@@ -1,0 +1,48 @@
+<script>
+  import ExamInfoModal from '$lib/component/ExamInfoModal/ExamInfoModal.svelte';
+  
+  // 使用$state()代替let
+  let showExamInfo = $state(false);
+  
+  // 考试信息数据
+  const examTitle = "《Svelte入门实战课》 2025年第1期阶段考试";
+  const examDuration = "60";
+  const startTime = "2025-01-22 09:00";
+  const endTime = "2025-01-22 10:00";
+  
+  // 考试须知列表
+  const examNotes = [
+    { id: 1, text: "请确保您的网络连接稳定，建议使用有线网络连接，并使用支持最新浏览器的电脑参加考试。" },
+    { id: 2, text: "提前30分钟登录考试平台，完成身份验证流程，以便准时开考，避免有效考试时间损失。" },
+    { id: 3, text: "考试环境应安静，无干扰，考前请关闭不需要的其他外设及任何无关软件，关闭所有与考试无关的应用程序。" },
+    { id: 4, text: "确保摄像头开启且画面清晰，以便考官人脸识别，考生注意端坐，保持坐姿端正，切勿低头或频繁转动头部。" },
+    { id: 5, text: "不得使用任何通讯工具或电子设备查看额外资料，包括手机、平板电脑等，与他人交流或者使用非指定的辅助材料。" },
+    { id: 6, text: "一旦进入考试界面，中途不允许离开，如强制终止考试(如突然断网)须重新进入考生考试界面，并遵循考生考试的引导。" },
+    { id: 7, text: "遵守考试时间限制，系统将在规定时间自动提交文档，请合理分配答题时间，不要集中在最后一刻提交文章。" },
+    { id: 8, text: "考试期间严禁录屏、录音或任何形式记录考试试题内容，违反此规定将被视为作弊处理。" },
+    { id: 9, text: "如有任何技术问题或遇到不可抗力因素影响考试进行，请立即联系在线技术支持或考官请求帮助。" }
+  ];
+  
+  // 处理确认按钮点击事件
+  function handleConfirm() {
+    console.log('用户已确认考试信息');
+    // 这里可以添加其他逻辑，如开始考试等
+  }
+  
+  // 显示弹窗
+  function openExamInfoModal() {
+    showExamInfo = true;
+  }
+</script>
+
+<button on:click={openExamInfoModal}>查看考试信息</button>
+
+<ExamInfoModal
+  title={examTitle}
+  examDuration={examDuration}
+  startTime={startTime}
+  endTime={endTime}
+  examNotes={examNotes}
+  bind:show={showExamInfo}
+  on:confirm={handleConfirm}
+/>

@@ -1,0 +1,15 @@
+stages: # List of stages for jobs, and their order of execution
+  - deploy
+
+deploy-game-fe:
+  only:
+    refs:
+      - main
+      - master
+  stage: deploy
+  tags:
+    - nodejs-build
+  environment: production
+  script:
+    - chmod +x deploy.sh 
+    - ./deploy.sh
