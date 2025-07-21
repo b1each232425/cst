@@ -41,6 +41,8 @@
 		"vitest-browser-svelte": "^0.1.0"
 	},
 	"dependencies": {
-		"@testing-library/svelte": "^5.2.8"
+		"@testing-library/svelte": "^5.2.8",
+		"sass": "^1.89.2",
+		"svelte-routing": "^2.13.0"
 	}
 }
