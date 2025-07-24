@@ -413,73 +413,20 @@
     //初始化题目
     //如果examinee_id为空则从local store中取题目
     if (!examinee_id) {
-      // 直接赋值 mock 数据，无需依赖 localStorage
-      const questions = [
-        {
-          id: 7,
-          type: "00",
-          group_name: "三、判断题题（9分）",
-          content: `<p>According to the attachment ,select the correct answer.</p><p> <a target="_blank" rel="noopener noreferrer nofollow" href="" download="attachment.docx">attachment.docx</a> </p>`,
-          options: [
-            { label: "A", value: "<p>Software is computer programs.</p>" },
-            {
-              label: "B",
-              value: `<p>Software is a collection of computer data and instructions organized in a specific order.</p>`,
-            },
-          ],
-        },
-        {
-          id: 7,
-          type: "04",
-          group_name: "三、判断题题（9分）",
-          content: `<p>According to the attachment ,select the correct answer.</p><p> <a target="_blank" rel="noopener noreferrer nofollow" href="" download="attachment.docx">attachment.docx</a> </p>`,
-          options: [
-            { label: "A", value: "对" },
-            {
-              label: "B",
-              value: `错`,
-            },
-          ],
-        },
-        {
-          id: 8,
-          type: "08",
-          group_name: "四. Web Services And SOAP（20分）",
-          content: "<p>请简述 WSDL 的作用及其与 UDDI 的关系。（10分）</p>",
-          answer_num: 1,
-        },
-        {
-          id: 8,
-          type: "08",
-          group_name: "四. Web Services And SOAP（20分）",
-          content: "<p>请简述 WSDL 的作用及其与 UDDI 的关系。（10分）</p>",
-          answer_num: 2,
-        },
-        {
-          id: 8,
-          type: "08",
-          group_name: "四. Web Services And SOAP（20分）",
-          content: "<p>请简述 WSDL 的作用及其与 UDDI 的关系。（10分）</p>",
-          answer_num: 2,
-        },
-        {
-          id: 8,
-          type: "08",
-          group_name: "四. Web Services And SOAP（20分）",
-          content: "<p>请简述 WSDL 的作用及其与 UDDI 的关系。（10分）</p>",
-          answer_num: 2,
-        },
-      ];
-      examQuestions.length = 0;
-      examQuestions.push(...questions);
-      questionGroups.length = 0;
-      questionGroups.push(...getQuestionGroups());
-      // 题目标题
-      const exam_title = localStorage.getItem("examTitle");
-      if (!exam_title) {
-        title = "预览考试";
-      } else {
-        title = exam_title;
+      const stored = localStorage.getItem("examQuestions");
+      if (stored) {
+        try {
+          let data = JSON.parse(stored);
+          console.log("examQuestions", data);
+          examQuestions.length = 0;
+          examQuestions.push(...data);
+          questionGroups.length = 0;
+          questionGroups.push(...getQuestionGroups());
+        } catch (e) {
+          console.error("Failed to parse examQuestions from localStorage", e);
+          alert("Failed to parse examQuestions from localStorage");
+          return;
+        }
       }
     } else {
       //检测是否加载成功
@@ -575,11 +522,6 @@
       } else {
         title = exam_title;
       }
-      // 关键：直接赋值给 examQuestions 并刷新分组
-      examQuestions.length = 0;
-      examQuestions.push(...questions);
-      questionGroups.length = 0;
-      questionGroups.push(...getQuestionGroups());
     }
   });
 </script>
