@@ -197,7 +197,7 @@
 
 <div class="paper-management">
     <!-- 标题区域 -->
-    <div>试卷管理</div>
+    <div id="temp-title">试卷管理&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;———————————————————————————————————————</div>
 
     <!-- 操作栏区域 -->
     <div class="header">
@@ -205,27 +205,27 @@
         <div class="left-side">
             <!-- 试卷名称 -->
             <div class="search-paper-name">
-                <span>试卷名称</span>
-                <input type="text" placeholder="搜索试卷名称">
+                <span style="margin-right: 26px;">试卷名称</span>
+                <input id="temp-input" type="text" placeholder="搜索试卷名称">
             </div>
 
             <!-- 试卷标签 -->
             <div class="search-paper-tag">
-                <span>试卷标签</span>
-                <input type="text" placeholder="搜索试卷标签">
+                <span style="margin-right: 10px;">试卷标签</span>
+                <input id="temp-input" type="text" placeholder="搜索试卷标签">
             </div>
         </div>
 
         <!-- 右侧 -->
         <div class="right-side">
-            <button>重置</button>
-            <button>删除</button>
-            <button on:click={
-            goto('/teacher/paper-management/add-paper').then(() => {
+            <button id="temp-btn">重置</button>
+            <button id="temp-btn">删除</button>
+            <button id="temp-btn" on:click={
+                goto('/teacher/paper-management/add-paper').then(() => {
                 location.reload();
             })}>自定义组卷</button>
-            <button>随机组卷</button>
-            <button>智能刷题</button>
+            <button id="temp-btn">随机组卷</button>
+            <button id="temp-btn">智能刷题</button>
         </div>
     </div>
 
@@ -304,21 +304,42 @@
 </div>
 
 <style>
+    
+    /************ 此区域为临时组件区域 ************/
+
+    #temp-title {
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    #temp-input {
+        padding: 7px 12px;
+    }
+
+    #temp-btn {
+        padding: 7px 20px;
+    }
+
+    /************ 此区域为临时组件区域 ************/
+
     .paper-management {
         font-family: 'Noto Sans SC', sans-serif;
         color: var(--text-primary);
+        padding: 5px 20px;
         
         /* 操作栏区域 */
         .header {
             /* background-color: red; */
             display: flex;
             font-size: 14px;
+            margin: 30px 0;
 
             /* 左侧 */
             .left-side {
                 /* background-color: rebeccapurple; */
                 display: flex;
                 gap: 32px;
+                align-items: center;
             }
 
             /* 右侧 */
