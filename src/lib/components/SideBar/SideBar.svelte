@@ -1,14 +1,20 @@
 <script>
   // @ts-nocheck
   import { goto } from "$app/navigation";
+  import { page } from "$app/state";
   import {
     sidebarFoldingState,
     sidebarWidth,
     navMap,
-  } from "../../../lib/stores/modules/layoutStore";
-  import { Router, Route, Link } from "svelte-routing";
+  } from "$lib/stores/modules/layoutStore";
 
-  // 处理折叠点击事件
+  let currentPath = $state(""); // 当前页面路径
+
+  $effect(() => {
+    currentPath = page.url.pathname;
+  });
+
+  // 折叠、展开侧边栏
   const toggleSidebar = () => {
     $sidebarFoldingState = !$sidebarFoldingState;
     $sidebarWidth = $sidebarFoldingState ? "0px" : "235px";
@@ -17,24 +23,12 @@
   // 处理侧边栏点击事件
   const handleItemButtonClick = (item) => {
     if (!item.children) {
-      navMap.update((map) => {
-        map.forEach((i) => {
-          i.isSelect = false;
-          if (i.children) {
-            i.children.forEach((child) => {
-              child.isSelect = false;
-            });
-          }
-        });
-        item.isSelect = true;
-        item.isOpen = !item.isOpen;
-        return [...map];
-      });
+      item.isOpen = !item.isOpen;
+      navMap.update((map) => [...map]);
+      goto(item.path);
     } else {
       item.isOpen = !item.isOpen;
-      navMap.update((map) => {
-        return [...map];
-      });
+      navMap.update((map) => [...map]);
     }
   };
 </script>
@@ -53,16 +47,17 @@
   <!-- logo -->
   <div class="logo {!$sidebarFoldingState ? '' : 'hide'}">3min</div>
 
-  <!-- 侧边栏内容 -->
+  <!-- 侧边栏主要导航区域 -->
   <div class="sidebar-content {!$sidebarFoldingState ? '' : 'hide'}">
-    <!-- 导航项内容 -->
     <div class="sidebar-content-main">
+      <!-- 遍历路由 -->
       {#each $navMap as item}
         <div
           class="sidebar-item"
-          class:active={item.isSelect}
+          class:active={item.path === currentPath}
           style="opacity: {$sidebarFoldingState ? 0 : 1};"
         >
+          <!-- 有子路由 -->
           {#if item.children}
             <button
               class="sidebar-item-btn"
@@ -90,43 +85,37 @@
                 {/if}
               </div>
             </button>
+            <!-- 无子路由 -->
           {:else}
-            <Router>
-              <Link to={item.path} style="text-decoration: none;">
-                <button
-                  class="sidebar-item-btn"
-                  onclick={() => handleItemButtonClick(item)}
-                >
-                  <div class="sidebar-item-content">
-                    <img
-                      class="sidebar-item-icon"
-                      src={item.icon}
-                      alt={item.title}
-                    />
-                    <span class="sidebar-item-text">{item.title}</span>
-                  </div>
-                </button></Link
-              >
-            </Router>
+            <button
+              class="sidebar-item-btn"
+              onclick={() => handleItemButtonClick(item)}
+            >
+              <div class="sidebar-item-content">
+                <img
+                  class="sidebar-item-icon"
+                  src={item.icon}
+                  alt={item.title}
+                />
+                <span class="sidebar-item-text">{item.title}</span>
+              </div>
+            </button>
           {/if}
         </div>
+        <!-- 处理子路由 -->
         {#if item.isOpen && item.children}
           {#each item.children as child}
             <div
               class="sidebar-subitem"
-              class:active={child.isSelect}
+              class:active={child.path === currentPath}
               style="opacity: {$sidebarFoldingState ? 0 : 1};"
             >
-              <Router>
-                <Link to={child.path} style="text-decoration: none;">
-                  <button
-                    class="sidebar-subitem-btn"
-                    onclick={() => handleItemButtonClick(child)}
-                  >
-                    {child.title}
-                  </button></Link
-                >
-              </Router>
+              <button
+                class="sidebar-subitem-btn"
+                onclick={() => handleItemButtonClick(child)}
+              >
+                {child.title}
+              </button>
             </div>
           {/each}
         {/if}

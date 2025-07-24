@@ -1,21 +1,76 @@
 <script>
+  // @ts-nocheck
+  import { page } from "$app/state";
+  import { goto } from "$app/navigation";
   import {
     sidebarFoldingState,
     sidebarWidth,
     navMap,
-  } from "../../../lib/stores/modules/layoutStore";
+    crumbStore,
+  } from "$lib/stores/modules/layoutStore";
+  import { tooltip } from "$lib/components/ToolTip/tooltip";
 
-  // 静态数据
-  let username = "张三";
-
-  // 用户菜单是否打开
-  let user_menu_open = false;
-  let displayName = username;
+  let userName = "张三"; // 静态数据
+  let isMenuOpen = $state(false); // 用户菜单是否打开
+  let currentPath = ""; // 当前页面路径
+  let crumbTitles = []; // url分割后的字段数组
+  let filterCrumbs = $state([]); // 过滤后的面包屑title和path
 
   // 处理展开按钮点击事件
   const toggleSidebar = () => {
     $sidebarFoldingState = !$sidebarFoldingState;
     $sidebarWidth = $sidebarFoldingState ? "0px" : "235px";
+  };
+
+  // 响应式处理路径变化
+  $effect(() => {
+    currentPath = page.url.pathname;
+    crumbTitles = currentPath
+      .split("/")
+      .filter((part) => part !== "" && part !== "teacher");
+
+    updateCrumbSelection($crumbStore);
+  });
+
+  // 更新面包屑数据，过滤不需要显示的项
+  const updateCrumbSelection = (crumbData) => {
+    let newFilterCrumbs = [];
+
+    // 遍历 crumbTitles 和仓库数据
+    crumbTitles.forEach((part) => {
+      // 遍历仓库数据，找到与 part 对应的 name
+      const matchedItem = findItemByName(part, crumbData);
+
+      // 如果找到匹配项且 isFilter 为 false，则加入 newFilterCrumbs
+      if (matchedItem && !matchedItem.isFilter) {
+        newFilterCrumbs.push({
+          title: matchedItem.title,
+          path: matchedItem.path,
+        });
+      }
+    });
+
+    // 使用 $state 进行更新，避免递归更新
+    filterCrumbs = newFilterCrumbs;
+  };
+
+  // 根据 name 查找仓库中的项
+  const findItemByName = (name, crumbData) => {
+    // 遍历仓库中的数据
+    for (const item of crumbData) {
+      if (item.name === name || item.name === "[bankid]") {
+        return item;
+      }
+
+      // 如果有子项，递归查找
+      if (item.children) {
+        const childMatch = findItemByName(name, item.children);
+        if (childMatch) {
+          return childMatch;
+        }
+      }
+    }
+    return null;
   };
 </script>
 
@@ -29,35 +84,32 @@
 
   <!-- 面包屑 -->
   <div class="breadcrumbs-container">
-    {#each $navMap as item}
-      {#if !item.children && item.isSelect}
-        <div class="breadcrumbs-item-container">
-          <button class="breadcrumbs-item active">
-            {item.title}
-          </button>
-        </div>
-      {:else if item.children}
-        {#each item.children as child}
-          {#if child.isSelect}
-            <div class="breadcrumbs-item-container">
-              <button class="breadcrumbs-item active">
-                {child.title}
-              </button>
-            </div>
-          {/if}
-        {/each}
-      {/if}
+    {#each filterCrumbs as crumb, index}
+      <button
+        class="breadcrumb-item"
+        onclick={() => goto(crumb.path)}
+        use:tooltip={() => ({
+          content: "回到" + crumb.title,
+          theme: "light",
+        })}
+      >
+        {#if index < filterCrumbs.length - 1}
+          {crumb.title} >
+        {:else}
+          {crumb.title}
+        {/if}
+      </button>
     {/each}
   </div>
 
   <!-- 用户信息 -->
   <div class="user-container">
-    <span class="welcome-text">{`你好，${displayName}`}</span>
+    <span class="welcome-text">{`你好，${userName}`}</span>
 
     <button
       class="avatar-btn"
       onclick={() => {
-        user_menu_open = !user_menu_open;
+        isMenuOpen = !isMenuOpen;
       }}
     >
       <img class="avatar-img" src="/user_icons/defaultAvatar.svg" alt="头像" />
@@ -72,7 +124,7 @@
     </button>
   </div>
 
-  <div class="user-menu-container {user_menu_open ? '' : 'hide'}">
+  <div class="user-menu-container {isMenuOpen ? '' : 'hide'}">
     <button class="user-menu-item"> 个人中心 </button>
     <button class="user-menu-item"> 设置 </button>
     <button class="user-menu-item logout"> 退出登录 </button>
@@ -127,21 +179,17 @@
       height: 100%;
       background-color: transparent;
 
-      .breadcrumbs-item {
-        text-decoration: none;
-        color: rgba(0, 0, 0, 0.6);
-        padding: 2px;
-        font-size: 16px;
-        border: none;
-        cursor: pointer;
+      .breadcrumb-item {
+        all: unset;
+      }
 
-        &.active {
-          color: #0052d9;
-          &:hover {
-            color: #2b36ff;
-            text-decoration: underline;
-          }
-        }
+      .breadcrumb-item:disabled {
+        color: grey;
+      }
+
+      .breadcrumb-item:last-child {
+        color: blue;
+        pointer-events: none;
       }
     }
 
