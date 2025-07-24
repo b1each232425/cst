@@ -1,14 +1,15 @@
 <script>
-  import { Router, Route, Link } from "svelte-routing";
-  import Sidebar from "../../lib/components/SideBar/SideBar.svelte";
-  import Crumb from "../../lib/components/Crumb/Crumb.svelte";
-  import Brand from "../../lib/components/Brand/Brand.svelte";
-  import { sidebarWidth } from "../../lib/stores/modules/layoutStore";
+  import Sidebar from "$lib/components/SideBar/SideBar.svelte";
+  import Crumb from "$lib/components/Crumb/Crumb.svelte";
+  import Brand from "$lib/components/Brand/Brand.svelte";
+  import { sidebarWidth } from "$lib/stores/modules/layoutStore";
+
+  let { children } = $props();
 </script>
 
 <div class="app">
   <nav class="sidebar-container" style="width: {$sidebarWidth};">
-    <Sidebar></Sidebar>
+    <Sidebar />
   </nav>
 
   <main style="margin-left: {$sidebarWidth};">
@@ -17,15 +18,7 @@
     </header>
 
     <div class="content-container">
-      <Router>
-        <!-- 路由配置，确保 path 属性正确设置 -->
-        <Route
-          path="/teacher/question-bank-management/theory"
-          component={() =>
-            import("./question-bank-management/theory/+page.svelte")}
-        />
-        <Route path="/teacher" component={() => import("./+page.svelte")} />
-      </Router>
+      {@render children()}
     </div>
 
     <footer>
@@ -57,7 +50,7 @@
       display: flex;
       flex-direction: column;
       flex: 1;
-      transition: margin-left 0.5s ease; /* 主体部分左边距过渡 */
+      transition: margin-left 0.5s ease;
 
       header {
         display: flex;
@@ -69,6 +62,7 @@
         flex-grow: 1;
         display: flex;
         flex-direction: column;
+        padding: 20px;
       }
 
       footer {
