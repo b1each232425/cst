@@ -24,6 +24,13 @@
           component={() =>
             import("./question-bank-management/theory/+page.svelte")}
         />
+        <Route
+          path="/teacher/grade-management"
+          component={async () => {
+            const module = await import("./grade-management/+page.svelte");
+            return module.default;
+          }}
+        />
         <Route path="/teacher" component={() => import("./+page.svelte")} />
       </Router>
     </div>

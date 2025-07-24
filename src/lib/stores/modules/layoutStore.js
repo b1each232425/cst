@@ -70,26 +70,11 @@ export const navMap = writable([
   {
     name: "score-management",
     title: "成绩管理",
-    path: "",
+    path: "/teacher/grade-management", // Update path
     icon: "/sidebar/nav_icon/grade.svg",
     isOpen: true,
     isSelect: false,
-    children: [
-      {
-        name: "exam-score-management",
-        title: "考试成绩管理",
-        path: "/teacher",
-        isOpen: true,
-        isSelect: false,
-      },
-      {
-        name: "practice-score-management",
-        title: "练习成绩管理",
-        path: "/teacher",
-        isOpen: true,
-        isSelect: false,
-      },
-    ],
+    // Remove children array
   },
   {
     name: "exam-point-management",
