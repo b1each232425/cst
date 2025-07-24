@@ -32,6 +32,7 @@
 		"globals": "^16.0.0",
 		"jsdom": "^26.1.0",
 		"playwright": "^1.53.0",
+		"prettier": "^3.6.2",
 		"sass": "^1.89.2",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
@@ -45,9 +46,6 @@
 		"@3min/cst-tiptap": "^1.2.2",
 		"@3min/smart-edit": "^1.5.2",
 		"@testing-library/svelte": "^5.2.8",
-		"bulma": "^1.0.4",
-		"quill": "^2.0.3",
-		"sass": "^1.89.2",
 		"svelte-routing": "^2.13.0",
 		"tippy.js": "^6.3.7"
 	}
