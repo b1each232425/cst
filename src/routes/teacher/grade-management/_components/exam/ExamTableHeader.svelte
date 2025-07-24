@@ -40,7 +40,7 @@
 		align-items: center;
 		box-sizing: border-box;
 		padding: 0 15px;
-		background-color: #f7f8fa;
+		background-color: transparent; /* Changed from gray to transparent */
 
 		th {
 			font-size: 14px;

@@ -1,4 +1,4 @@
-import { getPractices } from '$lib/api/grade-management';
+import { getPractices, exportPracticeGrades } from '$lib/api/grade-management';
 import { formatISOString } from '../../../routes/teacher/grade-management/_utils'; // Assuming this can be reused
 
 /**
@@ -38,6 +38,7 @@ export function createPracticeGradeStore() {
 		practices: [],
 		totalRecords: 0,
 		loading: false,
+		selectAll: false,
 		filters: {
 			courseID: 0,
 			classID: 0,
@@ -46,7 +47,9 @@ export function createPracticeGradeStore() {
 		pagination: {
 			page: 1,
 			pageSize: 10
-		}
+		},
+		/** @type {Record<number, boolean>} */
+		selected: {}
 	});
 
 	/** @type {any} */
@@ -88,10 +91,57 @@ export function createPracticeGradeStore() {
 		}
 	};
 
+	/**
+	 * @param {number} id
+	 */
+	function toggleSelect(id) {
+		state.selected[id] = !state.selected[id];
+		const practiceIds = state.practices.map(p => p.id);
+		const selectedIds = Object.keys(state.selected).map(Number).filter(k => practiceIds.includes(k) && state.selected[k]);
+		
+		if (selectedIds.length === practiceIds.length && practiceIds.length > 0) {
+			state.selectAll = true;
+		} else {
+			state.selectAll = false;
+		}
+	}
+
+	function toggleSelectAll() {
+		state.selectAll = !state.selectAll;
+		/** @type {Record<number, boolean>} */
+		const newSelected = {};
+		for (const practice of state.practices) {
+			newSelected[practice.id] = state.selectAll;
+		}
+		state.selected = newSelected;
+	}
+
+	function exportGrades() {
+		const selectedIds = Object.keys(state.selected)
+			.filter((id) => state.selected[Number(id)])
+			.map(Number);
+
+		if (selectedIds.length === 0) {
+			alert('请至少选择一项进行导出。');
+			return;
+		}
+
+		exportPracticeGrades(selectedIds)
+			.then(() => {
+				// Success
+			})
+			.catch((/** @type {any} */ err) => {
+				console.error('导出练习成绩失败:', err);
+			});
+	}
+
 	return {
 		get state() {
 			return state;
 		},
-		...actions
+		...actions,
+		toggleSelect,
+		toggleSelectAll,
+		exportGrades
 	};
 } 

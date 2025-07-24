@@ -129,4 +129,38 @@ export function getPractices(params) {
 		}
 		return response.json();
 	});
+}
+
+/**
+ * @param {number[]} ids
+ * @returns {Promise<any>}
+ */
+export function exportPracticeGrades(ids) {
+	return fetch('/api/teacher/practice-grade/export', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			credentials: 'include'
+		},
+		body: JSON.stringify({ ids })
+	})
+		.then((response) => {
+			if (!response.ok) {
+				throw new Error('HTTP error! status: ' + response.status);
+			}
+			return response.blob();
+		})
+		.then((blob) => {
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'practice_grades.xlsx';
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+		})
+		.catch((error) => {
+			console.error('导出练习成绩失败:', error);
+			throw error;
+		});
 } 

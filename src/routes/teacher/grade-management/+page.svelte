@@ -1,13 +1,12 @@
 <script>
 	import { createGradeStore } from '$lib/stores/modules/grade.svelte.js';
 	import { createPracticeGradeStore } from '$lib/stores/modules/practiceGrade.svelte.js';
-	import FilterPanel from './_components/FilterPanel.svelte';
-	import ExamTable from './_components/ExamTable.svelte';
-	import Title from './_components/Title.svelte';
-	import Pagination from './_components/Pagination.svelte';
-	import ActionToolbar from './_components/ActionToolbar.svelte';
-	import PracticeFilterPanel from './_components/PracticeFilterPanel.svelte';
-	import PracticeTable from './_components/PracticeTable.svelte';
+	import ExamFilterPanel from './_components/exam/ExamFilterPanel.svelte';
+	import ExamTable from './_components/exam/ExamTable.svelte';
+	import Title from './_components/shared/Title.svelte';
+	import Pagination from './_components/shared/Pagination.svelte';
+	import PracticeFilterPanel from './_components/practice/PracticeFilterPanel.svelte';
+	import PracticeTable from './_components/practice/PracticeTable.svelte';
 
 	let activeTab = $state('exam');
 	const examGradeStore = createGradeStore();
@@ -43,8 +42,9 @@
 		<div class="content-item" style="visibility: {activeTab === 'exam' ? 'visible' : 'hidden'};">
 			<Title title="考试成绩管理" />
 			<div class="main-content">
-				<FilterPanel store={examGradeStore} />
-				<ActionToolbar store={examGradeStore} />
+				<div class="top-bar">
+					<ExamFilterPanel store={examGradeStore} />
+				</div>
 				{#if examGradeStore.state.loading}
 					<p>加载中...</p>
 				{:else}
@@ -119,6 +119,12 @@
 					flex-grow: 1;
 					display: flex;
 					flex-direction: column;
+
+					.top-bar {
+						display: flex;
+						justify-content: space-between;
+						align-items: center;
+					}
 
 					& > :last-child {
 						margin-top: auto;
