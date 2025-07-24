@@ -1,14 +1,15 @@
 <script>
-  import { Router, Route, Link } from "svelte-routing";
-  import Sidebar from "../../lib/components/SideBar/SideBar.svelte";
-  import Crumb from "../../lib/components/Crumb/Crumb.svelte";
-  import Brand from "../../lib/components/Brand/Brand.svelte";
-  import { sidebarWidth } from "../../lib/stores/modules/layoutStore";
+  import Sidebar from "$lib/components/SideBar/SideBar.svelte";
+  import Crumb from "$lib/components/Crumb/Crumb.svelte";
+  import Brand from "$lib/components/Brand/Brand.svelte";
+  import { sidebarWidth } from "$lib/stores/modules/layoutStore";
+
+  let { children } = $props();
 </script>
 
 <div class="app">
   <nav class="sidebar-container" style="width: {$sidebarWidth};">
-    <Sidebar></Sidebar>
+    <Sidebar />
   </nav>
 
   <main style="margin-left: {$sidebarWidth};">
@@ -64,7 +65,7 @@
       display: flex;
       flex-direction: column;
       flex: 1;
-      transition: margin-left 0.5s ease; /* 主体部分左边距过渡 */
+      transition: margin-left 0.5s ease;
 
       header {
         display: flex;
@@ -76,6 +77,7 @@
         flex-grow: 1;
         display: flex;
         flex-direction: column;
+        padding: 20px;
       }
 
       footer {
