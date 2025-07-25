@@ -1,5 +1,5 @@
-import { getExams, submitExamGrades, getExamineeGradeList } from '$lib/api/grade-management';
-import { formatISOString } from '../../../routes/teacher/grade-management/_utils';
+import { getExams, submitExamGrades, getExamineeGradeList, getGradeLogs } from '../_api';
+import { formatISOString } from '../_utils';
 
 /**
  * @typedef {object} ExamSessionInfo

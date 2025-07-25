@@ -1,5 +1,5 @@
-import { getPractices, exportPracticeGrades } from '$lib/api/grade-management';
-import { formatISOString } from '../../../routes/teacher/grade-management/_utils'; // Assuming this can be reused
+import { getPractices, exportPracticeGrades } from '../_api';
+import { formatISOString } from '../_utils';
 
 /**
  * @typedef {object} PracticeInfo

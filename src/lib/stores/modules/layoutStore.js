@@ -78,14 +78,14 @@ export const navMap = writable([
       {
         name: "exam-score-management",
         title: "考试成绩管理",
-        path: "/teacher/grade-management/exam",
+        path: "/teacher/score-management/exam-score-management",
         isOpen: true,
         isSelect: false,
       },
       {
         name: "practice-score-management",
         title: "练习成绩管理",
-        path: "/teacher/grade-management/practice",
+        path: "/teacher/score-management/practice-score-management",
         isOpen: true,
         isSelect: false,
       },
@@ -198,14 +198,14 @@ export const crumbStore = writable([
       {
         name: "exam-score-management",
         title: "考试成绩管理",
-        path: "/teacher/grade-management/exam",
+        path: "/teacher",
         isSelect: false,
         isFilter: false,
       },
       {
         name: "practice-score-management",
         title: "练习成绩管理",
-        path: "/teacher/grade-management/practice",
+        path: "/teacher",
         isSelect: false,
         isFilter: false,
       },
@@ -214,27 +214,25 @@ export const crumbStore = writable([
   {
     name: "exam-point-management",
     title: "考点管理",
-    path: "/teacher/exam-point-management",
+    path: "/teacher",
     isSelect: false,
     isFilter: false,
   },
   {
     name: "student-management",
     title: "学生管理",
-    path: "/teacher/student-management",
+    path: "/teacher",
     isSelect: false,
     isFilter: false,
   },
   {
     name: "user-management",
     title: "用户管理",
-    path: "/teacher/user-management",
+    path: "/teacher",
     isSelect: false,
     isFilter: false,
   },
 ]);
-
-
 
 // 控制侧边栏折叠状态
 export const sidebarFoldingState = writable(false);

@@ -1,27 +1,29 @@
 <script>
-	import { createPracticeGradeStore } from '$lib/stores/modules/practiceGrade.svelte.js';
+	import { createGradeStore } from '../_stores/grade.svelte.js';
+	import ExamFilterPanel from '../_components/exam/ExamFilterPanel.svelte';
+	import ExamTable from '../_components/exam/ExamTable.svelte';
 	import Title from '../_components/shared/Title.svelte';
 	import Pagination from '../_components/shared/Pagination.svelte';
-	import PracticeFilterPanel from '../_components/practice/PracticeFilterPanel.svelte';
-	import PracticeTable from '../_components/practice/PracticeTable.svelte';
 
-	const practiceGradeStore = createPracticeGradeStore();
+	const examGradeStore = createGradeStore();
 
 	$effect(() => {
-		practiceGradeStore.fetchPractices();
+		examGradeStore.fetchExams();
 	});
 </script>
 
 <div class="grade-management-content">
-	<Title title="练习成绩管理" />
+	<Title title="考试成绩管理" />
 	<div class="main-content">
-		<PracticeFilterPanel store={practiceGradeStore} />
-		{#if practiceGradeStore.state.loading}
+		<div class="top-bar">
+			<ExamFilterPanel store={examGradeStore} />
+		</div>
+		{#if examGradeStore.state.loading}
 			<p>加载中...</p>
 		{:else}
-			<PracticeTable store={practiceGradeStore} />
+			<ExamTable store={examGradeStore} />
 		{/if}
-		<Pagination store={practiceGradeStore} />
+		<Pagination store={examGradeStore} />
 	</div>
 </div>
 
@@ -39,6 +41,12 @@
 			flex-grow: 1;
 			display: flex;
 			flex-direction: column;
+
+			.top-bar {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
 
 			& > :last-child {
 				margin-top: auto;
