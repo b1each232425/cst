@@ -18,7 +18,7 @@
     </header>
 
     <div class="content-container">
-      <slot />
+      {@render children()}
     </div>
 
     <footer>
