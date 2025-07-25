@@ -3,7 +3,7 @@
 	import '$lib/styles/global.css';
 </script>
 
-<!-- <style>
+<style>
 	:global(html) {
 		height: 100%;
 	}
@@ -19,7 +19,7 @@
 	.app-container {
 		min-height: 100vh;
 	}
-</style> -->
+</style>
 
 <div class="app-container">
 	<slot />
