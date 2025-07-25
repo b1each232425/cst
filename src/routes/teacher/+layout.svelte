@@ -18,22 +18,7 @@
     </header>
 
     <div class="content-container">
-      <Router>
-        <!-- 路由配置，确保 path 属性正确设置 -->
-        <Route
-          path="/teacher/question-bank-management/theory"
-          component={() =>
-            import("./question-bank-management/theory/+page.svelte")}
-        />
-        <Route
-          path="/teacher/grade-management"
-          component={async () => {
-            const module = await import("./grade-management/+page.svelte");
-            return module.default;
-          }}
-        />
-        <Route path="/teacher" component={() => import("./+page.svelte")} />
-      </Router>
+      <slot />
     </div>
 
     <footer>

@@ -70,11 +70,26 @@ export const navMap = writable([
   {
     name: "score-management",
     title: "成绩管理",
-    path: "/teacher/grade-management", // Update path
+    path: "",
     icon: "/sidebar/nav_icon/grade.svg",
     isOpen: true,
     isSelect: false,
-    // Remove children array
+    children: [
+      {
+        name: "exam-score-management",
+        title: "考试成绩管理",
+        path: "/teacher/grade-management/exam",
+        isOpen: true,
+        isSelect: false,
+      },
+      {
+        name: "practice-score-management",
+        title: "练习成绩管理",
+        path: "/teacher/grade-management/practice",
+        isOpen: true,
+        isSelect: false,
+      },
+    ],
   },
   {
     name: "exam-point-management",
@@ -183,14 +198,14 @@ export const crumbStore = writable([
       {
         name: "exam-score-management",
         title: "考试成绩管理",
-        path: "/teacher",
+        path: "/teacher/grade-management/exam",
         isSelect: false,
         isFilter: false,
       },
       {
         name: "practice-score-management",
         title: "练习成绩管理",
-        path: "/teacher",
+        path: "/teacher/grade-management/practice",
         isSelect: false,
         isFilter: false,
       },
@@ -219,122 +234,7 @@ export const crumbStore = writable([
   },
 ]);
 
-// 存储面包屑数据
-export const crumbStore = writable([
-  {
-    name: "question-bank-management",
-    title: "题库管理",
-    path: "/teacher/question-bank-management",
-    isSelect: false,
-    isFilter: true,
-    children: [
-      {
-        name: "theory",
-        title: "理论题库管理",
-        path: "/teacher/question-bank-management/theory",
-        isSelect: true,
-        isFilter: false,
-        children: [
-          {
-            name: "[bankid]",
-            title: "理论题目管理",
-            path: "/teacher/question-bank-management/theory/[bankid]",
-            isSelect: false,
-            isFilter: false,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    name: "paper",
-    title: "试卷管理",
-    path: "/teacher",
-    isSelect: false,
-    isFilter: false,
-  },
-  {
-    name: "practice",
-    title: "练习管理",
-    path: "/teacher",
-    isSelect: false,
-    isFilter: false,
-  },
-  {
-    name: "exam",
-    title: "考试管理",
-    path: "/teacher",
-    isSelect: false,
-    isFilter: false,
-  },
-  {
-    name: "paper-correction",
-    title: "试卷批改",
-    path: "/teacher",
-    isSelect: false,
-    isFilter: false,
-    children: [
-      {
-        name: "exam-correction",
-        title: "考试批改",
-        path: "/teacher",
-        isSelect: false,
-        isFilter: false,
-      },
-      {
-        name: "practice-correction",
-        title: "练习批改",
-        path: "/teacher",
-        isSelect: false,
-        isFilter: false,
-      },
-    ],
-  },
-  {
-    name: "score-management",
-    title: "成绩管理",
-    path: "",
-    isSelect: false,
-    isFilter: false,
-    children: [
-      {
-        name: "exam-score-management",
-        title: "考试成绩管理",
-        path: "/teacher",
-        isSelect: false,
-        isFilter: false,
-      },
-      {
-        name: "practice-score-management",
-        title: "练习成绩管理",
-        path: "/teacher",
-        isSelect: false,
-        isFilter: false,
-      },
-    ],
-  },
-  {
-    name: "exam-point-management",
-    title: "考点管理",
-    path: "/teacher",
-    isSelect: false,
-    isFilter: false,
-  },
-  {
-    name: "student-management",
-    title: "学生管理",
-    path: "/teacher",
-    isSelect: false,
-    isFilter: false,
-  },
-  {
-    name: "user-management",
-    title: "用户管理",
-    path: "/teacher",
-    isSelect: false,
-    isFilter: false,
-  },
-]);
+
 
 // 控制侧边栏折叠状态
 export const sidebarFoldingState = writable(false);
