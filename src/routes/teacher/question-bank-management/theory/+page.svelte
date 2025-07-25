@@ -1,8 +1,8 @@
 <script>
-  import { goto } from "$app/navigation";
+  import { goto } from '$app/navigation';
 
   const gotoBank = () => {
-    goto("/teacher/question-bank-management/theory/11");
+    goto('/teacher/question-bank-management/theory/11');
   };
 </script>
 
