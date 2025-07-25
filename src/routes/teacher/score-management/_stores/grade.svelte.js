@@ -1,5 +1,5 @@
-import { getExams, submitExamGrades, getExamineeGradeList, getGradeLogs } from '../_api';
-import { formatISOString } from '../_utils';
+import { getExams, submitExamGrades, getExamineeGradeList, getGradeLogs } from '../_api/score';
+import { formatISOString } from '../_utils/dateFormatter';
 
 /**
  * @typedef {object} ExamSessionInfo

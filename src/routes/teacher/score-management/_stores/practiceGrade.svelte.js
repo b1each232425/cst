@@ -1,5 +1,5 @@
-import { getPractices, exportPracticeGrades } from '../_api';
-import { formatISOString } from '../_utils';
+import { getPractices, exportPracticeGrades } from '../_api/score';
+import { formatISOString } from '../_utils/dateFormatter';
 
 /**
  * @typedef {object} PracticeInfo
