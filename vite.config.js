@@ -32,7 +32,7 @@ export default defineConfig({
 		conditions: ['browser'],
 	},
 	test: {
-		workspace: [
+		projects: [
 			{
 				extends: './vite.config.js',
 				plugins: [svelteTesting({
@@ -41,10 +41,18 @@ export default defineConfig({
 				test: {
 					name: 'unit',
 					environment: 'jsdom',
+					globals: true,
 					clearMocks: true,
 					include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
 					exclude: ['src/lib/server/**'],
-					setupFiles: ['./vitest-setup-client.js']
+					setupFiles: ['./vitest-setup-client.js'],
+					coverage: {
+						provider: 'v8',
+						reporter: ['text', 'html', 'lcov'],
+						reportOnFailure: true,
+						include: ['src/**/*.{js,ts,svelte}'],
+						exclude: ['src/**/*.{test,spec}.{js,ts}', 'src/lib/server/**']
+					}
 				}
 			},
 			{
