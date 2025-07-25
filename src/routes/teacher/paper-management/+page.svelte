@@ -220,10 +220,8 @@
         <div class="right-side">
             <button id="temp-btn">重置</button>
             <button id="temp-btn">删除</button>
-            <button id="temp-btn" on:click={
-                goto('/teacher/paper-management/add-paper').then(() => {
-                location.reload();
-            })}>自定义组卷</button>
+            <button id="temp-btn" onclick={
+                goto('/teacher/paper-management/add-paper')}>自定义组卷</button>
             <button id="temp-btn">随机组卷</button>
             <button id="temp-btn">智能刷题</button>
         </div>
@@ -325,7 +323,6 @@
     .paper-management {
         font-family: 'Noto Sans SC', sans-serif;
         color: var(--text-primary);
-        padding: 5px 20px;
         
         /* 操作栏区域 */
         .header {

@@ -33,3 +33,4 @@ export function getColorIndex(tagName) {
     // 计算并返回颜色数组的索引
     return charCode % tagColorList.length;
 }
+
