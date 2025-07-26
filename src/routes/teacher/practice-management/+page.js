@@ -1,9 +1,9 @@
 /*
- * @Author: chenyijun
- * @Date: 2025-04-20 20:20:00
- * @LastEditors: chenyijun
- * @LastEditTime: 2025-05-03 14:20:06
- */
+ * @Author: 李乐毅 
+ * @Date: 2025-07-27 16:36:22 
+ * @Last Modified by:   李乐毅 
+ * @Last Modified time: 2025-07-27 16:36:22 
+ */ 
 import { practice_data_list,practice_data_list_display, practice_name_store, practice_type_store, practice_status_store, current_page_store, page_size_store, practice_filter } from "../../../lib/stores/modules/practiceData";
 import { get } from "svelte/store";
 import { pageQueryHandle } from "./utils";

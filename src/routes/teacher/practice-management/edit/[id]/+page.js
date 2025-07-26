@@ -1,9 +1,9 @@
-/*
- * @Author: chenyijun
- * @Date: 2025-04-20 20:20:00
- * @LastEditors: OuYang Haobin 1242968386@qq.com
- * @LastEditTime: 2025-06-18 13:06:23
- */
+ /*
+ * @Author: 李乐毅 
+ * @Date: 2025-07-27 16:36:22 
+ * @Last Modified by:   李乐毅 
+ * @Last Modified time: 2025-07-27 16:36:22 
+ */ 
 /** @param {Object} params - 加载函数参数
  * @param {Function} params.fetch - SvelteKit提供的fetch函数
  * @param {Object} params.params - 路由参数

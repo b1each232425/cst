@@ -1,17 +1,14 @@
-<!-- 
- /*
- * @Author: Mayux dbs45412@163.com
- * @Date: 2025-04-18 11:48:06
- * @LastEditors: Mayux && 1243805308@qq.com
- * @LastEditTime: 2025-06-15 19:51:07
- * @FilePath: \tutorial-platform-fe\src\routes\teacher\examManagement\StudentImportPanel.svelte
- * @Description: 学生导入面板
- * Copyright (c) 2025 by Mayux, All Rights Reserved. 
- */ 
- -->
+<!-- /*
+ * @Author: 李乐毅 
+ * @Date: 2025-07-27 16:36:22 
+ * @Last Modified by:   李乐毅 
+ * @Last Modified time: 2025-07-27 16:36:22 
+ */ -->
 <script>
-    import { checkData } from "$lib/batch_check/check_examinee";
+    import { checkData } from "../batch_check/check_examinee";
+  import InputBox from "$lib/components/Input/InputBox.svelte";
     import Toast from "$lib/components/Toast/Toast.svelte";
+    import Pagination from "$lib/components/Pagination/Pagination.svelte";
 
 
     // 字段映射表
@@ -461,11 +458,11 @@
                     class="student-search-container"
                     style="height: 32px;width:350px; margin-left:10px"
                 >
-                    <!-- <SearchInput
-                        purpose_text={"搜索考生"}
-                        place_holder={"请输姓名/手机号/身份证号"}
+                     <InputBox
+                        label={"搜索考生"}
+                        placeholder={"请输姓名/手机号/身份证号"}
                         onSearchFunc={onSearch}
-                    ></SearchInput> -->
+                    ></InputBox> 
                 </div>
                 <div class="checkbox-container">
                     <span style="font-size: 12px;">
@@ -541,15 +538,16 @@
                     <span style="font-size: 12px; margin-right:10px">
                         已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_ids.length}</span> 条
                     </span>
-                    <!-- <Pagination
+                     <Pagination
                         show_per_page={false}
-                        total_data_num={totals}
+                        totalItems={totals}
+                        pageSize={PAGE_SIZE}
                         total_page_num={total_page}
-                        current_page_num={current_page}
-                        onPageChangeFunc={onNextOrLastPage}
-                        onPageSearchFunc={onSearchPageFunc}
+                        currentPage={current_page}
+                        on:pageChange={onNextOrLastPage}
+                        jumpPage={onSearchPageFunc}
                         {onPageChooseFunc}
-                    ></Pagination> -->
+                    ></Pagination> 
                 </div>
             </div>
         </div>

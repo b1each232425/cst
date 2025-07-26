@@ -1,13 +1,13 @@
-<!--
- * @Author: chenyijun
- * @Date: 2025-04-19 19:38:33
- * @LastEditors: chenyijun
- * @LastEditTime: 2025-05-03 16:08:49
- -->
+<!-- /*
+ * @Author: 李乐毅 
+ * @Date: 2025-07-27 16:36:22 
+ * @Last Modified by:   李乐毅 
+ * @Last Modified time: 2025-07-27 16:36:22 
+ */ -->
 <script>
     import CustomSelect from "./CustomSelect.svelte";
     import Tag from "../../../../lib/components/Tag/Tag.svelte";
-  //  import Pagination from "$lib/components/Pagination/Pagination.svelte";
+    import Pagination from "$lib/components/Pagination/Pagination.svelte";
   import InputBox  from "$lib/components/Input/InputBox.svelte";
   import Option from "$lib/components/Select/Option.svelte";
   import Button from "$lib/components/Button/Button.svelte";
@@ -420,10 +420,10 @@
                 </div>
                 <div class="pagination-container">
                     <div class="total-count">共 {totalTests} 条</div>
-                    <!-- <Pagination
-                        total_data_num={totalTests}
+                    <Pagination
+                        totalItems={totalTests}
                         total_page_num={totalPages}
-                        current_page_num={currentPage}
+                        currentPage={currentPage}
                         max_show_page_num={5}
                         data_num_per_page_options={[
                             { value: 5, label: "5条/页" },
@@ -434,12 +434,12 @@
                             value: pageSize,
                             label: `${pageSize}条/页`,
                         }}
-                        onPageChangeFunc={handlePageChange}
-                        onPageChooseFunc={handlePageChoose}
+                        on:pageChange={handlePageChange}
+                        jumpPage={handlePageChoose}
                         selectOptionFunc={handlePageSizeChange}
                         onPageSearchFunc={handlePageSearch}
                         expand_direction="up"
-                    /> -->
+                    /> 
                 </div>
             </div>
 

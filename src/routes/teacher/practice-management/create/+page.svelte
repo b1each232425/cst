@@ -1,9 +1,9 @@
-<!--
- * @Author: chenyijun
- * @Date: 2025-04-20 20:20:00
- * @LastEditors: chenyijun
- * @LastEditTime: 2025-05-02 19:20:13
- -->
+<!-- /*
+ * @Author: 李乐毅 
+ * @Date: 2025-07-27 16:36:22 
+ * @Last Modified by:   李乐毅 
+ * @Last Modified time: 2025-07-27 16:36:22 
+ */ -->
 <script>
     import PracticeForm from "../_components/PracticeForm.svelte";
     import { practice_data_list } from "$lib/stores/modules/practiceData";

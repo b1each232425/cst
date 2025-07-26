@@ -1,11 +1,9 @@
-/*
- * @Author: OuYang Haobin 1242968386@qq.com
- * @Date: 2025-06-04 14:24:46
- * @LastEditors: OuYang Haobin 1242968386@qq.com
- * @LastEditTime: 2025-06-18 13:33:27
- * @FilePath: /tutorial-platform-fe/src/routes/teacher/practiceManagement/utils.js
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
+ /*
+ * @Author: 李乐毅 
+ * @Date: 2025-07-27 16:36:22 
+ * @Last Modified by:   李乐毅 
+ * @Last Modified time: 2025-07-27 16:36:22 
+ */ 
 import ExcelJS from 'exceljs';
 export async function exportToExcel(data) {
     const workbook = new ExcelJS.Workbook();

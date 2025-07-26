@@ -1,6 +1,6 @@
 <script>
      import Toast from "$lib/components/Toast/Toast.svelte";  //吐司
-    // import Pagination from "$lib/component/Pagination.svelte";   //分页器
+   import Pagination from "$lib/components/Pagination/Pagination.svelte";  //分页器
     import InputBox from "$lib/components/Input/InputBox.svelte";//搜索框
     import StudentImportPanel from "./StudentImportPanel.svelte";
     import Button from "$lib/components/Button/Button.svelte";
@@ -605,15 +605,15 @@ if (result.Status != 0) {
                         <span style="font-size: 12px; margin-right:10px">
                             已选 <span style="color: #00A870; margin:0 5px 0 5px;">{filtered_selected_ids.length}</span> 条
                         </span>
-                        <!-- 等待组件封装<Pagination
+                        <Pagination
                             show_per_page={false}
-                            total_data_num={filtered_selected_ids.length}
+                            totalItems={filtered_selected_ids.length}
                             total_page_num={selected_total_page}
-                            current_page_num={selected_search_params.page}
-                            onPageChangeFunc={onSelectedNextOrLastPage}
+                            currentPage={selected_search_params.page}
+                            on:pageChange={onSelectedNextOrLastPage}
                             onPageSearchFunc={onSelectedSearchPageFunc}
-                            onPageChooseFunc={onSelectedPageChooseFunc}
-                        ></Pagination> -->
+                            jumpPage={onSelectedPageChooseFunc}
+                        ></Pagination>
                     </div>
                 </div>
             {:else}
@@ -755,15 +755,16 @@ if (result.Status != 0) {
                             >{selected_ids.length}</span
                         > 条
                     </span>
-                    <!-- <Pagination 等待组件封装
+                    <Pagination 等待组件封装
                         show_per_page={false}
-                        total_data_num={totals}
+                        totalItems={totals}
                         total_page_num={total_page}
-                        current_page_num={current_page}
-                        onPageChangeFunc={onNextOrLastPage}
-                        onPageSearchFunc={onSearchPageFunc}
+                        pageSize={search_params.pageSize}
+                        currentPage={current_page}
+                        on:pageChange={onNextOrLastPage}
+                        jumpPage={onSearchPageFunc}
                         {onPageChooseFunc}
-                    ></Pagination> -->
+                    ></Pagination> 
                 </div>
             {/if}
         </div>
