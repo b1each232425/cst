@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { tooltip } from '$lib/components/ToolTip/tooltip';
   import { sidebarFoldingState, sidebarWidth, navMap, crumbStore } from '$lib/stores/modules/layoutStore';
+  import { onMount } from 'svelte';
 
   let userName = '张三'; // 静态数据
   let isMenuOpen = $state(false); // 用户菜单是否打开
@@ -58,6 +59,17 @@
 
     filterCrumbs = newFilterCrumbs;
   };
+
+  onMount(() => {
+    // 点击外部关闭菜单栏
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.header-container')) {
+        isMenuOpen = false;
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  });
 </script>
 
 <div class="header-container">
@@ -88,12 +100,7 @@
   <div class="user-container">
     <span class="welcome-text">{`你好，${userName}`}</span>
 
-    <button
-      class="avatar-btn"
-      onclick={() => {
-        isMenuOpen = !isMenuOpen;
-      }}
-    >
+    <button class="avatar-btn" onclick={() => (isMenuOpen = !isMenuOpen)}>
       <img class="avatar-img" src="/user_icons/defaultAvatar.svg" alt="头像" />
     </button>
 
@@ -102,6 +109,7 @@
     </button>
   </div>
 
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="user-menu-container {isMenuOpen ? '' : 'hide'}">
     <button class="user-menu-item"> 个人中心 </button>
     <button class="user-menu-item"> 设置 </button>

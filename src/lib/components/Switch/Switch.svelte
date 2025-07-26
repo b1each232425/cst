@@ -18,7 +18,7 @@
    *
    * 使用示例：
    * <Switch
-   *   isChecked={is-checked}                     // 控制开关状态的变量，传入自定义 bool 值
+   *   isChecked={isChecked}                     // 控制开关状态的变量，传入自定义 bool 值
    *   ballColor="white"                         // 小球的颜色，设置为白色
    *   checkedBackgroundColor="#4a90e2"          // 开启状态的背景色，设置为蓝色
    *   uncheckedBackgroundColor="#ccc"           // 关闭状态的背景色，设置为灰色
@@ -28,10 +28,10 @@
    *   clickSwitchButton={handleClickSwitchButton} // 点击开关按钮时触发的事件
    * />
    *
-   *  let is-checked = $state(false);
+   *  let isChecked = $state(false);
    * // 父组件更新开关状态（用户点击 switch 按钮之后的逻辑）
    * function handleClickSwitchButton() {
-   *   is-checked = !is-checked;   // 切换开关状态
+   *   isChecked = !isChecked;   // 切换开关状态
    * }
    */ -->
 <script>
