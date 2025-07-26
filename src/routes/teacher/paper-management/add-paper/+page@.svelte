@@ -1,5 +1,6 @@
 <script>
   import { goto } from "$app/navigation";
+  import Button from "$lib/components/Button/Button.svelte";
   import { tagColorList } from "../_utils/data";
   import { getColorIndex } from "../_utils/func";
 
@@ -66,11 +67,11 @@
         
         <!-- 操作区 -->
         <div class="operation">
-            <button id="temp-btn">一键展开</button>
-            <button id="temp-btn">一键收取</button>
-            <button id="temp-btn">从题库中导入</button>
-            <button id="temp-btn">保存</button>
-            <button id="temp-btn" onclick={goto('/teacher/paper-management')}>退出</button>
+            <Button plain={true}>一键展开</Button>
+            <Button plain={true}>一键收取</Button>
+            <Button>从题库中导入</Button>
+            <Button plain={true}>保存</Button>
+            <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper-management')}>退出</Button>
         </div>
     </div>
 
@@ -162,7 +163,7 @@
                         <div class="title">题组列表</div>
                         <span>共有 5 个题组</span>
                     </div>
-                    <button id="temp-add-group">添加题组</button>
+                    <Button plain={true}>添加题组</Button>
                 </div>
 
                 <!-- 列表 -->
@@ -331,7 +332,7 @@
                     <div class="header-right">
                         <span>每题分值：</span>
                         <input value={10} id="temp-average-question-score-input" type="number">
-                        <button id="temp-import-questions">导入题目</button>
+                        <Button>导入题目</Button>
                     </div>
                 </div>
 
@@ -509,7 +510,7 @@
                     <div class="header-right">
                         <span>每题分值：</span>
                         <input value={0} id="temp-per-question-score-input" type="number">
-                        <button id="temp-import-questions">导入题目</button>
+                        <Button>导入题目</Button>
                     </div>
                 </div>
 
@@ -520,7 +521,7 @@
                         <div class="no-questions-box">
                             <span class="title">题组暂无题目</span>
                             <span class="prompt">可以通过以下方式快速添加题目：</span>
-                            <button id="temp-import-questions">导入题目</button>
+                            <Button>导入题目</Button>
                         </div>
                     </div>
                 </div>
@@ -531,10 +532,6 @@
 
 <style>
     /**************** 临时组件区 ****************/
-    
-    #temp-btn {
-        padding: 6px 18px;
-    }
 
     #temp-select {
         width: 300px;

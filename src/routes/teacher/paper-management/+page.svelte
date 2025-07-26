@@ -5,6 +5,8 @@
     import { levelTrans, categoryTrans, accessModeTrans, assemblyTypeTrans, tagColorList } from "./_utils/data";
     import { goto } from "$app/navigation";
     import Title from "$lib/components/Title/Title.svelte";
+    import InputBox from "$lib/components/Input/InputBox.svelte";
+    import Button from "$lib/components/Button/Button.svelte";
 
     // 模拟数据
     let analogyData = [
@@ -194,13 +196,14 @@
         },
     ];
 
+    let paperName = $state("");
+    let paperTag = $state("");
+
 </script>
 
 <div class="paper-management">
     <!-- 标题区域 -->
-    <div>
-        <Title title="试卷管理"/>
-    </div>
+    <Title title="试卷管理"/>
 
     <!-- 操作栏区域 -->
     <div class="header">
@@ -208,25 +211,34 @@
         <div class="left-side">
             <!-- 试卷名称 -->
             <div class="search-paper-name">
-                <span style="margin-right: 26px;">试卷名称</span>
-                <input id="temp-input" type="text" placeholder="搜索试卷名称">
+                <span class="prompt">试卷名称</span>
+                <InputBox
+                    placeholder="搜索试卷名称"
+                    showLabel={false}
+                    type="text"
+                    bind:value={paperName}
+                />
             </div>
 
             <!-- 试卷标签 -->
             <div class="search-paper-tag">
-                <span style="margin-right: 10px;">试卷标签</span>
-                <input id="temp-input" type="text" placeholder="搜索试卷标签">
+                <span class="prompt">试卷标签</span>
+                <InputBox
+                    placeholder="搜索试卷标签"
+                    showLabel={false}
+                    type="text"
+                    bind:value={paperName}
+                />
             </div>
         </div>
 
         <!-- 右侧 -->
         <div class="right-side">
-            <button id="temp-btn">重置</button>
-            <button id="temp-btn">删除</button>
-            <button id="temp-btn" onclick={
-                goto('/teacher/paper-management/add-paper')}>自定义组卷</button>
-            <button id="temp-btn">随机组卷</button>
-            <button id="temp-btn">智能刷题</button>
+            <Button plain={true}>重置</Button>
+            <Button plain={true} type="danger">删除</Button>
+            <Button onclick={()=>goto('/teacher/paper-management/add-paper')} plain={true}>自定义组卷</Button>
+            <Button plain={true}>随机组卷</Button>
+            <Button plain={true}>智能刷题</Button>
         </div>
     </div>
 
@@ -304,25 +316,10 @@
     </div>
 </div>
 
+
+
 <style>
     
-    /************ 此区域为临时组件区域 ************/
-
-    #temp-title {
-        font-size: 20px;
-        font-weight: bold;
-    }
-
-    #temp-input {
-        padding: 7px 12px;
-    }
-
-    #temp-btn {
-        padding: 7px 20px;
-    }
-
-    /************ 此区域为临时组件区域 ************/
-
     .paper-management {
         font-family: 'Noto Sans SC', sans-serif;
         color: var(--text-primary);
@@ -340,6 +337,28 @@
                 display: flex;
                 gap: 32px;
                 align-items: center;
+
+                /* 搜索试卷名称 */
+                .search-paper-name {
+                    display: flex;
+                    align-items: center;
+                    width: 300px;
+
+                    .prompt {
+                        width: 120px;
+                    }
+                }
+
+                /* 搜索试卷标题 */
+                .search-paper-tag {
+                    display: flex;
+                    align-items: center;
+                    width: 300px;
+
+                    .prompt {
+                        width: 120px;
+                    }
+                }
             }
 
             /* 右侧 */

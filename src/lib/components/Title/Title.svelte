@@ -5,7 +5,7 @@
 <section class="Title-container">
 	<header class="Title-title">
 		<span class="Title-title-bar"></span>
-		<h2 class="Title-title-text">{title}</h2>
+		<span class="Title-title-text">{title}</span>
 	</header>
 	<hr class="Title-line" class:hidden={!line} />
 </section>
