@@ -358,7 +358,6 @@
 <style>
   .date-picker-container {
     position: relative;
-    width: 0;
 
     .input-container {
       gap: 10px;
