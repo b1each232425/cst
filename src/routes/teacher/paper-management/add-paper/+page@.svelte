@@ -167,7 +167,7 @@
                 <!-- 列表 -->
                 <div class="question-groups-box">
                     <div class="single-group">
-                        <span>一、单选题&nbsp;&nbsp;&nbsp;&nbsp;(共0题，共0分)</span>
+                        <span>一、单选题（共0题，共0分）</span>
                         <div>
                             <!-- 编辑按钮 -->
                             <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
@@ -193,7 +193,7 @@
                     </div>
 
                     <div class="single-group">
-                        <span>二、多选题&nbsp;&nbsp;&nbsp;&nbsp;(共0题，共0分)</span>
+                        <span>二、多选题（共0题，共0分）</span>
                         <div>
                             <!-- 编辑按钮 -->
                             <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
@@ -218,7 +218,7 @@
                         </div>
                     </div>
                     <div class="single-group">
-                        <span>三、判断题&nbsp;&nbsp;&nbsp;&nbsp;(共0题，共0分)</span>
+                        <span>三、判断题（共0题，共0分）</span>
                         <div>
                             <!-- 编辑按钮 -->
                             <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
@@ -243,7 +243,7 @@
                         </div>
                     </div>
                     <div class="single-group">
-                        <span>四、填空题&nbsp;&nbsp;&nbsp;&nbsp;(共0题，共0分)</span>
+                        <span>四、填空题（共0题，共0分）</span>
                         <div>
                             <!-- 编辑按钮 -->
                             <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
@@ -268,7 +268,7 @@
                         </div>
                     </div>
                     <div class="single-group" style="border-bottom: transparent;">
-                        <span>五、简答题&nbsp;&nbsp;&nbsp;&nbsp;(共0题，共0分)</span>
+                        <span>五、简答题（共0题，共0分）</span>
                         <div>
                             <!-- 编辑按钮 -->
                             <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
@@ -303,18 +303,102 @@
                 <div class="group-header">
                     <!-- 左侧区域 -->
                     <div class="header-left">
-
+                        <button class="toggle-btn">∨</button>
+                        <span>一、单选题（共0题，共0分）</span>
                     </div>
+
+                    <!-- 编辑按钮 -->
+                    <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
+                        <svg
+                            viewBox="0 0 1024 1024"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            width="14"
+                            height="14"
+                        >
+                            <path
+                                d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                fill="currentColor"
+                            />
+                        </svg>
+                    </button>
 
                     <!-- 右侧区域 -->
                     <div class="header-right">
-
+                        <span>每题分值：</span>
+                        <input value={0} id="temp-per-question-score-input" type="number">
+                        <button id="temp-import-questions">导入题目</button>
                     </div>
                 </div>
 
                 <!-- 题目列表 -->
                 <div class="group-question-list">
+                    <!-- 暂无题目 -->
+                    <div class="no-questions-container">
+                        <div class="no-questions-box">
+                            <span class="title">题组暂无题目</span>
+                            <span class="prompt">可以通过以下方式快速添加题目：</span>
+                            <button id="temp-import-questions">导入题目</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <div class="single-group-content">
+                <!-- 头部下拉栏 -->
+                <div class="group-header">
+                    <!-- 左侧区域 -->
+                    <div class="header-left">
+                        <button class="toggle-btn">∨</button>
+                        <span>二、多选题（共0题，共0分）</span>
+                    </div>
+
+                    <!-- 编辑按钮 -->
+                    <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
+                        <svg
+                            viewBox="0 0 1024 1024"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            width="14"
+                            height="14"
+                        >
+                            <path
+                                d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                fill="currentColor"
+                            />
+                        </svg>
+                    </button>
+
+                    <!-- 右侧区域 -->
+                    <div class="header-right">
+                        <span>每题分值：</span>
+                        <input value={0} id="temp-per-question-score-input" type="number">
+                        <button id="temp-import-questions">导入题目</button>
+                    </div>
+                </div>
+
+                <!-- 题目列表 -->
+                <div class="group-question-list">
+                    <div class="single-question">
+                        <!-- 头部下拉栏 -->
+                        <div class="question-header">
+                            <!-- 左侧区域 -->
+                            <div class="header-left">
+
+                            </div>
+
+                            <!-- 右侧区域 -->
+                            <div class="header-right">
+                                
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -340,6 +424,17 @@
 
     #temp-add-group {
         padding: 6px 12px;
+    }
+
+    #temp-per-question-score-input {
+        padding: 4px 8px 4px 24px;
+        width: 40px;
+        margin-right: 30px;
+        font-size: 16px;
+    }
+
+    #temp-import-questions {
+        padding: 4px 12px;
     }
 
     /**************** 临时组件区 ****************/
@@ -650,9 +745,114 @@
 
             /* 内容区 */
             .content-container {
-                background-color: aliceblue;
+                /* background-color: aliceblue; */
                 width: 73%;
                 padding: 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+
+                .single-group-content {
+                    border: 1px solid var(--border-light);
+                    border-radius: var(--border-radius-sm);
+
+                    /* 头部下拉栏 */
+                    .group-header {
+                        background-color: var(--bg-secondary);
+                        display: flex;
+                        padding: 10px 20px;
+                        align-items: center;
+
+                        &:hover {
+                            background-color: #edf2f7;
+                        }
+
+                        /* 左侧区域 */
+                        .header-left {
+                            display: flex;
+                            align-items: center;
+                            cursor: pointer;
+
+                            &:hover, &:hover .toggle-btn {
+                                color: #1890ff;
+                            }
+
+                            .toggle-btn {
+                                background: none;
+                                /* background-color: red; */
+                                border: none;
+                                padding: 2px 12px 0 0;
+                                height: 30px;
+                                margin-left: 8px;
+                                cursor: pointer;
+                                transform: scaleX(1.8);
+                                font-size: 10px;
+                                font-weight: 1000;
+                            }
+
+                            span {
+                                font-weight: 600;
+                            }
+
+                        }
+
+                        /* 编辑按钮 */
+                        .edit-group-btn {
+                            border: none;
+                            background: none;
+                            cursor: pointer;
+                            padding: 5px 0 0 0; 
+                            width: 22px;
+                            height: 22px;
+                            /* background-color: red; */
+
+                            &:hover {
+                                color: #1890ff;
+                            }
+                        }
+
+                        /* 右侧区域 */
+                        .header-right {
+                            margin-left: auto;
+                            
+                            span {
+                                font-size: 14px;
+                                color: var(--text-secondary);
+                                margin-right: 1vw;
+                            }
+                        }
+                    }
+                    
+                    /* 题目列表 */
+                    .group-question-list {
+                        padding: 16px 8px;
+
+                        /* 暂无题目 */
+                        .no-questions-container {
+                            /* background-color: #1890ff; */
+                            padding: 118px 0;
+
+                            .no-questions-box {
+                                /* background-color: #7792ff; */
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+
+                                .title {
+                                    margin-bottom: 8px;
+                                    font-size: 24px;
+                                    font-weight: bold;
+                                }
+
+                                .prompt {
+                                    margin-bottom: 16px;
+                                    font-size: 14px;
+                                    color: var(--text-secondary);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
