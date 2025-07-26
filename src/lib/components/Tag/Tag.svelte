@@ -1,13 +1,32 @@
-<script>
+<!--
   /**
-   * @description 标签组件
-   * type: 标签类型，可选值 primary, success, danger, warning, info
-   * size: 标签尺寸，可选值 small, middle, large
-   * them ： 标签主题，可选值 light, dark, plain
-   * plain: 是否为朴素标签
-   * round: 是否为圆角标签
+   * 标签组件（Tag）使用说明
+   *
+   * 作者：段春茂
+   * 邮箱：2162105974@qq.com
+   *
+   * 参数配置：
+   * @param {String} type    标签类型，决定颜色样式，可选值：'primary' | 'success' | 'danger' | 'warning' | 'info'，默认值为 'primary'
+   * @param {String} size    标签尺寸，可选值：'small' | 'middle' | 'large'，默认值为 'middle'
+   * @param {String} them    标签主题风格，可选值：'light' | 'dark' | 'plain'，默认值为 'dark'
+   * @param {Boolean} round  是否显示圆角（胶囊形）样式，默认值为 false
+   *
+   * 插槽：
+   * 默认插槽：用于显示标签文字或自定义内容
+   *
+   * 功能说明：
+   * - 支持五种类型颜色（主色 / 成功 / 危险 / 警告 / 信息）
+   * - 支持三种尺寸样式（小 / 中 / 大）
+   * - 支持三种主题风格（light：浅色背景，dark：深色背景，plain：朴素边框）
+   * - 可选圆角样式，设置 `round` 为 true 后呈现圆角标签
+   *
+   * 使用示例：
+   * <Tag type="success" size="small" them="light" round>审核通过</Tag>
+   * <Tag type="danger" them="plain">删除失败</Tag>
    */
-  let { type = 'primary', size = 'middle', them = 'dark', round = false } = $props();
+-->
+<script>
+  let { type = 'primary', size = 'middle', them = 'dark', round = false, children } = $props();
 
   let classes = $state(
     ['Tag', `Tag-${type}`, `Tag-${size}`, them && `Tag-${them}`, round && 'Tag-round'].filter(Boolean).join(' '),
@@ -15,7 +34,7 @@
 </script>
 
 <span class={classes}>
-  <slot />
+  {@render children()}
 </span>
 
 <style lang="scss" scoped>
