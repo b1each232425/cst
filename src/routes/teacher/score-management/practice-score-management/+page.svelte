@@ -12,37 +12,42 @@
 	});
 </script>
 
-<div class="grade-management-content">
+<div class="page-container">
 	<Title title="练习成绩管理" />
-	<div class="main-content">
+	<div class="filter-container">
 		<PracticeFilterPanel store={practiceGradeStore} />
+	</div>
+	<div class="table-container">
 		{#if practiceGradeStore.state.loading}
 			<p>加载中...</p>
 		{:else}
 			<PracticeTable store={practiceGradeStore} />
 		{/if}
-		<Pagination store={practiceGradeStore} />
+		<div class="pagination-wrapper">
+			<Pagination store={practiceGradeStore} />
+		</div>
 	</div>
 </div>
 
 <style lang="scss">
-	.grade-management-content {
-		background-color: #fff;
-		border-radius: 8px;
+	.page-container {
 		display: flex;
 		flex-direction: column;
 		height: 100%;
+	}
+
+	.filter-container {
+		padding: 16px 33px 10px 33px; /* 控制筛选区和表格的间距 */
+	}
+
+	.table-container {
 		flex-grow: 1;
-
-		.main-content {
-			padding: 0 20px 20px 20px;
-			flex-grow: 1;
-			display: flex;
-			flex-direction: column;
-
-			& > :last-child {
-				margin-top: auto;
-			}
-		}
+		display: flex;
+		flex-direction: column;
+		padding: 0 37px; /* 移除顶部的 padding */
+	}
+	.pagination-wrapper {
+		margin-top: auto; /* 将分页器推到底部 */
+		padding-bottom: 35px;
 	}
 </style> 

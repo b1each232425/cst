@@ -11,7 +11,17 @@
  * @returns {Promise<any>}
  */
 export function getExams(params) {
-	const { courseID, classID, name, type, submitted, page, pageSize } = params;
+	// 添加参数校验和默认值
+	const {
+		courseID = 0,
+		classID = 0,
+		name = '',
+		type = '',
+		submitted = '',
+		page = 1,
+		pageSize = 10
+	} = params || {};
+
 	const url = `/api/teacher/exam-grade?courseID=${courseID}&classID=${classID}&name=${name}&type=${type}&submitted=${submitted}&page=${page}&pageSize=${pageSize}`;
 
 	return fetch(url, {
@@ -39,6 +49,11 @@ export function getExams(params) {
  * @returns {Promise<any>}
  */
 export function submitExamGrades(exam_ids) {
+	// 添加参数校验
+	if (!Array.isArray(exam_ids) || exam_ids.length === 0) {
+		return Promise.reject(new Error('提交成绩失败：exam_ids 必须是一个非空数组。'));
+	}
+
 	const url = `/api/teacher/exam-grades`;
 
 	return fetch(url, {
@@ -69,6 +84,10 @@ export function submitExamGrades(exam_ids) {
  * @returns {Promise<any>}
  */
 export function getExamineeGradeList(examIDString) {
+	// 添加参数校验
+	if (typeof examIDString !== 'string' || !examIDString) {
+		return Promise.reject(new Error('获取考生名单失败：examIDString 必须是一个非空字符串。'));
+	}
 	const url = `/api/teacher/exam-grade/examinee-grade-list?examID=${examIDString}&page=-1&pageSize=-1`;
 	return fetch(url, {
 		method: 'GET',
@@ -118,7 +137,15 @@ export function getGradeLogs(page = 1, pageSize = 10) {
  * @returns {Promise<any>}
  */
 export function getPractices(params) {
-	const { courseID, classID, practiceName, page, pageSize } = params;
+	// 添加参数校验和默认值
+	const {
+		courseID = 0,
+		classID = 0,
+		practiceName = '',
+		page = 1,
+		pageSize = 10
+	} = params || {};
+
 	const url = `/api/teacher/practice-grade?courseID=${courseID}&classID=${classID}&practiceName=${practiceName}&page=${page}&pageSize=${pageSize}`;
 	return fetch(url, {
 		method: 'GET',
@@ -136,6 +163,11 @@ export function getPractices(params) {
  * @returns {Promise<any>}
  */
 export function exportPracticeGrades(ids) {
+	// 添加参数校验
+	if (!Array.isArray(ids) || ids.length === 0) {
+		return Promise.reject(new Error('导出失败：未选择任何项目。'));
+	}
+
 	return fetch('/api/teacher/practice-grade/export', {
 		method: 'POST',
 		headers: {

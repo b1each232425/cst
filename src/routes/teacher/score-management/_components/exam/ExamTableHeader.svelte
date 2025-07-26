@@ -40,22 +40,28 @@
 		align-items: center;
 		box-sizing: border-box;
 		padding: 0 15px;
-		background-color: transparent; /* Changed from gray to transparent */
+		background-color: transparent;
 
 		th {
 			font-size: 14px;
 			font-weight: normal;
 			color: rgb(0, 0, 0, 0.3);
-			text-align: center;
-			box-sizing: border-box;
 			padding: 0 4px;
+			box-sizing: border-box;
+			/* --- 统一布局为 Flex --- */
+			display: flex;
+			justify-content: center;
+			align-items: center;
 		}
 	}
 
 	.exam-select {
 		width: 5%;
 	}
-	.exam-name,
+	.exam-name {
+		width: 16%;
+		justify-content: flex-start; /* 左对齐 */
+	}
 	.exam-time {
 		width: 16%;
 	}
@@ -75,6 +81,7 @@
 	}
 	.operation {
 		width: 14%;
+		justify-content: flex-end; /* 右对齐 */
 	}
 
 	.square-container {

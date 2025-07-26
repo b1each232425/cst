@@ -130,16 +130,22 @@
 		color: #3d3d3d;
 		font-size: 14px;
 		font-family: 'Arial', sans-serif;
-		text-align: center;
 		padding: 0 4px;
 		box-sizing: border-box;
 		min-height: fit-content;
+		/* --- 统一布局为 Flex --- */
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 
 	.exam-select {
 		width: 5%;
 	}
-	.exam-name,
+	.exam-name {
+		width: 16%;
+		justify-content: flex-start; /* 左对齐 */
+	}
 	.exam-time {
 		width: 16%;
 	}
@@ -159,6 +165,7 @@
 	}
 	.operation {
 		width: 14%;
+		justify-content: flex-end; /* 右对齐 */
 	}
 
 	.session-row {
@@ -180,7 +187,6 @@
 		}
 	}
 
-	.exam-name,
 	.exam-time,
 	.exam-total-score,
 	.exam-average-score,
@@ -198,7 +204,7 @@
 
 	.exam-name span {
 		display: block;
-		max-width: 100%;
+		width: 100%; /* 让 span 占满单元格宽度 */
 		text-overflow: ellipsis;
 		overflow: hidden;
 		white-space: nowrap;
@@ -223,10 +229,12 @@
 	.operation .details-btn,
 	.operation .export-btn {
 		color: #0052d9;
+		margin: 0 4px; /* 增加按钮间距 */
 	}
 
 	.operation .submit-btn {
 		color: #00a870;
+		margin: 0 4px; /* 增加按钮间距 */
 	}
 
 	.square-container {
