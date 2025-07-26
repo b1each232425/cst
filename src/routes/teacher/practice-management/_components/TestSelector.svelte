@@ -5,9 +5,13 @@
  * @LastEditTime: 2025-05-03 16:08:49
  -->
 <script>
-    import CustomSelect from "$lib/component/CustomSelect.svelte";
-    import UneditableHashTags from "../../../../lib//component/UneditableHashTags.svelte";
-    import Pagination from "$lib/component/Pagination.svelte";
+    import CustomSelect from "./CustomSelect.svelte";
+    import Tag from "../../../../lib/components/Tag/Tag.svelte";
+  //  import Pagination from "$lib/components/Pagination/Pagination.svelte";
+  import InputBox  from "$lib/components/Input/InputBox.svelte";
+  import Option from "$lib/components/Select/Option.svelte";
+  import Button from "$lib/components/Button/Button.svelte";
+  import Select from  "./CustomSelect.svelte"
 
     let {
         show = $bindable(false),
@@ -155,6 +159,7 @@
         searchText = "";
         tagSearchText = "";
         selectedStructure = "全部";
+        
         fetchPaperList({
             page: "1",
         });
@@ -303,8 +308,8 @@
             <div class="search-container">
                 <div class="search-items">
                     <div class="search-item">
-                        <label for="search-text">试卷名称</label>
-                        <input
+                        <InputBox
+                        label="试卷名称"
                             id="search-text"
                             type="text"
                             placeholder="搜索试卷名称"
@@ -313,8 +318,8 @@
                     </div>
 
                     <div class="search-item">
-                        <label for="tag-search">试卷标签</label>
-                        <input
+                        <InputBox
+                        label="试卷标签"
                             id="tag-search"
                             type="text"
                             placeholder="搜索试卷标签"
@@ -324,7 +329,7 @@
 
                     <div class="search-item">
                         <label>组卷方式</label>
-                        <CustomSelect
+                    <CustomSelect
                             options={structureOptions}
                             bind:selected_value={selectedStructure}
                             width="200px"
@@ -333,11 +338,11 @@
                 </div>
 
                 <div class="search-btns">
-                    <button class="search-btn" onclick={searchPapers}
-                        >搜索</button
+                    <Button class="search-btn" onclick={searchPapers}
+                        >搜索</Button
                     >
-                    <button class="reset-btn" onclick={resetFilters}
-                        >重置</button
+                    <Button class="reset-btn" onclick={resetFilters}
+                        >重置</Button
                     >
                 </div>
             </div>
@@ -386,7 +391,7 @@
                                     {test.total_score}
                                 </div>
                                 <div class="cell standard-cell">
-                                    <UneditableHashTags tags={test.tags} />
+                                    <Tags tags={test.tags} />
                                 </div>
                                 <div class="cell suggest-cell">{test.duration}</div>
                                 <div class="cell diff-cell">
@@ -415,7 +420,7 @@
                 </div>
                 <div class="pagination-container">
                     <div class="total-count">共 {totalTests} 条</div>
-                    <Pagination
+                    <!-- <Pagination
                         total_data_num={totalTests}
                         total_page_num={totalPages}
                         current_page_num={currentPage}
@@ -434,14 +439,14 @@
                         selectOptionFunc={handlePageSizeChange}
                         onPageSearchFunc={handlePageSearch}
                         expand_direction="up"
-                    />
+                    /> -->
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button class="cancel-btn" onclick={closeModal}>取消</button>
-                <button class="confirm-btn" onclick={confirmSelection}
-                    >确定</button
+                <Button class="cancel-btn" onclick={closeModal} round>取消</Button>
+                <Button class="confirm-btn" onclick={confirmSelection} round
+                    >确定</Button
                 >
             </div>
         </div>

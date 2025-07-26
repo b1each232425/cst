@@ -4,8 +4,9 @@
  * @LastEditors: chenyijun
  * @LastEditTime: 2025-05-03 14:20:06
  */
-import { practice_data_list,practice_data_list_display, practice_name_store, practice_type_store, practice_status_store, current_page_store, page_size_store, practice_filter } from "../../../lib/stores/practiceData";
+import { practice_data_list,practice_data_list_display, practice_name_store, practice_type_store, practice_status_store, current_page_store, page_size_store, practice_filter } from "../../../lib/stores/modules/practiceData";
 import { get } from "svelte/store";
+import { pageQueryHandle } from "./utils";
 /** @param {Object} params - 加载函数参数
  * @param {Function} params.fetch - SvelteKit提供的fetch函数
  */
@@ -22,32 +23,35 @@ export async function load({ fetch }) {
 		};
     }
 	// 从API获取练习列表数据
-	try {
-		const response = await fetch('/api/practices/list?page=1&page_size=10', {
+	
+		await fetch('/api/practice?page=1&page_size=10', {
             credentials: "include"
-        });
-		const data = await response.json();
-        console.log("练习列表数据:", data);
-        practice_filter.set(true);
-		if (data.status === 0 && data.data && data.data.records) {
+        }).then((data)=>{
+            if(!data.ok){
+                throw new Error("Failed to fetch practice list.");
+            }
+            return data.json();
+        }
+        ).then((data)=>{
+             practice_filter.set(true);
+		if (data.status === 0 && data.data && data.data.practices) {
             // 数据格式正确
-            practice_data_list.set(data.data.records);
+            practice_data_list.set(data.data.practices);
             return {
-                practices: data.data.records,
-                total_count: data.rowCount || 0,
-                total_page: data.data.pages,
-                current_page: data.data.current,
-                page_size: data.data.size
+                practices: data.data.practices,
+                total_count: data.total || 0,
+                total_page: pageQueryHandle(data.total,10),
+                current_page: 1,
+                page_size: 10
             };
         } 
-        console.error('获取练习列表响应格式错误:', data);
+         console.error('获取练习列表响应格式错误:', data);
         // 返回默认空数组
         return {
             practices: []
         };
-        
-	} catch (error) {
-		console.error('获取练习列表失败:', error);
+        }).catch((error)=>{
+            console.error('获取练习列表失败:', error);
         practice_filter.set(true);
 		return {
 			practices: get(practice_data_list),
@@ -58,5 +62,5 @@ export async function load({ fetch }) {
             current_page: get(current_page_store),
             page_size: get(page_size_store)
 		};
-	}
+        })
 }

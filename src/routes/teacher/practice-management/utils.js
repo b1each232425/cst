@@ -48,3 +48,11 @@ export async function exportToExcel(data) {
 
     URL.revokeObjectURL(url);
 }
+
+export async function pageQueryHandle(total,pageSize){
+      // 计算总页数
+   return    total/ pageSize
+            ? Math.ceil(total/ pageSize)
+            : 1;
+
+}

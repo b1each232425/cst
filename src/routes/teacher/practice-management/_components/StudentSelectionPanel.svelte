@@ -1,8 +1,9 @@
 <script>
-    // import ActionToast from "$lib/component/ActionToast.svelte";  //吐司
+     import Toast from "$lib/components/Toast/Toast.svelte";  //吐司
     // import Pagination from "$lib/component/Pagination.svelte";   //分页器
-    // import SearchInput from "$lib/component/SearchInput.svelte"; //搜索框
+    import InputBox from "$lib/components/Input/InputBox.svelte";//搜索框
     import StudentImportPanel from "./StudentImportPanel.svelte";
+    import Button from "$lib/components/Button/Button.svelte";
 
     let {
         show_panel = false,
@@ -113,9 +114,37 @@
 
     let show_action_toast = $state(false);
     /**等待组件封装
-     * @type {import("$lib/component/ActionToast.svelte").default | null}
+     * @type {import("$lib/components/Toast/Toast.svelte").default | null}
      */
     let action_toast = $state(null);
+
+      // Toast 状态管理
+  let showToast = $state(false);
+  let toastConfig = $state({
+    type: 'success',
+    message: '',
+    duration: 3000,
+    showClose: true,
+    plain: true
+  });
+
+  // 自定义 Toast 显示函数
+  function showToastMessage(type, message, duration = 3000) {
+    toastConfig = {
+      type,
+      message,
+      duration,
+      showClose: true,
+      plain: true
+    };
+    showToast = true;
+    
+    // 自动隐藏（与组件内部的自动关闭配合）
+    setTimeout(() => {
+      showToast = false;
+    }, duration + 100);
+  }
+
 
     let show_student_import_panel = $state(false);
 
@@ -253,15 +282,15 @@
 
         // 添加基础参数
         query_params.append("page", search_params.page.toString());
-        query_params.append("page_size", search_params.pageSize.toString());
+        query_params.append("pageSize", search_params.pageSize.toString());
 
         // 添加可选参数
         if (search_params.name && search_params.name!=="") {
-            query_params.append("search_text", search_params.name);
+            query_params.append("officialName", search_params.name);
         }
 
         const response = await fetch(
-            `/api/teacher/student/list?${query_params.toString()}`,
+            `/api/user?${query_params.toString()}`,
             {
                 method: "GET",
                 credentials: "include",
@@ -271,7 +300,7 @@
             },
         ).then((response) => {
   if (response.status === 404) {
-            action_toast?.show("error", "搜索失败，请稍后重试");
+           {action_toast? showToastMessage("error", "搜索失败，请稍后重试") : null}
             return;
         }
         return response.json();
@@ -281,7 +310,7 @@
             student_list = [];
             totals = 0;
             search_params.page = current_page;
-            action_toast?.show("error", error);
+          {action_toast ? showToastMessage("error", error) : null}
         } else {
             student_list = result.data === null ? [] : result.data;
             totals = result.rowCount;
@@ -306,7 +335,7 @@
         loading = false;
         }).catch((error)=>{
             console.log(error);
-            action_toast("获取学生列表失败");
+            showToastMessage("error","获取学生列表失败");
         })
 
       
@@ -375,7 +404,7 @@
             },
         ).then((response)=>{
  if (response.status === 404) {
-            action_toast?.show("error", "获取学生列表失败，请稍后重试");
+           {action_toast&& showToastMessage("error", "获取学生列表失败");}
             return;
         }
         return response.json();
@@ -385,7 +414,7 @@ if (result.Status != 0) {
             selected_ids = [];
             totals = 0;
             search_params.page = current_page;
-            action_toast?.show("error", error);
+            {action_toast && showToastMessage("error", error);}
         } else {
             selected_ids = result.Data === null ? [] : result.Data;
         }
@@ -395,7 +424,7 @@ if (result.Status != 0) {
             selected_ids = [];
             totals = 0;
             search_params.page = current_page;
-            action_toast?.show("error", error);
+             {action_toast && showToastMessage("error", error);}
         });
         
     }
@@ -517,14 +546,15 @@ if (result.Status != 0) {
     <div class="examinee-panel">
         <div class="panel-header">
             <span class="panel-header-text">{is_selection_mode ? "选择学生" : "学生列表"}</span>
-            <button
+            <Button
+            type ="info"
                 class="close-btn"
                 onclick={() => {
                     show_panel = false;
                     search_params.page = 1;
                     selected_ids = [];
                     onCancel(false);
-                }}>×</button
+                }} plain>×</Button
             >
         </div>
         <div class="panel-body">
@@ -534,16 +564,16 @@ if (result.Status != 0) {
                     <div class="action-container">
                         <div class="examinee-search-container">
                             
-                            <!-- 等待组件封装 <SearchInput
-                                purpose_text={"搜索学生"}
-                                place_holder={"请输姓名/手机号/身份证号"}
+                            <InputBox
+                                label={"搜索学生："}
+                                placeholder={"请输姓名/手机号/身份证号"}
                                 onSearchFunc={onSelectedSearch}
-                            ></SearchInput> -->
+                            ></InputBox> 
                         </div>
                         <div class="button-group">
-                            <button class="upload-file-button" onclick={switchToSelectionMode}>
+                            <Button onclick={switchToSelectionMode}>
                                 选择学生
-                            </button>
+                            </Button>
                         </div>
                     </div>
                     <div class="examinee-selection-table-container">
@@ -590,22 +620,22 @@ if (result.Status != 0) {
                 <!-- 选择模式 -->
                 <div class="action-container">
                     <div class="examinee-search-container">
-                        <!-- 等待组件封装<SearchInput
-                            purpose_text={"搜索学生"}
-                            place_holder={"请输姓名/手机号/身份证号"}
+                        <InputBox
+                            label={"搜索学生"}
+                            placeholder={"请输姓名/手机号/身份证号"}
                             onSearchFunc={onSearch}
-                        ></SearchInput> -->
+                        ></InputBox> 
                     </div>
                     <div class="button-group">
-                        <button class="back-btn" onclick={backToViewMode}>返回</button>
-                        <button class="download-template-button" onclick={downloadTemplate}>
+                        <Button type="info"  onclick={backToViewMode} plain>返回</Button>
+                        <Button  onclick={downloadTemplate}>
                             下载模板
-                        </button>
-                        <button class="upload-file-button" onclick={() => {
+                        </Button>
+                        <Button  onclick={() => {
                             if (student_import_panel) {
                                 student_import_panel.triggerFileInput();
                             }
-                        }}>导入学生</button>
+                        }}>导入学生</Button>
                     </div>
                 </div>
                 <div class="examinee-selection-table-container">
@@ -738,29 +768,32 @@ if (result.Status != 0) {
             {/if}
         </div>
         <div class="panel-footer">
-            <button
+            <Button
+            type="info"
+
                 class="cancel-btn"
                 onclick={() => {
                     show_panel = false;
                     search_params.page = 1;
                     selected_ids = [];
                     onCancel(false);
-                }}>取消</button
+                }} plain>取消</Button
             >
-            <button
+            <Button
+            type="info"
                 class={selected_ids.length === 0 ? "save-btn-disabled" : "save-btn"}
                 disabled={selected_ids.length === 0}
                 onclick={() => {
                     show_panel = false;
                     search_params.page = 1;
                     onConfirm(selected_ids);
-                }}>确定</button
+                }}>确定</Button
             >
         </div>
     </div>
 </div>
-<!-- 等待组件封装
-<ActionToast bind:isShow={show_action_toast} bind:this={action_toast} /> -->
+ 
+<Toast bind:visible={showToast} bind:this={action_toast} />
 
 <StudentImportPanel
     onImport={(/** @type {any[]} */ success_student, /** @type {boolean} */ has_error) => {

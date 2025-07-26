@@ -9,7 +9,7 @@
   // import Pagination from "../../../lib/component/Pagination.svelte"
   // import Dialog from "./components/Dialog.svelte";
   import { goto } from "$app/navigation";
-  // import ActionToast from "$lib/component/ActionToast.svelte";
+   import Toast from "$lib/components/Toast/Toast.svelte";
   import StudentSelectionPanel from "./_components/StudentSelectionPanel.svelte";
   import {
     practice_data_list,
@@ -20,17 +20,51 @@
     current_page_store,
     page_size_store,
   } from "$lib/stores/modules/practiceData.js";
-  import { exportToExcel } from "./utils";
-  import Title from "./_components/Title.svelte";
+  import { exportToExcel, pageQueryHandle } from "./utils";
+  import Title from "$lib/components/Title/Title.svelte";
   import { resolveRoute } from "$app/paths";
+  import { onMount } from "svelte";
+  import MessageBox from "$lib/components/MessageBox/MessageBox.svelte";
+  import  inputBox from "$lib/components/Input/InputBox.svelte"
+  import InputBox from "$lib/components/Input/InputBox.svelte";
+  import  Select from "$lib/components/Select/Select.svelte";
+  import Option from "$lib/components/Select/Option.svelte";
+
 
   // 使用runes接收页面数据
   const { data } = $props();
 
   /**
-   * @type {ActionToast}
+   * @type {Toast}
    */
   let actionToast;
+
+  // Toast 状态管理
+  let showToast = $state(false);
+  let toastConfig = $state({
+    type: 'success',
+    message: '',
+    duration: 3000,
+    showClose: true,
+    plain: true
+  });
+
+  // 自定义 Toast 显示函数
+  function showToastMessage(type, message, duration = 3000) {
+    toastConfig = {
+      type,
+      message,
+      duration,
+      showClose: true,
+      plain: true
+    };
+    showToast = true;
+    
+    // 自动隐藏（与组件内部的自动关闭配合）
+    setTimeout(() => {
+      showToast = false;
+    }, duration + 100);
+  }
 
   // 状态管理
   let practice_name = $state(data.practice_name || ""); // 练习名称/课程名称输入框的值
@@ -155,7 +189,7 @@
       }
 
       // 发送请求
-      const url = `/api/practices/list?${queryParams.toString()}`;
+      const url = `/api/practice?${queryParams.toString()}`;
       const response = await fetch(url, {
         credentials: "include",
       }).then(async(response)=>{
@@ -165,15 +199,15 @@
         }
         return response;
       }).then((res) => res.json()).then((result)=>{
-        if (result.status === 0 && result.data && result.data.records) {
+        if (result.status === 0 && result.data && result.data.practices) {
         // 更新练习列表和分页信息
-        const transformedData = transformPracticeData(result.data.records);
+        const transformedData = transformPracticeData(result.data.practices);
         practice_list = transformedData;
         displayed_practice_list = transformedData;
 
         // 更新分页信息
         total_data_num = result.rowCount || 0;
-        total_page_num = result.data.pages;
+        total_page_num = pageQueryHandle(total_data_num, page_size);
         current_page_num = page;
         data_per_page = page_size;
 
@@ -203,7 +237,7 @@
     current_page_store.set(current_page_num);
     page_size_store.set(data_per_page);
 
-    // 使用服务器端分页和筛选
+    // 使用本地端分页和筛选
     await fetchPracticesFromServer(
       current_page_num,
       data_per_page,
@@ -214,7 +248,10 @@
   }
 
   // 初始化时执行一次筛选
-  filter_practice_list();
+  onMount(()=>{
+ filter_practice_list();
+  })
+ 
 
   // 修改CustomSelect组件以添加事件监听
   function handle_type_change() {
@@ -289,7 +326,7 @@
 
   // 新建练习按钮点击事件
   function create_new_practice() {
-    goto("/teacher/practiceManagement/create");
+    goto("/teacher/practice-management/create");
   }
 
   /**
@@ -312,19 +349,18 @@
     // 实现发布练习的逻辑
     console.log("确认发布练习:", currentPractice.Name);
     console.log("练习信息:", currentPractice);
+    const queryParams = new URLSearchParams();
+    queryParams.append("id", currentPractice.ID);
+    queryParams.append("status", "02");
+
+    const url = `/api/practice?${queryParams.toString()}`;
 
     // 调用API发布练习
-    fetch("/api/practices/publish", {
-      method: "POST",
+    fetch(url , {
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        action: "publish",
-        data: {
-          id: currentPractice.ID,
-        },
-      }),
       credentials: "include",
     }).then(async(response) => {
       if (!response.ok){
@@ -338,7 +374,7 @@
         console.log("发布练习响应:", data);
         if (data.status !== 0) {
           console.error("发布练习失败:", data.msg);
-          actionToast.show("error", data.msg || "发布练习失败", "", 1000);
+         showToastMessage("error", data.msg || "发布练习失败", "", 1000);
           return;
         }
         // 更新练习状态
@@ -353,11 +389,11 @@
         }
 
         // 显示发布成功提示
-        actionToast.show("success", "发布练习成功", "", 1000);
+        showToastMessage("success", "发布练习成功", "", 1000);
       })
       .catch((error) => {
         console.error("发布练习请求异常:", error);
-        actionToast.show("error", "发布练习请求异常", "", 1000);
+        showToastMessage("error", "发布练习请求异常", "", 1000);
       });
   }
 
@@ -380,19 +416,16 @@
 
     // 实现取消发布的逻辑
     console.log("确认取消发布练习:", currentPractice.Name);
-
+    const queryParams = new URLSearchParams();
+    queryParams.append("id", currentPractice.ID);
+    queryParams.append("status", "00");
+    const url = `/api/practice?${queryParams.toString()}`;
     // 调用API取消发布练习
-    fetch("/api/practices/unpublish", {
-      method: "POST",
+    fetch(url, {
+      method: "Patch",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        action: "unpublish",
-        data: {
-          ID: currentPractice.ID,
-        },
-      }),
       credentials: "include",
     }).then(async(response)=>{
       if (!response.ok){
@@ -406,7 +439,7 @@
         console.log("取消发布练习响应:", data);
         if (data.status !== 0) {
           console.error("取消发布练习失败:", data.msg);
-          actionToast.show("error", data.msg || "取消发布练习失败", "", 1000);
+          showToastMessage("error", data.msg || "取消发布练习失败", "", 1000);
           return;
         }
         // 更新练习状态
@@ -420,11 +453,11 @@
         }
 
         // 显示取消发布成功提示
-        actionToast.show("success", "取消发布练习成功", "", 1000);
+        showToastMessage("success", "取消发布练习成功", "", 1000);
       })
       .catch((error) => {
         console.error("取消发布练习请求异常:", error);
-        actionToast.show("error", "取消发布练习请求异常", "", 1000);
+       showToastMessage("error", "取消发布练习请求异常", "", 1000);
       });
   }
 
@@ -447,7 +480,7 @@
    */
   async function fetchSelectedStudents(practiceId) {
     await fetch(
-        `/api/practices/students?practice_id=${practiceId}`
+        `/api/practiceStudentList?id=${practiceId}`
       ).then(async(response)=>{
          if (!response.ok) {
         const err_text = await response.text();
@@ -465,7 +498,7 @@
       }
       }).catch(error => {
        console.error("获取已选择学生异常:", error);
-      actionToast.show("error", `获取已选择学生异常:${error}`, "", 1000);
+      showToastMessage("error", `获取已选择学生异常:${error}`, "", 1000);
       selectedStudentIds = [];
       });
     
@@ -478,18 +511,21 @@
   async function handleStudentSelectionConfirm(selected) {
     if (!currentPractice) return;
       // 调用API更新练习的学生
-      const response = await fetch("/api/practices/students", {
-        method: "PATCH",
+      const response = await fetch("/api/practice", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          data: {
-            id: currentPractice.ID,
-            students: selected.map((s) => ({
+         practice: {
+            ID: currentPractice.ID,
+          
+          },
+          student:{
+              students: selected.map((s) => ({
               id: s.id,
             })),
-          },
+          }
         }),
         credentials: "include",
       }).then(async(response)=>{
@@ -505,10 +541,10 @@
         return;
       }
       // 显示更新成功提示
-      actionToast.show("success", "更新学生成功", "", 1000);
+      showToastMessage("success", "更新学生成功", "", 1000);
      }).catch(error => {
         console.error("更新学生失败:", error);
-        actionToast.show("error", "更新学生失败", "", 1000);
+        showToastMessage("error", "更新学生失败", "", 1000);
       });
      
     }
@@ -545,26 +581,28 @@
     // 实现删除练习的逻辑
     console.log("确认删除练习:", currentPractice.Name);
 
+    const queryParams = new URLSearchParams();
+    queryParams.append("id", currentPractice.Id);
+    queryParams.append("status", "04")
+
     // 调用API删除练习
-    fetch("/api/practices/delete", {
-      method: "POST",
+    fetch("/api/practice", {
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        action: "delete",
-        data: {
-          ID: currentPractice.ID,
-        },
-      }),
       credentials: "include",
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+           throw new Error("删除练习失败");
+        } return response.json();
+      })
       .then((data) => {
         console.log("删除练习响应:", data);
         if (data.status !== 0) {
           console.error("删除练习失败:", data.msg);
-          actionToast.show("error", data.msg || "删除练习失败", "", 1000);
+          showToastMessage("error", data.msg || "删除练习失败", "", 1000);
           return;
         }
         // 从列表中移除
@@ -575,11 +613,11 @@
         filter_practice_list();
 
         // 显示删除成功提示
-        actionToast.show("success", "删除练习成功", "", 1000);
+        showToastMessage("success", "删除练习成功", "", 1000);
       })
       .catch((error) => {
         console.error("删除练习请求异常:", error);
-        actionToast.show("error", "删除练习请求异常", "", 1000);
+        showToastMessage("error", "删除练习请求异常", "", 1000);
       });
   }
 
@@ -589,7 +627,7 @@
    */
   async function getStudentInfos(practice) {
    await fetch(
-        `/api/practices/students?practice_id=${practice.ID}`
+        `/api/practiceStudentList?id=${practice.ID}`
       ).then(async(response)=>{
  if (!response.ok) {
         const err_text = await response.text();
@@ -606,7 +644,7 @@ if (data.status !== 0) {
       }
       }).catch((error)=>{
   console.error("获取参与学生名单异常:", error);
-      actionToast.show("error", `获取参与学生名单异常:${error}`, "", 1000);
+      showToastMessage("error", `获取参与学生名单异常:${error}`, "", 1000);
       })
     
   }
@@ -619,10 +657,9 @@ if (data.status !== 0) {
     <div class="search-and-add-button-container">
       <div class="search-bar">
         <div class="search-box">
-          <span class="search-label">搜索练习：</span>
-          <input 
-            type="text"
-            class="search-input"
+          <InputBox
+          label="搜索练习："
+          type="text"
             placeholder="请输入练习名称"
             bind:value={practice_name}
             oninput={handle_name_input}
@@ -632,22 +669,29 @@ if (data.status !== 0) {
         <div class="filter-box">
           <span class="filter-label">练习类型：</span>
           <div class="dropdown-wrapper">
-            <CustomSelect
-              options={type_options}
-              bind:selected_value={practice_type}
+            <Select
+              bind:value={practice_type}
               onChangeFunc={handle_type_change}
-            />
+              filterable
+            >
+         {#each type_options as option}
+    <Option value={option} label={option}></Option>
+  {/each}
+          </Select>
           </div>
         </div>
-
         <div class="filter-box">
           <span class="filter-label">练习状态：</span>
           <div class="dropdown-wrapper">
-            <CustomSelect
-              options={status_options}
+            <Select
               bind:selected_value={practice_status}
+              filterable
               onChangeFunc={handle_status_change}
-            />
+            >
+          {#each status_options as option}
+          <Option value={option} label={option}></Option>
+          {/each}
+          </Select>
           </div>
         </div>
       </div>
@@ -755,7 +799,7 @@ if (data.status !== 0) {
         </tbody>
       </table>
     </div>
-    <div class="pagination-container">
+     <div class="pagination-container">
       <!-- <Pagination
         {total_data_num}
         {total_page_num}
@@ -772,34 +816,34 @@ if (data.status !== 0) {
         selectOptionFunc={handle_page_size_change}
         onPageSearchFunc={handle_page_search}
         expand_direction="up"
-      /> -->
-    </div>
+      />  -->
+     </div> 
   </div>
 
-  发布确认对话框
-  <!-- <Dialog
+  <!-- 发布确认对话框 -->
+   <MessageBox
     bind:isOpen={publishDialogOpen}
     title="请问是否要发布练习？"
     content="发布练习将同时发布练习通知"
     onConfirm={confirm_publish}
-  /> -->
+  /> 
 
   <!-- 删除确认对话框 -->
-  <!-- <Dialog
+  <MessageBox
     bind:isOpen={deleteDialogOpen}
     title="请问是否要删除练习？"
     content="该操作不可逆，请谨慎操作。"
     confirmTextBackgroundColor="#E34D59"
     onConfirm={confirm_delete}
-  /> -->
+  /> 
 
   <!-- 取消发布确认对话框 -->
-  <!-- <Dialog
+  <MessageBox
     bind:isOpen={cancelPublishDialogOpen}
     title="请问是否要取消发布练习？"
     content="取消发布后学生将无法参与该练习。"
     onConfirm={confirm_cancel_publish}
-  /> -->
+  /> 
 
   <!-- 学生选择面板 -->
   <StudentSelectionPanel
@@ -817,8 +861,7 @@ if (data.status !== 0) {
     }}
   />
 
-  <!-- 操作提示组件 等待组件封装 -->
-  <!-- <ActionToast bind:this={actionToast} isShow={false} /> -->
+
 </div>
 
 <style lang="scss">
@@ -923,7 +966,7 @@ if (data.status !== 0) {
       .filter-box {
         display: flex;
         align-items: center;
-        min-width: 200px;
+        min-width: 315px;
 
         .filter-label {
           font-size: 14px;

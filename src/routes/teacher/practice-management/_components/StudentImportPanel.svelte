@@ -11,6 +11,7 @@
  -->
 <script>
     import { checkData } from "$lib/batch_check/check_examinee";
+    import Toast from "$lib/components/Toast/Toast.svelte";
 
 
     // 字段映射表
@@ -94,6 +95,35 @@
 
     let action_toast = $state(null)
 
+     // Toast 状态管理
+  let showToast = $state(false);
+
+  let toastConfig = $state({
+    type: 'success',
+    message: '',
+    duration: 3000,
+    showClose: true,
+    plain: true
+  });
+
+  // 自定义 Toast 显示函数
+  function showToastMessage(type, message, duration = 3000) {
+    toastConfig = {
+      type,
+      message,
+      duration,
+      showClose: true,
+      plain: true
+    };
+    showToast = true;
+    
+    // 自动隐藏（与组件内部的自动关闭配合）
+    setTimeout(() => {
+      showToast = false;
+    }, duration + 100);
+  }
+
+
     // 计算成功和失败的考生数量
     let success_count = $state(0)
     let failure_count = $derived(failure_student_list.filter(item => !item.is_ok).length)
@@ -117,7 +147,7 @@
             // 如果没有成功的学生，直接返回
             if (students.length === 0) {
                 failure_student_list = student_list;
-                action_toast.show("error","有"+failure_count+"名学生导入失败")
+                showToastMessage("error","有"+failure_count+"名学生导入失败")
                 return;
             }
 
@@ -152,7 +182,7 @@
 
                 // 导入成功
                 onImport(success_student, false);
-                action_toast.show("success", "导入成功");
+                showToastMessage("success", "导入成功");
                 // 添加页面刷新
                 setTimeout(() => {
                     window.location.reload();
@@ -179,7 +209,7 @@
                 // 将导入成功的学生传递出去
                 let success_student = result.data.success_ids
                 success_count += success_student.length
-                action_toast.show("error","有"+temp_failure_student_list.length+"名学生导入失败")
+                showToastMessage("error","有"+temp_failure_student_list.length+"名学生导入失败")
 
                 onImport(success_student, true)
                 
@@ -190,7 +220,7 @@
             }
             }).catch((error) => { 
                   console.error('导入失败:', error);
-            action_toast.show("error", error.message || '导入失败，请稍后重试');
+            showToastMessage("error", error.message || '导入失败，请稍后重试');
             });
 
         
@@ -300,7 +330,7 @@
             let result = await checkData(file);
             if (result.error) {
                 error = result.error;
-                action_toast.show("error",error);
+                showToastMessage("error",error);
                 return;
             }
 
@@ -335,7 +365,7 @@
             if (successData.length > 0) {
                 handleImport(successData);
             } else {
-                action_toast.show("error", "没有符合格式要求的学生，请确保学生信息格式正确");
+                showToastMessage("error", "没有符合格式要求的学生，请确保学生信息格式正确");
             }
 
             if(file_input){
@@ -545,7 +575,7 @@
                     }));
 
                     if (students.length <= 0) {
-                        action_toast.show("error","没有符合格式要求的学生，请确保学生信息格式正确")
+                        showToastMessage("error","没有符合格式要求的学生，请确保学生信息格式正确")
                         return
                     }
                     handleImport(failure_student_list);
@@ -555,10 +585,11 @@
     </div>
 </div>
 
-<!-- <ActionToast
-    bind:isShow={show_action_toast}
+<Toast
+    bind:visible={showToast}
     bind:this={action_toast}
-/> -->
+/> 
+
 
 <style lang="scss" scoped>
     .hide {

@@ -14,7 +14,7 @@ export async function load({ fetch, params }) {
 
     
         // 获取练习详情数据
-         await fetch(`/api/practices/detail?id=${id}`, {
+         await fetch(`/api/practice?id=${id}`, {
             credentials: "include"
         }).then((response) => {
             if (!response.ok) {
@@ -23,7 +23,7 @@ export async function load({ fetch, params }) {
             return response.json();
 
             
-        }).then((result)=>{
+        }).then((data)=>{
              console.log("练习详情数据:", data);
 
         if (data.status !== 0 || !data.data) {

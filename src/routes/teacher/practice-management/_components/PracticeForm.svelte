@@ -8,6 +8,9 @@
   import StudentSelectionPanel from "./StudentSelectionPanel.svelte";
   import TestSelector from "./TestSelector.svelte";
   import { onMount } from "svelte";
+  import InputBox from "$lib/components/Input/InputBox.svelte";
+  import Button from "$lib/components/Button/Button.svelte";
+  
 
   // 组件属性
   let {
@@ -128,6 +131,7 @@
 
   // 打开试卷选择弹窗
   async function openTestModal() {
+    show_test_modal = true;
       // 构造查询参数
       const searchParams = new URLSearchParams({
         name: "",
@@ -193,7 +197,7 @@
        console.error("获取试卷列表失败", error);
       throw error;
       });
-    show_test_modal = true;
+    
     errors.test = ""; // 清除错误
   }
 
@@ -296,19 +300,16 @@
     <div class="form-content">
       {#if !practiceData||practiceData&&practiceData.data.status === "00"}
         <div class="form-group">
-          <label for="practice-name">
-            <span class="required">*</span> 练习名称：
-          </label>
           <div class="input-wrapper">
             <div class="form-input-container">
-              <input
+              <InputBox
+              label="练习名称:"
+              request
                 type="text"
                 id="practice-name"
-                class="form-input"
                 placeholder="请输入练习名称"
                 bind:value={practice_name}
                 oninput={handleNameInput}
-                maxlength="40"
               />
             </div>
             <div class="error-message" class:hidden={!errors.practice_name}>
@@ -324,13 +325,14 @@
           </label>
           <div class="input-wrapper">
             {#if !testConfirmed}
-              <button
+              <Button
                 id="test-select"
                 class="select-btn"
                 onclick={openTestModal}
+                plain
               >
                 选择试卷
-              </button>
+              </Button>
             {:else}
               <div class="selected-test-display">
                 <div class="test-info-container">
@@ -441,13 +443,14 @@
         <div class="input-wrapper">
           <div class="class-selection-area">
             <div class="select-wrapper">
-              <button
+              <Button
                 id="student-select"
                 class="select-btn"
                 onclick={openStudentModal}
+                plain
               >
                 选择学生
-              </button>
+              </Button>
               {#if selectedStudents.length > 0}
                 <span class="student-badge">{selectedStudents.length}</span>
               {/if}
@@ -461,20 +464,14 @@
     </div>
 
     <div class="form-footer">
-      <button class="cancel-btn" onclick={handleCancel}>取消</button>
-      <button class="save-btn" onclick={handleSubmit}>保存</button>
+      <Button type="info" plain size= "large"  onclick={handleCancel} round>取消</Button>
+       <div class="button-spacer"></div>
+      <Button  size= "large"  onclick={handleSubmit} round>保存</Button>
     </div>
   </div>
 </div>
 
 <!-- 学生选择弹窗组件 -->
-<!-- <StudentSelector
-  bind:show={show_student_modal}
-  onSelectionChangeFunc={updateStudentSelection}
-  students={practiceData ? practiceData.form.students : []}
-  selectedStudents={selectedStudents}
-/> -->
-
  <StudentSelectionPanel
         show_panel={show_student_modal}
         onConfirm={(selected) => {
@@ -564,15 +561,13 @@
 
   // 输入包装器样式
   .input-wrapper {
-    flex: 1;
-    width: 0;
-    min-width: 0;
-    overflow: visible;
-
+     flex: 1; // 输入区域占剩余空间
+    display: flex;
+    align-items: center; // 内容垂直居中
     // 学生选择区域特殊处理，保持文本区域的overflow控制
     .form-input-container {
       overflow: hidden;
-      width: 100%;
+      width: 80%;
     }
 
     // 表单输入框
@@ -661,7 +656,9 @@
     display: flex;
     justify-content: center;
     margin-top: 40px;
-
+    .button-spacer {
+    width: 100px; // 调整这个值来控制间距大小
+  }
     button {
       width: $footer-btn-width;
       height: $footer-btn-height;

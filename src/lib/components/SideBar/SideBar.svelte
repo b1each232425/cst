@@ -1,23 +1,15 @@
 <script>
   // @ts-nocheck
-  import { goto } from "$app/navigation";
-  import { page } from "$app/state";
-  import {
-    sidebarFoldingState,
-    sidebarWidth,
-    navMap,
-  } from "$lib/stores/modules/layoutStore";
+  import { goto } from '$app/navigation';
+  import { page } from '$app/state';
+  import { sidebarFoldingState, sidebarWidth, navMap } from '$lib/stores/modules/layoutStore';
 
-  let currentPath = $state(""); // 当前页面路径
-
-  $effect(() => {
-    currentPath = page.url.pathname;
-  });
+  let currentPath = $derived(page.url.pathname); // 当前页面路径
 
   // 折叠、展开侧边栏
   const toggleSidebar = () => {
     $sidebarFoldingState = !$sidebarFoldingState;
-    $sidebarWidth = $sidebarFoldingState ? "0px" : "235px";
+    $sidebarWidth = $sidebarFoldingState ? '0px' : '235px';
   };
 
   // 处理侧边栏点击事件
@@ -31,15 +23,22 @@
       navMap.update((map) => [...map]);
     }
   };
+
+  // 处理路径变化
+  function isPathActive(path) {
+    const basePath = '/teacher'; // 去掉的公共部分
+    const currentPathWithoutBase = currentPath.replace(basePath, '');
+    const itemPathWithoutBase = path.replace(basePath, '');
+
+    // 比较路径去掉公共部分后的结果
+    return currentPathWithoutBase.startsWith(itemPathWithoutBase);
+  }
 </script>
 
 <div class="sidebar-container" style="width: {$sidebarWidth};">
   <!-- 折叠按钮 -->
   <div class="sidebar-header">
-    <button
-      class="sidebar-toggle-btn {!$sidebarFoldingState ? '' : 'hide'}"
-      onclick={() => toggleSidebar()}
-    >
+    <button class="sidebar-toggle-btn {!$sidebarFoldingState ? '' : 'hide'}" onclick={() => toggleSidebar()}>
       <img src="/sidebar/fold.svg" alt="收起侧边栏" style="width:30px" />
     </button>
   </div>
@@ -59,44 +58,22 @@
         >
           <!-- 有子路由 -->
           {#if item.children}
-            <button
-              class="sidebar-item-btn"
-              onclick={() => handleItemButtonClick(item)}
-            >
+            <button class="sidebar-item-btn" onclick={() => handleItemButtonClick(item)}>
               <div class="sidebar-item-content">
-                <img
-                  class="sidebar-item-icon"
-                  src={item.icon}
-                  alt={item.title}
-                />
+                <img class="sidebar-item-icon" src={item.icon} alt={item.title} />
                 <span class="sidebar-item-text">{item.title}</span>
                 {#if item.isOpen}
-                  <img
-                    class="img-flod"
-                    src="/sidebar/nav_icon/fold.svg"
-                    alt=""
-                  />
+                  <img class="img-flod" src="/sidebar/nav_icon/fold.svg" alt="" />
                 {:else}
-                  <img
-                    class="img-unflod"
-                    src="/sidebar/nav_icon/unfold.svg"
-                    alt=""
-                  />
+                  <img class="img-unflod" src="/sidebar/nav_icon/unfold.svg" alt="" />
                 {/if}
               </div>
             </button>
             <!-- 无子路由 -->
           {:else}
-            <button
-              class="sidebar-item-btn"
-              onclick={() => handleItemButtonClick(item)}
-            >
+            <button class="sidebar-item-btn" onclick={() => handleItemButtonClick(item)}>
               <div class="sidebar-item-content">
-                <img
-                  class="sidebar-item-icon"
-                  src={item.icon}
-                  alt={item.title}
-                />
+                <img class="sidebar-item-icon" src={item.icon} alt={item.title} />
                 <span class="sidebar-item-text">{item.title}</span>
               </div>
             </button>
@@ -107,13 +84,10 @@
           {#each item.children as child}
             <div
               class="sidebar-subitem"
-              class:active={child.path === currentPath}
+              class:active={isPathActive(child.path)}
               style="opacity: {$sidebarFoldingState ? 0 : 1};"
             >
-              <button
-                class="sidebar-subitem-btn"
-                onclick={() => handleItemButtonClick(child)}
-              >
+              <button class="sidebar-subitem-btn" onclick={() => handleItemButtonClick(child)}>
                 {child.title}
               </button>
             </div>
@@ -164,8 +138,7 @@
       border-radius: 3px;
       background-color: rgba(255, 255, 255, 0);
       box-sizing: border-box;
-      font-family: "ComicSansMS-Bold", "Comic Sans MS Bold", "Comic Sans MS",
-        sans-serif;
+      font-family: 'ComicSansMS-Bold', 'Comic Sans MS Bold', 'Comic Sans MS', sans-serif;
       font-weight: 700;
       font-size: 36px;
       color: #0336ff;
