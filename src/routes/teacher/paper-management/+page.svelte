@@ -4,6 +4,7 @@
     import { formatDate, formatTimestamp, getColorIndex } from "./_utils/func";
     import { levelTrans, categoryTrans, accessModeTrans, assemblyTypeTrans, tagColorList } from "./_utils/data";
     import { goto } from "$app/navigation";
+    import Title from "$lib/components/Title/Title.svelte";
 
     // 模拟数据
     let analogyData = [
@@ -197,7 +198,9 @@
 
 <div class="paper-management">
     <!-- 标题区域 -->
-    <div id="temp-title">试卷管理&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;———————————————————————————————————————</div>
+    <div>
+        <Title title="试卷管理"/>
+    </div>
 
     <!-- 操作栏区域 -->
     <div class="header">

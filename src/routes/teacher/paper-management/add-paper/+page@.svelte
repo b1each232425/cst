@@ -1,4 +1,5 @@
 <script>
+  import { goto } from "$app/navigation";
   import { tagColorList } from "../_utils/data";
   import { getColorIndex } from "../_utils/func";
 
@@ -69,7 +70,7 @@
             <button id="temp-btn">一键收取</button>
             <button id="temp-btn">从题库中导入</button>
             <button id="temp-btn">保存</button>
-            <button id="temp-btn">退出</button>
+            <button id="temp-btn" onclick={goto('/teacher/paper-management')}>退出</button>
         </div>
     </div>
 
@@ -329,19 +330,148 @@
                     <!-- 右侧区域 -->
                     <div class="header-right">
                         <span>每题分值：</span>
-                        <input value={0} id="temp-per-question-score-input" type="number">
+                        <input value={10} id="temp-average-question-score-input" type="number">
                         <button id="temp-import-questions">导入题目</button>
                     </div>
                 </div>
 
                 <!-- 题目列表 -->
                 <div class="group-question-list">
-                    <!-- 暂无题目 -->
-                    <div class="no-questions-container">
-                        <div class="no-questions-box">
-                            <span class="title">题组暂无题目</span>
-                            <span class="prompt">可以通过以下方式快速添加题目：</span>
-                            <button id="temp-import-questions">导入题目</button>
+                    <div class="single-question">
+                        <!-- 头部下拉栏 -->
+                        <div class="question-header">
+                            <!-- 左侧区域 -->
+                            <div class="header-left">
+                                <button class="toggle-btn-left">∨</button>
+                                <span class="sequence">1</span>
+                                <span class="question-type">单选题</span>
+                                <span class="level-easy">简单</span>
+                            </div>
+
+                            <!-- 右侧区域 -->
+                            <div class="header-right">
+                                <span>分值：</span>
+                                <input value={10} id="temp-per-question-score-input" type="number">
+                                <button class="move-btn" title="上移">↑</button>
+                                <button class="move-btn" title="下移">↓</button>
+                                <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
+                                    <svg
+                                        viewBox="0 0 1024 1024"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        width="12"
+                                        height="12"
+                                    >
+                                        <path
+                                            d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                </button>
+                                <button class="delete-question-btn" title="删除">✕</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="single-question">
+                        <!-- 头部下拉栏 -->
+                        <div class="question-header">
+                            <!-- 左侧区域 -->
+                            <div class="header-left">
+                                <button class="toggle-btn-left">∨</button>
+                                <span class="sequence">2</span>
+                                <span class="question-type">多选题</span>
+                                <span class="level-normal">中等</span>
+                            </div>
+
+                            <!-- 右侧区域 -->
+                            <div class="header-right">
+                                <span>分值：</span>
+                                <input value={10} id="temp-per-question-score-input" type="number">
+                                <button class="move-btn" title="上移">↑</button>
+                                <button class="move-btn" title="下移">↓</button>
+                                <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
+                                    <svg
+                                        viewBox="0 0 1024 1024"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        width="12"
+                                        height="12"
+                                    >
+                                        <path
+                                            d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                </button>
+                                <button class="delete-question-btn" title="删除">✕</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="single-question">
+                        <!-- 头部下拉栏 -->
+                        <div class="question-header">
+                            <!-- 左侧区域 -->
+                            <div class="header-left">
+                                <button class="toggle-btn-down">∨</button>
+                                <span class="sequence">3</span>
+                                <span class="question-type">填空题</span>
+                                <span class="level-hard">困难</span>
+                            </div>
+
+                            <!-- 右侧区域 -->
+                            <div class="header-right">
+                                <span>分值：</span>
+                                <input value={10} id="temp-per-question-score-input" type="number">
+                                <button class="move-btn" title="上移">↑</button>
+                                <button class="move-btn" title="下移">↓</button>
+                                <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
+                                    <svg
+                                        viewBox="0 0 1024 1024"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        width="12"
+                                        height="12"
+                                    >
+                                        <path
+                                            d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                </button>
+                                <button class="delete-question-btn" title="删除">✕</button>
+                            </div>
+                        </div>
+
+                        <!-- 题目内容 -->
+                        <div class="question-container">
+                            <!-- 问题 -->
+                            <div class="question-box">
+                                IP地址 202.135.111.77 对应的自然分类网段的广播地址为__ 。
+                            </div>
+
+                            <!-- 答案 -->
+                            <div class="answer-container">
+                                <span class="prompt">【答案】</span>
+                                <span class="sequence">(1)</span>
+                                <span>202.135.111.255</span>
+                            </div>
+
+                            <!-- 解析 -->
+                            <div class="analysis-container">
+                                <span class="prompt">【解析】</span>
+                                <span>略</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -385,18 +515,12 @@
 
                 <!-- 题目列表 -->
                 <div class="group-question-list">
-                    <div class="single-question">
-                        <!-- 头部下拉栏 -->
-                        <div class="question-header">
-                            <!-- 左侧区域 -->
-                            <div class="header-left">
-
-                            </div>
-
-                            <!-- 右侧区域 -->
-                            <div class="header-right">
-                                
-                            </div>
+                    <!-- 暂无题目 -->
+                    <div class="no-questions-container">
+                        <div class="no-questions-box">
+                            <span class="title">题组暂无题目</span>
+                            <span class="prompt">可以通过以下方式快速添加题目：</span>
+                            <button id="temp-import-questions">导入题目</button>
                         </div>
                     </div>
                 </div>
@@ -426,10 +550,17 @@
         padding: 6px 12px;
     }
 
-    #temp-per-question-score-input {
+    #temp-average-question-score-input {
         padding: 4px 8px 4px 24px;
         width: 40px;
         margin-right: 30px;
+        font-size: 16px;
+    }
+
+    #temp-per-question-score-input {
+        padding: 4px 8px 4px 16px;
+        width: 36px;
+        margin-right: 12px;
         font-size: 16px;
     }
 
@@ -826,6 +957,9 @@
                     /* 题目列表 */
                     .group-question-list {
                         padding: 16px 8px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 12px;
 
                         /* 暂无题目 */
                         .no-questions-container {
@@ -848,6 +982,175 @@
                                     margin-bottom: 16px;
                                     font-size: 14px;
                                     color: var(--text-secondary);
+                                }
+                            }
+                        }
+
+                        .single-question {
+                            border: 1px solid var(--border-light);
+                            border-radius: var(--border-radius-sm);
+
+                            /* 头部下拉栏 */
+                            .question-header {
+                                padding: 10px 16px;
+                                background-color: #fafafa;
+                                display: flex;
+                                border-bottom: 1px solid var(--border-light);
+
+                                /* 左侧区域 */
+                                .header-left {
+                                    display: flex;
+                                    align-items: center;
+                                    cursor: pointer;
+
+                                    /* 下拉按钮-向右状态 */
+                                    .toggle-btn-left {
+                                        background: none;
+                                        /* background-color: red; */
+                                        border: none;
+                                        padding: 0;
+                                        height: 30px;
+                                        margin-left: 6px;
+                                        margin-right: 14px;
+                                        cursor: pointer;
+                                        transform: scaleY(1.8) rotate(-90deg);
+                                        font-size: 10px;
+                                        font-weight: 1000;
+                                    }
+
+                                    /* 下拉按钮-向下状态 */
+                                    .toggle-btn-down {
+                                        background: none;
+                                        /* background-color: red; */
+                                        border: none;
+                                        padding: 2px 12px 0 0;
+                                        height: 30px;
+                                        margin-left: 8px;
+                                        cursor: pointer;
+                                        transform: scaleX(1.8);
+                                        font-size: 10px;
+                                        font-weight: 1000;
+                                    }
+
+                                    /* 题序 */
+                                    .sequence {
+                                        font-weight: 500;
+                                    }
+                                    
+                                    /* 题型 */
+                                    .question-type {
+                                        padding: 2px 8px;
+                                        background-color: #e8f8f2;
+                                        color: var(--primary-color);
+                                        margin-left: 24px;
+                                        border-radius: var(--border-radius-sm);
+                                    }
+
+                                    /* 难度 */
+                                    .level-easy, .level-normal, .level-hard {
+                                        margin-left: 12px;
+                                        padding: 2px 8px;
+                                        border-radius: var(--border-radius-sm);
+                                    }
+                                    .level-easy { color: var(--green); background-color:#e8f8f2;}
+                                    .level-normal { color: var(--orange); background-color:#fef3e6; }
+                                    .level-hard { color: var(--red); background-color:#fdecee; }
+                                }
+
+                                /* 右侧区域 */
+                                .header-right {
+                                    margin-left: auto;
+                                    display: flex;
+                                    align-items: center;
+
+                                    span {
+                                        font-size: 14px;
+                                        color: var(--text-secondary);
+                                    }
+
+                                    .move-btn, .edit-question-btn, .delete-question-btn {
+                                        width: 30px;
+                                        height: 30px;
+                                        margin-left: 6px;
+                                        border-radius: var(--btn-border-radius);
+                                        border: 1px solid var(--border-light);
+                                        background-color: var(--bg-primary);
+                                        cursor: pointer;
+                                    }
+
+                                    /* 移动按钮 */
+                                    .move-btn {
+                                        font-size: 16px;
+
+                                        &:hover {
+                                            color: var(--primary-color);
+                                            border-color: var(--primary-color);
+                                            transition: all 0.3s;
+                                        }
+                                    }
+
+                                    /* 编辑按钮 */
+                                    .edit-question-btn {
+
+                                        &:hover {
+                                            color: var(--green);
+                                            border-color: var(--green);
+                                            transition: all 0.3s;
+                                        }
+
+                                        svg {
+                                            padding-top: 4px;
+                                        }
+                                    }
+
+                                    /* 删除按钮 */
+                                    .delete-question-btn {
+                                        font-weight: bold;
+
+                                        &:hover {
+                                            color: var(--red);
+                                            border-color: var(--red);
+                                            transition: all 0.3s;
+                                        }
+                                    }
+                                }
+                            }
+
+                            /* 题目内容 */
+                            .question-container {
+                                padding: 20px;
+
+                                .prompt {
+                                    font-size: 14px;
+                                    color: #619cf5;
+                                    margin-right: 10px;
+                                }
+
+                                /* 问题 */
+                                .question-box {
+                                    padding: 12px 8px;
+                                    margin-bottom: 10px;
+                                }
+
+                                /* 答案 */
+                                .answer-container {
+                                    display: flex;
+                                    padding: 12px 0;
+                                    background:linear-gradient(to right, #ddd 0%, #ddd 8px, transparent 8px, transparent 15px) repeat-x bottom;
+                                    background-size: 15px 2px;
+                                    align-items: center;
+
+                                    .sequence {
+                                        color: #619cf5;
+                                        font-size: 14px;
+                                        margin-right: 10px;
+                                    }
+                                }
+
+                                /* 解析 */
+                                .analysis-container {
+                                    display: flex;
+                                    padding: 12px 0;
                                 }
                             }
                         }
