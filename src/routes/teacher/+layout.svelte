@@ -1,8 +1,8 @@
 <script>
-  import Sidebar from '$lib/components/SideBar/SideBar.svelte';
-  import Crumb from '$lib/components/Crumb/Crumb.svelte';
-  import Brand from '$lib/components/Brand/Brand.svelte';
-  import { sidebarWidth } from '$lib/stores/modules/layoutStore';
+  import Sidebar from "$lib/components/SideBar/SideBar.svelte";
+  import Crumb from "$lib/components/Crumb/Crumb.svelte";
+  import Brand from "$lib/components/Brand/Brand.svelte";
+  import { sidebarWidth } from "$lib/stores/modules/layoutStore";
 
   let { children } = $props();
 </script>
@@ -22,7 +22,9 @@
     </div>
 
     <footer>
-      <Brand content={'广州近邻信息有限公司 Copyright © 2024-2034 w2w.me. All Rights Reserved.'} />
+      <Brand
+        content={"广州近邻信息有限公司 Copyright © 2024-2034 w2w.me. All Rights Reserved."}
+      />
     </footer>
   </main>
 </div>
