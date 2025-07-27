@@ -3,8 +3,8 @@
  # @Author: Zpekii 3156752796@qq.com
  # @Date: 2025-04-05 22:41:06
  # @LastEditors: Zpekii 3156752796@qq.com
- # @LastEditTime: 2025-07-27 03:45:19
- # @FilePath: /exam/deploy.sh
+ # @LastEditTime: 2025-07-26 22:33:55
+ # @FilePath: \exam\deploy_p.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zpekii, All Rights Reserved. 
@@ -26,7 +26,7 @@ export PNPM_HOME=/var/data/pnpm
 mkdir -p $PNPM_HOME
 
 DEPLOY_ROOT_PATH=/var/deploy/
-DEPLOY_TARGET_PATH=/var/deploy/devmentor/fe
+DEPLOY_TARGET_PATH=/var/deploy/3min/fe
 
 export PATH="$GOPATH/bin:$GOROOT/bin:$NODE_HOME/bin:$PNPM_HOME:$BIN_PATH/bin:$BIN_PATH/docker:$PATH"
 
