@@ -25,7 +25,7 @@
   * - `label` 宽度固定 90px，右对齐，组件整体可响应式布局
   */ -->
 <script>
-  let { label, value, password, children } = $props();
+  let { label, value, showLabel = true, password, children } = $props();
 
   let showPassword = $state(false);
   function togglePassword() {
@@ -34,7 +34,9 @@
 </script>
 
 <div class="InforInput-wrapper">
-  <label for="" class="InforInput-label">{label}</label>
+  {#if showLabel}
+    <label for="" class="InforInput-label">{label}</label>
+  {/if}
   {#if password}
     <div class="InforInput-password">
       {#if showPassword}

@@ -1,78 +1,94 @@
+<!-- /**
+   * 选择输入搜索框组件使用说明(Option)
+   *
+   * 作者：段春茂
+   * 邮箱：2162105974@qq.com
+   *
+   * 参数配置：
+   * @param {string} value - 选择器的值
+   * @param {string} label - 选择器的标签
+   * @param {boolean} disabled - 选择器是否禁用
+   *
+   * 功能说明：
+   * - 选项：支持自定义选项内容，可自定义选项值,贴近原生,方便使用
+   *
+   * 使用示例：
+   * <Select value="1" placeholder="请选择">
+   *   <Option value="1" label="选项1"></Option>
+   *   <Option value="2" label="选项2"></Option>
+   *   <Option value="3" label="选项3"></Option>
+   * </Select>
+   */ -->
 <script>
   import { getContext, setContext } from 'svelte';
   import { onMount, onDestroy } from 'svelte';
   import { writable } from 'svelte/store';
-  /**
-   * @description Select > Option 组件的属性
-   * @props {string} value - 选择器的值
-   * @props {string} label - 选择器的标签
-   * @props {boolean} disabled - 选择器是否禁用
-   */
 
-  const { filterText } = getContext('SelectFilter'); // 过滤文本
-  const { add, sub, reset } = getContext('ShowOptionCounts'); // 显示选项计数
-  const { filterable, remote, handerSelectValue, setActive } = getContext('OptionData'); // 通信
+  // props
+  let { value, label, disabled = false } = $props();
 
-  let { value, label, disabled = false } = $props(); // 接收 props
+  // 上下文通信
+  const {
+    add,
+    sub,
+    reset,
+    getSelectShow,
+    getOptionData,
+    filterText,
+    filterable,
+    remote,
+    handerSelectValue,
+    setActive,
+  } = getContext('SELECT-OPTIONS');
 
-  let isSelected = $state(false); // 是否选中
-  let visible = $state(true); // 是否可见
-  let lastvisible = $state(true); // 上一次是否可见
+  // 状态管理
+  let isSelectShow = $state(getSelectShow());
+  let isSelected = $state(false);
+  let isShow = $state(false);
 
-  // 监听 visible 变化
+  // 订阅
+  const filterTextStore = filterText.subscribe((text) => {
+    isShow = label.toLowerCase().includes(text.toLowerCase());
+  });
+
+  // 监听 isShow 变化
   $effect(() => {
-    if (visible !== lastvisible) {
-      if (visible) add();
-      else sub();
-      lastvisible = visible;
-    }
+    if (isSelectShow === true || isSelectShow === false) keepActive();
   });
-
-  // 订阅 filterText
-  const unsubscribe = filterText.subscribe((text) => {
-    visible = label.toLowerCase().includes(text.toLowerCase());
-  });
-
-  // 选中某一个选项
-  function handerSelected() {
-    if (disabled) return;
-    if (handerSelectValue({ selectValue: value, selectLabel: label })) {
-      isSelected = true;
-      return;
-    }
-    isSelected = false;
-  }
 
   // 保持选中状态,存储选中状态不变
   function keepActive() {
     if (setActive(value)) isSelected = true;
+    else isSelected = false;
+  }
+
+  // 点击option,若之前选中,则取消选中,否则选中
+  function handerSelected() {
+    if (disabled) return;
+    if (handerSelectValue({ selectValue: value, selectLabel: label })) isSelected = true;
+    else isSelected = false;
   }
 
   onMount(() => {
     keepActive();
     add();
+    getOptionData({ value, label });
   });
-
   onDestroy(() => {
-    unsubscribe();
+    filterTextStore();
     reset();
   });
 </script>
 
 <button
-  class="dropdown-container {disabled ? 'disabled' : ''}  {visible ? '' : 'hiddle'}"
+  class="dropdown-container {disabled ? 'disabled' : ''}  {isShow ? '' : 'hiddle'}"
   onclick={handerSelected}
   class:active={isSelected}
 >
-  <li class="dropdown-container-item">
-    {label}
-  </li>
+  <li class="dropdown-container-item">{label}</li>
 </button>
 
 <style lang="scss" scoped>
-  button {
-    all: unset;
-  }
   .dropdown-container {
     padding: 4px 8px;
     cursor: pointer;
@@ -91,6 +107,15 @@
         background-color: transparent;
       }
     }
+    &.active {
+      background-color: #e7e7e7;
+      &:hover {
+        background-color: #e7e7e7;
+      }
+    }
+    &.hiddle {
+      display: none;
+    }
     .dropdown-container-item {
       white-space: nowrap;
       overflow: hidden;
@@ -98,13 +123,7 @@
       font-weight: 400;
     }
   }
-  .active {
-    background-color: #e7e7e7;
-    &:hover {
-      background-color: #e7e7e7;
-    }
-  }
-  .hiddle {
-    display: none;
+  button {
+    all: unset;
   }
 </style>
