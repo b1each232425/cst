@@ -4,6 +4,8 @@
   import Brand from '$lib/components/Brand/Brand.svelte';
   import { sidebarWidth } from '$lib/stores/modules/layoutStore';
 
+  let richTextEditor;
+
   let { children } = $props();
 </script>
 
