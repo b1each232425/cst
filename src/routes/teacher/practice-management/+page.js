@@ -4,7 +4,7 @@
  * @Last Modified by:   李乐毅 
  * @Last Modified time: 2025-07-27 16:36:22 
  */ 
-import { practice_data_list,practice_data_list_display, practice_name_store, practice_type_store, practice_status_store, current_page_store, page_size_store, practice_filter } from "../../../lib/stores/modules/practiceData";
+import { practice_data_list,practice_data_list_display, practice_name_store, practice_type_store, practice_status_store, current_page_store, page_size_store, practice_filter } from "./store/practiceData";
 import { get } from "svelte/store";
 import { pageQueryHandle } from "./utils";
 /** @param {Object} params - 加载函数参数

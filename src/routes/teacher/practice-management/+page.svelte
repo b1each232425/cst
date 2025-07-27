@@ -6,7 +6,7 @@
  */ -->
 <script>
    import CustomSelect from "./_components/CustomSelect.svelte";
-  // import Pagination from "../../../lib/component/Pagination.svelte"
+  import Pagination from "$lib/components/Pagination/Pagination.svelte";
   // import Dialog from "./components/Dialog.svelte";
   import { goto } from "$app/navigation";
    import Toast from "$lib/components/Toast/Toast.svelte";
@@ -19,7 +19,7 @@
     practice_status_store,
     current_page_store,
     page_size_store,
-  } from "$lib/stores/modules/practiceData.js";
+  } from "./store/practiceData.js"
   import { exportToExcel, pageQueryHandle } from "./utils";
   import Title from "$lib/components/Title/Title.svelte";
   import { resolveRoute } from "$app/paths";
@@ -800,10 +800,10 @@ if (data.status !== 0) {
       </table>
     </div>
      <div class="pagination-container">
-      <!-- <Pagination
-        {total_data_num}
+       <Pagination
+       totalItems= {total_data_num}
         {total_page_num}
-        {current_page_num}
+        currentPage=   {current_page_num}
         max_show_page_num={5}
         data_num_per_page_options={[
           { value: 10, label: "10条/页" },
@@ -811,12 +811,12 @@ if (data.status !== 0) {
           { value: 30, label: "30条/页" },
         ]}
         selected={{ value: data_per_page, label: `${data_per_page}条/页` }}
-        onPageChangeFunc={handle_page_change}
-        onPageChooseFunc={handle_page_choose}
+        on:pageChange={handle_page_change}
+        jumpPage={handle_page_choose}
         selectOptionFunc={handle_page_size_change}
         onPageSearchFunc={handle_page_search}
         expand_direction="up"
-      />  -->
+      />  
      </div> 
   </div>
 

@@ -6,7 +6,7 @@
  */ -->
 <script>
     import PracticeForm from "../_components/PracticeForm.svelte";
-    import { practice_data_list } from "$lib/stores/modules/practiceData";
+    import { practice_data_list } from "../store/practiceData"
     import { goto } from "$app/navigation";
     import ActionToast from "$lib/components/Toast/Toast.svelte";
     import MessageBox from "$lib/components/MessageBox/MessageBox.svelte";
