@@ -237,8 +237,6 @@
             <Button plain={true}>重置</Button>
             <Button plain={true} type="danger">删除</Button>
             <Button onclick={()=>goto('/teacher/paper-management/add-paper')} plain={true}>自定义组卷</Button>
-            <Button plain={true}>随机组卷</Button>
-            <Button plain={true}>智能刷题</Button>
         </div>
     </div>
 

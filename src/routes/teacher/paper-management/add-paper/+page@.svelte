@@ -543,10 +543,6 @@
         width: 252px;
     }
 
-    #temp-add-group {
-        padding: 6px 12px;
-    }
-
     #temp-average-question-score-input {
         padding: 4px 8px 4px 24px;
         width: 40px;
@@ -559,10 +555,6 @@
         width: 36px;
         margin-right: 12px;
         font-size: 16px;
-    }
-
-    #temp-import-questions {
-        padding: 4px 12px;
     }
 
     /**************** 临时组件区 ****************/
@@ -874,11 +866,11 @@
             /* 内容区 */
             .content-container {
                 /* background-color: aliceblue; */
-                width: 73%;
                 padding: 20px;
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
+                flex-grow: 1;
 
                 .single-group-content {
                     border: 1px solid var(--border-light);
