@@ -434,7 +434,8 @@
                             value: pageSize,
                             label: `${pageSize}条/页`,
                         }}
-                        on:pageChange={handlePageChange}
+                        on:pageChange={handlePageChoose}
+                        on:pageSizeChange={handlePageSizeChange}
                         jumpPage={handlePageChoose}
                         selectOptionFunc={handlePageSizeChange}
                         onPageSearchFunc={handlePageSearch}

@@ -14,6 +14,7 @@
 
   // 组件属性
   let {
+    PracticeId = null,
     onSubmitFunc = (/** @type {Object} */ practiceData) => {},
     practiceData = null, // 添加练习数据属性，用于编辑功能
     onCancelFunc = () => {}, // 添加取消函数属性
@@ -66,9 +67,9 @@
     practice_name = practiceData.form.practice_name || "";
 
     // 设置批改方式
-    if (practiceData.form.grading_method === "00") {
+    if (practiceData.form.grading_method === "10") {
       grading_method = "人工批改";
-    } else if (practiceData.form.grading_method === "02") {
+    } else if (practiceData.form.grading_method === "00") {
       grading_method = "自动批改";
     }
 
@@ -254,9 +255,9 @@
    */
   function mapGradingMethodToApi(grading_method) {
     // 使用对象键值查找的安全方式
-    if (grading_method === "人工批改") return "00";
-    if (grading_method === "自动批改") return "02";
-    return "00"; // 默认值
+    if (grading_method === "人工批改") return "10";
+    if (grading_method === "自动批改") return "00";
+    return "10"; // 默认值
   }
 
   /**
@@ -474,6 +475,7 @@
 <!-- 学生选择弹窗组件 -->
  <StudentSelectionPanel
         show_panel={show_student_modal}
+        practice_id = {PracticeId}
         onConfirm={(selected) => {
             //确认后将选择的考生取出
             show_student_modal = false;

@@ -9,6 +9,7 @@
   import InputBox from "$lib/components/Input/InputBox.svelte";
     import Toast from "$lib/components/Toast/Toast.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
+  import { page } from "$app/state";
 
 
     // 字段映射表
@@ -54,7 +55,7 @@
     });
 
     //每页显示的数据条数
-    const PAGE_SIZE = 10;
+    let page_size = $state(10);
 
     // 计算总页数
     let total_pages = $derived(Math.ceil(failure_student_list.length / PAGE_SIZE));
@@ -136,9 +137,9 @@
             const students = student_list
                 .filter(student => student.is_ok)
                 .map(student => ({
-                    official_name: student.official_name,
-                    id_card_no: student.id_card_no,
-                    phone: student.phone
+                    officialName: student.official_name,
+                    idCardNo: student.id_card_no,
+                    MobilePhone: student.phone
                 }));
 
             // 如果没有成功的学生，直接返回
@@ -154,7 +155,7 @@
             };
 
             // 发送请求
-         await fetch('/api/teacher/student/import', {
+         await fetch('/api/user', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -304,6 +305,19 @@
         }
         search_params.page = page;
     }
+
+    /**
+   * 每页数量选择回调
+   * @param {string} value - 每页显示的数据条数
+   */
+  function handle_page_size_change(value) {
+    const newPageSize = parseInt(value, 10);
+    if (newPageSize !== page_size) {
+      page_size = newPageSize;
+      current_page_num = 1; // 重置为第一页
+    }
+  }
+
 
     /**
      * @param {string} value
@@ -545,6 +559,7 @@
                         total_page_num={total_page}
                         currentPage={current_page}
                         on:pageChange={onNextOrLastPage}
+                        on:pageSizeChange ={handle_page_size_change}
                         jumpPage={onSearchPageFunc}
                         {onPageChooseFunc}
                     ></Pagination> 
@@ -584,6 +599,10 @@
 </div>
 
 <Toast
+    type ={toastConfig.type}
+    message ={toastConfig.message}
+    duration ={toastConfig.duration}
+    plain={toastConfig.plain}
     bind:visible={showToast}
     bind:this={action_toast}
 /> 

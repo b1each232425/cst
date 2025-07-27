@@ -11,10 +11,11 @@ import { pageQueryHandle } from "./utils";
  * @param {Function} params.fetch - SvelteKit提供的fetch函数
  */
 export async function load({ fetch }) {
+    practice_filter.set(true);
     if(get(practice_filter)){
         return {
 			practices: get(practice_data_list),
-            practices_display:get(practice_data_list_display),
+            practices_display:get(practice_data_list),
             practice_name: get(practice_name_store),
             practice_type: get(practice_type_store),
             practice_status: get(practice_status_store),

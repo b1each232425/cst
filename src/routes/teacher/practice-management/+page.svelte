@@ -558,7 +558,7 @@
    */
   function continue_edit(practice) {
     // 实现继续编辑的逻辑
-    goto(`/teacher/practiceManagement/edit/${practice.ID}`);
+    goto(`/teacher/practice-management/edit/${practice.ID}`);
   }
 
   /**
@@ -805,17 +805,12 @@ if (data.status !== 0) {
         {total_page_num}
         currentPage=   {current_page_num}
         max_show_page_num={5}
-        data_num_per_page_options={[
-          { value: 10, label: "10条/页" },
-          { value: 20, label: "20条/页" },
-          { value: 30, label: "30条/页" },
-        ]}
         selected={{ value: data_per_page, label: `${data_per_page}条/页` }}
         on:pageChange={handle_page_change}
         jumpPage={handle_page_choose}
         selectOptionFunc={handle_page_size_change}
         onPageSearchFunc={handle_page_search}
-        expand_direction="up"
+        on:pageSizeChange={handle_page_size_change}
       />  
      </div> 
   </div>

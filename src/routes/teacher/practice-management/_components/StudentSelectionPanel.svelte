@@ -8,6 +8,7 @@
     let {
         show_panel = false,
         ids = [],
+         practice_id = null,  // 添加练习ID参数
         onCancel = (/** @type {boolean} */ load_new_file) => {
             console.log("取消选择");
         },
@@ -23,13 +24,14 @@
     
     // 是否处于选择模式（true为选择模式，false为查看已选择模式）
     let is_selection_mode = $state(false);
+    let page_size = $state(10);
 
 
     //搜索参数
     let search_params = $state({
         name: "",
         page: 1,
-        pageSize: 10,
+        pageSize: page_size,
     });
 
     /**
@@ -41,7 +43,7 @@
     let selected_search_params = $state({
         name: "",
         page: 1,
-        pageSize: 10,
+        pageSize: page_size,
     });
 
     // 已选择学生的总页数
@@ -85,6 +87,17 @@
             ? Math.ceil(totals / search_params.pageSize)
             : 1,
     );
+     /**
+   * 每页数量选择回调
+   * @param {string} value - 每页显示的数据条数
+   */
+  function handle_page_size_change(value) {
+    const newPageSize = parseInt(value, 10);
+    if (newPageSize !== page_size) {
+      page_size = newPageSize;
+      current_page_num = 1; // 重置为第一页
+    }
+  }
 
     let current_page = $state(1);
 
@@ -383,18 +396,18 @@
     }
     
     /**
-     * @param {number[]} ids
+     * @param {number} id
      */
-    async function getStudentInfo(ids){
+    async function getStudentInfo(id){
         error = "";
 
         // 构建查询参数
         let query_params = new URLSearchParams();
 
-        query_params.append("selected_ids", ids.join(','));
+        query_params.append("id", practice_id);
 
         await fetch(
-            `/api/teacher/exam/usersInfo?${query_params.toString()}`,
+            `/api/practiceStudentList?${query_params.toString()}`,
             {
                 method: "GET",
                 credentials: "include",
@@ -611,6 +624,7 @@ if (result.Status != 0) {
                             total_page_num={selected_total_page}
                             currentPage={selected_search_params.page}
                             on:pageChange={onSelectedNextOrLastPage}
+                            on:pageSizeChange={handle_page_size_change}
                             onPageSearchFunc={onSelectedSearchPageFunc}
                             jumpPage={onSelectedPageChooseFunc}
                         ></Pagination>
@@ -755,15 +769,16 @@ if (result.Status != 0) {
                             >{selected_ids.length}</span
                         > 条
                     </span>
-                    <Pagination 等待组件封装
+                    <Pagination 
                         show_per_page={false}
                         totalItems={totals}
                         total_page_num={total_page}
                         pageSize={search_params.pageSize}
                         currentPage={current_page}
-                        on:pageChange={onNextOrLastPage}
+                        on:pageChange={onPageChooseFunc}
+                        on:pageSizeChange={handle_page_size_change}
                         jumpPage={onSearchPageFunc}
-                        {onPageChooseFunc}
+                        
                     ></Pagination> 
                 </div>
             {/if}
@@ -794,7 +809,13 @@ if (result.Status != 0) {
     </div>
 </div>
  
-<Toast bind:visible={showToast} bind:this={action_toast} />
+<Toast 
+type= {toastConfig.type}
+message={toastConfig.message}
+duration={toastConfig.duration}
+plain={toastConfig.plain}
+bind:visible={showToast} 
+bind:this={action_toast} />
 
 <StudentImportPanel
     onImport={(/** @type {any[]} */ success_student, /** @type {boolean} */ has_error) => {

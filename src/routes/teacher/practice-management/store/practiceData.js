@@ -17,6 +17,7 @@ export const practice_data_list = writable([
     Name: "Svelte入门实战理论练习",
     Type: "经典巩固",
     Status: "未发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -24,6 +25,7 @@ export const practice_data_list = writable([
     Name: "Svelte入门实战理论练习",
     Type: "经典巩固",
     Status: "未发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -31,6 +33,7 @@ export const practice_data_list = writable([
     Name: "Svelte入门实战理论练习",
     Type: "经典巩固",
     Status: "未发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -38,6 +41,7 @@ export const practice_data_list = writable([
     Name: "Svelte入门实战理论练习",
     Type: "经典巩固",
     Status: "未发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -45,6 +49,7 @@ export const practice_data_list = writable([
     Name: "React入门实战课后练习",
     Type: "随机组卷",
     Status: "已发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -52,6 +57,7 @@ export const practice_data_list = writable([
     Name: "Nodejs入门实战课后练习",
     Type: "智能提升",
     Status: "已发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -59,6 +65,7 @@ export const practice_data_list = writable([
     Name: "Nodejs入门实战课后练习",
     Type: "智能提升",
     Status: "已发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -66,6 +73,7 @@ export const practice_data_list = writable([
     Name: "Nodejs入门实战课后练习",
     Type: "智能提升",
     Status: "已发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -73,6 +81,7 @@ export const practice_data_list = writable([
     Name: "Svelte入门实战理论练习",
     Type: "经典巩固",
     Status: "未发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -80,6 +89,7 @@ export const practice_data_list = writable([
     Name: "Svelte入门实战理论练习",
     Type: "经典巩固",
     Status: "未发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -87,6 +97,7 @@ export const practice_data_list = writable([
     Name: "Svelte入门实战理论练习",
     Type: "经典巩固",
     Status: "未发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -94,6 +105,7 @@ export const practice_data_list = writable([
     Name: "Svelte入门实战理论练习",
     Type: "经典巩固",
     Status: "未发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -101,6 +113,7 @@ export const practice_data_list = writable([
     Name: "React入门实战课后练习",
     Type: "随机组卷",
     Status: "已发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -108,6 +121,7 @@ export const practice_data_list = writable([
     Name: "Nodejs入门实战课后练习",
     Type: "智能提升",
     Status: "已发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -115,6 +129,7 @@ export const practice_data_list = writable([
     Name: "Nodejs入门实战课后练习",
     Type: "智能提升",
     Status: "已发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
   {
@@ -122,13 +137,15 @@ export const practice_data_list = writable([
     Name: "Nodejs入门实战课后练习",
     Type: "智能提升",
     Status: "已发布",
+    student_cnt: 10,
     AllowedAttempts: 1,
   },
 ]);
 
 /** @type {import('svelte/store').Writable<Practice[]>} */
-export const practice_data_list_display = writable([]);
-
+export const practice_data_list_display = writable([
+  
+]);
 export const practice_name_store = writable("");
 export const practice_type_store = writable("全部");
 export const practice_status_store = writable("全部");
