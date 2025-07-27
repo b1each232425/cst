@@ -3,7 +3,6 @@
   import Crumb from '$lib/components/Crumb/Crumb.svelte';
   import Brand from '$lib/components/Brand/Brand.svelte';
   import { sidebarWidth } from '$lib/stores/modules/layoutStore';
-  import DatePicker from '$lib/components/DatePicker/DatePicker.svelte';
 
   let { children } = $props();
 </script>
