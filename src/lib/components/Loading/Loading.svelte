@@ -1,34 +1,34 @@
-<!-- /**
-   * Loading 组件使用说明
-   *
-   * 作者：熊炜
-   * 邮箱：1062051028@qq.com
-   *
-   * 参数配置：
-   * @param {Boolean} isLoading            控制加载状态的开关，true 为加载中，false 为加载完成  boolean
-   * @param {String} loadingText       自定义加载时显示的文本  string
-   *
-   * 函数说明：
-   * @event bind:value                 绑定加载状态的值，在父组件控制加载的显示与隐藏  { value: boolean }
-   *
-   * 使用示例：
-   * <Loading
-   *   bind:value={isLoading}         // 控制加载状态
-   *   loadingText="正在加载"         // 自定义加载提示文本
-   * />
-   *
-   * // 父组件控制加载状态（这只是一个例子，你可以在有需要的地方改变isLoading，用来实现组件的动态加载）
-   * let isLoading = $state(false);  // 初始加载状态为 false
-   * function openLoading() {
-   *   isLoading = true;
-   *   setTimeout(() => {
-   *     closeLoading();
-   *   }, 10000);  // 10秒后自动关闭加载状态
-   * }
-   * function closeLoading() {
-   *   isLoading = false;  // 关闭加载状态
-   * }
-   */ -->
+<!--
+   Loading 组件使用说明
+
+   作者：熊炜
+   邮箱：1062051028@qq.com
+
+   参数配置：
+   @param {Boolean} isLoading            控制加载状态的开关，true 为加载中，false 为加载完成  boolean
+   @param {String} loadingText       自定义加载时显示的文本  string
+
+   函数说明：
+   @event bind:value                 绑定加载状态的值，在父组件控制加载的显示与隐藏  { value: boolean }
+
+   使用示例：
+   <Loading
+     bind:value={isLoading}         // 控制加载状态
+     loadingText="正在加载"         // 自定义加载提示文本
+   />
+
+   // 父组件控制加载状态（这只是一个例子，你可以在有需要的地方改变isLoading，用来实现组件的动态加载）
+   let isLoading = $state(false);  // 初始加载状态为 false
+   function openLoading() {
+     isLoading = true;
+     setTimeout(() => {
+       closeLoading();
+     }, 10000);  // 10秒后自动关闭加载状态
+   }
+   function closeLoading() {
+     isLoading = false;  // 关闭加载状态
+   }
+-->
 
 <script>
   let { value: isLoading, loadingText } = $props();

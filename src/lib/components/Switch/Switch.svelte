@@ -1,39 +1,40 @@
-<!-- /**
-   * Switch 组件使用说明
-   *
-   * 作者：熊炜
-   * 邮箱：1062051028@qq.com
-   *
-   * 参数配置：
-   * @param {Boolean} isChecked                  开关是否开启，true 表示开启，false 表示关闭  boolean
-   * @param {String} ballColor                   小球的颜色，支持任何合法的 CSS 颜色值            string
-   * @param {String} checkedBackgroundColor      开启状态下的背景色，支持任何合法的 CSS 颜色值   string
-   * @param {String} uncheckedBackgroundColor    关闭状态下的背景色，支持任何合法的 CSS 颜色值   string
-   * @param {String} leftText                    左侧文本，显示在开关左侧的标签文本              string
-   * @param {String} rightText                   右侧文本，显示在开关右侧的标签文本             string
-   * @param {String} width                       控制开关的宽度，单位为 px，默认单位为 "px"     string
-   *
-   * 函数说明：
-   * @event clickSwitchButton                    点击开关时触发的事件，用于更新开关状态         { isChecked: boolean }
-   *
-   * 使用示例：
-   * <Switch
-   *   isChecked={isChecked}                     // 控制开关状态的变量，传入自定义 bool 值
-   *   ballColor="white"                         // 小球的颜色，设置为白色
-   *   checkedBackgroundColor="#4a90e2"          // 开启状态的背景色，设置为蓝色
-   *   uncheckedBackgroundColor="#ccc"           // 关闭状态的背景色，设置为灰色
-   *   leftText="Off"                            // 左侧文本，显示为 "Off"
-   *   rightText="On"                            // 右侧文本，显示为 "On"
-   *   width="80px"                              // 控制开关的宽度，设置为 80px
-   *   clickSwitchButton={handleClickSwitchButton} // 点击开关按钮时触发的事件
-   * />
-   *
-   *  let isChecked = $state(false);
-   * // 父组件更新开关状态（用户点击 switch 按钮之后的逻辑）
-   * function handleClickSwitchButton() {
-   *   isChecked = !isChecked;   // 切换开关状态
-   * }
-   */ -->
+<!--
+   Switch 组件使用说明
+
+   作者：熊炜
+   邮箱：1062051028@qq.com
+
+   参数配置：
+   @param {Boolean} isChecked                  开关是否开启，true 表示开启，false 表示关闭  boolean
+   @param {String} ballColor                   小球的颜色，支持任何合法的 CSS 颜色值            string
+   @param {String} checkedBackgroundColor      开启状态下的背景色，支持任何合法的 CSS 颜色值   string
+   @param {String} uncheckedBackgroundColor    关闭状态下的背景色，支持任何合法的 CSS 颜色值   string
+   @param {String} leftText                    左侧文本，显示在开关左侧的标签文本              string
+   @param {String} rightText                   右侧文本，显示在开关右侧的标签文本             string
+   @param {String} width                       控制开关的宽度，单位为 px，默认单位为 "px"     string
+
+   函数说明：
+   @event clickSwitchButton                    点击开关时触发的事件，用于更新开关状态         { isChecked: boolean }
+
+   使用示例：
+   <Switch
+     isChecked={isChecked}                     // 控制开关状态的变量，传入自定义 bool 值
+     ballColor="white"                         // 小球的颜色，设置为白色
+     checkedBackgroundColor="#4a90e2"          // 开启状态的背景色，设置为蓝色
+     uncheckedBackgroundColor="#ccc"           // 关闭状态的背景色，设置为灰色
+     leftText="Off"                            // 左侧文本，显示为 "Off"
+     rightText="On"                            // 右侧文本，显示为 "On"
+     width="80px"                              // 控制开关的宽度，设置为 80px
+     clickSwitchButton={handleClickSwitchButton} // 点击开关按钮时触发的事件
+   />
+
+   let isChecked = $state(false);
+   // 父组件更新开关状态（用户点击 switch 按钮之后的逻辑）
+   function handleClickSwitchButton() {
+     isChecked = !isChecked;   // 切换开关状态
+   }
+-->
+
 <script>
   let {
     isChecked = false,
