@@ -32,8 +32,8 @@ export PATH="$GOPATH/bin:$GOROOT/bin:$NODE_HOME/bin:$PNPM_HOME:$BIN_PATH/bin:$BI
 
 cat <<EOF > .npmrc
 registry=https://registry.npmmirror.com/
-@3min:registry=https://git.w2w.me:6443/api/v4/projects/19/packages/npm/
-//git.w2w.me:6443/api/v4/projects/19/packages/npm/:_authToken=${NPM_AUTH_TOKEN}
+@3min:registry=https://git.w2w.me:6443/api/v4/projects/44/packages/npm/
+//git.w2w.me:6443/api/v4/projects/44/packages/npm/:_authToken=${NPM_AUTH_TOKEN}
 EOF
 
 echo "VITE_SERVER_PORT=6443" > .env.production
