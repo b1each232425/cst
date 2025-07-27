@@ -1,18 +1,37 @@
+<!-- /**
+   * 选择输入搜索框组件使用说明(Select)
+   *
+   * 作者：段春茂
+   * 邮箱：2162105974@qq.com
+   *
+   * 参数配置：
+   * @param {string} value - 选择器的值
+   * @param {string} placeholder - 选择器的占位符
+   * @param {boolean} disabled - 选择器是否禁用
+   * @param {boolean} multiple - 选择器是否多选
+   * @param {boolean} filterable - 选择器是否可搜索
+   * @param {boolean} remote - 选择器是否远程搜索
+   * @param {function} remote_method - 远程搜索的方法
+   *
+   * 功能说明：
+   * - 选择器：支持单选/多选，可搜索，可远程搜索，可清除，可禁用
+   * - 选项：支持自定义选项内容，可自定义选项值,贴近原生,方便使用
+   *
+   * 使用示例：
+   * <Select value="1" placeholder="请选择" multiple filterable remote={true} remote_method={handleRemoteSearch}>
+   *   <Option value="1" label="选项1"></Option>
+   *   <Option value="2" label="选项2"></Option>
+   *   <Option value="3" label="选项3"></Option>
+   * </Select>
+   *
+   * 注意事项：
+   * - 选项的value值不能重复，否则会导致选项显示异常
+   */ -->
 <script>
   import { setContext, getContext } from 'svelte';
   import { writable } from 'svelte/store';
-  /**
-   * @description Select 组件的属性
-   * @props {string} value - 选择器的值
-   * @props {string} placeholder - 选择器的占位符
-   * @props {boolean} disabled - 选择器是否禁用
-   * @props {boolean} clearable - 选择器是否可清除
-   * @props {boolean} multiple - 选择器是否多选
-   * @props {boolean} filterable - 选择器是否可搜索
-   * @props {boolean} remote - 选择器是否远程搜索
-   * @props {function} remote_method - 远程搜索的方法
-   */
 
+  // props
   let {
     value = $bindable(),
     placeholder = '请选择',
@@ -22,48 +41,31 @@
     remote = false,
     remote_method = () => {},
     onChangeValue = () => {},
+    children,
   } = $props();
 
-  if (multiple && !Array.isArray(value)) value = []; // 处理 value,如果是多选就会返回arr[]
-  let isOpen = $state(false); // 是否展开
-  let selectedLabel = $state([]); // 多选时，已选中的标签, 数组
-  let OptionCounts = $state(0); // select-option的数量(统计显示的option)
-  let filterText = writable(''); // 搜索框的值,配合setContext使用实现持久通信
+  // 处理 value,如果是多选就会返回arr[]
+  if (multiple) value = Array.isArray(value) ? value : [];
 
-  // 处理统计显示的option
-  setContext('ShowOptionCounts', {
-    add: () => (OptionCounts = OptionCounts + 1), // 增加显示的option数量
-    sub: () => (OptionCounts = OptionCounts - 1), // 减少显示的option数量
-    reset: () => (OptionCounts = 0), // 重置显示的option数量
-  });
-  // 处理本地搜索
-  setContext('SelectFilter', {
-    filterText,
-  });
-  // 与子组件通信,控制子组件选中数据并且传递回来
-  setContext('OptionData', {
+  // 状态管理
+  let isShow = $state(false);
+  let selectedLabel = $state([]);
+  let OptionCounts = $state(0);
+  let OptionData = $state([]);
+  let filterText = writable('');
+
+  // 上下文通信
+  setContext('SELECT-OPTIONS', {
     filterable,
     remote,
-    handerSelectValue: ({ selectValue, selectLabel }) => {
-      if (multiple) {
-        if (value.includes(selectValue)) {
-          value.splice(value.indexOf(selectValue), 1);
-          selectedLabel.splice(selectedLabel.indexOf(selectLabel), 1);
-          onChangeValue(value); // 传递回来
-          return false;
-        } else {
-          value.push(selectValue);
-          selectedLabel.push(selectLabel);
-          onChangeValue(value); // 传递回来
-          return true;
-        }
-      } else {
-        value = selectValue;
-        selectedLabel = [selectLabel];
-        onChangeValue(value); // 传递回来
-        closeSelect();
-        return true;
-      }
+    filterText,
+    getSelectShow: () => isShow,
+    add: () => (OptionCounts = OptionCounts + 1),
+    sub: () => (OptionCounts = OptionCounts - 1),
+    reset: () => (OptionCounts = 0),
+    getOptionData: ({ value, label }) => {
+      OptionData.push({ selectValue: value, selectLabel: label });
+      initLabelvalue();
     },
     setActive: (optionValue) => {
       if (multiple) {
@@ -73,34 +75,78 @@
       if (value == optionValue) return true;
       return false;
     },
+    handerSelectValue: ({ selectValue, selectLabel }) => {
+      if (multiple) {
+        if (value.includes(selectValue)) {
+          // 创建新数组进行修改
+          const newValue = value.filter((v) => v !== selectValue);
+          const newSelectedLabel = selectedLabel.filter((l) => l !== selectLabel);
+          value = newValue;
+          selectedLabel = newSelectedLabel;
+          onChangeValue(newValue);
+          return false;
+        } else {
+          // 创建新数组进行修改
+          value = [...value, selectValue];
+          selectedLabel = [...selectedLabel, selectLabel];
+          onChangeValue(value);
+          return true;
+        }
+      } else {
+        value = selectValue;
+        selectedLabel = [selectLabel];
+        onChangeValue(value);
+        closeSelect();
+        return true;
+      }
+    },
   });
+
+  // 处理外部传入value
+  $effect(() => {
+    initLabelvalue();
+    if (value === '') onChangeValue(value);
+    if (value === undefined || value === null) onChangeValue(value);
+  });
+
+  // 处理初始化value
+  function initLabelvalue() {
+    if (Array.isArray(value)) {
+      const labels = value
+        .map((item) => {
+          const option = OptionData.find((child) => child.selectValue == item);
+          return option ? option.selectLabel : '';
+        })
+        .filter(Boolean);
+
+      if (labels.length > 0) selectedLabel = labels;
+    } else {
+      const option = OptionData.find((child) => child.selectValue == value);
+      if (option) selectedLabel = [option.selectLabel];
+    }
+  }
 
   // 处理输入框的事件
   function onInputChange(e) {
     filterText.set(e.target.value || '');
-    if (remote && typeof remote_method === 'function') {
-      remote_method(e.target.value || '');
-    }
+    if (remote && typeof remote_method === 'function') remote_method(e.target.value || '');
     openSelect();
   }
 
   // 关闭选择器
   function closeSelect() {
-    if (isOpen) isOpen = false;
+    if (isShow) isShow = false;
   }
-
   // 打开选择器
   function openSelect() {
     if (disabled) return;
-    if (!isOpen) isOpen = true;
+    if (!isShow) isShow = true;
   }
-
   // 切换选择器
   function toggleSelect() {
     if (disabled) return;
-    isOpen = !isOpen;
+    isShow = !isShow;
   }
-
   // 点击外部关闭选择器
   let dropdownContainer;
   function handleClickOutside(event) {
@@ -120,21 +166,15 @@
     oninput={onInputChange}
     onclick={toggleSelect}
   />
-  <button class="dropdown-icon" onclick={toggleSelect} aria-label="Toggle dropdown">
-    <img src="/dropdown/arrow_black.png" alt="Dropdown icon" style={isOpen ? 'transform: rotate(180deg);' : ''} />
+  <button class="dropdown-icon" onclick={toggleSelect} aria-label="Toggle dropdown" tabindex="-1">
+    <img src="/dropdown/arrow_black.png" alt="Dropdown icon" style={isShow ? 'transform: rotate(180deg);' : ''} />
   </button>
-  {#if isOpen}
-    <ul class="dropdown-options" role="listbox">
-      <section>
-        <slot />
-        {#if OptionCounts <= 0}
-          <div class="no-options">
-            <li class="no-data">暂无数据</li>
-          </div>
-        {/if}
-      </section>
-    </ul>
-  {/if}
+  <ul class="dropdown-options {isShow ? '' : 'hidle'}" role="listbox">
+    <section>
+      {@render children()}
+      {#if OptionCounts <= 0}<div class="no-options"><li class="no-data">暂无数据</li></div>{/if}
+    </section>
+  </ul>
 </div>
 
 <style lang="scss" scoped>
@@ -185,7 +225,7 @@
     }
     .dropdown-options {
       position: absolute;
-      top: 70%;
+      top: calc(100% + 2px);
       left: 0;
       width: 100%;
       max-height: 200px;
@@ -218,5 +258,8 @@
         }
       }
     }
+  }
+  .hidle {
+    display: none;
   }
 </style>
