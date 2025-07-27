@@ -3,8 +3,8 @@
  # @Author: Zpekii 3156752796@qq.com
  # @Date: 2025-04-05 22:41:06
  # @LastEditors: Zpekii 3156752796@qq.com
- # @LastEditTime: 2025-05-01 20:05:42
- # @FilePath: \exam-fe\deploy.sh
+ # @LastEditTime: 2025-07-27 03:45:19
+ # @FilePath: /exam/deploy.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zpekii, All Rights Reserved. 
@@ -32,8 +32,8 @@ export PATH="$GOPATH/bin:$GOROOT/bin:$NODE_HOME/bin:$PNPM_HOME:$BIN_PATH/bin:$BI
 
 cat <<EOF > .npmrc
 registry=https://registry.npmmirror.com/
-@3min:registry=https://git.w2w.me:6443/api/v4/projects/44/packages/npm/
-//git.w2w.me:6443/api/v4/projects/44/packages/npm/:_authToken=${NPM_AUTH_TOKEN}
+@3min:registry=https://git.w2w.me:6443/api/v4/projects/19/packages/npm/
+//git.w2w.me:6443/api/v4/projects/19/packages/npm/:_authToken=${NPM_AUTH_TOKEN}
 EOF
 
 echo "VITE_SERVER_PORT=6443" > .env.production

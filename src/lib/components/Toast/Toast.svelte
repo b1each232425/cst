@@ -1,3 +1,26 @@
+<!--
+/**
+ * Toast 提示组件
+ * 
+ * 作者：段春茂
+ * 邮箱：2162105974@qq.com
+ * 
+ * 参数说明：
+ * @param {string} type        提示类型，可选 'success' | 'error' | 'warning'，默认 'success'
+ * @param {string} message     提示文本内容
+ * @param {number} duration    自动关闭时间，单位毫秒，默认 3000ms
+ * @param {boolean} showClose  是否显示关闭按钮，默认 true
+ * @param {boolean} plain      是否为朴素风格（无背景色），默认 true
+ * 
+ * 功能说明：
+ * - 根据 type 显示不同的图标和背景色
+ * - duration 时间后自动关闭
+ * - 点击关闭按钮手动关闭，带淡出动画效果
+ * 
+ * 使用示例：
+ * <Toast type="error" message="操作失败" duration={4000} showClose={false} plain={false} />
+ */
+-->
 <script>
   import { onMount } from 'svelte';
   let { type = 'success', message = '', duration = 3000, showClose = true, plain = true } = $props();

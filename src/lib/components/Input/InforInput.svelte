@@ -1,11 +1,31 @@
+<!-- /**
+  * 信息展示输入框组件使用说明
+  *
+  * 作者：段春茂
+  * 邮箱：2162105974@qq.com
+  *
+  * 参数配置：
+  * @param {String} label         字段标签文本，如 "姓名"、"账号"
+  * @param {String} value         展示的值内容（普通模式下显示）
+  * @param {Boolean} password     是否为密码模式，开启后默认展示密文并支持切换显示/隐藏
+  *
+  * 插槽：
+  * 默认插槽：用于自定义展示内容，插槽内容将替代默认的 `value` 显示
+  *
+  * 功能说明：
+  * - 普通模式：展示 label + value（如：姓名：张三）
+  * - 密码模式：展示密文 `••••••••`，点击按钮切换明文 / 密文
+  *
+  * 使用示例：
+  * <InforInput label="姓名" value="张三" />
+  * <InforInput label="登录密码" password="123456" />
+  *
+  * 注意事项：
+  * - 如果使用插槽展示自定义内容，不需要再传入 `value` 属性
+  * - `label` 宽度固定 90px，右对齐，组件整体可响应式布局
+  */ -->
 <script>
-  /**
-   * @param {string} label 标签
-   * @param {string} value 值
-   * @param {boolean} password 是否是密码
-   * 支持插槽, 用于自定义输入框内容,就不能传入value属性了
-   */
-  let { label, value, password } = $props();
+  let { label, value, password, children } = $props();
 
   let showPassword = $state(false);
   function togglePassword() {
@@ -27,7 +47,7 @@
       <img src="/teacher_mgt/{showPassword ? 'hide.svg' : 'show.svg'}" alt="{showPassword ? '隐藏' : '显示'}密码" />
     </button>
   {:else}
-    <div class="InforInput-value">{value}<slot /></div>
+    <div class="InforInput-value">{value}{@render children()}</div>
   {/if}
 </div>
 
