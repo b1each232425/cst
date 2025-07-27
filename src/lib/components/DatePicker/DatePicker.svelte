@@ -19,7 +19,7 @@
     bind:this={datePicker}                           // 与创建的日期选择器对象绑定
     initialStartDate={new Date('2023/02/09 20:30')}  // 可选，初始起始日期
     initialEndDate={new Date('2023/02/09 20:30')}    // 可选，初始结束日期
-    singleDateSelection={false}    // 启用日期范围选择
+    isTimeSelection={false}        // 启用具体时间范围选择
     singleDateSelection={true}     // 选择单日期选择器还是双日期选择器
     inputWidth={'300px'}           // 自定义宽度
     on:startDateSelected={handleStartDateSelected}  // 监听起始日期变化
