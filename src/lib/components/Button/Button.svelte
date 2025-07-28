@@ -1,14 +1,40 @@
+<!-- /**
+  * 按钮组件使用说明
+  *
+  * 作者：段春茂
+  * 邮箱：2162105974@qq.com
+  *
+  * 参数配置：
+  * @param {Boolean} plain        是否为朴素按钮，样式为边框加文字，hover 时填充背景
+  * @param {String} size          按钮尺寸，可选值："small" | "medium" | "large"，默认 "medium"
+  * @param {String} type          按钮类型，可选值："primary" | "success" | "danger" | "warning" | "info"，默认 "primary"
+  * @param {Boolean} disabled     是否禁用按钮，禁用后无法点击
+  * @param {Boolean} round        是否为圆角按钮，开启后圆角更大
+  * @param {String} icon          按钮左侧图标地址，支持本地或远程图片
+  * @param {Function} onclick     点击事件处理函数，可传入自定义逻辑
+  *
+  * 插槽：
+  * 默认插槽：用于定义按钮文本内容，可嵌入 HTML 或组件
+  *
+  * 使用示例：
+  * <Button
+  *   type="success"
+  *   size="large"
+  *   plain={true}                  // 或者 plain(表示true)
+  *   round={true}
+  *   icon="/icons/plus.svg"
+  *   disabled={false}
+  *   onclick={handleClick}
+  * >
+  *   添加数据
+  * </Button>
+  *
+  * // 父组件中定义点击处理
+  * function handleClick() {
+  *   console.log('按钮被点击');
+  * }
+  */ -->
 <script>
-  /**
-   * @description 按钮组件
-   * plain: 是否为朴素按钮  默认为 false
-   * size: 按钮大小，可选值 small    medium    large    默认为 medium
-   * round: 是否为圆角按钮  默认为 false
-   * type: 按钮类型，可选值 primary    success    danger    warning    info    默认为 primary
-   * disabled: 是否禁用按钮  默认为 false
-   * icon: 按钮左侧图标的URL   默认为 null
-   * click: 点击事件处理函数  默认为 null
-   */
   let {
     plain = false,
     size = 'medium',
@@ -17,6 +43,7 @@
     round = false,
     icon = '',
     onclick = null,
+    children,
   } = $props();
   let classes = $state(
     [
@@ -36,7 +63,7 @@
   {#if icon}
     <img class="Button-icon" src={icon} alt="图标" />
   {/if}
-  <span class="Button-text"><slot /> </span>
+  <span class="Button-text">{@render children()} </span>
 </button>
 
 <style lang="scss" scoped>
@@ -75,6 +102,7 @@
   }
   .Button-text {
     display: inline-block;
+    white-space: nowrap;
     vertical-align: middle;
   }
 
