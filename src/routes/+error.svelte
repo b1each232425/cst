@@ -1,7 +1,7 @@
 <script>
   // @ts-nocheck
   import { page } from "$app/state";
-
+  //测试
   const { status } = page;
 </script>
 
