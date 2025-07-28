@@ -54,3 +54,29 @@ export async function pageQueryHandle(total,pageSize){
             : 1;
 
 }
+export function transformPracticeData(practices) {
+    if (!Array.isArray(practices)) return [];
+
+    return practices.map((item) => {
+    const practice = item.practice; // 提取实际的practice对象
+    
+    // 转置type字段
+    let transformedType = practice.Type;
+    if (practice.Type === '00') transformedType = '经典巩固';
+    else if (practice.Type === '02') transformedType = '随机组卷';
+    else if (practice.Type === '04') transformedType = '智能提升';
+
+    // 转置status字段
+    let transformedStatus = practice.Status;
+    if (practice.Status === '02') transformedStatus = '已发布';
+    else if (practice.Status === '00') transformedStatus = '未发布';
+
+    // 创建新对象，包含practice的所有属性和转换后的字段
+    return {
+      ...practice, // 展开practice对象的所有属性
+      student_count: item.student_count||0, // 从外层对象获取student_count
+      Type: transformedType,
+      Status: transformedStatus,
+    };
+  });
+  }

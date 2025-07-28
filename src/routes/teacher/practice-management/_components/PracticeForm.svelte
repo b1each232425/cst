@@ -5,12 +5,11 @@
  * @Last Modified time: 2025-07-27 16:36:22 
  */ -->
 <script>
-  import StudentSelectionPanel from "./StudentSelectionPanel.svelte";
-  import TestSelector from "./TestSelector.svelte";
-  import { onMount } from "svelte";
-  import InputBox from "$lib/components/Input/InputBox.svelte";
-  import Button from "$lib/components/Button/Button.svelte";
-  
+  import StudentSelectionPanel from './StudentSelectionPanel.svelte';
+  import TestSelector from './TestSelector.svelte';
+  import { onMount } from 'svelte';
+  import InputBox from '$lib/components/Input/InputBox.svelte';
+  import Button from '$lib/components/Button/Button.svelte';
 
   // 组件属性
   let {
@@ -26,9 +25,9 @@
    */
 
   // 状态管理
-  let practice_name = $state(""); // 练习名称
-  let grading_method = $state("人工批改"); // 批改方式
-  let allowed_attempts_type = $state("不限次数"); //可作答次数类型
+  let practice_name = $state(''); // 练习名称
+  let grading_method = $state('人工批改'); // 批改方式
+  let allowed_attempts_type = $state('不限次数'); //可作答次数类型
   let allowed_attempts = $state(0); //限制的次数
   // 添加一个变量用于向TestSelector传递初始ID
   let testInitialId = $state(null);
@@ -36,9 +35,9 @@
   let paper_list = $state([]);
   // 错误状态
   let errors = $state({
-    practice_name: "",
-    students: "",
-    test: "",
+    practice_name: '',
+    students: '',
+    test: '',
   });
 
   // 弹窗状态控制
@@ -48,7 +47,7 @@
   // 学生数据
   /** @type {Array<{id: number, name: string}>} */
   let selectedStudents = $state([]);
-  let practice_type = $state("");
+  let practice_type = $state('');
   // 试卷数据
   /** @type {null|{id: number, name: string, assembly_type: string, difficulty?: string, questionCount?: number, totalScore?: number,suggest_duration?:number}} */
   let selectedTestObj = $state(null);
@@ -58,28 +57,28 @@
 
   // 组件挂载时，如果有practiceData，初始化表单值
   onMount(() => {
-    console.log("practiceData:",practiceData)
+    console.log('practiceData:', practiceData);
     if (!practiceData || !practiceData.form) {
       return;
     }
-    console.log("practiceData",practiceData)
+    console.log('practiceData', practiceData);
     // 设置练习名称
-    practice_name = practiceData.form.practice_name || "";
+    practice_name = practiceData.form.practice_name || '';
 
     // 设置批改方式
-    if (practiceData.form.grading_method === "10") {
-      grading_method = "人工批改";
-    } else if (practiceData.form.grading_method === "00") {
-      grading_method = "自动批改";
+    if (practiceData.form.grading_method === '00') {
+      grading_method = '人工批改';
+    } else if (practiceData.form.grading_method === '02') {
+      grading_method = '自动批改';
     }
 
     // 设置练习类型
-    if (practiceData.form.type === "00") {
-      practice_type = "自定义组卷（经典巩固）";
-    } else if (practiceData.form.type === "02") {
-      practice_type = "随机组卷（常练常新）";
-    } else if (practiceData.form.type === "04") {
-      practice_type = "智能刷题（智能提升）";
+    if (practiceData.form.type === '00') {
+      practice_type = '自定义组卷（经典巩固）';
+    } else if (practiceData.form.type === '02') {
+      practice_type = '随机组卷（常练常新）';
+    } else if (practiceData.form.type === '04') {
+      practice_type = '智能刷题（智能提升）';
     }
     // 设置学生数据
     if (practiceData.form.students && practiceData.form.students.length > 0) {
@@ -90,7 +89,7 @@
     if (practiceData.form.test) {
       selectedTestObj = {
         id: practiceData.form.test.id,
-        name: practiceData.form.test.name || practiceData.data.exam_name || "",
+        name: practiceData.form.test.name || practiceData.data.exam_name || '',
         assembly_type: practice_type,
       };
       testConfirmed = true;
@@ -100,16 +99,16 @@
 
     //可作答次数初始化
     if (practiceData.data.allowed_attempts) {
-      console.log("限制次数");
-      allowed_attempts_type = "限制次数";
+      console.log('限制次数');
+      allowed_attempts_type = '限制次数';
       allowed_attempts = practiceData.data.allowed_attempts;
     } else {
-      console.log("不限次数");
-      allowed_attempts_type = "不限次数";
+      console.log('不限次数');
+      allowed_attempts_type = '不限次数';
       allowed_attempts = 0;
     }
 
-    console.log("practiceData",practiceData)
+    console.log('practiceData', practiceData);
   });
 
   /**
@@ -120,86 +119,81 @@
     // 将selectedStudents作为本地状态更新，而不是依赖绑定
     selectedStudents = students;
     if (selectedStudents.length > 0) {
-      errors.students = "";
+      errors.students = '';
     }
   }
 
   // 打开学生选择弹窗
   function openStudentModal() {
     show_student_modal = true;
-    errors.students = ""; // 清除错误
+    errors.students = ''; // 清除错误
   }
 
   // 打开试卷选择弹窗
   async function openTestModal() {
     show_test_modal = true;
-      // 构造查询参数
-      const searchParams = new URLSearchParams({
-        name: "",
-        tags: "",
-        page: "1",
-        category: "02",
-        page_size: "10",
-      });
+    // 构造查询参数
+    const searchParams = new URLSearchParams({
+      name: '',
+      tags: '',
+      page: '1',
+      category: '02',
+      pageSize: '10',
+    });
 
-      // 发送带参数的GET请求
-      const response = await fetch(`/api/paper?${searchParams}`, {
-        method: "GET",
-        credentials: "include",
-      }).then((response)=>{
+    // 发送带参数的GET请求
+    const response = await fetch(`/api/paper?${searchParams}`, {
+      method: 'GET',
+      credentials: 'include',
+    }).then((response) => {
         if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         return response.json();
-      }).then((result)=>{
- console.log("获取试卷列表成功", result);
-      const records = result.data.data;
-      if (records) {
-        paper_list = records.map((/** @type {any} */ item) => {
-          // 处理时间格式
-          let updateTimeObj = new Date(item.update_time || item.create_time);
-          let updateDate = updateTimeObj
-            .toLocaleDateString("zh-CN")
-            .replace(/\//g, "-");
-          let updateTime = updateTimeObj.toLocaleTimeString("zh-CN", {
-            hour: "2-digit",
-            minute: "2-digit",
+      })
+      .then((result) => {
+        console.log('获取试卷列表成功', result);
+        const records = result.data;
+        if (records) {
+          paper_list = records.map((/** @type {any} */ item) => {
+            // 处理时间格式
+            let updateTimeObj = new Date(item.UpdateTime || item.CreateTime);
+            let updateDate = updateTimeObj.toLocaleDateString('zh-CN').replace(/\//g, '-');
+            let updateTime = updateTimeObj.toLocaleTimeString('zh-CN', {
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+
+            // 创建日期只取年月日
+            let createTimeObj = new Date(item.CreateTime || item.UpdateTime);
+            let createDate = createTimeObj.toISOString().split('T')[0];
+
+            // 找到对应ID的练习并更新
+            return {
+              ...item,
+              assembly_type:
+                item.AssemblyType === '00'
+                  ? '自定义组卷（经典巩固）'
+                  : item.AssemblyType === '02'
+                    ? '随机组卷（随机组卷）'
+                    : '智能刷题（智能提升）',
+              level: item.Level === '00' ? '简单' : item.Level === '02' ? '中等' : '困难',
+              // 添加格式化后的时间
+              update_time: `${updateDate} ${updateTime}`,
+              create_time: createDate,
+              // 确保有tags属性
+              tags: item.Tags || [],
+            };
           });
-
-          // 创建日期只取年月日
-          let createTimeObj = new Date(item.create_time || item.update_time);
-          let createDate = createTimeObj.toISOString().split("T")[0];
-
-          // 找到对应ID的练习并更新
-          return {
-            ...item,
-            assembly_type:
-              item.assembly_type === "00"
-                ? "自定义组卷（经典巩固）"
-                : item.assembly_type === "02"
-                  ? "随机组卷（随机组卷）"
-                  : "智能刷题（智能提升）",
-            level:
-              item.level === "00"
-                ? "简单"
-                : item.level === "02"
-                  ? "中等"
-                  : "困难",
-            // 添加格式化后的时间
-            update_time: `${updateDate} ${updateTime}`,
-            create_time: createDate,
-            // 确保有tags属性
-            tags: item.tags || [],
-          };
-        });
-      }
-      console.log("获取试卷列表成功", result.data.data);
-      }).catch((error) => {
-       console.error("获取试卷列表失败", error);
-      throw error;
+        }
+        console.log('获取试卷列表成功', result.data);
+      })
+      .catch((error) => {
+        console.error('获取试卷列表失败', error);
+        throw error;
       });
-    
-    errors.test = ""; // 清除错误
+
+    errors.test = ''; // 清除错误
   }
 
   // 确认试卷选择
@@ -215,17 +209,17 @@
    */
   function updateTestSelection(test) {
     selectedTestObj = test;
-    console.log("Selected Test:", selectedTestObj);
+    console.log('Selected Test:', selectedTestObj);
     if (selectedTestObj) {
       testConfirmed = true;
-      errors.test = "";
+      errors.test = '';
     }
   }
 
   // 监听名称输入，清除错误
   function handleNameInput() {
     if (practice_name.trim()) {
-      errors.practice_name = "";
+      errors.practice_name = '';
     }
   }
 
@@ -234,14 +228,12 @@
     let valid = true;
 
     if (!practice_name.trim()) {
-      errors.practice_name = "请输入练习名称";
+      errors.practice_name = '请输入练习名称';
       valid = false;
     }
 
-    
-
     if (!selectedTestObj) {
-      errors.test = "请选择练习试卷";
+      errors.test = '请选择练习试卷';
       valid = false;
     }
 
@@ -255,9 +247,9 @@
    */
   function mapGradingMethodToApi(grading_method) {
     // 使用对象键值查找的安全方式
-    if (grading_method === "人工批改") return "10";
-    if (grading_method === "自动批改") return "00";
-    return "10"; // 默认值
+    if (grading_method === '人工批改') return '00';
+    if (grading_method === '自动批改') return '02';
+    return '10'; // 默认值
   }
 
   /**
@@ -267,8 +259,8 @@
    */
   function mapAllowedAttemptsToApi(allowed_attempts_type) {
     // 使用对象键值查找的安全方式
-    if (allowed_attempts_type === "不限次数") return 0;
-    if (allowed_attempts_type === "限制次数") return allowed_attempts;
+    if (allowed_attempts_type === '不限次数') return 0;
+    if (allowed_attempts_type === '限制次数') return allowed_attempts;
     return 0; // 默认值
   }
 
@@ -279,11 +271,11 @@
       const practiceData = {
         practice_name,
         grading_method: mapGradingMethodToApi(grading_method),
-        students: selectedStudents,
+        student: selectedStudents.map(student => student.id),
         test: selectedTestObj,
         allowed_attempts: mapAllowedAttemptsToApi(allowed_attempts_type),
       };
-      console.log("准备提交数据", practiceData);
+      console.log('准备提交数据', practiceData);
       // 调用父组件传入的提交函数
       onSubmitFunc(practiceData);
     }
@@ -299,13 +291,13 @@
 <div class="practice-form-container">
   <div class="practice-form">
     <div class="form-content">
-      {#if !practiceData||practiceData&&practiceData.data.status === "00"}
+      {#if !practiceData || (practiceData && practiceData.data.status === '00')}
         <div class="form-group">
           <div class="input-wrapper">
             <div class="form-input-container">
               <InputBox
-              label="练习名称:"
-              request
+                label="练习名称:"
+                request
                 type="text"
                 id="practice-name"
                 placeholder="请输入练习名称"
@@ -314,47 +306,34 @@
               />
             </div>
             <div class="error-message" class:hidden={!errors.practice_name}>
-              {errors.practice_name || " "}
+              {errors.practice_name || ' '}
             </div>
           </div>
         </div>
       {/if}
-      {#if !practiceData||practiceData&&practiceData.data.status === "00"}
+      {#if !practiceData || (practiceData && practiceData.data.status === '00')}
         <div class="form-group">
           <label for="test-select">
             <span class="required">*</span> 练习试卷：
           </label>
           <div class="input-wrapper">
             {#if !testConfirmed}
-              <Button
-                id="test-select"
-                class="select-btn"
-                onclick={openTestModal}
-                plain
-              >
-                选择试卷
-              </Button>
+              <Button id="test-select" class="select-btn" onclick={openTestModal} plain>选择试卷</Button>
             {:else}
               <div class="selected-test-display">
                 <div class="test-info-container">
                   <div class="test-info-row">
                     <span class="test-type">
-                      {selectedTestObj?.assembly_type || "自定义组卷"} :
+                      {selectedTestObj?.assembly_type || '自定义组卷'} :
                     </span>
-                    <span class="test-name" title={selectedTestObj?.name}
-                      >{selectedTestObj?.name}</span
-                    >
+                    <span class="test-name" title={selectedTestObj?.name}>{selectedTestObj?.name}</span>
                   </div>
                 </div>
-                <button
-                  id="test-select"
-                  class="change-test-btn"
-                  onclick={openTestModal}>更换试卷</button
-                >
+                <button id="test-select" class="change-test-btn" onclick={openTestModal}>更换试卷</button>
               </div>
             {/if}
             <div class="error-message" class:hidden={!errors.test}>
-              {errors.test || " "}
+              {errors.test || ' '}
             </div>
           </div>
         </div>
@@ -370,8 +349,8 @@
                 type="radio"
                 name="grading-method"
                 value="人工批改"
-                checked={grading_method === "人工批改"}
-                onchange={() => (grading_method = "人工批改")}
+                checked={grading_method === '人工批改'}
+                onchange={() => (grading_method = '人工批改')}
               />
               <span class="radio-text">人工批改</span>
             </label>
@@ -381,8 +360,8 @@
                 type="radio"
                 name="grading-method"
                 value="自动批改"
-                checked={grading_method === "自动批改"}
-                onchange={() => (grading_method = "自动批改")}
+                checked={grading_method === '自动批改'}
+                onchange={() => (grading_method = '自动批改')}
               />
               <span class="radio-text">自动批改</span>
             </label>
@@ -400,9 +379,9 @@
                 type="radio"
                 name="allowed_attempts"
                 value="不限次数"
-                checked={allowed_attempts_type === "不限次数"}
+                checked={allowed_attempts_type === '不限次数'}
                 onchange={() => {
-                  allowed_attempts_type = "不限次数";
+                  allowed_attempts_type = '不限次数';
                   allowed_attempts = 0;
                 }}
               />
@@ -414,81 +393,69 @@
                 type="radio"
                 name="allowed_attempts"
                 value="不限次数"
-                checked={allowed_attempts_type === "限制次数"}
+                checked={allowed_attempts_type === '限制次数'}
                 onchange={() => {
-                  allowed_attempts_type = "限制次数";
+                  allowed_attempts_type = '限制次数';
                 }}
               />
               <span class="radio-text">限制次数</span>
             </label>
           </div>
-          <div
-            class="attempts-input-container"
-            class:disabled={allowed_attempts_type !== "限制次数"}
-          >
+          <div class="attempts-input-container" class:disabled={allowed_attempts_type !== '限制次数'}>
             <input
               type="number"
               class="attempts-input"
               min="1"
               bind:value={allowed_attempts}
-              disabled={allowed_attempts_type !== "限制次数"}
+              disabled={allowed_attempts_type !== '限制次数'}
             />
             <span class="attempts-unit">次</span>
           </div>
         </div>
       {/if}
       <div class="form-group">
-        <label for="student-select">
-           参与学生：
-        </label>
+        <label for="student-select"> 参与学生： </label>
         <div class="input-wrapper">
           <div class="class-selection-area">
             <div class="select-wrapper">
-              <Button
-                id="student-select"
-                class="select-btn"
-                onclick={openStudentModal}
-                plain
-              >
-                选择学生
-              </Button>
+              <Button id="student-select" class="select-btn" onclick={openStudentModal} plain>选择学生</Button>
               {#if selectedStudents.length > 0}
                 <span class="student-badge">{selectedStudents.length}</span>
               {/if}
             </div>
           </div>
           <div class="error-message" class:hidden={!errors.students}>
-            {errors.students || " "}
+            {errors.students || ' '}
           </div>
         </div>
       </div>
     </div>
 
     <div class="form-footer">
-      <Button type="info" plain size= "large"  onclick={handleCancel} round>取消</Button>
-       <div class="button-spacer"></div>
-      <Button  size= "large"  onclick={handleSubmit} round>保存</Button>
+      <Button type="info" plain size="large" onclick={handleCancel} round>取消</Button>
+      <div class="button-spacer"></div>
+      <Button size="large" onclick={handleSubmit} round>保存</Button>
     </div>
   </div>
 </div>
 
 <!-- 学生选择弹窗组件 -->
- <StudentSelectionPanel
-        show_panel={show_student_modal}
-        practice_id = {PracticeId}
-        onConfirm={(selected) => {
-            //确认后将选择的考生取出
-            show_student_modal = false;
-            selectedStudents = selected;
-        }}
-        onCancel={(/** @type {boolean} */ load_new_file) => {
-            show_student_modal = false;
-            if (load_new_file) {
-                selectedStudents = [];
-            }
-        }}
-        ids={selectedStudents}
-    ></StudentSelectionPanel>
+<StudentSelectionPanel
+  show_panel={show_student_modal}
+  practice_id={PracticeId}
+  onConfirm={(selected) => {
+    //确认后将选择的考生取出
+    show_student_modal = false;
+    selectedStudents = selected;
+  }}
+  onCancel={(/** @type {boolean} */ load_new_file) => {
+    show_student_modal = false;
+    if (load_new_file) {
+      selectedStudents = [];
+    }
+  }}
+  ids={selectedStudents}
+></StudentSelectionPanel>
 
 <!-- 试卷选择弹窗 -->
 <TestSelector
@@ -563,7 +530,7 @@
 
   // 输入包装器样式
   .input-wrapper {
-     flex: 1; // 输入区域占剩余空间
+    flex: 1; // 输入区域占剩余空间
     display: flex;
     align-items: center; // 内容垂直居中
     // 学生选择区域特殊处理，保持文本区域的overflow控制
@@ -571,8 +538,6 @@
       overflow: hidden;
       width: 80%;
     }
-
-    
 
     .error-message {
       font-size: 12px;
@@ -623,7 +588,7 @@
       margin-right: 20px;
       cursor: pointer;
 
-      input[type="radio"] {
+      input[type='radio'] {
         margin-right: 8px;
         cursor: pointer;
         accent-color: $primary-color;
@@ -642,8 +607,8 @@
     justify-content: center;
     margin-top: 40px;
     .button-spacer {
-    width: 100px; // 调整这个值来控制间距大小
-  }
+      width: 100px; // 调整这个值来控制间距大小
+    }
     button {
       width: $footer-btn-width;
       height: $footer-btn-height;
@@ -651,7 +616,6 @@
       font-size: 14px;
       cursor: pointer;
       margin: 0 30px;
-
     }
   }
 

@@ -45,7 +45,7 @@ export async function load({ fetch, params }) {
 
         // 转换练习状态显示
         let statusText = "未发布";
-        if (data.data.status === "02") statusText = "已发布";
+        if (data.data.practice.Status === "02") statusText = "已发布";
 
         // 转换练习类型显示
         console.log("编辑表单的数据:", data.data);
@@ -54,15 +54,10 @@ export async function load({ fetch, params }) {
             practice: {
                 data: data.data,
                 form: {
-                    practice_name: data.data.name,
-                    grading_method: data.data.correct_mode,
-                    test: {
-                        id: data.data.paper_id,
-                        name: data.data.exam_name || "",
-                    },
-                    students: data.data.student_infos,
+                    practice_name: data.data.practice.Name,
+                    grading_method: data.data.practice.CorrectMode,
                     status: statusText,
-                    type: data.data.type
+                    type: data.data.practice.Type
                 }
             }
         };

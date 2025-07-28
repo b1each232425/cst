@@ -6,7 +6,7 @@
  */ 
 import { practice_data_list,practice_data_list_display, practice_name_store, practice_type_store, practice_status_store, current_page_store, page_size_store, practice_filter } from "./store/practiceData";
 import { get } from "svelte/store";
-import { pageQueryHandle } from "./utils";
+import { pageQueryHandle, transformPracticeData } from "./utils";
 /** @param {Object} params - 加载函数参数
  * @param {Function} params.fetch - SvelteKit提供的fetch函数
  */
@@ -35,10 +35,11 @@ export async function load({ fetch }) {
         ).then((data)=>{
              practice_filter.set(true);
 		if (data.status === 0 && data.data && data.data.practices) {
+           const practices =transformPracticeData(data.data.practices);
             // 数据格式正确
-            practice_data_list.set(data.data.practices);
+            practice_data_list.set(practices);
             return {
-                practices: data.data.practices,
+                practices: practices,
                 total_count: data.total || 0,
                 total_page: pageQueryHandle(data.total,10),
                 current_page: 1,

@@ -27,10 +27,11 @@
                     Name: practiceData.practice_name,
                     CorrectMode: practiceData.grading_method,
                     PaperID: practiceData.test.id,
+                    Type : "02",
                     AllowedAttempts: practiceData.allowed_attempts,                                                                            
                     duration:practiceData.test.suggest_duration
                 },
-                 students: practiceData.students,
+                 student: practiceData.student,
             };
             console.log(requestData);
             // 发送请求
@@ -57,16 +58,16 @@
             // 创建成功，将新创建的练习添加到store
             practice_data_list.update((list) => {
                 const newPractice = {
-                    ID: data.data?.id || Date.now(),
-                    Name: data.data.name,
+                    ID: requestData?.id || Date.now(),
+                    Name: requestData.practice.Name,
                     Type:
-                        data.data.type === "00"
+                        requestData.practice.Type === "00"
                             ? "经典巩固"
-                            : data.data.type === "02"
+                            : requestData.practice.Type === "02"
                               ? "随机组卷"
                               : "智能提升",
                     Status: "未发布",
-                    AllowedAttempts:  data.data.allowed_attempts,
+                    AllowedAttempts:  requestData.practice.AllowedAttempts,
                 };
                 return [newPractice, ...list];
             });

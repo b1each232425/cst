@@ -133,16 +133,16 @@
     function confirmSelection() {
         const selected = paper_list.find(
             (
-                /** @type {{id: number, name: string, assembly_type: string}} */ test,
-            ) => test.id === selectedTestId,
+                /** @type {{ID: number, Name: string, assembly_type: string}} */ test,
+            ) => test.ID === selectedTestId,
         );
         if (selected) {
             // 确保传递正确的数据结构给父组件
             onTestSelectFunc({
-                id: selected.id,
-                name: selected.name,
+                id: selected.ID,
+                name: selected.Name,
                 assembly_type: selected.assembly_type,
-                suggest_duration: selected.duration,
+                suggest_duration: selected.SuggestedDuration,
             });
             onConfirmFunc();
         }
@@ -182,7 +182,7 @@
                 name: params.name || "",
                 tags: params.tags || "",
                 page: params.page || String(currentPage),
-                page_size: params.page_size || String(pageSize),
+                pageSize: params.page_size || String(pageSize),
                 category: "02", // 默认分类
                 ...(params.assembly_type && params.assembly_type !== "全部"
                     ? { assembly_type: params.assembly_type }
@@ -204,23 +204,23 @@
             return response.json();
             }).then((result)=>{
             console.log("获取试卷列表响应:", result);
-            if (!result.data && !result.data.data) {
+            if (!result.data ) {
                 paper_list = [];
                 totalTests = 0;
                 return;
             }
             //获取试卷的记录
-            const records = result.data.paper_list;
+            const records = result.data;
 
             // 更新总数 - 从total_count字段获取
-            totalTests = result.data.total_count || 0;
+            totalTests = result.rowCount || 0;
             console.log("总数据条数:", totalTests);
 
             // 更新试卷列表
             paper_list = records.map((/** @type {any} */ item) => {
                 // 处理时间格式
                 let updateTimeObj = new Date(
-                    item.update_time || item.create_time,
+                    item.UpdateTime || item.CreateTime,
                 );
                 let updateDate = updateTimeObj
                     .toLocaleDateString("zh-CN")
@@ -232,30 +232,30 @@
 
                 // 创建日期只取年月日
                 let createTimeObj = new Date(
-                    item.create_time || item.update_time,
+                    item.CreateTime || item.UpdateTime,
                 );
                 let createDate = createTimeObj.toISOString().split("T")[0];
 
                 return {
                     ...item,
                     assembly_type:
-                        item.assembly_type === "00"
+                        item.AssemblyType === "00"
                             ? "自定义组卷（经典巩固）"
-                            : item.assembly_type === "02"
+                            : item.AssemblyType === "02"
                               ? "随机组卷（随机组卷）"
                               : "智能刷题（智能提升）",
                     level:
-                        item.level === "00"
+                        item.Level === "00"
                             ? "简单"
-                            : item.level === "02"
+                            : item.Level === "02"
                               ? "中等"
                               : "困难",
                     // 添加格式化后的时间
                     update_time: `${updateDate} ${updateTime}`,
                     create_time: createDate,
                     // 确保有tags属性
-                    tags: item.tags || [],
-                    duration:item.duration,
+                    tags: item.Tags || [],
+                    duration:item.SuggestedDuration,
                 };
             });
             }).catch(error => {
@@ -365,7 +365,7 @@
                     </div>
 
                     <div class="table-body">
-                        {#each currentPageTests as test (test.id)}
+                        {#each currentPageTests as test (test.ID)}
                         
                             <div class="table-row">
                                 <div class="cell select-cell">
@@ -373,27 +373,27 @@
                                         <input
                                             type="radio"
                                             name="test-selection"
-                                            value={test.id}
-                                            onclick={() => selectTest(test.id)}
-                                            checked={selectedTestId === test.id}
+                                            value={test.ID}
+                                            onclick={() => selectTest(test.ID)}
+                                            checked={selectedTestId === test.ID}
                                         />
                                         <span class="radio-checkmark"></span>
                                     </label>
                                 </div>
-                                <div class="cell name-cell">{test.name}</div>
+                                <div class="cell name-cell">{test.Name}</div>
                                 <div class="cell type-cell">
                                     {test.assembly_type}
                                 </div>
                                 <div class="cell count-cell">
-                                    {test.question_count}
+                                    {test.QuestionCount}
                                 </div>
                                 <div class="cell score-cell">
-                                    {test.total_score}
+                                    {test.TotalScore}
                                 </div>
                                 <div class="cell standard-cell">
                                     <UneditableHashTags tags={test.tags} />
                                 </div>
-                                <div class="cell suggest-cell">{test.duration}</div>
+                                <div class="cell suggest-cell">{test.SuggestedDuration}</div>
                                 <div class="cell diff-cell">
                                     <span
                                         class={`level ${test.level === "简单" ? "easy" : test.level === "中等" ? "medium" : "hard"}`}
@@ -419,13 +419,11 @@
                     </div>
                 </div>
                 <div class="pagination-container">
-                    <div class="total-count">共 {totalTests} 条</div>
+                    <div class="total-count"></div>
                     <Pagination
                         totalItems={totalTests}
                         currentPage={currentPage}
-                        pageSizeOptions={[
-                          5,10,20
-                        ]}
+                        pageSize={pageSize}
                         on:pageChange={handlePageChoose}
                         on:pageSizeChange={handlePageSizeChange}
                         jumpPage={handlePageChoose}

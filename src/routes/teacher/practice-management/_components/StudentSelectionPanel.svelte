@@ -31,7 +31,7 @@
     let search_params = $state({
         name: "",
         page: 1,
-        pageSize: page_size,
+        pageSize: 10,
     });
 
     /**
@@ -43,7 +43,7 @@
     let selected_search_params = $state({
         name: "",
         page: 1,
-        pageSize: page_size,
+        pageSize: 10,
     });
 
     // 已选择学生的总页数
@@ -91,12 +91,10 @@
    * 每页数量选择回调
    * @param {string} value - 每页显示的数据条数
    */
-  function handle_page_size_change(value) {
-    const newPageSize = parseInt(value, 10);
-    if (newPageSize !== page_size) {
-      page_size = newPageSize;
-      current_page_num = 1; // 重置为第一页
-    }
+  function handle_page_size_change(event) {
+    
+      search_params.pageSize = event.detail;
+      searchExaminee();
   }
 
     let current_page = $state(1);
@@ -178,14 +176,14 @@
     }
 
     /**
-     * @param {number} page
+     * 
      * 页数跳转
      */
-    function onPageChooseFunc(page) {
+    function onPageChooseFunc(event) {
         if (loading === true) {
             return;
         }
-        search_params.page = page;
+        search_params.page = event.detail;
         searchExaminee();
     }
 
@@ -300,7 +298,7 @@
                     selected_ids.map((item) => item.id),
                 );
                 student_list.forEach((student) => {
-                    if (!selected_id_set.has(student.id)) {
+                    if (!selected_id_set.has(student.ID)) {
                         student.selected = false;
                     } else {
                         student.selected = true;
@@ -421,16 +419,16 @@ if (result.Status != 0) {
             student_list.forEach(
                 (student) => {
                     const exists = selected_ids.find(
-                        (item) => item.id === student.id,
+                        (item) => item.id === student.ID,
                     );
                     if (!exists) {
                         selected_ids.push({
-                            id: student.id,
-                            official_name:student.official_name,
-                            gender:student.gender,
-                            account:student.account,
-                            phone:student.phone,
-                            id_card_no:student.id_card_no,
+                            id: student.ID,
+                            official_name:student.OfficialName,
+                            gender:student.Gender,
+                            account:student.Account,
+                            phone:student.Phone,
+                            id_card_no:student.IDCardNo,
                             serial_number: selected_ids.length + 1,
                         });
                     }
@@ -441,7 +439,7 @@ if (result.Status != 0) {
                 /** @param {{ id: string }} student */
                 (student) => {
                     const index = selected_ids.findIndex(
-                        (item) => item.id === student.id,
+                        (item) => item.id === student.ID,
                     );
                     if (index !== -1) {
                         selected_ids.splice(index, 1);
@@ -602,7 +600,8 @@ if (result.Status != 0) {
                         <InputBox
                             label={"搜索学生"}
                             placeholder={"请输姓名/手机号/身份证号"}
-                            onSearchFunc={onSearch}
+                            bind:value={search_params.name}
+                            onInput={onSearch}
                         ></InputBox> 
                     </div>
                     <div class="button-group">
@@ -656,18 +655,18 @@ if (result.Status != 0) {
                                                         !selected_ids.find(
                                                             (g) =>
                                                                 g.id ===
-                                                                student.id,
+                                                                student.ID,
                                                         )
                                                     ) {
                                                         const currentMaxSerial =
                                                             getMaxSerialNumber();
                                                         selected_ids.push({
-                                                            id: student.id,
-                                                            official_name:student.official_name,
-                                                            account:student.account,
-                                                            gender:student.gender,
-                                                            phone:student.phone,
-                                                            id_card_no:student.id_card_no,
+                                                            id: student.ID,
+                                                            official_name:student.OfficialName,
+                                                            account:student.Account,
+                                                            gender:student.Gender,
+                                                            phone:student.MobilePhone,
+                                                            id_card_no:student.IDCardNo,
                                                             serial_number:
                                                                 currentMaxSerial +
                                                                 1,
@@ -681,7 +680,7 @@ if (result.Status != 0) {
                                                         selected_ids.findIndex(
                                                             (g) =>
                                                                 g.id ===
-                                                                student.id,
+                                                                student.ID,
                                                         );
                                                     if (index !== -1) {
                                                         selected_ids.splice(
@@ -697,28 +696,28 @@ if (result.Status != 0) {
                                         />
                                     </td>
                                     <td
-                                        >{student.official_name === null ||
-                                        student.official_name === ""
+                                        >{student.OfficialName === null ||
+                                        student.OfficialName === ""
                                             ? "--"
-                                            : student.official_name}</td
+                                            : student.OfficialName}</td
                                     >
                                     <td
-                                        >{student.gender === null ||
-                                        student.gender === ""
+                                        >{student.Gender === null ||
+                                        student.Gender === ""
                                             ? "--"
-                                            : student.gender}</td
+                                            : (student.Gender==='F'?'女':'男')}</td
                                     >
                                     <td
-                                        >{student.phone === null ||
-                                        student.phone === ""
+                                        >{student.MobilePhone === null ||
+                                        student.MobilePhone === ""
                                             ? "--"
-                                            : student.phone}</td
+                                            : student.MobilePhone}</td
                                     >
                                     <td
-                                        >{student.id_card_no === null ||
-                                        student.id_card_no === ""
+                                        >{student.IDCardNo === null ||
+                                        student.IDCardNo === ""
                                             ? "--"
-                                            : student.id_card_no}</td
+                                            : student.IDCardNo}</td
                                     >
                                 </tr>
                             {/each}
@@ -736,9 +735,8 @@ if (result.Status != 0) {
                     </span>
                     <Pagination 
                         totalItems={totals}
-                        total_page_num={total_page}
                         pageSize={search_params.pageSize}
-                        currentPage={current_page}
+                        currentPage={search_params.page}
                         on:pageChange={onPageChooseFunc}
                         on:pageSizeChange={handle_page_size_change}
                         jumpPage={onSearchPageFunc}
@@ -760,8 +758,6 @@ if (result.Status != 0) {
             >
             <Button
             type="info"
-                class={selected_ids.length === 0 ? "save-btn-disabled" : "save-btn"}
-                disabled={selected_ids.length === 0}
                 onclick={() => {
                     show_panel = false;
                     search_params.page = 1;

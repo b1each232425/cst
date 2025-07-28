@@ -53,7 +53,7 @@
    * @typedef {Object} Practice
    * @property {number} ID - 练习ID
    * @property {string} Name - 练习名称
-   * @property {number} student_cnt - 学生人数
+   * @property {number} student_count - 学生人数
    * @property {string} Type - 练习类型
    * @property {string} Status - 练习状态
    * @property {number} AllowedAttempts - 可作答的次数
@@ -72,26 +72,33 @@
   function transformPracticeData(practices) {
     if (!Array.isArray(practices)) return [];
 
-    return practices.map((practice) => {
-      // 转置type字段
-      let transformedType = practice.Type;
-      // 这里根据实际需求进行转置处理，例如：
-      // 假设后端返回的是英文类型，需要转为中文显示
-      if (practice.Type === '00') transformedType = '经典巩固';
-      else if (practice.Type === '02') transformedType = '随机组卷';
-      else if (practice.Type === '04') transformedType = '智能提升';
+    return practices.map((item) => {
+    const practice = item.practice; // 提取实际的practice对象
+        // 检查 practice 是否存在
+    if (!practice) {
+      console.error('Invalid practice item:', item);
+      return null; // 或者返回一个默认值
+    }
+    
+    // 转置type字段
+    let transformedType = practice.Type;
+    if (practice.Type === '00') transformedType = '经典巩固';
+    else if (practice.Type === '02') transformedType = '随机组卷';
+    else if (practice.Type === '04') transformedType = '智能提升';
 
-      // 转置status字段
-      let transformedStatus = practice.Status;
-      if (practice.Status === '02') transformedStatus = '已发布';
-      else if (practice.Status === '00') transformedStatus = '未发布';
+    // 转置status字段
+    let transformedStatus = practice.Status;
+    if (practice.Status === '02') transformedStatus = '已发布';
+    else if (practice.Status === '00') transformedStatus = '未发布';
 
-      return {
-        ...practice,
-        Type: transformedType,
-        Status: transformedStatus,
-      };
-    });
+    // 创建新对象，包含practice的所有属性和转换后的字段
+    return {
+      ...practice, // 展开practice对象的所有属性
+      student_count: item.student_count||0, // 从外层对象获取student_count
+      Type: transformedType,
+      Status: transformedStatus,
+    };
+  });
   }
 
   // 练习列表数据 - 从page.js加载，并进行转置处理
@@ -164,7 +171,7 @@
           displayed_practice_list = transformedData;
 
           // 更新分页信息
-          total_data_num = result.rowCount || 0;
+          total_data_num = result.data.total || 0;
           total_page_num = pageQueryHandle(total_data_num, page_size);
           current_page_num = page;
           data_per_page = page_size;
@@ -283,7 +290,6 @@
   function publish_practice(practice) {
     // 保存当前操作的练习
     currentPractice = practice;
-    // 打开发布确认对话框
     publishDialogOpen = true;
   }
 
@@ -370,7 +376,7 @@
     const url = `/api/practice?${queryParams.toString()}`;
     // 调用API取消发布练习
     fetch(url, {
-      method: 'Patch',
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -530,11 +536,11 @@
     console.log('确认删除练习:', currentPractice.Name);
 
     const queryParams = new URLSearchParams();
-    queryParams.append('id', currentPractice.Id);
+    queryParams.append('id', currentPractice.ID);
     queryParams.append('status', '04');
 
     // 调用API删除练习
-    fetch('/api/practice', {
+    fetch(`/api/practice?${queryParams.toString()}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -611,14 +617,14 @@
             type="text"
             placeholder="请输入练习名称"
             bind:value={practice_name}
-            oninput={handle_name_input}
+            onInput={handle_name_input}
           />
         </div>
 
         <div class="filter-box">
           <span class="filter-label">练习类型：</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={practice_type} onChangeFunc={handle_type_change} filterable>
+            <Select bind:value={practice_type}  onChangeValue={handle_type_change} filterable>
               {#each type_options as option}
                 <Option value={option} label={option}></Option>
               {/each}
@@ -628,7 +634,7 @@
         <div class="filter-box">
           <span class="filter-label">练习状态：</span>
           <div class="dropdown-wrapper">
-            <Select bind:selected_value={practice_status} filterable onChangeFunc={handle_status_change}>
+            <Select bind:value={practice_status} filterable onChangeValue={handle_status_change}>
               {#each status_options as option}
                 <Option value={option} label={option}></Option>
               {/each}
@@ -656,7 +662,7 @@
             <tr>
               <td style="text-align: center;" title={practice.Name}>{practice.Name}</td>
               <td style="text-align: center;" title={practice.Type}>{practice.Type}</td>
-              <td style="text-align: center;" title={practice.student_cnt.toString()}>{practice.student_cnt}</td>
+              <td style="text-align: center;" title={practice.student_count.toString()}>{practice.student_count}</td>
               <td style="text-align: center;">
                 <span class="Status-tag {practice.Status === '已发布' ? 'published' : 'unpublished'}">
                   {practice.Status}
@@ -705,26 +711,32 @@
 
   <!-- 发布确认对话框 -->
   <MessageBox
-    bind:isOpen={publishDialogOpen}
+    bind:visible={publishDialogOpen}
     title="请问是否要发布练习？"
     content="发布练习将同时发布练习通知"
+    confirm_text= "确定"
+		cancel_text='取消'
     onConfirm={confirm_publish}
   />
 
   <!-- 删除确认对话框 -->
   <MessageBox
-    bind:isOpen={deleteDialogOpen}
+    bind:visible={deleteDialogOpen}
     title="请问是否要删除练习？"
     content="该操作不可逆，请谨慎操作。"
+     confirm_text= "确定"
+		cancel_text='取消'
     confirmTextBackgroundColor="#E34D59"
     onConfirm={confirm_delete}
   />
 
   <!-- 取消发布确认对话框 -->
   <MessageBox
-    bind:isOpen={cancelPublishDialogOpen}
+    bind:visible={cancelPublishDialogOpen}
     title="请问是否要取消发布练习？"
     content="取消发布后学生将无法参与该练习。"
+     confirm_text= "确定"
+		cancel_text='取消'
     onConfirm={confirm_cancel_publish}
   />
 

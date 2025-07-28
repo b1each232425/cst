@@ -157,7 +157,7 @@
 
   <PracticeForm
     PracticeId={practiceId}
-    onSubmitFunc={practice.data.status === '02' ? updateStudents : handleSubmit}
+    onSubmitFunc={practice.data.practice.Status === '02' ? updateStudents : handleSubmit}
     practiceData={practice}
     onCancelFunc={handleCancel}
   />
