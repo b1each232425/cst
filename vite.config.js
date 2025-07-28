@@ -70,7 +70,7 @@ export default defineConfig({
 	},
 	server:{
 		open: true,
-		port: 6443,
+		port: 6643,
 		host:'0.0.0.0',
 		proxy:{
 			'/api': "http://localhost:6616",
