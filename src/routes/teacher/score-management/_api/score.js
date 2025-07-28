@@ -1,28 +1,44 @@
 /**
  * 获取考试成绩列表
  * @param {object} params - 查询参数
- * @param {number} params.courseID - 课程ID
- * @param {number} params.classID - 班级ID
  * @param {string} params.name - 考试名称
  * @param {string} params.type - 考试类型
  * @param {boolean | ""} params.submitted - 提交状态
  * @param {number} params.page - 页码
  * @param {number} params.pageSize - 每页数量
+ * @param {number} [params.teacherID] - 教师ID
+ * @param {number} [params.examID] - 考试ID
  * @returns {Promise<any>}
  */
 export function getExams(params) {
 	// 添加参数校验和默认值
 	const {
-		courseID = 0,
-		classID = 0,
 		name = '',
 		type = '',
 		submitted = '',
 		page = 1,
-		pageSize = 10
+		pageSize = 10,
+		teacherID,
+		examID
 	} = params || {};
 
-	const url = `/api/teacher/exam-grade?courseID=${courseID}&classID=${classID}&name=${name}&type=${type}&submitted=${submitted}&page=${page}&pageSize=${pageSize}`;
+	const queryParams = new URLSearchParams({
+		category: 'exam',
+		page: page.toString(),
+		pageSize: pageSize.toString()
+	});
+
+	if (name) queryParams.append('name', name);
+	if (type) queryParams.append('type', type);
+	if (teacherID) queryParams.append('teacherID', teacherID.toString());
+	if (examID) queryParams.append('examID', examID.toString());
+
+	// submitted 可能为 "" (全部), true (已提交), false (未提交)
+	if (submitted !== '') {
+		queryParams.append('submitted', submitted ? '1' : '0');
+	}
+
+	const url = `/api/grade/list?${queryParams.toString()}`;
 
 	return fetch(url, {
 		method: 'GET',
@@ -54,7 +70,7 @@ export function submitExamGrades(exam_ids) {
 		return Promise.reject(new Error('提交成绩失败：exam_ids 必须是一个非空数组。'));
 	}
 
-	const url = `/api/teacher/exam-grades`;
+	const url = `/api/grade/submission`;
 
 	return fetch(url, {
 		method: 'PATCH',
@@ -62,7 +78,11 @@ export function submitExamGrades(exam_ids) {
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify({ exam_ids })
+		body: JSON.stringify({
+			data: {
+				exam_ids
+			}
+		})
 	})
 		.then((response) => {
 			if (!response.ok) {
@@ -129,24 +149,29 @@ export function getGradeLogs(page = 1, pageSize = 10) {
 /**
  * 获取练习成绩列表
  * @param {object} params
- * @param {number} params.courseID
- * @param {number} params.classID
  * @param {string} params.practiceName
  * @param {number} params.page
  * @param {number} params.pageSize
+ * @param {number} [params.teacherID] - 教师ID
+ * @param {number} [params.practiceID] - 练习ID
  * @returns {Promise<any>}
  */
 export function getPractices(params) {
 	// 添加参数校验和默认值
-	const {
-		courseID = 0,
-		classID = 0,
-		practiceName = '',
-		page = 1,
-		pageSize = 10
-	} = params || {};
+	const { practiceName = '', page = 1, pageSize = 10, teacherID, practiceID } = params || {};
 
-	const url = `/api/teacher/practice-grade?courseID=${courseID}&classID=${classID}&practiceName=${practiceName}&page=${page}&pageSize=${pageSize}`;
+	const queryParams = new URLSearchParams({
+		category: 'practice',
+		page: page.toString(),
+		pageSize: pageSize.toString()
+	});
+
+	if (practiceName) queryParams.append('name', practiceName);
+	if (teacherID) queryParams.append('teacherID', teacherID.toString());
+	if (practiceID) queryParams.append('practiceID', practiceID.toString());
+
+	const url = `/api/grade/list?${queryParams.toString()}`;
+
 	return fetch(url, {
 		method: 'GET',
 		credentials: 'include'

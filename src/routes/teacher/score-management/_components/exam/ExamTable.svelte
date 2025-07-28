@@ -62,7 +62,7 @@
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		padding: 28px 37px 100px 37px;
+		padding: 5px 37px 100px 37px;
 		border-collapse: separate;
 		border-spacing: 0;
 		background: #fff;

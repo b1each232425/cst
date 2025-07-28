@@ -1,15 +1,15 @@
 import { getPractices, exportPracticeGrades } from '../_api/score';
 import { formatISOString } from '../_utils/dateFormatter';
+import { sget } from '$lib/utils';
 
 /**
  * @typedef {object} PracticeInfo
- * @property {number} id -练习ID
- * @property {string} name -练习名称
- * @property {string} class -练习班级
- * @property {number | string} total_score -练习总分
- * @property {number | string} average_score -练习平均分
- * @property {number} completed_students -作答人数
- * @property {number} passed_students -通过人数
+ * @property {number} id - 练习ID
+ * @property {string} name - 练习名称
+ * @property {number | string} total_score - 练习总分
+ * @property {number | string} average_score - 练习平均分
+ * @property {number} completed_students - 作答人数
+ * @property {number} passed_students - 通过人数
  */
 
 /**
@@ -40,9 +40,9 @@ export function createPracticeGradeStore() {
 		loading: false,
 		selectAll: false,
 		filters: {
-			courseID: 0,
-			classID: 0,
-			practiceName: ''
+			name: '',
+			teacherID: undefined,
+			practiceID: undefined
 		},
 		pagination: {
 			page: 1,
@@ -63,11 +63,15 @@ export function createPracticeGradeStore() {
 				return;
 			}
 			state.loading = true;
-			const params = { ...state.filters, ...state.pagination };
+			const params = {
+				practiceName: state.filters.name,
+				...state.filters,
+				...state.pagination
+			};
 			getPractices(params)
 				.then((data) => {
-					state.practices = formatPracticeData(data.data);
-					state.totalRecords = data.row_count;
+					state.practices = formatPracticeData(sget(data, 'data', []));
+					state.totalRecords = sget(data, 'rowCount', 0);
 				})
 				.catch((err) => console.error('Failed to fetch practices', err))
 				.finally(() => (state.loading = false));

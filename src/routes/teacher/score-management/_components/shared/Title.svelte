@@ -10,7 +10,7 @@
 
 <style lang="scss" scoped>
   .title-bar {
-    padding: 15px 25px 10px 25px;
+    padding: 0px 25px 5px 25px;
     display: flex;
     align-items: center;
   }

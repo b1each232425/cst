@@ -90,9 +90,9 @@
 <style lang="scss">
 	.top-action-bar {
 		display: flex;
-		justify-content: space-between;
+		justify-content: flex-start;
 		align-items: center;
-		padding: 16px 0;
+		padding: 16px 0 0 0;
 	}
 	.filters {
 		display: flex;

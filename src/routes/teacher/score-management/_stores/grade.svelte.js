@@ -1,27 +1,29 @@
 import { getExams, submitExamGrades, getExamineeGradeList, getGradeLogs } from '../_api/score';
 import { formatISOString } from '../_utils/dateFormatter';
+import { sget } from '$lib/utils';
 
 /**
  * @typedef {object} ExamSessionInfo
- * @property {number} id -考试场次
- * @property {string} paper_name -试卷名称
- * @property {string} start_time -考试开始时间
- * @property {string} end_time -考试结束时间
- * @property {number | string} total_score -考试总分
- * @property {number | string} average_score -考试平均分
- * @property {number} scheduled_examinees -计划应考人数
- * @property {number} actual_examinees -实际应考人数
- * @property {number} pass_examinees -考试通过人数
+ * @property {number} exam_id - 考试ID
+ * @property {number} exam_session_id - 考试场次ID
+ * @property {string} paper_name - 试卷名称
+ * @property {number} start_time - 考试开始时间 (timestamp)
+ * @property {number} end_time - 考试结束时间 (timestamp)
+ * @property {string} mark_mode - 阅卷模式
+ * @property {number | string} total_score - 考试总分
+ * @property {number | string} average_score - 考试平均分
+ * @property {number} scheduled_examinees - 计划应考人数
+ * @property {number} actual_examinees - 实际应考人数
+ * @property {number} pass_examinees - 考试通过人数
  */
 
 /**
  * @typedef {object} ExamInfo
- * @property {number} id -考试ID
- * @property {string} name -考试名称
- * @property {string} type -考试类型
- * @property {string} class -考试班级
- * @property {ExamSessionInfo[]} sessions -考试场次
- * @property {boolean} submitted -是否提交
+ * @property {number} id - 考试ID
+ * @property {string} name - 考试名称
+ * @property {string} type - 考试类型
+ * @property {ExamSessionInfo[]} sessions - 考试场次
+ * @property {boolean} submitted - 是否提交
  */
 
 /**
@@ -58,12 +60,12 @@ export function createGradeStore() {
 		loading: false,
 		selectAll: false, // New state for select all checkbox
 		filters: {
-			courseID: 0,
-			classID: 0,
 			name: '',
 			type: '',
 			/** @type {boolean | ''} */
-			submitted: ''
+			submitted: '',
+			teacherID: undefined,
+			examID: undefined
 		},
 		pagination: {
 			page: 1,
@@ -98,8 +100,8 @@ export function createGradeStore() {
 			};
 			getExams(params)
 				.then((data) => {
-					state.exams = formatExamData(data.data);
-					state.totalRecords = data.row_count;
+					state.exams = formatExamData(sget(data, 'data', []));
+					state.totalRecords = sget(data, 'rowCount', 0);
 				})
 				.catch((error) => {
 					console.error('获取考试列表失败:', error);

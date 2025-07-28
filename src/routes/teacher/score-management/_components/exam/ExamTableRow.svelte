@@ -29,7 +29,7 @@
 	}
 </script>
 
-<tr class="exam-list-row" class:alter={index % 2 === 1}>
+<tr class="exam-list-row">
 	<td class="exam-select">
 		<button class="square-container {isSelected ? 'checked' : ''}" onclick={handleSelect}>
 			{#if isSelected}
@@ -121,9 +121,6 @@
 		box-sizing: border-box;
 		padding: 0 15px;
 		border-bottom: 1px solid #e0e0e0;
-		&.alter {
-			background-color: #f7f8fa;
-		}
 	}
 
 	td {
@@ -168,6 +165,17 @@
 		justify-content: flex-end; /* 右对齐 */
 	}
 
+	/* 为所有包含多场次信息的列设置垂直flex布局 */
+	.exam-sessions,
+	.exam-time,
+	.exam-total-score,
+	.exam-average-score,
+	.exam-scheduled-examinees,
+	.exam-actual-examinees,
+	.exam-pass-examinees {
+		flex-direction: column;
+	}
+
 	.session-row {
 		display: flex;
 		justify-content: center;
@@ -185,21 +193,6 @@
 			-webkit-line-clamp: 2;
 			-webkit-box-orient: vertical;
 		}
-	}
-
-	.exam-time,
-	.exam-total-score,
-	.exam-average-score,
-	.exam-sessions,
-	.exam-scheduled-examinees,
-	.exam-actual-examinees,
-	.exam-pass-examinees {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		height: 100%;
-		overflow: hidden;
 	}
 
 	.exam-name span {
