@@ -10,8 +10,7 @@
  */ 
  -->
 <script>
-    import ActionToast from "$lib/component/ActionToast.svelte";
-    import Pagination from "$lib/component/Pagination.svelte";
+    import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import SearchInput from "$lib/component/SearchInput.svelte";
     import StudentImportPanel from "./StudentImportPanel.svelte";
 
@@ -584,15 +583,17 @@
                         <span style="font-size: 12px; margin-right:10px">
                             已选 <span style="color: #00A870; margin:0 5px 0 5px;">{filtered_selected_ids.length}</span> 条
                         </span>
+                        
                         <Pagination
-                            show_per_page={false}
-                            total_data_num={filtered_selected_ids.length}
-                            total_page_num={selected_total_page}
-                            current_page_num={selected_search_params.page}
-                            onPageChangeFunc={onSelectedNextOrLastPage}
-                            onPageSearchFunc={onSelectedSearchPageFunc}
-                            onPageChooseFunc={onSelectedPageChooseFunc}
-                        ></Pagination>
+                            totalItems={filtered_selected_ids.length}
+                            currentPage={selected_search_params.page}
+                            pageSizeOptions={[10]}
+                            on:pageChange={onSelectedNextOrLastPage}
+                            on:pageSearch={onSearchPageFunc}
+                            on:pageChoose={onPageChooseFunc}
+                            >
+                        </Pagination>
+                        
                     </div>
                 </div>
             {:else}
@@ -734,7 +735,7 @@
                             >{selected_ids.length}</span
                         > 条
                     </span>
-                    <Pagination
+                    <!-- <Pagination
                         show_per_page={false}
                         total_data_num={totals}
                         total_page_num={total_page}
@@ -742,7 +743,15 @@
                         onPageChangeFunc={onNextOrLastPage}
                         onPageSearchFunc={onSearchPageFunc}
                         {onPageChooseFunc}
-                    ></Pagination>
+                    ></Pagination> -->
+                    <Pagination
+                        totalItems={totals}
+                        currentPage={search_params.page}
+                        pageSizeOptions={[10]}
+                        on:pageChange={onNextOrLastPage}
+                        on:pageSearch={onSearchPageFunc}
+                        on:pageChoose={onPageChooseFunc}>
+                    </Pagination>
                 </div>
             {/if}
         </div>
@@ -770,7 +779,7 @@
     </div>
 </div>
 
-<ActionToast bind:isShow={show_action_toast} bind:this={action_toast} />
+
 
 <StudentImportPanel
     onImport={(/** @type {any} */ success_student, /** @type {any} */ has_error) => {

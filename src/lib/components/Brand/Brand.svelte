@@ -28,7 +28,7 @@
     height: 48%;
     background-color: rgba(255, 255, 255, 0);
     box-sizing: border-box;
-    font-family: "Arial", sans-serif;
+    font-family: 'Arial', sans-serif;
     color: #333333;
     text-align: center;
     margin: 0;

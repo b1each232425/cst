@@ -11,66 +11,6 @@
     export const DIFFICULTY_COLOR_HARD = "red";
     export const DIFFICULTY_COLOR_DEFAULT = "black";
 
-    const mockData = {
-  status: 0,
-  msg: "success",
-  data: {
-    total_count: 3,
-    paper_list: [
-      {
-        id: 8881,
-        name: "模拟试卷-前端基础",
-        category: "00",
-        assembly_type: "00",
-        level: "02",
-        duration: 60,
-        total_score: 100,
-        question_count: 10,
-        tags: ["mock", "前端"],
-        creator: 0,
-        create_time: "2025-07-25T09:00:00Z",
-        update_time: "2025-07-25T09:00:00Z",
-        status: "00",
-        access_mode: "00"
-      },
-      {
-        id: 8882,
-        name: "模拟试卷-数据结构",
-        category: "00",
-        assembly_type: "02",
-        level: "04",
-        duration: 90,
-        total_score: 120,
-        question_count: 8,
-        tags: ["mock", "算法"],
-        creator: 0,
-        create_time: "2025-07-25T09:00:00Z",
-        update_time: "2025-07-25T09:00:00Z",
-        status: "00",
-        access_mode: "00"
-      },
-      {
-        id: 8883,
-        name: "模拟试卷-网络协议",
-        category: "00",
-        assembly_type: "00",
-        level: "00",
-        duration: 45,
-        total_score: 80,
-        question_count: 12,
-        tags: ["mock", "网络"],
-        creator: 0,
-        create_time: "2025-07-25T09:00:00Z",
-        update_time: "2025-07-25T09:00:00Z",
-        status: "00",
-        access_mode: "00"
-      }
-    ]
-  },
-  rowCount: 3,
-  method: "GET"
-};
-
     const ASSEMBLY_TYPE_MAP = {
         '00': '自定义组卷',
         '02': '随机组卷',
@@ -279,7 +219,7 @@
         if (search_params.tags) {
             query_params.append("tags", search_params.tags);
         }
-
+        console.log(query_params.toString());
         const response = await fetch(
             `/api/paper?${query_params.toString()}`,
             {
@@ -290,15 +230,6 @@
                 },
             },
         );
-// 如果响应状态不是200，且状态码为500，则使用mock数据
-        if (!response.ok && response.status === 500) {
-            const result = mockData;
-            paper_list = result.data.paper_list;
-            totals = result.data.total_count;
-            current_page = search_params.page;
-            loading = false;
-            return;
-        }
 
         const result = await response.json();
 
@@ -531,7 +462,6 @@
         th, td {
             font-size: 14px;
             color: var(--text-primary);
-            color:blue;
             border: none;
             padding: 8px;
             text-align: center;
@@ -548,7 +478,6 @@
 
         td {
             border-bottom: 1px solid #ddd;
-            color:var(--text-primary);
         }
 
         th {
@@ -591,7 +520,6 @@
         max-width: 200px;
         word-wrap: break-word;
         word-break: break-all;
-        
     }
 
     // 自定义复选框

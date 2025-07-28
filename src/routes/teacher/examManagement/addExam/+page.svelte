@@ -2,10 +2,11 @@
     //@ts-nocheck
     import { goto } from "$app/navigation";
     import SmartEditor from "@3min/smart-edit";
-    import DateTimePicker from "$lib/component/DatePicker/DateTimePicker.svelte";
+   // import DateTimePicker from "$lib/component/DatePicker/DateTimePicker.svelte";
     import RequiredLabel from "../_components/RequiredLabel.svelte";
     import PaperSelectionPanel from "../_components/PaperSelectionPanel.svelte";
     import ExamineeSelectionPanel from "../_components/ExamineeSelectionPanel.svelte";
+    import Button from "$lib/components/Button/Button.svelte";
     const TIP_TEXT = {
         final_exam:
             "当一门考试的考试性质为期末成绩考试时，它将决定学生在此课程的最终期末成绩",
@@ -75,6 +76,8 @@
     let examinee_num = $derived(examExaminee.length);
     let files = $state([]);
     let RichTextEditor; //富文本编辑器
+    let examRooms = $state([]); //考试场地
+    let invigilators = $state([]); //监考人员
     //考试场次数组
     let paper_configs = $state([
         {
@@ -154,7 +157,7 @@
         paper_configs = [...paper_configs, default_paper_config];
 
         // 清空考场选择
-        // exam_rooms = [];
+        // examRooms = [];
         // invigilators = [];
     }
 
@@ -213,7 +216,7 @@
             paper_configs[index].end_time = endISO;
 
             // 清空考场选择
-            // exam_rooms = [];
+            // examRooms = [];
             // invigilators = [];
         };
     }
@@ -253,12 +256,6 @@
             return;
         }
 
-        // 创建考试时可以暂时不选择考生
-        // if (examExaminee.length < 1) {
-        //     action_toast.show("error", "未选择考生");
-        //     return;
-        // }
-
         if (paper_configs.length <= 0) {
             action_toast.show("error", "请至少添加一个考试场次");
             return;
@@ -275,16 +272,16 @@
             }
 
             // 校验开始时间
-            if (!session.start_time || session.start_time === "") {
-                action_toast.show("error", `第${i + 1}个场次未设置时间段`);
-                return;
-            }
+            // if (!session.start_time || session.start_time === "") {
+            //     action_toast.show("error", `第${i + 1}个场次未设置时间段`);
+            //     return;
+            // }
 
-            // 校验结束时间
-            if (!session.end_time || session.end_time === "") {
-                action_toast.show("error", `第${i + 1}个场次未设置时间段`);
-                return;
-            }
+            // // 校验结束时间
+            // if (!session.end_time || session.end_time === "") {
+            //     action_toast.show("error", `第${i + 1}个场次未设置时间段`);
+            //     return;
+            // }
 
             // 校验时间逻辑
             const startTime = new Date(session.start_time);
@@ -292,22 +289,22 @@
             const now = new Date();
 
             // 检查开始时间是否早于当前时间
-            if (startTime < now) {
-                action_toast.show(
-                    "error",
-                    `第${i + 1}个场次的开始时间不能早于当前时间`,
-                );
-                return;
-            }
+            // if (startTime < now) {
+            //     action_toast.show(
+            //         "error",
+            //         `第${i + 1}个场次的开始时间不能早于当前时间`,
+            //     );
+            //     return;
+            // }
 
             // 检查结束时间是否早于开始时间
-            if (endTime <= startTime) {
-                action_toast.show(
-                    "error",
-                    `第${i + 1}个场次的结束时间必须晚于开始时间`,
-                );
-                return;
-            }
+            // if (endTime <= startTime) {
+            //     action_toast.show(
+            //         "error",
+            //         `第${i + 1}个场次的结束时间必须晚于开始时间`,
+            //     );
+            //     return;
+            // }
 
 
         for (let i = 0; i < paper_configs.length; i++) {
@@ -349,7 +346,23 @@
 
 
         const formData = new FormData();
-
+        let examSessionsdata = paper_configs.map((cfg, idx) => ({
+            PaperID: cfg.paper_id,
+            PeriodMode: cfg.period_mode,
+            StartTime: cfg.start_time ? new Date(cfg.start_time).getTime() : 0, // 转成时间戳
+            EndTime: cfg.end_time ? new Date(cfg.end_time).getTime() : 0,       // 转成时间戳
+            Duration: Number(cfg.duration) || 0,
+            LateEntryTime: Number(cfg.late_entry_time) || 0,
+            EarlySubmissionTime: Number(cfg.early_submission_time) || 0,
+            QuestionShuffledMode: cfg.question_shuffled_mode,
+            MarkMethod: cfg.mark_method,
+            NameVisibilityIn: !!cfg.name_visibility,
+            ReviewerIds: (cfg.mark_config && cfg.mark_config.teacher_mark_configs)
+                ? cfg.mark_config.teacher_mark_configs.map(t => t.id)
+                : [],
+            MarkMode: cfg.mark_mode,
+            SessionNum: idx + 1, // 场次编号
+        }));
 
         let exam_data = {
             examInfo: {
@@ -365,30 +378,73 @@
                     }
                 ]
             },
-            examSessions: paper_configs,
+            examSessions: examSessionsdata,
             examinee:examExaminee,
             invigilators: [0] // 监考员列表，暂时设置为0，后续可以添加监考员选择功能，模拟数据   
         };
 
         formData.append("data", JSON.stringify(exam_data));
-
-        fetch("http://127.0.0.1:4523/m1/6247470-5941367-default/api/exam",
+        
+        let DATA={
+    "action": "",
+    "sets": [],
+    "orderBy": [],
+    "page": 0,
+    "pageSize": 0,
+    "data": {
+        "examInfo": {
+            "Name": "测试线上考试",
+            "Rules": "<p><span>线上考试规则</span></p>",
+            "Type": "00",
+            "Mode": "00",
+            "Files": []
+        },
+        "examSessions": [
+            {
+                "PaperID": 61,
+                "PeriodMode": "00",
+                "StartTime": 1753580700000,
+                "EndTime": 1753581300000,
+                "Duration": 10,
+                "LateEntryTime": 3,
+                "EarlySubmissionTime": 3,
+                "QuestionShuffledMode": "06",
+                "MarkMethod": "00",
+                "NameVisibilityIn": false,
+                "ReviewerIds": [
+                    1574
+                ],
+                "MarkMode": "10"
+            }
+        ],
+        "examinee": [
+            1575,
+            1578,
+            1582
+        ],
+        "invigilators": []
+    },
+    "filter": {},
+    "authFilter": {}
+}
+        fetch("/api/exam",
         {
             method: "POST",
-            body: formData,
+            credentials: 'include',
+            body: JSON.stringify(DATA),
         })
         .then((response) => response.json())
         .then((result) => {
             if(result.status===0){
-                // action_toast.show("success", "考试创建成功！");
+                console.log("创建考试成功:", result);
             }
             else{
-                // action_toast.show("error", "考试创建失败！");
+                console.error("考试创建失败:", result);
             }
         })
         .catch( (error) => {
                 console.error("创建考试失败:", error);
-                action_toast.show("error", "考试创建失败！");
+                //action_toast.show("error", "考试创建失败！");
             });
     
         // fetch("/api/teacher/exam/createExam", {
@@ -475,11 +531,7 @@
                     />
                     期末成绩考试
                     <span class="tip-wrapper">
-                        <img
-                            src="/tip.png"
-                            alt="提示"
-                            style="width: 14px; height:auto"
-                        />
+                        <img class="tip" alt="提示" src="/tip.png" />
                         <div class="tooltip-text">{TIP_TEXT["final_exam"]}</div>
                     </span>
                 </label>
@@ -492,11 +544,7 @@
                     />
                     资格证考试
                     <span class="tip-wrapper">
-                        <img
-                            src="/tip.png"
-                            alt="提示"
-                            style="width: 14px; height:auto"
-                        />
+                       <img class="tip" alt="提示" src="/tip.png" />
                         <div class="tooltip-text">
                             {TIP_TEXT["qualifying_exams"]}
                         </div>
@@ -518,11 +566,7 @@
                     />
                     线上考试
                     <span class="tip-wrapper">
-                        <img
-                            src="/tip.png"
-                            alt="提示"
-                            style="width: 14px; height:auto"
-                        />
+                        <img class="tip" alt="提示" src="/tip.png" />
                         <div class="tooltip-text">{TIP_TEXT["online"]}</div>
                     </span>
                 </label>
@@ -537,12 +581,13 @@
                     {@render paperConfig(index)}
                 {/each}
 
-                <button
+                <!-- <button
                     class="add-paper-button"
                     onclick={() => {
                         addNewPaper();
                     }}>添加试卷</button
-                >
+                > -->
+
             </div>
         </div>
 
@@ -557,12 +602,19 @@
         <div class="examinee-container">
             <RequiredLabel text="考试人员" colon={false}  Asterisk={false}/>
             <div class="examinee-button-container normal-button-container">
-                <button
+                <!-- <button
                     class="examinee-button normal-button"
                     onclick={() => {
                         show_examinee_panel = true;
-                    }}>考生选择</button
-                >
+                    }}>考生选择</button> -->
+                    <Button
+                        type="primary"
+                        size="small"
+                        onclick={() => {
+                            show_examinee_panel = true;
+                            }}>
+                            考生选择
+                    </Button>
                 <div class="examinee-number-container">
                     <span class="examinee-number-text">已选择 </span>
                     <span
@@ -602,8 +654,8 @@
                 onclick={() => {
                     paper_configs.splice(paper_config_index, 1);
                     // 清空考场选择
-                    // exam_rooms = [];
-                    // invigilators = [];
+                     examRooms = [];
+                     invigilators = [];
                 }}><img src="/delete.svg" alt="删除" /></button
             >
             <button
@@ -622,14 +674,22 @@
                     <div class="config-row-content">
                         <div class="paper-button-container normal-button-container">
                             {#if paper_configs[paper_config_index].paper_id === 0}
-                                <button
+                                <!-- <button
                                     class="paper-button normal-button"
                                     onclick={() => {
                                         paper_configs[
                                             paper_config_index
                                         ].showPaperSelectionPanel = true;
                                     }}>试卷选择</button
-                                >
+                                > -->
+                                    <Button
+                                    type="primary"
+                                    onclick={() => {
+                                        paper_configs[
+                                            paper_config_index
+                                        ].showPaperSelectionPanel = true;
+                                    }}>试卷选择</Button>
+
                                 {:else}
                                 <div class="paper-item-container">
                                     {#if !paper_configs[paper_config_index].paper_type || !paper_configs[paper_config_index].paper_name}
@@ -679,11 +739,7 @@
                                 固定时段考试
 
                                 <span class="tip-wrapper">
-                                    <img
-                                        src="/tip.png"
-                                        alt="提示"
-                                        style="width: 14px; height:auto"
-                                    />
+                                    <img class="tip" alt="提示" src="/tip.png" />
                                     <div class="tooltip-text" style="min-width: 255px;">
                                         {TIP_TEXT["fixed"]}
                                     </div>
@@ -695,7 +751,7 @@
                     <div class="exam-time-container config-row">
                         <RequiredLabel text="考试时段" />
                         <div class="config-row-content">
-                            <DateTimePicker
+                            <!-- <DateTimePicker
                                 start_date={new Date()}
                                 end_date={new Date()}
                                 onSelectDate={onChooseTime(paper_config_index)}
@@ -706,7 +762,7 @@
                                             paper_config_index - 1
                                         ].end_time,
                                     )}
-                            ></DateTimePicker>
+                            ></DateTimePicker> -->
                         </div>
                     </div>
 
@@ -1089,6 +1145,10 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        .tip{
+            width: 14px;
+            height: auto;
+        }
         .tooltip-text {
             visibility: hidden;
             opacity: 0;
@@ -1132,6 +1192,9 @@
         margin-top: 10px;
         padding-bottom: 10px;
         gap:10px;
+        .duration-input{
+            width: 50px;
+        }
     }
 
     .total-duration-text{

@@ -1,19 +1,17 @@
 <script>
-    export let text = '';
-    export let Asterisk = true; // 控制是否显示星号，默认显示
-    export let colon = true; // 默认显示冒号
+    let { text = "", Asterisk = true, colon = true } = $props();
 </script>
 
 <div class="labelContainer">
     <span class="labelText">
         {#if Asterisk}
-            <span class="requiredIcon">*</span>
+            <span class="requiredIcon"> *</span>
         {/if}
         {text}
     </span>
     <span class="colon">
         {#if colon}
-            ：
+            :
         {/if}
     </span>
 </div>
@@ -36,10 +34,6 @@
 
     .requiredIcon {
         margin-right: 2px;
-        color:var(--red)
-    }
-
-    .colon {
-        margin-left: 2px;
+        color: var(--red);
     }
 </style>
