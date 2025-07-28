@@ -5,7 +5,7 @@
  * @Last Modified time: 2025-07-27 16:36:22 
  */ -->
 <script>
-  import { checkData } from '../batch_check/check_examinee';
+  import { checkData } from '../batch_check/check_examinee.js';
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import { page } from '$app/state';

@@ -5,13 +5,13 @@
  * @Last Modified time: 2025-07-27 16:36:22 
  */ -->
 <script>
-    import CustomSelect from "./CustomSelect.svelte";
+  
     import UneditableHashTags from "../../../../lib/components/Tag/UneditableHashTags.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
   import InputBox  from "$lib/components/Input/InputBox.svelte";
   import Option from "$lib/components/Select/Option.svelte";
   import Button from "$lib/components/Button/Button.svelte";
-  import Select from  "./CustomSelect.svelte"
+  import Select from "$lib/components/Select/Select.svelte"
 
     let {
         show = $bindable(false),
@@ -329,11 +329,14 @@
 
                     <div class="search-item">
                         <label>组卷方式</label>
-                    <CustomSelect
-                            options={structureOptions}
-                            bind:selected_value={selectedStructure}
-                            width="200px"
-                        />
+                    <Select
+                            bind:value={selectedStructure}
+                            filterable
+                        >
+                        {#each (structureOptions) as structureOptions}
+                        <option value={structureOptions.value}>{structureOptions.label}</option>
+                        {/each}
+                    </Select>
                     </div>
                 </div>
 

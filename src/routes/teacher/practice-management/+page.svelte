@@ -5,7 +5,6 @@
  * @Last Modified time: 2025-07-27 16:36:22 
  */ -->
 <script>
-  import CustomSelect from './_components/CustomSelect.svelte';
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import { goto } from '$app/navigation';
   import {toast} from '$lib/components/Toast/Toast.js';
