@@ -58,7 +58,7 @@
     let page_size = $state(10);
 
     // 计算总页数
-    let total_pages = $derived(Math.ceil(failure_student_list.length / PAGE_SIZE));
+    let total_pages = $derived(Math.ceil(failure_student_list.length / page_size));
 
     // 搜索关键词
     let search_keyword = $state("");
@@ -261,8 +261,8 @@
             return 0;
         });
 
-        const start = (search_params.page - 1) * PAGE_SIZE;
-        const end = start + PAGE_SIZE;
+        const start = (search_params.page - 1) * page_size;
+        const end = start + page_size;
         return sortedList.slice(start, end);
     }
 
@@ -314,7 +314,7 @@
     const newPageSize = parseInt(value, 10);
     if (newPageSize !== page_size) {
       page_size = newPageSize;
-      current_page_num = 1; // 重置为第一页
+      search_params.page = 1; // 重置为第一页
     }
   }
 
@@ -555,7 +555,7 @@
                      <Pagination
                         show_per_page={false}
                         totalItems={totals}
-                        pageSize={PAGE_SIZE}
+                        pageSize={page_size}
                         total_page_num={total_page}
                         currentPage={current_page}
                         on:pageChange={onNextOrLastPage}

@@ -11,7 +11,6 @@ import { pageQueryHandle } from "./utils";
  * @param {Function} params.fetch - SvelteKit提供的fetch函数
  */
 export async function load({ fetch }) {
-    practice_filter.set(true);
     if(get(practice_filter)){
         return {
 			practices: get(practice_data_list),
