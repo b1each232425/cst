@@ -3,6 +3,12 @@
   import Button from "$lib/components/Button/Button.svelte";
   import { tagColorList } from "../_utils/data";
   import { getColorIndex } from "../_utils/func";
+  import ImportQuestion from "../_components/ImportQuestion/ImportQuestion.svelte";
+  import InputBox from "$lib/components/Input/InputBox.svelte";
+  import Select from "$lib/components/Select/Select.svelte";
+  import Option from "$lib/components/Select/Option.svelte";
+
+    /*************** 试卷信息区 ****************/
 
     let paperName = $state("新建试卷");
     let category = $state("00");            // 试卷用途 00：考试 02：练习
@@ -12,7 +18,23 @@
     let questionCount = $state(0);
     let description = $state("");
     let tags = $state(["测试","简单","常识","English", "牛逼", "WDF"]);
+
+    /*************** 试卷信息区 ****************/
     
+
+
+    /*************** 控制开关区 ****************/
+
+    let importModalIsOpen = $state(false);
+
+    function closeImportModal() {
+        importModalIsOpen = false;
+    }
+
+    /*************** 控制开关区 ****************/
+
+
+
     /**************** 标签处理区 ****************/
 
     let toAddTag = $state("");
@@ -52,6 +74,9 @@
 
 <!-- {toAddTag}
 <button onclick={test}>{tags}</button> -->
+{#if importModalIsOpen}
+    <ImportQuestion onclose={closeImportModal}/>
+{/if}
 
 <div class="add-paper">
     <!-- 顶部栏 -->
@@ -69,7 +94,7 @@
         <div class="operation">
             <Button plain={true}>一键展开</Button>
             <Button plain={true}>一键收取</Button>
-            <Button>从题库中导入</Button>
+            <Button onclick={()=>{importModalIsOpen=true}}>从题库中导入</Button>
             <Button plain={true}>保存</Button>
             <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper-management')}>退出</Button>
         </div>
@@ -86,25 +111,31 @@
                 <div class="single-line">
                     <span class="info-label">试卷用途</span>
                     <select id="temp-select">
-                        <option id="temp-option">考试</option>
-                        <option id="temp-option">练习</option>
+                        <option value="00">考试</option>
+                        <option value="02">练习</option>
                     </select>
                 </div>
 
                 <!-- 试卷难度 -->
                 <div class="single-line">
                     <span class="info-label">试卷难度</span>
-                    <div>
-                        <input type="radio" name="paper-level" value="00" bind:group={level}>简单
-                        <input type="radio" name="paper-level" value="02" bind:group={level}>中等
-                        <input type="radio" name="paper-level" value="04" bind:group={level}>困难
+                    <div class="level-container">
+                        <div class="single-level">
+                            <input type="radio" name="paper-level" value="00" bind:group={level}>简单
+                        </div>
+                        <div class="single-level">
+                            <input type="radio" name="paper-level" value="02" bind:group={level}>中等
+                        </div>
+                        <div class="single-level">
+                            <input type="radio" name="paper-level" value="04" bind:group={level}>困难
+                        </div>
                     </div>
                 </div>
                 
                 <!-- 建议时长 -->
                 <div class="single-line">
                     <span class="info-label">建议时长</span>
-                    <input type="number" id="temp-duration" bind:value={suggestedDuration}>
+                    <InputBox bind:value={suggestedDuration} type="number" showLabel={false} clearable={false}/>
                     <span class="duration-span">分钟</span>
                 </div>
 
@@ -538,11 +569,6 @@
         padding: 6px 12px;
     }
 
-    #temp-duration {
-        padding: 6px;
-        width: 252px;
-    }
-
     #temp-average-question-score-input {
         padding: 4px 8px 4px 24px;
         width: 40px;
@@ -661,7 +687,7 @@
                     margin-bottom: 24px;
                     
                     /* 提示词 */
-                    .info-label { margin-right: 16px; }
+                    .info-label { margin-right: 16px; min-width: 56px; }
 
                     /* 标题 */
                     .title { font-weight: 1000; font-size: 20px; }
@@ -670,8 +696,25 @@
                     .single-line {
                         display: flex;
                         align-items: center;
+
+                        .level-container {
+                            display: flex;
+                            gap: 8px;
+
+                            .single-level {
+                                display: flex;
+                                align-items: flex-end;
+                                
+                                input {
+                                    width: 20px;
+                                    height: 20px;
+                                    accent-color: var(--blue);
+                                    margin-right: 8px;
+                                }
+                            }
+                        }
                         
-                        .duration-span { font-size: 12px; margin-left: 8px }
+                        .duration-span { font-size: 12px; margin-left: 8px; width: 34px; }
                         .total-score-number { font-weight: 500;}
                         .total-score-span { margin-left: 4px; font-weight: 500; }
                         .question-count-number { font-weight: 500; }
@@ -818,7 +861,7 @@
                             display: flex;
                             padding: 17px 21px;
                             justify-content: space-between;
-                            cursor: grab;
+                            /* cursor: grab; */
                             border-bottom: 1px solid var(--border-light);
 
                             span {
@@ -882,6 +925,7 @@
                         display: flex;
                         padding: 10px 20px;
                         align-items: center;
+                        min-width: 588px;
 
                         &:hover {
                             background-color: #edf2f7;

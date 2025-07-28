@@ -1,7 +1,9 @@
 <script>
     import Button from "$lib/components/Button/Button.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
+    import Pagination from "$lib/components/Pagination/Pagination.svelte";
 
+    let { onclose } = $props();
     let dropUpToggleIsOpen = $state(false);
     let filterIsOpen = $state(false);
 
@@ -14,7 +16,7 @@
         <!-- 头部 -->
         <div class="container-header">
             <span class="title">从题库导入题目</span>
-            <button>✖</button>
+            <button onclick={onclose}>✖</button>
         </div>
 
         <!-- 内容区 -->
@@ -131,73 +133,240 @@
                     <!-- 下拉筛选栏 -->
                     <!-- svelte-ignore a11y_click_events_have_key_events -->
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
-                    <div class="filter-header" onclick={filterIsOpen=!filterIsOpen}>
+                    <div class="filter-header" onmouseenter={filterIsOpen=true} onmouseleave={filterIsOpen=false}>
+                        <!-- 筛选菜单 -->
+                        {#if filterIsOpen}
+                            <div class="filter-container"  onmouseenter={filterIsOpen=true} onmouseleave={filterIsOpen=false}>
+                                <!-- 题型 -->
+                                <div class="type">
+                                    <span class="prompt">题型：</span>
+                                    <button>单选题</button>
+                                    <button>多选题</button>
+                                    <button>判断题</button>
+                                    <button>填空题</button>
+                                    <button>简答题</button>
+                                    <button>编程题</button>
+                                </div>
+
+                                <!-- 难度 -->
+                                <div class="level">
+                                    <span class="prompt">难度：</span>
+                                    <button>简单</button>
+                                    <button>中等</button>
+                                    <button>困难</button>
+                                </div>
+
+                                <!-- 标签 -->
+                                <div class="question-tags">
+                                    <span class="level-prompt">标签：</span>
+                                    <div class="tags-box">
+                                        <button>测试</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+                                        <button>常识</button>
+
+                                    </div>
+                                </div>
+
+                                <!-- 清空条件 -->
+                                <div class="clear-condition">
+                                    <button>清空条件</button>
+                                </div>
+                            </div>
+                        {/if}
                         <span class="filter-prompt">筛选</span>
                         <button class="dropdown-btn">{filterIsOpen?"∨":"∧"}</button>
                     </div>
 
-                    <!-- 筛选菜单 -->
-                    {#if filterIsOpen}
-                        <div class="filter-container">
-                            <!-- 题型 & 难度 -->
-                            <div class="type-level">
-                                <span class="prompt">题型：</span>
-                                <button>单选题</button>
-                                <button>多选题</button>
-                                <button>判断题</button>
-                                <button>填空题</button>
-                                <button>简答题</button>
-                                <button>编程题</button>
-                                <span class="prompt">难度：</span>
-                                <button>简单</button>
-                                <button>中等</button>
-                                <button>困难</button>
-                            </div>
-
-                            <!-- 标签 -->
-                            <div class="question-tags">
-                                <span class="level-prompt">标签：</span>
-                                <div class="tags-box">
-                                    <button>测试</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-                                    <button>常识</button>
-
-                                </div>
-                            </div>
-
-                            <!-- 清空条件 -->
-                            <div class="clear-condition">
-                                <button>清空条件</button>
-                            </div>
-                        </div>
-                    {/if}
+                    
                 </div>
 
                 <!-- 下半区 -->
                 <div class="bottom-area">
+                    <!-- 表格区域 -->
+                    <div class="questions-table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox"></th>
+                                    <th>题目内容</th>
+                                    <th>题目类型</th>
+                                    <th>题目难度</th>
+                                    <th>分值</th>
+                                    <th>更新时间</th>
+                                    <th>标签</th>
+                                </tr>
+                            </thead>
 
+                            <tbody>
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="easy-level">简单</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="normal-level">中等</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="hard-level">困难</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="hard-level">困难</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="hard-level">困难</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="hard-level">困难</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="hard-level">困难</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="hard-level">困难</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="hard-level">困难</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="hard-level">困难</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr><tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="hard-level">困难</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="hard-level">困难</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="hard-level">困难</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="hard-level">困难</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="checkbox"><input type="checkbox"></td>
+                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
+                                    <td class="question-type">多选题</td>
+                                    <td class="question-level"><span class="hard-level">困难</span></td>
+                                    <td class="question-score">10</td>
+                                    <td class="update-time">2025-06-03 21:37</td>
+                                    <td class="question-tags">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 翻页控制 -->
+                    <div class="page-control-container">
+                        <Pagination/>
+                    </div>
                 </div>
             </div>
         </div>
@@ -240,7 +409,7 @@
                 <button class="toggle-btn">∨</button>
             </div>
             <div class="btn-box">
-                <Button plain={true}>取消</Button>
+                <Button onclick={onclose} plain={true}>取消</Button>
                 <Button>确认导入</Button>
             </div>
         </div>
@@ -271,6 +440,7 @@
             max-height: 90vh;
             width: 85vw;
             max-width: 85vw;
+            min-width: 1100px;
             background-color: #fff;
             border-radius: var(--border-radius-md);
             display: flex;
@@ -421,93 +591,223 @@
 
                         /* 下拉筛选栏 */
                         .filter-header {
+                            position: relative;
                             display: flex;
                             justify-content: space-between;
-                            padding: 12px 16px;
+                            padding: 12px 0;
                             cursor: pointer;
-                            background-color: rgb(249, 249, 249);
+                            background-color: var(--bg-primary);
+                            border: 1px solid var(--border-light);
+                            border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
+
+                            &:hover {
+                                transition: all 0.3s ease;
+                                border-color: #1890ff;
+                                box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+                                    
+                                .filter-prompt, .dropdown-btn {
+                                    color: #1890ff;
+                                    transition: all 0.3s ease;
+                                }
+                            }
 
                             .filter-prompt {
                                 font-weight: 1000;
+                                padding-left: 16px;
                             }
 
                             .dropdown-btn {
                                 transform: scaleX(1.8);
                                 background: none;
                                 border: none;
-                                padding: 2px 0 0 0;
+                                padding: 2px 16px 0 0;
                                 height: 30px;
                                 cursor: pointer;
                                 font-size: 10px;
                                 font-weight: 1000;
                             }
-                        }
 
-                        /* 筛选菜单 */
-                        .filter-container {
-                            display: flex;
-                            flex-direction: column;
-                            gap: 12px;
-                            padding: 0 16px 12px;
-                            background-color: rgb(249, 249, 249);
-                            border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
-
-                            .prompt { font-size: 12px; font-weight: 500;}
-
-                            button {
-                                padding: 2px 8px;
-                                background-color: #f5f5f5;
-                                border: 1px solid #d9d9d9;
-                                border-radius: var(--btn-border-radius);
-                                font-size: 12px;
-                                cursor: pointer;
-
-                                &:hover {
-                                    border-color: #40a9ff;
-                                    transition: all 0.3;
-                                }
-                            }
-
-                            /* 题型 & 难度 */
-                            .type-level {
+                            /* 筛选菜单 */
+                            .filter-container {
                                 display: flex;
-                                flex-wrap: wrap;
-                                gap: 8px;
-                                align-items: center;
-                            }
+                                flex-direction: column;
+                                gap: 12px;
+                                background-color: var(--bg-primary);
+                                border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
+                                position: absolute;
+                                z-index: 1000;
+                                width: 100%;
+                                top: 100%;
+                                margin-top: 2.5px;
+                                padding: 16px 0;
+                                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                                cursor: default;
 
-                            /* 标签 */
-                            .question-tags {
-                                display: flex;
+                                .prompt { font-size: 12px; font-weight: 500;}
 
-                                .level-prompt {
+                                button {
+                                    padding: 2px 8px;
+                                    background-color: #f5f5f5;
+                                    border: 1px solid #d9d9d9;
+                                    border-radius: var(--btn-border-radius);
                                     font-size: 12px;
-                                    font-weight: 500;
-                                    margin-right: 8px;
-                                    width: 75px;
+                                    cursor: pointer;
+
+                                    &:hover {
+                                        border-color: #40a9ff;
+                                        transition: all 0.3;
+                                    }
                                 }
 
-                                .tags-box {
+                                /* 题型 & 难度 */
+                                .type, .level {
                                     display: flex;
                                     flex-wrap: wrap;
                                     gap: 8px;
-                                    flex-grow: 1;
-                                    overflow-y: auto;
-                                    max-height: 54px;
+                                    align-items: center;
+                                    padding: 0 16px;
+                                }
+
+                                /* 标签 */
+                                .question-tags {
+                                    display: flex;
+                                    padding: 0 16px;
+
+                                    .level-prompt {
+                                        font-size: 12px;
+                                        font-weight: 500;
+                                        margin-right: 8px;
+                                        min-width: max-content;
+                                    }
+
+                                    .tags-box {
+                                        display: flex;
+                                        flex-wrap: wrap;
+                                        gap: 8px;
+                                        flex-grow: 1;
+                                        overflow-y: auto;
+                                        max-height: 54px;
+                                    }
+                                }
+
+                                /* 清空条件 */
+                                .clear-condition {
+                                    display: flex;
+                                    justify-content: right;
+                                    margin-right: 16px;
                                 }
                             }
-
-                            /* 清空条件 */
-                            .clear-condition {
-                                display: flex;
-                                justify-content: right;
-                            }
                         }
+
                     }
 
                     /* 下半区 */
                     .bottom-area {
                         flex-grow: 1;
+                        display: flex;
+                        flex-direction: column;
+
+                        /* 表格区域 */
+                        .questions-table-container {
+                            padding: 0 16px;
+                            flex-grow: 1;
+                            max-height: calc(90vh - 320px);
+                            overflow-y: auto;
+
+                            table {
+                                border-collapse: collapse;
+
+                                tbody tr {
+                                    cursor: pointer;
+                                    
+                                    &:hover {
+                                        background-color: rgb(224, 240, 255);
+                                    }
+                                }
+
+                                th, td {
+                                    padding: 6px 3px;
+                                }
+
+                                th {
+                                    font-size: 12px;
+                                    color: var(--text-disabled);
+                                    text-align: center;
+                                    position: sticky;
+                                    top: 0;
+                                    background-color: var(--bg-primary);
+                                    padding-top: 14px;
+
+                                    input {
+                                        width: 16px;
+                                        height: 16px;
+                                        cursor: pointer;
+                                        accent-color: var(--blue);
+                                    }
+                                }
+
+                                td {
+                                    border-bottom: 1px solid var(--border-light);
+                                }
+
+                                .checkbox {
+                                    min-width: 32px;
+                                    text-align: center;
+                                    
+                                    input {
+                                        width: 16px;
+                                        height: 16px;
+                                        cursor: pointer;
+                                        accent-color: var(--blue);
+                                    }
+                                }
+                                .question-content {
+                                    padding: 6px 10px;
+                                    max-width: calc(85vw - 800px);
+                                    min-width: 300px;
+                                    white-space: nowrap;      /* 不允许文本换行 */
+                                    overflow: hidden;         /* 超出容器的文本被隐藏 */
+                                    text-overflow: ellipsis;  /* 超出的文本用省略号显示 */
+                                }
+                                .question-type {
+                                    font-size: 14px;
+                                    text-align: center;
+                                    min-width: 48px;
+                                }
+                                .question-level {
+                                    font-size: 14px;
+                                    text-align: center;
+                                    min-width: 48px;
+
+                                    .easy-level { color: green; }
+                                    .normal-level { color: orange; }
+                                    .hard-level { color: red; }
+                                }
+                                .question-score {
+                                    font-size: 14px;
+                                    text-align: center;
+                                    min-width: 24px;
+                                }
+                                .update-time {
+                                    font-size: 14px;
+                                    text-align: center;
+                                    min-width: 42px;
+                                }
+                                .question-tags {
+                                    font-size: 14px;
+                                    text-align: center;
+                                    min-width: 140px;
+                                }
+                            }
+                        }
+
+                        /* 翻页控制 */
+                        .page-control-container {
+                            display: flex;
+                            justify-content: right;
+                            padding: 0 16px;
+                        }
+
                     }
                 }
             }

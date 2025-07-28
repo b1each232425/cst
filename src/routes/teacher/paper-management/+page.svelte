@@ -7,6 +7,7 @@
     import Title from "$lib/components/Title/Title.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Button from "$lib/components/Button/Button.svelte";
+  import Pagination from "$lib/components/Pagination/Pagination.svelte";
 
     // 模拟数据
     let analogyData = [
@@ -194,6 +195,328 @@
             AuthWhereBeginPos: 0,
             AuthProc: false
         },
+
+        {
+            ID: 65,
+            // 试卷ID
+            Name: "H3C选择题卷",
+            // 试卷名称
+            AssemblyType: "04",
+            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
+            Category: "02",
+            // 试卷用途 00：考试 02：练习
+            Level: "04",
+            // 试卷难度 00：简单 02：中等 04：困难
+            SuggestedDuration: 30,
+            // 建议时长，单位为分钟
+            Tags: ["H3C"],
+            // 试卷标签
+            Description: null,
+            // 试卷说明，介绍整张试卷
+            Creator: 1,
+            // 创建者
+            CreateTime: 1753104023766,
+            // 创建时间
+            UpdatedBy: null,
+            // 更新者
+            UpdateTime: 1753104023766,
+            // 更新时间
+            Status: "00",
+            // 状态 00：正常， 02：异常
+            AccessMode: "00",
+            // 试卷访问权限，00私有 02共享 04公开
+            TotalScore: 290,
+            QuestionCount: 29,
+            GroupCount: null,
+            TableMap: null,
+            Action: "",
+            Condition: "",
+            Expr: "",
+            Values: null,
+            Columns: null,
+            QryResult: null,
+            Result: null,
+            RowCount: 0,
+            AuthExpr: "",
+            AuthWhereValues: null,
+            AuthWhereBeginPos: 0,
+            AuthProc: false
+        },
+        {
+            ID: 65,
+            // 试卷ID
+            Name: "H3C选择题卷",
+            // 试卷名称
+            AssemblyType: "04",
+            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
+            Category: "02",
+            // 试卷用途 00：考试 02：练习
+            Level: "04",
+            // 试卷难度 00：简单 02：中等 04：困难
+            SuggestedDuration: 30,
+            // 建议时长，单位为分钟
+            Tags: ["H3C"],
+            // 试卷标签
+            Description: null,
+            // 试卷说明，介绍整张试卷
+            Creator: 1,
+            // 创建者
+            CreateTime: 1753104023766,
+            // 创建时间
+            UpdatedBy: null,
+            // 更新者
+            UpdateTime: 1753104023766,
+            // 更新时间
+            Status: "00",
+            // 状态 00：正常， 02：异常
+            AccessMode: "00",
+            // 试卷访问权限，00私有 02共享 04公开
+            TotalScore: 290,
+            QuestionCount: 29,
+            GroupCount: null,
+            TableMap: null,
+            Action: "",
+            Condition: "",
+            Expr: "",
+            Values: null,
+            Columns: null,
+            QryResult: null,
+            Result: null,
+            RowCount: 0,
+            AuthExpr: "",
+            AuthWhereValues: null,
+            AuthWhereBeginPos: 0,
+            AuthProc: false
+        },
+        {
+            ID: 65,
+            // 试卷ID
+            Name: "H3C选择题卷",
+            // 试卷名称
+            AssemblyType: "04",
+            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
+            Category: "02",
+            // 试卷用途 00：考试 02：练习
+            Level: "04",
+            // 试卷难度 00：简单 02：中等 04：困难
+            SuggestedDuration: 30,
+            // 建议时长，单位为分钟
+            Tags: ["H3C"],
+            // 试卷标签
+            Description: null,
+            // 试卷说明，介绍整张试卷
+            Creator: 1,
+            // 创建者
+            CreateTime: 1753104023766,
+            // 创建时间
+            UpdatedBy: null,
+            // 更新者
+            UpdateTime: 1753104023766,
+            // 更新时间
+            Status: "00",
+            // 状态 00：正常， 02：异常
+            AccessMode: "00",
+            // 试卷访问权限，00私有 02共享 04公开
+            TotalScore: 290,
+            QuestionCount: 29,
+            GroupCount: null,
+            TableMap: null,
+            Action: "",
+            Condition: "",
+            Expr: "",
+            Values: null,
+            Columns: null,
+            QryResult: null,
+            Result: null,
+            RowCount: 0,
+            AuthExpr: "",
+            AuthWhereValues: null,
+            AuthWhereBeginPos: 0,
+            AuthProc: false
+        },
+        {
+            ID: 65,
+            // 试卷ID
+            Name: "H3C选择题卷",
+            // 试卷名称
+            AssemblyType: "04",
+            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
+            Category: "02",
+            // 试卷用途 00：考试 02：练习
+            Level: "04",
+            // 试卷难度 00：简单 02：中等 04：困难
+            SuggestedDuration: 30,
+            // 建议时长，单位为分钟
+            Tags: ["H3C"],
+            // 试卷标签
+            Description: null,
+            // 试卷说明，介绍整张试卷
+            Creator: 1,
+            // 创建者
+            CreateTime: 1753104023766,
+            // 创建时间
+            UpdatedBy: null,
+            // 更新者
+            UpdateTime: 1753104023766,
+            // 更新时间
+            Status: "00",
+            // 状态 00：正常， 02：异常
+            AccessMode: "00",
+            // 试卷访问权限，00私有 02共享 04公开
+            TotalScore: 290,
+            QuestionCount: 29,
+            GroupCount: null,
+            TableMap: null,
+            Action: "",
+            Condition: "",
+            Expr: "",
+            Values: null,
+            Columns: null,
+            QryResult: null,
+            Result: null,
+            RowCount: 0,
+            AuthExpr: "",
+            AuthWhereValues: null,
+            AuthWhereBeginPos: 0,
+            AuthProc: false
+        },{
+            ID: 65,
+            // 试卷ID
+            Name: "H3C选择题卷",
+            // 试卷名称
+            AssemblyType: "04",
+            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
+            Category: "02",
+            // 试卷用途 00：考试 02：练习
+            Level: "04",
+            // 试卷难度 00：简单 02：中等 04：困难
+            SuggestedDuration: 30,
+            // 建议时长，单位为分钟
+            Tags: ["H3C"],
+            // 试卷标签
+            Description: null,
+            // 试卷说明，介绍整张试卷
+            Creator: 1,
+            // 创建者
+            CreateTime: 1753104023766,
+            // 创建时间
+            UpdatedBy: null,
+            // 更新者
+            UpdateTime: 1753104023766,
+            // 更新时间
+            Status: "00",
+            // 状态 00：正常， 02：异常
+            AccessMode: "00",
+            // 试卷访问权限，00私有 02共享 04公开
+            TotalScore: 290,
+            QuestionCount: 29,
+            GroupCount: null,
+            TableMap: null,
+            Action: "",
+            Condition: "",
+            Expr: "",
+            Values: null,
+            Columns: null,
+            QryResult: null,
+            Result: null,
+            RowCount: 0,
+            AuthExpr: "",
+            AuthWhereValues: null,
+            AuthWhereBeginPos: 0,
+            AuthProc: false
+        },
+        {
+            ID: 65,
+            // 试卷ID
+            Name: "H3C选择题卷",
+            // 试卷名称
+            AssemblyType: "04",
+            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
+            Category: "02",
+            // 试卷用途 00：考试 02：练习
+            Level: "04",
+            // 试卷难度 00：简单 02：中等 04：困难
+            SuggestedDuration: 30,
+            // 建议时长，单位为分钟
+            Tags: ["H3C"],
+            // 试卷标签
+            Description: null,
+            // 试卷说明，介绍整张试卷
+            Creator: 1,
+            // 创建者
+            CreateTime: 1753104023766,
+            // 创建时间
+            UpdatedBy: null,
+            // 更新者
+            UpdateTime: 1753104023766,
+            // 更新时间
+            Status: "00",
+            // 状态 00：正常， 02：异常
+            AccessMode: "00",
+            // 试卷访问权限，00私有 02共享 04公开
+            TotalScore: 290,
+            QuestionCount: 29,
+            GroupCount: null,
+            TableMap: null,
+            Action: "",
+            Condition: "",
+            Expr: "",
+            Values: null,
+            Columns: null,
+            QryResult: null,
+            Result: null,
+            RowCount: 0,
+            AuthExpr: "",
+            AuthWhereValues: null,
+            AuthWhereBeginPos: 0,
+            AuthProc: false
+        },
+        {
+            ID: 65,
+            // 试卷ID
+            Name: "H3C选择题卷",
+            // 试卷名称
+            AssemblyType: "04",
+            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
+            Category: "02",
+            // 试卷用途 00：考试 02：练习
+            Level: "04",
+            // 试卷难度 00：简单 02：中等 04：困难
+            SuggestedDuration: 30,
+            // 建议时长，单位为分钟
+            Tags: ["H3C"],
+            // 试卷标签
+            Description: null,
+            // 试卷说明，介绍整张试卷
+            Creator: 1,
+            // 创建者
+            CreateTime: 1753104023766,
+            // 创建时间
+            UpdatedBy: null,
+            // 更新者
+            UpdateTime: 1753104023766,
+            // 更新时间
+            Status: "00",
+            // 状态 00：正常， 02：异常
+            AccessMode: "00",
+            // 试卷访问权限，00私有 02共享 04公开
+            TotalScore: 290,
+            QuestionCount: 29,
+            GroupCount: null,
+            TableMap: null,
+            Action: "",
+            Condition: "",
+            Expr: "",
+            Values: null,
+            Columns: null,
+            QryResult: null,
+            Result: null,
+            RowCount: 0,
+            AuthExpr: "",
+            AuthWhereValues: null,
+            AuthWhereBeginPos: 0,
+            AuthProc: false
+        },
     ];
 
     let paperName = $state("");
@@ -310,7 +633,9 @@
 
     <!-- 翻页控制 -->
     <div class="page-control-container">
-        <div class="page-control">(我是翻页组件)</div>
+        <div class="page-control">
+            <Pagination/>
+        </div>
     </div>
 </div>
 
@@ -321,13 +646,15 @@
     .paper-management {
         font-family: 'Noto Sans SC', sans-serif;
         color: var(--text-primary);
+        display: flex;
+        flex-direction: column;
         
         /* 操作栏区域 */
         .header {
             /* background-color: red; */
             display: flex;
             font-size: 14px;
-            margin: 30px 0;
+            margin: 15px 0;
 
             /* 左侧 */
             .left-side {
@@ -370,7 +697,7 @@
 
         /* 表格区域 */
         .table-container {
-            max-height: 70vh;
+            height: calc(87vh - 200px);
             overflow: auto;
 
             /* 表格内容 */
@@ -382,12 +709,13 @@
 
                 th, td {
                     background-color: var(--bg-primary);
+                    padding: 8px 6px;
                 }
 
                 th {
                     color: rgb(178, 178, 178);
                     font-weight: normal;
-                    height: 40px;
+                    height: 30px;
                     position: sticky;
                     top: 0;
                     z-index: 1;
@@ -395,7 +723,7 @@
 
                 td {
                     border-bottom: 1px solid var(--border-light);
-                    height: 75px;
+                    height: 60px;
 
                     /* 试卷难度 */
                     .easy-level { color: var(--green); }
