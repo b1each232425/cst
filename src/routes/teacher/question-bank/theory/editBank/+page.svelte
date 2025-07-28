@@ -2,7 +2,7 @@
  * @Author: qjj && qiaojunjie6@qq.com
  * @Date: 2025-07-25 10:51:51
  * @Author: qjj && qiaojunjie6@qq.com
- * @LastEditTime: 2025-07-25 10:51:51
+ * @LastEditTime: 2025-07-28 18:54:51
  * @FilePath: \src\routes\teacher\question-bank-management\theory\newBank\+page.svelte
  * @Description: 理论题库新建页
  * @LastEditors: qjj 
@@ -341,6 +341,7 @@ data.push({
             return;
         }
         toast.success("添加题目成功");
+     
 
 
     } catch (error) {
@@ -366,6 +367,11 @@ data.push({
            await AddNewQuestion(new_question_data);
       }
         
+         show_single_select_edit_panel = false;
+        show_multiple_select_edit_panel = false;
+        show_judge_select_edit_panel = false;
+        show_fill_bank_edit_panel = false;
+        show_short_answer_edit_panel = false;
         modifying_question = null;
         new_question_type = "";
         is_dirty = false;

@@ -18,7 +18,7 @@
 
     import { TheoryQuestion } from "../theory/type";
     import { formatTimestamp } from "../utils/time_utils";
-    import QuestionPreviewPanel from "../_components/QuestionPreviewPanel.svelte";
+    import QuestionPreviewPanel from "./QuestionPreviewPanel.svelte";
     import { questionLimit } from "../utils/questionConfig.js";
     import { getQuestionFilesPath } from "../utils/utils";
 
