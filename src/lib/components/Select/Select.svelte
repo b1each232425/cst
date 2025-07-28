@@ -188,6 +188,8 @@
     flex-direction: column;
     font-family: 'Inter', sans-serif;
     font-size: 14px;
+    min-width: 150px;
+    width: 100%;
     .dropdown-input {
       padding: 5px 36px 5px 12px;
       border: 1px solid #dcdfe6;
