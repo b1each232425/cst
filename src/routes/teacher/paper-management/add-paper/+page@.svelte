@@ -201,7 +201,7 @@
                 <div class="question-groups-box">
                     <div class="single-group">
                         <span>一、单选题（共0题，共0分）</span>
-                        <div>
+                        <div class="btn-box">
                             <!-- 编辑按钮 -->
                             <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
                                 <svg
@@ -221,13 +221,13 @@
                                 </svg>
                             </button>
                             <!-- 删除按钮 -->
-                            <button class="delete-group-btn" title="删除">x</button>
+                            <button class="delete-group-btn" title="删除">✖</button>
                         </div>
                     </div>
 
                     <div class="single-group">
                         <span>二、多选题（共0题，共0分）</span>
-                        <div>
+                        <div class="btn-box">
                             <!-- 编辑按钮 -->
                             <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
                                 <svg
@@ -247,12 +247,12 @@
                                 </svg>
                             </button>
                             <!-- 删除按钮 -->
-                            <button class="delete-group-btn" title="删除">x</button>
+                            <button class="delete-group-btn" title="删除">✖</button>
                         </div>
                     </div>
                     <div class="single-group">
                         <span>三、判断题（共0题，共0分）</span>
-                        <div>
+                        <div class="btn-box">
                             <!-- 编辑按钮 -->
                             <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
                                 <svg
@@ -272,12 +272,12 @@
                                 </svg>
                             </button>
                             <!-- 删除按钮 -->
-                            <button class="delete-group-btn" title="删除">x</button>
+                            <button class="delete-group-btn" title="删除">✖</button>
                         </div>
                     </div>
                     <div class="single-group">
                         <span>四、填空题（共0题，共0分）</span>
-                        <div>
+                        <div class="btn-box">
                             <!-- 编辑按钮 -->
                             <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
                                 <svg
@@ -297,12 +297,12 @@
                                 </svg>
                             </button>
                             <!-- 删除按钮 -->
-                            <button class="delete-group-btn" title="删除">x</button>
+                            <button class="delete-group-btn" title="删除">✖</button>
                         </div>
                     </div>
                     <div class="single-group" style="border-bottom: transparent;">
                         <span>五、简答题（共0题，共0分）</span>
-                        <div>
+                        <div class="btn-box">
                             <!-- 编辑按钮 -->
                             <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
                                 <svg
@@ -322,7 +322,7 @@
                                 </svg>
                             </button>
                             <!-- 删除按钮 -->
-                            <button class="delete-group-btn" title="删除">x</button>
+                            <button class="delete-group-btn" title="删除">✖</button>
                         </div>
                     </div>
                 </div>
@@ -872,23 +872,33 @@
                                 background-color: var(--bg-secondary);
                             }
 
-                            .edit-group-btn, .delete-group-btn {
-                                width: 24px;
-                                height: 24px;
-                                border: 1px solid var(--border-light);
-                                background: none;
-                                border-radius: var(--btn-border-radius);
-                                cursor: pointer;
-                                background-color: var(--bg-primary);
-                            }
+                            .btn-box {
+                                display: flex;
+                                align-items: center;
+                                gap: 3px;
 
-                            /* 编辑按钮 */
-                            .edit-group-btn {
-                                padding: 0;
+                                svg {
+                                    padding-top: 5px;
+                                }
 
-                                &:hover {
-                                    border-color: var(--green);
-                                    color: var(--green);
+                                .edit-group-btn, .delete-group-btn {
+                                    width: 24px;
+                                    height: 24px;
+                                    border: 1px solid var(--border-light);
+                                    background: none;
+                                    border-radius: var(--btn-border-radius);
+                                    cursor: pointer;
+                                    background-color: var(--bg-primary);
+                                }
+    
+                                /* 编辑按钮 */
+                                .edit-group-btn {
+                                    padding: 0;
+    
+                                    &:hover {
+                                        border-color: var(--green);
+                                        color: var(--green);
+                                    }
                                 }
                             }
 
@@ -969,6 +979,7 @@
                             width: 22px;
                             height: 22px;
                             /* background-color: red; */
+                            visibility: hidden;  /* 暂时没有编辑功能 */
 
                             &:hover {
                                 color: #1890ff;
@@ -1029,6 +1040,14 @@
                                 background-color: #fafafa;
                                 display: flex;
                                 border-bottom: 1px solid var(--border-light);
+
+                                &:hover {
+                                    background-color: #edf2f7;
+
+                                    .sequence { color: #1890ff; }
+
+                                    .toggle-btn-down, .toggle-btn-left { color: #1890ff; }
+                                }
 
                                 /* 左侧区域 */
                                 .header-left {

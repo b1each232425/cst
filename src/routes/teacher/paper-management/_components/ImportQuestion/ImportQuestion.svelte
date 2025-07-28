@@ -638,7 +638,7 @@
                                 z-index: 1000;
                                 width: 100%;
                                 top: 100%;
-                                margin-top: 2.5px;
+                                margin-top: 2px;
                                 padding: 16px 0;
                                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                                 cursor: default;
@@ -712,7 +712,7 @@
                             padding: 0 16px;
                             flex-grow: 1;
                             max-height: calc(90vh - 320px);
-                            overflow-y: auto;
+                            overflow: auto;
 
                             table {
                                 border-collapse: collapse;

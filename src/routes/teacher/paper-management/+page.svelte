@@ -7,7 +7,8 @@
     import Title from "$lib/components/Title/Title.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Button from "$lib/components/Button/Button.svelte";
-  import Pagination from "$lib/components/Pagination/Pagination.svelte";
+    import Pagination from "$lib/components/Pagination/Pagination.svelte";
+    import Tag from "$lib/components/Tag/Tag.svelte";
 
     // 模拟数据
     let analogyData = [
@@ -550,7 +551,7 @@
                     placeholder="搜索试卷标签"
                     showLabel={false}
                     type="text"
-                    bind:value={paperName}
+                    bind:value={paperTag}
                 />
             </div>
         </div>
@@ -606,7 +607,11 @@
                             </div>
                         </td>
                         <td class="level"><span class={levelTrans[levelTrans[paper.Level]]}>{levelTrans[paper.Level]}</span></td>
-                        <td class="access-mode"><span class={accessModeTrans[accessModeTrans[paper.AccessMode]]}>{accessModeTrans[paper.AccessMode]}</span></td>
+                        <td class="access-mode">
+                            <div class="access-mode-box">
+                                <Tag type={accessModeTrans[accessModeTrans[paper.AccessMode]]} them="light">{accessModeTrans[paper.AccessMode]}</Tag>
+                            </div>
+                        </td>
                         <td class="update-time">{formatTimestamp(paper.UpdateTime)}</td>
                         <td class="create-time">{formatDate(paper.CreateTime)}</td>
                         <td>
@@ -707,6 +712,17 @@
                 text-align: center;
                 border-collapse: collapse;
 
+                tbody tr {
+
+                    &:hover {
+
+                        td {
+
+                            background-color: rgb(236, 242, 254);
+                        }
+                    }
+                }
+
                 th, td {
                     background-color: var(--bg-primary);
                     padding: 8px 6px;
@@ -726,9 +742,9 @@
                     height: 60px;
 
                     /* 试卷难度 */
-                    .easy-level { color: var(--green); }
-                    .normal-level { color: var(--orange); }
-                    .hard-level { color: var(--red); }
+                    .easy-level { font-size: 15px; color: var(--green); }
+                    .normal-level { font-size: 15px; color: var(--orange); }
+                    .hard-level { font-size: 15px; color: var(--red); }
 
                     /* 共享状态 */
                     .private-access {
@@ -776,6 +792,12 @@
                                 transition: all 0.2s;
                                 white-space: nowrap;  /* 文本内容不换行 */
                                 border-radius: var(--btn-border-radius);
+                                border: 1px solid var(--border-medium);
+
+                                &:hover {
+                                    font-weight: bold;
+                                    border: 1px solid var(--border-dark)
+                                }
                             }
 
                             .blue-btn { 
@@ -792,7 +814,7 @@
         
                                 &:hover {
                                     background-color: #fff2f0;
-                                    color: rgb(34, 34, 34);
+                                    color: var(--red);
                                 }
                             }
                         }
@@ -863,6 +885,15 @@
                 }
                 .access-mode {
                     min-width: 58px;
+
+                    .access-mode-box {
+                        padding-top: 4px;
+                        width: 40px;
+                        /* background-color: red; */
+                        width: 100%;
+                        display: flex;
+                        justify-content: center;
+                    }
                 }
                 .update-time {
                     min-width: 74px;

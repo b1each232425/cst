@@ -27,9 +27,9 @@ export const accessModeTrans = {
     "02": "共享",
     "04": "公开",
 
-    "私有": "private-access",
-    "共享": "share-access",
-    "公开": "public-access",
+    "私有": "info",
+    "共享": "primary",
+    "公开": "success",
 };
 
 // 标签颜色
