@@ -1,9 +1,9 @@
 <script>
-     import Toast from "$lib/components/Toast/Toast.svelte";  //吐司
    import Pagination from "$lib/components/Pagination/Pagination.svelte";  //分页器
     import InputBox from "$lib/components/Input/InputBox.svelte";//搜索框
     import StudentImportPanel from "./StudentImportPanel.svelte";
     import Button from "$lib/components/Button/Button.svelte";
+  import { toast } from "$lib/components/Toast/Toast.js";
 
     let {
         show_panel = false,
@@ -124,41 +124,6 @@
      * @type {boolean} 表示是否全选
      */
     let is_all_selected = $state(false);
-
-    let show_action_toast = $state(false);
-    /**等待组件封装
-     * @type {import("$lib/components/Toast/Toast.svelte").default | null}
-     */
-    let action_toast = $state(null);
-
-      // Toast 状态管理
-  let showToast = $state(false);
-  let toastConfig = $state({
-    type: 'success',
-    message: '',
-    duration: 3000,
-    showClose: true,
-    plain: true
-  });
-
-  // 自定义 Toast 显示函数
-  function showToastMessage(type, message, duration = 3000) {
-    toastConfig = {
-      type,
-      message,
-      duration,
-      showClose: true,
-      plain: true
-    };
-    showToast = true;
-    
-    // 自动隐藏（与组件内部的自动关闭配合）
-    setTimeout(() => {
-      showToast = false;
-    }, duration + 100);
-  }
-
-
     let show_student_import_panel = $state(false);
 
     /**
@@ -313,7 +278,7 @@
             },
         ).then((response) => {
   if (response.status === 404) {
-           {action_toast? showToastMessage("error", "搜索失败，请稍后重试") : null}
+          toast.error("找不到页面");
             return;
         }
         return response.json();
@@ -323,7 +288,7 @@
             student_list = [];
             totals = 0;
             search_params.page = current_page;
-          {action_toast ? showToastMessage("error", error) : null}
+          toast.error(error)
         } else {
             student_list = result.data === null ? [] : result.data;
             totals = result.rowCount;
@@ -348,7 +313,7 @@
         loading = false;
         }).catch((error)=>{
             console.log(error);
-            showToastMessage("error","获取学生列表失败");
+            toast.error("获取学生列表失败");
         })
 
       
@@ -417,7 +382,7 @@
             },
         ).then((response)=>{
  if (response.status === 404) {
-           {action_toast&& showToastMessage("error", "获取学生列表失败");}
+          toast.error("获取学生列表失败");
             return;
         }
         return response.json();
@@ -427,7 +392,7 @@ if (result.Status != 0) {
             selected_ids = [];
             totals = 0;
             search_params.page = current_page;
-            {action_toast && showToastMessage("error", error);}
+            toast.error(error);
         } else {
             selected_ids = result.Data === null ? [] : result.Data;
         }
@@ -437,7 +402,7 @@ if (result.Status != 0) {
             selected_ids = [];
             totals = 0;
             search_params.page = current_page;
-             {action_toast && showToastMessage("error", error);}
+            toast.error(error);
         });
         
     }
@@ -770,7 +735,6 @@ if (result.Status != 0) {
                         > 条
                     </span>
                     <Pagination 
-                        show_per_page={false}
                         totalItems={totals}
                         total_page_num={total_page}
                         pageSize={search_params.pageSize}
@@ -778,7 +742,6 @@ if (result.Status != 0) {
                         on:pageChange={onPageChooseFunc}
                         on:pageSizeChange={handle_page_size_change}
                         jumpPage={onSearchPageFunc}
-                        
                     ></Pagination> 
                 </div>
             {/if}
@@ -809,13 +772,6 @@ if (result.Status != 0) {
     </div>
 </div>
  
-<Toast 
-type= {toastConfig.type}
-message={toastConfig.message}
-duration={toastConfig.duration}
-plain={toastConfig.plain}
-bind:visible={showToast} 
-bind:this={action_toast} />
 
 <StudentImportPanel
     onImport={(/** @type {any[]} */ success_student, /** @type {boolean} */ has_error) => {
@@ -997,16 +953,7 @@ bind:this={action_toast} />
         gap: 16px;
     }
 
-    .back-btn {
-        border: none;
-        border-radius: 3px;
-        background-color: #e3e3e3;
-        width: 100px;
-        height: 32px;
-        color: #333;
-        font-size: 14px;
-        cursor: pointer;
-    }
+
 
     .selected-examinees-container {
         display: flex;
@@ -1024,41 +971,6 @@ bind:this={action_toast} />
         overflow-y: auto;
     }
 
-    .btn {
-        min-width: 80px;
-        padding: 7px 18px;
-        border-radius: 5px;
-        border: 1.5px solid #d9d9d9;
-        background: #fff;
-        color: #0052d9;
-        font-size: 15px;
-        cursor: pointer;
-        font-weight: 500;
-        transition: all 0.2s;
-
-        @media (max-width: 768px) {
-            min-width: 70px;
-            padding: 6px 16px;
-            font-size: 14px;
-        }
-
-        &:hover {
-            background: #f0f6ff;
-        }
-        &.save {
-            background: #0052d9;
-            color: #fff;
-            border-color: #0052d9;
-            &:hover {
-                background: #2563eb;
-                border-color: #2563eb;
-            }
-        }
-        &:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-    }
 
     .panel-footer {
         display: flex;
@@ -1131,27 +1043,6 @@ bind:this={action_toast} />
         }
     }
 
-    .download-template-button {
-        border: none;
-        border-radius: 3px;
-        background-color: #e3e3e3;
-        width: 100px;
-        height: 32px;
-        color: #165dff;
-        font-size: 14px;
-        cursor: pointer;
-    }
-
-    .upload-file-button {
-        border: none;
-        border-radius: 3px;
-        background-color: #165dff;
-        width: 100px;
-        height: 32px;
-        color: white;
-        font-size: 14px;
-        cursor: pointer;
-    }
 
     .no-data-text {
         position: absolute;

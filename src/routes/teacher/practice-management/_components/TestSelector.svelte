@@ -6,7 +6,7 @@
  */ -->
 <script>
     import CustomSelect from "./CustomSelect.svelte";
-    import Tag from "../../../../lib/components/Tag/Tag.svelte";
+    import UneditableHashTags from "../../../../lib/components/Tag/UneditableHashTags.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
   import InputBox  from "$lib/components/Input/InputBox.svelte";
   import Option from "$lib/components/Select/Option.svelte";
@@ -391,7 +391,7 @@
                                     {test.total_score}
                                 </div>
                                 <div class="cell standard-cell">
-                                    <Tags tags={test.tags} />
+                                    <UneditableHashTags tags={test.tags} />
                                 </div>
                                 <div class="cell suggest-cell">{test.duration}</div>
                                 <div class="cell diff-cell">
@@ -422,24 +422,13 @@
                     <div class="total-count">共 {totalTests} 条</div>
                     <Pagination
                         totalItems={totalTests}
-                        total_page_num={totalPages}
                         currentPage={currentPage}
-                        max_show_page_num={5}
-                        data_num_per_page_options={[
-                            { value: 5, label: "5条/页" },
-                            { value: 10, label: "10条/页" },
-                            { value: 20, label: "20条/页" },
+                        pageSizeOptions={[
+                          5,10,20
                         ]}
-                        selected={{
-                            value: pageSize,
-                            label: `${pageSize}条/页`,
-                        }}
                         on:pageChange={handlePageChoose}
                         on:pageSizeChange={handlePageSizeChange}
                         jumpPage={handlePageChoose}
-                        selectOptionFunc={handlePageSizeChange}
-                        onPageSearchFunc={handlePageSearch}
-                        expand_direction="up"
                     /> 
                 </div>
             </div>

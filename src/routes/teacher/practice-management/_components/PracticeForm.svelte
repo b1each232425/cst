@@ -572,24 +572,7 @@
       width: 80%;
     }
 
-    // 表单输入框
-    .form-input {
-      width: 100%;
-      height: $form-input-height;
-      padding: 0 10px;
-      border: 1px solid $border-color;
-      border-radius: $border-radius;
-      font-size: 14px;
-      outline: none;
-
-      &:focus {
-        border-color: $primary-color;
-      }
-
-      &::placeholder {
-        color: $placeholder-color;
-      }
-    }
+    
 
     .error-message {
       font-size: 12px;
@@ -669,26 +652,6 @@
       cursor: pointer;
       margin: 0 30px;
 
-      &.cancel-btn {
-        background-color: white;
-        border: 1px solid #ddd;
-        color: $text-color;
-
-        &:hover {
-          border-color: $primary-color;
-          color: $primary-color;
-        }
-      }
-
-      &.save-btn {
-        background-color: $primary-color;
-        border: none;
-        color: white;
-
-        &:hover {
-          background-color: $primary-hover;
-        }
-      }
     }
   }
 

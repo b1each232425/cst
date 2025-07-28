@@ -8,46 +8,14 @@
     import PracticeForm from "../_components/PracticeForm.svelte";
     import { practice_data_list } from "../store/practiceData"
     import { goto } from "$app/navigation";
-    import ActionToast from "$lib/components/Toast/Toast.svelte";
     import MessageBox from "$lib/components/MessageBox/MessageBox.svelte";
+  import  {toast}  from "$lib/components/Toast/Toast.js";
   
     
     // Dialog状态
     let isDialogOpen = $state(false);
     
-    //todo
-    // 创建ActionToast组件实例
-    /**todo
-     * @type {ActionToast}
-     */
-    let actionToast;
 
-     // Toast 状态管理
-  let showToast = $state(false);
-  let toastConfig = $state({
-    type: 'success',
-    message: '',
-    duration: 3000,
-    showClose: true,
-    plain: true
-  });
-
-  // 自定义 Toast 显示函数
-  function showToastMessage(type, message, duration = 3000) {
-    toastConfig = {
-      type,
-      message,
-      duration,
-      showClose: true,
-      plain: true
-    };
-    showToast = true;
-    
-    // 自动隐藏（与组件内部的自动关闭配合）
-    setTimeout(() => {
-      showToast = false;
-    }, duration + 100);
-  }
 
     /**
      * @param {{ practice_name: any; grading_method: any; test: { id: any; suggest_duration?:number}; students: any[]; allowed_attempts:any}} practiceData
@@ -83,7 +51,7 @@
 
             if (data.status !== 0) {
                 console.error("创建练习失败:", data.msg);
-                showToastMessage("error", data.msg || "创建练习失败", "", 1000);
+                toast.error("error", data.msg || "创建练习失败", "", 1000);
                 return;
             }
             // 创建成功，将新创建的练习添加到store
@@ -104,7 +72,7 @@
             });
             
             // 显示创建成功的提示
-            showToastMessage("success", "创建练习成功", "", 1000);
+            toast.success( "创建练习成功", 1000);
             
             // 延迟跳转，让用户能看到提示
             setTimeout(() => {
@@ -112,7 +80,7 @@
             }, 1000);
             }).catch(error => { 
                  console.error("创建练习请求异常:", error);
-            showToastMessage("error", "创建练习请求异常", "", 1000);
+            toast.error( "创建练习请求异常", 1000);
             });
            
     

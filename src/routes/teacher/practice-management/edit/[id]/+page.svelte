@@ -11,8 +11,8 @@
   import { goto } from '$app/navigation';
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
   import { page } from '$app/stores';
-  import Toast from '$lib/components/Toast/Toast.svelte';
   import { onMount } from 'svelte';
+  import  {toast}  from '$lib/components/Toast/Toast.js';
 
   // 获取路由参数中的 id (即 practice_id)
   const practiceId = $page.params.id;
@@ -22,38 +22,6 @@
 
   // Dialog状态
   let isDialogOpen = $state(false);
-
-  /**
-   * @type {Toast}
-   */
-  // Toast 状态管理
-  let showToast = $state(false);
-
-  let toastConfig = $state({
-    type: 'success',
-    message: '',
-    duration: 3000,
-    showClose: true,
-    plain: true,
-  });
-
-  // 自定义 Toast 显示函数
-  function showToastMessage(type, message, duration = 3000) {
-    toastConfig = {
-      type,
-      message,
-      duration,
-      showClose: true,
-      plain: true,
-    };
-    showToast = true;
-
-    // 自动隐藏（与组件内部的自动关闭配合）
-    setTimeout(() => {
-      showToast = false;
-    }, duration + 100);
-  }
-
   /**
    * @param {{ practice_name: any; grading_method: any; test: { id: any;suggest_duration?:number }; students: any[];allowed_attempts:any}} practiceData
    */
@@ -91,7 +59,7 @@
 
         if (data.status !== 0) {
           console.error('编辑练习失败:', data.msg);
-          showToastMessage('error', data.msg || '编辑练习失败', '', 1000);
+          toast.error( data.msg || '编辑练习失败', '', 1000);
           return;
         }
         // 更新store中的数据
@@ -111,7 +79,7 @@
         });
 
         // 显示编辑成功的提示
-        showToastMessage('success', '保存练习成功', 1000);
+        toast.success( '保存练习成功', 1000);
 
         // 延迟跳转，让用户能看到提示
         setTimeout(() => {
@@ -121,7 +89,7 @@
       })
       .catch((error) => {
         console.error('编辑练习请求异常:', error);
-        showToastMessage('error', '编辑练习请求异常', 1000);
+        toast.error( '编辑练习请求异常', 1000);
       });
   }
   /**
@@ -153,7 +121,7 @@
       .then((result) => {
         console.log('update result:', result);
         if (result.status === 0) {
-          showToastMessage('success', '更新成功', 1000);
+          toast.success( '更新成功', 1000);
           // 延迟跳转，让用户能看到提示
           setTimeout(() => {
             // 跳转回列表页
@@ -165,7 +133,7 @@
       })
       .catch((error) => {
         console.error('编辑练习请求异常:', error);
-        showToastMessage('error', '编辑练习请求异常', 1000);
+        toast.error( '编辑练习请求异常', 1000);
       });
   }
 
@@ -198,15 +166,6 @@
     title="请问是否要取消编辑？"
     content="取消编辑将不会保存修改的内容。"
     onConfirm={confirmCancel}
-  />
-
-  <Toast
-    type={toastConfig.type}
-    message={toastConfig.message}
-    duration={toastConfig.duration}
-    plain={toastConfig.plain}
-    bind:this={actionToast}
-    visible={showToast}
   />
 </main>
 
