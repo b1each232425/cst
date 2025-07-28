@@ -401,13 +401,12 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 
       const result = await response.json();
       if (result.status !== 0) {
-        toast.error('添加题目失败: ' + result.msg, result.msg);
+        toast.error('添加题目失败: ' + result.msg);
         return;
       }
       toast.success('添加题目成功');
       await getQuestionList();
-
-      return result.status;
+      return result;
     } catch (error) {
       console.error('Error:', error);
 
@@ -422,14 +421,17 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   const onEditPanelConFirm = async (new_question_data) => {
     //新增题目
     if (new_question_type != '') {
-      const status = await AddNewQuestion(new_question_data);
-      if (status == 0) {
+      const  result = await AddNewQuestion(new_question_data);
+      if (result.status == 0) {
         show_single_select_edit_panel = false;
         show_multiple_select_edit_panel = false;
         show_judge_select_edit_panel = false;
         modifying_question = null;
         new_question_type = '';
         is_dirty = false;
+      }
+      else{
+        toast.error('添加题目失败: ' + result.msg);
       }
     }
   };
@@ -476,7 +478,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       });
       const result = await response.json();
       if (result.status !== 0) {
-        toast.error('保存题库数据失败:', result.msg);
+        toast.error('保存题库数据失败:'+ result.msg);
         return;
       }
       toast.success('题库数据保存成功');
@@ -492,7 +494,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       bank_data_not_save_btn.style.opacity = '0';
       is_dirty = false;
     } catch (error) {
-      toast.error('保存题库数据异常:', error);
+      toast.error('保存题库数据异常:'+ error);
       return;
     }
   };
@@ -521,7 +523,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 
       return data.data;
     } catch (error) {
-      toast.error('获取题库列表异常:', error);
+      toast.error('获取题库列表异常:'+ error);
       return null; // 或 throw error;
     }
   }
