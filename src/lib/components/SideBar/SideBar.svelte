@@ -2,9 +2,7 @@
   // @ts-nocheck
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
-
   import { sidebarFoldingState, sidebarWidth, navStore } from '$lib/stores/modules/layoutStore';
-
 
   let currentPath = $derived(page.url.pathname); // 当前页面路径
 

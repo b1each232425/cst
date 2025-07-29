@@ -1,4 +1,3 @@
-
 /**
  * @description 判断是否为合法的手机号码
  * @param {string} mobile
@@ -29,6 +28,5 @@ export function validIdCard(str) {
   const reg = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
   return reg.test(str);
 }
-
 
 

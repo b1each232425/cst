@@ -111,7 +111,7 @@
 }
 
     function toggleMoreActions(index) {
-        examList[index].action_expended = !examList[index].action_expended;
+        examList[index].actionExpanded = !examList[index].actionExpanded;
     }
 
     function onSearchFunc(value) {
@@ -220,16 +220,16 @@
 }
     // 模拟获取考试列表数据
         examList = [
-            { name: '数学考试', type: '00', method: '00', start_time: '2023-10-01 10:00', end_time: '2023-10-01 12:00', duration: '120分钟', status: '00',delivery_status: '00',addi: '',action_expended:false,num_of_examinee:1},
-            { name: '英语考试', type: '02', method: '02', start_time: '2023-10-02 14:00', end_time: '2023-10-02 15:30', duration: '90分钟', status: '04' ,delivery_status: '00',addi: '',action_expended:false,num_of_examinee:1},
-            { name: '物理期中', type: '00', method: '00', start_time: '2023-10-03 09:00', end_time: '2023-10-03 11:00', duration: '120分钟', status: '02' ,delivery_status: '00',addi: '',action_expended:false,num_of_examinee:1},
-            { name: '化学期末', type: '02', method: '02', start_time: '2023-10-04 13:30', end_time: '2023-10-04 15:00', duration: '90分钟', status: '04' ,delivery_status: '00',addi: '',action_expended:false,num_of_examinee:1},
-            { name: '语文模拟', type: '04', method: '00', start_time: '2023-10-05 08:30', end_time: '2023-10-05 10:00', duration: '90分钟', status: '00' ,delivery_status: '00',addi: '',action_expended:false,num_of_examinee:1},
-            { name: '生物测评', type: '02', method: '02', start_time: '2023-10-06 10:00', end_time: '2023-10-06 11:30', duration: '90分钟', status: '02' ,delivery_status: '00',addi: '',action_expended:false,num_of_examinee:1},
-            { name: '历史会考', type: '00', method: '02', start_time: '2023-10-07 15:00', end_time: '2023-10-07 16:30', duration: '90分钟', status: '04' ,delivery_status: '00',addi: '',action_expended:false,num_of_examinee:1},
-            { name: '历史会考', type: '00', method: '02', start_time: '2023-10-07 15:00', end_time: '2023-10-07 16:30', duration: '90分钟', status: '04' ,delivery_status: '00',addi: '',action_expended:false,num_of_examinee:1},
-            { name: '历史会考', type: '00', method: '02', start_time: '2023-10-07 15:00', end_time: '2023-10-07 16:30', duration: '90分钟', status: '04' ,delivery_status: '00',addi: '',action_expended:false,num_of_examinee:1},
-            { name: '历史会考', type: '00', method: '02', start_time: '2023-10-07 15:00', end_time: '2023-10-07 16:30', duration: '90分钟', status: '12' ,delivery_status: '00',addi: '',action_expended:false,num_of_examinee:1}
+            { name: '数学考试', type: '00', method: '00', start_time: '2023-10-01 10:00', end_time: '2023-10-01 12:00', duration: '120分钟', status: '00',delivery_status: '00',addi: '',actionExpanded:false,num_of_examinee:1},
+            { name: '英语考试', type: '02', method: '02', start_time: '2023-10-02 14:00', end_time: '2023-10-02 15:30', duration: '90分钟', status: '04' ,delivery_status: '00',addi: '',actionExpanded:false,num_of_examinee:1},
+            { name: '物理期中', type: '00', method: '00', start_time: '2023-10-03 09:00', end_time: '2023-10-03 11:00', duration: '120分钟', status: '02' ,delivery_status: '00',addi: '',actionExpanded:false,num_of_examinee:1},
+            { name: '化学期末', type: '02', method: '02', start_time: '2023-10-04 13:30', end_time: '2023-10-04 15:00', duration: '90分钟', status: '04' ,delivery_status: '00',addi: '',actionExpanded:false,num_of_examinee:1},
+            { name: '语文模拟', type: '04', method: '00', start_time: '2023-10-05 08:30', end_time: '2023-10-05 10:00', duration: '90分钟', status: '00' ,delivery_status: '00',addi: '',actionExpanded:false,num_of_examinee:1},
+            { name: '生物测评', type: '02', method: '02', start_time: '2023-10-06 10:00', end_time: '2023-10-06 11:30', duration: '90分钟', status: '02' ,delivery_status: '00',addi: '',actionExpanded:false,num_of_examinee:1},
+            { name: '历史会考', type: '00', method: '02', start_time: '2023-10-07 15:00', end_time: '2023-10-07 16:30', duration: '90分钟', status: '04' ,delivery_status: '00',addi: '',actionExpanded:false,num_of_examinee:1},
+            { name: '历史会考', type: '00', method: '02', start_time: '2023-10-07 15:00', end_time: '2023-10-07 16:30', duration: '90分钟', status: '04' ,delivery_status: '00',addi: '',actionExpanded:false,num_of_examinee:1},
+            { name: '历史会考', type: '00', method: '02', start_time: '2023-10-07 15:00', end_time: '2023-10-07 16:30', duration: '90分钟', status: '04' ,delivery_status: '00',addi: '',actionExpanded:false,num_of_examinee:1},
+            { name: '历史会考', type: '00', method: '02', start_time: '2023-10-07 15:00', end_time: '2023-10-07 16:30', duration: '90分钟', status: '12' ,delivery_status: '00',addi: '',actionExpanded:false,num_of_examinee:1}
         ];
 
     onMount(() => {

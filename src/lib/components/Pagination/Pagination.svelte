@@ -39,10 +39,8 @@
 
 <script>
   // @ts-nocheck
-
   import left_jt from '/static/pagination/left.svg';
   import right_jt from '/static/pagination/right.svg';
-
   import { createEventDispatcher } from 'svelte';
 
   let {

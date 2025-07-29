@@ -3,7 +3,6 @@
   import { goto } from '$app/navigation';
   import { tooltip } from '$lib/components/ToolTip/tooltip';
   import { sidebarFoldingState, sidebarWidth, crumbStore } from '$lib/stores/modules/layoutStore';
-
   import { onMount } from 'svelte';
 
   let userName = '张三'; // 静态数据
@@ -35,7 +34,6 @@
         // 如果 item.id 是 '[bankid]'，检查路径前缀部分是否匹配
         if (item.id === '[bankid]') {
           // 检查路径前缀部分是否相同
-
           const basePath = '/teacher/question-bank/theory';
           const isBasePathMatch = currentPath.startsWith(basePath);
           const isDynamicPath = currentPath.split('/').length === basePath.split('/').length + 1;
@@ -84,11 +82,9 @@
       <button
         class="breadcrumb-item"
         onclick={() => goto(crumb.path)}
-
         use:tooltip={{
           text: '回到' + crumb.title,
         }}
-
       >
         {crumb.title}
       </button>

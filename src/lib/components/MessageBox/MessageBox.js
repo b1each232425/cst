@@ -1,4 +1,3 @@
-
 import MessageBox from './MessageBox.svelte';
 import { mount, unmount } from 'svelte';
 

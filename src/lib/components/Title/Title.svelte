@@ -1,4 +1,3 @@
-
 <!-- /**
    * @description 页面标题组件，带有前缀蓝色条和可选的横线分割
    * @property {String} title - 标题文本，默认为 'Title'
@@ -50,4 +49,3 @@
     }
   }
 </style>
-

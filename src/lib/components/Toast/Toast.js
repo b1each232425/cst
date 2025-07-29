@@ -1,4 +1,3 @@
-
 /**
  * @File: toast.js
  * @Description: Toast 提示调用封装，使用 mount 动态挂载 Toast 组件到页面中
@@ -61,4 +60,3 @@ export const toast = {
   error: (msg, duration = 3000) => showToast(msg, 'error', duration),
   warning: (msg, duration = 3000) => showToast(msg, 'warning', duration),
 };
-
