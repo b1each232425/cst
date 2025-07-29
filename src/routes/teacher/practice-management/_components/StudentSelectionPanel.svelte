@@ -1,3 +1,9 @@
+<!-- /*
+ * @Author: 李乐毅 
+ * @Date: 2025-07-27 16:36:22 
+ * @Last Modified by:   李乐毅 
+ * @Last Modified time: 2025-07-27 16:36:22 
+ */ -->
 <script>
    import Pagination from "$lib/components/Pagination/Pagination.svelte";  //分页器
     import InputBox from "$lib/components/Input/InputBox.svelte";//搜索框

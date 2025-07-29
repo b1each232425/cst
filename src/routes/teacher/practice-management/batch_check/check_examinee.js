@@ -1,13 +1,9 @@
-/*
- * @Author: Mayux && dbs45412@163.com
- * @Date: 2025-04-27 21:01:50
- * @LastEditors: Mayux && 1243805308@qq.com
- * @LastEditTime: 2025-06-14 16:10:21
- * @FilePath: \tutorial-platform-fe\src\lib\batch_check\check_examinee.js
- * @Description: 批量导入考生
- * @Copyright: Copyright (c) 2025 by Mayux, All Rights Reserved. 
- */
-// @ts-nocheck
+ /*
+ * @Author: 李乐毅 
+ * @Date: 2025-07-27 16:36:22 
+ * @Last Modified by:   李乐毅 
+ * @Last Modified time: 2025-07-27 16:36:22 
+ */ 
 import ExcelJS from 'exceljs';
 const { Workbook } = ExcelJS;
 
