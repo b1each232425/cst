@@ -38,10 +38,13 @@
 			</div>
 		{/each}
 	</td>
-	<td class="exam-total-score">{exam.sessions.reduce((acc, s) => acc + s.total_score, 0)}</td>
+	<td class="exam-total-score">
+		{exam.sessions.reduce((acc, s) => acc + Number(s.total_score), 0)}
+	</td>
 	<td class="exam-average-score">
 		{(
-			exam.sessions.reduce((acc, s) => acc + s.average_score, 0) / exam.sessions.length
+			exam.sessions.reduce((acc, s) => acc + Number(s.average_score), 0) /
+			(exam.sessions.length || 1)
 		).toFixed(1)}
 	</td>
 	<td class="exam-scheduled-examinees">
