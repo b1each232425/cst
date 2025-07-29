@@ -9,8 +9,9 @@
     import Button from "$lib/components/Button/Button.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import Tag from "$lib/components/Tag/Tag.svelte";
-    import { getPaperList } from "./_utils/api";
-  import Loading from "$lib/components/Loading/Loading.svelte";
+    import Loading from "$lib/components/Loading/Loading.svelte";
+    import { fetchPaperList } from "./_utils/api";
+    import { debounce } from "$lib/utils/optimize";
 
     // 模拟数据
     let analogyData = [
@@ -522,31 +523,59 @@
         },
     ];
 
-    let paperName = $state("");
-    let paperTags = $state("");
-    let paperPage = $state(1);
-    let paperPageSize = $state(10);
-    let paperCategory = $state("");
-    let paperList = [];
-    // let test = true;
+    let paperName = $state("");         // 试卷名称
+    let paperTags = $state("");         // 试卷标签
+    let paperCategory = $state("");     // 试卷用途
+
+    let totalPapers = $state(0);        // 试卷总数
+    let paperPageSize = $state(10);     // 每页条数
+    let paperPage = $state(1);          // 当前页
+    let paperPageSizeOptions = [10, 20]  // 每页条数选择项
+
+
+    let paperList = $state([]);
+
+    let isLoading = $state(false);  // 加载中
+
+    // 重置按钮
+    function resetSearch() {
+        paperName = "";
+        paperTags = "";
+        paperPage = 1;
+    }
+
+    function handlePageChange() {
+        paperPage = event.detail;
+    }
+
+    function handlePageSizeChange() {
+        paperPageSize = event.detail;
+        paperPage = 1; // 改变每页数量时通常要跳回第一页
+    }
+
+    const debouncedFetchPaperList = debounce(() => {
+        isLoading = true;
+        fetchPaperList(paperName, paperTags, paperPage, paperPageSize, paperCategory)
+            .then(result => {
+                totalPapers = result.rowCount;
+                paperList = result.data || [];
+            })
+            .finally(() => {
+                isLoading = false;
+            });
+    }, 1000, false);
 
     $effect(() => {
-        getPaperList(paperName, paperTags, paperPage, paperPageSize, paperCategory)
-            .then(result => {
-                if (result) {
-                    paperList = result.data || [];
-                } else {
-                    paperList = [];
-                }
-            })
-            .catch(() => {
-                paperList = [];
-            });
+        paperName; paperTags; paperPage; paperPageSize; paperCategory;
+        debouncedFetchPaperList();
     });
+
 
 </script>
 
-<!-- <Loading bind:value={test} loadingText="正在加载中"/> -->
+<button onclick={console.log(paperList)}>点我</button>
+
+<Loading bind:value={isLoading} loadingText="正在加载中"/>
 
 <div class="paper-management">
     <!-- 标题区域 -->
@@ -581,7 +610,7 @@
 
         <!-- 右侧 -->
         <div class="right-side">
-            <Button plain={true}>重置</Button>
+            <Button onclick={()=>resetSearch()} plain={true}>重置</Button>
             <Button plain={true} type="danger">删除</Button>
             <Button onclick={()=>goto('/teacher/paper/add-paper')} plain={true}>自定义组卷</Button>
         </div>
@@ -610,7 +639,7 @@
             </thead>
 
             <tbody>
-                {#each analogyData as paper}
+                {#each paperList as paper}
                     <tr>
                         <td><input class="checkbox" type="checkbox"></td>
                         <td class="paper-name">{paper.Name}</td>
@@ -621,12 +650,16 @@
                         <td class="suggested-duration">{paper.SuggestedDuration}</td>
                         <td class="paper-tag">
                             <div class="tag-container">
-                                {#each paper.Tags as tag}
-                                    <div class="per-tag">
-                                        <div class="tag-block" style="background-color: {tagColorList[getColorIndex(tag)]};"></div>
-                                        <span class="tag-name">{tag}</span>
-                                    </div>
-                                {/each}
+                                {#if paper.Tags.length !== 0}
+                                    {#each paper.Tags as tag}
+                                        <div class="per-tag">
+                                            <div class="tag-block" style="background-color: {tagColorList[getColorIndex(tag)]};"></div>
+                                            <span class="tag-name">{tag}</span>
+                                        </div>
+                                    {/each}
+                                {:else}
+                                    <span>-</span>
+                                {/if}
                             </div>
                         </td>
                         <td class="level"><span class={levelTrans[levelTrans[paper.Level]]}>{levelTrans[paper.Level]}</span></td>
@@ -662,7 +695,14 @@
     <!-- 翻页控制 -->
     <div class="page-control-container">
         <div class="page-control">
-            <Pagination/>
+            <Pagination
+                totalItems={totalPapers}
+                pageSize={paperPageSize}   
+                currentPage={paperPage}                
+                pageSizeOptions={paperPageSizeOptions}
+                on:pageChange={handlePageChange}
+                on:pageSizeChange={handlePageSizeChange}
+            />
         </div>
     </div>
 </div>
@@ -670,7 +710,6 @@
 
 
 <style>
-    
     .paper-management {
         font-family: 'Noto Sans SC', sans-serif;
         color: var(--text-primary);
@@ -865,12 +904,7 @@
                                 border-radius: 2px;
                                 margin-right: 9px;
                             }
-    
-                            /* 标签名 */
-                            .tag-name {
-    
-                            }
-                    }
+                        }
                     }
                 }
 

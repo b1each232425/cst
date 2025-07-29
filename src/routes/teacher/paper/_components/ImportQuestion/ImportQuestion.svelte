@@ -1,13 +1,85 @@
 <script>
     import Button from "$lib/components/Button/Button.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
+    import Loading from "$lib/components/Loading/Loading.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
+    import { debounce } from "$lib/utils/optimize";
+    import { fetchBankQuestionList, fetchQuestionBankList } from "../../_utils/api";
 
-    let { onclose } = $props();
-    let dropUpToggleIsOpen = $state(false);
-    let filterIsOpen = $state(false);
+    
+    let { onclose } = $props();                 // 关闭弹窗
+    let dropUpToggleIsOpen = $state(false);     // 上拉题组栏
+    let filterIsOpen = $state(false);           // 下拉筛选栏
+    let isLoading = $state(false);              // 加载中
+    
+    /**************** 题库列表 ****************/
+
+    let bankKeyWord = $state("");
+    let bankID = $state("");
+    let bankList = $state([]);
+
+    // 防抖搜索题库列表
+    const debouncedFetchQuestionBankList = debounce(() => {
+        isLoading = true;
+        fetchQuestionBankList(bankKeyWord, "", "", "")
+            .then(result => {
+                bankList = result.data || [];
+            })
+            .finally(() => {
+                isLoading = false;
+            });
+    }, 1000, false);
+
+    $effect(() => {
+        bankKeyWord;
+        debouncedFetchQuestionBankList();
+    });
+
+    // 单选题库功能
+    function toggleBank(id) {
+        bankID = bankID === id ? "" : id;
+    }
+
+    /**************** 题库列表 ****************/
+
+
+
+    /**************** 题目列表 ****************/
+
+    let questionPage = $state(1);
+    let questionPageSize = $state(10);
+    let questionName = $state("");
+    let questionTags = $state("");
+    let questionType = $state("");
+    let questionDifficulty = $state("");
+    let questionList = $state([]);
+    let totalQuestions = $state(0);
+    
+    $effect(() => {
+        bankID;
+        if(bankID!=="") {
+            isLoading = true;
+            fetchBankQuestionList(
+                bankID,
+                questionPage,
+                questionPageSize,
+                questionName,
+                questionTags,
+                questionType,
+                questionDifficulty
+            ).then( result => {
+                questionList = result.data;
+            }).finally(()=>{
+                isLoading = false;
+            });
+        }
+    });
+
+    /**************** 题目列表 ****************/
 
 </script>
+
+<Loading bind:value={isLoading} loadingText="正在加载中"/>
 
 <!-- 遮罩 -->
 <div class="modal-overlay">
@@ -30,7 +102,7 @@
 
                 <!-- 搜索 -->
                 <div class="search-box">
-                    <InputBox placeholder="搜索题库" showLabel={false}/>
+                    <InputBox bind:value={bankKeyWord} placeholder="搜索题库" showLabel={false}/>
                     <div class="selected-banks-box">
                         <span class="selected-banks">已选择 <span>0</span> 个题库</span>
                     </div>
@@ -38,87 +110,17 @@
 
                 <!-- 题库列表 -->
                 <div class="question-bank-list">
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
-                    <div class="single-bank">
-                        <input type="checkbox">
-                        <span class="bank-name">软件工程基础题库</span>
-                        <span class="questions-number">11</span>
-                    </div>
+                    {#if bankList.length !== 0}
+                        {#each bankList as bank}
+                            <!-- svelte-ignore a11y_click_events_have_key_events -->
+                            <!-- svelte-ignore a11y_no_static_element_interactions -->
+                            <div class="single-bank" onclick={()=>toggleBank(bank.ID)}>
+                                <input type="checkbox" checked={bankID === bank.ID} onclick={(e) => {e.stopPropagation(); toggleBank(bank.ID);}}>
+                                <span class="bank-name">{bank.Name}</span>
+                                <span class="questions-number">{bank.QuestionCount}</span>
+                            </div>
+                        {/each}
+                    {/if}
                 </div>
             </div>
 
@@ -133,7 +135,7 @@
                     <!-- 下拉筛选栏 -->
                     <!-- svelte-ignore a11y_click_events_have_key_events -->
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
-                    <div class="filter-header" onmouseenter={filterIsOpen=true} onmouseleave={filterIsOpen=false}>
+                    <div class="filter-header" onmouseenter={()=>{filterIsOpen=true}} onmouseleave={()=>{filterIsOpen=false}}>
                         <!-- 筛选菜单 -->
                         {#if filterIsOpen}
                             <div class="filter-container"  onmouseenter={filterIsOpen=true} onmouseleave={filterIsOpen=false}>
@@ -231,134 +233,6 @@
                                     <td class="update-time">2025-06-03 21:37</td>
                                     <td class="question-tags">-</td>
                                 </tr>
-
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="normal-level">中等</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
-
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="hard-level">困难</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
-
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="hard-level">困难</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="hard-level">困难</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="hard-level">困难</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="hard-level">困难</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="hard-level">困难</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="hard-level">困难</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="hard-level">困难</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr><tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="hard-level">困难</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="hard-level">困难</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="hard-level">困难</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="hard-level">困难</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="hard-level">困难</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -375,7 +249,8 @@
         <div class="container-footer">
             <span class="selected-span">已选择 <span>2</span> 道题目</span>
             <span class="import-span">导入到题组：</span>
-            <div class="dropup-toggle" onmouseenter={dropUpToggleIsOpen=true} onmouseleave={dropUpToggleIsOpen=false}>
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div class="dropup-toggle" onmouseenter={()=>{dropUpToggleIsOpen=true}} onmouseleave={()=>{dropUpToggleIsOpen=false}}>
                 {#if dropUpToggleIsOpen}
                     <div class="dropup-menu">
                         <div class="menu-option selected">
@@ -567,7 +442,8 @@
     
                             /* 题目数量 */
                             .questions-number {
-    
+                                flex-grow: 1;
+                                text-align: center;
                             }
                         }
 

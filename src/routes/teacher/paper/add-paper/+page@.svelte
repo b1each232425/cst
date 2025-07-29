@@ -565,11 +565,6 @@
 <style>
     /**************** 临时组件区 ****************/
 
-    #temp-select {
-        width: 300px;
-        padding: 6px 12px;
-    }
-
     #temp-average-question-score-input {
         padding: 4px 8px 4px 24px;
         width: 40px;
