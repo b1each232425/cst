@@ -7,6 +7,25 @@ deploy-3min-fe:
       - main
       - master
   stage: deploy
+
+  when: manual
+
+  tags:
+    - nodejs-build
+  environment: production
+  script:
+    - chmod +x deploy_p.sh
+    - ./deploy_p.sh
+
+
+deploy-devmentor-fe:
+  only:
+    refs:
+      - /^v\d+\.\d+\.\d+$/
+  stage: deploy
+
+  when: manual
+
   tags:
     - nodejs-build
   environment: production
