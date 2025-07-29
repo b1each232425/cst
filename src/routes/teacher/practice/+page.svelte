@@ -1,13 +1,13 @@
 <!-- /*
- * @Author: 李乐毅 
- * @Date: 2025-07-27 16:36:22 
- * @Last Modified by:   李乐毅 
- * @Last Modified time: 2025-07-27 16:36:22 
+ * @Author: 李乐毅
+ * @Date: 2025-07-27 16:36:22
+ * @Last Modified by:   李乐毅
+ * @Last Modified time: 2025-07-27 16:36:22
  */ -->
 <script>
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import { goto } from '$app/navigation';
-  import {toast} from '$lib/components/Toast/Toast.js';
+  import { toast } from '$lib/components/Toast/Toast.js';
   import StudentSelectionPanel from './_components/StudentSelectionPanel.svelte';
   import {
     practice_data_list,
@@ -72,32 +72,32 @@
     if (!Array.isArray(practices)) return [];
 
     return practices.map((item) => {
-    const practice = item.practice; // 提取实际的practice对象
-        // 检查 practice 是否存在
-    if (!practice) {
-      console.error('Invalid practice item:', item);
-      return null; // 或者返回一个默认值
-    }
-    
-    // 转置type字段
-    let transformedType = practice.Type;
-    if (practice.Type === '00') transformedType = '经典巩固';
-    else if (practice.Type === '02') transformedType = '随机组卷';
-    else if (practice.Type === '04') transformedType = '智能提升';
+      const practice = item.practice; // 提取实际的practice对象
+      // 检查 practice 是否存在
+      if (!practice) {
+        console.error('Invalid practice item:', item);
+        return null; // 或者返回一个默认值
+      }
 
-    // 转置status字段
-    let transformedStatus = practice.Status;
-    if (practice.Status === '02') transformedStatus = '已发布';
-    else if (practice.Status === '00') transformedStatus = '未发布';
+      // 转置type字段
+      let transformedType = practice.Type;
+      if (practice.Type === '00') transformedType = '经典巩固';
+      else if (practice.Type === '02') transformedType = '随机组卷';
+      else if (practice.Type === '04') transformedType = '智能提升';
 
-    // 创建新对象，包含practice的所有属性和转换后的字段
-    return {
-      ...practice, // 展开practice对象的所有属性
-      student_count: item.student_count||0, // 从外层对象获取student_count
-      Type: transformedType,
-      Status: transformedStatus,
-    };
-  });
+      // 转置status字段
+      let transformedStatus = practice.Status;
+      if (practice.Status === '02') transformedStatus = '已发布';
+      else if (practice.Status === '00') transformedStatus = '未发布';
+
+      // 创建新对象，包含practice的所有属性和转换后的字段
+      return {
+        ...practice, // 展开practice对象的所有属性
+        student_count: item.student_count || 0, // 从外层对象获取student_count
+        Type: transformedType,
+        Status: transformedStatus,
+      };
+    });
   }
 
   // 练习列表数据 - 从page.js加载，并进行转置处理
@@ -245,9 +245,9 @@
    * 页码选择回调
    * @param {number} page - 选中的页码
    */
-  function handle_page_choose(page) {
-    if (page !== current_page_num) {
-      current_page_num = page;
+  function handle_page_choose(event) {
+    if (event.detail !== current_page_num) {
+      current_page_num = event.detail;
       filter_practice_list();
     }
   }
@@ -256,8 +256,8 @@
    * 每页数量选择回调
    * @param {string} value - 每页显示的数据条数
    */
-  function handle_page_size_change(value) {
-    const newPageSize = parseInt(value, 10);
+  function handle_page_size_change(event) {
+    const newPageSize = parseInt(event.detail, 10);
     if (newPageSize !== data_per_page) {
       data_per_page = newPageSize;
       current_page_num = 1; // 重置为第一页
@@ -279,7 +279,7 @@
 
   // 新建练习按钮点击事件
   function create_new_practice() {
-    goto('/teacher/practice-management/create');
+    goto('/teacher/practice/create');
   }
 
   /**
@@ -327,7 +327,7 @@
         console.log('发布练习响应:', data);
         if (data.status !== 0) {
           console.error('发布练习失败:', data.msg);
-          toast.error( data.msg || '发布练习失败',  1000);
+          toast.error(data.msg || '发布练习失败', 1000);
           return;
         }
         // 更新练习状态
@@ -342,11 +342,11 @@
         }
 
         // 显示发布成功提示
-        toast.success( '发布练习成功',  1000);
+        toast.success('发布练习成功', 1000);
       })
       .catch((error) => {
         console.error('发布练习请求异常:', error);
-        toast.error( '发布练习请求异常',  1000);
+        toast.error('发布练习请求异常', 1000);
       });
   }
 
@@ -393,7 +393,7 @@
         console.log('取消发布练习响应:', data);
         if (data.status !== 0) {
           console.error('取消发布练习失败:', data.msg);
-          toast.error( data.msg || '取消发布练习失败',  1000);
+          toast.error(data.msg || '取消发布练习失败', 1000);
           return;
         }
         // 更新练习状态
@@ -407,13 +407,16 @@
         }
 
         // 显示取消发布成功提示
-        toast.success( '取消发布练习成功',  1000);
+        toast.success('取消发布练习成功', 1000);
       })
       .catch((error) => {
         console.error('取消发布练习请求异常:', error);
-        toast.error( '取消发布练习请求异常', 1000);
+        toast.error('取消发布练习请求异常', 1000);
       });
   }
+
+
+  let practiceID =$state()
 
   /**
    * 选择学生按钮点击事件
@@ -426,6 +429,7 @@
     await fetchSelectedStudents(practice.ID);
     // 打开学生选择面板
     show_student_selectionPanel = true;
+    practiceID = practice.ID
   }
 
   /**
@@ -454,7 +458,7 @@
       })
       .catch((error) => {
         console.error('获取已选择学生异常:', error);
-        toast.error( `获取已选择学生异常:${error}`,  1000);
+        toast.error(`获取已选择学生异常:${error}`, 1000);
         selectedStudentIds = [];
       });
   }
@@ -493,15 +497,15 @@
       .then((data) => {
         if (data.status !== 0) {
           console.error('更新学生失败:', data.msg);
-         toast.error( data.msg || '更新学生失败', 1000);
+          toast.error(data.msg || '更新学生失败', 1000);
           return;
         }
         // 显示更新成功提示
-        toast.success( '更新学生成功',  1000);
+        toast.success('更新学生成功', 1000);
       })
       .catch((error) => {
         console.error('更新学生失败:', error);
-        toast.error( '更新学生失败',  1000);
+        toast.error('更新学生失败', 1000);
       });
   }
 
@@ -511,7 +515,7 @@
    */
   function continue_edit(practice) {
     // 实现继续编辑的逻辑
-    goto(`/teacher/practice-management/edit/${practice.ID}`);
+    goto(`/teacher/practice/edit/${practice.ID}`);
   }
 
   /**
@@ -556,7 +560,7 @@
         console.log('删除练习响应:', data);
         if (data.status !== 0) {
           console.error('删除练习失败:', data.msg);
-          toast.error( data.msg || '删除练习失败',  1000);
+          toast.error(data.msg || '删除练习失败', 1000);
           return;
         }
         // 从列表中移除
@@ -567,7 +571,7 @@
         filter_practice_list();
 
         // 显示删除成功提示
-        toast.success( '删除练习成功', 1000);
+        toast.success('删除练习成功', 1000);
       })
       .catch((error) => {
         console.error('删除练习请求异常:', error);
@@ -599,7 +603,7 @@
       })
       .catch((error) => {
         console.error('获取参与学生名单异常:', error);
-        toast.error( `获取参与学生名单异常:${error}`, '', 1000);
+        toast.error(`获取参与学生名单异常:${error}`, '', 1000);
       });
   }
 </script>
@@ -623,7 +627,7 @@
         <div class="filter-box">
           <span class="filter-label">练习类型：</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={practice_type}  onChangeValue={handle_type_change} filterable>
+            <Select bind:value={practice_type} onChangeValue={handle_type_change} filterable>
               {#each type_options as option}
                 <Option value={option} label={option}></Option>
               {/each}
@@ -701,7 +705,7 @@
         totalItems={total_data_num}
         pageSize={data_per_page}
         currentPage={current_page_num}
-        on:pageChange={handle_page_change}
+        on:pageChange={handle_page_choose}
         jumpPage={handle_page_choose}
         on:pageSizeChange={handle_page_size_change}
       />
@@ -713,8 +717,8 @@
     bind:visible={publishDialogOpen}
     title="请问是否要发布练习？"
     content="发布练习将同时发布练习通知"
-    confirm_text= "确定"
-		cancel_text='取消'
+    confirm_text="确定"
+    cancel_text="取消"
     onConfirm={confirm_publish}
   />
 
@@ -723,8 +727,8 @@
     bind:visible={deleteDialogOpen}
     title="请问是否要删除练习？"
     content="该操作不可逆，请谨慎操作。"
-     confirm_text= "确定"
-		cancel_text='取消'
+    confirm_text="确定"
+    cancel_text="取消"
     confirmTextBackgroundColor="#E34D59"
     onConfirm={confirm_delete}
   />
@@ -734,8 +738,8 @@
     bind:visible={cancelPublishDialogOpen}
     title="请问是否要取消发布练习？"
     content="取消发布后学生将无法参与该练习。"
-     confirm_text= "确定"
-		cancel_text='取消'
+    confirm_text="确定"
+    cancel_text="取消"
     onConfirm={confirm_cancel_publish}
   />
 
@@ -746,6 +750,8 @@
     onCancel={() => {
       show_student_selectionPanel = false;
     }}
+    practice_id={practiceID}
+    
     onConfirm={(selected) => {
       handleStudentSelectionConfirm(selected);
       show_student_selectionPanel = false;

@@ -5,8 +5,8 @@
  * @Last Modified time: 2025-07-27 16:36:22 
  */ -->
 <script>
-    import PracticeForm from "../_components/PracticeForm.svelte";
-    import { practice_data_list } from "../store/practiceData"
+    import PracticeForm from "../../practice/_components/PracticeForm.svelte";
+    import { practice_data_list } from "../../practice/store/practiceData"
     import { goto } from "$app/navigation";
     import MessageBox from "$lib/components/MessageBox/MessageBox.svelte";
   import  {toast}  from "$lib/components/Toast/Toast.js";
@@ -79,7 +79,7 @@
             
             // 延迟跳转，让用户能看到提示
             setTimeout(() => {
-                goto("/teacher/practice-management");
+                goto("/teacher/practice");
             }, 1000);
             }).catch(error => { 
                  console.error("创建练习请求异常:", error);
@@ -96,7 +96,7 @@
 
     // 确认取消
     function confirmCancel() {
-        goto("/teacher/practice-management");
+        goto("/teacher/practice");
     }
 </script>
 

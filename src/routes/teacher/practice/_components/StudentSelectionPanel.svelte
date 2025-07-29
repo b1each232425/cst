@@ -479,7 +479,7 @@ if (result.status != 0) {
             });
 
             // 获取已选学生的信息
-            getStudentInfo(search_ids)
+            getStudentInfo(practice_id)
 
             // 初始化为查看模式，不自动搜索
             is_selection_mode = false;

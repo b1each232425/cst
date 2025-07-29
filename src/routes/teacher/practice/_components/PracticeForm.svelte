@@ -66,9 +66,9 @@
     practice_name = practiceData.form.practice_name || '';
 
     // 设置批改方式
-    if (practiceData.form.grading_method === '00') {
+    if (practiceData.form.grading_method === '10') {
       grading_method = '人工批改';
-    } else if (practiceData.form.grading_method === '02') {
+    } else if (practiceData.form.grading_method === '00') {
       grading_method = '自动批改';
     }
 
@@ -247,8 +247,8 @@
    */
   function mapGradingMethodToApi(grading_method) {
     // 使用对象键值查找的安全方式
-    if (grading_method === '人工批改') return '00';
-    if (grading_method === '自动批改') return '02';
+    if (grading_method === '人工批改') return '10';
+    if (grading_method === '自动批改') return '00';
     return '10'; // 默认值
   }
 
