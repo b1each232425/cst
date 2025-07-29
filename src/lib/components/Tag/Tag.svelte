@@ -368,4 +368,3 @@
     border: 1px solid var(--info);
   }
 </style>
->>>>>>> v1.0.0

@@ -1,16 +1,9 @@
 <script>
-<<<<<<< HEAD
-  // @ts-nocheck
-  import { page } from '$app/state';
-  import { goto } from '$app/navigation';
-  import { tooltip } from '$lib/components/ToolTip/tooltip';
-  import { sidebarFoldingState, sidebarWidth, navMap, crumbStore } from '$lib/stores/modules/layoutStore';
-=======
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { tooltip } from '$lib/components/ToolTip/tooltip';
   import { sidebarFoldingState, sidebarWidth, crumbStore } from '$lib/stores/modules/layoutStore';
->>>>>>> v1.0.0
+
   import { onMount } from 'svelte';
 
   let userName = '张三'; // 静态数据
@@ -42,20 +35,11 @@
         // 如果 item.id 是 '[bankid]'，检查路径前缀部分是否匹配
         if (item.id === '[bankid]') {
           // 检查路径前缀部分是否相同
-<<<<<<< HEAD
-          const basePath = '/teacher/question-bank-management/theory';
 
-          // 判断 currentPath 是否以 basePath 开头，并且路径长度比 basePath 多一部分
-          const isBasePathMatch = currentPath.startsWith(basePath);
-          const isDynamicPath = currentPath.split('/').length === basePath.split('/').length + 1;
-
-          // 如果是动态路径，匹配并继续处理；如果没有动态部分，也需要匹配
-=======
           const basePath = '/teacher/question-bank/theory';
           const isBasePathMatch = currentPath.startsWith(basePath);
           const isDynamicPath = currentPath.split('/').length === basePath.split('/').length + 1;
 
->>>>>>> v1.0.0
           return isBasePathMatch && (isDynamicPath || currentPath === basePath);
         }
         // 处理其他非动态路径的匹配
@@ -100,16 +84,11 @@
       <button
         class="breadcrumb-item"
         onclick={() => goto(crumb.path)}
-<<<<<<< HEAD
-        use:tooltip={() => ({
-          content: '回到' + crumb.title,
-          theme: 'light',
-        })}
-=======
+
         use:tooltip={{
           text: '回到' + crumb.title,
         }}
->>>>>>> v1.0.0
+
       >
         {crumb.title}
       </button>

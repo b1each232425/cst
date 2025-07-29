@@ -1,18 +1,10 @@
 <script>
-<<<<<<< HEAD
-  import Sidebar from '$lib/components/SideBar/SideBar.svelte';
-  import Crumb from '$lib/components/Crumb/Crumb.svelte';
-  import Brand from '$lib/components/Brand/Brand.svelte';
-  import { sidebarWidth } from '$lib/stores/modules/layoutStore';
 
-  let richTextEditor;
-
-=======
   import { sidebarWidth } from '$lib/stores/modules/layoutStore';
   import Sidebar from '$lib/components/SideBar/SideBar.svelte';
   import Crumb from '$lib/components/Crumb/Crumb.svelte';
   import Brand from '$lib/components/Brand/Brand.svelte';
->>>>>>> v1.0.0
+
   let { children } = $props();
 </script>
 
