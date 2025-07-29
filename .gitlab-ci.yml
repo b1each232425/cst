@@ -1,12 +1,31 @@
 stages: # List of stages for jobs, and their order of execution
   - deploy
 
-deploy-game-fe:
+deploy-3min-fe:
   only:
     refs:
       - main
       - master
   stage: deploy
+
+  when: manual
+
+  tags:
+    - nodejs-build
+  environment: production
+  script:
+    - chmod +x deploy_p.sh
+    - ./deploy_p.sh
+
+
+deploy-devmentor-fe:
+  only:
+    refs:
+      - /^v\d+\.\d+\.\d+$/
+  stage: deploy
+
+  when: manual
+
   tags:
     - nodejs-build
   environment: production
