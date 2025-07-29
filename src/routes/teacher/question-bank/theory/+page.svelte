@@ -142,37 +142,33 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * 获取题库列表请求函数
    */
 
-  async function getBankList({ keyword = '', page = '', pageSize = '', bankID = '' } = {}) {
-    // 构造查询参数（Query Params）
-    const queryParams = new URLSearchParams({
-      keyword,
-      page,
-      pageSize,
-      bankID,
-    });
-
-    try {
-      // 发起 GET 请求
-      const response = await fetch(`/api/question-banks?${queryParams}`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      // 解析 JSON 数据
-      const data = await response.json();
-
-      // 检查业务状态（假设后端返回 { status: 0, data: [], msg: "success" }）
+ function getBankList({ keyword = '', page = '', pageSize = '', bankID = '' } = {}) {
+  const queryParams = new URLSearchParams({
+    keyword,
+    page,
+    pageSize,
+    bankID,
+  });
+ 
+  return fetch(`/api/question-banks?${queryParams}`, {
+    method: 'GET',
+    credentials: 'include',
+  })
+    .then((response) => {
+      return response.json();
+    })
+    .then((data) => {
+      
       if (data.status !== 0) {
-        toast.error('获取题库列表失败:', data.msg);
-        return null;
+        toast.error(`获取题库列表失败: ${data.msg}`);
       }
-
-      return data.data;
-    } catch (error) {
-      toast.error('获取题库列表异常:', error);
+      return data.data; // 返回实际数据
+    })
+    .catch((error) => {
+      toast.error(`获取题库列表失败: ${error.message}`);
       return null; // 或 throw error;
-    }
-  }
+    });
+}
 
   onMount(async () => {
     const data = await getBankList();
@@ -209,27 +205,34 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * 添加题库接口
    *
    */
-  async function addNewBank() {
-    const data = {
-      name: '未命名题库',
-      type: '00',
-      tags: [],
-    };
-    try {
-      const response = await fetch('/api/question-banks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ data }),
-      });
-
-      const result = await response.json();
+  function addNewBank() {
+  const data = {
+    name: '未命名题库',
+    type: '00',
+    tags: [],
+  };
+ 
+  return fetch('/api/question-banks', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ data }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((result) => {
       if (result.status !== 0) {
-        toast.error('新建题库失败:', result.msg);
-        return;
+       toast.error(`新建题库失败: ${result.msg}`);
+        return ;
       }
       toast.success('新建题库成功');
+ 
+      // 存储到 localStorage
       localStorage.setItem(
         'question_bank_data',
         JSON.stringify({
@@ -240,16 +243,17 @@ o.  )88b 888   .o8  888      888   888   888   888 .
           update_time: formatTimestamp(Date.now()),
         }),
       );
-
+ 
+      // 跳转页面
       goto(`${window.location.pathname}/editBank`);
-    } catch (error) {
-      console.error('Error:', error);
-      if (result.status !== 0) {
-        toast.error('新建题库失败:', result.msg);
-        return;
-      }
-    }
-  }
+      return ;
+    })
+    .catch((error) => {
+      toast.error(`新建题库失败: ${error.message}`);
+    
+      return ;
+    });
+}
 
   /**
    * 添加题库处理函数

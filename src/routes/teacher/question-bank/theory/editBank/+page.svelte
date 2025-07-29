@@ -375,10 +375,10 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * 添加题目
    * @param {Partial<TheoryQuestion>} new_question_data
    */
-  export async function AddNewQuestion(new_question_data) {
-    //构建body数据
-    const data = [];
-    data.push({
+  export function AddNewQuestion(new_question_data) {
+  // 构建 body 数据
+  const data = [
+    {
       Type: new_question_type,
       Difficulty: new_question_data.difficulty,
       Content: new_question_data.content,
@@ -389,30 +389,34 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       Score: new_question_data.score,
       QuestionAttachmentsPath: new_question_data.question_attachments_path,
       BelongTO: bank_id,
-    });
-    try {
-      const response = await fetch('/api/questions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ data }),
-      });
-
-      const result = await response.json();
+    },
+  ];
+ 
+  return fetch('/api/questions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ data }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((result) => {
       if (result.status !== 0) {
-        toast.error('添加题目失败: ' + result.msg);
-        return;
+        toast.error(`添加土木是该: ${result.msg}`);
       }
       toast.success('添加题目成功');
-      await getQuestionList();
-      return result;
-    } catch (error) {
-      console.error('Error:', error);
-
-      return;
-    }
-  }
+      return getQuestionList().then(() => result); // 确保 getQuestionList() 执行后再返回 result
+    })
+    .catch((error) => {
+      toast.error(`添加题目失败: ${error.message}`);
+      return ;
+    });
+}
 
   /**
    * @description 题目编辑确认
@@ -455,78 +459,94 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   /**
    * @description 题库数据校验
    */
-  const onConfirmUpdateQuestionBankData = async () => {
-    if (bank_name.trim() === '') {
-      toast.error('题库名称不能为空');
-      return;
-    }
-
-    try {
-      // 构造请求体
-      const data = {
-        name: bank_name,
-        tags: bank_tags,
-        id: bank_id,
-        type: '00',
-      };
-      const response = await fetch('/api/question-banks', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ data }),
-      });
-      const result = await response.json();
+ function onConfirmUpdateQuestionBankData() {
+  if (bank_name.trim() === '') {
+    toast.error('题库名称不能为空');
+    return ;
+  }
+ 
+  // 构造请求体
+  const requestData = {
+    name: bank_name,
+    tags: bank_tags,
+    id: bank_id,
+    type: '00',
+  };
+ 
+ fetch('/api/question-banks', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ data: requestData }), 
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((result) => {
       if (result.status !== 0) {
-        toast.error('保存题库数据失败:'+ result.msg);
+        toast.error(`题库数据保存失败: ${result.msg}`);
         return;
       }
       toast.success('题库数据保存成功');
+ 
       // 更新题库原始数据
       origin_bank_data.name = bank_name;
       origin_bank_data.tags = bank_tags;
       bank_update_time = formatTimestamp(new Date().getTime());
-
-      if (!bank_data_save_btn || !bank_data_not_save_btn) return;
-      bank_data_save_btn.style.visibility = 'hidden';
-      bank_data_save_btn.style.opacity = '0';
-      bank_data_not_save_btn.style.visibility = 'hidden';
-      bank_data_not_save_btn.style.opacity = '0';
-      is_dirty = false;
-    } catch (error) {
-      toast.error('保存题库数据异常:'+ error);
-      return;
-    }
-  };
-
-  export async function getBankWithQuestions(bankID) {
-    // 构造查询参数（Query Params）
-    const queryParams = new URLSearchParams({
-      bankID,
-      page:1,
-      pageSize: 1000, 
-    });
-
-    try {
-      const response = await fetch(`/api/questions?${queryParams}`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-      // 解析 JSON 数据
-      const data = await response.json();
-
-      // 检查业务状态（假设后端返回 { status: 0, data: [], msg: "success" }）
-      if (data.status !== 0) {
-        toast.error('获取题库列表失败:', data.msg);
-        return null;
+ 
+      // 隐藏保存按钮
+      if (bank_data_save_btn && bank_data_not_save_btn) {
+        bank_data_save_btn.style.visibility = 'hidden';
+        bank_data_save_btn.style.opacity = '0';
+        bank_data_not_save_btn.style.visibility = 'hidden';
+        bank_data_not_save_btn.style.opacity = '0';
       }
+      is_dirty = false;
+ 
+      return result; 
+    })
+    .catch((error) => {
+      toast.error(`保存题库数据失败: ${error.message}`);
+      return 
+    });
+}
 
-      return data.data;
-    } catch (error) {
-      toast.error('获取题库列表异常:'+ error);
-      return null; // 或 throw error;
-    }
-  }
+  export function getBankWithQuestions(bankID) {
+  // 构造查询参数（Query Params）
+  const queryParams = new URLSearchParams({
+    bankID,
+    page: 1,
+    pageSize: 1000,
+  });
+ 
+  return fetch(`/api/questions?${queryParams}`, {
+    method: 'GET',
+    credentials: 'include',
+  })
+    .then((response) => {
+      if (!response.ok) {
+       toast.error(`HTTP错误: ${response.status}`);
+       return ;
+      }
+      return response.json();
+    })
+    .then((data) => {
+    
+      if (data.status !== 0) {
+        toast.error(`获取题库列表失败: ${data.msg}`);
+        return ;
+      }
+      return data.data; 
+    })
+    .catch((error) => {
+      toast.error(`获取题库列表失败: ${error.message}`);
+      return ;
+    });
+}
   /**
    * @description 获取题目列表
    */
