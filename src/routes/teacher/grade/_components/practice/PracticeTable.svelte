@@ -14,10 +14,12 @@
 		</thead>
 		<tbody>
 			{#if state.practices.length === 0}
-				<p class="no-data">暂无数据</p>
+				<tr>
+					<td colspan="7" class="no-data">暂无数据</td>
+				</tr>
 			{:else}
-				{#each state.practices as practice, i}
-					<PracticeTableRow {practice} {store} isAlter={i % 2 === 1} />
+				{#each state.practices as practice (practice.id)}
+					<PracticeTableRow {practice} {store} />
 				{/each}
 			{/if}
 		</tbody>
@@ -28,6 +30,7 @@
 	.practice-table-container {
 		width: 100%;
 		overflow-x: auto;
+		flex-grow: 1; /* 让表格容器占满剩余空间 */
 	}
 
 	.practice-table {

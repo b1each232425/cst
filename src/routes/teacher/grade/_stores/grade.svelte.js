@@ -147,7 +147,6 @@ export function createGradeStore() {
 		},
 		/** @param {number[]} examIds */
 		submitGrades(examIds) {
-			console.log('Submitting grades for exams:', examIds);
 			submitExamGrades(examIds)
 				.then(() => {
 					actions.fetchExams(); // Refresh data after submission
