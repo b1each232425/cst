@@ -142,33 +142,32 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * 获取题库列表请求函数
    */
 
- function getBankList({ keyword = '', page = '', pageSize = '', bankID = '' } = {}) {
-  const queryParams = new URLSearchParams({
-    keyword,
-    page,
-    pageSize,
-    bankID,
-  });
- 
-  return fetch(`/api/question-banks?${queryParams}`, {
-    method: 'GET',
-    credentials: 'include',
-  })
-    .then((response) => {
-      return response.json();
-    })
-    .then((data) => {
-      
-      if (data.status !== 0) {
-        toast.error(`获取题库列表失败: ${data.msg}`);
-      }
-      return data.data; // 返回实际数据
-    })
-    .catch((error) => {
-      toast.error(`获取题库列表失败: ${error.message}`);
-      return null; // 或 throw error;
+  function getBankList({ keyword = '', page = '', pageSize = '', bankID = '' } = {}) {
+    const queryParams = new URLSearchParams({
+      keyword,
+      page,
+      pageSize,
+      bankID,
     });
-}
+
+    return fetch(`/api/question-banks?${queryParams}`, {
+      method: 'GET',
+      credentials: 'include',
+    })
+      .then((response) => {
+        return response.json();
+      })
+      .then((data) => {
+        if (data.status !== 0) {
+          toast.error(`获取题库列表失败: ${data.msg}`);
+        }
+        return data.data; // 返回实际数据
+      })
+      .catch((error) => {
+        toast.error(`获取题库列表失败: ${error.message}`);
+        return null; // 或 throw error;
+      });
+  }
 
   onMount(async () => {
     const data = await getBankList();
@@ -198,7 +197,6 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       });
     }
     preloadCode('/teacher/question-bank/theory/editBank');
-
   });
 
   /**
@@ -206,54 +204,54 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    *
    */
   function addNewBank() {
-  const data = {
-    name: '未命名题库',
-    type: '00',
-    tags: [],
-  };
- 
-  return fetch('/api/question-banks', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ data }),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
+    const data = {
+      name: '未命名题库',
+      type: '00',
+      tags: [],
+    };
+
+    return fetch('/api/question-banks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data }),
     })
-    .then((result) => {
-      if (result.status !== 0) {
-       toast.error(`新建题库失败: ${result.msg}`);
-        return ;
-      }
-      toast.success('新建题库成功');
- 
-      // 存储到 localStorage
-      localStorage.setItem(
-        'question_bank_data',
-        JSON.stringify({
-          id: result.data.ID,
-          name: '未命名题库',
-          tags: [],
-          create_time: formatTimestamp(Date.now()),
-          update_time: formatTimestamp(Date.now()),
-        }),
-      );
- 
-      // 跳转页面
-      goto(`${window.location.pathname}/editBank`);
-      return ;
-    })
-    .catch((error) => {
-      toast.error(`新建题库失败: ${error.message}`);
-    
-      return ;
-    });
-}
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((result) => {
+        if (result.status !== 0) {
+          toast.error(`新建题库失败: ${result.msg}`);
+          return;
+        }
+        toast.success('新建题库成功');
+
+        // 存储到 localStorage
+        localStorage.setItem(
+          'question_bank_data',
+          JSON.stringify({
+            id: result.data.ID,
+            name: '未命名题库',
+            tags: [],
+            create_time: formatTimestamp(Date.now()),
+            update_time: formatTimestamp(Date.now()),
+          }),
+        );
+
+        // 跳转页面
+        goto(`${window.location.pathname}/editBank`);
+        return;
+      })
+      .catch((error) => {
+        toast.error(`新建题库失败: ${error.message}`);
+
+        return;
+      });
+  }
 
   /**
    * 添加题库处理函数
@@ -605,7 +603,7 @@ o888o o888o   "888" o888o o888o o888o o888o
       </button>
 
       <button
-       class="button-cancelSelect"
+        class="button-cancelSelect"
         onclick={() => {
           antiSelectAllHandleFunc();
         }}
@@ -693,18 +691,14 @@ o.  )88b   888 .    `888'     888  888    .o
     &:focus {
       outline: none;
     }
-
-
   }
 
-  .button-delete{
+  .button-delete {
     background-color: var(--red);
   }
-  .button-cancelSelect{
-  background-color: #7787a2
+  .button-cancelSelect {
+    background-color: #7787a2;
   }
-  
-
 
   .question-bank-container {
     position: relative;

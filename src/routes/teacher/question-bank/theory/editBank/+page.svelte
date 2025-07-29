@@ -20,6 +20,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 <script>
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import QuestionList from '../../_components/questionList.svelte';
   import FilterBar from '../../_components/FilterBarForQuestionBank.svelte';
   import BankTag from '../../_components/editableTag.svelte';
   import Dropdown from '../../_components/DropDownForQuesitonBank.svelte';
@@ -33,6 +34,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { formatTimestamp } from '../../utils/time_utils.js';
   import { TheoryQuestion } from '../type';
   import SinglePage from '../../_components/singlePage.svelte';
+  import { get } from 'svelte/store';
 
   /**
    * @description ICON集合
@@ -47,8 +49,6 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     checkbox_unselected: '/theory_question_bank/icons/checkbox_unselected.svg',
   };
 
-
-
   /**
    * @description 预览面板显示
    * @type {boolean}
@@ -60,31 +60,31 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * @type {TheoryQuestion}
    */
 
- /**
-     * @description 题目标签
+  /**
+   * @description 题目标签
+   * @type {Array<string>}
+   */
+  let all_question_tags = $derived.by(() => {
+    /**
      * @type {Array<string>}
      */
-    let all_question_tags = $derived.by(() => {
-        /**
-         * @type {Array<string>}
-         */
-        let question_tags = [];
-        questions.forEach((item) => {
-            if (item.tags) {
-                item.tags.forEach(
-                    /**
-                     * @param tag {string}
-                     */
-                    (tag) => {
-                        if (!question_tags.includes(tag)) {
-                            question_tags.push(tag);
-                        }
-                    },
-                );
+    let question_tags = [];
+    questions.forEach((item) => {
+      if (item.tags) {
+        item.tags.forEach(
+          /**
+           * @param tag {string}
+           */
+          (tag) => {
+            if (!question_tags.includes(tag)) {
+              question_tags.push(tag);
             }
-        });
-        return question_tags;
+          },
+        );
+      }
     });
+    return question_tags;
+  });
 
   /**
    * @description 题库名称输入框
@@ -139,7 +139,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     // window.location.href = "/teacher/questionBank/theory";
     goto('/teacher/question-bank/theory');
   };
- /**
+  /**
    * @description 题目类型
    */
   let question_types = $state([
@@ -224,7 +224,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   let is_dirty = false;
   let modifying_question = $state(null);
   let new_question_type = $state('');
-   /**
+  /**
    * @description 题目类型筛选条件
    * @type {Array<string>}
    */
@@ -245,11 +245,11 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * @type {string}
    */
   let search_question_content = $state('');
- /**
+  /**
    * @description 符合筛选条件的题目数量
    */
   let question_filtered_count = $state(0);
-  
+
   /**
    * @description 题库更新时间
    */
@@ -264,7 +264,19 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * @param {(string|number)[]} value
    * @param {string} condition
    */
-/**
+
+  /**
+   * @description 当前页码
+   * @type {number}
+   */
+  let current_page = $state(1);
+  /**
+   * @description 每页显示的题目数量
+   * @type {number}
+   */
+  let page_size = $state(10);
+
+  /**
    * @description 题目数据
    * @type {TheoryQuestion[]}
    */
@@ -274,7 +286,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * @description 题目数量
    * @type {number}
    */
-  let question_count = $derived(questions.length);
+  let question_count = $state(0);
 
   /**
    * @description 题库标签输入框内容
@@ -327,7 +339,6 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     }
   };
 
- 
   const onAddNewQuestion = (value) => {
     if (request_lock) {
       toast.warning('请等待当前操作完成后再进行其他操作');
@@ -369,54 +380,52 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     }
   };
 
- 
-
   /**
    * 添加题目
    * @param {Partial<TheoryQuestion>} new_question_data
    */
   export function AddNewQuestion(new_question_data) {
-  // 构建 body 数据
-  const data = [
-    {
-      Type: new_question_type,
-      Difficulty: new_question_data.difficulty,
-      Content: new_question_data.content,
-      Tags: new_question_data.tags,
-      Options: new_question_data.options,
-      Answers: new_question_data.answers,
-      Analysis: new_question_data.analysis,
-      Score: new_question_data.score,
-      QuestionAttachmentsPath: new_question_data.question_attachments_path,
-      BelongTO: bank_id,
-    },
-  ];
- 
-  return fetch('/api/questions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ data }),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
+    // 构建 body 数据
+    const data = [
+      {
+        Type: new_question_type,
+        Difficulty: new_question_data.difficulty,
+        Content: new_question_data.content,
+        Tags: new_question_data.tags,
+        Options: new_question_data.options,
+        Answers: new_question_data.answers,
+        Analysis: new_question_data.analysis,
+        Score: new_question_data.score,
+        QuestionAttachmentsPath: new_question_data.question_attachments_path,
+        BelongTO: bank_id,
+      },
+    ];
+
+    return fetch('/api/questions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data }),
     })
-    .then((result) => {
-      if (result.status !== 0) {
-        toast.error(`添加土木是该: ${result.msg}`);
-      }
-      toast.success('添加题目成功');
-      return getQuestionList().then(() => result); // 确保 getQuestionList() 执行后再返回 result
-    })
-    .catch((error) => {
-      toast.error(`添加题目失败: ${error.message}`);
-      return ;
-    });
-}
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((result) => {
+        if (result.status !== 0) {
+          toast.error(`添加土木是该: ${result.msg}`);
+        }
+        toast.success('添加题目成功');
+        return getQuestionList().then(() => result); // 确保 getQuestionList() 执行后再返回 result
+      })
+      .catch((error) => {
+        toast.error(`添加题目失败: ${error.message}`);
+        return;
+      });
+  }
 
   /**
    * @description 题目编辑确认
@@ -425,7 +434,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   const onEditPanelConFirm = async (new_question_data) => {
     //新增题目
     if (new_question_type != '') {
-      const  result = await AddNewQuestion(new_question_data);
+      const result = await AddNewQuestion(new_question_data);
       if (result.status == 0) {
         show_single_select_edit_panel = false;
         show_multiple_select_edit_panel = false;
@@ -433,13 +442,11 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         modifying_question = null;
         new_question_type = '';
         is_dirty = false;
-      }
-      else{
+      } else {
         toast.error('添加题目失败: ' + result.msg);
       }
     }
   };
-
 
   /**
    * @description 输入题目搜索关键字
@@ -459,103 +466,110 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   /**
    * @description 题库数据校验
    */
- function onConfirmUpdateQuestionBankData() {
-  if (bank_name.trim() === '') {
-    toast.error('题库名称不能为空');
-    return ;
-  }
- 
-  // 构造请求体
-  const requestData = {
-    name: bank_name,
-    tags: bank_tags,
-    id: bank_id,
-    type: '00',
-  };
- 
- fetch('/api/question-banks', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ data: requestData }), 
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then((result) => {
-      if (result.status !== 0) {
-        toast.error(`题库数据保存失败: ${result.msg}`);
-        return;
-      }
-      toast.success('题库数据保存成功');
- 
-      // 更新题库原始数据
-      origin_bank_data.name = bank_name;
-      origin_bank_data.tags = bank_tags;
-      bank_update_time = formatTimestamp(new Date().getTime());
- 
-      // 隐藏保存按钮
-      if (bank_data_save_btn && bank_data_not_save_btn) {
-        bank_data_save_btn.style.visibility = 'hidden';
-        bank_data_save_btn.style.opacity = '0';
-        bank_data_not_save_btn.style.visibility = 'hidden';
-        bank_data_not_save_btn.style.opacity = '0';
-      }
-      is_dirty = false;
- 
-      return result; 
-    })
-    .catch((error) => {
-      toast.error(`保存题库数据失败: ${error.message}`);
-      return 
-    });
-}
+  function onConfirmUpdateQuestionBankData() {
+    if (bank_name.trim() === '') {
+      toast.error('题库名称不能为空');
+      return;
+    }
 
-  export function getBankWithQuestions(bankID) {
-  // 构造查询参数（Query Params）
-  const queryParams = new URLSearchParams({
-    bankID,
-    page: 1,
-    pageSize: 1000,
+    // 构造请求体
+    const requestData = {
+      name: bank_name,
+      tags: bank_tags,
+      id: bank_id,
+      type: '00',
+    };
+
+    fetch('/api/question-banks', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data: requestData }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((result) => {
+        if (result.status !== 0) {
+          toast.error(`题库数据保存失败: ${result.msg}`);
+          return;
+        }
+        toast.success('题库数据保存成功');
+
+        // 更新题库原始数据
+        origin_bank_data.name = bank_name;
+        origin_bank_data.tags = bank_tags;
+        bank_update_time = formatTimestamp(new Date().getTime());
+
+        // 隐藏保存按钮
+        if (bank_data_save_btn && bank_data_not_save_btn) {
+          bank_data_save_btn.style.visibility = 'hidden';
+          bank_data_save_btn.style.opacity = '0';
+          bank_data_not_save_btn.style.visibility = 'hidden';
+          bank_data_not_save_btn.style.opacity = '0';
+        }
+        is_dirty = false;
+
+        return result;
+      })
+      .catch((error) => {
+        toast.error(`保存题库数据失败: ${error.message}`);
+        return;
+      });
+  }
+
+  $effect(() => {
+    getQuestionList();
   });
- 
-  return fetch(`/api/questions?${queryParams}`, {
-    method: 'GET',
-    credentials: 'include',
-  })
-    .then((response) => {
-      if (!response.ok) {
-       toast.error(`HTTP错误: ${response.status}`);
-       return ;
-      }
-      return response.json();
-    })
-    .then((data) => {
-    
-      if (data.status !== 0) {
-        toast.error(`获取题库列表失败: ${data.msg}`);
-        return ;
-      }
-      return data.data; 
-    })
-    .catch((error) => {
-      toast.error(`获取题库列表失败: ${error.message}`);
-      return ;
+
+  export function getBankWithQuestions() {
+    // 构造查询参数（Query Params）
+    const queryParams = new URLSearchParams({
+      bankID: bank_id,
+      page: current_page,
+      pageSize: page_size,
     });
-}
+
+    return fetch(`/api/questions?${queryParams}`, {
+      method: 'GET',
+      credentials: 'include',
+    })
+      .then((response) => {
+        if (!response.ok) {
+          toast.error(`HTTP错误: ${response.status}`);
+          return;
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.status !== 0) {
+          toast.error(`获取题库列表失败: ${data.msg}`);
+          return;
+        }
+        return data;
+      })
+      .catch((error) => {
+        toast.error(`获取题库列表失败: ${error.message}`);
+        return;
+      });
+  }
   /**
    * @description 获取题目列表
    */
-  const getQuestionList = async () => {
+  const getQuestionList = async (init) => {
     // 拉取题目列表
     request_lock = true;
-    const data = await getBankWithQuestions(bank_id);
+    const response = await getBankWithQuestions();
+    const data = response.data || [];
     request_lock = false;
-
+    if (init == 1) {
+      question_count = response.rowCount;
+    }
+    question_filtered_count = response.rowCount;
     questions = [];
     for (let i = 0; i < data.length; i++) {
       questions.push({
@@ -573,9 +587,6 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         question_attachments_path: data[i].QuestionAttachmentsPath,
       });
     }
-
-    // 应用数据
-    list_table_component.updateData();
   };
 
   /**
@@ -604,10 +615,9 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       return;
     }
 
-    getQuestionList();
+    getQuestionList(1);
   });
 
- 
   /**
    * @description 题目列表组件
    * @type {ListTable}
@@ -687,7 +697,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     bank_data_not_save_btn.style.visibility = 'hidden';
     bank_data_not_save_btn.style.opacity = '0';
   };
-  
+
   const addNewBankTag = (old_content, new_content) => {
     const value = new_content.trim();
     if (value === '') return;
@@ -774,7 +784,6 @@ o888o o888o   "888" o888o o888o o888o o888o
 -->
 
 <div class={`questionPrviewPanel ${show_preview_panel ? 'show' : 'hide'}`}>
-
   <QuestionPreviewPanel question={preview_question_data} closePanel={onClosePrviewPanel}></QuestionPreviewPanel>
 </div>
 
@@ -916,20 +925,22 @@ o888o o888o   "888" o888o o888o o888o o888o
         ]}
         onSelectTag={(value) => filterConditionSelect(value, 'difficulty')}
       ></FilterBar>
-      <FilterBar filter_title="标签"
+      <FilterBar
+        filter_title="标签"
         all_filter_conditions={all_question_tags.map((tag) => {
-                    return {
-                        value: tag,
-                        label: tag,
-                    };
-                })}
-       onSelectTag={(value) => filterConditionSelect(value, 'tag')}></FilterBar>
+          return {
+            value: tag,
+            label: tag,
+          };
+        })}
+        onSelectTag={(value) => filterConditionSelect(value, 'tag')}
+      ></FilterBar>
     </div>
     <div class="questionListContainer">
       <div class="questionListTitle">
         <div class="leftColorBlock"></div>
         <span class="questionListTitleText">试题列表</span>
-        <span >共筛选{question_filtered_count}道题</span>
+        <span>共筛选{question_filtered_count}道题</span>
       </div>
       <div class="questionListControlBar">
         <div class="questionListSearch">
@@ -953,19 +964,21 @@ o888o o888o   "888" o888o o888o o888o o888o
           </button>
         </div>
       </div>
-      <ListTable
+      <QuestionList
         bind:this={list_table_component}
-        question_data={questions}
+        bind:question_count={question_filtered_count}
+        bind:question_data={questions}
+        bind:page_size
+        bind:current_page
         question_types={question_types_map}
-        onEdit={onListTableClickEdit}
-        update_filtered_question_count={(count) => {
-          question_filtered_count = count;
-        }}
+        on:pageChange={(e) => (current_page = e.detail)}
+        on:pageSizeChange={(e) => (page_size = e.detail)}
         onListItemClick={(question) => {
           preview_question_data = question;
           show_preview_panel = true;
         }}
-      ></ListTable>
+        onEdit={onListTableClickEdit}
+      ></QuestionList>
     </div>
   </div>
 </div>
@@ -1164,7 +1177,7 @@ o888o o888o   "888" o888o o888o o888o o888o
             font-size: 12px;
             color: #333333;
             font-weight: 500;
-            color:var( --text-secondary) !important;
+            color: var(--text-secondary) !important;
           }
         }
 
@@ -1181,7 +1194,7 @@ o888o o888o   "888" o888o o888o o888o o888o
             white-space: nowrap;
 
             background-color: var(--primary-color);
-            color:var(--text-white) ;
+            color: var(--text-white);
 
             border-top-left-radius: 5px;
             border-bottom-left-radius: 5px;
@@ -1251,7 +1264,7 @@ o888o o888o   "888" o888o o888o o888o o888o
       .quesionFilter {
         display: flex;
         flex-direction: column;
-        background-color: var( --bg-primary);
+        background-color: var(--bg-primary);
         border-radius: 5px;
         max-width: 21%;
         min-width: 200px;
@@ -1278,12 +1291,12 @@ o888o o888o   "888" o888o o888o o888o o888o
           flex-direction: column;
           margin-bottom: 10px;
 
-          background-color:var(--bg-primary);
+          background-color: var(--bg-primary);
 
           .colorHolder {
             width: 100%;
             height: 15px;
-            background-color:var(--bg-primary);
+            background-color: var(--bg-primary);
           }
           .leftColorBlock {
             display: block;
@@ -1310,7 +1323,8 @@ o888o o888o   "888" o888o o888o o888o o888o
         flex-direction: column;
         min-width: 800px;
         min-height: 0;
-
+        overflow-y: auto;
+        max-height: 600px;
         border-radius: 5px;
         margin-left: 10px;
         padding: 5px;
@@ -1332,7 +1346,7 @@ o888o o888o   "888" o888o o888o o888o o888o
           margin-top: 10px;
           margin-bottom: 10px;
           align-items: center;
-          gap:5px;
+          gap: 5px;
           .leftColorBlock {
             display: block;
             max-width: 8px;
@@ -1455,27 +1469,27 @@ o888o o888o   "888" o888o o888o o888o o888o
     }
   }
 
- .questionPrviewPanel {
-  position: fixed;
-  top: 50%;
-  right: 30px;
-  width: 30%;
-  height: 90vh;
-  background-color: var(--bg-primary);
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease-in-out;
-  z-index: 1000;
- 
-  // 默认状态（隐藏）
-  &.hide {
-    transform: translate(calc(100% + 30px), -50%);
+  .questionPrviewPanel {
+    position: fixed;
+    top: 50%;
+    right: 30px;
+    width: 30%;
+    height: 90vh;
+    background-color: var(--bg-primary);
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease-in-out;
+    z-index: 1000;
+
+    // 默认状态（隐藏）
+    &.hide {
+      transform: translate(calc(100% + 30px), -50%);
+    }
+
+    // 显示状态
+    &.show {
+      transform: translate(0, -50%);
+    }
   }
- 
-  // 显示状态
-  &.show {
-    transform: translate(0, -50%);
-  }
-}
 
   .modal {
     position: fixed;
