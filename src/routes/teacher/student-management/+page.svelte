@@ -1,11 +1,16 @@
 <script>
     import { onMount } from "svelte";
     import Title from "$lib/components/Title/Title.svelte";
+    import InputBox from "$lib/components/Input/InputBox.svelte";
+    import InforInput from "$lib/components/Input/InforInput.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import Select from "$lib/components/Select/Select.svelte";
     import Option from "$lib/components/Select/Option.svelte";
+    import Empty from "$lib/components/Table/Empty.svelte";
+    import StudentImportPanel from "./StudentImportPanel.svelte";
     import { debounce } from "./_utils/debounce.js";
     import { goto } from "$app/navigation";
+
 
     let students = $state([]); // 用户列表
 
@@ -15,7 +20,6 @@
     // 筛选和搜索状态
     let searchText = $state(""); // 搜索框文本内容
     let accountStatus = $state("全部"); // 当前选中的账号状态
-    let isDropdownOpen = $state(false); // 下拉框展开状态
 
     // 分页相关状态
     let currentPage = $state(1);
@@ -26,6 +30,9 @@
     // 加载状态
     let loading = $state(false);
     let error = $state(null);
+
+    let showImportPanel = $state(false);
+    let studentImportPanelRef = $state(null);
 
     //状态码到显示文字的映射
     const StateMap = {
@@ -41,7 +48,7 @@
         "04": "deleted",
     };
 
-    //处理获取学生列表 TODO：替换为统一接口请求
+    //处理获取学生列表 
     function fetchStudents() {
         loading = true;
         error = null;
@@ -125,24 +132,11 @@
             });
     }
 
-    // 搜索处理
-    function handleSearch() {
-        currentPage = 1;
-        fetchStudents();
-    }
-
     //防抖处理搜索函数
     const handleSearchDebounced = debounce(() => {
         currentPage = 1;
         fetchStudents();
     }, 400);
-
-    // 清空搜索
-    function clearSearch() {
-        searchText = "";
-        handleSearch();
-    }
-    
 
     //切换全选状态
     function toggleSelectAll() {
@@ -165,14 +159,14 @@
     // 页码选择处理
     function handlePageChange(event) {
         currentPage = event.detail;
-        fetchUsers();
+        fetchStudents();
     }
 
     // 每页大小变更处理
     function handlePageSizeChange(event) {
         pageSize = event.detail;
         currentPage = 1;
-        fetchUsers();
+        fetchStudents();
     }
 
     // 下载模板
@@ -182,7 +176,8 @@
 
     // 导入学生
     function handleImport() {
-        // TODO: 实现导入逻辑
+        studentImportPanelRef?.triggerFileInput();
+        showImportPanel = true;
     }
 
     // 添加学生
@@ -204,7 +199,7 @@
 
     // 创建学生
     function handleCreate() {
-        goto("/studentManage/addStudent");
+        goto("/teacher/student-management/addStudent");
     }
 
     // 删除选中学生
@@ -272,7 +267,7 @@
     }
 
     onMount(() => {
-        
+        fetchStudents();
     });
 </script>
 
@@ -285,19 +280,13 @@
                 <div class="filter-item">
                     <span class="filter-label">姓名/账号/身份证号/手机号</span>
                     <div class="search-container">
-                        <input
+                        <InputBox
+                            placeholder="请输入关键词"
                             type="text"
                             bind:value={searchText}
-                            placeholder="请输入关键词"
-                            class="search-input"
+                            showLabel={false}
                             oninput={handleSearchDebounced}
-                        />
-                        <button
-                            class="clear-btn {searchText ? 'show' : 'hide'}"
-                            onclick={clearSearch}
-                        >
-                            ×
-                        </button>
+                        ></InputBox>
                     </div>
                 </div>
                 <div class="filter-item">
@@ -458,6 +447,14 @@
                         </td>
                     </tr>
                 {/each}
+                <!-- 空页面 -->
+                <tr class="empty-row {students.length > 0 ? 'hide' : ''}">
+                    <td colspan="8" class="empty-cell">
+                        <div class="empty-container">
+                            <Empty text="暂无学生数据" />
+                        </div>
+                    </td>
+                </tr>
             </tbody>
         </table>
         <!-- 分页器 -->
@@ -474,6 +471,18 @@
             </div>
         </div>
     </div>
+
+    <!-- 导入学生面板 -->
+    <StudentImportPanel
+        bind:show={showImportPanel}
+        onImport={(isAllOk) => {
+            if (isAllOk) {
+                fetchStudents();
+            }
+            showImportPanel = false;
+        }}
+        bind:this={studentImportPanelRef}
+    />
 </div>
 
 <style lang="scss" scoped>
@@ -537,62 +546,17 @@
                 margin-right: 10px;
                 align-items: center;
                 justify-items: center;
+                gap: 20px;
             }
 
             .search-container {
                 position: relative;
                 display: flex;
-                width: 100%;
-                min-height: 32px;
-                border: 1px solid #ddd;
-                border-radius: 3px;
-                padding: 0 5px;
-                margin-left: 10px;
-                align-items: center;
-                justify-items: center;
-
-                .search-input {
-                    flex: 1;
-                    border: none;
-                    outline: none;
-                    height: 100%;
-                    padding: 0 25px 0 5px;
-                    font-size: $normal-font-size;
-                    background-color: transparent;
-
-                    &::placeholder {
-                        color: #999;
-                    }
-                }
-
-                .clear-btn {
-                    position: absolute;
-                    display: flex;
-                    right: 5px;
-                    background: none;
-                    border: none;
-                    cursor: pointer;
-                    color: #999;
-                    font-size: 16px;
-                    padding: 0;
-                    align-items: center;
-                    justify-self: center;
-
-                    &.hide {
-                        visibility: hidden;
-                    }
-
-                    &.show {
-                        visibility: visible;
-                    }
-                }
             }
 
             .dropdown-container {
                 position: relative;
                 display: flex;
-                margin-left: 10px;
-                
             }
         }
 
@@ -695,6 +659,10 @@
             height: 60px;
         }
 
+        .empty-row td {
+            border-bottom: none;
+        }
+
         .table-row:hover {
             background-color: #ecf2fe;
         }
@@ -790,5 +758,13 @@
                 visibility: hidden;
             }
         }
+    }
+
+    .empty-container {
+        margin-top: 40px;
+    }
+
+    .empty-row.hide {
+        display: none;
     }
 </style>

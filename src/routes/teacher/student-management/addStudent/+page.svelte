@@ -128,7 +128,7 @@
             title: "确认退出",
             content: "你还未提交数据，确定要退出吗？",
             onConfirm: () => {
-                goto("/studentManage");//TODO:后续改为正确路径
+                goto("/teacher/student-management");
             },
         });
     }
@@ -186,7 +186,7 @@
                 }
                 return res.json();
             })
-            .then(() => goto("/studentManage"))
+            .then(() => goto("/teacher/student-management"))
             .catch((err) => {
                 alert(`创建用户失败: ${err.message}`); //TODO:后续需改为弹窗提示
             });

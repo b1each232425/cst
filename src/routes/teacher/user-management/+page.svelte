@@ -1,7 +1,14 @@
 <script>
     import { onMount } from "svelte";
     import Title from "$lib/components/Title/Title.svelte";
-    import Pagination from '$lib/components/Pagination/Pagination.svelte';
+    import InputBox from "$lib/components/Input/InputBox.svelte";
+    import InforInput from "$lib/components/Input/InforInput.svelte";
+    import Pagination from "$lib/components/Pagination/Pagination.svelte";
+    import Select from "$lib/components/Select/Select.svelte";
+    import Option from "$lib/components/Select/Option.svelte";
+    import Empty from "$lib/components/Table/Empty.svelte";
+    import DatePicker from "$lib/components/DatePicker/DatePicker.svelte";
+    import { formatDate } from "$lib/components/DatePicker/datePicker";
     import { debounce } from "./_utils/debounce.js";
     import { goto } from "$app/navigation";
 
@@ -17,14 +24,10 @@
     let searchEmail = $state("");
 
     // 选择筛选状态
-    let filterCreateTime = $state("");
+    let filterCreateTime = $state(null);
     let filterRole = $state([]);
     let filterGender = $state("all"); // 性别值(发送后端)
     let filterStatus = $state("all"); // 状态值(发送后端)
-
-    let isDropdownOpen = $state(false); // 状态下拉框展开状态
-    let isGenderDropdownOpen = $state(false); // 性别下拉框展开状态
-    let isRoleDropdownOpen = $state(false); // 角色下拉框展开状态
 
     // 分页相关状态
     let currentPage = $state(1);
@@ -35,6 +38,8 @@
     // 加载状态
     let loading = $state(false);
     let error = $state(null);
+
+    let datePicker; //创建日期选择器对象
 
     const TypeMap = {
         "00": "匿名用户",
@@ -57,20 +62,6 @@
         { value: "学生", label: "学生" },
     ];
 
-    // 性别下拉选项(用于筛选)
-    const genderOptions = [
-        { value: "all", label: "全部" },
-        { value: "男", label: "男" },
-        { value: "女", label: "女" },
-    ];
-
-    // 状态下拉选项(用于筛选)
-    const statusOptions = [
-        { value: "all", label: "全部" },
-        { value: "00", label: "启用" },
-        { value: "02", label: "停用" },
-    ];
-
     // 状态码到CSS类名的映射(用于CSS样式不同值显示不同颜色)
     const StateClassMap = {
         "00": "enabled",
@@ -83,13 +74,6 @@
         all: "全部",
         "00": "启用",
         "02": "停用",
-    };
-
-    // 性别映射(将值转换为显示文本)
-    const genderLabelMap = {
-        all: "全部",
-        男: "男",
-        女: "女",
     };
 
     //处理获取用户列表 TODO：替换为统一接口请求
@@ -111,9 +95,7 @@
             params.status = filterStatus; //all则不传值，显示全部
         if (searchAccount) params.account = searchAccount;
         if (filterCreateTime) {
-            const [y, m, d] = filterCreateTime.split("-").map(Number);
-            const localDate = new Date(y, m - 1, d); //monthIndex 从 0 开始
-            params.createTime = localDate.getTime();
+            params.createTime = filterCreateTime.getTime(); // 直接获取时间戳
         }
         1;
         //TODO:角色的筛选，后端暂不返回 roles
@@ -172,46 +154,15 @@
         fetchUsers();
     }, 400);
 
-    // 清空搜索
-    function clearSearch(field) {
-        switch (field) {
-            case "account":
-                searchAccount = "";
-                break;
-            case "name":
-                searchName = "";
-                break;
-            case "phone":
-                searchPhone = "";
-                break;
-            case "email":
-                searchEmail = "";
-                break;
-        }
-        fetchUsers();
-    }
+    // 处理单日期选择事件
+    function handleStartDateSelected(event) {
+        const d = event.detail.date;
+        console.log("选择的日期是：", formatDate(d));
 
-    // 状态筛选处理函数(点击下拉选项的重新调用)
-    function handleStatusFilter(value) {
-        filterStatus = value;
-        currentPage = 1;
-        isDropdownOpen = false;
-        fetchUsers();
-    }
-
-    // 性别筛选处理函数(点击下拉选项的重新调用)
-    function handleGenderFilter(value) {
-        filterGender = value;
-        currentPage = 1;
-        isGenderDropdownOpen = false;
-        fetchUsers();
-    }
-
-    // 创建时间筛选处理函数
-    const handleCreateTimeChange = debounce(() => {
+        filterCreateTime = new Date(d.getFullYear(), d.getMonth(), d.getDate()); // 去掉时分秒
         currentPage = 1;
         fetchUsers();
-    }, 400);
+    }
 
     //切换全选状态
     function toggleSelectAll() {
@@ -318,17 +269,7 @@
     }
 
     onMount(() => {
-        //点击页面空白处自动关闭下拉框
-        const closeDropdowns = (event) => {
-            if (!event.target.closest(".input-container")) {
-                isDropdownOpen = false;
-                isGenderDropdownOpen = false;
-                isRoleDropdownOpen = false;
-            }
-        };
-        document.addEventListener("click", closeDropdowns);
         fetchUsers();
-        return () => document.removeEventListener("click", closeDropdowns);
     });
 </script>
 
@@ -343,17 +284,13 @@
                     <span class="item-label">账号</span>
                     <div class="input-container">
                         <div class="search-container">
-                            <input
+                            <InputBox
                                 type="text"
                                 bind:value={searchAccount}
                                 placeholder="请输入账号"
-                                class="search-input"
+                                showLabel={false}
                                 oninput={handleSearchDebounced}
                             />
-                            <button
-                                class="clear-btn {searchAccount ? '' : 'hide'}"
-                                onclick={() => clearSearch("account")}>×</button
-                            >
                         </div>
                     </div>
                 </div>
@@ -362,17 +299,13 @@
                     <span class="item-label">姓名</span>
                     <div class="input-container">
                         <div class="search-container">
-                            <input
+                            <InputBox
                                 type="text"
                                 bind:value={searchName}
                                 placeholder="请输入姓名"
-                                class="search-input"
+                                showLabel={false}
                                 oninput={handleSearchDebounced}
                             />
-                            <button
-                                class="clear-btn {searchName ? '' : 'hide'}"
-                                onclick={() => clearSearch("name")}>×</button
-                            >
                         </div>
                     </div>
                 </div>
@@ -381,17 +314,13 @@
                     <span class="item-label">电话</span>
                     <div class="input-container">
                         <div class="search-container">
-                            <input
+                            <InputBox
                                 type="text"
                                 bind:value={searchPhone}
                                 placeholder="请输入电话"
-                                class="search-input"
+                                showLabel={false}
                                 oninput={handleSearchDebounced}
                             />
-                            <button
-                                class="clear-btn {searchPhone ? '' : 'hide'}"
-                                onclick={() => clearSearch("phone")}>×</button
-                            >
                         </div>
                     </div>
                 </div>
@@ -400,17 +329,13 @@
                     <span class="item-label">邮箱</span>
                     <div class="input-container">
                         <div class="search-container">
-                            <input
+                            <InputBox
                                 type="text"
                                 bind:value={searchEmail}
                                 placeholder="请输入邮箱"
-                                class="search-input"
+                                showLabel={false}
                                 oninput={handleSearchDebounced}
                             />
-                            <button
-                                class="clear-btn {searchEmail ? '' : 'hide'}"
-                                onclick={() => clearSearch("email")}>×</button
-                            >
                         </div>
                     </div>
                 </div>
@@ -419,12 +344,14 @@
                 <div class="input-item">
                     <span class="item-label">创建时间</span>
                     <div class="input-container">
-                        <input
-                            type="date"
-                            bind:value={filterCreateTime}
-                            onchange={handleCreateTimeChange}
-                            class="date-input"
+                        <div class="date-input">
+                        <DatePicker
+                            bind:this={datePicker}
+                            singleDateSelection={true}
+                            inputWidth={"320px"}
+                            on:startDateSelected={handleStartDateSelected}
                         />
+                        </div>
                     </div>
                 </div>
 
@@ -432,60 +359,23 @@
                 <div class="input-item">
                     <span class="item-label">角色</span>
                     <div class="input-container">
-                        <button
-                            class="dropdown-btn"
-                            onclick={() =>
-                                (isRoleDropdownOpen = !isRoleDropdownOpen)}
+                        <Select
+                            bind:value={filterRole}
+                            placeholder="请选择角色"
+                            multiple
+                            onChangeValue={(value) => {
+                                filterRole = value;
+                                currentPage = 1;
+                                fetchUsers();
+                            }}
                         >
-                            {filterRole.length === 0
-                                ? "全部角色"
-                                : filterRole.length === roleOptions.length
-                                  ? "全部角色"
-                                  : filterRole.join(", ")}
-                            <img
-                                src="/student_management/down_arrow.svg"
-                                alt="toggle"
-                                class="dropdown-icon {isRoleDropdownOpen
-                                    ? 'rotate'
-                                    : ''}"
-                            />
-                        </button>
-
-                        <div
-                            class="dropdown-options {isRoleDropdownOpen
-                                ? 'show'
-                                : 'hide'}"
-                        >
-                            <!-- 全部角色选项 -->
-                            <button
-                                onclick={() => (filterRole = [])}
-                                class="dropdown-option {filterRole.length === 0
-                                    ? 'active'
-                                    : ''}"
-                            >
-                                全部角色
-                            </button>
-                            <!-- 各角色选项 -->
                             {#each roleOptions as option}
-                                <button
-                                    onclick={() =>
-                                        (filterRole = filterRole.includes(
-                                            option.value,
-                                        )
-                                            ? filterRole.filter(
-                                                  (r) => r !== option.value,
-                                              )
-                                            : [...filterRole, option.value])}
-                                    class="dropdown-option {filterRole.includes(
-                                        option.value,
-                                    )
-                                        ? 'active'
-                                        : ''}"
-                                >
-                                    {option.label}
-                                </button>
+                                <Option
+                                    value={option.value}
+                                    label={option.label}
+                                />
                             {/each}
-                        </div>
+                        </Select>
                     </div>
                 </div>
 
@@ -493,39 +383,19 @@
                 <div class="input-item">
                     <span class="item-label">性别</span>
                     <div class="input-container">
-                        <button
-                            class="dropdown-btn"
-                            onclick={() =>
-                                (isGenderDropdownOpen = !isGenderDropdownOpen)}
+                        <Select
+                            bind:value={filterGender}
+                            placeholder="全部"
+                            onChangeValue={(value) => {
+                                filterGender = value;
+                                currentPage = 1;
+                                fetchUsers();
+                            }}
                         >
-                            {genderLabelMap[filterGender]}
-                            <img
-                                src="/student_management/down_arrow.svg"
-                                alt="toggle"
-                                class="dropdown-icon {isGenderDropdownOpen
-                                    ? 'rotate'
-                                    : ''}"
-                            />
-                        </button>
-
-                        <div
-                            class="dropdown-options {isGenderDropdownOpen
-                                ? 'show'
-                                : 'hide'}"
-                        >
-                            {#each genderOptions as option}
-                                <button
-                                    onclick={() =>
-                                        handleGenderFilter(option.value)}
-                                    class="dropdown-option {filterGender ===
-                                    option.value
-                                        ? 'active'
-                                        : ''}"
-                                >
-                                    {option.label}
-                                </button>
-                            {/each}
-                        </div>
+                            <Option value="all" label="全部" />
+                            <Option value="男" label="男" />
+                            <Option value="女" label="女" />
+                        </Select>
                     </div>
                 </div>
 
@@ -533,37 +403,19 @@
                 <div class="input-item">
                     <span class="item-label">账号状态</span>
                     <div class="input-container">
-                        <button
-                            class="dropdown-btn"
-                            onclick={() => (isDropdownOpen = !isDropdownOpen)}
+                        <Select
+                            bind:value={filterStatus}
+                            placeholder="全部"
+                            onChangeValue={(value) => {
+                                filterStatus = value;
+                                currentPage = 1;
+                                fetchUsers();
+                            }}
                         >
-                            {statusLabelMap[filterStatus]}
-                            <img
-                                src="/student_management/down_arrow.svg"
-                                alt="toggle"
-                                class="dropdown-icon {isDropdownOpen
-                                    ? 'rotate'
-                                    : ''}"
-                            />
-                        </button>
-                        <div
-                            class="dropdown-options {isDropdownOpen
-                                ? 'show'
-                                : 'hide'}"
-                        >
-                            {#each statusOptions as option}
-                                <button
-                                    onclick={() =>
-                                        handleStatusFilter(option.value)}
-                                    class="dropdown-option {filterStatus ===
-                                    option.value
-                                        ? 'active'
-                                        : ''}"
-                                >
-                                    {option.label}
-                                </button>
-                            {/each}
-                        </div>
+                            <Option value="all" label="全部" />
+                            <Option value="00" label="启用" />
+                            <Option value="02" label="停用" />
+                        </Select>
                     </div>
                 </div>
             </div>
@@ -577,7 +429,7 @@
                 </button>
                 <button
                     class="action-btn add-btn"
-                    onclick={() => goto("/userManage/addUser")}
+                    onclick={() => goto("/teacher/user-management/addUser")}
                 >
                     新增
                 </button>
@@ -708,17 +560,25 @@
                         </td>
                     </tr>
                 {/each}
+                <!-- 空页面 -->
+                <tr class="empty-row {users.length > 0 ? 'hide' : ''}">
+                    <td colspan="12" class="empty-cell">
+                        <div class="empty-container">
+                            <Empty text="暂无用户数据" />
+                        </div>
+                    </td>
+                </tr>
             </tbody>
         </table>
         <!-- 分页器 -->
         <div class="pagination-wrapper">
             <div class="pagination-container {totalItems > 0 ? '' : 'hide'}">
                 <Pagination
-                    totalItems={totalItems}
-                    currentPage={currentPage}
-                    pageSize={pageSize}
+                    {totalItems}
+                    {currentPage}
+                    {pageSize}
                     pageSizeOptions={[10, 20, 50]}
-                    on:pageChange={handlePageChange} 
+                    on:pageChange={handlePageChange}
                     on:pageSizeChange={handlePageSizeChange}
                 />
             </div>
@@ -775,6 +635,7 @@
             .input-item {
                 display: flex;
                 align-items: center;
+                gap: 20px;
 
                 .item-label {
                     font-size: $normal-font-size;
@@ -788,142 +649,15 @@
                     position: relative;
                     display: flex;
                     width: 100%;
-                    min-height: 32px;
-                    border: 1px solid #ddd;
-                    border-radius: 3px;
-                    padding: 0 5px;
-                    margin-left: 20px;
-                    align-items: center;
-                    justify-items: center;
 
                     .search-container {
                         position: relative;
                         display: flex;
-                        flex: 1;
-                        align-items: center;
                         width: 100%;
                     }
 
-                    .dropdown-btn {
-                        display: flex;
-                        padding: 0 12px;
-                        min-height: 32px;
-                        width: 100%;
-                        color: #1d2129;
-                        align-items: center;
-                        justify-content: space-between;
-                        font-size: $normal-font-size;
-                        border: none;
-                        background: transparent;
-                        border-radius: 3px;
-
-                        cursor: pointer;
-
-                        .dropdown-icon {
-                            min-width: 12px;
-                            height: auto;
-                            transition: transform 0.3s ease;
-                            &.rotate {
-                                transform: rotate(180deg);
-                            }
-                        }
-                    }
-                    .dropdown-options {
-                        position: absolute;
-                        display: flex;
-                        flex-direction: column;
-                        top: calc(100% + 5px);
-                        left: 0;
-                        right: 0;
-                        border: 1px solid #e5e5e5;
-                        border-radius: 4px;
-                        background: #fff;
-                        z-index: 10;
-
-                        &.hide {
-                            visibility: hidden;
-                        }
-
-                        &.show {
-                            visibility: visible;
-                        }
-
-                        .dropdown-option {
-                            width: 100%;
-                            min-height: 32px;
-                            padding: 0 10px;
-                            font-size: $normal-font-size;
-                            border: none;
-                            background: transparent;
-                            cursor: pointer;
-                            text-align: left;
-                            display: flex;
-                            align-items: center;
-                            padding: 8px 10px;
-                            cursor: pointer;
-                            input[type="checkbox"] {
-                                margin-right: 8px;
-                                cursor: pointer;
-                            }
-
-                            &:hover {
-                                background-color: #cccccc;
-                            }
-
-                            &.active {
-                                background: #cccccc;
-                            }
-                        }
-                    }
                 }
 
-                .search-input {
-                    flex: 1;
-                    border: none;
-                    outline: none;
-                    height: 100%;
-                    padding: 0 25px 0 5px;
-                    font-size: $normal-font-size;
-                    background-color: transparent;
-
-                    &::placeholder {
-                        color: #999;
-                    }
-                }
-
-                .date-input,
-                .select-input {
-                    width: 100%;
-                    min-height: 32px;
-                    border: 1px solid rgb(255, 255, 255);
-                    border-radius: 3px;
-                    padding: 0 8px;
-                    font-size: $normal-font-size;
-                    outline: none;
-                    box-sizing: border-box;
-                }
-
-                .clear-btn {
-                    position: absolute;
-                    display: flex;
-                    right: 5px;
-                    background: none;
-                    border: none;
-                    cursor: pointer;
-                    color: #999;
-                    font-size: 16px;
-                    padding: 0;
-                    align-items: center;
-                    justify-self: center;
-
-                    &.hide {
-                        visibility: hidden;
-                    }
-
-                    &.show {
-                        visibility: visible;
-                    }
-                }
             }
         }
 
@@ -1059,6 +793,10 @@
             height: 60px;
         }
 
+        .empty-row td {
+            border-bottom: none;
+        }
+
         .table-row:hover {
             background-color: #ecf2fe;
         }
@@ -1163,5 +901,13 @@
                 visibility: hidden;
             }
         }
+    }
+
+    .empty-container {
+        margin-top: 40px;
+    }
+
+    .empty-row.hide {
+        display: none;
     }
 </style>

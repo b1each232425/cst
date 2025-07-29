@@ -68,7 +68,7 @@
             title: "确认退出",
             content: "你还未提交数据，确定要退出吗？",
             onConfirm: () => {
-                goto("/userManage");//TODO:后续改为正确路径
+                goto("/teacher/user-management");
             },
         });
     }
@@ -149,7 +149,7 @@
                 }
                 return res.json();
             })
-            .then(() => goto("/userManage"))
+            .then(() => goto("/teacher/user-management"))
             .then(() => {
                 toast.success("操作成功");
             })
