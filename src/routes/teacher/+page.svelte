@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
 
   onMount(() => {
-    goto('/login/question-bank/theory');
+    goto('/teacher/question-bank/theory');
   });
 </script>
 
