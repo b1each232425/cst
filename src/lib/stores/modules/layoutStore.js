@@ -30,7 +30,7 @@ export const navStore = writable([
   {
     name: 'practice',
     title: '练习管理',
-    path: '/teacher/practice-management',
+    path: '/teacher/practice',
     icon: '/sidebar/nav_icon/practice.svg',
     isOpen: true,
     isSelect: false,
@@ -243,6 +243,3 @@ export const crumbStore = writable([
 
 // 控制侧边栏折叠状态
 export const sidebarFoldingState = writable(false);
-
-// 控制侧边栏宽度
-export const sidebarWidth = writable('235px');
