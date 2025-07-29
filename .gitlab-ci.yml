@@ -32,16 +32,3 @@ deploy-devmentor-fe:
   script:
     - chmod +x deploy_p.sh
     - ./deploy_p.sh
-
-
-deploy-devmentor-fe:
-  only:
-    refs:
-      - /^v\d+\.\d+\.\d+$/
-  stage: deploy
-  tags:
-    - nodejs-build
-  environment: production
-  script:
-    - chmod +x deploy.sh 
-    - ./deploy.sh
