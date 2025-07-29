@@ -22,7 +22,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 	import { onMount } from "svelte";
 	import EditableTag from "./editableTag.svelte";
 	import { fade, slide } from "svelte/transition";
-
+    import '$lib/styles/global.css';
 	/**
 	 * @typedef BankData
 	 * @property {string}           id              - 题库ID
@@ -459,7 +459,7 @@ o.  )88b   888 .    `888'     888  888    .o
 			border: none;
 			border-radius: 14px;
 			box-sizing: border-box;
-			background-color: #7490ff;
+			background-color:var(--blue);
 			cursor: pointer;
 
 			.add-img {
@@ -476,12 +476,12 @@ o.  )88b   888 .    `888'     888  888    .o
 				box-sizing: border-box;
 				font-family: "Arial Bold", "Arial Normal", "Arial", sans-serif;
 				font-weight: 700;
-				color: #ffffff;
+				color: var(--text-white);
 				text-align: center;
 			}
 
 			&:hover {
-				background-color: #8da3fc;
+				background-color:var(--primary-hover);
 			}
 		}
 
@@ -491,7 +491,7 @@ o.  )88b   888 .    `888'     888  888    .o
 			height: inherit;
 			border: 1px solid #cbcbcb;
 			border-radius: 14px;
-			background-color: #ffffff;
+			background-color: var(--bg-primary);
 			transform: rotateX(0deg);
 			transition: all 0.4s ease-in-out;
 			transform-style: preserve-3d;

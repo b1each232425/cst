@@ -254,7 +254,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   /**
    * 添加题库处理函数
    */
-  function add_handle_func() {
+  function addHandleFunc() {
     addNewBank();
   }
 
@@ -262,7 +262,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * 选中题库处理函数
    * @param {BankCardItemData} item
    */
-  function select_handle_func(item) {
+  function selectHandleFunc(item) {
     // // console.log("选中题库:", item);
 
     item.selected = item.selected == null ? true : !item.selected;
@@ -595,13 +595,13 @@ o888o o888o   "888" o888o o888o o888o o888o
     </div>
 
     <div class="operation-btns">
-      <button style="background-color: #f36d78" onclick={onBatchDeleteBank}>
+      <button class="button-delete" onclick={onBatchDeleteBank}>
         <img src={icons.delete} alt="批量删除" />
         <span>批量删除</span>
       </button>
 
       <button
-        style="background-color: #7787a2"
+       class="button-cancelSelect"
         onclick={() => {
           antiSelectAllHandleFunc();
         }}
@@ -616,7 +616,7 @@ o888o o888o   "888" o888o o888o o888o o888o
   <div class="bank-container">
     <div class="bank-list">
       <div class="bank-card-container">
-        <BankCard type="add" {icons} {add_handle_func} />
+        <BankCard type="add" {icons} add_handle_func={addHandleFunc} />
       </div>
 
       {#each bank_list as item, index}
@@ -630,7 +630,7 @@ o888o o888o   "888" o888o o888o o888o o888o
             }}
             normal_handle_funcs={{
               select: () => {
-                select_handle_func(item);
+                selectHandleFunc(item);
               },
               add_tag: (content) => {
                 addTagHandleFunc(item, content);
@@ -689,7 +689,18 @@ o.  )88b   888 .    `888'     888  888    .o
     &:focus {
       outline: none;
     }
+
+
   }
+
+  .button-delete{
+    background-color: var(--red);
+  }
+  .button-cancelSelect{
+  background-color: #7787a2
+  }
+  
+
 
   .question-bank-container {
     position: relative;

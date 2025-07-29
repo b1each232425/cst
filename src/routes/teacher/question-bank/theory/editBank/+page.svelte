@@ -753,10 +753,8 @@ oooo            .                     oooo
 o888o o888o   "888" o888o o888o o888o o888o                                                     
 -->
 
-<div
-  class="questionPrviewPanel"
-  style:transform={show_preview_panel ? 'translate(0, -50%)' : 'translate(calc(100% + 30px), -50%)'}
->
+<div class={`questionPrviewPanel ${show_preview_panel ? 'show' : 'hide'}`}>
+
   <QuestionPreviewPanel question={preview_question_data} closePanel={onClosePrviewPanel}></QuestionPreviewPanel>
 </div>
 
@@ -911,7 +909,7 @@ o888o o888o   "888" o888o o888o o888o o888o
       <div class="questionListTitle">
         <div class="leftColorBlock"></div>
         <span class="questionListTitleText">试题列表</span>
-        <span style="margin-left:10px">共筛选{question_filtered_count}道题</span>
+        <span >共筛选{question_filtered_count}道题</span>
       </div>
       <div class="questionListControlBar">
         <div class="questionListSearch">
@@ -1062,7 +1060,7 @@ o888o o888o   "888" o888o o888o o888o o888o
         min-width: 12px;
         flex: 1;
 
-        background-color: #0336ff;
+        background-color: var(--primary-color);
 
         border-radius: 5px;
       }
@@ -1146,7 +1144,7 @@ o888o o888o   "888" o888o o888o o888o o888o
             font-size: 12px;
             color: #333333;
             font-weight: 500;
-            color: #666 !important;
+            color:var( --text-secondary) !important;
           }
         }
 
@@ -1162,8 +1160,8 @@ o888o o888o   "888" o888o o888o o888o o888o
             padding: 5px;
             white-space: nowrap;
 
-            background-color: #0336ff;
-            color: white;
+            background-color: var(--primary-color);
+            color:var(--text-white) ;
 
             border-top-left-radius: 5px;
             border-bottom-left-radius: 5px;
@@ -1185,7 +1183,7 @@ o888o o888o   "888" o888o o888o o888o o888o
 
         .saveBankDataUpdateBtn {
           border: 1px solid #0336ff;
-          color: #0336ff;
+          color: var(--primary-color);
           margin-left: 20px;
           padding: 5px 10px;
           border-radius: 5px;
@@ -1193,14 +1191,14 @@ o888o o888o   "888" o888o o888o o888o o888o
           opacity: 0;
 
           &:hover {
-            background-color: #0336ff;
+            background-color: var(--primary-color);
             color: white;
           }
         }
 
         .giveUpBankDataUpdateBtn {
           border: 1px solid #d9001b;
-          color: #d9001b;
+          color: var(--red);
           margin-left: 10px;
           padding: 5px 10px;
           border-radius: 5px;
@@ -1208,7 +1206,7 @@ o888o o888o   "888" o888o o888o o888o o888o
           opacity: 0;
 
           &:hover {
-            background-color: #d9001b;
+            background-color: var(--red);
             color: white;
           }
         }
@@ -1233,7 +1231,7 @@ o888o o888o   "888" o888o o888o o888o o888o
       .quesionFilter {
         display: flex;
         flex-direction: column;
-        background-color: #fff;
+        background-color: var( --bg-primary);
         border-radius: 5px;
         max-width: 21%;
         min-width: 200px;
@@ -1260,12 +1258,12 @@ o888o o888o   "888" o888o o888o o888o o888o
           flex-direction: column;
           margin-bottom: 10px;
 
-          background-color: #fff;
+          background-color:var(--bg-primary);
 
           .colorHolder {
             width: 100%;
             height: 15px;
-            background-color: #fff;
+            background-color:var(--bg-primary);
           }
           .leftColorBlock {
             display: block;
@@ -1273,7 +1271,7 @@ o888o o888o   "888" o888o o888o o888o o888o
             min-width: 8px;
             flex: 1;
 
-            background-color: #0336ff;
+            background-color: var(--primary-color);
 
             border-radius: 3px;
           }
@@ -1296,7 +1294,7 @@ o888o o888o   "888" o888o o888o o888o o888o
         border-radius: 5px;
         margin-left: 10px;
         padding: 5px;
-        background-color: #fff;
+        background-color: var(--bg-primary);
         box-sizing: border-box;
 
         border-radius: 8px;
@@ -1314,6 +1312,7 @@ o888o o888o   "888" o888o o888o o888o o888o
           margin-top: 10px;
           margin-bottom: 10px;
           align-items: center;
+          gap:5px;
           .leftColorBlock {
             display: block;
             max-width: 8px;
@@ -1321,7 +1320,7 @@ o888o o888o   "888" o888o o888o o888o o888o
             height: 100%;
             flex: 1;
 
-            background-color: #0336ff;
+            background-color: var(--primary-color);
 
             border-radius: 3px;
           }
@@ -1382,12 +1381,12 @@ o888o o888o   "888" o888o o888o o888o o888o
     margin-left: 20px;
     margin-right: 20px;
     padding: 5px 10px;
-    color: #0336ff;
+    color: var(--primary-color);
     box-sizing: border-box;
     border: 1px solid #cecece;
     transition: all 0.2s ease;
     &:hover {
-      border-color: #0336ff;
+      border-color: var(--primary-hover);
     }
     border-radius: 5px;
 
@@ -1436,17 +1435,27 @@ o888o o888o   "888" o888o o888o o888o o888o
     }
   }
 
-  .questionPrviewPanel {
-    position: fixed;
-    top: 50%;
-    right: 30px;
-    width: 30%;
-    height: 90vh;
-    background-color: white;
-    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s ease-in-out;
-    z-index: 1000;
+ .questionPrviewPanel {
+  position: fixed;
+  top: 50%;
+  right: 30px;
+  width: 30%;
+  height: 90vh;
+  background-color: var(--bg-primary);
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease-in-out;
+  z-index: 1000;
+ 
+  // 默认状态（隐藏）
+  &.hide {
+    transform: translate(calc(100% + 30px), -50%);
   }
+ 
+  // 显示状态
+  &.show {
+    transform: translate(0, -50%);
+  }
+}
 
   .modal {
     position: fixed;
@@ -1460,7 +1469,7 @@ o888o o888o   "888" o888o o888o o888o o888o
     z-index: 100;
 
     .copyQuestionPanel {
-      background-color: white;
+      background-color: var(--bg-primary);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       width: 500px;
