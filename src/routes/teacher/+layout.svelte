@@ -4,6 +4,8 @@
   import Crumb from '$lib/components/Crumb/Crumb.svelte';
   import Brand from '$lib/components/Brand/Brand.svelte';
   let { children } = $props();
+
+  import Pagination from '$lib/components/Pagination/Pagination.svelte';
 </script>
 
 <div class="app">
@@ -17,6 +19,7 @@
     </header>
 
     <div class="content-container">
+      <Pagination totalItems={200}></Pagination>
       {@render children()}
     </div>
 

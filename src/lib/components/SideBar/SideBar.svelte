@@ -1,5 +1,4 @@
 <script>
-  // @ts-nocheck
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { sidebarFoldingState, sidebarWidth, navStore } from '$lib/stores/modules/layoutStore';
@@ -99,7 +98,6 @@
 </div>
 
 <style lang="scss" scoped>
-  /* 修改后的样式 */
   .sidebar-container {
     position: relative;
     display: block;
