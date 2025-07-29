@@ -33,9 +33,24 @@
 		setFilters({ [key]: value });
 	}
 
-	function handleBatchExport() { console.log('Batch Export'); }
-	function handleBatchSubmit() { console.log('Batch Submit'); }
-	function handleShowLogs() { console.log('Show Logs'); }
+	function handleBatchExport() {
+		console.log('Batch Export');
+	}
+	function handleBatchSubmit() {
+		const selectedIds = Object.keys(store.state.selected)
+			.filter((id) => store.state.selected[Number(id)])
+			.map(Number);
+
+		if (selectedIds.length > 0) {
+			store.submitGrades(selectedIds);
+		} else {
+			// Optional: show a message to the user
+			console.log('No exams selected for submission.');
+		}
+	}
+	function handleShowLogs() {
+		console.log('Show Logs');
+	}
 </script>
 
 <div class="top-action-bar">
