@@ -80,16 +80,16 @@
     } else if (practiceData.form.type === '04') {
       practice_type = '智能刷题（智能提升）';
     }
-    // 设置学生数据
-    if (practiceData.form.students && practiceData.form.students.length > 0) {
-      selectedStudents = practiceData.form.students;
-    }
+     // 设置学生数据
+     if (practiceData.form.students ) {
+       selectedStudents.length = practiceData.form.students;
+     }
 
     // 设置试卷数据
     if (practiceData.form.test) {
       selectedTestObj = {
         id: practiceData.form.test.id,
-        name: practiceData.form.test.name || practiceData.data.exam_name || '',
+        name: practiceData.form.test.name || practiceData.data.paper_name || '',
         assembly_type: practice_type,
       };
       testConfirmed = true;
@@ -98,10 +98,10 @@
     }
 
     //可作答次数初始化
-    if (practiceData.data.allowed_attempts) {
+    if (practiceData.data.practice.AllowedAttempts) {
       console.log('限制次数');
       allowed_attempts_type = '限制次数';
-      allowed_attempts = practiceData.data.allowed_attempts;
+      allowed_attempts = practiceData.data.practice.AllowedAttempts;
     } else {
       console.log('不限次数');
       allowed_attempts_type = '不限次数';
@@ -291,7 +291,7 @@
 <div class="practice-form-container">
   <div class="practice-form">
     <div class="form-content">
-      {#if !practiceData || (practiceData && practiceData.data.status === '00')}
+      {#if !practiceData || (practiceData && practiceData.data.practice.Status === '00')}
         <div class="form-group">
           <div class="input-wrapper">
             <div class="form-input-container">
@@ -311,7 +311,7 @@
           </div>
         </div>
       {/if}
-      {#if !practiceData || (practiceData && practiceData.data.status === '00')}
+      {#if !practiceData || (practiceData && practiceData.data.practice.Status === '00')}
         <div class="form-group">
           <label for="test-select">
             <span class="required">*</span> 练习试卷：

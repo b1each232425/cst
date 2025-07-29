@@ -10,6 +10,7 @@
     import { goto } from "$app/navigation";
     import MessageBox from "$lib/components/MessageBox/MessageBox.svelte";
   import  {toast}  from "$lib/components/Toast/Toast.js";
+  import { transFormType } from "../utils";
   
     
     // Dialog状态
@@ -21,13 +22,14 @@
      * @param {{ practice_name: any; grading_method: any; test: { id: any; suggest_duration?:number}; students: any[]; allowed_attempts:any}} practiceData
      */
     async function handleSubmit(practiceData) {
+        
             // 准备请求数据
             const requestData = {
                 practice: {
                     Name: practiceData.practice_name,
                     CorrectMode: practiceData.grading_method,
                     PaperID: practiceData.test.id,
-                    Type : "02",
+                    Type : transFormType(practiceData.test.assembly_type),
                     AllowedAttempts: practiceData.allowed_attempts,                                                                            
                     duration:practiceData.test.suggest_duration
                 },

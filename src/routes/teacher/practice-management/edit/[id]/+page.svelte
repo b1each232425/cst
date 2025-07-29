@@ -13,12 +13,13 @@
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import  {toast}  from '$lib/components/Toast/Toast.js';
+  import { transFormType } from '../../utils';
 
   // 获取路由参数中的 id (即 practice_id)
   const practiceId = $page.params.id;
   // 使用runes接收页面数据
   const { data } = $props();
-  const { practice } = data;
+  const { practice  } = data;
 
   // Dialog状态
   let isDialogOpen = $state(false);
@@ -29,18 +30,19 @@
     // 准备请求数据
     const requestData = {
       practice: {
-        id: practice.data.id,
+        ID: practice.data.practice.ID,
         Name: practiceData.practice_name,
         CorrectMode: practiceData.grading_method,
         PaperID: practiceData.test.id,
+        Type: transFormType(practiceData.test.assembly_type),
         AllowedAttempts: practiceData.allowed_attempts,
         duration: practiceData.test.suggest_duration,
       },
-      students: practiceData.students,
+      student: practiceData.student,
     };
 
     // 发送请求
-    const response = await fetch('/api/practices', {
+    const response = await fetch('/api/practice', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -52,6 +54,7 @@
         if (!response.ok) {
           throw new Error('Failed to update practice');
         }
+        console.log('111', response);
         return response.json();
       })
       .then((data) => {
@@ -148,7 +151,8 @@
   }
 
   onMount(() => {
-    console.log('edit practice', practice);
+    console.log('Received data:', data);
+    console.log('Practice data:', practice);
   });
 </script>
 
@@ -157,14 +161,16 @@
 
   <PracticeForm
     PracticeId={practiceId}
-    onSubmitFunc={practice.data.practice.Status === '02' ? updateStudents : handleSubmit}
+      onSubmitFunc={(practice.data.practice.Status === '02') ? updateStudents : handleSubmit}
     practiceData={practice}
     onCancelFunc={handleCancel}
   />
   <MessageBox
-    bind:isOpen={isDialogOpen}
+    bind:visible={isDialogOpen}
     title="请问是否要取消编辑？"
     content="取消编辑将不会保存修改的内容。"
+     confirm_text= "确定"
+		cancel_text='取消'
     onConfirm={confirmCancel}
   />
 </main>

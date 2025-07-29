@@ -332,9 +332,11 @@
                     <Select
                             bind:value={selectedStructure}
                             filterable
+                            remote
+                            remote_method={searchPapers}
                         >
-                        {#each (structureOptions) as structureOptions}
-                        <option value={structureOptions.value}>{structureOptions.label}</option>
+                        {#each structureOptions as structureOption}
+                        <Option value={structureOption} label= {structureOption}></Option>
                         {/each}
                     </Select>
                     </div>
