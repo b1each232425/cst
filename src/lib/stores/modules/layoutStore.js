@@ -243,6 +243,3 @@ export const crumbStore = writable([
 
 // 控制侧边栏折叠状态
 export const sidebarFoldingState = writable(false);
-
-// 控制侧边栏宽度
-export const sidebarWidth = writable('235px');

@@ -103,9 +103,6 @@
 {/if}
 
 <style lang="scss" scoped>
-  button {
-    all: unset;
-  }
   .overlay {
     position: fixed;
     top: 0;
@@ -117,63 +114,68 @@
     align-items: center;
     justify-content: center;
     z-index: 1000;
-  }
-  .message-box {
-    background: #fff;
-    border-radius: 4px;
-    padding: 18px;
-    min-width: 350px;
-    max-width: 500px;
-    position: relative;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  .message-box.center {
-    display: flex;
-    justify-content: center;
-    text-align: center;
-  }
-  .message-box-cancel {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 10px;
-    height: 10px;
-    cursor: pointer;
-    img {
-      width: 100%;
-      height: 100%;
+    .message-box {
+      background: #fff;
+      border-radius: 4px;
+      padding: 18px;
+      min-width: 390px;
+      max-width: 600px;
+      position: relative;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      &.center {
+        display: flex;
+        justify-content: center;
+        text-align: center;
+      }
+      .message-box-cancel {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        width: 14px;
+        height: 14px;
+        cursor: pointer;
+        img {
+          width: 100%;
+          height: 100%;
+        }
+      }
+      .message-box-content {
+        .message-box-title {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 13px;
+          display: flex;
+          align-items: center;
+          &.center {
+            justify-content: center;
+          }
+          .message-box-title-icon {
+            width: 22px;
+            height: 22px;
+            margin-right: 10px;
+          }
+        }
+        .message-box-text {
+          color: rgb(102, 102, 102);
+          font-size: 16px;
+          margin-bottom: 24px;
+          line-height: 1.5;
+        }
+        .message-box-buttons {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          &.button-center {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            align-items: center;
+          }
+        }
+      }
     }
   }
-  .message-box-title {
-    font-size: 14px;
-    font-weight: bold;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-  }
-  .message-box-title-icon {
-    width: 20px;
-    height: 20px;
-    margin-right: 10px;
-  }
-  .message-box-title.center {
-    justify-content: center;
-  }
-  .message-box-text {
-    color: rgb(102, 102, 102);
-    font-size: 12px;
-    margin-bottom: 20px;
-    line-height: 1.5;
-  }
-  .message-box-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-  }
-  .button-center {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    align-items: center;
+  button {
+    all: unset;
   }
 </style>

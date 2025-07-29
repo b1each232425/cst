@@ -12,9 +12,6 @@ describe('登录页面组件测试', () => {
 	beforeEach(() => {
 		// 清除所有模拟
 		vi.clearAllMocks();
-		// 模拟console.log和console.error
-		vi.spyOn(console, 'log').mockImplementation(() => {});
-		vi.spyOn(console, 'error').mockImplementation(() => {});
 	});
 
 	/**
@@ -89,8 +86,9 @@ describe('登录页面组件测试', () => {
 		// 点击登录按钮（不填写任何信息）
 		await fireEvent.click(loginButton);
 
-		// 验证错误信息
-		expect(console.log).toHaveBeenCalledWith('请输入令牌和密码');
+		// 验证MessageBox显示
+		expect(screen.getByText('提示')).toBeInTheDocument();
+		expect(screen.getByText('请输入令牌和密码')).toBeInTheDocument();
 	});
 
 	/**
@@ -108,8 +106,9 @@ describe('登录页面组件测试', () => {
 		// 点击登录按钮
 		await fireEvent.click(loginButton);
 
-		// 验证错误信息
-		expect(console.log).toHaveBeenCalledWith('请输入令牌和密码');
+		// 验证MessageBox显示
+		expect(screen.getByText('提示')).toBeInTheDocument();
+		expect(screen.getByText('请输入令牌和密码')).toBeInTheDocument();
 	});
 
 	/**
@@ -129,8 +128,9 @@ describe('登录页面组件测试', () => {
 		// 点击登录按钮（不勾选用户协议）
 		await fireEvent.click(loginButton);
 
-		// 验证错误信息
-		expect(console.log).toHaveBeenCalledWith('请先同意用户协议');
+		// 验证MessageBox显示
+		expect(screen.getByText('提示')).toBeInTheDocument();
+		expect(screen.getByText('请先同意用户协议')).toBeInTheDocument();
 	});
 
 	/**
@@ -201,8 +201,9 @@ describe('登录页面组件测试', () => {
 		// 等待异步操作完成
 		await new Promise(resolve => setTimeout(resolve, 0));
 
-		// 验证错误信息
-		expect(console.error).toHaveBeenCalledWith('登录失败:', '用户名或密码错误');
+		// 验证MessageBox显示
+		expect(screen.getByText('登录失败')).toBeInTheDocument();
+		expect(screen.getByText('用户名或密码错误')).toBeInTheDocument();
 	});
 
 	/**
@@ -230,8 +231,9 @@ describe('登录页面组件测试', () => {
 		// 等待异步操作完成
 		await new Promise(resolve => setTimeout(resolve, 0));
 
-		// 验证错误信息
-		expect(console.error).toHaveBeenCalledWith('登录失败:', expect.any(Error));
+		// 验证MessageBox显示
+		expect(screen.getByText('登录失败')).toBeInTheDocument();
+		expect(screen.getByText('网络错误，请检查网络连接后重试')).toBeInTheDocument();
 	});
 
 	/**
@@ -262,8 +264,33 @@ describe('登录页面组件测试', () => {
 		// 等待异步操作完成
 		await new Promise(resolve => setTimeout(resolve, 0));
 
-		// 验证错误信息
-		expect(console.error).toHaveBeenCalledWith('登录失败:', expect.any(Error));
+		// 验证MessageBox显示
+		expect(screen.getByText('登录失败')).toBeInTheDocument();
+		expect(screen.getByText('网络错误，请检查网络连接后重试')).toBeInTheDocument();
+	});
+
+	/**
+	 * 测试MessageBox组件的关闭功能
+	 */
+	it('应该能够关闭MessageBox提示框', async () => {
+		render(LoginPage);
+
+		const loginButton = screen.getByRole('button', { name: '登录' });
+
+		// 触发错误提示
+		await fireEvent.click(loginButton);
+
+		// 验证MessageBox显示
+		expect(screen.getByText('提示')).toBeInTheDocument();
+		expect(screen.getByText('请输入令牌和密码')).toBeInTheDocument();
+
+		// 点击确定按钮关闭MessageBox
+		const confirmButton = screen.getByRole('button', { name: '确定' });
+		await fireEvent.click(confirmButton);
+
+		// 验证MessageBox已关闭
+		expect(screen.queryByText('提示')).not.toBeInTheDocument();
+		expect(screen.queryByText('请输入令牌和密码')).not.toBeInTheDocument();
 	});
 
 	/**

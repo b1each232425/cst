@@ -2,7 +2,7 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { tooltip } from '$lib/components/ToolTip/tooltip';
-  import { sidebarFoldingState, sidebarWidth, crumbStore } from '$lib/stores/modules/layoutStore';
+  import { sidebarFoldingState, crumbStore } from '$lib/stores/modules/layoutStore';
   import { onMount } from 'svelte';
 
   let userName = '张三'; // 静态数据
@@ -14,7 +14,6 @@
   // 处理展开按钮点击事件
   const toggleSidebar = () => {
     $sidebarFoldingState = !$sidebarFoldingState;
-    $sidebarWidth = $sidebarFoldingState ? '0px' : '235px';
   };
 
   // 响应式处理路径变化
@@ -79,15 +78,12 @@
   <!-- 面包屑 -->
   <div class="breadcrumbs-container">
     {#each filterCrumbs as crumb, index}
-      <button
-        class="breadcrumb-item"
-        onclick={() => goto(crumb.path)}
-        use:tooltip={{
-          text: '回到' + crumb.title,
-        }}
-      >
+      <button class="breadcrumb-item" onclick={() => goto(crumb.path)}>
         {crumb.title}
       </button>
+      {#if index < filterCrumbs.length - 1}
+        >
+      {/if}
     {/each}
   </div>
 
@@ -115,14 +111,10 @@
 <style lang="scss" scoped>
   .header-container {
     display: flex;
+    height: 100%;
     flex-direction: row;
-    position: relative;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 52px;
-    max-height: 52px;
-    background-color: var(--bg-secondary);
     box-sizing: border-box;
     padding: 0px 2px 2px 0px;
     justify-content: flex-start;
@@ -158,15 +150,14 @@
       justify-content: flex-start;
       width: max-content;
       height: 100%;
-      background-color: transparent;
 
       .breadcrumb-item {
         all: unset;
-        font-size: 14px;
+        font-size: 16px;
         font-weight: 500;
+        color: #007bff;
         cursor: pointer;
 
-        border: 1px solid #ccc;
         padding: 5px 10px;
         border-radius: 4px;
         transition:
@@ -186,7 +177,7 @@
       }
 
       .breadcrumb-item:last-child {
-        color: #007bff;
+        color: black;
         pointer-events: none;
       }
     }

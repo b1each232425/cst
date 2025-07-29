@@ -28,7 +28,6 @@
         if (!res.status) {
           toast.success('登出成功');
           goto('/login');
-          console.log('goto');
         } else throw new Error(res.msg ?? '登出失败');
       })
       .catch((err) => {
@@ -95,8 +94,8 @@
         margin-top: 1rem;
         padding-bottom: 0.5rem;
 
-        &:hover {
-          font-weight: bold;
+        &.selected {
+          border-bottom: 2px solid blue;
         }
       }
     }
@@ -111,8 +110,8 @@
       background-color: white;
       box-sizing: border-box;
 
-      &.selected {
-        border-bottom: 2px solid blue;
+      &:hover {
+        font-weight: bold;
       }
     }
   }
