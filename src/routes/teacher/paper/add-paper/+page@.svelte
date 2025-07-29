@@ -1,12 +1,13 @@
 <script>
-  import { goto } from "$app/navigation";
-  import Button from "$lib/components/Button/Button.svelte";
-  import { tagColorList } from "../_utils/data";
-  import { getColorIndex } from "../_utils/func";
-  import ImportQuestion from "../_components/ImportQuestion/ImportQuestion.svelte";
-  import InputBox from "$lib/components/Input/InputBox.svelte";
-  import Select from "$lib/components/Select/Select.svelte";
-  import Option from "$lib/components/Select/Option.svelte";
+    import { goto } from "$app/navigation";
+    import Button from "$lib/components/Button/Button.svelte";
+    import { tagColorList } from "../_utils/data";
+    import { getColorIndex } from "../_utils/func";
+    import ImportQuestion from "../_components/ImportQuestion/ImportQuestion.svelte";
+    import InputBox from "$lib/components/Input/InputBox.svelte";
+    import Select from "$lib/components/Select/Select.svelte";
+    import Option from "$lib/components/Select/Option.svelte";
+    
 
     /*************** 试卷信息区 ****************/
 
@@ -96,7 +97,7 @@
             <Button plain={true}>一键收取</Button>
             <Button onclick={()=>{importModalIsOpen=true}}>从题库中导入</Button>
             <Button plain={true}>保存</Button>
-            <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper-management')}>退出</Button>
+            <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper')}>退出</Button>
         </div>
     </div>
 
@@ -110,10 +111,10 @@
                 <!-- 试卷用途 -->
                 <div class="single-line">
                     <span class="info-label">试卷用途</span>
-                    <select id="temp-select">
-                        <option value="00">考试</option>
-                        <option value="02">练习</option>
-                    </select>
+                    <Select bind:value={category}>
+                        <Option value="00" label="考试"></Option>
+                        <Option value="02" label="练习"></Option>
+                    </Select>
                 </div>
 
                 <!-- 试卷难度 -->

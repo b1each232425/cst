@@ -9,6 +9,8 @@
     import Button from "$lib/components/Button/Button.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import Tag from "$lib/components/Tag/Tag.svelte";
+    import { getPaperList } from "./_utils/api";
+  import Loading from "$lib/components/Loading/Loading.svelte";
 
     // 模拟数据
     let analogyData = [
@@ -521,9 +523,30 @@
     ];
 
     let paperName = $state("");
-    let paperTag = $state("");
+    let paperTags = $state("");
+    let paperPage = $state(1);
+    let paperPageSize = $state(10);
+    let paperCategory = $state("");
+    let paperList = [];
+    // let test = true;
+
+    $effect(() => {
+        getPaperList(paperName, paperTags, paperPage, paperPageSize, paperCategory)
+            .then(result => {
+                if (result) {
+                    paperList = result.data || [];
+                } else {
+                    paperList = [];
+                }
+            })
+            .catch(() => {
+                paperList = [];
+            });
+    });
 
 </script>
+
+<!-- <Loading bind:value={test} loadingText="正在加载中"/> -->
 
 <div class="paper-management">
     <!-- 标题区域 -->
@@ -551,7 +574,7 @@
                     placeholder="搜索试卷标签"
                     showLabel={false}
                     type="text"
-                    bind:value={paperTag}
+                    bind:value={paperTags}
                 />
             </div>
         </div>
@@ -560,7 +583,7 @@
         <div class="right-side">
             <Button plain={true}>重置</Button>
             <Button plain={true} type="danger">删除</Button>
-            <Button onclick={()=>goto('/teacher/paper-management/add-paper')} plain={true}>自定义组卷</Button>
+            <Button onclick={()=>goto('/teacher/paper/add-paper')} plain={true}>自定义组卷</Button>
         </div>
     </div>
 
