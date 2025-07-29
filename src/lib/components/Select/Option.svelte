@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!-- /**
    * 选择输入搜索框组件使用说明(Option)
    *
@@ -127,3 +128,134 @@
     all: unset;
   }
 </style>
+=======
+<!-- /**
+   * 选择输入搜索框组件使用说明(Option)
+   *
+   * 作者：段春茂
+   * 邮箱：2162105974@qq.com
+   *
+   * 参数配置：
+   * @param {string} value - 选择器的值
+   * @param {string} label - 选择器的标签
+   * @param {boolean} disabled - 选择器是否禁用
+   *
+   * 功能说明：
+   * - 选项：支持自定义选项内容，可自定义选项值,贴近原生,方便使用
+   *
+   * 使用示例：
+   * <Select value="1" placeholder="请选择">
+   *   <Option value="1" label="选项1"></Option>
+   *   <Option value="2" label="选项2"></Option>
+   *   <Option value="3" label="选项3"></Option>
+   * </Select>
+   */ -->
+<script>
+  import { getContext, setContext } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
+  import { writable } from 'svelte/store';
+
+  // props
+  let { value, label, disabled = false } = $props();
+
+  // 上下文通信
+  const {
+    add,
+    sub,
+    reset,
+    getSelectShow,
+    getOptionData,
+    filterText,
+    filterable,
+    remote,
+    handerSelectValue,
+    setActive,
+  } = getContext('SELECT-OPTIONS');
+
+  // 状态管理
+  let isSelectShow = $state(getSelectShow());
+  let isSelected = $state(false);
+  let isShow = $state(false);
+
+  // 订阅
+  const filterTextStore = filterText.subscribe((text) => {
+    isShow = label.toLowerCase().includes(text.toLowerCase());
+  });
+
+  // 监听 isShow 变化
+  $effect(() => {
+    if (isSelectShow === true || isSelectShow === false) keepActive();
+  });
+
+  // 保持选中状态,存储选中状态不变
+  function keepActive() {
+    if (setActive(value)) isSelected = true;
+    else isSelected = false;
+  }
+
+  // 点击option,若之前选中,则取消选中,否则选中
+  function handerSelected() {
+    if (disabled) return;
+    if (handerSelectValue({ selectValue: value, selectLabel: label })) isSelected = true;
+    else isSelected = false;
+  }
+
+  onMount(() => {
+    keepActive();
+    add();
+    getOptionData({ value, label });
+  });
+  onDestroy(() => {
+    filterTextStore();
+    reset();
+  });
+</script>
+
+<button
+  class="dropdown-container {disabled ? 'disabled' : ''}  {isShow ? '' : 'hiddle'}"
+  onclick={handerSelected}
+  class:active={isSelected}
+>
+  <li class="dropdown-container-item">{label}</li>
+</button>
+
+<style lang="scss" scoped>
+  .dropdown-container {
+    padding: 4px 8px;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+    color: #333;
+    border-radius: 6px;
+    &:hover {
+      background-color: #fafafa;
+    }
+    &.disabled {
+      color: #c0c4cc;
+      cursor: not-allowed;
+      &:hover {
+        background-color: transparent;
+      }
+    }
+    &.active {
+      background-color: #e7e7e7;
+      &:hover {
+        background-color: #e7e7e7;
+      }
+    }
+    &.hiddle {
+      display: none;
+    }
+    .dropdown-container-item {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 400;
+    }
+  }
+  button {
+    all: unset;
+  }
+</style>
+>>>>>>> v1.0.0

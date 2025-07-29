@@ -39,8 +39,13 @@
 
 <script>
   // @ts-nocheck
+<<<<<<< HEAD
   import left_jt from '/static/pagination/left_jt.svg';
   import right_jt from '/static/pagination/right_jt.svg';
+=======
+  import left_jt from '/static/pagination/left.svg';
+  import right_jt from '/static/pagination/right.svg';
+>>>>>>> v1.0.0
   import { createEventDispatcher } from 'svelte';
 
   let {

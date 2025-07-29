@@ -2,7 +2,11 @@
   // @ts-nocheck
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
+<<<<<<< HEAD
   import { sidebarFoldingState, sidebarWidth, navMap } from '$lib/stores/modules/layoutStore';
+=======
+  import { sidebarFoldingState, sidebarWidth, navStore } from '$lib/stores/modules/layoutStore';
+>>>>>>> v1.0.0
 
   let currentPath = $derived(page.url.pathname); // 当前页面路径
 
@@ -16,11 +20,11 @@
   const handleItemButtonClick = (item) => {
     if (!item.children) {
       item.isOpen = !item.isOpen;
-      navMap.update((map) => [...map]);
+      navStore.update((map) => [...map]);
       goto(item.path);
     } else {
       item.isOpen = !item.isOpen;
-      navMap.update((map) => [...map]);
+      navStore.update((map) => [...map]);
     }
   };
 
@@ -50,7 +54,7 @@
   <div class="sidebar-content {!$sidebarFoldingState ? '' : 'hide'}">
     <div class="sidebar-content-main">
       <!-- 遍历路由 -->
-      {#each $navMap as item}
+      {#each $navStore as item}
         <div
           class="sidebar-item"
           class:active={item.path === currentPath}
