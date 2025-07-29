@@ -64,8 +64,8 @@ export function createGradeStore() {
 			type: '',
 			/** @type {boolean | ''} */
 			submitted: '',
-			teacherID: undefined,
-			examID: undefined
+			teacherID: -1, // -1 代表所有教师
+			examID: ''
 		},
 		pagination: {
 			page: 1,

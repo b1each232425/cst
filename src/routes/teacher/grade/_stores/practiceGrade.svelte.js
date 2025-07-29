@@ -41,8 +41,8 @@ export function createPracticeGradeStore() {
 		selectAll: false,
 		filters: {
 			name: '',
-			teacherID: undefined,
-			practiceID: undefined
+			teacherID: -1, // -1 代表所有教师
+			practiceID: ''
 		},
 		pagination: {
 			page: 1,
