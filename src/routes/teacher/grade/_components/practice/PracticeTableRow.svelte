@@ -24,11 +24,11 @@
 			{/if}
 		</button>
 	</td>
-	<td class="practice-name">{practice.name}</td>
-	<td class="practice-total-score">{practice.total_score}</td>
-	<td class="practice-avg-score">{practice.average_score}</td>
-	<td class="practice-completed">{practice.completed_students}</td>
-	<td class="practice-passed">{practice.passed_students}</td>
+	<td class="practice-name">{practice.name ?? '-'}</td>
+	<td class="practice-total-score">{practice.total_score ?? '-'}</td>
+	<td class="practice-avg-score">{practice.average_score ?? '-'}</td>
+	<td class="practice-completed">{practice.completed_students ?? '-'}</td>
+	<td class="practice-passed">{practice.passed_students ?? '-'}</td>
 	<td class="practice-operation">
 		<button class="detail-btn">详情</button>
 				</td>

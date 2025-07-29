@@ -39,25 +39,35 @@
 		{/each}
 	</td>
 	<td class="exam-total-score">
-		{exam.sessions.reduce((acc, s) => acc + Number(s.total_score), 0)}
+		{exam.sessions && exam.sessions.length > 0
+			? exam.sessions.reduce((acc, s) => acc + Number(s.total_score), 0)
+			: '-'}
 	</td>
 	<td class="exam-average-score">
-		{(
-			exam.sessions.reduce((acc, s) => acc + Number(s.average_score), 0) /
-			(exam.sessions.length || 1)
-		).toFixed(1)}
+		{exam.sessions && exam.sessions.length > 0
+			? (
+					exam.sessions.reduce((acc, s) => acc + Number(s.average_score), 0) /
+					exam.sessions.length
+			  ).toFixed(1)
+			: '-'}
 	</td>
 	<td class="exam-scheduled-examinees">
-		{exam.sessions.reduce((acc, s) => acc + s.scheduled_examinees, 0)}
+		{exam.sessions && exam.sessions.length > 0
+			? exam.sessions.reduce((acc, s) => acc + s.scheduled_examinees, 0)
+			: '-'}
 	</td>
 	<td class="exam-actual-examinees">
-		{exam.sessions.reduce((acc, s) => acc + s.actual_examinees, 0)}
+		{exam.sessions && exam.sessions.length > 0
+			? exam.sessions.reduce((acc, s) => acc + s.actual_examinees, 0)
+			: '-'}
 	</td>
 	<td class="exam-pass-examinees">
-		{exam.sessions.reduce((acc, s) => acc + s.pass_examinees, 0)}
+		{exam.sessions && exam.sessions.length > 0
+			? exam.sessions.reduce((acc, s) => acc + s.pass_examinees, 0)
+			: '-'}
 	</td>
 	<td class="exam-submitted" class:submitted={exam.submitted} class:not-submitted={!exam.submitted}>
-		{exam.submitted ? '已提交' : '未提交'}
+		{exam.submitted === null || exam.submitted === undefined ? '-' : exam.submitted ? '已提交' : '未提交'}
 	</td>
 	<td class="operation">
 		<button class="op-btn" onclick={() => console.log('详情', exam.id)}>详情</button>
