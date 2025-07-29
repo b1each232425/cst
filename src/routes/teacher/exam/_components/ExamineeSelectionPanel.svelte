@@ -1,19 +1,8 @@
-<!-- 
- /*
- * @Author: Mayux dbs45412@163.com
- * @Date: 2025-04-18 11:48:06
- * @LastEditors: Mayux && 1243805308@qq.com
- * @LastEditTime: 2025-07-07 15:52:18
- * @FilePath: \tutorial-platform-fe\src\routes\teacher\examManagement\ExamineeSelectionPanel.svelte
- * @Description: 考生选择面板
- * Copyright (c) 2025 by Mayux, All Rights Reserved. 
- */ 
- -->
 <script>
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
-    import SearchInput from "$lib/component/SearchInput.svelte";
     import StudentImportPanel from "./StudentImportPanel.svelte";
-
+    import InputBox from "$lib/components/Input/InputBox.svelte";
+    
     let {
         show_panel = false,
         ids = [],
@@ -28,7 +17,7 @@
     /**
      * @type {any[]}
      */
-    let examinee_list = $state([]);
+    let examineeList = $state([]);
 
     // 是否处于选择模式（true为选择模式，false为查看已选择模式）
     let is_selection_mode = $state(false);
@@ -59,16 +48,13 @@
             : 1,
     );
 
-    // 已选择学生的当前页
-    let selected_current_page = $state(1);
-
     function getFilteredSelectedIds() {
         let filtered = selected_ids;
         if (selected_search_params.name) {
             filtered = selected_ids.filter(examinee => 
-                (examinee.official_name && examinee.official_name.toLowerCase().includes(selected_search_params.name.toLowerCase())) ||
-                (examinee.phone && examinee.phone.includes(selected_search_params.name)) ||
-                (examinee.id_card_no && examinee.id_card_no.includes(selected_search_params.name))
+                (examinee.OfficialName && examinee.OfficialName.toLowerCase().includes(selected_search_params.name.toLowerCase())) ||
+                (examinee.MobilePhone && examinee.MobilePhone.includes(selected_search_params.name)) ||
+                (examinee.IDCardNo && examinee.IDCardNo.includes(selected_search_params.name))
             );
         }
         return filtered;
@@ -198,7 +184,8 @@
      * @param {string} value
      * 搜索
      */
-    function onSearch(value) {
+    function onSearch(event) {
+        const value = event.target.value;
         search_params.name = value === "" ? "" : value;
 
         //防抖逻辑
@@ -216,7 +203,8 @@
      * @param {string} value
      * 已选择学生搜索
      */
-    function onSelectedSearch(value) {
+    function onSelectedSearch(event) {
+        const value = event.target.value;
         selected_search_params.name = value;
         selected_search_params.page = 1;
         // 搜索功能通过响应式更新自动触发，不需要额外调用
@@ -261,137 +249,109 @@
         error = "";
 
         // 构建查询参数
-        let query_params = new URLSearchParams();
-
-        // 添加基础参数
+        const query_params = new URLSearchParams();
         query_params.append("page", search_params.page.toString());
-        query_params.append("page_size", search_params.pageSize.toString());
+        query_params.append("pageSize", search_params.pageSize.toString());
 
-        // 添加可选参数
-        if (search_params.name && search_params.name!=="") {
-            query_params.append("search_text", search_params.name);
+        if (search_params.name) {
+            query_params.append("name", search_params.name);
         }
 
-        const response = await fetch(
-            `/api/teacher/student/list?${query_params.toString()}`,
-            {
-                method: "GET",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+        await fetch(`/api/user?${query_params.toString()}`, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
             },
-        );
-
-        let result = null;
-
-        if (response.status === 404) {
-            action_toast?.show("error", "搜索失败，请稍后重试");
-            return;
-        }
-
-        result = await response.json();
-
-        if (result.status != 0) {
-            error = result.msg || "搜索失败";
-            examinee_list = [];
-            totals = 0;
-            search_params.page = current_page;
-            action_toast?.show("error", error);
-        } else {
-            examinee_list = result.data === null ? [] : result.data;
-            totals = result.rowCount;
-            current_page = search_params.page;
-
-            if (examinee_list !== null) {
-                //更新选中状态
-                let selected_id_set = new Set(
-                    selected_ids.map((item) => item.id),
-                );
-                examinee_list.forEach((examinee) => {
-                    if (!selected_id_set.has(examinee.id)) {
-                        examinee.selected = false;
-                    } else {
-                        examinee.selected = true;
-                    }
-                });
+        })
+        .then(response => {
+            if (response.status === 404) {
+                throw new Error("404 Not Found");
             }
+            return response.json();
+        })
+        .then(result => {
+            if (result.status !== 0) {
+                error = result.msg || "搜索失败";
+                examineeList = [];
+                totals = 0;
+                search_params.page = current_page;
+                action_toast?.show("error", error);
+            } else {
+                examineeList = result.data === null ? [] : result.data;
+                totals = result.rowCount;
+                current_page = search_params.page;
 
-            is_all_selected = isAllSelected();
-        }
-        loading = false;
+                if (examineeList !== null) {
+                    // 更新选中状态
+                    const selected_id_set = new Set(
+                        selected_ids.map((item) => item.id)
+                    );
+                    examineeList.forEach((examinee) => {
+                        examinee.selected = selected_id_set.has(examinee.id);
+                    });
+                }
+
+                is_all_selected = isAllSelected();
+            }
+        })
+        .catch(error => {
+            console.error("搜索用户失败:", error);
+            if (!error.message.includes("404")) {
+                action_toast?.show("error", "搜索失败，请稍后重试");
+            }
+            examineeList = [];
+            totals = 0;
+        })
+        .finally(() => {
+            loading = false;
+        });
     }
 
     // 重新计算所有selected_ids的serial_number
     function recalculateSerialNumbers() {
-        // 只在序号不连续或序号过大时重新计算
-        let needsRecalculation = false;
-
-        // 只检查第一个和最后一个序号，检查是否不连续，以及是否有超过10000的序号
-        if (selected_ids.length > 0) {
-            const firstItem = selected_ids[0];
-            const lastItem = selected_ids[selected_ids.length - 1];
-
-            needsRecalculation =
-                (firstItem.serial_number !== 1 ||
-                    lastItem.serial_number !== selected_ids.length) &&
-                lastItem.serial_number > 10000;
-        }
-
-        if (needsRecalculation) {
-            selected_ids = selected_ids.map((item, index) => ({
-                ...item,
-                serial_number: index + 1,
-            }));
-        }
+        selected_ids = selected_ids.map((item, index) => ({
+            ...item,
+            serial_number: index + 1,
+        }));
     }
 
-    // 切换全选状态
+    // 修复：切换全选状态
     function toggleSelectAll() {
-        is_all_selected = !is_all_selected; // 切换全选状态
-        examinee_list.forEach(
-            (/** @type {{ selected: boolean; }} */ examinee) => {
-                examinee.selected = is_all_selected; // 更新所有行的选中状态
-            },
-        );
+        is_all_selected = !is_all_selected;
+        
+        examineeList.forEach((examinee) => {
+            examinee.selected = is_all_selected;
+        });
 
-        //根据全选状态调整已选择的数组
         if (is_all_selected) {
-            examinee_list.forEach(
-                (examinee) => {
-                    const exists = selected_ids.find(
-                        (item) => item.id === examinee.id,
-                    );
-                    if (!exists) {
-                        selected_ids.push({
-                            id: examinee.id,
-                            official_name:examinee.official_name,
-                            gender:examinee.gender,
-                            account:examinee.account,
-                            phone:examinee.phone,
-                            id_card_no:examinee.id_card_no,
-                            serial_number: selected_ids.length + 1,
-                        });
-                    }
-                },
-            );
+            // 全选：添加当前页面所有未选中的考生
+            examineeList.forEach((examinee) => {
+                const exists = selected_ids.find((item) => item.id === examinee.id);
+                if (!exists) {
+                    selected_ids.push({
+                        id: examinee.id,
+                        OfficialName: examinee.OfficialName || "",
+                        gender: examinee.gender || "",
+                        account: examinee.account || "",
+                        MobilePhone: examinee.MobilePhone || "",
+                        IDCardNo: examinee.IDCardNo || "",
+                        serial_number: 0, // 临时设置，稍后重新计算
+                    });
+                }
+            });
         } else {
-            examinee_list.forEach(
-                /** @param {{ id: string }} examinee */
-                (examinee) => {
-                    const index = selected_ids.findIndex(
-                        (item) => item.id === examinee.id,
-                    );
-                    if (index !== -1) {
-                        selected_ids.splice(index, 1);
-                    }
-                },
-            );
-
-            // 只在取消全选时检查是否需要重新计算序号
-            recalculateSerialNumbers();
+            // 取消全选：移除当前页面的所有考生
+            examineeList.forEach((examinee) => {
+                const index = selected_ids.findIndex((item) => item.id === examinee.id);
+                if (index !== -1) {
+                    selected_ids.splice(index, 1);
+                }
+            });
         }
-        is_all_selected = isAllSelected();
+        
+        // 重新计算序列号
+        recalculateSerialNumbers();
     }
 
     // 切换到选择模式
@@ -409,12 +369,10 @@
         selected_search_params.name = "";
     }
 
-    let initial_load = $derived(show_panel);
-
     // 判断是否全选
     function isAllSelected() {
-        if (examinee_list !== null) {
-            return examinee_list.every((examinee) => examinee.selected);
+        if (examineeList !== null && examineeList.length > 0) {
+            return examineeList.every((examinee) => examinee.selected);
         } else {
             return false;
         }
@@ -455,68 +413,49 @@
         }
     }
 
-    /**
-     * @param {number[]} ids
-     */
-    async function getStudentInfo(ids){
-        error = "";
-
-        // 构建查询参数
-        let query_params = new URLSearchParams();
-
-        query_params.append("selected_ids", ids.join(','));
-
-        const response = await fetch(
-            `/api/teacher/exam/usersInfo?${query_params.toString()}`,
-            {
-                method: "GET",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            },
-        );
-
-        let result = null;
-
-        if (response.status === 404) {
-            action_toast?.show("error", "获取学生列表失败，请稍后重试");
-            return;
-        }
-
-        result = await response.json();
-
-        if (result.Status != 0) {
-            error = result.msg || "获取学生列表失败";
-            selected_ids = [];
-            totals = 0;
-            search_params.page = current_page;
-            action_toast?.show("error", error);
+    // 修复：单个复选框选择事件处理
+    function handleCheckboxChange(examinee, event) {
+        const target = /** @type {HTMLInputElement} */ (event.target);
+        const checked = target.checked;
+        
+        if (checked) {
+            // 选中：添加到已选列表
+            if (!selected_ids.find((g) => g.id === examinee.id)) {
+                selected_ids.push({
+                    id: examinee.ID,
+                    OfficialName: examinee.OfficialName || "",
+                    Account: examinee.Account || "",
+                    Gender: examinee.Gender || "",
+                    MobilePhone: examinee.MobilePhone || "",
+                    IDCardNo: examinee.IDCardNo || "",
+                    serial_number: 0, // 临时设置，稍后重新计算
+                });
+            }
+            examinee.selected = true;
         } else {
-            selected_ids = result.Data === null ? [] : result.Data;
+            // 取消选中：从已选列表移除
+            const index = selected_ids.findIndex((g) => g.id === examinee.id);
+            if (index !== -1) {
+                selected_ids.splice(index, 1);
+            }
+            examinee.selected = false;
         }
+        
+        // 重新计算序列号
+        recalculateSerialNumbers();
+        
+        // 更新全选状态
+        is_all_selected = isAllSelected();
+        console.log("当前已选中的用户：", selected_ids);
     }
 
-    //当打开面板时自动搜索考生列表
+    // 初始化选中的考生
     $effect(() => {
-        if (show_panel && initial_load) {
-            initial_load = false;
-
-            //每次打开时将外部选中的id赋值给当前面板记录的已选中的id 在搜索前执行是为了能正常显示每个列表项的选中效果
-            selected_ids = [];
-            
-            /**
-             * @type {number[]}
-             */
-            let search_ids = [];
-            ids.forEach((element) => {
-                search_ids.push(element.id)
-            });
-
-            // 获取已选学生的信息
-            getStudentInfo(search_ids)
-
-            is_selection_mode = false;
+        if (show_panel && ids && ids.length > 0) {
+            selected_ids = ids.map((item, index) => ({
+                ...item,
+                serial_number: index + 1
+            }));
         }
     });
 </script>
@@ -530,7 +469,6 @@
                 onclick={() => {
                     show_panel = false;
                     search_params.page = 1;
-                    selected_ids = [];
                     is_selection_mode = false;
                     onCancel(false);
                 }}>×</button
@@ -542,11 +480,11 @@
                 <div class="selected-examinees-container">
                     <div class="action-container">
                         <div class="examinee-search-container">
-                            <SearchInput
-                                purpose_text={"搜索考生"}
-                                place_holder={"请输姓名/手机号/身份证号"}
-                                onSearchFunc={onSelectedSearch}
-                            ></SearchInput>
+                            <InputBox
+                                label={"搜索考生"}
+                                placeholder={"请输姓名/手机号/身份证号"}
+                                onInput={onSelectedSearch}
+                            ></InputBox>
                         </div>
                         <div class="button-group">
                             <button class="upload-file-button" onclick={switchToSelectionMode}>
@@ -567,10 +505,10 @@
                             <tbody>
                                 {#each current_page_selected_ids as examinee}
                                     <tr class="examinee">
-                                        <td>{examinee.official_name || "--"}</td>
+                                        <td>{examinee.OfficialName || "--"}</td>
                                         <td>{examinee.gender || "--"}</td>
-                                        <td>{examinee.phone || "--"}</td>
-                                        <td>{examinee.id_card_no || "--"}</td>
+                                        <td>{examinee.MobilePhone || "--"}</td>
+                                        <td>{examinee.IDCardNo || "--"}</td>
                                     </tr>
                                 {/each}
                             </tbody>
@@ -585,14 +523,13 @@
                         </span>
                         
                         <Pagination
-                            totalItems={filtered_selected_ids.length}
-                            currentPage={selected_search_params.page}
-                            pageSizeOptions={[10]}
-                            on:pageChange={onSelectedNextOrLastPage}
-                            on:pageSearch={onSearchPageFunc}
-                            on:pageChoose={onPageChooseFunc}
-                            >
-                        </Pagination>
+                        totalItems={filtered_selected_ids.length}
+                        currentPage={selected_search_params.page}
+                        pageSizeOptions={[10]}
+                        on:pageChange={(e) => {
+                            selected_search_params.page = e.detail;
+                        }}
+                        />
                         
                     </div>
                 </div>
@@ -600,11 +537,11 @@
                 <!-- 选择模式 -->
                 <div class="action-container">
                     <div class="examinee-search-container">
-                        <SearchInput
-                            purpose_text={"搜索考生"}
-                            place_holder={"请输姓名/手机号/身份证号"}
-                            onSearchFunc={onSearch}
-                        ></SearchInput>
+                        <InputBox
+                                label={"搜索考生"}
+                                placeholder={"请输姓名/手机号/身份证号"}
+                                onInput={onSearch}
+                            ></InputBox>
                     </div>
                     <div class="button-group">
                         <button class="back-btn" onclick={backToViewMode}>返回考生列表</button>
@@ -637,7 +574,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {#each examinee_list as examinee, index}
+                            {#each examineeList as examinee, index}
                                 <tr
                                     class={`examinee ${examinee.selected ? "selected" : ""}`}
                                 >
@@ -646,86 +583,38 @@
                                             type="checkbox"
                                             class="custom-checkbox"
                                             checked={examinee.selected}
-                                            onchange={/** @param {Event} event */
-                                            (event) => {
-                                                const target =
-                                                    /** @type {HTMLInputElement} */ (
-                                                        event.target
-                                                    );
-                                                if (target && target.checked) {
-                                                    if (
-                                                        !selected_ids.find(
-                                                            (g) =>
-                                                                g.id ===
-                                                                examinee.id,
-                                                        )
-                                                    ) {
-                                                        const currentMaxSerial =
-                                                            getMaxSerialNumber();
-                                                        selected_ids.push({
-                                                            id: examinee.id,
-                                                            official_name:examinee.official_name,
-                                                            account:examinee.account,
-                                                            gender:examinee.gender,
-                                                            phone:examinee.phone,
-                                                            id_card_no:examinee.id_card_no,
-                                                            serial_number:
-                                                                currentMaxSerial +
-                                                                1,
-                                                        });
-                                                    }
-                                                    examinee.selected = true;
-                                                    is_all_selected =
-                                                        isAllSelected();
-                                                } else {
-                                                    const index =
-                                                        selected_ids.findIndex(
-                                                            (g) =>
-                                                                g.id ===
-                                                                examinee.id,
-                                                        );
-                                                    if (index !== -1) {
-                                                        selected_ids.splice(
-                                                            index,
-                                                            1,
-                                                        );
-                                                    }
-                                                    examinee.selected = false;
-                                                    is_all_selected =
-                                                        isAllSelected();
-                                                }
-                                            }}
+                                            onchange={(event) => handleCheckboxChange(examinee, event)}
                                         />
                                     </td>
                                     <td
-                                        >{examinee.official_name === null ||
-                                        examinee.official_name === ""
+                                        >{examinee.OfficialName === null ||
+                                        examinee.OfficialName === ""
                                             ? "--"
-                                            : examinee.official_name}</td
+                                            : examinee.OfficialName}</td
                                     >
                                     <td
-                                        >{examinee.gender === null ||
-                                        examinee.gender === ""
+                                        >{examinee.Gender === null ||
+                                        examinee.Gender === ""
                                             ? "--"
-                                            : examinee.gender}</td
+                                            : examinee.Gender}</td
                                     >
                                     <td
-                                        >{examinee.phone === null ||
-                                        examinee.phone === ""
+                                        >{examinee.MobilePhone === null ||
+                                        examinee.MobilePhone === ""
                                             ? "--"
-                                            : examinee.phone}</td
+                                            : examinee.MobilePhone}</td
                                     >
                                     <td
-                                        >{examinee.id_card_no === null ||
-                                        examinee.id_card_no === ""
+                                        >{examinee.IDCardNo === null ||
+                                        examinee.IDCardNo === ""
                                             ? "--"
-                                            : examinee.id_card_no}</td
+                                            : examinee.IDCardNo}</td
                                     >
                                 </tr>
                             {/each}
                         </tbody>
                     </table>
-                    {#if examinee_list.length === 0}
+                    {#if examineeList.length === 0}
                         <div class="no-data-text">暂无数据</div>
                     {/if}
                 </div>
@@ -735,22 +624,14 @@
                             >{selected_ids.length}</span
                         > 条
                     </span>
-                    <!-- <Pagination
-                        show_per_page={false}
-                        total_data_num={totals}
-                        total_page_num={total_page}
-                        current_page_num={current_page}
-                        onPageChangeFunc={onNextOrLastPage}
-                        onPageSearchFunc={onSearchPageFunc}
-                        {onPageChooseFunc}
-                    ></Pagination> -->
                     <Pagination
                         totalItems={totals}
                         currentPage={search_params.page}
                         pageSizeOptions={[10]}
-                        on:pageChange={onNextOrLastPage}
-                        on:pageSearch={onSearchPageFunc}
-                        on:pageChoose={onPageChooseFunc}>
+                        on:pageChange={(e) => {
+                        search_params.page = e.detail;
+                        searchExaminee();
+                    }}>
                     </Pagination>
                 </div>
             {/if}
@@ -771,15 +652,12 @@
                 onclick={() => {
                     show_panel = false;
                     onConfirm(selected_ids);
-                    selected_ids = [];
                     is_selection_mode = false;
                 }}>确定</button
             >
         </div>
     </div>
 </div>
-
-
 
 <StudentImportPanel
     onImport={(/** @type {any} */ success_student, /** @type {any} */ has_error) => {
@@ -792,16 +670,21 @@
                 )
                 .map((/** @type {any} */ student, /** @type {any} */ index) => ({
                     id: student,
-                    serial_number: selected_ids.length + index + 1,
+                    OfficialName: `学生${student}`, // 临时名称
+                    gender: "",
+                    account: "",
+                    MobilePhone: "",
+                    IDCardNo: "",
+                    serial_number: 0, // 临时设置
                 }));
 
             // 更新selected_ids
             selected_ids = [...selected_ids, ...newStudents];
 
-            searchExaminee();
-
-            // 检查是否需要重新计算序号
+            // 重新计算序列号
             recalculateSerialNumbers();
+
+            searchExaminee();
         }
 
         if (!has_error) {
@@ -829,7 +712,7 @@
         th,
         td {
             font-size: 14px;
-            color: (0, 0, 0, 0.3);
+            color: rgba(51, 51, 51);
             border: none;
             padding: 8px;
             text-align: center;
@@ -955,6 +838,10 @@
 
     .examinee-search-container {
         flex: 0 0 350px;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        margin-left: -5%; //维持组件位置在行左侧对齐
     }
 
     .button-group {

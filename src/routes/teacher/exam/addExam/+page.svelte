@@ -2,11 +2,12 @@
     //@ts-nocheck
     import { goto } from "$app/navigation";
     import SmartEditor from "@3min/smart-edit";
-   // import DateTimePicker from "$lib/component/DatePicker/DateTimePicker.svelte";
     import RequiredLabel from "../_components/RequiredLabel.svelte";
     import PaperSelectionPanel from "../_components/PaperSelectionPanel.svelte";
     import ExamineeSelectionPanel from "../_components/ExamineeSelectionPanel.svelte";
     import Button from "$lib/components/Button/Button.svelte";
+    import DatePicker from "$lib/components/DatePicker/DatePicker.svelte"
+    import Title from "$lib/components/Title/Title.svelte";
     const TIP_TEXT = {
         final_exam:
             "当一门考试的考试性质为期末成绩考试时，它将决定学生在此课程的最终期末成绩",
@@ -180,47 +181,50 @@
         paper_configs[index].max_duration = durationInSeconds;
     }
 
-    function onChooseTime(index) {
-        return function (
-            /** @type {string | number | Date} */ start,
-            /** @type {string | number | Date} */ end,
-        ) {
-            if (!start || !end) {
-                paper_configs[index].duration = 0;
-                paper_configs[index].max_duration = 0;
-                return;
-            }
+    
 
-            const startTime = new Date(start);
-            const endTime = new Date(end);
-
-            // 检查日期是否有效
-            if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-                console.error("Invalid date values");
-                return;
-            }
-
-            startTime.setSeconds(0, 0);
-            endTime.setSeconds(0, 0);
-
-            const timeDifference = endTime.getTime() - startTime.getTime();
-            const durationInSeconds = Math.floor(timeDifference / (1000 * 60));
-
-            paper_configs[index].duration = durationInSeconds;
-            paper_configs[index].max_duration = durationInSeconds;
-
-            const startISO = startTime.toISOString();
-            const endISO = endTime.toISOString();
-
+    function onChooseStartTime(index) {
+    return function(event) {
+        const startDate = event.detail.date;
+        if (startDate) {
+            startDate.setSeconds(0, 0);
+            const startISO = startDate.toISOString();
             paper_configs[index].start_time = startISO;
-            paper_configs[index].end_time = endISO;
+            updateDuration(index);
+        }
+    };
+}
 
-            // 清空考场选择
-            // examRooms = [];
-            // invigilators = [];
-        };
+function onChooseEndTime(index) {
+    return function(event) {
+        const endDate = event.detail.date;
+        if (endDate) {
+            endDate.setSeconds(0, 0);
+            const endISO = endDate.toISOString();
+            paper_configs[index].end_time = endISO;
+            updateDuration(index);
+        }
+    };
+}
+
+function updateDuration(index) {
+    const startTime = paper_configs[index].start_time;
+    const endTime = paper_configs[index].end_time;
+    
+    if (!startTime || !endTime) {
+        paper_configs[index].duration = 0;
+        paper_configs[index].max_duration = 0;
+        return;
     }
 
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const timeDifference = end.getTime() - start.getTime();
+    const durationInMinutes = Math.floor(timeDifference / (1000 * 60));
+
+    paper_configs[index].duration = Math.max(0, durationInMinutes);
+    paper_configs[index].max_duration = Math.max(0, durationInMinutes);
+}
     function calculateDuration(paper_configs) {
         let duration = 0;
         paper_configs.forEach((element) => {
@@ -266,22 +270,22 @@
             const session = paper_configs[i];
 
             // 校验试卷ID
-            if (!session.paper_id || session.paper_id === 0) {
-                action_toast.show("error", `第${i + 1}个场次未选择试卷`);
+            // if (!session.paper_id || session.paper_id === 0) {
+            //     action_toast.show("error", `第${i + 1}个场次未选择试卷`);
+            //     return;
+            // }
+
+            // 校验开始时间
+            if (!session.start_time || session.start_time === "") {
+                action_toast.show("error", `第${i + 1}个场次未设置时间段`);
                 return;
             }
 
-            // 校验开始时间
-            // if (!session.start_time || session.start_time === "") {
-            //     action_toast.show("error", `第${i + 1}个场次未设置时间段`);
-            //     return;
-            // }
-
-            // // 校验结束时间
-            // if (!session.end_time || session.end_time === "") {
-            //     action_toast.show("error", `第${i + 1}个场次未设置时间段`);
-            //     return;
-            // }
+            // 校验结束时间
+            if (!session.end_time || session.end_time === "") {
+                action_toast.show("error", `第${i + 1}个场次未设置时间段`);
+                return;
+            }
 
             // 校验时间逻辑
             const startTime = new Date(session.start_time);
@@ -475,10 +479,9 @@
     }
 }
 </script>
-
+<Title title="创建考试" line={true} />
 <div class="createExamWrapper">
     <div class="createExamContainer">
-         <span>创建考试</span> <!-- 占位标记 -->
          <div class="examNameInputContainer">
             <RequiredLabel text="考试名称" />
             <input
@@ -581,13 +584,13 @@
                     {@render paperConfig(index)}
                 {/each}
 
-                <!-- <button
-                    class="add-paper-button"
+                
+                <Button
+                    size="small"
                     onclick={() => {
                         addNewPaper();
-                    }}>添加试卷</button
-                > -->
-
+                    }}>添加试卷</Button
+                >
             </div>
         </div>
 
@@ -602,11 +605,6 @@
         <div class="examinee-container">
             <RequiredLabel text="考试人员" colon={false}  Asterisk={false}/>
             <div class="examinee-button-container normal-button-container">
-                <!-- <button
-                    class="examinee-button normal-button"
-                    onclick={() => {
-                        show_examinee_panel = true;
-                    }}>考生选择</button> -->
                     <Button
                         type="primary"
                         size="small"
@@ -631,7 +629,7 @@
             <button
                 class="cancel-action-button"
                 onclick={() => {
-                    goto("/teacher/examManagement");
+                    goto("/teacher/exam");
                 }}>取消</button
             >
             <button
@@ -674,15 +672,8 @@
                     <div class="config-row-content">
                         <div class="paper-button-container normal-button-container">
                             {#if paper_configs[paper_config_index].paper_id === 0}
-                                <!-- <button
-                                    class="paper-button normal-button"
-                                    onclick={() => {
-                                        paper_configs[
-                                            paper_config_index
-                                        ].showPaperSelectionPanel = true;
-                                    }}>试卷选择</button
-                                > -->
                                     <Button
+                                    size="small"
                                     type="primary"
                                     onclick={() => {
                                         paper_configs[
@@ -762,7 +753,17 @@
                                             paper_config_index - 1
                                         ].end_time,
                                     )}
+                                        on:startDateSelected={onChooseTime(paper_config_index)}
+                                on:endDateSelected={onChooseTime(paper_config_index)}
                             ></DateTimePicker> -->
+                            <DatePicker
+                                isTimeSelection={true}
+
+                                inputWidth={'250px'} 
+                                singleDateSelection={false}
+                                on:startDateSelected={onChooseStartTime(paper_config_index)}
+                                on:endDateSelected={onChooseEndTime(paper_config_index)}
+                            ></DatePicker>
                         </div>
                     </div>
 
@@ -868,6 +869,18 @@
                                 />
                                 人工批卷
                             </label>
+
+                            <label class="label">
+                                <input
+                                    type="radio"
+                                    bind:group={
+                                        paper_configs[paper_config_index].mark_method
+                                    }
+                                    value={"02"}
+                                    class="choice-radio-input"
+                                />
+                                自动批卷
+                            </label>
                         </div>
                     </div>
 
@@ -916,7 +929,7 @@
                         <RequiredLabel text="批改配置" Asterisk={false} />
                         <div class="config-row-content graders-container">
                             <div class = "graders-type-1">
-                                <button
+                                <!-- <button
                                     class="add-graders-button"
                                     onclick={() => {
                                         paper_configs[
@@ -928,7 +941,20 @@
                                         alt="添加"
                                         style="height: 14px; margin-right:5px"
                                     />添加批阅员</button
+                                > -->
+
+                                <Button
+                                    size="small"
+                                    onClick={() => {
+                                        paper_configs[paper_config_index].show_graders_selection_panel = true;
+                                    }}
                                 >
+                                    <img
+                                        src="/add.svg"
+                                        alt="添加"
+                                        style="height: 10px; margin-right:5px"
+                                    />添加批阅员
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -1022,6 +1048,7 @@
         overflow-y: hidden;
         overflow-x: auto;
         padding-bottom: 5%;
+        padding-top:10px;
         .createExamContainer {
             margin: 0 auto;
             position: relative;
@@ -1203,8 +1230,8 @@
     }
     
     .examinee-number-text {
-                font-size: 14px;
-            }
+        font-size: 14px;
+    }
     
     .bottom-action-panel-fixed{
         display: flex;

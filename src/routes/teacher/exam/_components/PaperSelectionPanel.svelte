@@ -1,17 +1,18 @@
 <script>
-    import DropdownGray from "$lib/component/DropdownGray.svelte";
-    import Pagination from "$lib/component/Pagination.svelte";
-    import SearchInput from "$lib/component/SearchInput.svelte";
-    import UneditableTag from "$lib/component/UneditableTag.svelte";
+    // import DropdownGray from "$lib/component/DropdownGray.svelte";
+    import Pagination from "$lib/components/Pagination/Pagination.svelte";
+    // import SearchInput from "$lib/component/SearchInput.svelte";
+    // import UneditableTag from "$lib/component/UneditableTag.svelte";
     import { onDestroy } from "svelte";
-
+    import Select from "$lib/components/Select/Select.svelte";
+    import Option from "$lib/components/Select/Option.svelte";
     // 难度颜色常量
     export const DIFFICULTY_COLOR_SIMPLE = "green";
     export const DIFFICULTY_COLOR_MEDIUM = "orange";
     export const DIFFICULTY_COLOR_HARD = "red";
     export const DIFFICULTY_COLOR_DEFAULT = "black";
 
-    const ASSEMBLY_TYPE_MAP = {
+    const AssemblyType_MAP = {
         '00': '自定义组卷',
         '02': '随机组卷',
         '04': '智能刷题'
@@ -58,7 +59,8 @@
         name: "",
         tags: "",
         page: 1,
-        pageSize: 6,
+        pageSize: 10,
+        assembly_type: "",
     });
 
     //总页数
@@ -146,46 +148,13 @@
             tags_search_timer = null;
         }, 300);
     }
-
-    /**
-     * @param {string} value
-     * 搜索页数
-     */
-    function onSearchPageFunc(value) {
-        const numericValue = parseFloat(value);
-        if (isNaN(numericValue) || numericValue < 1 || numericValue === null) {
-            search_params.page = 1;
-        } else {
-            search_params.page = numericValue;
-        }
-
-        //防抖逻辑
-        if (page_search_timer) {
-            clearTimeout(page_search_timer);
-        }
-        page_search_timer = setTimeout(() => {
-            searchPaper();
-            page_search_timer = null;
-        }, 300);
+    function handlePageChange(event) {
+    if (loading === true) {
+        return;
     }
-
-    /**
-     * @param {boolean} is_next
-     * 上一页/下一页
-     */
-    function onNextOrLastPage(is_next) {
-        if (loading === true) {
-            return;
-        }
-        if (is_next && search_params.page < total_page) {
-            search_params.page += 1;
-            searchPaper();
-        }
-        if (!is_next && search_params.page > 1) {
-            search_params.page -= 1;
-            searchPaper();
-        }
-    }
+    search_params.page = event.detail;
+    searchPaper();
+}
 
     /**
      * @param {number} page
@@ -210,7 +179,7 @@
         // 添加基础参数
         query_params.append("page", search_params.page.toString());
         query_params.append("pageSize", search_params.pageSize.toString());
-        query_params.append("category","00")
+       // query_params.append("category","00")
 
         // 添加可选参数
         if (search_params.name) {
@@ -219,7 +188,10 @@
         if (search_params.tags) {
             query_params.append("tags", search_params.tags);
         }
-        console.log(query_params.toString());
+
+        if (search_params.assembly_type) {
+        query_params.append("assembly_type", search_params.assembly_type);
+}
         const response = await fetch(
             `/api/paper?${query_params.toString()}`,
             {
@@ -232,7 +204,7 @@
         );
 
         const result = await response.json();
-
+        console.log(result);
         if (result.status!== 0 ) {
             error = result.msg || "搜索失败";
             paper_list = [];
@@ -241,8 +213,8 @@
             search_params.page = current_page;
             
         } else {
-            paper_list = result.data.paper_list;
-            totals = result.data.total_count;
+            paper_list = result.data;
+            totals = result.totalCount;
             current_page = search_params.page;
         }
         
@@ -274,19 +246,42 @@
         const minute = String(date.getMinutes()).padStart(2, "0");
         return `${year}-${month}-${day} ${hour}:${minute}`;
     }
+    // 添加 Select 相关状态和函数
+    let selected_paper_type = $state("04");
 
-    let initial_load = $derived(show_panel);
-
-    //当打开面板时自动搜索试卷列表
-    $effect(() => {
-        if (show_panel && initial_load) {
-            initial_load = false;
-            
-            paper_selected_id = selected_id;
-
-            searchPaper();
+    function onPaperTypeChange(value) {
+        selected_paper_type = value;
+        // 根据选择的值设置搜索参数
+        if (value === "04") {
+            search_params.assembly_type = ""; // 全部，不筛选
+        } else {
+            search_params.assembly_type = value;
         }
-    });
+        search_params.page = 1;
+        searchPaper();
+    }
+
+    // 添加处理每页条数变化的函数
+    function handlePageSizeChange(event) {
+        if (loading === true) {
+            return;
+        }
+        search_params.pageSize = event.detail;
+        search_params.page = 1; // 重置到第一页
+        searchPaper();
+    }
+        let initial_load = $derived(show_panel);
+
+        //当打开面板时自动搜索试卷列表
+        $effect(() => {
+            if (show_panel && initial_load) {
+                initial_load = false;
+                
+                paper_selected_id = selected_id;
+
+                searchPaper();
+            }
+        });
 
     onDestroy(() => {
         if (name_search_timer !== null) {
@@ -318,30 +313,31 @@
         <div class="panel-body">
             <div class="action-container">
                 <div class="paper-selection-search-container">
-                    <SearchInput
+                    <!-- <SearchInput
                         purpose_text={"搜索试卷"}
                         place_holder={"请输入试卷名"}
                         onSearchFunc={onSearchName}
-                    ></SearchInput>
+                    ></SearchInput> -->
                 </div>
                 <div class="paper-selection-search-container">
-                    <SearchInput
+                    <!-- <SearchInput
                         purpose_text={"搜索标签"}
                         place_holder={"请输入标签名"}
                         onSearchFunc={onSearchTags}
-                    ></SearchInput>
+                    ></SearchInput> -->
                 </div>
                 <div class="paper-type-container">
-                    <span class="paper-type-label">试卷类型</span>
                     <div class="paper-type-dropdown">
-                        <DropdownGray
-                            options={[
-                                { value: "04", label: "全部" },
-                                { value: "00", label: "自定义组卷" },
-                                { value: "02", label: "随机组卷" },
-                            ]}
-                            selected={"04"}
-                        ></DropdownGray>
+
+                        <Select 
+                        bind:value={selected_paper_type} 
+                        placeholder="试卷类型"
+                        onChangeValue={onPaperTypeChange}
+                    >
+                        <Option value="04" label="全部"/>
+                        <Option value="00" label="自定义组卷"/>
+                        <Option value="02" label="随机组卷"/>
+                    </Select>
                     </div>
                 </div>
             </div>
@@ -369,63 +365,61 @@
                                     <input
                                         type="radio"
                                         class="custom-checkbox"
-                                        value={paper.id}
+                                        value={paper.ID}
                                         bind:group={paper_selected_id}
                                         onchange={() => {
                                             paper_list.forEach((element) => {
                                                 if (
-                                                    element.id === paper_selected_id
+                                                    element.ID === paper_selected_id
                                                 ) {
                                                     paper_selected_name =
-                                                        element.name;
+                                                        element.Name;
                                                     paper_selected_type =
-                                                        element.assembly_type;
+                                                        element.AssemblyType;
                                                 }
                                             });
                                         }}
                                     />
                                 </td>
                                 <td class="body-row paper-name-cell">
-                                    {paper.name}
+                                    {paper.Name}
                                 </td>
-                                <td class="body-row">{ASSEMBLY_TYPE_MAP[paper.assembly_type]}</td>
-                                <td class="body-row">{CATEGORY_MAP[paper.category]}</td>
-                                <td class="body-row">{paper.question_count}</td>
-                                <td class="body-row">{paper.total_score}</td>
-                                <td class="body-row">{paper.duration}</td>
+                                <td class="body-row">{AssemblyType_MAP[paper.AssemblyType]}</td>
+                                <td class="body-row">{CATEGORY_MAP[paper.Category]}</td>
+                                <td class="body-row">{paper.QuestionCount}</td>
+                                <td class="body-row">{paper.TotalScore}</td>
+                                <td class="body-row">{paper.SuggestedDuration}</td>
                                 <td class="body-row">
-                                    {#if paper.tags && paper?.tags.length>0}
-                                        {#each paper?.tags ?? [] as tag, index}
+                                    {#if paper.Tags && paper?.Tags.length>0}
+                                        {#each paper?.Tags ?? [] as tag, index}
                                             <div class="paper-tags-item">
-                                                <UneditableTag content={tag} />
+                                                <!-- <UneditableTag content={tag} /> -->
                                             </div>
                                         {/each}
                                     {:else}
                                         <span>--</span>
                                     {/if}
                                 </td>
-                                <td style="color: {getDifficultyColor(paper.level)};" class="body-row">{LEVEL_MAP[paper.level]}</td>
+                                <td style="color: {getDifficultyColor(paper.Level)};" class="body-row">{LEVEL_MAP[paper.Level]}</td>
                                 <td class="updated-time body-row">
-                                    {formatDateTime(paper.update_time)}
+                                    {formatDateTime(paper.UpdateTime)}
                                 </td>
-                                <td class="body-row">{formatDate(paper.create_time)}</td>
+                                <td class="body-row">{formatDate(paper.CreateTime)}</td>
                             </tr>
                         {/each}
                     </tbody>
                 </table>
-                {#if paper_list.length === 0}
+                <!-- {#if paper_list.length === 0}
                     <div class="no-data-text">暂无数据</div>
-                {/if}
+                {/if} -->
             </div>
             <div class="pagination-container">
                 <Pagination
-                    show_per_page={false}
-                    current_page_num={current_page}
-                    total_data_num={totals}
-                    total_page_num={total_page}
-                    onPageSearchFunc={onSearchPageFunc}
-                    onPageChangeFunc={onNextOrLastPage}
-                    {onPageChooseFunc}
+                    totalItems={totals}
+                    currentPage={current_page}
+                    pageSize={total_page}
+                    on:pageChange={handlePageChange}
+                    pageSizeOptions={[10, 20, 30]}
                 ></Pagination>
             </div>
         </div>
@@ -622,6 +616,8 @@
     .paper-type-dropdown {
         width: 130px;
         height: 32px;
+        display: flex;
+        justify-content: flex-end;
     }
 
     .paper-selection-table-container {

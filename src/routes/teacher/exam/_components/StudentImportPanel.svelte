@@ -1,19 +1,7 @@
-<!-- 
- /*
- * @Author: Mayux dbs45412@163.com
- * @Date: 2025-04-18 11:48:06
- * @LastEditors: Mayux && 1243805308@qq.com
- * @LastEditTime: 2025-06-15 22:01:40
- * @FilePath: \tutorial-platform-fe\src\routes\teacher\examManagement\StudentImportPanel.svelte
- * @Description: 学生导入面板
- * Copyright (c) 2025 by Mayux, All Rights Reserved. 
- */ 
- -->
-<script>
-    import { checkData } from "$lib/batch_check/check_examinee";
-    import ActionToast from "$lib/component/ActionToast.svelte";
-    import Pagination from "$lib/component/Pagination.svelte";
-    import SearchInput from "$lib/component/SearchInput.svelte";
+<script>  
+    import Pagination from "$lib/components/Pagination/Pagination.svelte";
+    import InputBox from "$lib/components/Input/InputBox.svelte";
+    import InforInput from "$lib/components/Input/InforInput.svelte";
 
     // 字段映射表
     const ERROR_TYPE = {
@@ -61,7 +49,7 @@
     const PAGE_SIZE = 10;
 
     // 计算总页数
-    let total_pages = $derived(Math.ceil(failure_student_list.length / PAGE_SIZE));
+    let total_pages = $derived(Math.ceil(failure_student_list.length / search_params.pageSize));
 
     // 搜索关键词
     let search_keyword = $state("");
@@ -211,6 +199,15 @@
         return filtered;
     }
 
+    // 替换现有的分页处理函数
+    function handlePageChange(event) {
+        search_params.page = event.detail;
+    }
+
+    function handlePageSizeChange(event) {
+        search_params.pageSize = event.detail;
+        search_params.page = 1; // 改变每页条数时重置到第一页
+    }
     function getCurrentPage() {
         // 先对数据进行排序：失败的在前，成功的按序号排序
         const sortedList = [...filtered_student_list].sort((a, b) => {
@@ -225,8 +222,8 @@
             return 0;
         });
 
-        const start = (search_params.page - 1) * PAGE_SIZE;
-        const end = start + PAGE_SIZE;
+        const start = (search_params.page - 1) * search_params.pageSize;
+        const end = start + search_params.pageSize;
         return sortedList.slice(start, end);
     }
 
@@ -279,62 +276,7 @@
         search_params.page = 1; // 搜索时重置到第一页
     }
 
-    //处理文件上传
-    async function handleFileUpload(event) {
-        const files = event.target.files;
-        if (!files || files.length === 0) {
-            onImport([], false);
-            return;
-        }
-        
-        const file = files[0];
-        if (file) {
-            let result = await checkData(file);
-            if (result.error) {
-                error = result.error;
-                action_toast.show("error",error);
-                return;
-            }
-
-            // 如果没有导入任何学生，则返回空数组，并关闭该面板
-            if (result.data.length <= 0 ){
-                onImport([], false)
-                return;
-            }
-
-            // 转换字段名
-            const convertedData = result.data.map(item => ({
-                official_name: item["姓名"],
-                phone: item["手机号"],
-                id_card_no: item["身份证号"],
-                serial_number: item["编号"],
-                error_type: item.error_type,
-                is_ok: item.is_ok
-            }));
-
-            // 分离格式错误和正确的数据
-            const errorData = convertedData.filter(item => !item.is_ok);
-            const successData = convertedData.filter(item => item.is_ok);
-
-            // 将格式错误的数据直接放入failure_student_list
-            if (errorData.length > 0) {
-                failure_student_list = [...failure_student_list, ...errorData];
-            }
-
-            show = true;
-
-            // 只将格式正确的数据发送到后端
-            if (successData.length > 0) {
-                handleImport(successData);
-            } else {
-                action_toast.show("error", "没有符合格式要求的学生，请确保学生信息格式正确");
-            }
-
-            if(file_input){
-                file_input.value = null;
-            }
-        }
-    }
+    
 
     export function triggerFileInput() {
         failure_student_list = [];
@@ -423,11 +365,13 @@
                     class="student-search-container"
                     style="height: 32px;width:350px; margin-left:10px"
                 >
-                    <SearchInput
-                        purpose_text={"搜索考生"}
-                        place_holder={"请输姓名/手机号/身份证号"}
-                        onSearchFunc={onSearch}
-                    ></SearchInput>
+                    <InputBox>
+                        label="搜索考生"
+                        placeholder="请输入姓名/手机号/身份证号"
+                        onInput={e => {
+                            search_keyword = e.target.value;
+                        }}
+                    </InputBox>
                 </div>
                 <div class="checkbox-container">
                     <span style="font-size: 12px;">
@@ -449,7 +393,6 @@
                     type="file"
                     id="fileInput"
                     style="display: none"
-                    onchange={handleFileUpload}
                     bind:this={file_input}
                 />
             </div>
@@ -503,7 +446,7 @@
                     <span style="font-size: 12px; margin-right:10px">
                         已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_ids.length}</span> 条
                     </span>
-                    <Pagination
+                    <!-- <Pagination
                         show_per_page={false}
                         total_data_num={totals}
                         total_page_num={total_page}
@@ -511,7 +454,15 @@
                         onPageChangeFunc={onNextOrLastPage}
                         onPageSearchFunc={onSearchPageFunc}
                         {onPageChooseFunc}
-                    ></Pagination>
+                    ></Pagination> -->
+                     <Pagination
+                        totalItems={totals}
+                        pageSize={search_params.pageSize}
+                        currentPage={search_params.page}
+                        on:pageChange={handlePageChange}
+                        on:pageSizeChange={handlePageSizeChange}
+                        pageSizeOptions={[10, 20, 30, 40, 50]}
+                        />
                 </div>
             </div>
         </div>
@@ -547,10 +498,10 @@
     </div>
 </div>
 
-<ActionToast
+<!-- <ActionToast
     bind:isShow={show_action_toast}
     bind:this={action_toast}
-/>
+/> -->
 
 <style lang="scss" scoped>
     .hide {

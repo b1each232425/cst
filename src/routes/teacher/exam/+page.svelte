@@ -7,6 +7,8 @@
     import Select from "$lib/components/Select/Select.svelte";
     import Option from "$lib/components/Select/Option.svelte";
     import MessageBox from "$lib/components/MessageBox/MessageBox.svelte";
+    import Pagination from "$lib/components/Pagination/Pagination.svelte";
+    import Title from "$lib/components/Title/Title.svelte";
     let examList=$state([]);
     let Listrows = $state([]); //返回数据行数
     let nameSearchTime = null;
@@ -63,34 +65,25 @@
     loading = true;
     error = "";
 
-    // 构建查询参数
-    let queryParams = new URLSearchParams();
+    // 构建后端期望的查询对象
+    const queryObject = {
+        Action: "select",
+        OrderBy: [{"ID": "DESC"}],
+        Filter: {
+            Name: searchParams.name || "",
+            Status: searchParams.status || "",
+            StartTime: searchParams.startTime ? new Date(searchParams.startTime).getTime() : 0,
+            EndTime: searchParams.endTime ? new Date(searchParams.endTime).getTime() : 0
+        },
+        Page: searchParams.page || 1,
+        PageSize: searchParams.pageSize || 10
+    };
 
-    // 添加基础参数
-    queryParams.append("page", (searchParams.page || 1).toString());
-    queryParams.append("pageSize", (searchParams.pageSize || 10).toString());
+    const queryParams = new URLSearchParams();
+    queryParams.append("q", JSON.stringify(queryObject));
 
-    // 添加可选参数
-    if (searchParams.name) {
-        queryParams.append("filter.Name", searchParams.name);
-    }
-    if (searchParams.status) {
-        queryParams.append("filter.Status", searchParams.status);
-    }
-
-    if (searchParams.startTime) {
-        const start_time = new Date(searchParams.startTime);
-        queryParams.append("filter.StartTime", start_time.toISOString());
-    }
-    if (searchParams.endTime) {
-        const endTime = new Date(searchParams.endTime);
-        queryParams.append("filter.EndTime", endTime.toISOString());
-    }
-
-    // 添加 orderBy 参数
-    queryParams.append("orderBy[0].Duration", "DESC");
-    queryParams.append("orderBy[0].Time", "DESC");
-    console.log("查询参数:", queryParams.toString());
+    console.log("查询参数:", queryObject);
+    
     fetch(`/api/exam/list?${queryParams.toString()}`, {
         method: "GET",
         credentials: "include",
@@ -108,9 +101,14 @@
 }
 
     function formatDateTime(isoString) {
-        const date = new Date(isoString);
-        return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-    }
+    const date = new Date(isoString);
+    const Y = date.getFullYear();
+    const M = String(date.getMonth() + 1).padStart(2, "0");
+    const D = String(date.getDate()).padStart(2, "0");
+    const h = String(date.getHours()).padStart(2, "0");
+    const m = String(date.getMinutes()).padStart(2, "0");
+    return `${Y}-${M}-${D} ${h}:${m}`;
+}
 
     function toggleMoreActions(index) {
         examList[index].action_expended = !examList[index].action_expended;
@@ -140,80 +138,86 @@
         }
     }
 
-    function onNextOrLastPage(is_next) {
-        if (loading === true) return;
-        if (is_next && searchParams.page < totalPage) {
-            searchParams.page += 1;
-            searchExam();
-        }
-        if (!is_next && searchParams.page > 1) {
-            searchParams.page -= 1;
-            searchExam();
-        }
+    // 处理页码变化
+    function handlePageChange(event) {
+        console.log("页码变化:", event.detail);
+        searchParams.page = event.detail;
+        searchExam();
     }
+    
+    // 处理每页条数变化
+    function handlePageSizeChange(event) {
+        console.log("每页条数变化:", event.detail);
+        searchParams.pageSize = event.detail;
+        searchParams.page = 1; // 重置到第一页
+        searchExam();
+    }
+
+    // function onNextOrLastPage(is_next) {
+    //     if (loading === true) return;
+    //     if (is_next && searchParams.page < totalPage) {
+    //         searchParams.page += 1;
+    //         searchExam();
+    //     }
+    //     if (!is_next && searchParams.page > 1) {
+    //         searchParams.page -= 1;
+    //         searchExam();
+    //     }
+    // }
 
     async function publishExam(examId) {
         loading = true;
         message = "";
-        const params = {
-        "data": {
-            "ID": parseInt(examId), // 确保ID是数字类型
-            "Status": "02"
-        }
-    };
-    const url = `/api/exam/status?${new URLSearchParams(params).toString()}`;
 
-        const response = await fetch(url, {
-            method: "PUT",
+        return fetch(`/api/exam/lock?exam_id=${examId}`, {
+            method: "GET",
             credentials: "include",
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
+            headers: { "Content-Type": "application/json" }
+        })
+            .then((res) =>
+            res.ok
+                ? res
+                : res.json().then((err) =>
+                    Promise.reject(new Error(`获取考试锁失败：${err.Msg || "考试可能正在被其他用户编辑"}`))
+                )
+            )
+            .then(() => {
+            const params = {
+                q: JSON.stringify({
+                data: { ID: parseInt(examId), Status: "02" }
+                })
+            };
+            const url = `/api/exam/status?${new URLSearchParams(params).toString()}`;
+            return fetch(url, {
+                method: "PUT",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" }
+            });
+            })
+            .then((res) => res.json())
+            .then((data) => {
+            if (data.Status === 0) {
+                message = "考试发布成功";
+                return searchExam();
+            } else {
+                return Promise.reject(new Error(`发布失败：${data.Msg || "未知错误"}`));
+            }
+            })
+            .catch((err) => {
+            message = err.message || "发布失败";
+            })
 
-        const data = await response.json();
-
-        // if (action_toast === null) {
-        //     // alert(data.Msg);
-        //     loading = false;
-        //     return;
-        // }
-
-        if (data.Status === 0) {
-            message = "考试发布成功";
-            // action_toast.show("success", message);
-            await searchExam();
-         } 
-        //else if (data.Status === -11) {
-        //     message = `发布失败：${data.Msg}`;
-        //     action_toast.show("error", "考试时间无效，请重新设置考试时间");
-        // } else if (data.Status === -12) {
-        //     action_toast.show("error", "考试状态异常，正在重新获取考试列表");
-        //     await searchExam();
-        // } else if (data.Status === -13) {
-        //     action_toast.show(
-        //         "error",
-        //         "尚未导入考生，请在导入考生后再发布该考试",
-        //     );
-        //     await searchExam();
-        // } else if (data.Status === -14) {
-        //     action_toast.show(
-        //         "error",
-        //         "部分场次尚未配置批阅员，请在配置完批阅员后再发布该考试",
-        //     );
-        //     await searchExam();
-        // } else if (data.Status === -18) {
-        //     message = `发布失败：考试正在被其他用户编辑`;
-        //     action_toast.show("error", message);
-        // } else if (data.Status === -20) {
-        //     action_toast.show("error", "用户无权访问");
-        //}
-         else {
-            // action_toast.show("error", "考试发布失败，请稍后重试: " + message);
-        }
-
-        loading = false;
-    }
+            .finally(() =>
+            fetch(`/api/exam/lock?exam_id=${examId}`, {
+                method: "DELETE",
+                credentials: "include"
+            })
+            .catch((releaseErr) => console.error("释放考试锁失败:", releaseErr))
+            )
+            .finally(() => {
+            loading = false;
+            });
+}
     // 模拟获取考试列表数据
         examList = [
             { name: '数学考试', type: '00', method: '00', start_time: '2023-10-01 10:00', end_time: '2023-10-01 12:00', duration: '120分钟', status: '00',delivery_status: '00',addi: '',action_expended:false,num_of_examinee:1},
@@ -251,7 +255,7 @@
     <div class="button-container">
         <button class="continue-edit-button action-button {status !== '00' && status !== '02' ? 'hideButton' : ''}"
         onclick={()=>{
-            goto(`/teacher/examManagement/editExam/${examList[index].id}`)
+            goto(`/teacher/exam/editExam/${examList[index].id}`)
         }}>
         继续编辑</button>
         <button class="publish-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
@@ -276,7 +280,10 @@
         <td>{data.name} </td>
         <td>{TypeMap[data.type]} </td>
         <td>{MethodMap[data.method]} </td>
-        <td>{formatDateTime(data.start_time)} - {formatDateTime(data.end_time)}</td>
+        <td>
+            {data.exam_sessions?.[0] ? formatDateTime(data.exam_sessions[0].start_time) : ''} - 
+            {data.exam_sessions?.[0] ? formatDateTime(data.exam_sessions[0].end_time) : ''}
+        </td>
         <td>{data.duration}</td>
         <td>{@render stateRender(data.status, data.addi)}</td>
         <td>{data.num_of_examinees}</td>
@@ -289,20 +296,6 @@
     /** @type {"00" | "02" | "04" | "08" | "10" | "12"} */ status,
     /** @type {string} */ addi,
 )}
-    <!-- <div class="statusError {status === '12' ? 'visible' : 'hidden'}">
-        <div class="statusTag {StateClassMap[status]}">
-        {StateMap[status]}
-        </div>
-    <button class="tip {status === '12' ? 'visible' : 'hidden'}">
-        <img
-            src="/exam_list/tip.png"
-            alt="提示"
-            style="width: 16px; height:auto"
-        />
-        <div class="tooltip-text">考试异常：{delivery_status === "06"?"考卷下发失败":addi}</div>
-    </button>
-    <div class="statusTagNoError {StateClassMap[status]}" style="visibility: {status === '12' ? 'hidden' : 'visible'};">{StateMap[status]}</div>
-</div> -->
     {#if status === "12"}
         <div class="statusError">
             <div class="statusTag {StateClassMap[status]}">
@@ -323,7 +316,7 @@
 {/snippet}
 
 <div class="examManagementContainer">
-    <span>考试列表</span>
+    <Title title="考试管理" />
     <div class="tableFilterContainer">
         <div class="actionPart">      
 
@@ -374,7 +367,7 @@
             <Button
                 type="primary"
                 size="medium"
-                onclick={() => goto("/teacher/examManagement/addExam")}
+                onclick={() => goto("/teacher/exam/addExam")}
             >
             新增考试
             </Button>
@@ -412,6 +405,17 @@
     confirm_text="确认发布"
     onConfirm={() => publishExam(examIdToPublish)}
     />
+    
+    <div class="paginationContainer">
+        <Pagination
+            totalItems={examList.length}
+            pageSize={10}
+            currentPage={1}
+            on:pageChange={handlePageChange}
+            on:pageSizeChange={handlePageSizeChange}
+            pageSizeOptions = {[10, 20, 30, 40, 50]}
+        />
+    </div>
 </div>
 
 <style lang="scss" scoped>
@@ -469,6 +473,11 @@
             }
 
         }
+        .paginationContainer{
+        display: flex;
+        justify-content: flex-end;
+        padding: 0 40px 0px 0;
+        }
     }
     
     .examListContainer {
@@ -523,6 +532,7 @@
                     cursor: pointer;
                 }
         }
+        
     }
     .examListTableData {
             tr {
@@ -620,4 +630,6 @@
     .button-container{
         background-color: rgb(0, 0, 0, 0);
     }
+
+    
 </style>
