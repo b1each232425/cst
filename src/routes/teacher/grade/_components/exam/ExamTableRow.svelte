@@ -72,9 +72,11 @@
 	<td class="operation">
 		<button class="op-btn" onclick={() => console.log('详情', exam.id)}>详情</button>
 		<button class="op-btn" onclick={() => store.exportGrades([exam.id])}>导出</button>
-		<button class="op-btn op-btn-submit" onclick={() => store.submitGrades([exam.id])}>
-			提交
-		</button>
+		{#if !exam.submitted}
+			<button class="op-btn op-btn-submit" onclick={() => store.submitGrades([exam.id])}>
+				提交
+			</button>
+		{/if}
 	</td>
 </tr>
 
