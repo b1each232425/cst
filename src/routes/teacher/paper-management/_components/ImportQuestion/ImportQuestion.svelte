@@ -597,7 +597,7 @@
                             padding: 12px 0;
                             cursor: pointer;
                             background-color: var(--bg-primary);
-                            border: 1px solid var(--border-light);
+                            border: 1px solid var(--border-medium);
                             border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
 
                             &:hover {
