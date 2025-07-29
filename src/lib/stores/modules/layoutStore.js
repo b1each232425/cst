@@ -30,7 +30,7 @@ export const navStore = writable([
   {
     name: 'practice',
     title: '练习管理',
-    path: '/teacher/practice',
+    path: '/teacher/practice-management',
     icon: '/sidebar/nav_icon/practice.svg',
     isOpen: true,
     isSelect: false,
