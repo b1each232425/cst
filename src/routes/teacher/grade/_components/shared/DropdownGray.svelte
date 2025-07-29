@@ -18,61 +18,67 @@
  */ 
  -->
 <script>
-    let {
-      //value为实际值，点击某个选项后将会调用外部传入的处理函数并将value作为参数传入，label为展示在下拉框的值
-      options = [
-        { value: "option1", label: "option1" },
-        { value: "option2", label: "option2" },
-        { value: "option3", label: "option3" },
-        { value: "option4", label: "option4" },
-        { value: "option5", label: "option5" },
-      ],
-      selected = null,
-      placeholder = "请选择",
-      disabled = false,
-      is_open = false,
-      selectOptionFunc = defaultSelectOption,
-      expand_direction = "down"
-    } = $props();
-  
-    function toggleDropdown() {
-      if (!disabled) is_open = !is_open;
-    }
-  
-    /**
-     * @param {any} value
-     */
-    function defaultSelectOption(value) {
-      console.log("选中"+value);
-    }
+	import { createEventDispatcher } from 'svelte';
+	let {
+		//value为实际值，点击某个选项后将会调用外部传入的处理函数并将value作为参数传入，label为展示在下拉框的值
+		options = [
+			{ value: "option1", label: "option1" },
+			{ value: "option2", label: "option2" },
+			{ value: "option3", label: "option3" },
+			{ value: "option4", label: "option4" },
+			{ value: "option5", label: "option5" },
+		],
+		selected = null,
+		placeholder = "请选择",
+		disabled = false,
+		is_open = false,
+		expand_direction = "down",
+		onchange = (/** @type {CustomEvent} */ e) => {}
+	} = $props();
 
-    /**
-     * @param {string} value
-     */
-    function changeValue(value){
-      is_open = false;
-      selected = value;
-    }
-  
-    /**
-       * @param {{ key: string; preventDefault: () => void; }} e
-       */
-    function handleKeyDown(e) {
-      if (disabled) return;
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        toggleDropdown();
-      }
-    }
-  
-    function handleBlur() {
-      setTimeout(() => {
-        if (is_open) {
-          is_open = false;
-        }
-      }, 200);
-    }
-  </script>
+	const dispatch = createEventDispatcher();
+
+	function toggleDropdown() {
+		if (!disabled) is_open = !is_open;
+	}
+
+	/**
+	 * @param {any} value
+	 */
+	function handleSelect(value) {
+		is_open = false;
+		selected = value;
+		onchange(new CustomEvent('change', { detail: { value } }));
+		dispatch('change', { value }); // Keep both for compatibility if needed
+	}
+
+	/**
+	 * @param {string} value
+	 */
+	function changeValue(value){
+		is_open = false;
+		selected = value;
+	}
+
+	/**
+	   * @param {{ key: string; preventDefault: () => void; }} e
+	   */
+	function handleKeyDown(e) {
+		if (disabled) return;
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault();
+			toggleDropdown();
+		}
+	}
+
+	function handleBlur() {
+		setTimeout(() => {
+			if (is_open) {
+				is_open = false;
+			}
+		}, 200);
+	}
+</script>
   
   <div class="dropdown-container">
     <button
@@ -104,7 +110,7 @@
             class:selected={option.value === selected}
             role="option"
             aria-selected={option.value === selected}
-            onmousedown={() => {selectOptionFunc(option.value);changeValue(option.value)}}
+            onmousedown={() => handleSelect(option.value)}
             onkeydown={handleKeyDown}
             tabindex="-1"
           >

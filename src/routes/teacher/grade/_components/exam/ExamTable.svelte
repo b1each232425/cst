@@ -3,73 +3,49 @@
 	import ExamTableRow from './ExamTableRow.svelte';
 
 	/**
-	 * @typedef {ReturnType<import('$lib/stores/modules/grade.svelte.js').createGradeStore>} GradeStore
+	 * @typedef {ReturnType<import('../../../_stores/grade.svelte.js').createGradeStore>} GradeStore
 	 */
 
 	/** @type {{ store: GradeStore }} */
 	let { store } = $props();
-
-	const { state, toggleSelect, toggleSelectAll, submitGrades, exportGrades } = store;
-
-	function handleSelectAll() {
-		toggleSelectAll();
-	}
-
-	/**
-	 * @param {CustomEvent<{id: number}>} event
-	 */
-	function handleSelect(event) {
-		toggleSelect(event.detail.id);
-	}
-
-	/**
-	 * @param {CustomEvent<{exam: import('$lib/stores/modules/grade.svelte.js').ExamInfo}>} event
-	 */
-	function handleSubmit(event) {
-		submitGrades([event.detail.exam.id]);
-	}
-
-	/**
-	 * @param {CustomEvent<{exam: import('$lib/stores/modules/grade.svelte.js').ExamInfo}>} event
-	 */
-	function handleExport(event) {
-		exportGrades([event.detail.exam.id]);
-	}
+	const { state } = store;
 </script>
 
-<div class="table-container">
-	<table>
+<div class="exam-table-container">
+	<table class="exam-table">
 		<thead>
-			<ExamTableHeader selected={state.selectAll} on:selectAll={handleSelectAll} />
+			<ExamTableHeader selected={state.selectAll} onclick={() => store.toggleSelectAll()} />
 		</thead>
 		<tbody>
-			{#each state.exams as exam, index}
-				<ExamTableRow
-					{exam}
-					index={index}
-					isSelected={!!state.selected[exam.id]}
-					on:select={handleSelect}
-					on:submit={handleSubmit}
-					on:export={handleExport}
-				/>
-			{/each}
+			{#if state.exams.length === 0}
+				<tr>
+					<td colspan="12" class="no-data">暂无数据</td>
+				</tr>
+			{:else}
+				{#each state.exams as exam, index (exam.id)}
+					<ExamTableRow {exam} {store} />
+				{/each}
+			{/if}
 		</tbody>
 	</table>
 </div>
 
 <style lang="scss">
-	.table-container {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		padding: 5px 37px 100px 37px;
-		border-collapse: separate;
-		border-spacing: 0;
-		background: #fff;
-		font-size: 15px;
+	.exam-table-container {
+		width: 100%;
+		overflow-x: auto;
+		flex-grow: 1;
+	}
 
-		table {
-			width: 100%;
-		}
+	.exam-table {
+		width: 100%;
+		border-collapse: collapse;
+		table-layout: fixed; /* 关键：使用固定表格布局 */
+	}
+
+	.no-data {
+		text-align: center;
+		padding: 40px;
+		color: #999;
 	}
 </style> 

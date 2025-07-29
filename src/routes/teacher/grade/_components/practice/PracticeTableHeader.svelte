@@ -1,64 +1,45 @@
 <script>
 	/**
-	 * @typedef {ReturnType<import('$lib/stores/modules/practiceGrade.svelte.js').createPracticeGradeStore>} PracticeGradeStore
+	 * @typedef {ReturnType<import('../../../_stores/practiceGrade.svelte.js').createPracticeGradeStore>} PracticeGradeStore
 	 */
 
 	/** @type {{ store: PracticeGradeStore }} */
 	let { store } = $props();
-	const { state, toggleSelectAll } = store;
+	const { toggleSelectAll } = store;
 </script>
 
-<div class="practice-list-head">
-	<table>
-		<colgroup>
-			<col class="practice-select" />
-			<col class="practice-name" />
-			<col class="practice-total-score" />
-			<col class="practice-avg-score" />
-			<col class="practice-completed" />
-			<col class="practice-passed" />
-			<col class="practice-operation" />
-		</colgroup>
-		<thead>
-			<tr>
-				<th><input type="checkbox" bind:checked={state.selectAll} on:change={toggleSelectAll} /></th>
-				<th>名称</th>
-				<th>总分</th>
-				<th>平均分</th>
-				<th>作答人数</th>
-				<th>通过人数</th>
-				<th>操作</th>
-			</tr>
-		</thead>
-	</table>
-</div>
+<tr class="practice-list-head">
+	<th class="practice-select">
+		<button
+			class="square-container {store.state.selectAll ? 'checked' : ''}"
+			onclick={toggleSelectAll}
+		>
+			{#if store.state.selectAll}
+				<div class="check-square"></div>
+			{/if}
+		</button>
+	</th>
+	<th class="practice-name">名称</th>
+	<th class="practice-total-score">总分</th>
+	<th class="practice-avg-score">平均分</th>
+	<th class="practice-completed">作答人数</th>
+	<th class="practice-passed">通过人数</th>
+	<th class="practice-operation">操作</th>
+</tr>
 
 <style lang="scss">
 	.practice-list-head {
-		background-color: transparent;
-		padding: 0 20px;
+		width: 100%;
 		height: 50px;
-		line-height: 50px;
+		background-color: transparent;
 
-		table {
-			width: 100%;
-			border-collapse: collapse;
-
-			th {
-				text-align: center;
-				padding: 0 8px;
-				font-weight: normal;
-				color: rgb(0, 0, 0, 0.3);
-
-				&:first-child,
-				&:nth-child(2) {
-					text-align: left;
-				}
-
-				&:last-child {
-					text-align: right;
-				}
-			}
+		th {
+			font-size: 14px;
+			font-weight: normal;
+			color: rgb(0, 0, 0, 0.3);
+			padding: 0 4px;
+			vertical-align: middle;
+			text-align: center;
 		}
 	}
 
@@ -67,20 +48,43 @@
 	}
 	.practice-name {
 		width: 35%;
+		text-align: left;
 	}
 	.practice-total-score {
-		width: 10%;
-	}
-	.practice-avg-score {
-		width: 10%;
-	}
-	.practice-completed {
 		width: 15%;
 	}
+	.practice-avg-score 
+	.practice-completed 
 	.practice-passed {
 		width: 10%;
 	}
 	.practice-operation {
 		width: 15%;
+		text-align: right;
+	}
+
+	.square-container {
+		background-color: white;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		cursor: pointer;
+		border: 1px solid #919191;
+		border-radius: 3px;
+		margin: 0 auto;
+		padding: 0;
+		width: 16px;
+		height: 16px;
+
+		&:hover {
+			background-color: #e0e0e0;
+			border-color: #aaa;
+		}
+	}
+
+	.check-square {
+		width: 11px;
+		height: 11px;
+		background-color: #165dff;
 	}
 </style> 

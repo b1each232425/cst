@@ -7,25 +7,33 @@
 	const { state } = store;
 </script>
 
-<div class="practice-table">
-	<PracticeTableHeader {store} />
-	<div class="table-body">
-		{#if state.practices.length === 0}
-			<p class="no-data">暂无数据</p>
-		{:else}
-			{#each state.practices as practice, i}
-				<PracticeTableRow {practice} {store} isAlter={i % 2 === 1} />
-			{/each}
-		{/if}
-	</div>
+<div class="practice-table-container">
+	<table class="practice-table">
+		<thead>
+			<PracticeTableHeader {store} />
+		</thead>
+		<tbody>
+			{#if state.practices.length === 0}
+				<p class="no-data">暂无数据</p>
+			{:else}
+				{#each state.practices as practice, i}
+					<PracticeTableRow {practice} {store} isAlter={i % 2 === 1} />
+				{/each}
+			{/if}
+		</tbody>
+	</table>
 </div>
 
 <style lang="scss">
+	.practice-table-container {
+		width: 100%;
+		overflow-x: auto;
+	}
+
 	.practice-table {
 		width: 100%;
-		flex-grow: 1;
-		display: flex;
-		flex-direction: column;
+		border-collapse: collapse;
+		table-layout: fixed; /* 关键：使用固定表格布局 */
 	}
 
 	.table-body {
