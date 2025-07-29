@@ -10,9 +10,10 @@
   import DatePicker from '$lib/components/DatePicker/DatePicker.svelte';
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Dialog from '../answer/_component/Dialog.svelte';
+  import { formatTimestamp } from '$lib/utils/time_utils';
 
   // 日期选择器对象
-  let datePicker;
+  let datePicker = null;
 
   // 场次状态映射
   const statusMap = new Map([
@@ -34,127 +35,127 @@
   ]);
 
   // mock 数据
-  const mockExam = [
-    {
-      id: 5,
-      name: 'H34',
-      exam_sessions: [
-        {
-          id: 201,
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '10',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-    },
-    {
-      id: 6,
-      name: 'H34',
-      exam_sessions: [
-        {
-          id: 201,
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '10',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-    },
-    {
-      id: 7,
-      name: 'H34',
-      exam_sessions: [
-        {
-          id: 201,
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '08',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-    },
-    {
-      id: 8,
-      name: 'H34',
-      exam_sessions: [
-        {
-          id: 201,
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '10',
-          examinee_status: '02',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-    },
-    {
-      id: 9,
-      name: 'H34',
-      exam_sessions: [
-        {
-          id: 201,
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '06',
-          examinee_status: '04',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-    },
-    {
-      id: 12,
-      name: 'H34',
-      exam_sessions: [
-        {
-          id: 201,
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '10',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-    },
-    {
-      id: 13,
-      name: 'H34',
-      exam_sessions: [
-        {
-          id: 201,
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '10',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-    },
-  ];
+  // const mockExam = [
+  //   {
+  //     id: 5,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         id: 201,
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '04',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 6,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         id: 201,
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 7,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         id: 201,
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '08',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 8,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         id: 201,
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '02',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 9,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         id: 201,
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '06',
+  //         examinee_status: '04',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 12,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         id: 201,
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 13,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         id: 201,
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  // ];
 
   // 是否已经批改好
   function isMarked(status) {
@@ -167,7 +168,7 @@
   }
 
   // 考试列表
-  let examList = $state([...mockExam]);
+  let examList = $state([]);
 
   // 总数据数
   let totalCount = $state(0);
@@ -175,18 +176,18 @@
   // 筛选条件
   let examName = $state('');
   let examStatus = $state('');
-  let startTime = $state('');
-  let endTime = $state('');
+  let startTime = $state(0);
+  let endTime = $state(0);
   let page = $state(1);
   let pageSize = $state(10);
 
-  // 前往考试
-  function gotoExam() {
-    goto();
+  // TODO：前往考试
+  function gotoExam(id) {
+    goto('/student/');
   }
 
-  // 前往考试详情页
-  function gotoExamInfo() {
+  // TODO：前往考试详情页
+  function gotoExamInfo(id) {
     goto('/student/examInfo');
   }
 
@@ -199,8 +200,8 @@
       })
       .then((res) => {
         if (!res.status) {
-          examList = res.data;
-          totalCount = res.rowCount;
+          examList = res.data ?? [];
+          totalCount = res.rowCount ?? 0;
         } else throw new Error(res.msg ?? '获取考试列表失败');
       })
       .catch((err) => {
@@ -272,18 +273,22 @@
     <div class="datePicker">
       <div class="label">考试时间：</div>
       <DatePicker
-        inputWidth={'15rem'}
+        inputWidth={'21rem'}
         bind:this={datePicker}
         singleDateSelection={false}
+        isTimeSelection={true}
         on:startDateSelected={handleStartDateSelected}
         on:endDateSelected={handleEndDateSelected}
       />
     </div>
-    <div>
-      考试状态：<Select bind:value={examStatus}>
+    <div class="select">
+      <div class="label">考试状态：</div>
+      <Select bind:value={examStatus}>
         <Option value="" label="全部" />
-        {#each statusMap as [key, val]}
-          <Option value={key} label={val} />
+        {#each statusMap as [key, val], index (index)}
+          {#if index < 3}
+            <Option value={key} label={val} />
+          {/if}
         {/each}
       </Select>
     </div>
@@ -312,7 +317,7 @@
             <tr>
               <td>{exam.name}</td>
               <td>{paper_name}</td>
-              <td>{start_time}~{end_time}</td>
+              <td>{formatTimestamp(start_time)}~{formatTimestamp(end_time)}</td>
               <td
                 class="status"
                 class:incoming={status === '02'}
@@ -380,22 +385,19 @@
       gap: 1rem;
       z-index: 10;
 
-      .input {
+      .input,
+      .datePicker,
+      .select {
         display: flex;
         align-items: center;
-
-        .label {
-          white-space: nowrap;
-        }
       }
 
-      .datePicker {
-        display: flex;
-        align-items: center;
+      .label {
+        white-space: nowrap;
+      }
 
-        .label {
-          white-space: nowrap;
-        }
+      .select {
+        width: 15rem;
       }
     }
 

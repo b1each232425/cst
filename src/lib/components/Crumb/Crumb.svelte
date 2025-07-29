@@ -1,9 +1,8 @@
 <script>
-  // @ts-nocheck
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { tooltip } from '$lib/components/ToolTip/tooltip';
-  import { sidebarFoldingState, sidebarWidth, navMap, crumbStore } from '$lib/stores/modules/layoutStore';
+  import { sidebarFoldingState, crumbStore } from '$lib/stores/modules/layoutStore';
   import { onMount } from 'svelte';
 
   let userName = '张三'; // 静态数据
@@ -15,7 +14,6 @@
   // 处理展开按钮点击事件
   const toggleSidebar = () => {
     $sidebarFoldingState = !$sidebarFoldingState;
-    $sidebarWidth = $sidebarFoldingState ? '0px' : '235px';
   };
 
   // 响应式处理路径变化
@@ -35,13 +33,10 @@
         // 如果 item.id 是 '[bankid]'，检查路径前缀部分是否匹配
         if (item.id === '[bankid]') {
           // 检查路径前缀部分是否相同
-          const basePath = '/teacher/question-bank-management/theory';
-
-          // 判断 currentPath 是否以 basePath 开头，并且路径长度比 basePath 多一部分
+          const basePath = '/teacher/question-bank/theory';
           const isBasePathMatch = currentPath.startsWith(basePath);
           const isDynamicPath = currentPath.split('/').length === basePath.split('/').length + 1;
 
-          // 如果是动态路径，匹配并继续处理；如果没有动态部分，也需要匹配
           return isBasePathMatch && (isDynamicPath || currentPath === basePath);
         }
         // 处理其他非动态路径的匹配
@@ -83,16 +78,12 @@
   <!-- 面包屑 -->
   <div class="breadcrumbs-container">
     {#each filterCrumbs as crumb, index}
-      <button
-        class="breadcrumb-item"
-        onclick={() => goto(crumb.path)}
-        use:tooltip={() => ({
-          content: '回到' + crumb.title,
-          theme: 'light',
-        })}
-      >
+      <button class="breadcrumb-item" onclick={() => goto(crumb.path)}>
         {crumb.title}
       </button>
+      {#if index < filterCrumbs.length - 1}
+        >
+      {/if}
     {/each}
   </div>
 
@@ -120,14 +111,10 @@
 <style lang="scss" scoped>
   .header-container {
     display: flex;
+    height: 100%;
     flex-direction: row;
-    position: relative;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 52px;
-    max-height: 52px;
-    background-color: var(--bg-secondary);
     box-sizing: border-box;
     padding: 0px 2px 2px 0px;
     justify-content: flex-start;
@@ -163,15 +150,14 @@
       justify-content: flex-start;
       width: max-content;
       height: 100%;
-      background-color: transparent;
 
       .breadcrumb-item {
         all: unset;
-        font-size: 14px;
+        font-size: 16px;
         font-weight: 500;
+        color: #007bff;
         cursor: pointer;
 
-        border: 1px solid #ccc;
         padding: 5px 10px;
         border-radius: 4px;
         transition:
@@ -191,7 +177,7 @@
       }
 
       .breadcrumb-item:last-child {
-        color: #007bff;
+        color: black;
         pointer-events: none;
       }
     }

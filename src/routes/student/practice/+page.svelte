@@ -10,178 +10,178 @@
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Toast from '$lib/components/Toast/Toast.svelte';
 
-  const mockPractice = [
-    {
-      ID: 1,
-      Name: '练习一：基础语法',
-      Type: '00',
-      AttemptCount: 0,
-      Difficulty: '00',
-      AllowedAttempts: 10,
-      QuestionCount: 10,
-      WrongCount: 15,
-      TotalScore: 75,
-      HighestScore: 90,
-      PaperTotalScore: 100,
-      PaperID: 'paper_001',
-      LatestUnsubmittedID: '',
-      LatestSubmittedID: 'attempt_008',
-      Action: '00',
-    },
-    {
-      ID: 2,
-      Name: '练习二：数据类型',
-      Type: '00',
-      AttemptCount: 2,
-      Difficulty: '02',
-      AllowedAttempts: 5,
-      QuestionCount: 8,
-      WrongCount: 0,
-      TotalScore: 0,
-      HighestScore: 0,
-      PaperTotalScore: 100,
-      PaperID: 'paper_002',
-      LatestUnsubmittedID: '',
-      LatestSubmittedID: 'attempt_015',
-      Action: '06',
-    },
-    {
-      ID: 3,
-      Name: '练习三：指针进阶',
-      Type: '00',
-      AttemptCount: 0,
-      Difficulty: '00',
-      AllowedAttempts: 5,
-      QuestionCount: 5,
-      WrongCount: 0,
-      TotalScore: 0,
-      HighestScore: 0,
-      PaperTotalScore: 100,
-      PaperID: 'paper_003',
-      LatestUnsubmittedID: '',
-      LatestSubmittedID: '',
-      Action: '00',
-    },
-    {
-      ID: 4,
-      Name: '练习四：操作系统模拟题',
-      Type: '00',
-      AttemptCount: 1,
-      Difficulty: '04',
-      AllowedAttempts: 3,
-      QuestionCount: 15,
-      WrongCount: 5,
-      TotalScore: 92,
-      HighestScore: 92,
-      PaperTotalScore: 100,
-      PaperID: 'paper_004',
-      LatestUnsubmittedID: '',
-      LatestSubmittedID: 'attempt_005',
-      Action: '02',
-    },
-    {
-      ID: 5,
-      Name: '练习一：基础语法',
-      Type: '00',
-      AttemptCount: 5,
-      Difficulty: '00',
-      AllowedAttempts: 10,
-      QuestionCount: 10,
-      WrongCount: 15,
-      TotalScore: 75,
-      HighestScore: 90,
-      PaperTotalScore: 100,
-      PaperID: 'paper_001',
-      LatestUnsubmittedID: 'attempt_009',
-      LatestSubmittedID: 'attempt_008',
-      Action: '10',
-    },
-    {
-      ID: 6,
-      Name: '练习二：数据结构综合',
-      Type: '00',
-      AttemptCount: 2,
-      Difficulty: '02',
-      AllowedAttempts: 3,
-      QuestionCount: 20,
-      WrongCount: 10,
-      TotalScore: 85,
-      HighestScore: 88,
-      PaperTotalScore: 100,
-      PaperID: 'paper_002',
-      LatestUnsubmittedID: '',
-      LatestSubmittedID: 'attempt_003',
-      Action: '04',
-    },
-    {
-      ID: 7,
-      Name: '练习三：指针进阶',
-      Type: '00',
-      AttemptCount: 0,
-      Difficulty: '00',
-      AllowedAttempts: 5,
-      QuestionCount: 5,
-      WrongCount: 0,
-      TotalScore: 0,
-      HighestScore: 0,
-      PaperTotalScore: 100,
-      PaperID: 'paper_003',
-      LatestUnsubmittedID: '',
-      LatestSubmittedID: '',
-      Action: '00',
-    },
-    {
-      ID: 8,
-      Name: '练习四：操作系统模拟题',
-      Type: '00',
-      AttemptCount: 1,
-      Difficulty: '04',
-      AllowedAttempts: 3,
-      QuestionCount: 15,
-      WrongCount: 5,
-      TotalScore: 92,
-      HighestScore: 92,
-      PaperTotalScore: 100,
-      PaperID: 'paper_004',
-      LatestUnsubmittedID: '',
-      LatestSubmittedID: 'attempt_005',
-      Action: '02',
-    },
-    {
-      ID: 9,
-      Name: '练习四：操作系统模拟题',
-      Type: '00',
-      AttemptCount: 1,
-      Difficulty: '04',
-      AllowedAttempts: 3,
-      QuestionCount: 15,
-      WrongCount: 5,
-      TotalScore: 92,
-      HighestScore: 92,
-      PaperTotalScore: 100,
-      PaperID: 'paper_004',
-      LatestUnsubmittedID: '',
-      LatestSubmittedID: 'attempt_005',
-      Action: '02',
-    },
-    {
-      ID: 12,
-      Name: '练习四：操作系统模拟题',
-      Type: '00',
-      AttemptCount: 1,
-      Difficulty: '04',
-      AllowedAttempts: 3,
-      QuestionCount: 15,
-      WrongCount: 5,
-      TotalScore: 92,
-      HighestScore: 92,
-      PaperTotalScore: 100,
-      PaperID: 'paper_004',
-      LatestUnsubmittedID: '',
-      LatestSubmittedID: 'attempt_005',
-      Action: '02',
-    },
-  ];
+  // const mockPractice = [
+  //   {
+  //     ID: 1,
+  //     Name: '练习一：基础语法',
+  //     Type: '00',
+  //     AttemptCount: 0,
+  //     Difficulty: '00',
+  //     AllowedAttempts: 10,
+  //     QuestionCount: 10,
+  //     WrongCount: 15,
+  //     TotalScore: 75,
+  //     HighestScore: 90,
+  //     PaperTotalScore: 100,
+  //     PaperID: 'paper_001',
+  //     LatestUnsubmittedID: '',
+  //     LatestSubmittedID: 'attempt_008',
+  //     Action: '00',
+  //   },
+  //   {
+  //     ID: 2,
+  //     Name: '练习二：数据类型',
+  //     Type: '00',
+  //     AttemptCount: 2,
+  //     Difficulty: '02',
+  //     AllowedAttempts: 5,
+  //     QuestionCount: 8,
+  //     WrongCount: 0,
+  //     TotalScore: 0,
+  //     HighestScore: 0,
+  //     PaperTotalScore: 100,
+  //     PaperID: 'paper_002',
+  //     LatestUnsubmittedID: '',
+  //     LatestSubmittedID: 'attempt_015',
+  //     Action: '06',
+  //   },
+  //   {
+  //     ID: 3,
+  //     Name: '练习三：指针进阶',
+  //     Type: '00',
+  //     AttemptCount: 0,
+  //     Difficulty: '00',
+  //     AllowedAttempts: 5,
+  //     QuestionCount: 5,
+  //     WrongCount: 0,
+  //     TotalScore: 0,
+  //     HighestScore: 0,
+  //     PaperTotalScore: 100,
+  //     PaperID: 'paper_003',
+  //     LatestUnsubmittedID: '',
+  //     LatestSubmittedID: '',
+  //     Action: '00',
+  //   },
+  //   {
+  //     ID: 4,
+  //     Name: '练习四：操作系统模拟题',
+  //     Type: '00',
+  //     AttemptCount: 1,
+  //     Difficulty: '04',
+  //     AllowedAttempts: 3,
+  //     QuestionCount: 15,
+  //     WrongCount: 5,
+  //     TotalScore: 92,
+  //     HighestScore: 92,
+  //     PaperTotalScore: 100,
+  //     PaperID: 'paper_004',
+  //     LatestUnsubmittedID: '',
+  //     LatestSubmittedID: 'attempt_005',
+  //     Action: '02',
+  //   },
+  //   {
+  //     ID: 5,
+  //     Name: '练习一：基础语法',
+  //     Type: '00',
+  //     AttemptCount: 5,
+  //     Difficulty: '00',
+  //     AllowedAttempts: 10,
+  //     QuestionCount: 10,
+  //     WrongCount: 15,
+  //     TotalScore: 75,
+  //     HighestScore: 90,
+  //     PaperTotalScore: 100,
+  //     PaperID: 'paper_001',
+  //     LatestUnsubmittedID: 'attempt_009',
+  //     LatestSubmittedID: 'attempt_008',
+  //     Action: '10',
+  //   },
+  //   {
+  //     ID: 6,
+  //     Name: '练习二：数据结构综合',
+  //     Type: '00',
+  //     AttemptCount: 2,
+  //     Difficulty: '02',
+  //     AllowedAttempts: 3,
+  //     QuestionCount: 20,
+  //     WrongCount: 10,
+  //     TotalScore: 85,
+  //     HighestScore: 88,
+  //     PaperTotalScore: 100,
+  //     PaperID: 'paper_002',
+  //     LatestUnsubmittedID: '',
+  //     LatestSubmittedID: 'attempt_003',
+  //     Action: '04',
+  //   },
+  //   {
+  //     ID: 7,
+  //     Name: '练习三：指针进阶',
+  //     Type: '00',
+  //     AttemptCount: 0,
+  //     Difficulty: '00',
+  //     AllowedAttempts: 5,
+  //     QuestionCount: 5,
+  //     WrongCount: 0,
+  //     TotalScore: 0,
+  //     HighestScore: 0,
+  //     PaperTotalScore: 100,
+  //     PaperID: 'paper_003',
+  //     LatestUnsubmittedID: '',
+  //     LatestSubmittedID: '',
+  //     Action: '00',
+  //   },
+  //   {
+  //     ID: 8,
+  //     Name: '练习四：操作系统模拟题',
+  //     Type: '00',
+  //     AttemptCount: 1,
+  //     Difficulty: '04',
+  //     AllowedAttempts: 3,
+  //     QuestionCount: 15,
+  //     WrongCount: 5,
+  //     TotalScore: 92,
+  //     HighestScore: 92,
+  //     PaperTotalScore: 100,
+  //     PaperID: 'paper_004',
+  //     LatestUnsubmittedID: '',
+  //     LatestSubmittedID: 'attempt_005',
+  //     Action: '02',
+  //   },
+  //   {
+  //     ID: 9,
+  //     Name: '练习四：操作系统模拟题',
+  //     Type: '00',
+  //     AttemptCount: 1,
+  //     Difficulty: '04',
+  //     AllowedAttempts: 3,
+  //     QuestionCount: 15,
+  //     WrongCount: 5,
+  //     TotalScore: 92,
+  //     HighestScore: 92,
+  //     PaperTotalScore: 100,
+  //     PaperID: 'paper_004',
+  //     LatestUnsubmittedID: '',
+  //     LatestSubmittedID: 'attempt_005',
+  //     Action: '02',
+  //   },
+  //   {
+  //     ID: 12,
+  //     Name: '练习四：操作系统模拟题',
+  //     Type: '00',
+  //     AttemptCount: 1,
+  //     Difficulty: '04',
+  //     AllowedAttempts: 3,
+  //     QuestionCount: 15,
+  //     WrongCount: 5,
+  //     TotalScore: 92,
+  //     HighestScore: 92,
+  //     PaperTotalScore: 100,
+  //     PaperID: 'paper_004',
+  //     LatestUnsubmittedID: '',
+  //     LatestSubmittedID: 'attempt_005',
+  //     Action: '02',
+  //   },
+  // ];
 
   // 练习类型映射表
   const typeMap = new Map([
@@ -209,12 +209,12 @@
   let page = $state(1);
   let pageSize = $state(10);
 
-  // 前往练习
+  // TODO: 前往练习
   function gotoPractice(practiceID) {
     goto('');
   }
 
-  // 前往练习解析页
+  // TODO: 前往练习解析页
   function gotoPracticeInfo(practiceID) {
     goto('');
   }
@@ -270,13 +270,13 @@
   }
 
   // 练习列表
-  let practiceList = $state([...mockPractice]);
+  let practiceList = $state([]);
   let currentPracticeList = $derived(practiceList.filter((p) => p.Type === currentPracticeTypeTab));
 
   // 获取练习列表
   function getPracticeList(q) {
     fetch(
-      `/api/practiceS?name=${q.name}&difficulty=${q.difficulty}&page=${q.page}&pageSize=${q.pageSize}&type=${q.type}`,
+      `/api/practiceS?name=${q.name}&difficulty=${q.difficulty}&page=${q.page}&page_size=${q.pageSize}&type=${q.type}`,
     )
       .then((res) => {
         if (!res.ok) throw new Error('网络错误');
@@ -284,8 +284,8 @@
       })
       .then((res) => {
         if (!res.status) {
-          practiceList = res.data.practice;
-          totalCount = res.data.total;
+          practiceList = res.data?.practices ?? [];
+          totalCount = res.data?.total ?? 0;
 
           // 计算每个练习 action
           if (Array.isArray(practiceList)) practiceList.forEach((p) => (p.Action = getPracticeAction(p)));
@@ -344,10 +344,11 @@
       <div class="label">搜索练习：</div>
       <InputBox placeholder="练习名称 / 知识点" bind:value={practiceInfo} type="text" showLabel={false} />
     </div>
-    <div>
-      练习难度：<Select bind:value={practiceDifficulty}>
+    <div class="select">
+      <div class="label">练习难度：</div>
+      <Select bind:value={practiceDifficulty}>
         <Option value="" label="全部" />
-        {#each difficultyMap as [key, val]}
+        {#each difficultyMap as [key, val], index (index)}
           <Option value={key} label={val} />
         {/each}
       </Select>
@@ -485,13 +486,18 @@
       gap: 1rem;
       z-index: 10;
 
-      .input {
+      .input,
+      .select {
         display: flex;
         align-items: center;
+      }
 
-        .label {
-          white-space: nowrap;
-        }
+      .label {
+        white-space: nowrap;
+      }
+
+      .select {
+        width: 15rem;
       }
     }
 
@@ -545,7 +551,6 @@
           th {
             font-weight: lighter;
             font-size: 0.9rem;
-            padding: 0.7rem 2.1rem;
             white-space: nowrap;
           }
         }

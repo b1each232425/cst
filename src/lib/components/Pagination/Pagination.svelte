@@ -39,15 +39,16 @@
 
 <script>
   // @ts-nocheck
-  import left_jt from '/static/pagination/left_jt.svg';
-  import right_jt from '/static/pagination/right_jt.svg';
+  import left_jt from '/static/pagination/left.svg';
+  import right_jt from '/static/pagination/right.svg';
   import { createEventDispatcher } from 'svelte';
+  import DropdownGray from '../DiaryLogPanel/DropdownGray.svelte';
 
   let {
     totalItems = 0, // 总数据条数
     pageSize = 10, // 每页显示的数据条数
     currentPage = 1, // 当前页数
-    jumpPage = 0, // 跳转的目标页
+    jumpPage = 1, // 跳转的目标页
     pageSizeOptions = [10, 20, 30, 40, 50], // 每页条数选项
   } = $props(); // 从父组件获取的属性
 
@@ -267,6 +268,7 @@
       display: flex;
       align-items: center;
       gap: 0.3rem;
+      margin-left: 10px;
 
       span {
         font-size: 0.9rem;
@@ -274,12 +276,13 @@
       }
 
       input {
-        width: 60px;
+        width: 50px;
         padding: 0.3rem 0.5rem;
         font-size: 0.9rem;
         border: none;
         border-radius: 4px;
         background-color: #f5f5f5;
+        text-align: center;
       }
 
       input:focus {
