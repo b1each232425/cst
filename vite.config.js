@@ -73,9 +73,9 @@ export default defineConfig({
 		port: 6443,
 		host:'0.0.0.0',
 		proxy:{
-			'/api': "http://localhost:6612",
+			'/api': "http://localhost:6616",
 			"/api/ws":{
-				target: "http://localhost:6612",
+				target: "http://localhost:6616",
 				ws: true
 			}
 		},
