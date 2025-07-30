@@ -90,6 +90,7 @@
   let selectedStartMinute = $state(null);
   let selectedEndHour = $state(null);
   let selectedEndMinute = $state(null);
+  let dateInputElement;
 
   // 创建事件分发器，允许向父组件发送事件
   const dispatch = createEventDispatcher();
@@ -321,6 +322,8 @@
   });
 
   onMount(() => {
+    // 初始化组件宽度
+    dateInputElement.style.setProperty('--date-picker-width', inputWidth);
     // 初始化组件，设置初始日期和日历
     if (initialStartDate instanceof Date && initialEndDate instanceof Date) {
       internalStartDate = new Date(initialStartDate);
@@ -345,13 +348,13 @@
 </script>
 
 <div class="date-picker-container">
-  <div class="input-container" style="width: {inputWidth};">
+  <div class="input-container">
     <input
       type="text"
       class="date-picker"
-      style="width: {inputWidth};"
       readonly
       bind:value={inputValue}
+      bind:this={dateInputElement}
       onclick={() => (isCalendarsVisible = !isCalendarsVisible)}
     />
   </div>
@@ -479,6 +482,7 @@
     .date-picker {
       border: 1px solid #ccc;
       border-radius: 4px;
+      width: var(--date-picker-width);
       padding: 6px 12px;
       font-size: 17px;
       box-sizing: border-box;
