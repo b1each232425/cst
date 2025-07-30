@@ -1,11 +1,12 @@
 <script>
 	import { createGradeStore } from './../_stores/grade.svelte.js';
 	import Title from '../_components/shared/Title.svelte';
-	import Pagination from '../_components/shared/Pagination.svelte';
+	import Pagination from '../../../lib/components/Pagination/Pagination.svelte';
 	import ExamFilterPanel from '../_components/exam/ExamFilterPanel.svelte';
 	import ExamTable from '../_components/exam/ExamTable.svelte';
 
 	const examGradeStore = createGradeStore();
+	const { state, setPage, setPageSize } = examGradeStore;
 
 	$effect(() => {
 		examGradeStore.fetchExams();
@@ -26,7 +27,13 @@
 			<ExamTable store={examGradeStore} />
 		{/if}
 		<div class="pagination-wrapper">
-			<Pagination store={examGradeStore} />
+			<Pagination
+				totalItems={state.totalRecords}
+				pageSize={state.pagination.pageSize}
+				currentPage={state.pagination.page}
+				on:pageChange={(e) => setPage(e.detail)}
+				on:pageSizeChange={(e) => setPageSize(e.detail)}
+			/>
 		</div>
 	</div>
 </div>

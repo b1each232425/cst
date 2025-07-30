@@ -1,11 +1,12 @@
 <script>
 	import { createPracticeGradeStore } from '../_stores/practiceGrade.svelte.js';
 	import Title from '../_components/shared/Title.svelte';
-	import Pagination from '../_components/shared/Pagination.svelte';
+	import Pagination from '../../../lib/components/Pagination/Pagination.svelte';
 	import PracticeFilterPanel from '../_components/practice/PracticeFilterPanel.svelte';
 	import PracticeTable from '../_components/practice/PracticeTable.svelte';
 
 	const practiceGradeStore = createPracticeGradeStore();
+	const { state, setPage, setPageSize } = practiceGradeStore;
 
 	$effect(() => {
 		practiceGradeStore.fetchPractices();
@@ -24,7 +25,13 @@
 			<PracticeTable store={practiceGradeStore} />
 		{/if}
 		<div class="pagination-wrapper">
-			<Pagination store={practiceGradeStore} />
+			<Pagination
+				totalItems={state.totalRecords}
+				pageSize={state.pagination.pageSize}
+				currentPage={state.pagination.page}
+				on:pageChange={(e) => setPage(e.detail)}
+				on:pageSizeChange={(e) => setPageSize(e.detail)}
+			/>
 		</div>
 	</div>
 </div>
