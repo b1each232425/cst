@@ -16,9 +16,7 @@
 <script>
 
     let {
-        onSearchFunc = (/** @type {string} */ value) => {
-            console.log("搜索框输入:" + value);
-        },
+        oninput = (/** @type {CustomEvent<{value: string}>} */ e) => {},
         purpose_text = "搜索",
         place_holder = "搜索...",
     } = $props();
@@ -33,12 +31,13 @@
     function handleInput(event) {
         if (
         event &&
-        event.target &&
-        "value" in event.target &&
-        typeof event.target.value === "string"
+        event.currentTarget &&
+        "value" in event.currentTarget &&
+        typeof event.currentTarget.value === "string"
         ) {
-        input_value = event.target.value;
-        onSearchFunc(input_value);
+        const value = event.currentTarget.value;
+        input_value = value;
+        oninput(new CustomEvent('input', { detail: { value } }));
         }
     }
 
@@ -48,7 +47,7 @@
             input_value = "";
 
             //手动调用并传入空字符串
-            onSearchFunc("");
+            oninput(new CustomEvent('input', { detail: { value: '' } }));
         }
     }
 </script>
