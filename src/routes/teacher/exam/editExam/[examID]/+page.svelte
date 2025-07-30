@@ -2,12 +2,15 @@
     //@ts-nocheck
     import { goto } from "$app/navigation";
     import SmartEditor from "@3min/smart-edit";
-    import RequiredLabel from "../_components/RequiredLabel.svelte";
-    import PaperSelectionPanel from "../_components/PaperSelectionPanel.svelte";
-    import ExamineeSelectionPanel from "../_components/ExamineeSelectionPanel.svelte";
+    import RequiredLabel from "../../_components/RequiredLabel.svelte";
+    import PaperSelectionPanel from "../../_components/PaperSelectionPanel.svelte";
+    import ExamineeSelectionPanel from "../../_components/ExamineeSelectionPanel.svelte";
     import Button from "$lib/components/Button/Button.svelte";
     import DatePicker from "$lib/components/DatePicker/DatePicker.svelte"
     import Title from "$lib/components/Title/Title.svelte";
+    import { page } from '$app/stores';
+
+  import { onMount } from "svelte";
     const TIP_TEXT = {
         final_exam:
             "当一门考试的考试性质为期末成绩考试时，它将决定学生在此课程的最终期末成绩",
@@ -71,7 +74,7 @@
     //考试类型
     let examType = $state("00");
     //考试方式
-    let examMethod = $state("00");
+    let examMode = $state("00");
     let examExaminee = $state([]);
     //考生数量
     let examineeNum = $derived(examExaminee.length);
@@ -79,6 +82,7 @@
     let RichTextEditor; //富文本编辑器
     let examRooms = $state([]); //考试场地
     let invigilators = $state([]); //监考人员
+    let examID = $state();
     //考试场次数组
     let paperConfigs = $state([
         {
@@ -121,6 +125,8 @@
     let showExamineePanel = $state(false);
     let showActionToast = $state(false);
     let actionToast = $state(null);
+    
+
     function addNewPaper() {
         let default_paper_config = {
             paperID: 0, //试卷ID
@@ -142,12 +148,7 @@
             sessionNum: 1,
             markConfig: {
                 teacher_markConfigs: [
-                    // {
-                    //     id: 0,
-                    //     name: "",
-                    //     mark_count: 0, //第一版暂无
-                    //     mark_question_groups: [], //第一版暂无
-                    // },
+
                 ],
             },
             showPaperSelectionPanel: false,
@@ -195,36 +196,57 @@
     };
 }
 
-function onChooseEndTime(index) {
-    return function(event) {
-        const endDate = event.detail.date;
-        if (endDate) {
-            endDate.setSeconds(0, 0);
-            const endISO = endDate.toISOString();
-            paperConfigs[index].endTime = endISO;
-            updateDuration(index);
-        }
-    };
-}
-
-function updateDuration(index) {
-    const startTime = paperConfigs[index].startTime;
-    const endTime = paperConfigs[index].endTime;
-    
-    if (!startTime || !endTime) {
-        paperConfigs[index].duration = 0;
-        paperConfigs[index].maxDuration = 0;
-        return;
+    function onChooseEndTime(index) {
+        return function(event) {
+            const endDate = event.detail.date;
+            if (endDate) {
+                endDate.setSeconds(0, 0);
+                const endISO = endDate.toISOString();
+                paperConfigs[index].endTime = endISO;
+                updateDuration(index);
+            }
+        };
     }
 
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const timeDifference = end.getTime() - start.getTime();
-    const durationInMinutes = Math.floor(timeDifference / (1000 * 60));
+        /**
+     * 将秒或毫秒时间戳转换为 "YYYY/MM/DD HH:mm" 格式
+     * @param {number|string} ts - 秒或毫秒时间戳
+     * @returns {string}
+     */
+    // function formatDateTime(ts) {
+    //     if (!ts) return '';
+    //     // 自动判断是秒还是毫秒
+    //     const isMilli = String(ts).length > 10;
+    //     const date = new Date(isMilli ? Number(ts) : Number(ts) * 1000);
 
-    paperConfigs[index].duration = Math.max(0, durationInMinutes);
-    paperConfigs[index].maxDuration = Math.max(0, durationInMinutes);
-}
+    //     const Y = date.getFullYear();
+    //     const M = String(date.getMonth() + 1).padStart(2, '0');
+    //     const D = String(date.getDate()).padStart(2, '0');
+    //     const h = String(date.getHours()).padStart(2, '0');
+    //     const m = String(date.getMinutes()).padStart(2, '0');
+
+    //     return `${Y}/${M}/${D} ${h}:${m}`;
+    // }
+
+    function updateDuration(index) {
+        const startTime = paperConfigs[index].startTime;
+        const endTime = paperConfigs[index].endTime;
+        
+        if (!startTime || !endTime) {
+            paperConfigs[index].duration = 0;
+            paperConfigs[index].maxDuration = 0;
+            return;
+        }
+
+        const start = new Date(startTime);
+        const end = new Date(endTime);
+        const timeDifference = end.getTime() - start.getTime();
+        const durationInMinutes = Math.floor(timeDifference / (1000 * 60));
+
+        paperConfigs[index].duration = Math.max(0, durationInMinutes);
+        paperConfigs[index].maxDuration = Math.max(0, durationInMinutes);
+    }
+
     function calculateDuration(paperConfigs) {
         let duration = 0;
         paperConfigs.forEach((element) => {
@@ -241,23 +263,23 @@ function updateDuration(index) {
     async function handleSubmit() {
     /* 1. 必填字段校验（保持原逻辑） */
     if (examName === "") {
-        actionToast.show("error", "请输入考试名称");
+         actionToast.show("error", "请输入考试名称");
         return;
     }
     if (examName.length > 50) {
-        actionToast.show("error", "考试名称不得超过50个字符");
+         actionToast.show("error", "考试名称不得超过50个字符");
         return;
     }
     if (examRules === "") {
-        actionToast.show("error", "请输入考试规则");
+         actionToast.show("error", "请输入考试规则");
         return;
     }
     if (examRules.length > 1000) {
-        actionToast.show("error", "考试规则不得超过1000个字符");
+         actionToast.show("error", "考试规则不得超过1000个字符");
         return;
     }
     if (paperConfigs.length <= 0) {
-        actionToast.show("error", "请至少添加一个考试场次");
+         actionToast.show("error", "请至少添加一个考试场次");
         return;
     }
 
@@ -266,7 +288,7 @@ function updateDuration(index) {
         const session = paperConfigs[i];
 
         if (!session.startTime || session.startTime === "") {
-            // actionToast.show("error", `第${i + 1}个场次未设置时间段`);
+             actionToast.show("error", `第${i + 1}个场次未设置时间段`);
             return;
         }
         if (!session.endTime || session.endTime === "") {
@@ -277,17 +299,17 @@ function updateDuration(index) {
         const startTime = new Date(session.startTime);
         const endTime   = new Date(session.endTime);
         const now       = new Date();
-        
         if (startTime < now) {
             // actionToast.show("error", `第${i + 1}个场次的开始时间不能早于当前时间`);
             return;
         }
         if (endTime <= startTime) {
-            // actionToast.show("error", `第${i + 1}个场次的结束时间必须晚于开始时间`);
+             actionToast.show("error", `第${i + 1}个场次的结束时间必须晚于开始时间`);
             return;
         }
     }
-
+    
+    console.log("examExaminee", examExaminee);
     /* 3. 预处理场次数据（保持原逻辑） */
     for (let i = 0; i < paperConfigs.length; i++) {
         paperConfigs[i].sessionNum = i + 1;
@@ -340,7 +362,7 @@ function updateDuration(index) {
             Name:   examName,
             Rules:  examRules,
             Type:   examType,
-            Mode:   examMethod,
+            Mode:   examMode,
             status: "00",
             Files:  fileArr,
         },
@@ -350,7 +372,6 @@ function updateDuration(index) {
     };
 
     console.log("examDATA",examData);
-    /* 5. 发送请求（去掉写死的 DATA，直接发送 examData） */
     try {
         const res = await fetch("/api/exam", {
             method:  "POST",
@@ -369,6 +390,74 @@ function updateDuration(index) {
        
     }
 }
+
+    async function fetchExamInfo() {
+        //const examSessionsdata
+        fetch(`/api/exam?exam_id=${examID}`,{
+            method:"GET",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        })
+        .then((response) => response.json())
+        .then((data) =>{
+            if(data.status === 0)
+            {
+                const examData = data.data;
+                examName = examData.examInfo.Name;
+                examRules = examData.examInfo.Rules;
+                examType = examData.examInfo.Type;
+                examMode = examData.examInfo.Mode;
+                examExaminee = examData.examinee ||[1];
+                // invigilators = examData.invigilators.map(i => ({ id: i }));
+                paperConfigs = examData.examSessions.map((s, idx) => {
+                /* 根据 QuestionShuffledMode 还原两个 checkbox */
+                // const mode = s.QuestionShuffledMode || "06";
+                // const isQuestionShuffled = ["00", "04"].includes(mode);
+                return {
+                    paperID: s.PaperID || 0,
+                    periodMode: "00",       // 默认固定
+                    startTime: s.StartTime ? s.StartTime : "",
+                    endTime:   s.EndTime   ? s.EndTime   : "",
+                    duration:  s.Duration  || 0,
+                    maxDuration: s.Duration || 0,
+
+                    // isOptionShuffled,
+                    // isQuestionShuffled,
+                    // questionShuffledMode: mode,
+
+                    markMethod: s.MarkMethod || "00",
+                    nameVisibility: !!s.NameVisibilityIn,
+                    markMode: s.MarkMode || "10",
+                    gradingConfig: [],
+                    isHide: false,
+                    sessionNum: s.SessionNum,
+
+                    // markConfig: {
+                    //     teacher_markConfigs: (s.ReviewerIds || []).map(id => ({ id, name: "" })),
+                    // },
+
+                    showPaperSelectionPanel: false,
+                    showGraderSelectionPanel: false,
+                    lateEntryTime: s.LateEntryTime   || 1,
+                    earlySubmisstionTime: s.EarlySubmissionTime || 0,
+                };
+            });
+                    console.log(paperConfigs);
+            }
+        })
+        .catch((e) => {
+            console.error("获取考试信息失败", e);
+        });
+    }
+    onMount(()=>{
+        page.subscribe(value => {
+        examID = value.params.examID;
+        console.log('examID from params:', examID);
+    });
+        fetchExamInfo();
+    })
 </script>
 <Title title="创建考试" line={true} />
 <div class="createExamWrapper">
@@ -453,7 +542,7 @@ function updateDuration(index) {
                 <label class="label">
                     <input
                         type="radio"
-                        bind:group={examMethod}
+                        bind:group={examMode}
                         value={"00"}
                         class="choice-radio-input"
                         disabled={examType === '04'}
@@ -507,7 +596,7 @@ function updateDuration(index) {
                 <div class="examinee-number-container">
                     <span class="examinee-number-text">已选择 </span>
                     <span
-                        class="examinee-number-text {(examExaminee.length === 0) && examMethod === "02"
+                        class="examinee-number-text {(examExaminee.length === 0) && examMode === "02"
                             ? 'red-text'
                             : 'green-text'}">{examExaminee.length}</span
                     >
@@ -647,10 +736,12 @@ function updateDuration(index) {
                                         on:startDateSelected={onChooseTime(paperConfigIndex)}
                                 on:endDateSelected={onChooseTime(paperConfigIndex)}
                             ></DateTimePicker> -->
+                            
                             <DatePicker
                                 isTimeSelection={true}
-
-                                inputWidth={'350px'} 
+                                initialStartDate={paperConfigs[paperConfigIndex].startTime ? new Date(paperConfigs[paperConfigIndex].startTime) : null}
+                                initialEndDate={paperConfigs[paperConfigIndex].endTime ? new Date(paperConfigs[paperConfigIndex].endTime) : null}
+                                inputWidth={'350px'}
                                 singleDateSelection={false}
                                 on:startDateSelected={onChooseStartTime(paperConfigIndex)}
                                 on:endDateSelected={onChooseEndTime(paperConfigIndex)}
