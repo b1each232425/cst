@@ -27,5 +27,3 @@ vite.config.ts.timestamp-*
 .vscode
 .npmrc
 .trae
-
-coverage
