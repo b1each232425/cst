@@ -4,7 +4,7 @@
     import InputBox from "$lib/components/Input/InputBox.svelte";
     
     let {
-        show_panel = false,
+        showPanel = false,
         ids = [],
         onCancel = (/** @type {boolean} */ load_new_file) => {
             console.log("取消选择");
@@ -451,7 +451,7 @@
 
     // 初始化选中的考生
     $effect(() => {
-        if (show_panel && ids && ids.length > 0) {
+        if (showPanel && ids && ids.length > 0) {
             selectedIDs = ids.map((item, index) => ({
                 ...item,
                 serialNumber: index + 1
@@ -460,14 +460,14 @@
     });
 </script>
 
-<div class={show_panel ? "examinee-panel-container" : "hide"}>
+<div class={showPanel ? "examinee-panel-container" : "hide"}>
     <div class="examinee-panel">
         <div class="panel-header">
             <span class="panel-header-text">{isSelectionMode ? "选择考生" : "考生列表"}</span>
             <button
                 class="close-btn"
                 onclick={() => {
-                    show_panel = false;
+                    showPanel = false;
                     searchParams.page = 1;
                     isSelectionMode = false;
                     onCancel(false);
@@ -640,7 +640,7 @@
             <button
                 class="btn"
                 onclick={() => {
-                    show_panel = false;
+                    showPanel = false;
                     searchParams.page = 1;
                     selectedIDs = [];
                     onCancel(false);
@@ -650,7 +650,7 @@
             <button
                 class="btn save"
                 onclick={() => {
-                    show_panel = false;
+                    showPanel = false;
                     onConfirm(selectedIDs);
                     isSelectionMode = false;
                 }}>确定</button
