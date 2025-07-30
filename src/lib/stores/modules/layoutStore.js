@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 
 // 存储 sidebar 数据
 export const navStore = writable([
@@ -243,3 +243,35 @@ export const crumbStore = writable([
 
 // 控制侧边栏折叠状态
 export const sidebarFoldingState = writable(false);
+
+// 控制侧边栏悬浮
+export const sidebarFloatState = writable(false);
+
+// 用于保存定时器ID
+export let timerId = writable(null);
+
+// 处理鼠标进入事件
+export function sidebarMouseEnter() {
+  const currentTimerId = get(timerId);
+
+  if (currentTimerId) {
+    clearTimeout(currentTimerId);
+  }
+
+  sidebarFloatState.set(true);
+}
+
+// 处理鼠标离开事件
+export function sidebarMouseLeave() {
+  const currentTimerId = get(timerId);
+
+  if (currentTimerId) {
+    clearTimeout(currentTimerId);
+  }
+
+  const newTimerId = setTimeout(() => {
+    sidebarFloatState.set(false);
+  }, 1000);
+
+  timerId.set(newTimerId);
+}

@@ -2,7 +2,14 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { tooltip } from '$lib/components/ToolTip/tooltip';
-  import { sidebarFoldingState, crumbStore } from '$lib/stores/modules/layoutStore';
+  import {
+    sidebarFoldingState,
+    sidebarFloatState,
+    crumbStore,
+    timerId,
+    sidebarMouseEnter,
+    sidebarMouseLeave,
+  } from '$lib/stores/modules/layoutStore';
   import { onMount } from 'svelte';
 
   let userName = '张三'; // 静态数据
@@ -69,9 +76,14 @@
 
 <div class="header-container">
   <!-- 展开按钮 -->
-  <div class="sidebar-unflod-btn {$sidebarFoldingState ? '' : 'hide'}">
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    class="sidebar-unflod-btn {$sidebarFoldingState ? '' : 'hide'}"
+    onmouseenter={() => sidebarMouseEnter()}
+    onmouseleave={() => sidebarMouseLeave()}
+  >
     <button class="sidebar-toggle-btn" onclick={() => toggleSidebar()}>
-      <img src="/sidebar/unfold.svg" alt="展开侧边栏" style="width:30px" />
+      <img src="/sidebar/unfold.svg" alt="展开侧边栏" />
     </button>
   </div>
 
@@ -141,6 +153,10 @@
         all: unset;
         width: 30px;
         height: 30px;
+
+        img {
+          width: 30px;
+        }
       }
     }
 
