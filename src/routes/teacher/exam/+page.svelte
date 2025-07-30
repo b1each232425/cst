@@ -84,7 +84,7 @@
 
     console.log("查询参数:", queryObject);
     
-    fetch(`/api/exam/list?${queryParams.toString()}`, {
+    fetch(`/api/exam/list?${queryParams.toString()}&role=2`, {
         method: "GET",
         credentials: "include",
         headers: {
