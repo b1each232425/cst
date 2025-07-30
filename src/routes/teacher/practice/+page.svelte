@@ -720,6 +720,9 @@
     confirm_text="确定"
     cancel_text="取消"
     onConfirm={confirm_publish}
+    onCancel={()=>{
+      publishDialogOpen = false;
+    }}
   />
 
   <!-- 删除确认对话框 -->
@@ -731,6 +734,9 @@
     cancel_text="取消"
     confirmTextBackgroundColor="#E34D59"
     onConfirm={confirm_delete}
+    onCancel={()=>{
+      deleteDialogOpen = false;
+    }}
   />
 
   <!-- 取消发布确认对话框 -->
@@ -741,6 +747,9 @@
     confirm_text="确定"
     cancel_text="取消"
     onConfirm={confirm_cancel_publish}
+    onCancel={()=>{
+      cancelPublishDialogOpen = false;
+    }}
   />
 
   <!-- 学生选择面板 -->
@@ -821,7 +830,7 @@
     .filter-box {
       display: flex;
       align-items: center;
-      min-width: 315px;
+      min-width: 225px;
 
       .filter-label {
         font-size: 14px;

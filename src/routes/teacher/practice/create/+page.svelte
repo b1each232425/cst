@@ -111,6 +111,7 @@
         title="请问是否要取消创建？"
         content="取消创建将不会保存已填写的内容。"
         onConfirm={confirmCancel}
+        onCancel={() => { isDialogOpen = false; }}
          cancel_text = '取消'
     confirm_text = '确定'
     /> 
