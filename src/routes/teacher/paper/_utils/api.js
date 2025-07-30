@@ -159,3 +159,43 @@ export function fetchPaper(
             return null;
         });
 }
+
+// 保存试卷
+export function savePaper(
+    paperID = 0,
+    actionsArr = []
+){
+    const params = new URLSearchParams();
+
+    params.append("paper_id", paperID);
+
+    const data = {
+        data: {
+            actions: actionsArr
+        }
+    };
+
+    const headers = {
+        "Content-Type": "application/json"
+    };
+
+    return fetch(`/api/paper/manual?${params.toString()}`, {
+        headers: headers,
+        method: "PUT",
+        credentials: "include",
+        body: JSON.stringify(data)
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`请求失败，状态码：${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            return data;
+        })
+        .catch(error => {
+            console.error('保存试卷出错：', error);
+            return null;
+        });
+}

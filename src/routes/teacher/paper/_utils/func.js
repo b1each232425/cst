@@ -22,7 +22,7 @@ export function formatDate(timestamp) {
 	return `${year}-${month}-${day}`;
 }
 
-// 封装的函数：根据标签名称计算颜色数组的索引
+// 根据标签名称计算颜色数组的索引
 export function getColorIndex(tagName) {
     // 获取标签名称的第一个字符
     const firstChar = tagName.charAt(0);

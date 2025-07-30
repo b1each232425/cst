@@ -7,13 +7,17 @@
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Select from "$lib/components/Select/Select.svelte";
     import Option from "$lib/components/Select/Option.svelte";
-    import { onMount } from "svelte";
-    import { createEmptyPaper, fetchPaper } from "../_utils/api";
+    import { onMount, tick } from "svelte";
+    import { createEmptyPaper, fetchPaper, savePaper } from "../_utils/api";
+    import Toast from "$lib/components/Toast/Toast.svelte";
+    import { toast } from "$lib/components/Toast/Toast";
+    import MessageBox from "$lib/components/MessageBox/MessageBox";
     
     /*************** 控制开关区 ****************/
 
-    let isLoading = $state(false);
-    let importModalIsOpen = $state(false);
+    let isLoading = $state(false);          // 加载中
+    let importModalIsOpen = $state(false);  // 从题库中导入题目弹窗
+    let isAddingGroup = $state(false);      // 添加题组
 
     function closeImportModal() {
         importModalIsOpen = false;
@@ -75,7 +79,87 @@
     /**************** 题组列表区 ****************/
 
     let paperGroups = $state([]);
+    let toAddGroupName = $state("");
+    let toAddGroup = $state(null);
 
+    // 删除题组
+    function deleteGroup(paperID, groupID) {
+
+        MessageBox({
+            title: "删除确认",
+            content: "请问是否要删除该题组？",
+            confirm_button_type: "danger",
+
+            onConfirm: () => {
+                isLoading = true;
+
+                const actions = [
+                    {
+                        action: "delete_group",
+                        payload: groupID
+                    }
+                ];
+
+                savePaper(paperID,actions)
+                    .then(result => {
+                        console.log(result);
+                    })
+                    .finally(() => {
+                        isLoading = false;
+                        toast.success("删除题组成功", 1000);
+
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    });
+            }
+        });
+    }
+
+    // 添加题组
+    async function addGroup() {
+        isAddingGroup = true;
+        await tick();
+        toAddGroup.focus();
+    }
+
+    // 取消添加题组
+    function cancelAddGroup() {
+        isAddingGroup = false;
+    }
+
+    // 确认添加题组
+    function confirmAddgroup() {
+        if(event.key === "Enter" && toAddGroupName.trim() !== "") {
+
+            toAddGroup.blur();
+            
+            isLoading = true;
+
+            const actions = [
+                {
+                    action: "add_group",
+                    payload: {
+                        name: toAddGroupName,
+                        order: paperGroups.length + 1
+                    }
+                }
+            ];
+            
+            savePaper(paperID, actions)
+                    .then(result => {
+                        console.log(result);
+                    })
+                    .finally(() => {
+                        isLoading = false;
+                        toast.success("添加题组成功", 1000);
+
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    });
+        }
+    }
 
     /**************** 题组列表区 ****************/
 
@@ -229,11 +313,12 @@
                         <div class="title">题组列表</div>
                         <span>共有 {paperGroups.length} 个题组</span>
                     </div>
-                    <Button plain={true}>添加题组</Button>
+                    <Button onclick={()=>addGroup()} plain={true}>添加题组</Button>
                 </div>
 
                 <!-- 列表 -->
                 <div class="question-groups-box">
+                    <!-- 已有题组 -->
                     {#if paperGroups.length !== 0}
                         {#each paperGroups as group}
                             <div class="single-group">
@@ -258,11 +343,23 @@
                                         </svg>
                                     </button>
                                     <!-- 删除按钮 -->
-                                    <button class="delete-group-btn" title="删除">✖</button>
+                                    <button onclick={()=>deleteGroup(paperID,group.id)} class="delete-group-btn" title="删除">✖</button>
                                 </div>
                             </div>
                         {/each}
                     {/if}
+
+                    <!-- 添加题组 -->
+                    {#if isAddingGroup}
+                        <div class="single-group">
+                            <input bind:value={toAddGroupName} onkeydown={confirmAddgroup} bind:this={toAddGroup} class="add-group-input" type="text">
+                            <div class="btn-box">
+                                <!-- 取消按钮 -->
+                                <button onclick={()=>cancelAddGroup()} class="delete-group-btn" title="删除">✖</button>
+                            </div>
+                        </div>
+                    {/if}
+
                 </div>
             </div>
         </div>
@@ -817,6 +914,22 @@
                                 background-color: var(--bg-secondary);
                             }
 
+                            /* 添加题组 */
+                            .add-group-input {
+                                padding: 6px;
+                                transition: all 0.3s;
+                                outline: none;
+                                border-radius: var(--input-border-radius);
+                                border: 1px solid var(--border-light);
+                                width: 220px;
+
+                                &:focus {
+                                    border: 1px solid #40a9ff;
+                                    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+                                }
+                            }
+
+                            /* 按钮 */
                             .btn-box {
                                 display: flex;
                                 align-items: center;
