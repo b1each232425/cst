@@ -259,19 +259,19 @@
    * @param {number} page
    * 页数跳转
    */
-  function onPageChooseFunc(page) {
+  function onPageChooseFunc(event) {
     if (loading === true) {
       return;
     }
-    search_params.page = page;
+    search_params.page = event.detail;
   }
 
   /**
    * 每页数量选择回调
    * @param {string} value - 每页显示的数据条数
    */
-  function handle_page_size_change(value) {
-    const newPageSize = parseInt(value, 10);
+  function handle_page_size_change(event) {
+    const newPageSize = parseInt(event.detail, 10);
     if (newPageSize !== page_size) {
       page_size = newPageSize;
       search_params.page = 1; // 重置为第一页
