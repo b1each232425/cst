@@ -4,7 +4,7 @@
     import InforInput from "$lib/components/Input/InforInput.svelte";
 
     // 字段映射表
-    const ERROR_TYPE = {
+    const errorType = {
         "duplicate_id_card":"身份证号重复",
         "duplicate_phone":"手机号重复",
         "phone_used":"手机号已被其他用户使用",
@@ -18,28 +18,28 @@
         onCancel = () => {
             console.log("取消选择");
         },
-        onImport= (/** @type {any} */ success_student, /** @type {boolean} */ has_error) => {
-            console.log(success_student);
+        onImport= (/** @type {any} */ successStudent, /** @type {boolean} */ has_error) => {
+            console.log(successStudent);
         },
     } = $props();
 
     /**
      * @type {any[]}
      */
-    let failure_student_list = $state([
+    let failureStudentList = $state([
         {
-            official_name:"张三",
+            officialName:"张三",
             phone:"13824087366",
-            id_card_no:"440711200408223917",
-            serial_number:1,
-            error_type:"duplicate_id_card"
+            idCardNo:"440711200408223917",
+            serialNumber:1,
+            errorType:"duplicate_id_card"
         }
     ]);
 
-    let file_input = $state(null);
+    let fileInput = $state(null);
 
     //搜索参数
-    let search_params = $state({
+    let searchParams = $state({
         name: "",
         page: 1,
         pageSize: 10,
@@ -49,25 +49,25 @@
     const PAGE_SIZE = 10;
 
     // 计算总页数
-    let total_pages = $derived(Math.ceil(failure_student_list.length / search_params.pageSize));
+    let totalPages = $derived(Math.ceil(failureStudentList.length / searchParams.pageSize));
 
     // 搜索关键词
-    let search_keyword = $state("");
+    let searchKeyword = $state("");
 
     // 过滤后的数据
-    let filtered_student_list = $derived(filterStudentList());
+    let filteredStudentList = $derived(filterStudentList());
 
     // 获取当前页的数据
-    let current_page_data = $derived(getCurrentPage());
+    let currentPageData = $derived(getCurrentPage());
 
     // 更新总数据条数
-    let totals = $derived(filtered_student_list.length);
+    let totals = $derived(filteredStudentList.length);
 
     // 更新当前页
-    let current_page = $derived(search_params.page);
+    let currentPage = $derived(searchParams.page);
 
     // 更新总页数
-    let total_page = $derived(total_pages === 0 ?1 : total_pages);
+    let totalPage = $derived(totalPages === 0 ?1 : totalPages);
 
     //是否加载中
     let loading = $state(false);
@@ -76,39 +76,39 @@
     let error = $state("");
 
     /**
-     * @type {{ serial_number: number; name: string; phone_number: string; id_card: string; }[]}
+     * @type {{ serialNumber: number; name: string; phone_number: string; id_card: string; }[]}
      */
-    let selected_ids = $state([]);
+    let selectedIDs = $state([]);
 
-    let show_action_toast = $state(0)
+    let showActionToast = $state(0)
 
-    let action_toast = $state(null)
+    let actionToast = $state(null)
 
     // 计算成功和失败的考生数量
-    let success_count = $state(0)
-    let failure_count = $derived(failure_student_list.filter(item => !item.is_ok).length)
+    let successCount = $state(0)
+    let failureCount = $derived(failureStudentList.filter(item => !item.isOk).length)
 
     // 编辑相关状态
-    let editing_index = $state(-1);
-    let editing_serial_number = $state(null);
-    let editing_row = $state({ official_name: '', phone: '', id_card_no: '', serial_number: null, error_type: "" });
+    let editingIndex = $state(-1);
+    let editingSerialNumber = $state(null);
+    let editingRow = $state({ officialName: '', phone: '', idCardNo: '', serialNumber: null, errorType: "" });
 
     // 导入学生函数
     async function handleImport(student_list){
         try {
-            // 转换数据格式，只处理is_ok为true的学生
+            // 转换数据格式，只处理isOk为true的学生
             const students = student_list
-                .filter(student => student.is_ok)
+                .filter(student => student.isOk)
                 .map(student => ({
-                    official_name: student.official_name,
-                    id_card_no: student.id_card_no,
+                    officialName: student.officialName,
+                    idCardNo: student.idCardNo,
                     phone: student.phone
                 }));
 
             // 如果没有成功的学生，直接返回
             if (students.length === 0) {
-                failure_student_list = student_list;
-                action_toast.show("error","有"+failure_count+"名学生导入失败")
+                failureStudentList = student_list;
+                actionToast.show("error","有"+failureCount+"名学生导入失败")
                 return;
             }
 
@@ -138,60 +138,60 @@
                 throw new Error(result.msg || '导入失败');
             }
 
-            if (result.data.has_error === false && failure_student_list.length<=0) {
+            if (result.data.has_error === false && failureStudentList.length<=0) {
 
-                let success_student = result.data.success_ids
-                success_count += success_student.length
+                let successStudent = result.data.success_ids
+                successCount += successStudent.length
 
                 // 导入成功
-                onImport(success_student, false);
-                action_toast.show("success", "导入成功");
+                onImport(successStudent, false);
+                actionToast.show("success", "导入成功");
             } else {
                 // 存在有导入失败的学生，进行处理
-                let temp_failure_student_list = result.data.error_items;
+                let tempFailureStudentList = result.data.error_items;
 
-                // 获取当前failure_student_list的最大serial_number
-                let maxSerialNumber = failure_student_list.length > 0 
-                    ? Math.max(...failure_student_list.map(item => item.serial_number))
+                // 获取当前failureStudentList的最大serialNumber
+                let maxSerialNumber = failureStudentList.length > 0 
+                    ? Math.max(...failureStudentList.map(item => item.serialNumber))
                     : 0;
 
-                // 为失败的学生添加serial_number
-                temp_failure_student_list = temp_failure_student_list.map((item, index) => ({
+                // 为失败的学生添加serialNumber
+                tempFailureStudentList = tempFailureStudentList.map((item, index) => ({
                     ...item,
-                    serial_number: maxSerialNumber + index + 1,
-                    is_ok: false
+                    serialNumber: maxSerialNumber + index + 1,
+                    isOk: false
                 }));
 
-                // 更新failure_student_list
-                failure_student_list = [...failure_student_list, ...temp_failure_student_list];
+                // 更新failureStudentList
+                failureStudentList = [...failureStudentList, ...tempFailureStudentList];
 
                 // 将导入成功的学生传递出去
-                let success_student = result.data.success_ids
-                success_count += success_student.length
-                action_toast.show("error","有"+failure_student_list.length+"名学生导入失败")
+                let successStudent = result.data.success_ids
+                successCount += successStudent.length
+                actionToast.show("error","有"+failureStudentList.length+"名学生导入失败")
 
-                onImport(success_student, true)
+                onImport(successStudent, true)
             }
         } catch (error) {
             console.error('导入失败:', error);
-            action_toast.show("error", error.message || '导入失败，请稍后重试');
+            actionToast.show("error", error.message || '导入失败，请稍后重试');
         }
     }
 
     function filterStudentList() {
-        let filtered = failure_student_list;
+        let filtered = failureStudentList;
         
         // 根据搜索关键词过滤
-        if (search_keyword) {
+        if (searchKeyword) {
             filtered = filtered.filter((student) => {
-                const name = student.official_name || '';
+                const name = student.officialName || '';
                 const phone = student.phone || '';
-                const id_card_no = student.id_card_no || '';
+                const idCardNo = student.idCardNo || '';
                 
                 return (
-                    name.includes(search_keyword) ||
-                    phone.includes(search_keyword) ||
-                    id_card_no.includes(search_keyword)
+                    name.includes(searchKeyword) ||
+                    phone.includes(searchKeyword) ||
+                    idCardNo.includes(searchKeyword)
                 );
             });
         }
@@ -201,29 +201,29 @@
 
     // 替换现有的分页处理函数
     function handlePageChange(event) {
-        search_params.page = event.detail;
+        searchParams.page = event.detail;
     }
 
     function handlePageSizeChange(event) {
-        search_params.pageSize = event.detail;
-        search_params.page = 1; // 改变每页条数时重置到第一页
+        searchParams.pageSize = event.detail;
+        searchParams.page = 1; // 改变每页条数时重置到第一页
     }
     function getCurrentPage() {
         // 先对数据进行排序：失败的在前，成功的按序号排序
-        const sortedList = [...filtered_student_list].sort((a, b) => {
-            // 如果两个考生的is_ok不同，失败的排在前面
-            if (a.is_ok !== b.is_ok) {
-                return a.is_ok ? 1 : -1;
+        const sortedList = [...filteredStudentList].sort((a, b) => {
+            // 如果两个考生的isOk不同，失败的排在前面
+            if (a.isOk !== b.isOk) {
+                return a.isOk ? 1 : -1;
             }
             // 如果都是成功的，按序号排序
-            if (a.is_ok && b.is_ok) {
-                return (a.serial_number || 0) - (b.serial_number || 0);
+            if (a.isOk && b.isOk) {
+                return (a.serialNumber || 0) - (b.serialNumber || 0);
             }
             return 0;
         });
 
-        const start = (search_params.page - 1) * search_params.pageSize;
-        const end = start + search_params.pageSize;
+        const start = (searchParams.page - 1) * searchParams.pageSize;
+        const end = start + searchParams.pageSize;
         return sortedList.slice(start, end);
     }
 
@@ -234,9 +234,9 @@
     function onSearchPageFunc(value) {
         const numericValue = parseFloat(value);
         if (isNaN(numericValue) || numericValue < 1 || numericValue === null) {
-            search_params.page = 1;
+            searchParams.page = 1;
         } else {
-            search_params.page = numericValue;
+            searchParams.page = numericValue;
         }
     }
 
@@ -248,11 +248,11 @@
         if (loading === true) {
             return;
         }
-        if (is_next && search_params.page < total_page) {
-            search_params.page += 1;
+        if (is_next && searchParams.page < totalPage) {
+            searchParams.page += 1;
         }
-        if (!is_next && search_params.page > 1) {
-            search_params.page -= 1;
+        if (!is_next && searchParams.page > 1) {
+            searchParams.page -= 1;
         }
     }
 
@@ -264,7 +264,7 @@
         if (loading === true) {
             return;
         }
-        search_params.page = page;
+        searchParams.page = page;
     }
 
     /**
@@ -272,76 +272,76 @@
      * 搜索
      */
     function onSearch(value) {
-        search_keyword = value;
-        search_params.page = 1; // 搜索时重置到第一页
+        searchKeyword = value;
+        searchParams.page = 1; // 搜索时重置到第一页
     }
 
     
 
     export function triggerFileInput() {
-        failure_student_list = [];
-        success_count = 0;
-        search_keyword = "";
-        search_params.name = "";
-        search_params.page = 1;
-        search_params.pageSize = 10;
-        if (file_input) {
-            file_input.click();
+        failureStudentList = [];
+        successCount = 0;
+        searchKeyword = "";
+        searchParams.name = "";
+        searchParams.page = 1;
+        searchParams.pageSize = 10;
+        if (fileInput) {
+            fileInput.click();
         }
     }
 
     function handleEdit(student, idx) {
-        editing_index = idx;
-        editing_serial_number = student.serial_number;
-        editing_row = { ...student };
+        editingIndex = idx;
+        editingSerialNumber = student.serialNumber;
+        editingRow = { ...student };
     }
 
     function handleCancelEdit() {
-        editing_index = -1;
-        editing_serial_number = null;
-        editing_row = { official_name: '', phone: '', id_card_no: '', serial_number: null, error_type:"" };
+        editingIndex = -1;
+        editingSerialNumber = null;
+        editingRow = { officialName: '', phone: '', idCardNo: '', serialNumber: null, errorType:"" };
     }
 
     async function handleSaveEdit() {
 
-        if (!editing_row.official_name) {
-            editing_row.error_type = '姓名不能为空';
+        if (!editingRow.officialName) {
+            editingRow.errorType = '姓名不能为空';
             return;
         }
-        if (!/^1[3-9]\d{9}$/.test(editing_row.phone)) {
-            editing_row.error_type = '手机号格式错误';
+        if (!/^1[3-9]\d{9}$/.test(editingRow.phone)) {
+            editingRow.errorType = '手机号格式错误';
             return;
         }
-        if (!/(^\d{15}$)|(^\d{17}(\d|X|x)$)/.test(editing_row.id_card_no)) {
-            editing_row.error_type = '身份证号格式错误';
+        if (!/(^\d{15}$)|(^\d{17}(\d|X|x)$)/.test(editingRow.idCardNo)) {
+            editingRow.errorType = '身份证号格式错误';
             return;
         }
 
-        let new_student = {
-            ...$state.snapshot(editing_row),
+        let newStudent = {
+            ...$state.snapshot(editingRow),
         };
         
         // 校验通过，更新数据
-        failure_student_list = failure_student_list.map(item => {
-            if (item.serial_number === editing_serial_number) {
+        failureStudentList = failureStudentList.map(item => {
+            if (item.serialNumber === editingSerialNumber) {
                 return {
-                    ...new_student,
-                    serial_number: editing_serial_number,
-                    error_type: "",
-                    is_ok: true,
+                    ...newStudent,
+                    serialNumber: editingSerialNumber,
+                    errorType: "",
+                    isOk: true,
                 };
             }
             return item;
         });
         
-        editing_index = -1;
-        editing_serial_number = null;
-        editing_row = { official_name: '', phone: '', id_card_no: '', serial_number: null, error_type:"" };
+        editingIndex = -1;
+        editingSerialNumber = null;
+        editingRow = { officialName: '', phone: '', idCardNo: '', serialNumber: null, errorType:"" };
     }
 
     function handleDelete(student) {
         // 从student_list中删除该考生
-        failure_student_list = failure_student_list.filter(item => item.serial_number !== student.serial_number);
+        failureStudentList = failureStudentList.filter(item => item.serialNumber !== student.serialNumber);
     }
 </script>
 
@@ -352,9 +352,9 @@
             <button
                 class="close-btn"
                 onclick={() => {
-                    search_params.page = 1;
-                    selected_ids = [];
-                    failure_student_list = [];
+                    searchParams.page = 1;
+                    selectedIDs = [];
+                    failureStudentList = [];
                     onCancel();
                 }}>×</button
             >
@@ -369,7 +369,7 @@
                         label="搜索考生"
                         placeholder="请输入姓名/手机号/身份证号"
                         onInput={e => {
-                            search_keyword = e.target.value;
+                            searchKeyword = e.target.value;
                         }}
                     </InputBox>
                 </div>
@@ -377,14 +377,14 @@
                     <span style="font-size: 12px;">
                         导入成功
                         <span style="color: #00A870; margin:0 2px 0 2px;">
-                            {success_count}
+                            {successCount}
                         </span>
                         名
                     </span>
                     <span style="font-size: 12px; margin-right:15px">
                         导入失败
                         <span style="color: #FF4D4F; margin:0 2px 0 2px;">
-                            {failure_count}
+                            {failureCount}
                         </span>
                         名
                     </span>
@@ -393,7 +393,7 @@
                     type="file"
                     id="fileInput"
                     style="display: none"
-                    bind:this={file_input}
+                    bind:this={fileInput}
                 />
             </div>
             <div>
@@ -409,26 +409,26 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {#each current_page_data as student, index}
-                                {#if editing_serial_number === student.serial_number}
+                            {#each currentPageData as student, index}
+                                {#if editingSerialNumber === student.serialNumber}
                                     <tr class={`student failed-row`}>
-                                        <td><input type="text" bind:value={editing_row.official_name} style="width:90px" /></td>
-                                        <td><input type="text" bind:value={editing_row.phone} style="width:120px" /></td>
-                                        <td><input type="text" bind:value={editing_row.id_card_no} style="width:180px" /></td>
-                                        <td style={editing_row.error_type === null || editing_row.error_type === "" ? "" : "color: #ff4d4f;"}>{editing_row.error_type === null || editing_row.error_type === ""? "--":ERROR_TYPE[editing_row.error_type]}</td>
+                                        <td><input type="text" bind:value={editingRow.officialName} style="width:90px" /></td>
+                                        <td><input type="text" bind:value={editingRow.phone} style="width:120px" /></td>
+                                        <td><input type="text" bind:value={editingRow.idCardNo} style="width:180px" /></td>
+                                        <td style={editingRow.errorType === null || editingRow.errorType === "" ? "" : "color: #ff4d4f;"}>{editingRow.errorType === null || editingRow.errorType === ""? "--":errorType[editingRow.errorType]}</td>
                                         <td style="width:260px">
                                             <button class="action-btn" onclick={handleSaveEdit}>保存</button>
                                             <button class="action-btn" onclick={handleCancelEdit}>取消</button>
                                         </td>
                                     </tr>
                                 {:else}
-                                    <tr class={`student ${!student.is_ok ? "failed-row" : "selected"}`}>
-                                        <td>{student.official_name}</td>
+                                    <tr class={`student ${!student.isOk ? "failed-row" : "selected"}`}>
+                                        <td>{student.officialName}</td>
                                         <td>{student.phone}</td>
-                                        <td>{student.id_card_no}</td>
-                                        <td style={student.error_type === null || student.error_type === "" ? "" : "color: #ff4d4f;"}>{student.error_type === null || student.error_type === ""? "--":ERROR_TYPE[student.error_type]}</td>
+                                        <td>{student.idCardNo}</td>
+                                        <td style={student.errorType === null || student.errorType === "" ? "" : "color: #ff4d4f;"}>{student.errorType === null || student.errorType === ""? "--":errorType[student.errorType]}</td>
                                         <td style="width:260px">
-                                            {#if !student.is_ok}
+                                            {#if !student.isOk}
                                                 <button class="action-btn" onclick={() => handleEdit(student, index)}>编辑</button>
                                             {/if}
                                             <button class="action-btn" onclick={() => handleDelete(student)}>删除</button>
@@ -438,27 +438,27 @@
                             {/each}
                         </tbody>
                     </table>
-                    {#if failure_student_list.length === 0}
+                    {#if failureStudentList.length === 0}
                         <div class="no-data-text">暂无数据</div>
                     {/if}
                 </div>
                 <div class="pagination-container">
                     <span style="font-size: 12px; margin-right:10px">
-                        已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_ids.length}</span> 条
+                        已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selectedIDs.length}</span> 条
                     </span>
                     <!-- <Pagination
                         show_per_page={false}
                         total_data_num={totals}
-                        total_page_num={total_page}
-                        current_page_num={current_page}
+                        totalPage_num={totalPage}
+                        currentPage_num={currentPage}
                         onPageChangeFunc={onNextOrLastPage}
                         onPageSearchFunc={onSearchPageFunc}
                         {onPageChooseFunc}
                     ></Pagination> -->
                      <Pagination
                         totalItems={totals}
-                        pageSize={search_params.pageSize}
-                        currentPage={search_params.page}
+                        pageSize={searchParams.pageSize}
+                        currentPage={searchParams.page}
                         on:pageChange={handlePageChange}
                         on:pageSizeChange={handlePageSizeChange}
                         pageSizeOptions={[10, 20, 30, 40, 50]}
@@ -470,25 +470,25 @@
             <button
                 class="btn"
                 onclick={() => {
-                    search_params.page = 1;
-                    selected_ids = [];
-                    failure_student_list = [];
+                    searchParams.page = 1;
+                    selectedIDs = [];
+                    failureStudentList = [];
                     onCancel();
                 }}>返回</button
             >
             <button
                 class="btn save"
                 onclick={() => {
-                    const students = failure_student_list
-                    .filter(student => student.is_ok)
+                    const students = failureStudentList
+                    .filter(student => student.isOk)
                     .map(student => ({
-                        official_name: student.official_name,
-                        id_card_no: student.id_card_no,
+                        officialName: student.officialName,
+                        idCardNo: student.idCardNo,
                         phone: student.phone
                     }));
 
                     if (students.length <= 0) {
-                        action_toast.show("error","没有符合格式要求的学生，请确保学生信息格式正确")
+                        actionToast.show("error","没有符合格式要求的学生，请确保学生信息格式正确")
                         return
                     }
                     handleImport(students);
@@ -499,8 +499,8 @@
 </div>
 
 <!-- <ActionToast
-    bind:isShow={show_action_toast}
-    bind:this={action_toast}
+    bind:isShow={showActionToast}
+    bind:this={actionToast}
 /> -->
 
 <style lang="scss" scoped>
