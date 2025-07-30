@@ -1,8 +1,8 @@
 <!-- /*
- * @Author: 李乐毅 
- * @Date: 2025-07-27 16:36:22 
- * @Last Modified by:   李乐毅 
- * @Last Modified time: 2025-07-27 16:36:22 
+ * @Author: 李乐毅
+ * @Date: 2025-07-27 16:36:22
+ * @Last Modified by:   李乐毅
+ * @Last Modified time: 2025-07-27 16:36:22
  */ -->
 
 <script>
@@ -12,7 +12,7 @@
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
-  import  {toast}  from '$lib/components/Toast/Toast.js';
+  import { toast } from '$lib/components/Toast/Toast.js';
 
   // 获取路由参数中的 id (即 practice_id)
   const practiceId = $page.params.id;
@@ -59,7 +59,7 @@
 
         if (data.status !== 0) {
           console.error('编辑练习失败:', data.msg);
-          toast.error( data.msg || '编辑练习失败', '', 1000);
+          toast.error(data.msg || '编辑练习失败', '', 1000);
           return;
         }
         // 更新store中的数据
@@ -79,17 +79,17 @@
         });
 
         // 显示编辑成功的提示
-        toast.success( '保存练习成功', 1000);
+        toast.success('保存练习成功', 1000);
 
         // 延迟跳转，让用户能看到提示
         setTimeout(() => {
           // 跳转回列表页
-          goto('/teacher/practice-management');
+          goto('/teacher/practice');
         }, 1000);
       })
       .catch((error) => {
         console.error('编辑练习请求异常:', error);
-        toast.error( '编辑练习请求异常', 1000);
+        toast.error('编辑练习请求异常', 1000);
       });
   }
   /**
@@ -121,11 +121,11 @@
       .then((result) => {
         console.log('update result:', result);
         if (result.status === 0) {
-          toast.success( '更新成功', 1000);
+          toast.success('更新成功', 1000);
           // 延迟跳转，让用户能看到提示
           setTimeout(() => {
             // 跳转回列表页
-            goto('/teacher/practice-management');
+            goto('/teacher/practice');
           }, 1000);
         } else {
           throw new Error(`更新失败:${result.msg}  `);
@@ -133,7 +133,7 @@
       })
       .catch((error) => {
         console.error('编辑练习请求异常:', error);
-        toast.error( '编辑练习请求异常', 1000);
+        toast.error('编辑练习请求异常', 1000);
       });
   }
 
@@ -144,7 +144,7 @@
 
   // 确认取消
   function confirmCancel() {
-    goto('/teacher/practice-management');
+    goto('/teacher/practice');
   }
 
   onMount(() => {
