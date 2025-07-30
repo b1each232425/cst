@@ -63,12 +63,12 @@
     function getCurrentPageSelectedIds() {
         const startIndex = (selectedSearchParams.page - 1) * selectedSearchParams.pageSize;
         const endIndex = startIndex + selectedSearchParams.pageSize;
-        const filtered = filtered_selectedIDs;
+        const filtered = filteredSelectedIDs;
         return filtered.slice(startIndex, endIndex);
     }
 
     // 过滤后的已选择学生列表
-    let filtered_selectedIDs = $derived(getFilteredSelectedIds());
+    let filteredSelectedIDs = $derived(getFilteredSelectedIds());
 
     // 当前页显示的已选择学生
     let currentPageSelectedIDs = $derived(getCurrentPageSelectedIds());
@@ -77,13 +77,13 @@
     let totals = $state(0);
 
     //总页数
-    let total_page = $derived(
+    let totalPage = $derived(
         totals / searchParams.pageSize
             ? Math.ceil(totals / searchParams.pageSize)
             : 1,
     );
 
-    let current_page = $state(1);
+    let currentPage = $state(1);
 
     //是否加载中
     let loading = $state(false);
@@ -95,37 +95,37 @@
      * @type {any}
      * 防抖计时器
      */
-    let name_search_timer = null;
+    let nameSearchTimer = null;
 
     /**
      * @type {any}
      * 防抖计时器
      */
-    let page_search_timer = null;
+    let pageSearchTimer = null;
 
     // 全选/取消全选状态
     /**
      * @type {boolean} 表示是否全选
      */
-    let is_all_selected = $state(false);
+    let isAllSelected = $state(false);
 
-    let show_action_toast = $state(false);
+    let showActionToast = $state(false);
     /**
      * @type {any}
      */
-    let action_toast = $state(null);
+    let actionToast = $state(null);
 
-    let show_student_import_panel = $state(false);
+    let showStudentImportPanel = $state(false);
 
     /**
      * @type {any}
      */
-    let student_import_panel = $state(null);
+    let studentImportPanel = $state(null);
 
-    // 获取当前最大的serial_number
+    // 获取当前最大的serialNumber
     function getMaxSerialNumber() {
         if (selectedIDs.length === 0) return 0;
-        return Math.max(...selectedIDs.map((item) => item.serial_number || 0));
+        return Math.max(...selectedIDs.map((item) => item.serialNumber || 0));
     }
 
     /**
@@ -141,28 +141,28 @@
         }
 
         //防抖逻辑
-        if (page_search_timer) {
-            clearTimeout(page_search_timer);
+        if (pageSearchTimer) {
+            clearTimeout(pageSearchTimer);
         }
-        page_search_timer = setTimeout(() => {
+        pageSearchTimer = setTimeout(() => {
             searchExaminee();
-            page_search_timer = null;
+            pageSearchTimer = null;
         }, 300);
     }
 
     /**
-     * @param {boolean} is_next
+     * @param {boolean} isNext
      * 上一页/下一页
      */
-    function onNextOrLastPage(is_next) {
+    function onNextOrLastPage(isNext) {
         if (loading === true) {
             return;
         }
-        if (is_next && searchParams.page < total_page) {
+        if (isNext && searchParams.page < totalPage) {
             searchParams.page += 1;
             searchExaminee();
         }
-        if (!is_next && searchParams.page > 1) {
+        if (!isNext && searchParams.page > 1) {
             searchParams.page -= 1;
             searchExaminee();
         }
@@ -189,11 +189,11 @@
         searchParams.name = value === "" ? "" : value;
 
         //防抖逻辑
-        if (name_search_timer) {
-            clearTimeout(name_search_timer);
+        if (nameSearchTimer) {
+            clearTimeout(nameSearchTimer);
         }
-        name_search_timer = setTimeout(() => {
-            name_search_timer = null;
+        nameSearchTimer = setTimeout(() => {
+            nameSearchTimer = null;
             searchParams.page = 1;
             searchExaminee();
         }, 300);
@@ -211,14 +211,14 @@
     }
 
     /**
-     * @param {boolean} is_next
+     * @param {boolean} isNext
      * 已选择学生上一页/下一页
      */
-    function onSelectedNextOrLastPage(is_next) {
-        if (is_next && selectedSearchParams.page < selectedTotalPage) {
+    function onSelectedNextOrLastPage(isNext) {
+        if (isNext && selectedSearchParams.page < selectedTotalPage) {
             selectedSearchParams.page += 1;
         }
-        if (!is_next && selectedSearchParams.page > 1) {
+        if (!isNext && selectedSearchParams.page > 1) {
             selectedSearchParams.page -= 1;
         }
     }
@@ -249,15 +249,15 @@
         error = "";
 
         // 构建查询参数
-        const query_params = new URLSearchParams();
-        query_params.append("page", searchParams.page.toString());
-        query_params.append("pageSize", searchParams.pageSize.toString());
+        const queryParams = new URLSearchParams();
+        queryParams.append("page", searchParams.page.toString());
+        queryParams.append("pageSize", searchParams.pageSize.toString());
 
         if (searchParams.name) {
-            query_params.append("name", searchParams.name);
+            queryParams.append("name", searchParams.name);
         }
 
-        await fetch(`/api/user?${query_params.toString()}`, {
+        await fetch(`/api/user?${queryParams.toString()}`, {
             method: "GET",
             credentials: "include",
             headers: {
@@ -275,12 +275,12 @@
                 error = result.msg || "搜索失败";
                 examineeList = [];
                 totals = 0;
-                searchParams.page = current_page;
-                action_toast?.show("error", error);
+                searchParams.page = currentPage;
+                actionToast?.show("error", error);
             } else {
                 examineeList = result.data === null ? [] : result.data;
                 totals = result.rowCount;
-                current_page = searchParams.page;
+                currentPage = searchParams.page;
 
                 if (examineeList !== null) {
                     // 更新选中状态
@@ -292,13 +292,13 @@
                     });
                 }
 
-                is_all_selected = isAllSelected();
+                isAllSelected = isAllSelected();
             }
         })
         .catch(error => {
             console.error("搜索用户失败:", error);
             if (!error.message.includes("404")) {
-                action_toast?.show("error", "搜索失败，请稍后重试");
+                actionToast?.show("error", "搜索失败，请稍后重试");
             }
             examineeList = [];
             totals = 0;
@@ -308,23 +308,23 @@
         });
     }
 
-    // 重新计算所有selectedIDs的serial_number
+    // 重新计算所有selectedIDs的serialNumber
     function recalculateSerialNumbers() {
         selectedIDs = selectedIDs.map((item, index) => ({
             ...item,
-            serial_number: index + 1,
+            serialNumber: index + 1,
         }));
     }
 
     // 修复：切换全选状态
     function toggleSelectAll() {
-        is_all_selected = !is_all_selected;
+        isAllSelected = !isAllSelected;
         
         examineeList.forEach((examinee) => {
-            examinee.selected = is_all_selected;
+            examinee.selected = isAllSelected;
         });
 
-        if (is_all_selected) {
+        if (isAllSelected) {
             // 全选：添加当前页面所有未选中的考生
             examineeList.forEach((examinee) => {
                 const exists = selectedIDs.find((item) => item.id === examinee.id);
@@ -336,7 +336,7 @@
                         account: examinee.account || "",
                         MobilePhone: examinee.MobilePhone || "",
                         IDCardNo: examinee.IDCardNo || "",
-                        serial_number: 0, // 临时设置，稍后重新计算
+                        serialNumber: 0, // 临时设置，稍后重新计算
                     });
                 }
             });
@@ -428,7 +428,7 @@
                     Gender: examinee.Gender || "",
                     MobilePhone: examinee.MobilePhone || "",
                     IDCardNo: examinee.IDCardNo || "",
-                    serial_number: 0, // 临时设置，稍后重新计算
+                    serialNumber: 0, // 临时设置，稍后重新计算
                 });
             }
             examinee.selected = true;
@@ -445,7 +445,7 @@
         recalculateSerialNumbers();
         
         // 更新全选状态
-        is_all_selected = isAllSelected();
+        isAllSelected = isAllSelected();
         console.log("当前已选中的用户：", selectedIDs);
     }
 
@@ -454,7 +454,7 @@
         if (show_panel && ids && ids.length > 0) {
             selectedIDs = ids.map((item, index) => ({
                 ...item,
-                serial_number: index + 1
+                serialNumber: index + 1
             }));
         }
     });
@@ -513,17 +513,17 @@
                                 {/each}
                             </tbody>
                         </table>
-                        {#if filtered_selectedIDs.length === 0}
+                        {#if filteredSelectedIDs.length === 0}
                             <div class="no-data-text">暂无数据</div>
                         {/if}
                     </div>
                     <div class="pagination-container">
                         <span style="font-size: 12px; margin-right:10px">
-                            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{filtered_selectedIDs.length}</span> 条
+                            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{filteredSelectedIDs.length}</span> 条
                         </span>
                         
                         <Pagination
-                        totalItems={filtered_selectedIDs.length}
+                        totalItems={filteredSelectedIDs.length}
                         currentPage={selectedSearchParams.page}
                         pageSizeOptions={[10]}
                         on:pageChange={(e) => {
@@ -549,8 +549,8 @@
                             下载模板
                         </button>
                         <button class="upload-file-button" onclick={() => {
-                            if (student_import_panel) {
-                                student_import_panel.triggerFileInput();
+                            if (studentImportPanel) {
+                                studentImportPanel.triggerFileInput();
                             }
                         }}>导入学生</button>
                     </div>
@@ -564,7 +564,7 @@
                                         type="checkbox"
                                         class="custom-checkbox"
                                         onchange={toggleSelectAll}
-                                        checked={is_all_selected}
+                                        checked={isAllSelected}
                                     />
                                 </th>
                                 <th class="table-head">姓名</th>
@@ -675,7 +675,7 @@
                     account: "",
                     MobilePhone: "",
                     IDCardNo: "",
-                    serial_number: 0, // 临时设置
+                    serialNumber: 0, // 临时设置
                 }));
 
             // 更新selectedIDs
@@ -688,14 +688,14 @@
         }
 
         if (!has_error) {
-            show_student_import_panel = false;
+            showStudentImportPanel = false;
         }
     }}
     onCancel={() => {
-        show_student_import_panel = false;
+        showStudentImportPanel = false;
     }}
-    bind:show={show_student_import_panel}
-    bind:this={student_import_panel}
+    bind:show={showStudentImportPanel}
+    bind:this={studentImportPanel}
 />
 
 <style lang="scss" scoped>
