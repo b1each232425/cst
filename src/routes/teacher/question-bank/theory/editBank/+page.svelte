@@ -24,7 +24,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import FilterBar from '../../_components/FilterBarForQuestionBank.svelte';
   import BankTag from '../../_components/editableTag.svelte';
   import Dropdown from '../../_components/DropDownForQuesitonBank.svelte';
-  import ListTable from '../../_components/ListTableForQuestionBank.svelte';
+
   import SingleSelectEditPanel from '../../_components/singlePage.svelte';
   import MultipleSelectEditPanel from '../../_components/multiplePage.svelte';
   import JudgeSelectEditPanel from '../../_components/judgePage.svelte';
