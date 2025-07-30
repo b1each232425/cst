@@ -107,7 +107,7 @@
     /**
      * @type {boolean} 表示是否全选
      */
-    let isAllSelected = $state(false);
+    let isallSelected = $state(false);
 
     let showActionToast = $state(false);
     /**
@@ -288,11 +288,11 @@
                         selectedIDs.map((item) => item.id)
                     );
                     examineeList.forEach((examinee) => {
-                        examinee.selected = selected_id_set.has(examinee.id);
+                        examinee.selected = selected_id_set.has(examinee.ID);
                     });
                 }
 
-                isAllSelected = isAllSelected();
+                isallSelected = isAllSelected();
             }
         })
         .catch(error => {
@@ -318,21 +318,21 @@
 
     // 修复：切换全选状态
     function toggleSelectAll() {
-        isAllSelected = !isAllSelected;
+        isallSelected = !isallSelected;
         
         examineeList.forEach((examinee) => {
-            examinee.selected = isAllSelected;
+            examinee.selected = isallSelected;
         });
 
-        if (isAllSelected) {
+        if (isallSelected) {
             // 全选：添加当前页面所有未选中的考生
             examineeList.forEach((examinee) => {
-                const exists = selectedIDs.find((item) => item.id === examinee.id);
+                const exists = selectedIDs.find((item) => item.id === examinee.ID);
                 if (!exists) {
                     selectedIDs.push({
-                        id: examinee.id,
+                        id: examinee.ID,
                         OfficialName: examinee.OfficialName || "",
-                        gender: examinee.gender || "",
+                        Gender: examinee.Gender || "",
                         account: examinee.account || "",
                         MobilePhone: examinee.MobilePhone || "",
                         IDCardNo: examinee.IDCardNo || "",
@@ -343,7 +343,7 @@
         } else {
             // 取消全选：移除当前页面的所有考生
             examineeList.forEach((examinee) => {
-                const index = selectedIDs.findIndex((item) => item.id === examinee.id);
+                const index = selectedIDs.findIndex((item) => item.id === examinee.ID);
                 if (index !== -1) {
                     selectedIDs.splice(index, 1);
                 }
@@ -420,7 +420,7 @@
         
         if (checked) {
             // 选中：添加到已选列表
-            if (!selectedIDs.find((g) => g.id === examinee.id)) {
+            if (!selectedIDs.find((g) => g.id === examinee.ID)) {
                 selectedIDs.push({
                     id: examinee.ID,
                     OfficialName: examinee.OfficialName || "",
@@ -434,7 +434,7 @@
             examinee.selected = true;
         } else {
             // 取消选中：从已选列表移除
-            const index = selectedIDs.findIndex((g) => g.id === examinee.id);
+            const index = selectedIDs.findIndex((g) => g.id === examinee.ID);
             if (index !== -1) {
                 selectedIDs.splice(index, 1);
             }
@@ -445,7 +445,7 @@
         recalculateSerialNumbers();
         
         // 更新全选状态
-        isAllSelected = isAllSelected();
+        isallSelected = isAllSelected();
         console.log("当前已选中的用户：", selectedIDs);
     }
 
@@ -506,7 +506,7 @@
                                 {#each currentPageSelectedIDs as examinee}
                                     <tr class="examinee">
                                         <td>{examinee.OfficialName || "--"}</td>
-                                        <td>{examinee.gender || "--"}</td>
+                                        <td>{examinee.Gender || "--"}</td>
                                         <td>{examinee.MobilePhone || "--"}</td>
                                         <td>{examinee.IDCardNo || "--"}</td>
                                     </tr>
@@ -671,7 +671,7 @@
                 .map((/** @type {any} */ student, /** @type {any} */ index) => ({
                     id: student,
                     OfficialName: `学生${student}`, // 临时名称
-                    gender: "",
+                    Gender: "",
                     account: "",
                     MobilePhone: "",
                     IDCardNo: "",
