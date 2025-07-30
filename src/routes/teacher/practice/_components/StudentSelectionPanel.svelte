@@ -98,9 +98,9 @@
    * @param {string} value - 每页显示的数据条数
    */
   function handle_page_size_change(event) {
-    
-      search_params.pageSize = event.detail;
-      searchExaminee();
+      const pageSize = typeof event === 'number' ? event : event.detail;
+    selected_search_params.pageSize = pageSize;
+    selected_search_params.page = 1; // 重置到第一页
   }
 
     let current_page = $state(1);
@@ -238,8 +238,10 @@
      * @param {number} page
      * 已选择学生页数跳转
      */
-    function onSelectedPageChooseFunc(page) {
-        selected_search_params.page = page;
+    function onSelectedPageChooseFunc(event) {
+         // 注意：Pagination组件传递的是 event.detail，而不是直接的页码
+    const page = typeof event === 'number' ? event : event.detail;
+    selected_search_params.page = page;
     }
 
     /**
@@ -363,8 +365,7 @@
             }));
         }
     }
-    
-    /**
+      /**
      * @param {number} id
      */
     async function getStudentInfo(id){
@@ -391,14 +392,14 @@
         }
         return response.json();
         }).then((result)=>{
-if (result.Status != 0) {
+if (result.status != 0) {
             error = result.msg || "获取学生列表失败";
             selected_ids = [];
             totals = 0;
             search_params.page = current_page;
             toast.error(error);
         } else {
-            selected_ids = result.Data === null ? [] : result.Data;
+            selected_ids = result.data === null ? [] : result.data;
         }
         }).catch((error)=>{
             console.log(error);
@@ -411,6 +412,7 @@ if (result.Status != 0) {
         
     }
 
+    
     // 切换全选状态
     function toggleSelectAll() {
         is_all_selected = !is_all_selected; // 切换全选状态
@@ -464,7 +466,8 @@ if (result.Status != 0) {
         if (show_panel && initial_load) {
             initial_load = false;
 
-            //每次打开时将外部选中的id赋值给当前面板记录的已选中的id 在搜索前执行是为了能正常显示每个列表项的选中效果
+           if (practice_id){
+             //每次打开时将外部选中的id赋值给当前面板记录的已选中的id 在搜索前执行是为了能正常显示每个列表项的选中效果
             selected_ids = [];
             
             /**
@@ -476,10 +479,26 @@ if (result.Status != 0) {
             });
 
             // 获取已选学生的信息
-            getStudentInfo(search_ids)
+            getStudentInfo(practice_id)
 
             // 初始化为查看模式，不自动搜索
             is_selection_mode = false;
+
+           }else {
+             //每次打开时将外部选中的id赋值给当前面板记录的已选中的id 在搜索前执行是为了能正常显示每个列表项的选中效果
+            
+            /**
+             * @type {number[]}
+             */
+            let search_ids = [];
+            ids.forEach((element) => {
+                search_ids.push(element.id)
+            });
+            current_page_selected_ids = selected_ids;
+
+            // 初始化为查看模式，不自动搜索
+            is_selection_mode = false;
+           }
         }
     });
 
@@ -534,7 +553,6 @@ if (result.Status != 0) {
                 onclick={() => {
                     show_panel = false;
                     search_params.page = 1;
-                    selected_ids = [];
                     onCancel(false);
                 }} plain>×</Button
             >
@@ -549,7 +567,7 @@ if (result.Status != 0) {
                             <InputBox
                                 label={"搜索学生："}
                                 placeholder={"请输姓名/手机号/身份证号"}
-                                onSearchFunc={onSelectedSearch}
+                                onInput={onSelectedSearch}
                             ></InputBox> 
                         </div>
                         <div class="button-group">
@@ -588,13 +606,11 @@ if (result.Status != 0) {
                             已选 <span style="color: #00A870; margin:0 5px 0 5px;">{filtered_selected_ids.length}</span> 条
                         </span>
                         <Pagination
-                            show_per_page={false}
                             totalItems={filtered_selected_ids.length}
-                            total_page_num={selected_total_page}
+                            pageSize={selected_search_params.pageSize}
                             currentPage={selected_search_params.page}
-                            on:pageChange={onSelectedNextOrLastPage}
+                            on:pageChange={onSelectedPageChooseFunc}
                             on:pageSizeChange={handle_page_size_change}
-                            onPageSearchFunc={onSelectedSearchPageFunc}
                             jumpPage={onSelectedPageChooseFunc}
                         ></Pagination>
                     </div>

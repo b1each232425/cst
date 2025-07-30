@@ -80,3 +80,13 @@ export function transformPracticeData(practices) {
     };
   });
   }
+
+  export function transFormType(Type) { 
+    
+    // 转置type字段
+    if (Type === "自定义组卷（经典巩固）") return '00';
+    else if (Type === "随机组卷（随机组卷）") return'02';
+    else if (Type === "智能刷题（智能提升）") return '04';
+    
+
+  }

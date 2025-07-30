@@ -245,9 +245,9 @@
    * 页码选择回调
    * @param {number} page - 选中的页码
    */
-  function handle_page_choose(page) {
-    if (page !== current_page_num) {
-      current_page_num = page;
+  function handle_page_choose(event) {
+    if (event.detail !== current_page_num) {
+      current_page_num = event.detail;
       filter_practice_list();
     }
   }
@@ -256,8 +256,8 @@
    * 每页数量选择回调
    * @param {string} value - 每页显示的数据条数
    */
-  function handle_page_size_change(value) {
-    const newPageSize = parseInt(value, 10);
+  function handle_page_size_change(event) {
+    const newPageSize = parseInt(event.detail, 10);
     if (newPageSize !== data_per_page) {
       data_per_page = newPageSize;
       current_page_num = 1; // 重置为第一页
@@ -415,6 +415,9 @@
       });
   }
 
+
+  let practiceID =$state()
+
   /**
    * 选择学生按钮点击事件
    * @param {Practice} practice - 练习对象
@@ -426,6 +429,7 @@
     await fetchSelectedStudents(practice.ID);
     // 打开学生选择面板
     show_student_selectionPanel = true;
+    practiceID = practice.ID
   }
 
   /**
@@ -701,7 +705,7 @@
         totalItems={total_data_num}
         pageSize={data_per_page}
         currentPage={current_page_num}
-        on:pageChange={handle_page_change}
+        on:pageChange={handle_page_choose}
         jumpPage={handle_page_choose}
         on:pageSizeChange={handle_page_size_change}
       />
@@ -746,6 +750,8 @@
     onCancel={() => {
       show_student_selectionPanel = false;
     }}
+    practice_id={practiceID}
+    
     onConfirm={(selected) => {
       handleStudentSelectionConfirm(selected);
       show_student_selectionPanel = false;
