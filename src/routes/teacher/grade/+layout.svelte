@@ -1,6 +1,8 @@
-<div class="score-management-card">
-	<slot />
-</div>
+<script>
+	let { children } = $props();
+</script>
+
+{@render children()}
 
 <style>
 	.score-management-card {
