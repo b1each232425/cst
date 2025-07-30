@@ -107,7 +107,7 @@
     /**
      * @type {boolean} 表示是否全选
      */
-    let isallSelected = $state(false);
+    let isTotalSelected = $state(false);
 
     let showActionToast = $state(false);
     /**
@@ -292,7 +292,8 @@
                     });
                 }
 
-                isallSelected = isAllSelected();
+                isTotalSelected = isAllSelected();
+               
             }
         })
         .catch(error => {
@@ -318,13 +319,13 @@
 
     // 修复：切换全选状态
     function toggleSelectAll() {
-        isallSelected = !isallSelected;
+       isTotalSelected = !isTotalSelected;
         
         examineeList.forEach((examinee) => {
-            examinee.selected = isallSelected;
+            examinee.selected = isTotalSelected;
         });
 
-        if (isallSelected) {
+        if (isTotalSelected) {
             // 全选：添加当前页面所有未选中的考生
             examineeList.forEach((examinee) => {
                 const exists = selectedIDs.find((item) => item.id === examinee.ID);
@@ -371,11 +372,14 @@
 
     // 判断是否全选
     function isAllSelected() {
+        console.log(examineeList);
+        
         if (examineeList !== null && examineeList.length > 0) {
             return examineeList.every((examinee) => examinee.selected);
         } else {
             return false;
         }
+        
     }
 
     async function downloadTemplate() {
@@ -445,8 +449,7 @@
         recalculateSerialNumbers();
         
         // 更新全选状态
-        isallSelected = isAllSelected();
-        console.log("当前已选中的用户：", selectedIDs);
+        isTotalSelected = isAllSelected();
     }
 
     // 初始化选中的考生
@@ -564,7 +567,7 @@
                                         type="checkbox"
                                         class="custom-checkbox"
                                         onchange={toggleSelectAll}
-                                        checked={isAllSelected}
+                                        checked={isTotalSelected}
                                     />
                                 </th>
                                 <th class="table-head">姓名</th>
