@@ -73,14 +73,14 @@
     /**
      * @param {number} pageNum - 要跳转的页码
      */
-    function handlePageChoose(pageNum) {
-        if (pageNum !== currentPage) {
-            currentPage = pageNum;
+    function handlePageChoose(event) {
+        if (event.detail !== currentPage) {
+            currentPage = event.detail;
             fetchPaperList({
                 name: searchText,
                 tags: tagSearchText,
                 assembly_type: selectedStructure,
-                page: String(pageNum),
+                page: String(event.detail),
             });
         }
     }
@@ -89,18 +89,17 @@
     /**
      * @param {string|number} value - 每页显示的条数
      */
-    function handlePageSizeChange(value) {
+    function handlePageSizeChange(event) {
         // 确保value是数字类型
-        const pageSizeValue =
-            typeof value === "string" ? parseInt(value) : value;
-        pageSize = pageSizeValue;
+      
+        pageSize = event.detail;
         currentPage = 1; // 重置到第一页
         fetchPaperList({
             name: searchText,
             tags: tagSearchText,
             assembly_type: selectedStructure,
             page: "1",
-            page_size: String(pageSizeValue),
+            page_size: String(event.detail),
         });
     }
 
@@ -332,9 +331,11 @@
                     <Select
                             bind:value={selectedStructure}
                             filterable
+                            remote
+                            remote_method={searchPapers}
                         >
-                        {#each (structureOptions) as structureOptions}
-                        <option value={structureOptions.value}>{structureOptions.label}</option>
+                        {#each structureOptions as structureOption}
+                        <Option value={structureOption} label= {structureOption}></Option>
                         {/each}
                     </Select>
                     </div>

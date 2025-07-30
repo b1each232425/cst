@@ -60,7 +60,7 @@
         tags: "",
         page: 1,
         pageSize: 10,
-        assemblyType: "",
+        category: "",
     });
 
     //总页数
@@ -189,8 +189,8 @@
             queryParams.append("tags", searchParams.tags);
         }
 
-        if (searchParams.assemblyType) {
-        queryParams.append("assemblyType", searchParams.assemblyType);
+        if (searchParams.category) {
+        queryParams.append("category", searchParams.category);
 }
         const response = await fetch(
             `/api/paper?${queryParams.toString()}`,
@@ -214,7 +214,7 @@
             
         } else {
             paperList = result.data;
-            totals = result.totalCount;
+            totals = result.RowCount;
             currentPage = searchParams.page;
         }
         
