@@ -279,7 +279,7 @@
       `/api/practiceS?name=${q.name}&difficulty=${q.difficulty}&page=${q.page}&page_size=${q.pageSize}&type=${q.type}`,
     )
       .then((res) => {
-        if (!res.ok) throw new Error('网络错误');
+        if (!res.ok) throw new Error('请求失败');
         return res.json();
       })
       .then((res) => {
@@ -313,6 +313,12 @@
     };
 
     getPracticeList(q);
+  }
+
+  // 处理练习种类的切换
+  function handlePracticeTypeChange() {
+    currentPracticeTypeTab = key;
+    // handleSearch(); TODO 是否需要
   }
 
   // 处理页号改变
@@ -360,7 +366,7 @@
   <div class="practice-show">
     <div class="practice-category">
       {#each typeMap as [key, val] (key)}
-        <button onclick={() => (currentPracticeTypeTab = key)} class:selected={currentPracticeTypeTab === key}
+        <button onclick={() => handlePracticeTypeChange(key)} class:selected={currentPracticeTypeTab === key}
           >{val}{@render tip()}</button
         >
       {/each}
