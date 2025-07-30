@@ -27,3 +27,8 @@ vite.config.ts.timestamp-*
 .vscode
 .npmrc
 .trae
+
+# Playwright
+/playwright-report/
+/blob-report/
+/playwright/.cache/

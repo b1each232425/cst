@@ -27,6 +27,8 @@
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
+  import Empty from '$lib/components/Table/Empty.svelte';
+  import { on } from 'events';
 
   // 使用runes接收页面数据
   const { data } = $props();
@@ -661,6 +663,7 @@
           </tr>
         </thead>
         <tbody>
+          {#if displayed_practice_list.length > 0}
           {#each displayed_practice_list as practice}
             <tr>
               <td style="text-align: center;" title={practice.Name}>{practice.Name}</td>
@@ -697,6 +700,15 @@
               </td>
             </tr>
           {/each}
+          {:else}
+           <tr>
+      <td colspan="6" style="height: 200px; padding: 0;">
+        <div class="empty-wrapper">
+          <Empty text="暂无练习数据" />
+        </div>
+      </td>
+    </tr>
+        {/if}
         </tbody>
       </table>
     </div>
@@ -720,6 +732,9 @@
     confirm_text="确定"
     cancel_text="取消"
     onConfirm={confirm_publish}
+    onCancel={()=>{
+      publishDialogOpen = false;
+    }}
   />
 
   <!-- 删除确认对话框 -->
@@ -731,6 +746,10 @@
     cancel_text="取消"
     confirmTextBackgroundColor="#E34D59"
     onConfirm={confirm_delete}
+    onCancel={()=>{
+      deleteDialogOpen = false;
+    }}
+  
   />
 
   <!-- 取消发布确认对话框 -->
@@ -741,6 +760,9 @@
     confirm_text="确定"
     cancel_text="取消"
     onConfirm={confirm_cancel_publish}
+    onCancel={()=>{
+      cancelPublishDialogOpen = false;
+    }}
   />
 
   <!-- 学生选择面板 -->
@@ -821,7 +843,7 @@
     .filter-box {
       display: flex;
       align-items: center;
-      min-width: 315px;
+      min-width: 225px;
 
       .filter-label {
         font-size: 14px;
@@ -943,5 +965,13 @@
     margin-top: 15px;
     position: relative;
     z-index: 10;
+  }
+  .empty-wrapper{
+    display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 8px;
+          margin-bottom: 8px;
+
   }
 </style>

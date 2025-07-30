@@ -7,7 +7,7 @@ test.describe('登录页面测试', () => {
 	/**
 	 * 测试页面基本元素渲染
 	 */
-	test('页面基本元素应该正确渲染', async ({ page }) => {
+ 	test('页面基本元素应该正确渲染', async ({ page }) => {
 		await page.goto('/login');
 
 		// 检查页面标题
