@@ -239,243 +239,134 @@ function updateDuration(index) {
     }
 
     async function handleSubmit() {
-        //必填字段校验
-        if (examName === "") {
-            actionToast.show("error", "请输入考试名称");
+    /* 1. 必填字段校验（保持原逻辑） */
+    if (examName === "") {
+        actionToast.show("error", "请输入考试名称");
+        return;
+    }
+    if (examName.length > 50) {
+        actionToast.show("error", "考试名称不得超过50个字符");
+        return;
+    }
+    if (examRules === "") {
+        actionToast.show("error", "请输入考试规则");
+        return;
+    }
+    if (examRules.length > 1000) {
+        actionToast.show("error", "考试规则不得超过1000个字符");
+        return;
+    }
+    if (paperConfigs.length <= 0) {
+        actionToast.show("error", "请至少添加一个考试场次");
+        return;
+    }
+
+    /* 2. 场次级校验（保持原逻辑） */
+    for (let i = 0; i < paperConfigs.length; i++) {
+        const session = paperConfigs[i];
+
+        if (!session.startTime || session.startTime === "") {
+            // actionToast.show("error", `第${i + 1}个场次未设置时间段`);
+            return;
+        }
+        if (!session.endTime || session.endTime === "") {
+            // actionToast.show("error", `第${i + 1}个场次未设置时间段`);
             return;
         }
 
-        if (examName.length > 50) {
-            actionToast.show("error", "考试名称不得超过50个字符");
-            return;
-        }
-
-        if (examRules === "") {
-            actionToast.show("error", "请输入考试规则");
-            return;
-        }
-
-        if (examRules.length > 1000) {
-            actionToast.show("error", "考试规则不得超过1000个字符");
-            return;
-        }
-
-        if (paperConfigs.length <= 0) {
-            actionToast.show("error", "请至少添加一个考试场次");
-            return;
-        }
-
-        // 校验每个考试场次
-        for (let i = 0; i < paperConfigs.length; i++) {
-            const session = paperConfigs[i];
-
-            // 校验试卷ID
-            // if (!session.paperID || session.paperID === 0) {
-            //     actionToast.show("error", `第${i + 1}个场次未选择试卷`);
-            //     return;
-            // }
-
-            // 校验开始时间
-            if (!session.startTime || session.startTime === "") {
-                actionToast.show("error", `第${i + 1}个场次未设置时间段`);
-                return;
-            }
-
-            // 校验结束时间
-            if (!session.endTime || session.endTime === "") {
-                actionToast.show("error", `第${i + 1}个场次未设置时间段`);
-                return;
-            }
-
-            // 校验时间逻辑
-            const startTime = new Date(session.startTime);
-            const endTime = new Date(session.endTime);
-            const now = new Date();
-
-            // 检查开始时间是否早于当前时间
-            if (startTime < now) {
-                actionToast.show(
-                    "error",
-                    `第${i + 1}个场次的开始时间不能早于当前时间`,
-                );
-                return;
-            }
-
-            // 检查结束时间是否早于开始时间
-            if (endTime <= startTime) {
-                actionToast.show(
-                    "error",
-                    `第${i + 1}个场次的结束时间必须晚于开始时间`,
-                );
-                return;
-            }
-
-
-        for (let i = 0; i < paperConfigs.length; i++) {
-            //设置场次编号
-            paperConfigs[i].sessionNum = i + 1;
-
-            //设置乱序方式
-            if (
-                paperConfigs[i].isOptionShuffled &&
-                paperConfigs[i].isQuestionShuffled
-            ) {
-                paperConfigs[i].questionShuffledMode = "00";
-            } else if (
-                paperConfigs[i].isOptionShuffled &&
-                !paperConfigs[i].isQuestionShuffled
-            ) {
-                paperConfigs[i].questionShuffledMode = "02";
-            } else if (
-                !paperConfigs[i].isOptionShuffled &&
-                paperConfigs[i].isQuestionShuffled
-            ) {
-                paperConfigs[i].questionShuffledMode = "04";
-            } else if (
-                !paperConfigs[i].isOptionShuffled &&
-                !paperConfigs[i].isQuestionShuffled
-            ) {
-                paperConfigs[i].questionShuffledMode = "06";
-            }
-
-            // 如果是自动批改，则清空批阅员选择
-            if(paperConfigs[i].markMethod == "02"){
-                paperConfigs[i].markConfig.teacher_markConfigs = []
-                paperConfigs[i].markMode = "00"
-            }
-
-            paperConfigs[i].lateEntryTime = paperConfigs[i].lateEntryTime<=0?1:paperConfigs[i].lateEntryTime
-            paperConfigs[i].earlySubmissonTime = paperConfigs[i].earlySubmissonTime<=0?1:paperConfigs[i].earlySubmissonTime
-        }
-
-
-        const formData = new FormData();
-        let examSessionsdata = paperConfigs.map((cfg, idx) => ({
-            PaperID: cfg.paperID,
-            PeriodMode: cfg.periodMode,
-            StartTime: cfg.startTime ? new Date(cfg.startTime).getTime() : 0, // 转成时间戳
-            EndTime: cfg.endTime ? new Date(cfg.endTime).getTime() : 0,       // 转成时间戳
-            Duration: Number(cfg.duration) || 0,
-            LateEntryTime: Number(cfg.lateEntryTime) || 0,
-            EarlySubmissionTime: Number(cfg.earlySubmissonTime) || 0,
-            QuestionShuffledMode: cfg.questionShuffledMode,
-            MarkMethod: cfg.markMethod,
-            NameVisibilityIn: !!cfg.nameVisibility,
-            ReviewerIds: (cfg.markConfig && cfg.markConfig.teacher_markConfigs)
-                ? cfg.markConfig.teacher_markConfigs.map(t => t.id)
-                : [],
-            MarkMode: cfg.markMode,
-            SessionNum: idx + 1, // 场次编号
-        }));
-
-        let exam_data = {
-            examInfo: {
-                Name: examName,
-                Rules: examRules,
-                Type: examType,
-                Mode: examMethod,
-                status: "00",
-                Files:[
-                    {
-                    Name: "string", 
-                    Url: "string"
-                    }
-                ]
-            },
-            examSessions: examSessionsdata,
-            examinee:examExaminee,
-            invigilators: [0] // 监考员列表，暂时设置为0，后续可以添加监考员选择功能，模拟数据   
-        };
-
-        formData.append("data", JSON.stringify(exam_data));
+        const startTime = new Date(session.startTime);
+        const endTime   = new Date(session.endTime);
+        const now       = new Date();
         
-        let DATA={
-    "action": "",
-    "sets": [],
-    "orderBy": [],
-    "page": 0,
-    "pageSize": 0,
-    "data": {
-        "examInfo": {
-            "Name": "测试线上考试",
-            "Rules": "<p><span>线上考试规则</span></p>",
-            "Type": "00",
-            "Mode": "00",
-            "Files": []
+        if (startTime < now) {
+            // actionToast.show("error", `第${i + 1}个场次的开始时间不能早于当前时间`);
+            return;
+        }
+        if (endTime <= startTime) {
+            // actionToast.show("error", `第${i + 1}个场次的结束时间必须晚于开始时间`);
+            return;
+        }
+    }
+
+    /* 3. 预处理场次数据（保持原逻辑） */
+    for (let i = 0; i < paperConfigs.length; i++) {
+        paperConfigs[i].sessionNum = i + 1;
+
+        if (paperConfigs[i].isOptionShuffled && paperConfigs[i].isQuestionShuffled) {
+            paperConfigs[i].questionShuffledMode = "00";
+        } else if (paperConfigs[i].isOptionShuffled && !paperConfigs[i].isQuestionShuffled) {
+            paperConfigs[i].questionShuffledMode = "02";
+        } else if (!paperConfigs[i].isOptionShuffled && paperConfigs[i].isQuestionShuffled) {
+            paperConfigs[i].questionShuffledMode = "04";
+        } else {
+            paperConfigs[i].questionShuffledMode = "06";
+        }
+
+        if (paperConfigs[i].markMethod === "02") {
+            paperConfigs[i].markConfig.teacher_markConfigs = [];
+            paperConfigs[i].markMode = "00";
+        }
+
+        paperConfigs[i].lateEntryTime   = paperConfigs[i].lateEntryTime   <= 0 ? 1 : paperConfigs[i].lateEntryTime;
+        paperConfigs[i].earlySubmisstionTime = paperConfigs[i].earlySubmisstionTime <= 0 ? 0 : paperConfigs[i].earlySubmisstionTime;
+    }
+
+    /* 4. 构造真正要提交的 JSON（完全使用用户输入） */
+    const examSessionsdata = paperConfigs.map(cfg => ({
+        PaperID:              cfg.paperID,
+        PeriodMode:           cfg.periodMode,
+        StartTime:            cfg.startTime  ? new Date(cfg.startTime).getTime() : 0,
+        EndTime:              cfg.endTime    ? new Date(cfg.endTime).getTime()   : 0,
+        Duration:             Number(cfg.duration) || 0,
+        LateEntryTime:        Number(cfg.lateEntryTime)        || 0,
+        EarlySubmissionTime:  Number(cfg.earlySubmisstionTime) || 0,
+        QuestionShuffledMode: cfg.questionShuffledMode,
+        MarkMethod:           cfg.markMethod,
+        NameVisibilityIn:     !!cfg.nameVisibility,
+        ReviewerIds:          (cfg.markConfig && cfg.markConfig.teacher_markConfigs)
+                                ? cfg.markConfig.teacher_markConfigs.map(t => t.id)
+                                : [],
+        MarkMode:             cfg.markMode,
+        SessionNum:           cfg.sessionNum,
+    }));
+
+    // 附加文件：若用户上传了文件，则遍历填充；否则留空数组
+    const fileArr = files.length
+        ? files.map(f => ({ Name: f.name, Url: f.url || "" }))
+        : [];
+
+    const examData = {
+        examInfo: {
+            Name:   examName,
+            Rules:  examRules,
+            Type:   examType,
+            Mode:   examMethod,
+            status: "00",
+            Files:  fileArr,
         },
-        "examSessions": [
-            {
-                "PaperID": 61,
-                "PeriodMode": "00",
-                "StartTime": 1753580700000,
-                "EndTime": 1753581300000,
-                "Duration": 10,
-                "LateEntryTime": 3,
-                "EarlySubmissionTime": 3,
-                "QuestionShuffledMode": "06",
-                "MarkMethod": "00",
-                "NameVisibilityIn": false,
-                "ReviewerIds": [
-                    1574
-                ],
-                "MarkMode": "10"
-            }
-        ],
-        "examinee": [
-            1575,
-            1578,
-            1582
-        ],
-        "invigilators": []
-    },
-    "filter": {},
-    "authFilter": {}
-}
-        fetch("/api/exam",
-        {
-            method: "POST",
-            credentials: 'include',
-            body: JSON.stringify(DATA),
-        })
-        .then((response) => response.json())
-        .then((result) => {
-            if(result.status===0){
-                console.log("创建考试成功:", result);
-            }
-            else{
-                console.error("考试创建失败:", result);
-            }
-        })
-        .catch( (error) => {
-                console.error("创建考试失败:", error);
-                //actionToast.show("error", "考试创建失败！");
-            });
-    
-        // fetch("/api/teacher/exam/createExam", {
-        //     method: "POST",
-        //     credentials: "include",
-        //     body: formData,
-        // })
-        //     .then((response) => response.json())
-        //     .then((result) => {
-        //         if (result.Status === 0) {
-        //             actionToast.show("success", "考试创建成功！");
-        //             goto("/teacher/examManagement");
-        //         }else if (result.Status === -21) {
-        //             actionToast.show("error", "部分监考员无法监考该时段的考试，已自动取消选择");
-        //             result.Data.invigilatorNotCanInvigilate.forEach(element => {
-        //                 invigilators.splice(invigilators.findIndex(item => item.id === element), 1);
-        //             });
-        //         }
-        //         else {
-        //             console.error("创建考试失败:", result.Msg);
-        //             actionToast.show("error", "创建考试失败，请稍后重试");
-        //         }
-        //     })
-        //     .catch((error) => {
-        //         console.error("创建考试失败:", error);
-        //         actionToast.show("error", "创建考试失败，请稍后重试");
-        //     });
+        examSessions: examSessionsdata,
+        examinee:     examExaminee,          // 用户选中的考生 id 数组
+        invigilators: invigilators.map(i => i.id), // 监考员 id 数组
+    };
+
+    console.log("examDATA",examData);
+    /* 5. 发送请求（去掉写死的 DATA，直接发送 examData） */
+    try {
+        const res = await fetch("/api/exam", {
+            method:  "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify(examData),
+        });
+        const result = await res.json();
+        if (result.status === 0) {
+            goto("/teacher/exam");
+        } else {
+           
+        }
+    } catch (e) {
+        console.error(e);
+       
     }
 }
 </script>
@@ -759,7 +650,7 @@ function updateDuration(index) {
                             <DatePicker
                                 isTimeSelection={true}
 
-                                inputWidth={'250px'} 
+                                inputWidth={'350px'} 
                                 singleDateSelection={false}
                                 on:startDateSelected={onChooseStartTime(paperConfigIndex)}
                                 on:endDateSelected={onChooseEndTime(paperConfigIndex)}
@@ -998,7 +889,7 @@ function updateDuration(index) {
                     selected_id={paperConfigs[paperConfigIndex].paperID}
                     selected_name={paperConfigs[paperConfigIndex].paperName}
                     selected_type={paperConfigs[paperConfigIndex].paperType}
-                    show_panel={paperConfigs[paperConfigIndex]
+                    showPanel={paperConfigs[paperConfigIndex]
                         .showPaperSelectionPanel}
                     onCancel={() => {
                         paperConfigs[paperConfigIndex].showPaperSelectionPanel =
@@ -1018,7 +909,7 @@ function updateDuration(index) {
         ></PaperSelectionPanel>
 
         <ExamineeSelectionPanel
-            show_panel={showExamineePanel}
+            showPanel={showExamineePanel}
             onConfirm={(selected) => {
                 //确认后将选择的考生取出
                 showExamineePanel = false;
@@ -1045,7 +936,7 @@ function updateDuration(index) {
         display: block;
         background: #fff;
         margin: 0 auto;
-        overflow-y: hidden;
+        overflow-y: auto;
         overflow-x: auto;
         padding-bottom: 5%;
         padding-top:10px;
