@@ -2,7 +2,7 @@
     // @ts-nocheck
     
     import { formatDate, formatTimestamp, getColorIndex } from "./_utils/func";
-    import { levelTrans, categoryTrans, accessModeTrans, assemblyTypeTrans, tagColorList } from "./_utils/data";
+    import { paperLevelTrans, paperCategoryTrans, paperAccessModeTrans, paperAssemblyTypeTrans, tagColorList } from "./_utils/data";
     import { goto } from "$app/navigation";
     import Title from "$lib/components/Title/Title.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
@@ -10,7 +10,7 @@
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import Tag from "$lib/components/Tag/Tag.svelte";
     import Loading from "$lib/components/Loading/Loading.svelte";
-    import { fetchPaperList } from "./_utils/api";
+    import { createEmptyPaper, fetchPaperList } from "./_utils/api";
     import { debounce } from "$lib/utils/optimize";
 
     // 模拟数据
@@ -570,10 +570,20 @@
         debouncedFetchPaperList();
     });
 
+    // 自定义组卷
+    function manual() {
+        isLoading = true;
+        createEmptyPaper().then( result => {
+            localStorage.setItem('currentPaperID', JSON.stringify(result.data.paper.ID));
+        }).finally(() => {
+            isLoading = false;
+            goto('/teacher/paper/manual');
+        });
+    }
 
 </script>
 
-<button onclick={console.log(paperList)}>点我</button>
+<!-- <button onclick={console.log(paperList)}>点我</button> -->
 
 <Loading bind:value={isLoading} loadingText="正在加载中"/>
 
@@ -612,7 +622,7 @@
         <div class="right-side">
             <Button onclick={()=>resetSearch()} plain={true}>重置</Button>
             <Button plain={true} type="danger">删除</Button>
-            <Button onclick={()=>goto('/teacher/paper/add-paper')} plain={true}>自定义组卷</Button>
+            <Button onclick={()=>manual()} plain={true}>自定义组卷</Button>
         </div>
     </div>
 
@@ -643,8 +653,8 @@
                     <tr>
                         <td><input class="checkbox" type="checkbox"></td>
                         <td class="paper-name">{paper.Name}</td>
-                        <td class="assembly-type">{assemblyTypeTrans[paper.AssemblyType]}</td>
-                        <td class="category">{categoryTrans[paper.Category]}</td>
+                        <td class="assembly-type">{paperAssemblyTypeTrans[paper.AssemblyType]}</td>
+                        <td class="category">{paperCategoryTrans[paper.Category]}</td>
                         <td class="question-count">{paper.QuestionCount}</td>
                         <td class="total-score">{paper.TotalScore}</td>
                         <td class="suggested-duration">{paper.SuggestedDuration}</td>
@@ -662,10 +672,10 @@
                                 {/if}
                             </div>
                         </td>
-                        <td class="level"><span class={levelTrans[levelTrans[paper.Level]]}>{levelTrans[paper.Level]}</span></td>
+                        <td class="level"><span class={paperLevelTrans[paperLevelTrans[paper.Level]]}>{paperLevelTrans[paper.Level]}</span></td>
                         <td class="access-mode">
                             <div class="access-mode-box">
-                                <Tag type={accessModeTrans[accessModeTrans[paper.AccessMode]]} them="light">{accessModeTrans[paper.AccessMode]}</Tag>
+                                <Tag type={paperAccessModeTrans[paperAccessModeTrans[paper.AccessMode]]} them="light">{paperAccessModeTrans[paper.AccessMode]}</Tag>
                             </div>
                         </td>
                         <td class="update-time">{formatTimestamp(paper.UpdateTime)}</td>

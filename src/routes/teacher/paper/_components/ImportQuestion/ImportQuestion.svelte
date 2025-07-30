@@ -5,8 +5,9 @@
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import { debounce } from "$lib/utils/optimize";
     import { fetchBankQuestionList, fetchQuestionBankList } from "../../_utils/api";
+    import { questionDifficultyTrans, questionTypeTrans, tagColorList } from "../../_utils/data";
+    import { formatTimestamp, getColorIndex } from "../../_utils/func";
 
-    
     let { onclose } = $props();                 // 关闭弹窗
     let dropUpToggleIsOpen = $state(false);     // 上拉题组栏
     let filterIsOpen = $state(false);           // 下拉筛选栏
@@ -52,12 +53,12 @@
     let questionTags = $state("");
     let questionType = $state("");
     let questionDifficulty = $state("");
-    let questionList = $state([]);
     let totalQuestions = $state(0);
+    let questionList = $state([]);
     
     $effect(() => {
         bankID;
-        if(bankID!=="") {
+        if(bankID !== "") {
             isLoading = true;
             fetchBankQuestionList(
                 bankID,
@@ -69,10 +70,12 @@
                 questionDifficulty
             ).then( result => {
                 questionList = result.data;
+                totalQuestions = result.rowCount;
+                console.log(result);
             }).finally(()=>{
                 isLoading = false;
             });
-        }
+        } else { questionList = []; }
     });
 
     /**************** 题目列表 ****************/
@@ -108,6 +111,8 @@
                     </div>
                 </div>
 
+                {bankID}
+
                 <!-- 题库列表 -->
                 <div class="question-bank-list">
                     {#if bankList.length !== 0}
@@ -138,7 +143,7 @@
                     <div class="filter-header" onmouseenter={()=>{filterIsOpen=true}} onmouseleave={()=>{filterIsOpen=false}}>
                         <!-- 筛选菜单 -->
                         {#if filterIsOpen}
-                            <div class="filter-container"  onmouseenter={filterIsOpen=true} onmouseleave={filterIsOpen=false}>
+                            <div class="filter-container"  onmouseenter={()=>{filterIsOpen=true}} onmouseleave={()=>{filterIsOpen=false}}>
                                 <!-- 题型 -->
                                 <div class="type">
                                     <span class="prompt">题型：</span>
@@ -224,15 +229,32 @@
                             </thead>
 
                             <tbody>
-                                <tr>
-                                    <td class="checkbox"><input type="checkbox"></td>
-                                    <td class="question-content">某私有网络内有主机需要访问Internet，为实现此需求，管理员应该在该网络的边缘路由器上做如下哪些配置？</td>
-                                    <td class="question-type">多选题</td>
-                                    <td class="question-level"><span class="easy-level">简单</span></td>
-                                    <td class="question-score">10</td>
-                                    <td class="update-time">2025-06-03 21:37</td>
-                                    <td class="question-tags">-</td>
-                                </tr>
+                                {#if questionList.length !== 0}
+                                    {#each questionList as question}
+                                    <tr>
+                                        <td class="checkbox"><input type="checkbox"></td>
+                                        <td class="question-content">{@html question.Content}</td>
+                                        <td class="question-type">{questionTypeTrans[question.Type]}</td>
+                                        <td class="question-level"><span class={questionDifficultyTrans[questionDifficultyTrans[question.Difficulty]]}>{questionDifficultyTrans[question.Difficulty]}</span></td>
+                                        <td class="question-score">{question.Score}</td>
+                                        <td class="update-time">{formatTimestamp(question.UpdateTime)}</td>
+                                        <td class="question-tags">
+                                            <div class="tag-container">
+                                                {#if question.Tags.length !== 0}
+                                                    {#each question.Tags as tag}
+                                                        <div class="per-tag">
+                                                            <div class="tag-block" style="background-color: {tagColorList[getColorIndex(tag)]};"></div>
+                                                            <span class="tag-name">{tag}</span>
+                                                        </div>
+                                                    {/each}
+                                                {:else}
+                                                    <span>-</span>
+                                                {/if}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {/each}
+                                {/if}
                             </tbody>
                         </table>
                     </div>
@@ -589,6 +611,8 @@
                             flex-grow: 1;
                             max-height: calc(90vh - 320px);
                             overflow: auto;
+                            display: flex;
+                            flex-direction: column;
 
                             table {
                                 border-collapse: collapse;
@@ -641,6 +665,7 @@
                                     padding: 6px 10px;
                                     max-width: calc(85vw - 800px);
                                     min-width: 300px;
+                                    text-align: center;
                                     white-space: nowrap;      /* 不允许文本换行 */
                                     overflow: hidden;         /* 超出容器的文本被隐藏 */
                                     text-overflow: ellipsis;  /* 超出的文本用省略号显示 */
@@ -673,6 +698,32 @@
                                     font-size: 14px;
                                     text-align: center;
                                     min-width: 140px;
+
+                                    /* 试卷标签 */
+                                    .tag-container {
+                                        display: flex;
+                                        gap: 10px;
+                                        justify-content: center;
+                                        overflow-y: auto;
+                                        flex-wrap: wrap;
+                                        max-height: 65px;
+
+                                        .per-tag {
+                                            display: flex;
+                                            align-items: center;
+                                            width: max-content;
+                                            height: max-content;
+                    
+                                            /* 颜色块 */
+                                            .tag-block{
+                                                width: 12px;
+                                                height: 12px;
+                                                border-radius: 2px;
+                                                margin-right: 9px;
+                                                margin-top: 4px;
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

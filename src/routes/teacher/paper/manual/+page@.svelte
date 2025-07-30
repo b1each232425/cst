@@ -7,10 +7,25 @@
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Select from "$lib/components/Select/Select.svelte";
     import Option from "$lib/components/Select/Option.svelte";
+    import { onMount } from "svelte";
+    import { createEmptyPaper, fetchPaper } from "../_utils/api";
+    
+    /*************** 控制开关区 ****************/
+
+    let isLoading = $state(false);
+    let importModalIsOpen = $state(false);
+
+    function closeImportModal() {
+        importModalIsOpen = false;
+    }
+
+    /*************** 控制开关区 ****************/
     
 
     /*************** 试卷信息区 ****************/
 
+    let paperID = $state(0);
+    let paperInfo = $state(null);
     let paperName = $state("新建试卷");
     let category = $state("00");            // 试卷用途 00：考试 02：练习
     let level = $state("00");               // 试卷难度 00：简单 02：中等 04：困难
@@ -21,18 +36,6 @@
     let tags = $state(["测试","简单","常识","English", "牛逼", "WDF"]);
 
     /*************** 试卷信息区 ****************/
-    
-
-
-    /*************** 控制开关区 ****************/
-
-    let importModalIsOpen = $state(false);
-
-    function closeImportModal() {
-        importModalIsOpen = false;
-    }
-
-    /*************** 控制开关区 ****************/
 
 
 
@@ -67,14 +70,46 @@
 
     /**************** 标签处理区 ****************/    
 
+
+
+    /**************** 题组列表区 ****************/
+
+    let paperGroups = $state([]);
+
+
+    /**************** 题组列表区 ****************/
+
+    // 挂载区
+    onMount(() => {
+        isLoading = true;
+        paperID = JSON.parse(localStorage.getItem('currentPaperID'));
+        fetchPaper(paperID)
+            .then(result => {
+                paperInfo = result.data;
+                paperGroups = result.data.GroupsData;
+
+                paperName = paperInfo.Name;
+                category = paperInfo.Category;
+                level = paperInfo.Level;
+                suggestedDuration = paperInfo.SuggestedDuration;
+                tags = paperInfo.Tags;
+        }).finally(() => {
+            isLoading = false;
+
+            console.log(paperInfo);
+            console.log(paperGroups);
+        })
+    })
+
     function test() {
-        console.log(tags);
+        console.log(toCreatePaper);
+        console.log(paperGroups);
     }
 
 </script>
 
-<!-- {toAddTag}
-<button onclick={test}>{tags}</button> -->
+<button onclick={test}>点我</button>
+
 {#if importModalIsOpen}
     <ImportQuestion onclose={closeImportModal}/>
 {/if}
@@ -96,7 +131,6 @@
             <Button plain={true}>一键展开</Button>
             <Button plain={true}>一键收取</Button>
             <Button onclick={()=>{importModalIsOpen=true}}>从题库中导入</Button>
-            <Button plain={true}>保存</Button>
             <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper')}>退出</Button>
         </div>
     </div>
@@ -193,145 +227,109 @@
                 <div class="question-groups-header">
                     <div class="title-box">
                         <div class="title">题组列表</div>
-                        <span>共有 5 个题组</span>
+                        <span>共有 {paperGroups.length} 个题组</span>
                     </div>
                     <Button plain={true}>添加题组</Button>
                 </div>
 
                 <!-- 列表 -->
                 <div class="question-groups-box">
-                    <div class="single-group">
-                        <span>一、单选题（共0题，共0分）</span>
-                        <div class="btn-box">
-                            <!-- 编辑按钮 -->
-                            <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
-                                <svg
-                                    viewBox="0 0 1024 1024"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    width="10"
-                                    height="10"
-                                >
-                                    <path
-                                        d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-                            </button>
-                            <!-- 删除按钮 -->
-                            <button class="delete-group-btn" title="删除">✖</button>
-                        </div>
-                    </div>
-
-                    <div class="single-group">
-                        <span>二、多选题（共0题，共0分）</span>
-                        <div class="btn-box">
-                            <!-- 编辑按钮 -->
-                            <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
-                                <svg
-                                    viewBox="0 0 1024 1024"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    width="10"
-                                    height="10"
-                                >
-                                    <path
-                                        d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-                            </button>
-                            <!-- 删除按钮 -->
-                            <button class="delete-group-btn" title="删除">✖</button>
-                        </div>
-                    </div>
-                    <div class="single-group">
-                        <span>三、判断题（共0题，共0分）</span>
-                        <div class="btn-box">
-                            <!-- 编辑按钮 -->
-                            <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
-                                <svg
-                                    viewBox="0 0 1024 1024"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    width="10"
-                                    height="10"
-                                >
-                                    <path
-                                        d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-                            </button>
-                            <!-- 删除按钮 -->
-                            <button class="delete-group-btn" title="删除">✖</button>
-                        </div>
-                    </div>
-                    <div class="single-group">
-                        <span>四、填空题（共0题，共0分）</span>
-                        <div class="btn-box">
-                            <!-- 编辑按钮 -->
-                            <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
-                                <svg
-                                    viewBox="0 0 1024 1024"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    width="10"
-                                    height="10"
-                                >
-                                    <path
-                                        d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-                            </button>
-                            <!-- 删除按钮 -->
-                            <button class="delete-group-btn" title="删除">✖</button>
-                        </div>
-                    </div>
-                    <div class="single-group" style="border-bottom: transparent;">
-                        <span>五、简答题（共0题，共0分）</span>
-                        <div class="btn-box">
-                            <!-- 编辑按钮 -->
-                            <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
-                                <svg
-                                    viewBox="0 0 1024 1024"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    width="10"
-                                    height="10"
-                                >
-                                    <path
-                                        d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-                            </button>
-                            <!-- 删除按钮 -->
-                            <button class="delete-group-btn" title="删除">✖</button>
-                        </div>
-                    </div>
+                    {#if paperGroups.length !== 0}
+                        {#each paperGroups as group}
+                            <div class="single-group">
+                                <span>{group.name}（共0题，共0分）</span>
+                                <div class="btn-box">
+                                    <!-- 编辑按钮 -->
+                                    <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
+                                        <svg
+                                            viewBox="0 0 1024 1024"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            width="10"
+                                            height="10"
+                                        >
+                                            <path
+                                                d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                                fill="currentColor"
+                                            />
+                                        </svg>
+                                    </button>
+                                    <!-- 删除按钮 -->
+                                    <button class="delete-group-btn" title="删除">✖</button>
+                                </div>
+                            </div>
+                        {/each}
+                    {/if}
                 </div>
             </div>
         </div>
 
         <!-- 内容区 -->
         <div class="content-container">
+            {#if paperGroups}
+                {#each paperGroups as group}
+                    <div class="single-group-content">
+                        <!-- 头部下拉栏 -->
+                        <div class="group-header">
+                            <!-- 左侧区域 -->
+                            <!-- svelte-ignore a11y_click_events_have_key_events -->
+                            <!-- svelte-ignore a11y_no_static_element_interactions -->
+                            <div class="header-left" onclick={()=>{group.isOpen=!group.isOpen}}>
+                                <button class="toggle-btn">∨</button>
+                                <span>{group.name}（共0题，共0分）</span>
+                            </div>
+
+                            <!-- 编辑按钮 -->
+                            <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
+                                <svg
+                                    viewBox="0 0 1024 1024"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    width="14"
+                                    height="14"
+                                >
+                                    <path
+                                        d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                            </button>
+
+                            <!-- 右侧区域 -->
+                            <div class="header-right">
+                                <span>每题分值：</span>
+                                <input value={10} id="temp-average-question-score-input" type="number">
+                                <Button>导入题目</Button>
+                            </div>
+                        </div>
+
+                        <!-- 题目列表 -->
+                        {#if group.isOpen}
+                            <div class="group-question-list">
+                                <!-- 暂无题目 -->
+                                {#if group.questions.length !== 0}
+                                    
+                                {:else}
+                                    <div class="no-questions-container">
+                                        <div class="no-questions-box">
+                                            <span class="title">题组暂无题目</span>
+                                            <span class="prompt">可以通过以下方式快速添加题目：</span>
+                                            <Button onclick={()=>{importModalIsOpen=true}}>导入题目</Button>
+                                        </div>
+                                    </div>
+                                {/if}
+                            </div>
+                        {/if}
+                    </div>
+                {/each}
+            {/if}
+
             <div class="single-group-content">
                 <!-- 头部下拉栏 -->
                 <div class="group-header">
@@ -505,55 +503,6 @@
                                 <span class="prompt">【解析】</span>
                                 <span>略</span>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="single-group-content">
-                <!-- 头部下拉栏 -->
-                <div class="group-header">
-                    <!-- 左侧区域 -->
-                    <div class="header-left">
-                        <button class="toggle-btn">∨</button>
-                        <span>二、多选题（共0题，共0分）</span>
-                    </div>
-
-                    <!-- 编辑按钮 -->
-                    <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
-                        <svg
-                            viewBox="0 0 1024 1024"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            width="14"
-                            height="14"
-                        >
-                            <path
-                                d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                fill="currentColor"
-                            />
-                        </svg>
-                    </button>
-
-                    <!-- 右侧区域 -->
-                    <div class="header-right">
-                        <span>每题分值：</span>
-                        <input value={0} id="temp-per-question-score-input" type="number">
-                        <Button>导入题目</Button>
-                    </div>
-                </div>
-
-                <!-- 题目列表 -->
-                <div class="group-question-list">
-                    <!-- 暂无题目 -->
-                    <div class="no-questions-container">
-                        <div class="no-questions-box">
-                            <span class="title">题组暂无题目</span>
-                            <span class="prompt">可以通过以下方式快速添加题目：</span>
-                            <Button>导入题目</Button>
                         </div>
                     </div>
                 </div>

@@ -16,6 +16,7 @@ export function fetchPaperList(
 
     return fetch(`/api/paper?${params.toString()}`, {
         method: "GET",
+        credentials: "include"
     })
         .then(response => {
             if (!response.ok) {
@@ -48,6 +49,7 @@ export function fetchQuestionBankList(
 
     return fetch(`/api/question-banks?${params.toString()}`, {
         method: "GET",
+        credentials: "include"
     })
         .then(response => {
             if (!response.ok) {
@@ -86,6 +88,7 @@ export function fetchBankQuestionList(
 
     return fetch(`/api/questions?${params.toString()}`, {
         method: "GET",
+        credentials: "include"
     })
         .then(response => {
             if (!response.ok) {
@@ -98,6 +101,61 @@ export function fetchBankQuestionList(
         })
         .catch(error => {
             console.error('获取题库题目列表出错：', error);
+            return null;
+        });
+}
+
+// 自定义组卷
+export function createEmptyPaper() {
+
+    const headers = {
+        "Content-Type": "application/json"
+    };
+
+    // 发起 POST 请求
+    return fetch(`/api/paper/manual`, {
+        method: "POST",
+        headers: headers,
+        credentials: "include"
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`请求失败，状态码：${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            return data;
+        })
+        .catch(error => {
+            console.error('自定义组卷出错：', error);
+            return null;
+        });
+}
+
+// 获取试卷详情
+export function fetchPaper(
+    paperID = 0
+){
+    const params = new URLSearchParams();
+
+    params.append("paper_id", paperID);
+
+    return fetch(`/api/paper/manual?${params.toString()}`, {
+        method: "GET",
+        credentials: "include"
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`请求失败，状态码：${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            return data;
+        })
+        .catch(error => {
+            console.error('获取试卷详情出错：', error);
             return null;
         });
 }

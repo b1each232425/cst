@@ -1,18 +1,18 @@
 // @ts-nocheck
 
 // 组卷方式转换
-export const assemblyTypeTrans = {
+export const paperAssemblyTypeTrans = {
     "00": "自定义组卷",
     "02": "随机组卷",
     "04": "智能刷题",
 };
 // 试卷用途转换
-export const categoryTrans = {
+export const paperCategoryTrans = {
     "00": "考试",
     "02": "练习",
 };
 // 试卷难度转换
-export const levelTrans = {
+export const paperLevelTrans = {
     "00": "简单",
     "02": "中等",
     "04": "困难",
@@ -22,7 +22,7 @@ export const levelTrans = {
     "困难": "hard-level",
 };
 // 共享状态转换
-export const accessModeTrans = {
+export const paperAccessModeTrans = {
     "00": "私有",
     "02": "共享",
     "04": "公开",
@@ -41,3 +41,24 @@ export const tagColorList = [
     "#ffb3c0", "#ffc6d1", "#ffd9e0", "#c6ff8c", "#d9ff99",
     "#e0ffb3", "#e6ffcc"
 ];
+
+// 题目类型转换
+export const questionTypeTrans = {
+    "00": "单选题",
+    "02": "多选题",
+    "04": "判断题",
+    "06": "填空题",
+    "08": "简答题",
+    "10": "编程题"
+};
+
+// 题目难度转换
+export const questionDifficultyTrans = {
+    1 : "简单",
+    2 : "中等",
+    3 : "困难",
+
+    "简单": "easy-level",
+    "中等": "normal-level",
+    "困难": "hard-level"
+};
