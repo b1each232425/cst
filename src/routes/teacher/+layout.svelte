@@ -1,24 +1,18 @@
 <script>
-  import { linear } from 'svelte/easing';
-  import Sidebar from '$lib/components/SideBar/SideBar.svelte';
-  import Crumb from '$lib/components/Crumb/Crumb.svelte';
-  import Brand from '$lib/components/Brand/Brand.svelte';
-  import { sidebarFoldingState } from '$lib/stores/modules/layoutStore';
-  import { fly } from 'svelte/transition';
+  import Sidebar from "$lib/components/SideBar/SideBar.svelte";
+  import Crumb from "$lib/components/Crumb/Crumb.svelte";
+  import Brand from "$lib/components/Brand/Brand.svelte";
+  import { sidebarWidth } from "$lib/stores/modules/layoutStore";
+
   let { children } = $props();
 </script>
 
 <div class="app">
-  {#if !$sidebarFoldingState}
-    <nav
-      class="sidebar-container {!$sidebarFoldingState ? '' : 'hide'}"
-      transition:fly={{ x: -235, duration: 200, easing: linear }}
-    >
-      <Sidebar />
-    </nav>
-  {/if}
+  <nav class="sidebar-container" style="width: {$sidebarWidth};">
+    <Sidebar />
+  </nav>
 
-  <main class={$sidebarFoldingState ? 'shrink' : ''}>
+  <main style="margin-left: {$sidebarWidth};">
     <header>
       <Crumb />
     </header>
@@ -28,7 +22,9 @@
     </div>
 
     <footer>
-      <Brand content={'广州近邻信息有限公司 Copyright © 2024-2034 w2w.me. All Rights Reserved.'} />
+      <Brand
+        content={"广州近邻信息有限公司 Copyright © 2024-2034 w2w.me. All Rights Reserved."}
+      />
     </footer>
   </main>
 </div>
@@ -36,68 +32,47 @@
 <style lang="scss" scoped>
   .app {
     display: flex;
-    position: fixed;
+    position: relative;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 100vw;
     height: 100vh;
+    background-color: var(--bg-primary);
 
     .sidebar-container {
-      top: 0;
-      left: 0;
-      width: 235px;
       height: 100%;
+      background-color: var(--bg-thirdary);
       position: fixed;
-      z-index: 10;
+      transition: width 0.5s ease;
     }
 
     main {
       display: flex;
       flex-direction: column;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      transition: margin-left 0.2s linear;
-      margin-left: 235px;
-    }
+      flex: 1;
+      transition: margin-left 0.5s ease;
 
-    main.shrink {
-      margin-left: 0;
-    }
+      header {
+        display: flex;
+        width: 100%;
+        height: 60px;
+      }
 
-    header {
-      display: flex;
-      flex-direction: row;
-      position: relative;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: max-content;
-      z-index: 1;
-      background-color: #f5f5f5;
-    }
+      .content-container {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+      }
 
-    .content-container {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      width: 100%;
-      height: 100%;
-      background-color: var(--bg-primary);
-      box-sizing: border-box;
-      padding-bottom: 52px;
-    }
-
-    footer {
-      display: flex;
-      position: relative;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 52px;
-      z-index: 2;
-      background-color: #f5f5f5;
-      text-align: center;
+      footer {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 55px;
+        position: sticky;
+      }
     }
   }
 </style>

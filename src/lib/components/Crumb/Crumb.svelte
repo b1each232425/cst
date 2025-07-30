@@ -1,24 +1,34 @@
 <script>
-  import { page } from '$app/state';
-  import { goto } from '$app/navigation';
-  import { tooltip } from '$lib/components/ToolTip/tooltip';
-  import { sidebarFoldingState, crumbStore } from '$lib/stores/modules/layoutStore';
-  import { onMount } from 'svelte';
+  // @ts-nocheck
+  import { page } from "$app/state";
+  import { goto } from "$app/navigation";
+  import {
+    sidebarFoldingState,
+    sidebarWidth,
+    navMap,
+    crumbStore,
+  } from "$lib/stores/modules/layoutStore";
+  import { tooltip } from "$lib/components/ToolTip/tooltip";
 
-  let userName = '张三'; // 静态数据
+  let userName = "张三"; // 静态数据
   let isMenuOpen = $state(false); // 用户菜单是否打开
-  let currentPath = $derived(page.url.pathname); // 当前页面路径
-  let crumbArray = []; // url分割后的字段数组
+  let currentPath = ""; // 当前页面路径
+  let crumbTitles = []; // url分割后的字段数组
   let filterCrumbs = $state([]); // 过滤后的面包屑title和path
 
   // 处理展开按钮点击事件
   const toggleSidebar = () => {
     $sidebarFoldingState = !$sidebarFoldingState;
+    $sidebarWidth = $sidebarFoldingState ? "0px" : "235px";
   };
 
   // 响应式处理路径变化
   $effect(() => {
-    crumbArray = currentPath.split('/').filter((part) => part !== '' && part !== 'teacher');
+    currentPath = page.url.pathname;
+    crumbTitles = currentPath
+      .split("/")
+      .filter((part) => part !== "" && part !== "teacher");
+
     updateCrumbSelection($crumbStore);
   });
 
@@ -26,22 +36,10 @@
   const updateCrumbSelection = (crumbData) => {
     let newFilterCrumbs = [];
 
-    // 遍历 crumbArray 和仓库数据
-    crumbArray.forEach((part) => {
-      // 遍历仓库数据，找到与 part 对应的项
-      const matchedItem = crumbData.find((item) => {
-        // 如果 item.id 是 '[bankid]'，检查路径前缀部分是否匹配
-        if (item.id === '[bankid]') {
-          // 检查路径前缀部分是否相同
-          const basePath = '/teacher/question-bank/theory';
-          const isBasePathMatch = currentPath.startsWith(basePath);
-          const isDynamicPath = currentPath.split('/').length === basePath.split('/').length + 1;
-
-          return isBasePathMatch && (isDynamicPath || currentPath === basePath);
-        }
-        // 处理其他非动态路径的匹配
-        return item.id === part;
-      });
+    // 遍历 crumbTitles 和仓库数据
+    crumbTitles.forEach((part) => {
+      // 遍历仓库数据，找到与 part 对应的 name
+      const matchedItem = findItemByName(part, crumbData);
 
       // 如果找到匹配项且 isFilter 为 false，则加入 newFilterCrumbs
       if (matchedItem && !matchedItem.isFilter) {
@@ -52,19 +50,28 @@
       }
     });
 
+    // 使用 $state 进行更新，避免递归更新
     filterCrumbs = newFilterCrumbs;
   };
 
-  onMount(() => {
-    // 点击外部关闭菜单栏
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.header-container')) {
-        isMenuOpen = false;
+  // 根据 name 查找仓库中的项
+  const findItemByName = (name, crumbData) => {
+    // 遍历仓库中的数据
+    for (const item of crumbData) {
+      if (item.name === name || item.name === "[bankid]") {
+        return item;
       }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  });
+
+      // 如果有子项，递归查找
+      if (item.children) {
+        const childMatch = findItemByName(name, item.children);
+        if (childMatch) {
+          return childMatch;
+        }
+      }
+    }
+    return null;
+  };
 </script>
 
 <div class="header-container">
@@ -78,12 +85,20 @@
   <!-- 面包屑 -->
   <div class="breadcrumbs-container">
     {#each filterCrumbs as crumb, index}
-      <button class="breadcrumb-item" onclick={() => goto(crumb.path)}>
-        {crumb.title}
+      <button
+        class="breadcrumb-item"
+        onclick={() => goto(crumb.path)}
+        use:tooltip={() => ({
+          content: "回到" + crumb.title,
+          theme: "light",
+        })}
+      >
+        {#if index < filterCrumbs.length - 1}
+          {crumb.title} >
+        {:else}
+          {crumb.title}
+        {/if}
       </button>
-      {#if index < filterCrumbs.length - 1}
-        >
-      {/if}
     {/each}
   </div>
 
@@ -91,16 +106,24 @@
   <div class="user-container">
     <span class="welcome-text">{`你好，${userName}`}</span>
 
-    <button class="avatar-btn" onclick={() => (isMenuOpen = !isMenuOpen)}>
+    <button
+      class="avatar-btn"
+      onclick={() => {
+        isMenuOpen = !isMenuOpen;
+      }}
+    >
       <img class="avatar-img" src="/user_icons/defaultAvatar.svg" alt="头像" />
     </button>
 
     <button class="notification-btn">
-      <img class="notification-img" src="/user_icons/notification.svg" alt="通知" />
+      <img
+        class="notification-img"
+        src="/user_icons/notification.svg"
+        alt="通知"
+      />
     </button>
   </div>
 
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="user-menu-container {isMenuOpen ? '' : 'hide'}">
     <button class="user-menu-item"> 个人中心 </button>
     <button class="user-menu-item"> 设置 </button>
@@ -111,10 +134,14 @@
 <style lang="scss" scoped>
   .header-container {
     display: flex;
-    height: 100%;
     flex-direction: row;
+    position: relative;
     top: 0;
     left: 0;
+    width: 100%;
+    height: 52px;
+    max-height: 52px;
+    background-color: var(--bg-secondary);
     box-sizing: border-box;
     padding: 0px 2px 2px 0px;
     justify-content: flex-start;
@@ -150,34 +177,18 @@
       justify-content: flex-start;
       width: max-content;
       height: 100%;
+      background-color: transparent;
 
       .breadcrumb-item {
         all: unset;
-        font-size: 16px;
-        font-weight: 500;
-        color: #007bff;
-        cursor: pointer;
-
-        padding: 5px 10px;
-        border-radius: 4px;
-        transition:
-          color 0.2s,
-          background-color 0.2s;
-        margin-right: 5px;
-      }
-
-      .breadcrumb-item:hover {
-        background-color: #f0f0f0;
       }
 
       .breadcrumb-item:disabled {
-        color: #bbb;
-        border: 1px solid #ddd;
-        cursor: not-allowed;
+        color: grey;
       }
 
       .breadcrumb-item:last-child {
-        color: black;
+        color: blue;
         pointer-events: none;
       }
     }
