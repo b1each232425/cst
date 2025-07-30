@@ -1,7 +1,7 @@
 <script>
 	import { createGradeStore } from './../_stores/grade.svelte.js';
 	import Title from '../_components/shared/Title.svelte';
-	import Pagination from '../../../lib/components/Pagination/Pagination.svelte';
+	import Pagination from '$lib/components/Pagination/Pagination.svelte';
 	import ExamFilterPanel from '../_components/exam/ExamFilterPanel.svelte';
 	import ExamTable from '../_components/exam/ExamTable.svelte';
 
