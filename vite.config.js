@@ -75,7 +75,7 @@ export default defineConfig({
 		proxy:{
 			'/api': "http://localhost:6612",
 			"/api/ws":{
-				target: "ws://localhost:6612",
+				target: "http://localhost:6612",
 				ws: true
 			},
 			'/api/time-sync': {

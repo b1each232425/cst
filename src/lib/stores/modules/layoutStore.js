@@ -30,7 +30,7 @@ export const navStore = writable([
   {
     name: 'practice',
     title: '练习管理',
-    path: '/teacher/practice-management',
+    path: '/teacher/practice',
     icon: '/sidebar/nav_icon/practice.svg',
     isOpen: true,
     isSelect: false,
@@ -102,7 +102,7 @@ export const navStore = writable([
   {
     name: 'student',
     title: '学生管理',
-    path: '/teacher/student',
+    path: '/teacher/student-management',
     icon: '/sidebar/nav_icon/student.svg',
     isOpen: true,
     isSelect: false,
@@ -110,7 +110,7 @@ export const navStore = writable([
   {
     name: 'user',
     title: '用户管理',
-    path: '/teacher/user',
+    path: '/teacher/user-management',
     icon: '/sidebar/nav_icon/user.svg',
     isOpen: true,
     isSelect: false,
@@ -226,7 +226,7 @@ export const crumbStore = writable([
   {
     id: 'student',
     title: '学生管理',
-    path: '/teacher/student',
+    path: '/teacher/student-management',
     isSelect: false,
     isFilter: false,
     parentId: null,
@@ -234,7 +234,7 @@ export const crumbStore = writable([
   {
     id: 'user',
     title: '用户管理',
-    path: '/teacher/user',
+    path: '/teacher/user-management',
     isSelect: false,
     isFilter: false,
     parentId: null,
@@ -243,6 +243,3 @@ export const crumbStore = writable([
 
 // 控制侧边栏折叠状态
 export const sidebarFoldingState = writable(false);
-
-// 控制侧边栏宽度
-export const sidebarWidth = writable('235px');
