@@ -11,7 +11,7 @@
     position: relative;
     left: 0;
     width: 100%;
-    height: 52px;
+    height: 100%;
     padding: 2px 2px 2px 2px;
     margin: 0;
     color: #333333;
@@ -28,7 +28,7 @@
     height: 48%;
     background-color: rgba(255, 255, 255, 0);
     box-sizing: border-box;
-    font-family: "Arial", sans-serif;
+    font-family: 'Arial', sans-serif;
     color: #333333;
     text-align: center;
     margin: 0;
