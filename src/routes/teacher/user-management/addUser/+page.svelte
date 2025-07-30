@@ -159,12 +159,31 @@
     }
 
     onMount(() => {
-        // 生成随机账号 TODO:后续需改为从后端获取
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        account = Array.from(
-            { length: 12 },
-            () => chars[Math.floor(Math.random() * chars.length)],
-        ).join("");
+        // 生成随机账号
+        fetch("/api/user/new-account", {
+        method: "GET",
+        credentials: "include",
+    })
+        .then((res) => {
+            if (!res.ok) {
+                return res.text().then((msg) => {
+                    throw new Error(`获取账号失败: ${res.status} ${res.statusText} - ${msg}`);
+                });
+            }
+            return res.json();
+        })
+        .then((json) => {
+            if (json.status === 0 && typeof json.data === "string") {
+                account = json.data;
+            } else {
+                throw new Error(json.msg || "获取账号失败");
+            }
+        })
+        .catch((err) => {
+            toast.error(`获取账号失败：${err.message}`);
+            console.error(err);
+        });
+
 
         // 固定密码 TODO:后续需改为用户输入
         password = "abc123456";
