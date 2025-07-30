@@ -116,11 +116,11 @@
     
 
     //总时长计算
-    let total_duration = $derived(calculateDuration(paperConfigs));
+    let totalDuration = $derived(calculateDuration(paperConfigs));
     let showPaperSelectionPanel = $state(false);
-    let show_examinee_panel = $state(false);
-    let show_action_toast = $state(false);
-    let action_toast = $state(null);
+    let showExamineePanel = $state(false);
+    let showActionToast = $state(false);
+    let actionToast = $state(null);
     function addNewPaper() {
         let default_paper_config = {
             paperID: 0, //试卷ID
@@ -241,27 +241,27 @@ function updateDuration(index) {
     async function handleSubmit() {
         //必填字段校验
         if (examName === "") {
-            action_toast.show("error", "请输入考试名称");
+            actionToast.show("error", "请输入考试名称");
             return;
         }
 
         if (examName.length > 50) {
-            action_toast.show("error", "考试名称不得超过50个字符");
+            actionToast.show("error", "考试名称不得超过50个字符");
             return;
         }
 
         if (examRules === "") {
-            action_toast.show("error", "请输入考试规则");
+            actionToast.show("error", "请输入考试规则");
             return;
         }
 
         if (examRules.length > 1000) {
-            action_toast.show("error", "考试规则不得超过1000个字符");
+            actionToast.show("error", "考试规则不得超过1000个字符");
             return;
         }
 
         if (paperConfigs.length <= 0) {
-            action_toast.show("error", "请至少添加一个考试场次");
+            actionToast.show("error", "请至少添加一个考试场次");
             return;
         }
 
@@ -271,19 +271,19 @@ function updateDuration(index) {
 
             // 校验试卷ID
             // if (!session.paperID || session.paperID === 0) {
-            //     action_toast.show("error", `第${i + 1}个场次未选择试卷`);
+            //     actionToast.show("error", `第${i + 1}个场次未选择试卷`);
             //     return;
             // }
 
             // 校验开始时间
             if (!session.startTime || session.startTime === "") {
-                action_toast.show("error", `第${i + 1}个场次未设置时间段`);
+                actionToast.show("error", `第${i + 1}个场次未设置时间段`);
                 return;
             }
 
             // 校验结束时间
             if (!session.endTime || session.endTime === "") {
-                action_toast.show("error", `第${i + 1}个场次未设置时间段`);
+                actionToast.show("error", `第${i + 1}个场次未设置时间段`);
                 return;
             }
 
@@ -293,22 +293,22 @@ function updateDuration(index) {
             const now = new Date();
 
             // 检查开始时间是否早于当前时间
-            // if (startTime < now) {
-            //     action_toast.show(
-            //         "error",
-            //         `第${i + 1}个场次的开始时间不能早于当前时间`,
-            //     );
-            //     return;
-            // }
+            if (startTime < now) {
+                actionToast.show(
+                    "error",
+                    `第${i + 1}个场次的开始时间不能早于当前时间`,
+                );
+                return;
+            }
 
             // 检查结束时间是否早于开始时间
-            // if (endTime <= startTime) {
-            //     action_toast.show(
-            //         "error",
-            //         `第${i + 1}个场次的结束时间必须晚于开始时间`,
-            //     );
-            //     return;
-            // }
+            if (endTime <= startTime) {
+                actionToast.show(
+                    "error",
+                    `第${i + 1}个场次的结束时间必须晚于开始时间`,
+                );
+                return;
+            }
 
 
         for (let i = 0; i < paperConfigs.length; i++) {
@@ -344,8 +344,8 @@ function updateDuration(index) {
                 paperConfigs[i].markMode = "00"
             }
 
-            paperConfigs[i].late_entry_time = paperConfigs[i].late_entry_time<=0?1:paperConfigs[i].late_entry_time
-            paperConfigs[i].early_submission_time = paperConfigs[i].early_submission_time<=0?1:paperConfigs[i].early_submission_time
+            paperConfigs[i].lateEntryTime = paperConfigs[i].lateEntryTime<=0?1:paperConfigs[i].lateEntryTime
+            paperConfigs[i].earlySubmissonTime = paperConfigs[i].earlySubmissonTime<=0?1:paperConfigs[i].earlySubmissonTime
         }
 
 
@@ -356,11 +356,11 @@ function updateDuration(index) {
             StartTime: cfg.startTime ? new Date(cfg.startTime).getTime() : 0, // 转成时间戳
             EndTime: cfg.endTime ? new Date(cfg.endTime).getTime() : 0,       // 转成时间戳
             Duration: Number(cfg.duration) || 0,
-            LateEntryTime: Number(cfg.late_entry_time) || 0,
-            EarlySubmissionTime: Number(cfg.early_submission_time) || 0,
+            LateEntryTime: Number(cfg.lateEntryTime) || 0,
+            EarlySubmissionTime: Number(cfg.earlySubmissonTime) || 0,
             QuestionShuffledMode: cfg.questionShuffledMode,
             MarkMethod: cfg.markMethod,
-            NameVisibilityIn: !!cfg.name_visibility,
+            NameVisibilityIn: !!cfg.nameVisibility,
             ReviewerIds: (cfg.markConfig && cfg.markConfig.teacher_markConfigs)
                 ? cfg.markConfig.teacher_markConfigs.map(t => t.id)
                 : [],
@@ -448,7 +448,7 @@ function updateDuration(index) {
         })
         .catch( (error) => {
                 console.error("创建考试失败:", error);
-                //action_toast.show("error", "考试创建失败！");
+                //actionToast.show("error", "考试创建失败！");
             });
     
         // fetch("/api/teacher/exam/createExam", {
@@ -459,22 +459,22 @@ function updateDuration(index) {
         //     .then((response) => response.json())
         //     .then((result) => {
         //         if (result.Status === 0) {
-        //             action_toast.show("success", "考试创建成功！");
+        //             actionToast.show("success", "考试创建成功！");
         //             goto("/teacher/examManagement");
         //         }else if (result.Status === -21) {
-        //             action_toast.show("error", "部分监考员无法监考该时段的考试，已自动取消选择");
+        //             actionToast.show("error", "部分监考员无法监考该时段的考试，已自动取消选择");
         //             result.Data.invigilatorNotCanInvigilate.forEach(element => {
         //                 invigilators.splice(invigilators.findIndex(item => item.id === element), 1);
         //             });
         //         }
         //         else {
         //             console.error("创建考试失败:", result.Msg);
-        //             action_toast.show("error", "创建考试失败，请稍后重试");
+        //             actionToast.show("error", "创建考试失败，请稍后重试");
         //         }
         //     })
         //     .catch((error) => {
         //         console.error("创建考试失败:", error);
-        //         action_toast.show("error", "创建考试失败，请稍后重试");
+        //         actionToast.show("error", "创建考试失败，请稍后重试");
         //     });
     }
 }
@@ -597,7 +597,7 @@ function updateDuration(index) {
          <div class="total-duration-container">
             <RequiredLabel text="总考试时长" />
             <div class="total-duration-input-container">
-                <span class="total-duration-text">{total_duration}</span>
+                <span class="total-duration-text">{totalDuration}</span>
                 <span class="total-duration-text">&nbsp;&nbsp;&nbsp;分钟</span>
             </div>
         </div>
@@ -609,7 +609,7 @@ function updateDuration(index) {
                         type="primary"
                         size="small"
                         onclick={() => {
-                            show_examinee_panel = true;
+                            showExamineePanel = true;
                             }}>
                             考生选择
                     </Button>
@@ -643,14 +643,14 @@ function updateDuration(index) {
     
 </div>
 
-{#snippet paperConfig(/** @type {number} */ paper_config_index)}
+{#snippet paperConfig(/** @type {number} */ paperConfigIndex)}
     <div class="paper-config-container">
         <div class="paper-config-head">
-            <span class="paper-num">试卷{paper_config_index + 1}</span>
+            <span class="paper-num">试卷{paperConfigIndex + 1}</span>
             <button
-                class={paper_config_index != 0 ? "delete-paper-button" : "hide"}
+                class={paperConfigIndex != 0 ? "delete-paper-button" : "hide"}
                 onclick={() => {
-                    paperConfigs.splice(paper_config_index, 1);
+                    paperConfigs.splice(paperConfigIndex, 1);
                     // 清空考场选择
                      examRooms = [];
                      invigilators = [];
@@ -659,40 +659,40 @@ function updateDuration(index) {
             <button
                 class="arrow"
                 onclick={() => {
-                    paperConfigs[paper_config_index].isHide =
-                        !paperConfigs[paper_config_index].isHide;
+                    paperConfigs[paperConfigIndex].isHide =
+                        !paperConfigs[paperConfigIndex].isHide;
                 }}
                 ><img src="/dropdown/arrow_black.png" alt="展开/收起" /></button
             >
         </div>
 
-            <div class="paper-config-body {paperConfigs[paper_config_index].isHide ? 'hide' : 'show'}">
+            <div class="paper-config-body {paperConfigs[paperConfigIndex].isHide ? 'hide' : 'show'}">
                 <div class="paper-choose-container config-row">
                     <RequiredLabel text="试卷" />
                     <div class="config-row-content">
                         <div class="paper-button-container normal-button-container">
-                            {#if paperConfigs[paper_config_index].paperID === 0}
+                            {#if paperConfigs[paperConfigIndex].paperID === 0}
                                     <Button
                                     size="small"
                                     type="primary"
                                     onclick={() => {
                                         paperConfigs[
-                                            paper_config_index
+                                            paperConfigIndex
                                         ].showPaperSelectionPanel = true;
                                     }}>试卷选择</Button>
 
                                 {:else}
                                 <div class="paper-item-container">
-                                    {#if !paperConfigs[paper_config_index].paperType || !paperConfigs[paper_config_index].paperName}
+                                    {#if !paperConfigs[paperConfigIndex].paperType || !paperConfigs[paperConfigIndex].paperName}
                                         <span class="paper-type-text">未知试卷</span
                                         >
                                     {:else}
                                         <span class="paper-type-text">
-                                            {ASSEMBLY_TYPE_MAP[ paperConfigs[paper_config_index].paperType]}：
+                                            {ASSEMBLY_TYPE_MAP[ paperConfigs[paperConfigIndex].paperType]}：
                                         </span>
 
                                         <span class="paper-name-text"
-                                            >{paperConfigs[paper_config_index]
+                                            >{paperConfigs[paperConfigIndex]
                                                 .paperName}</span
                                         >
                                     {/if}
@@ -700,7 +700,7 @@ function updateDuration(index) {
                                         class="edit-button"
                                         onclick={() => {
                                             paperConfigs[
-                                                paper_config_index
+                                                paperConfigIndex
                                             ].showPaperSelectionPanel = true;
                                         }}
                                     >
@@ -718,12 +718,12 @@ function updateDuration(index) {
                             <label class="label">
                                 <input
                                     type="radio"
-                                    bind:group={paperConfigs[paper_config_index].periodMode}
+                                    bind:group={paperConfigs[paperConfigIndex].periodMode}
                                     value={"00"}
                                     class="choice-radio-input"
                                     onchange={() => {
-                                        if (paperConfigs[paper_config_index].periodMode === "00") {
-                                            resetTime(paper_config_index);
+                                        if (paperConfigs[paperConfigIndex].periodMode === "00") {
+                                            resetTime(paperConfigIndex);
                                         }
                                     }}
                                 />
@@ -745,24 +745,24 @@ function updateDuration(index) {
                             <!-- <DateTimePicker
                                 start_date={new Date()}
                                 end_date={new Date()}
-                                onSelectDate={onChooseTime(paper_config_index)}
-                                min_date={paper_config_index === 0
+                                onSelectDate={onChooseTime(paperConfigIndex)}
+                                min_date={paperConfigIndex === 0
                                     ? new Date()
                                     : new Date(
                                         paperConfigs[
-                                            paper_config_index - 1
+                                            paperConfigIndex - 1
                                         ].endTime,
                                     )}
-                                        on:startDateSelected={onChooseTime(paper_config_index)}
-                                on:endDateSelected={onChooseTime(paper_config_index)}
+                                        on:startDateSelected={onChooseTime(paperConfigIndex)}
+                                on:endDateSelected={onChooseTime(paperConfigIndex)}
                             ></DateTimePicker> -->
                             <DatePicker
                                 isTimeSelection={true}
 
                                 inputWidth={'250px'} 
                                 singleDateSelection={false}
-                                on:startDateSelected={onChooseStartTime(paper_config_index)}
-                                on:endDateSelected={onChooseEndTime(paper_config_index)}
+                                on:startDateSelected={onChooseStartTime(paperConfigIndex)}
+                                on:endDateSelected={onChooseEndTime(paperConfigIndex)}
                             ></DatePicker>
                         </div>
                     </div>
@@ -773,7 +773,7 @@ function updateDuration(index) {
                             <input
                                 class="duration-input"
                                 bind:value={
-                                    paperConfigs[paper_config_index].duration
+                                    paperConfigs[paperConfigIndex].duration
                                 }
                                 type="number"
                                 min="1"
@@ -789,37 +789,37 @@ function updateDuration(index) {
                                 <span style="font-size: 14px;">考试开始后</span>
                                 <input
                                     class="duration-input"
-                                    bind:value={paperConfigs[paper_config_index].late_entry_time}
+                                    bind:value={paperConfigs[paperConfigIndex].lateEntryTime}
                                     type="number"
                                     min="1"
-                                    max="{paperConfigs[paper_config_index].duration}"
+                                    max="{paperConfigs[paperConfigIndex].duration}"
                                     style="width:60px;"
                                     oninput={(event)=>{
-                                        const max = paperConfigs[paper_config_index].duration;
+                                        const max = paperConfigs[paperConfigIndex].duration;
                                         const val = Number(event.target.value);
                                         if (val > max) {
                                             event.target.value = max;
-                                            paperConfigs[paper_config_index].late_entry_time = max;
+                                            paperConfigs[paperConfigIndex].lateEntryTime = max;
                                         }else if(val < 1){
                                             event.target.value = 1;
-                                            paperConfigs[paper_config_index].late_entry_time = 1;
+                                            paperConfigs[paperConfigIndex].lateEntryTime = 1;
                                         }
                                     }}
                                 />
                             <span style="font-size: 14px;">分钟内可进入考场，可提前</span>
                             <input
                                 class="duration-input"
-                                bind:value={paperConfigs[paper_config_index].early_submission_time}
+                                bind:value={paperConfigs[paperConfigIndex].earlySubmissonTime}
                                 type="number"
                                 min="0"
-                                max="{paperConfigs[paper_config_index].duration}"
+                                max="{paperConfigs[paperConfigIndex].duration}"
                                 style="width:60px;"
                                 oninput={(event)=>{
-                                    const max = paperConfigs[paper_config_index].duration;
+                                    const max = paperConfigs[paperConfigIndex].duration;
                                     const val = Number(event.target.value);
                                     if (val > max) {
                                         event.target.value = max;
-                                        paperConfigs[paper_config_index].early_submission_time = max;
+                                        paperConfigs[paperConfigIndex].earlySubmissonTime = max;
                                     }
                                 }}
                             />
@@ -835,7 +835,7 @@ function updateDuration(index) {
                                     type="checkbox"
                                     class="choice-radio-input"
                                     bind:checked={
-                                        paperConfigs[paper_config_index]
+                                        paperConfigs[paperConfigIndex]
                                             .isOptionShuffled
                                     }
                                 />
@@ -846,7 +846,7 @@ function updateDuration(index) {
                                     type="checkbox"
                                     class="choice-radio-input"
                                     bind:checked={
-                                        paperConfigs[paper_config_index]
+                                        paperConfigs[paperConfigIndex]
                                             .isQuestionShuffled
                                     }
                                 />
@@ -862,7 +862,7 @@ function updateDuration(index) {
                                 <input
                                     type="radio"
                                     bind:group={
-                                        paperConfigs[paper_config_index].markMethod
+                                        paperConfigs[paperConfigIndex].markMethod
                                     }
                                     value={"00"}
                                     class="choice-radio-input"
@@ -874,7 +874,7 @@ function updateDuration(index) {
                                 <input
                                     type="radio"
                                     bind:group={
-                                        paperConfigs[paper_config_index].markMethod
+                                        paperConfigs[paperConfigIndex].markMethod
                                     }
                                     value={"02"}
                                     class="choice-radio-input"
@@ -885,7 +885,7 @@ function updateDuration(index) {
                     </div>
 
                     <div
-                        class="show-name-container {paperConfigs[paper_config_index]
+                        class="show-name-container {paperConfigs[paperConfigIndex]
                             .markMethod !== '00'
                             ? 'hide'
                             : ' config-row'}"
@@ -896,8 +896,8 @@ function updateDuration(index) {
                                 <input
                                     type="radio"
                                     bind:group={
-                                        paperConfigs[paper_config_index]
-                                            .name_visibility
+                                        paperConfigs[paperConfigIndex]
+                                            .nameVisibility
                                     }
                                     value={true}
                                     class="choice-radio-input"
@@ -908,8 +908,8 @@ function updateDuration(index) {
                                 <input
                                     type="radio"
                                     bind:group={
-                                        paperConfigs[paper_config_index]
-                                            .name_visibility
+                                        paperConfigs[paperConfigIndex]
+                                            .nameVisibility
                                     }
                                     value={false}
                                     class="choice-radio-input"
@@ -921,7 +921,7 @@ function updateDuration(index) {
         
                     <div
                         class="grading-config-container {paperConfigs[
-                            paper_config_index
+                            paperConfigIndex
                         ].markMethod !== '00'
                             ? 'hide'
                             : ' config-row'}"
@@ -933,7 +933,7 @@ function updateDuration(index) {
                                     class="add-graders-button"
                                     onclick={() => {
                                         paperConfigs[
-                                            paper_config_index
+                                            paperConfigIndex
                                         ].showGraderSelectionPanel = true;
                                     }}
                                     ><img
@@ -946,7 +946,7 @@ function updateDuration(index) {
                                 <Button
                                     size="small"
                                     onClick={() => {
-                                        paperConfigs[paper_config_index].showGraderSelectionPanel = true;
+                                        paperConfigs[paperConfigIndex].showGraderSelectionPanel = true;
                                     }}
                                 >
                                     <img
@@ -961,7 +961,7 @@ function updateDuration(index) {
 
                     <div
                         class="grading-mode-container {paperConfigs[
-                            paper_config_index
+                            paperConfigIndex
                         ].markMethod !== '00'
                             ? 'hide'
                             : ' config-row'}"
@@ -983,7 +983,7 @@ function updateDuration(index) {
                                         <input
                                             type="radio"
                                             bind:group={
-                                                paperConfigs[paper_config_index].markMode
+                                                paperConfigs[paperConfigIndex].markMode
                                             }
                                             value={"10"}
                                             class="choice-radio-input"
@@ -995,13 +995,13 @@ function updateDuration(index) {
                 </div>
 
                 <PaperSelectionPanel
-                    selected_id={paperConfigs[paper_config_index].paperID}
-                    selected_name={paperConfigs[paper_config_index].paperName}
-                    selected_type={paperConfigs[paper_config_index].paperType}
-                    show_panel={paperConfigs[paper_config_index]
+                    selected_id={paperConfigs[paperConfigIndex].paperID}
+                    selected_name={paperConfigs[paperConfigIndex].paperName}
+                    selected_type={paperConfigs[paperConfigIndex].paperType}
+                    show_panel={paperConfigs[paperConfigIndex]
                         .showPaperSelectionPanel}
                     onCancel={() => {
-                        paperConfigs[paper_config_index].showPaperSelectionPanel =
+                        paperConfigs[paperConfigIndex].showPaperSelectionPanel =
                             false;
                     }}
                     onConfirm={(
@@ -1009,23 +1009,23 @@ function updateDuration(index) {
                         /** @type {string} */ selected_name,
                         /** @type {string} */ selected_type,
                     ) => {
-                        paperConfigs[paper_config_index].showPaperSelectionPanel =
+                        paperConfigs[paperConfigIndex].showPaperSelectionPanel =
                             false;
-                        paperConfigs[paper_config_index].paperID = selected_id;
-                        paperConfigs[paper_config_index].paperName = selected_name;
-                        paperConfigs[paper_config_index].paperType = selected_type;
+                        paperConfigs[paperConfigIndex].paperID = selected_id;
+                        paperConfigs[paperConfigIndex].paperName = selected_name;
+                        paperConfigs[paperConfigIndex].paperType = selected_type;
                     }}
         ></PaperSelectionPanel>
 
         <ExamineeSelectionPanel
-            show_panel={show_examinee_panel}
+            show_panel={showExamineePanel}
             onConfirm={(selected) => {
                 //确认后将选择的考生取出
-                show_examinee_panel = false;
+                showExamineePanel = false;
                 examExaminee = selected;
             }}
             onCancel={(/** @type {boolean} */ load_new_file) => {
-                show_examinee_panel = false;
+                showExamineePanel = false;
                 if (load_new_file) {
                     examExaminee = [];
                 }
