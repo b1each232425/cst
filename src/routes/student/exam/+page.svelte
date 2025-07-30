@@ -139,7 +139,75 @@
   //     ],
   //   },
   //   {
-  //     id: 13,
+  //     id: 15,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         id: 201,
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 16,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         id: 201,
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 17,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         id: 201,
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 55,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 18,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         id: 201,
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 19,
   //     name: 'H34',
   //     exam_sessions: [
   //       {
@@ -195,7 +263,7 @@
   function getExamList(q) {
     fetch(`/api/exam/list?q=${q}&role=1`)
       .then((res) => {
-        if (!res.ok) throw new Error('网络错误');
+        if (!res.ok) throw new Error('请求失败');
         return res.json();
       })
       .then((res) => {
@@ -270,7 +338,7 @@
       <div class="label">考试名称：</div>
       <InputBox placeholder="请输入信息" bind:value={examName} type="text" showLabel={false} />
     </div>
-    <div class="datePicker">
+    <div class="datePicker" data-testid="datePicker">
       <div class="label">考试时间：</div>
       <DatePicker
         inputWidth={'21rem'}

@@ -20,8 +20,9 @@
 	];
 
 	const submittedStatusOptions = [
-		{ value: true, label: '已提交' },
-		{ value: false, label: '未提交' }
+		{ value: '', label: '全部' },
+		{ value: 1, label: '已提交' },
+		{ value: 0, label: '未提交' }
 	];
 
 	/**
@@ -32,9 +33,24 @@
 		setFilters({ [key]: value });
 	}
 
-	function handleBatchExport() { console.log('Batch Export'); }
-	function handleBatchSubmit() { console.log('Batch Submit'); }
-	function handleShowLogs() { console.log('Show Logs'); }
+	function handleBatchExport() {
+		console.log('Batch Export');
+	}
+	function handleBatchSubmit() {
+		const selectedIds = Object.keys(store.state.selected)
+			.filter((id) => store.state.selected[Number(id)])
+			.map(Number);
+
+		if (selectedIds.length > 0) {
+			store.submitGrades(selectedIds);
+		} else {
+			// Optional: show a message to the user
+			console.log('No exams selected for submission.');
+		}
+	}
+	function handleShowLogs() {
+		console.log('Show Logs');
+	}
 </script>
 
 <div class="top-action-bar">
@@ -45,7 +61,7 @@
 				<DropdownGray
 					options={examTypeOptions}
 					selected={state.filters.type}
-					selectOptionFunc={(/** @type {string | ''} */ value) => handleFilterChange('type', value)}
+					onchange={(e) => handleFilterChange('type', e.detail.value)}
 					placeholder="全部"
 				/>
 			</div>
@@ -54,7 +70,7 @@
 			<SearchInput
 				purpose_text="搜索考试"
 				place_holder="请输入考试名称"
-				onSearchFunc={(/** @type {string} */ value) => handleFilterChange('name', value)}
+				oninput={(e) => handleFilterChange('name', e.detail.value)}
 			/>
 		</div>
 		<div class="filter-group">
@@ -63,7 +79,7 @@
 				<DropdownGray
 					options={submittedStatusOptions}
 					selected={state.filters.submitted}
-					selectOptionFunc={(/** @type {boolean | ''} */ value) => handleFilterChange('submitted', value)}
+					onchange={(e) => handleFilterChange('submitted', e.detail.value)}
 					placeholder="全部"
 				/>
 			</div>

@@ -64,8 +64,8 @@ export function createGradeStore() {
 			type: '',
 			/** @type {boolean | ''} */
 			submitted: '',
-			teacherID: undefined,
-			examID: undefined
+			teacherID: -1, // -1 代表所有教师
+			examID: ''
 		},
 		pagination: {
 			page: 1,
@@ -147,14 +147,11 @@ export function createGradeStore() {
 		},
 		/** @param {number[]} examIds */
 		submitGrades(examIds) {
-			// Here you would call the API
-			console.log('Submitting grades for exams:', examIds);
-			// Example of calling API:
-			// submitExamGrades(examIds)
-			// 	.then(() => {
-			// 		actions.fetchExams(); // Refresh data
-			// 	})
-			// 	.catch(err => console.error(err));
+			submitExamGrades(examIds)
+				.then(() => {
+					actions.fetchExams(); // Refresh data after submission
+				})
+				.catch((err) => console.error('提交成绩失败:', err));
 		},
 		/** @param {number[]} examIds */
 		exportGrades(examIds) {

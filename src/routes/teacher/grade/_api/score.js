@@ -1,11 +1,11 @@
 /**
  * 获取考试成绩列表
  * @param {object} params - 查询参数
- * @param {string} params.name - 考试名称
- * @param {string} params.type - 考试类型
- * @param {boolean | ""} params.submitted - 提交状态
- * @param {number} params.page - 页码
- * @param {number} params.pageSize - 每页数量
+ * @param {string} [params.name] - 考试名称
+ * @param {string} [params.type] - 考试类型
+ * @param {1 | 0 | ''} [params.submitted] - 提交状态 (1: 已提交, 0: 未提交, '': 全部)
+ * @param {number} [params.page] - 页码
+ * @param {number} [params.pageSize] - 每页数量
  * @param {number} [params.teacherID] - 教师ID
  * @param {number} [params.examID] - 考试ID
  * @returns {Promise<any>}
@@ -33,12 +33,13 @@ export function getExams(params) {
 	if (teacherID) queryParams.append('teacherID', teacherID.toString());
 	if (examID) queryParams.append('examID', examID.toString());
 
-	// submitted 可能为 "" (全部), true (已提交), false (未提交)
-	if (submitted !== '') {
-		queryParams.append('submitted', submitted ? '1' : '0');
+	// 仅当 submitted 的值为 1 或 0 时，才将其作为查询参数
+	if (submitted === 1 || submitted === 0) {
+		queryParams.append('submitted', submitted.toString());
 	}
 
 	const url = `/api/grade/list?${queryParams.toString()}`;
+
 
 	return fetch(url, {
 		method: 'GET',

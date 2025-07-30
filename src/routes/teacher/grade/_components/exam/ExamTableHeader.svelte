@@ -1,18 +1,10 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
-
-	let { selected = false } = $props();
-
-	const dispatch = createEventDispatcher();
-
-	function handleSelectAll() {
-		dispatch('selectAll');
-	}
+	let { selected = false, onclick } = $props();
 </script>
 
 <tr class="exam-list-head">
 	<th class="exam-select">
-		<button class="square-container {selected ? 'checked' : ''}" onclick={handleSelectAll}>
+		<button class="square-container {selected ? 'checked' : ''}" {onclick}>
 			{#if selected}
 				<div class="check-square"></div>
 			{/if}
@@ -33,13 +25,7 @@
 
 <style lang="scss">
 	.exam-list-head {
-		display: flex;
-		width: 100%;
 		height: 64px;
-		justify-content: space-between;
-		align-items: center;
-		box-sizing: border-box;
-		padding: 0 15px;
 		background-color: transparent;
 
 		th {
@@ -47,11 +33,8 @@
 			font-weight: normal;
 			color: rgb(0, 0, 0, 0.3);
 			padding: 0 4px;
-			box-sizing: border-box;
-			/* --- 统一布局为 Flex --- */
-			display: flex;
-			justify-content: center;
-			align-items: center;
+			vertical-align: middle;
+			text-align: center;
 		}
 	}
 
@@ -60,7 +43,7 @@
 	}
 	.exam-name {
 		width: 16%;
-		justify-content: flex-start; /* 左对齐 */
+		text-align: left;
 	}
 	.exam-time {
 		width: 16%;
@@ -81,7 +64,7 @@
 	}
 	.operation {
 		width: 14%;
-		justify-content: flex-end; /* 右对齐 */
+		text-align: right;
 	}
 
 	.square-container {
