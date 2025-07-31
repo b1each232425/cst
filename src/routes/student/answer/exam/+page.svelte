@@ -123,7 +123,6 @@
     if (!load_success) {
       MessageBox({
       title: '出错了，请回到考试列表刷新重新进入',
-      content: $page.data.error_msg,
       show_cancel_button: false,
       onConfirm: () => {
          window.location.href = "/student/exam";
@@ -293,7 +292,7 @@
       .then((resp_data) => {
         if (resp_data.status === 0) {
           toast.success('考试结束，提交成功！', 2000);
-          goto(`/student/examPaperDetail?examId=${page.data.exam_id}`);
+          goto(`/student/answer/exam-detail?exam-id=${exam_id}&exam-session-id=${exam_session_id}`); //跳转到考试详情页
         } else {
           toast.error('提交失败！', 2000);
         }
@@ -311,7 +310,7 @@
     if (window.history.length > 1) {
       history.back();
     } else {
-      goto("/teacher/paperManagement"); 
+      goto("/teacher/exam"); 
     }
   }
   function nextQuestion() { // 切换到下一题
