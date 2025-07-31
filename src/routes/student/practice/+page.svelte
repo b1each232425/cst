@@ -316,7 +316,7 @@
   }
 
   // 处理练习种类的切换
-  function handlePracticeTypeChange() {
+  function handlePracticeTypeChange(key) {
     currentPracticeTypeTab = key;
     // handleSearch(); TODO 是否需要
   }
@@ -365,7 +365,7 @@
 
   <div class="practice-show">
     <div class="practice-category">
-      {#each typeMap as [key, val] (key)}
+      {#each typeMap as [key, val],index (index)}
         <button onclick={() => handlePracticeTypeChange(key)} class:selected={currentPracticeTypeTab === key}
           >{val}{@render tip()}</button
         >
