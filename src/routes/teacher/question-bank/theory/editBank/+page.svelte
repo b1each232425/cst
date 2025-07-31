@@ -313,6 +313,24 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       tags: question_tag_fileter,
     };
   });
+
+   /**
+     * @description 已有标签变更
+     * @param {string} old_content
+     * @param {string} new_content
+     * @param {number} index
+     */
+    const onSaveBankTagChange = (old_content, new_content, index) => {
+        const value = new_content.trim();
+
+        if (value === "") return;
+
+        let new_tags = JSON.parse(JSON.stringify(bank_tags));
+        new_tags[index] = value;
+        bank_tags = [...new_tags];
+
+        onQuestionBankDataChange();
+    };
   /**
    * @description 列表点击编辑
    * @param {TheoryQuestion} question

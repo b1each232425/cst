@@ -1,27 +1,27 @@
 <script>
-  import { onMount } from 'svelte';
-  import { page } from "$app/state";
-  import CountdownTimer from './_component/CountdownTimer/CountdownTimer.svelte';
-  import BulmaSwitch from './_component/SwitchBtn/BulmaSwitchBlue.svelte';
-  import Watermark from './_component/WaterMark.svelte';
-  import ActionToast from './_component/ActionToast.svelte';
-  import ExamInfoModal from './_component/ExamInfoModal/ExamInfoModal.svelte';
-  import Dialog from './_component/Dialog.svelte';
-  import Question from './_component/QuestionAnswer/question.svelte';
   /*
    * @Author: PENG HAIFENG 1614818457@qq.com
    * @Date: 2025-07-23 10:55:37
    * @LastEditors: PENG HAIFENG 1614818457@qq.com
-   * @LastEditTime: 2025-07-23 10:28:54
+   * @LastEditTime: 2025-07-30 10:28:54
    * @FilePath: \src\routes\student\answer\+page.svelte
    * @Description: 考试练习作答布局
    */
+  
+  
+  import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+  import { page } from "$app/state";
+  import CountdownTimer from '../_component/CountdownTimer/CountdownTimer.svelte';
+  import BulmaSwitch from '../_component/SwitchBtn/BulmaSwitchBlue.svelte';
+  import Watermark from '../_component/WaterMark.svelte';
+  import Toast from '$lib/components/Toast/Toast.svelte';
+  import ExamInfoModal from '../_component/ExamInfoModal/ExamInfoModal.svelte';
+  import Question from '../_component/QuestionAnswer/question.svelte';
+  import { toast } from '$lib/components/Toast/Toast';
+  import Button from '$lib/components/Button/Button.svelte';
+  import MessageBox from '$lib/components/MessageBox/MessageBox.js';
 
-   /**
-   * @typedef {Object} Option
-   * @property {string} label - 选项标签，如 A、B、C
-   * @property {string} value - 富文本格式的选项内容
-   */
 
   /**
    * @typedef {Object} Question
@@ -33,144 +33,249 @@
    * @property {number} [answer_num] - 可选的答案数量，通常用于简答题
    * @property {number} [index]
    * @property {answer} [answer]
-   */
+   *
 
-  /**
+   *
    * @typedef {Object} QuestionGroup
    * @property {string} name - 分组名称
    * @property {string} type - 题目类型
    * @property {GroupQuestion[]} questions - 本组的题目列表
-   */
+   *
 
-  /**
+   *
    * @typedef {Object} GroupQuestion
    * @property {number} index - 题目在本组的索引
    * @property {Question} question - 本组的题目
-   */
+   *
 
-  /**
+   *
    * @typedef {Object} answer
    * @property {String} type - 当前题目的类型
    * @property {number} question_id - 当前题目的id
    * @property {String[]} answer - 当前题目所在的分组的索引
-   */
+   *
 
-   // 默认信息
-  const DEFAULT_NAME = "";
-  const DEFAULT_ID = "";
-
-  //查看当前是否为预览模式
-  let ifPreview = $state(page.data.preview);
-
-  //学生名字
-  let student_name = DEFAULT_NAME;
-
-  // 学生的学号
-  let student_id = DEFAULT_ID;
-
-  // 头像url
-  let avatar_url = "/user_icons/defaultAvatar.svg";
-
-  // 是否为全卷模式
-  let is_full_examMode = $state(true);
-
-  //考试界面的开始时间
-  let start_time = $state(page.data.start_time);
-
-  //考试界面的结束时间
-  let end_time = $state(page.data.end_time);
-
-  //是否显示考试信息弹窗
-  let showExamInfo = $state(false);
-
-  //考试试卷的标题
-  let title = $state(page.data.title);
-
-  //考试规则说明
-  let exam_notes = $state(page.data.rules);
-
-  //考试时长
-  let exam_duration = $state(page.data.exam_duration);
-
-  //是否显示左边信息栏
-  let showLeftInfo = $state(true);
-
-  //提示展示状态
-  let actionToastIsShow = $state(false);
-
-  //提交确认对话框
-  let submit_dialog_open = $state(false);
-
-
-//绑定action toast的组件
-  /**
-   * @type {any}
-   */
-  let actionToast = $state(null);
-
-  /**
-   * @type {QuestionGroup[]}
-   */
-  const questionGroups = $state([]);
-
-  const query_url = ` /api/student/exam/answer?examinee_id=${encodeURIComponent(page.data.examinee_id)}`;
-
-  /**
+   *
    * 考试题目
    * @type {Question[]}
+   *
+
+   *
+   * 标记/取消标记题目
+   * @param {number}index
+   * @param {MouseEvent} event
+   *
+
+   *
+   * 跳转到指定题目
+   * @param {number}index
+   *
+  
+   *
+   * 保存答案到后端
+   * @param {Object} stu_answer
+   * @param {Question} question
+   * @param {boolean}if_show_toast
+   * @param {String[]}attachment_paths
+   *
+
+   *
+   * @type {QuestionGroup[]}
    */
-  let examQuestions = $state([]);
 
-  // 当前显示的问题
-  let currentQuestion = $state(examQuestions[0]);
+   // 学生信息初始变量
+  const DEFAULT_NAME = "";
+  const DEFAULT_ID = "";
+  let student_name = DEFAULT_NAME; //学生名字
+  let student_id = DEFAULT_ID; // 学生的学号
+  let avatar_url = "/user_icons/defaultAvatar.svg"; // 头像url
+  let examinee_id = $state("");  //考生id
+  let exam_session_id = $state("");  //考试场次id
+  let exam_id = $state(""); //当前考试id
+  
+  
+  //考试类信息变量
+  let load_success = $state(true);
+  let ifPreview = $state();//查看当前是否为预览模式
+  let is_full_examMode = $state(true); // 是否为全卷模式
+  let start_time = $state();//考试界面的开始时间
+  let end_time = $state(); //考试界面的结束时间
+  let showExamInfo = $state(false); //是否显示考试信息弹窗
+  let title = $state();//考试试卷的标题
+  let exam_notes = $state(); //考试规则说明
+  let exam_duration = $state(); //考试时长
+  let showLeftInfo = $state(true); //是否显示左边信息栏
+  let exam_status = $state(0); //考试状态
+  let files = $state([]); //考试附件
+  let examQuestionsMap = $state(new Map()); //考试题目map数组 key题目id value包含题目的题组
+  let questionGroupsMap = $state(new Map());  //考试题组map数组 key题目id value包含题组的信息
+  let query_url = $state(""); //用于查询考试题目的url 确保作答信息一致
+  let questionGroups = $state([]); //考试题组 用于渲染页面
+  let examQuestions = $state([]); //考试题目 用于渲染页面
+  let currentQuestion = $state(examQuestions[0]); // 当前显示的问题
+  let currentQuestionIndex = $state(0); // 当前显示的问题索引
+  let markedQuestions = $state(Array(examQuestions.length).fill(false)); // 添加标记题目的数组
+  let answeredCount = $state(0); // 已答题数量
+  let total_seconds = $state(0); // 考试总时长（秒）
 
-  // 当前显示的问题索引
-  let currentQuestionIndex = $state(0);
+  //实时检测出是否加载失败
+  $effect(() => {
+    if (!load_success) {
+      MessageBox({
+      title: '出错了，请回到考试列表刷新重新进入',
+      content: $page.data.error_msg,
+      show_cancel_button: false,
+      onConfirm: () => {
+         window.location.href = "/student/exam";
+      },
+    });
+    }
+  });
 
-  // 添加标记题目的数组
-  let markedQuestions = $state(Array(examQuestions.length).fill(false));
-
-  // 已答题数量
-  let answeredCount = $state(0);
-
-  //  当前考生id
-  let examinee_id = $state("");
-
-  //当前考试id
-  let exam_id = $state("");
-
-  //错误面板
-  let show_error_panel = $state(true);
-
-   //打开考试信息弹窗
-  function openModal() {
+  //左上角考试信息类
+  function openModal() { //打开考试信息弹窗
     showExamInfo = true;
   }
-
-  // 关闭考试信息弹窗
-  function closeModal() {
+  function closeModal() { // 关闭考试信息弹窗
     showExamInfo = false;
   }
 
-  //考试提交按钮逻辑
-  function submitExam() {
+  //渲染题目信息类
+  function getQuestionGroups() { // 获取题目分组信息，用于生成答题卡
+    const groups = [];
+
+    const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序出一个数组
+
+    sortedGroups.forEach(groupInfo => {
+      const groupId = groupInfo.ID; // 题组 id
+      const groupQuestions = examQuestionsMap.get(String(groupId)) || []; // 该分组下的题目数组
+
+      groups.push({ // 组装 QuestionGroup 对象
+        name: groupInfo.Name,
+        type: groupQuestions[0].type,
+        questions: groupQuestions.map((question, index) => ({
+          question,
+          index
+        }))
+      });
+    });
+    return groups;
+  }
+  function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组
+    const result = [];
+    const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序数组
+
+    sortedGroups.forEach(groupInfo => {
+      const groupId = groupInfo.ID;
+      const groupQuestions = examQuestionsMap.get(String(groupId)) || [];
+
+      groupQuestions.forEach(q => result.push(q)); // 将每个题目添加到结果数组中
+    });
+    return result;
+  }
+  $effect(() => { // 获取当前问题
+    currentQuestion = examQuestions[currentQuestionIndex];
+  });
+  $effect(() => {  //实时更新作答题目数量
+    answeredCount = examQuestions.reduce((acc, question, index) => {
+      if (
+        question?.Answer !== null &&
+        question.Answer !== undefined &&
+        Array.isArray(question.Answer) &&
+        !question.Answer.every((str) => str === "") &&
+        question.Answer.length !== 0
+      ) {
+        acc++;
+      }
+      return acc;
+    }, 0);
+  });
+
+
+  //考试提交类逻辑  
+  function saveAnswer( //实时保存答案到后端
+    stu_answer,
+    question,
+    if_show_toast,
+    attachment_paths
+  ) {
+
     if (ifPreview) {
+      toast.warning('当前为预览模式！', 2000);
+      return;
+    }
+
+    const data = { // 构建数据部分
+      examinee_id: Number(examinee_id) || 0, // 从上下文获取考试ID
+      question_id: question.ID, //题目id
+      type: "00", //00说明是考试
+      answer: stu_answer,  //该题答案
+      attachment_paths: attachment_paths, //附件
+    };
+    const requestBody = {
+      data: data,
+    };
+
+    fetch("/api/respondent", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(requestBody),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          console.error("保存答案时出错:", response.status);
+          throw new Error("保存答案时出错:" + response.status);
+        }
+        return response.json();
+      })
+      .then((resp) => {
+        if (resp.status === 0) {
+          if (if_show_toast) {
+            toast.success('答案保存成功', 2000);
+          }
+        } else {
+          console.error("答案保存失败:", resp.msg);
+          toast.error('答案保存失败！', 2000);
+        }
+      })
+      .catch((error) => {
+        console.error("保存答案时出错:", error);
+        toast.error('保存答案时出错！', 2000);
+      });
+  }
+  function submitMessageBox() { //考试提交提示框
+    MessageBox({
+      title: '请问是否要提交考试？',
+      content: '提交后将无法重新进入考试',
+      onConfirm: () => {
+                submitExam()
+      },
+    });
+  }
+  function submitExam() { // 主动提交考试
+    if (ifPreview) {
+     toast.warning('预览模式，不需要提交试卷', 2000);
       console.log("预览模式，不需要提交试卷");
       return;
     }
     submitExamAfterCountdown();
   }
-
-  //倒计时结束后的提交逻辑
-  function submitExamAfterCountdown() {
-    const body_data = {
-      exam_id: Number(page.data.exam_id),
-      examinee_id: Number(page.data.examinee_id),
+  function submitExamAfterCountdown() { //倒计时结束后的提交逻辑
+    const body_data = {  //请求体
+      type: "00", 
+      exam_id: Number(exam_id),
+      exam_session_id: Number(exam_session_id),
+      examinee_id: Number(examinee_id),
     };
     const requestBody = {
       data: body_data,
     };
-    fetch("/api/student/exam/submit", {
+    console.log(examinee_id, exam_session_id);
+
+    fetch("/api/respondent/submit", {  //发起请求
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -187,129 +292,39 @@
       })
       .then((resp_data) => {
         if (resp_data.status === 0) {
-          console.log(`提交成功：${resp_data.msg} `);
-          actionToast.show("success", "考试结束，提交成功");
-          setTimeout(() => {
-            goto(`/student/examPaperDetail?examId=${page.data.exam_id}`);
-          }, 2000);
+          toast.success('考试结束，提交成功！', 2000);
+          goto(`/student/examPaperDetail?examId=${page.data.exam_id}`);
         } else {
-          checkExamStatus(resp_data.status, actionToast, function () {});
-          console.error(`提交失败：${resp_data.msg} `);
+          toast.error('提交失败！', 2000);
         }
       })
       .catch((e) => {
         console.log(`提交失败：${e} `);
-        actionToast.show("error", `提交失败：${e} `);
+        toast.error('提交失败', 2000);
       });
   }
 
 
-  //预览返回按钮
-  function goBack() {
-    // 推荐用 history.back() 或 goto 上一个页面
+
+  //按钮控制事件类
+  function goBack() { //预览返回按钮
     if (window.history.length > 1) {
-      console.log("history.back()");
       history.back();
     } else {
-      goto("/teacher/paperManagement"); // 或你想返回的页面
+      goto("/teacher/paperManagement"); 
     }
   }
-
-  /**
-   * 标记/取消标记题目
-   * @param {number}index
-   * @param {MouseEvent} event
-   */
-
-
-   function toggleMarkQuestion(index, event) {
-    // 阻止事件冒泡，避免触发题目切换
-    event.stopPropagation();
-
-    markedQuestions[index] = !markedQuestions[index];
-  }
-
-  // 切换到下一题
-  function nextQuestion() {
-    if (currentQuestionIndex < examQuestions.length - 1) {
+  function nextQuestion() { // 切换到下一题
+    if (currentQuestionIndex < examQuestions.length - 1) { 
       currentQuestionIndex++;
     }
   }
-
-  // 切换到上一题
-  function prevQuestion() {
+  function prevQuestion() { // 切换到上一题
     if (currentQuestionIndex > 0) {
       currentQuestionIndex--;
     }
   }
-
-  // 获取当前问题
-  $effect(() => {
-    currentQuestion = examQuestions[currentQuestionIndex];
-  });
-
-  //实时更新作答题目数量
-  $effect(() => {
-    answeredCount = examQuestions.reduce((acc, question, index) => {
-      if (
-        question?.answer !== null &&
-        question.answer !== undefined &&
-        Array.isArray(question.answer) &&
-        !question.answer.every((str) => str === "") &&
-        question.answer.length !== 0
-      ) {
-        acc++;
-      }
-      return acc;
-    }, 0);
-  });
-
-
-   // 获取题目分组信息，用于生成答题卡
-  function getQuestionGroups() {
-    /**
-     * @type {QuestionGroup[]}
-     */
-    const groups = [];
-
-    /**
-     * @type {QuestionGroup | null}
-     */
-    let currentGroup = null;
-
-    examQuestions.forEach((question, index) => {
-      // 如果是新的题型分组
-      if (!currentGroup || currentGroup.name !== question.group_name) {
-        // 保存上一个分组
-        if (currentGroup) {
-          groups.push(currentGroup);
-        }
-
-        // 创建新分组
-        currentGroup = {
-          name: question.group_name,
-          type: question.type,
-          questions: [{ question: question, index: index }],
-        };
-      } else {
-        // 添加到当前分组
-        currentGroup.questions.push({ question: question, index: index });
-      }
-    });
-
-    // 添加最后一个分组
-    if (currentGroup) {
-      groups.push(currentGroup);
-    }
-
-    return groups;
-  }
-
-  /**
-   * 跳转到指定题目
-   * @param {number}index
-   */
-  function goToQuestion(index) {
+  function goToQuestion(index) { //跳转到指定题目
     currentQuestionIndex = index;
 
     // 如果是全卷模式，滚动到对应题目位置
@@ -336,192 +351,139 @@
     }
   }
 
-  /**
-   * 保存答案到后端
-   * @param {Object} stu_answer
-   * @param {Question} question
-   * @param {boolean}if_show_toast
-   * @param {String[]}attachment_paths
-   */
-  function saveAnswer(
-    stu_answer,
-    question,
-    if_show_toast,
-    attachment_paths
-  ) {
-    if (ifPreview) {
-      console.log("当前为预览模式");
-      return;
-    }
 
-    console.log("Saving answer:", stu_answer);
-    console.log("examineeId:", examinee_id);
-    console.log("attachment_paths:", attachment_paths);
-    // 构建数据部分
-    const data = {
-      examinee_id: Number(examinee_id) || 0, // 从上下文获取考试ID
-      question_id: question.id,
-      type: "00", //说明是考试
-      answer: stu_answer,
-      marker: 2,
-      attachment_paths: attachment_paths,
-      // 可以根据需要添加其他字段
-    };
-    //构建请求体
-    const requestBody = {
-      data: data,
-    };
 
-    fetch("/api/student/exam/answer", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(requestBody),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          console.error("保存答案时出错:", response.status);
-          throw new Error("保存答案时出错:" + response.status);
-        }
-        return response.json();
-      })
-      .then((resp) => {
-        if (resp.status === 0) {
-          console.log(resp.data);
-          console.log("答案保存成功");
-          if (if_show_toast) {
-            actionToast.show("success", "保存答案成功");
-          }
-        } else {
-          console.error("答案保存失败:", resp.msg);
-          actionToast.show("error", "保存答案失败");
-        }
-      })
-      .catch((error) => {
-        console.error("保存答案时出错:", error);
-        // 可以在这里添加错误处理逻辑
-      });
+  // 阻止事件冒泡，避免触发题目切换
+   function toggleMarkQuestion(index, event) {
+    event.stopPropagation();
+    markedQuestions[index] = !markedQuestions[index];
   }
 
-  onMount(async () => {
-    console.log("page.data:", page.data.files);
-    examinee_id = page.data.examinee_id;
-    exam_id = page.data.exam_id;
+  //格式化时间
+   function formatTimestamp(timestamp) {
+    if (!timestamp) return "--";
+    const date = new Date(Number(timestamp));
+    const yyyy = date.getFullYear();
+    const MM = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const hh = String(date.getHours()).padStart(2, "0");
+    const mm = String(date.getMinutes()).padStart(2, "0");
+    const ss = String(date.getSeconds()).padStart(2, "0");
+    return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`;
+  }
 
-    //初始化题目
+
+  //加载函数
+  onMount(async () => {
+    // 获取url中的考试参数
+    exam_id = page.url.searchParams.get("exam-id");
+    exam_session_id = page.url.searchParams.get("exam-session-id");
+
     //如果examinee_id为空则从local store中取题目
-    if (!examinee_id) {
+    if (!exam_id || !exam_session_id) {
+      ifPreview = true;//如果没有exam_id和exam_session_id则为预览模式
       const stored = localStorage.getItem("examQuestions");
       if (stored) {
         try {
           let data = JSON.parse(stored);
-          console.log("examQuestions", data);
+          examQuestionsMap =  data.Questions;
+          questionGroupsMap =  data.QuestionGroupInfo;
+          //加载题目
           examQuestions.length = 0;
-          examQuestions.push(...data);
+          examQuestions.push(...flattenExamQuestions());
           questionGroups.length = 0;
           questionGroups.push(...getQuestionGroups());
+
+          //如果是预览的话直接从localStorage获取title
+          const exam_title = localStorage.getItem("examTitle");
+          if (!title) {
+            if (!exam_title) {
+              title = "预览考试";
+            }
+            else  {
+              title = exam_title;
+            }
+          }
         } catch (e) {
-          console.error("Failed to parse examQuestions from localStorage", e);
-          alert("Failed to parse examQuestions from localStorage");
+          console.error("获取题目时出错！！", e);
+          toast.error('获取题目时出错！', 2000);
           return;
         }
       }
-    } else {
-      //检测是否加载成功
-      if (!page.data.load_success) {
-        window.location.href = "/student/exam";
+    }  else {
+      // 初始化考试
+      fetch('/api/respondent/init', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          data: {
+            type: "00",
+            exam_id: Number(exam_id),
+            exam_session_id: Number(exam_session_id)
+          }
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.text().then(text => {
+            console.error('接口响应失败:', text);
+            throw new Error(text);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.status !== 0) {
+          console.error(`接口错误: ${data.msg}`);
+          throw new Error(data.msg);
+        }
+
+        // 找到与 exam_session_id 匹配的 session
+        const matchedSession = data.data.session.find(session => 
+          session.ID.toString() === exam_session_id.toString()
+        );
+        if (!matchedSession) {
+          throw new Error('未找到匹配的考试场次信息');
+        }
+
+        // 计算剩余考试秒数
+        const currentTime = new Date().getTime();
+        const remainingSeconds = Math.floor((data.data.ExamineeInfo.ActualEndTime - currentTime) / 1000);
+
+        // 赋值到变量
+        //题目
+        examQuestionsMap = new Map(Object.entries(data.data.Questions));
+        questionGroupsMap = new Map(Object.entries(data.data.QuestionGroupInfo));
+        examinee_id = data.data.ExamineeInfo.ID;
+        //时间类
+        total_seconds = remainingSeconds > 0 ? remainingSeconds : 0;
+        start_time = data.data.ExamineeInfo.StartTime;
+        end_time = data.data.ExamineeInfo.ActualEndTime;
+        exam_duration = matchedSession.Duration * 60;
+        //考试信息类
+        title = data.data.exam_info.Name;
+        exam_notes = data.data.exam_info.Rules;
+        exam_status = data.data.exam_info.Status;
+        files = data.data.exam_info.Files;
+        load_success = true;
+        ifPreview = false;
+        query_url = `/api/respondent?examinee_id=${encodeURIComponent(examinee_id || '')}`;
+
+        //加载题目
+        examQuestions.length = 0;
+        examQuestions.push(...flattenExamQuestions());
+        questionGroups.length = 0;
+        questionGroups.push(...getQuestionGroups());
+
+      })
+      .catch(error => {
+        console.error('请求失败:', error);
+        load_success = false;
         return;
-      }
-      let exam_status = page.data.exam_status;
-      //检查考试的状态
-      checkExamStatus(exam_status, actionToast, function () {
-        window.location.href = "/student/exam";
       });
-      examQuestions.length = 0;
-      examQuestions.push(...page.data.exam_paper.questions);
-      // //获取进度
-      //创建进度查看分组
-      questionGroups.length = 0;
-      questionGroups.push(...getQuestionGroups());
-      questionGroups.forEach((group) => {
-        group.questions.forEach((question) => {
-          // console.log(question.question.answer);
-        });
-      });
-    }
-
-    //查询路径中有考试id，则获取考试信息
-    if (page.data.examinee_id) {
-      console.log("start_time", formatTimestamp(start_time));
-    } else {
-      const questions = [
-        {
-          id: 7,
-          type: "00",
-          group_name: "三、判断题题（9分）",
-          content: `<p>According to the attachment ,select the correct answer.</p><p> <a target="_blank" rel="noopener noreferrer nofollow" href="" download="attachment.docx">attachment.docx</a> </p>`,
-          options: [
-            { label: "A", value: "<p>Software is computer programs.</p>" },
-            {
-              label: "B",
-              value: `<p>Software is a collection of computer data and instructions 
-      organized in a specific order.</p>`,
-            },
-          ],
-        },
-        {
-          id: 7,
-          type: "04",
-          group_name: "三、判断题题（9分）",
-          content: `<p>According to the attachment ,select the correct answer.</p><p> <a target="_blank" rel="noopener noreferrer nofollow" href="" download="attachment.docx">attachment.docx</a> </p>`,
-          options: [
-            { label: "A", value: "对" },
-            {
-              label: "B",
-              value: `错`,
-            },
-          ],
-        },
-        {
-          id: 8,
-          type: "08",
-          group_name: "四. Web Services And SOAP（20分）",
-          content: "<p>请简述 WSDL 的作用及其与 UDDI 的关系。（10分）</p>",
-          answer_num: 1,
-        },
-        {
-          id: 8,
-          type: "08",
-          group_name: "四. Web Services And SOAP（20分）",
-          content: "<p>请简述 WSDL 的作用及其与 UDDI 的关系。（10分）</p>",
-          answer_num: 2,
-        },
-        {
-          id: 8,
-          type: "08",
-          group_name: "四. Web Services And SOAP（20分）",
-          content: "<p>请简述 WSDL 的作用及其与 UDDI 的关系。（10分）</p>",
-          answer_num: 2,
-        },
-        {
-          id: 8,
-          type: "08",
-          group_name: "四. Web Services And SOAP（20分）",
-          content: "<p>请简述 WSDL 的作用及其与 UDDI 的关系。（10分）</p>",
-          answer_num: 2,
-        },
-      ];
-
-      localStorage.setItem("examQuestions", JSON.stringify(questions));
-      //如果是预览的话直接从localStorage获取title
-      const exam_title = localStorage.getItem("examTitle");
-      if (!exam_title) {
-        title = "预览考试";
-      } else {
-        title = exam_title;
-      }
     }
   });
 </script>
@@ -533,65 +495,60 @@
   />
 </svelte:head>
 
-{#if !page.data.load_success}
-  <!-- 提交确认对话框 -->
-  <Dialog
-    bind:isOpen={show_error_panel}
-    title="出错了，请回到考试列表刷新重新进入"
-    content={page.data.error_msg}
-    onConfirm={() => {
-      show_error_panel = false;
-      window.location.href = "/student/exam";
-    }}
-    confirmTextBackgroundColor="#266fe8"
-  />
-{:else}
+
+{#if load_success}
+  //考试布局
   <!-- 重置样式并创建考试页面布局 -->
 
   <div class="exam-container" class:full-mode={is_full_examMode}>
     <div class="exam-header">
       {#if ifPreview}
-        <button class="back-btn" onclick={goBack}>
-          <span class="icon"> ← </span>
-          <span> 返回 </span>
-        </button>
+        <Button type="info" plain size="middle">
+            <span class="icon">←</span>
+            <span>返回</span>
+        </Button>
       {/if}
       <div class="exam-title">{title}</div>
       <div class="exam-header-right">
-        <CountdownTimer
-          {ifPreview}
-          init_end_time={page.data.end_time}
-          init_total_seconds={page.data.total_seconds}
-          examinee_id={page.data.examinee_id}
-          onComplete={async () => {
-            console.log("考试结束");
-            await submitExamAfterCountdown();
-          }}
-        ></CountdownTimer>
-        <button
-          class="submit-btn"
-          onclick={() => {
-            submit_dialog_open = true;
-          }}>提交</button
-        >
+        {#if examinee_id && end_time && total_seconds}
+          <CountdownTimer
+            {ifPreview}
+            init_end_time={end_time}
+            init_total_seconds={total_seconds}
+            examinee_id={examinee_id}
+            onComplete={async () => {
+              await submitExamAfterCountdown();
+            }}
+          />
+        {/if}
+        
+      
+        
+        <Button type="primary" round size="large"
+            onclick={submitMessageBox}>
+            <span>    提交    </span>
+        </Button>
       </div>
     </div>
-    <!-- 预览提醒 -->
+    <!-- 预览提醒用visibility控制 -->
     {#if ifPreview}
       <div class="preview-tip">
-        <img src="/student_answer_exam/preview-tip.svg" alt="提示" />
-        当前为预览模式，不允许作答
-      </div>
-    {/if}
+       <img src="/student_answer_exam/preview-tip.svg" alt="提示" />
+       当前为预览模式，不允许作答
+     </div>
+{/if}
 
     <div class="exam-content">
       <div class="left-info" class:hide={!showLeftInfo}>
         <!-- 考试信息区域 -->
         <div class="box exam-info">
           <div class="exam-time-info">
-            考试信息: <button class="button" onclick={openModal}
-              >查看详情</button
-            >
+            考试信息: 
+
+            <Button type="primary" plain size="small" onclick={openModal}>
+              <span>查看详情</span>
+            </Button>
+            
           </div>
 
           <div class="exam-time-info">
@@ -619,11 +576,13 @@
               alt="切换箭头"
             />
           </button>
+
+          
         </div>
         <div class="line"></div>
       </div>
       <div class="answer-area" class:stretch={!showLeftInfo}>
-        {#if (page.data.exam_status === 0 && page.data.exam_status !== null && page.data.exam_status !== undefined) || ifPreview}
+        {#if ( exam_status !== null && exam_status !== undefined) || ifPreview}
           <div class="layout">
             <div class="question-container">
               <Watermark />
@@ -638,7 +597,7 @@
                   {/if}
                   <div class="question-mark-container" id={`question-${index}`}>
                     <Question
-                      {question}
+                      bind:question={examQuestions[index]}
                       {index}
                       {ifPreview}
                       {saveAnswer}
@@ -659,6 +618,7 @@
                         />
                         {markedQuestions[index] ? "取消标记" : "标记此题"}
                       </button>
+
                     </div>
                   </div>
                 {/each}
@@ -670,7 +630,7 @@
 
                 <div class="question-mark-container">
                   <Question
-                    question={currentQuestion}
+                    bind:question={currentQuestion}
                     index={currentQuestionIndex}
                     {ifPreview}
                     {saveAnswer}
@@ -705,6 +665,7 @@
                     onclick={prevQuestion}
                     disabled={currentQuestionIndex === 0}>上一题</button
                   >
+
                   <button
                     class="nav-btn"
                     onclick={nextQuestion}
@@ -712,6 +673,8 @@
                     >下一题</button
                   >
                 </div>
+
+                
               {/if}
             </div>
             <!-- 右侧导航栏 -->
@@ -774,13 +737,7 @@
           </div>
         {/if}
       </div>
-      <ActionToast
-        bind:isShow={actionToastIsShow}
-        type="success"
-        message="删除试卷成功"
-        duration={2000}
-        bind:this={actionToast}
-      />
+      
       <ExamInfoModal
         {start_time}
         {end_time}
@@ -789,22 +746,18 @@
         {closeModal}
         {title}
         show={showExamInfo}
-        files={page.data.files}
+        files={files}
       />
     </div>
   </div>
-  <!-- 提交确认对话框 -->
-  <Dialog
-    bind:isOpen={submit_dialog_open}
-    title="请问是否要提交考试？"
-    content="提交后将无法重新进入考试"
-    onConfirm={submitExam}
-    confirmTextBackgroundColor="#266fe8"
-  />
+
+
 {/if}
 
 
+
 <style lang="scss" scoped>
+
   /* 重置样式，确保不继承根布局样式 */
   :global(*) {
     margin: 0;
@@ -854,6 +807,7 @@
 
   /* 考试头部样式 */
   .exam-header {
+    position: relative; // 新增
     height: 60px;
     background-color: white;
     display: flex;
@@ -887,7 +841,7 @@
     width: fit-content;
     right: 7px;
     z-index: 1001; /* 确保在其他元素之上 */
-    min-width: 200px; /* 设置最小宽度 */
+    min-width: 170px; /* 设置最小宽度 */
   }
 
   .submit-btn {
@@ -1374,5 +1328,6 @@
     justify-content: center;
     align-items: self-start;
   }
-</style>
 
+
+</style>

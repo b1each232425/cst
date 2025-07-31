@@ -22,6 +22,7 @@
 
   // 获取学生题目的答题情况
   async function getStudentAnswer() {
+
     if (ifPreview) {
       console.log("当前为预览模式");
       return;
@@ -31,7 +32,7 @@
     }
     const inputs = contentWrapper.querySelectorAll("input.blank-item-input");
     try {
-      const res = await fetch(`${query_url}&question_id=${question.id}`, {
+      const res = await fetch(`${query_url}&question_id=${question.ID}`, {
         method: "GET",
         credentials: "include",
       });
@@ -49,9 +50,9 @@
         // -10 表示没有作答记录，补空答案
         if (data.status === -10) {
           let answer = {
-            question_id: Number(question.id),
+            question_id: Number(question.ID),
             answer: Array(inputs.length).fill(""),
-            type: question.type,
+            type: question.Type,
           };
           await saveAnswer(answer, question, false, []);
         }
@@ -74,9 +75,9 @@
       } else {
         // 后端返回的是空数组，也需要存入空答案
         let answer = {
-          question_id: Number(question.id),
+          question_id: Number(question.ID),
           answer: Array(inputs.length).fill(""),
-          type: question.type,
+          type: question.Type,
         };
         await saveAnswer(answer, question, false, []);
       }
@@ -118,8 +119,8 @@
   }
 
   onMount(async () => {
-    if (question.type !== "06") return;
-    question.content = replaceSpansWithLines(question.content);
+    if (question.Type !== "06") return;
+    question.Content = replaceSpansWithLines(question.Content);
 
     // 在DOM渲染后，为所有input添加事件监听器
     setTimeout(async () => {
@@ -159,13 +160,13 @@
             const combinedAnswer = Array.from(allInputs).map((el) =>
               el.value.trim()
             );
-            question.answer = combinedAnswer;
+            question.Answer = combinedAnswer;
             // console.log("combinedAnswer:", combinedAnswer);
 
             const answer = {
-              question_id: Number(question.id),
+              question_id: Number(question.ID),
               answer: combinedAnswer,
-              type: question.type,
+              type: question.Type,
             };
 
             await saveAnswer(answer, question, false, []);
@@ -179,10 +180,11 @@
   });
 
   $effect(() => {
-    if (question.type === "06") {
+    if (question.Type === "06" ) {
       getStudentAnswer(); // 渲染完后填充答案
     }
   });
+
 </script>
 
 <div class="question">
@@ -191,12 +193,12 @@
       <h2>{index + 1}.</h2>
     {/if}
     <div class="piptap-content" style="width: 80%;" bind:this={contentWrapper}>
-      {@html question.content}
+      {@html question.Content}
     </div>
   </div>
 
-  {#if question.type !== "06"}
-    <Answer {question} {ifPreview} {saveAnswer} {query_url} {editor_height} />
+  {#if question.Type !== "06"}
+    <Answer bind:question={question} {ifPreview} {saveAnswer} {query_url} {editor_height} />
   {/if}
 </div>
 
