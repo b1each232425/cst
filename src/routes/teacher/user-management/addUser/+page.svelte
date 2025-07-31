@@ -38,13 +38,26 @@
   // 用户角色列表
   const userRoles = $state([
     { id: 1, name: '普通管理员' },
-    { id: 2, name: '教师' },
-    { id: 3, name: '批阅员' },
-    { id: 4, name: '监考员' },
-    { id: 5, name: '核分员' },
-    { id: 6, name: '考点负责人' },
-    { id: 7, name: '学生' },
+    { id: 2, name: '教务员' },
+    { id: 3, name: '教师' },
+    { id: 4, name: '批阅员' },
+    { id: 5, name: '考点负责人' },
+    { id: 6, name: '核分员' },
+    { id: 7, name: '监考员' },
+    { id: 8, name: '学生' },
   ]);
+
+  //对应后端字符
+  const roleIdToDomain = {
+    1: 'cst.school^admin', // 普通管理员
+    2: 'cst.school.academicAffair^admin', // 教务员
+    3: 'cst.school^teacher', // 教师
+    4: 'cst.school^examGrader', // 批阅员
+    5: 'cst.school.examSite^admin', // 考点负责人
+    6: 'cst.school^scoreChecker', // 核分员
+    7: 'cst.school^examSupervisor', // 监考员
+    8: 'cst.school^student', // 学生
+  };
 
   // 管理员权限列表
   const userPermissions = $state([
@@ -123,6 +136,7 @@
 
     const payload = {
       Account: account.trim(),
+      Domains: selectedRoles.map(id => roleIdToDomain[id]),
       OfficialName: name.trim() || null,
       Gender: gender.trim() || null,
       MobilePhone: phone.trim() || null,

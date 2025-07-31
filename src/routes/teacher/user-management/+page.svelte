@@ -25,7 +25,7 @@
 
   // 选择筛选状态
   let filterCreateTime = $state(null);
-  let filterRole = $state([]);
+  let filterRole = $state('');
   let filterGender = $state('all'); // 性别值(发送后端)
   let filterStatus = $state('all'); // 状态值(发送后端)
 
@@ -50,16 +50,22 @@
     '80': '系统上帝',
   };
 
-  // 角色下拉选项(用于筛选 TODO:后端暂不返回 roles)
+  const roleLabelMap = {
+    'cst.school^superAdmin': '超级管理员',
+    'cst.school^admin': '普通管理员',
+    'cst.school.academicAffair^admin': '教务员',
+    'cst.school^teacher': '教师',
+    'cst.school^examGrader': '批阅员',
+    'cst.school.examSite^admin': '考点负责人',
+    'cst.school^scoreChecker': '核分员',
+    'cst.school^examSupervisor': '监考员',
+    'cst.school^student': '学生',
+  };
+
+  // 角色下拉选项(用于筛选)
   const roleOptions = [
-    { value: '超级管理员', label: '超级管理员' },
-    { value: '普通管理员', label: '普通管理员' },
-    { value: '批阅员', label: '批阅员' },
-    { value: '教师', label: '教师' },
-    { value: '监考员', label: '监考员' },
-    { value: '核分员', label: '核分员' },
-    { value: '考点负责人', label: '考点负责人' },
-    { value: '学生', label: '学生' },
+    { value: '', label: '全部' },
+    ...Object.entries(roleLabelMap).map(([value, label]) => ({ value, label })),
   ];
 
   // 状态码到CSS类名的映射(用于CSS样式不同值显示不同颜色)
@@ -95,8 +101,9 @@
     if (filterCreateTime) {
       params.createTime = filterCreateTime.getTime(); // 直接获取时间戳
     }
-    1;
-    //TODO:角色的筛选，后端暂不返回 roles
+    if (filterRole) {
+      params.domain = filterRole;
+    }
 
     fetch(`/api/user?${new URLSearchParams(params)}`, {
       method: 'GET',
@@ -111,13 +118,13 @@
           users = res.data.map((user) => ({
             id: user.ID,
             account: user.Account,
+            roles: user.Domains.map((r) => roleLabelMap[r] || r),
             name: user.OfficialName || '-',
             gender: user.Gender || '-',
             phone: user.MobilePhone || '-',
             email: user.Email || '-',
             type: TypeMap[user.Type] || user.Type || '-',
             category: user.Category || '-',
-            roles: user.Roles || ['-'], // TODO:后端暂不返回 roles
             createTime: user.CreateTime ? new Date(user.CreateTime).toLocaleDateString() : '',
             Status: user.Status,
             selected: false,
@@ -126,6 +133,7 @@
           totalItems = res.rowCount || res.data.length;
           totalPages = Math.ceil(totalItems / pageSize);
           selectAll = false;
+          console.log('filterRole:', filterRole);
         } else {
           users = [];
           totalItems = 0;
@@ -343,14 +351,13 @@
           </div>
         </div>
 
-        <!-- 角色筛选TODO:后端暂不返回 roles -->
+        <!-- 角色筛选 -->
         <div class="input-item">
           <span class="item-label">角色</span>
           <div class="input-container">
             <Select
               bind:value={filterRole}
               placeholder="请选择角色"
-              multiple
               onChangeValue={(value) => {
                 filterRole = value;
                 currentPage = 1;
@@ -530,7 +537,6 @@
     min-height: 100vh;
     overflow-y: auto;
     min-width: 1000px;
-    height: 100vh;
   }
 
   .table-action-container {
@@ -546,6 +552,9 @@
       gap: 20px;
       align-items: flex-start;
 
+      @media (min-width: 1200px) {
+        gap: 10px;
+      }
       @media (max-width: 1200px) {
         gap: 15px;
       }
@@ -564,9 +573,13 @@
       min-width: 600px;
 
       @media (min-resolution: 1.25dppx) {
-        grid-template-columns: repeat(3, minmax(220px, 1fr));
+        grid-template-columns: repeat(3, minmax(200px, 1fr));
         grid-template-rows: repeat(2, 1fr);
         gap: 13px;
+      }
+
+      @media (max-width: 768px) {
+        gap: 10px;
       }
 
       .input-item {
@@ -581,7 +594,7 @@
         .item-label {
           font-size: $normal-font-size;
           color: $gray-font-color;
-          min-width: 70px;
+          min-width: 60px;
           display: inline-block;
           text-align: right; //放在容器右侧TODO:后续需确定放哪
 
@@ -607,9 +620,9 @@
       margin-right: 30px; //TODO：后续删除
       @media (max-width: 1400px) and (min-width: 1201px) {
         grid-template-columns: repeat(3, minmax(60px, 1fr));
-        grid-template-rows: repeat(2, 1fr);
-        gap: 20px;
-        margin-right: 20px;
+        grid-template-rows: repeat(3, 1fr);
+        gap: 10px;
+        margin-right: 0;
       }
       @media (max-width: 768px) {
         grid-template-columns: repeat(2, 1fr);
@@ -706,10 +719,8 @@
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
+    padding-bottom: 80px; 
 
-    @media (max-width: 1200px) {
-      padding: 5px 20px 50px 20px;
-    }
     @media (max-width: 768px) {
       padding: 5px 10px 50px 10px;
     }
@@ -717,8 +728,6 @@
     .table-scroll {
       flex: 1;
       overflow-y: auto;
-      min-height: 0;
-      max-height: calc(100vh - 335px); /* 预留顶部筛选区 + 分页区高度 */
     }
   }
 
@@ -733,6 +742,8 @@
       padding: 8px;
       text-align: center;
       background-color: #ffffff;
+      white-space: nowrap;
+      min-width: max-content;
     }
 
     td {
@@ -755,13 +766,13 @@
       width: 3%;
     }
     .col-account {
-      width: 10%;
+      width: 9%;
     }
     .col-name {
-      width: 5%;
+      width: 6%;
     }
     .col-gender {
-      width: 5%;
+      width: 4%;
     }
     .col-phone {
       width: 7%;
@@ -776,7 +787,7 @@
       width: 7%;
     }
     .col-role {
-      width: 8%;
+      width: 9%;
     }
     .col-creation {
       width: 7%;
@@ -785,7 +796,7 @@
       width: 7%;
     }
     .col-actions {
-      width: 14%;
+      width: 15%;
     }
   }
 
@@ -813,6 +824,9 @@
     @media (min-resolution: 1.25dppx) {
       gap: 10px;
     }
+    @media (max-width: 1320px) {
+      gap: 5px;
+    }
 
     .btn-link {
       background: none;
@@ -820,6 +834,7 @@
       cursor: pointer;
       padding: 0;
       font-size: $normal-font-size;
+      max-width: 30px;
 
       &:hover {
         font-weight: bold;
@@ -845,18 +860,19 @@
   }
 
   .pagination-wrapper {
+    flex-shrink: 0;            
+    padding: 10px 0;           
+  
     .pagination-container {
-      position: fixed;
-      bottom: 10px; //留出页脚位置
-      right: 20px;
-      z-index: 1000;
-      visibility: visible;
+    display: flex;             
+    justify-content: flex-end; 
+    padding-right: 10px;       
+    
+      
       &.hide {
         visibility: hidden;
       }
-      @media (min-resolution: 1.25dppx) {
-        bottom: 5px;
-      }
+      
     }
   }
 

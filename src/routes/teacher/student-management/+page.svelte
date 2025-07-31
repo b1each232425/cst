@@ -55,6 +55,7 @@
     const params = {
       page: String(currentPage),
       pageSize: String(pageSize),
+      domain: 'cst.school^student', 
     };
 
     // 添加状态筛选
@@ -421,13 +422,14 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100%;
     min-width: 1000px;
+    overflow-y: auto;
+
     height: 100vh;
   }
 
   .table-action-container {
-    padding: 17px 0 0 18px; //TODO：后续调整
+    padding: 10px 0 0 10px; //TODO：后续调整
 
     .action-layout {
       display: flex;
@@ -508,6 +510,7 @@
 
       @media (min-resolution: 1.25dppx) {
           margin-right: 0px; 
+          gap:10px;
         }
 
       @media (max-width: 1200px) {
@@ -526,10 +529,9 @@
         padding: 0 10px;
         font-size: $normal-font-size;
         cursor: pointer;
-        min-width: 60px;
+        min-width: 55px;
         text-align: center;
         white-space: nowrap;
-        transform: all 0.3s ease;
         border: 1px solid transparent;
 
         &.download-btn,
@@ -574,10 +576,8 @@
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
+    padding-bottom: 20px; 
 
-    @media (max-width: 1200px) {
-      padding: 5px 20px 50px 20px;
-    }
     @media (max-width: 768px) {
       padding: 5px 10px 50px 10px;
     }
@@ -585,8 +585,6 @@
     .table-scroll {
       flex: 1;
       overflow-y: auto;
-      min-height: 0;
-      max-height: calc(100vh - 290px);
     }
   }
 
@@ -601,6 +599,8 @@
       padding: 8px;
       text-align: center;
       background-color: #ffffff;
+      white-space: nowrap;
+      min-width: max-content;
     }
 
     td {
@@ -669,12 +669,20 @@
     gap: 20px;
     justify-content: center;
 
+    @media (min-resolution: 1.25dppx) {
+      gap: 10px;
+    }
+    @media (max-width: 1320px) {
+      gap: 5px;
+    }
+
     .btn-link {
       background: none;
       border: none;
       cursor: pointer;
       padding: 0;
       font-size: $normal-font-size;
+      max-width: 30px;
 
       &:hover {
         font-weight: bold;
@@ -700,20 +708,20 @@
   }
 
   .pagination-wrapper {
+    flex-shrink: 0;            
+    padding: 10px 0;           
+  
     .pagination-container {
-      position: fixed;
-      bottom: 10px; //留出页脚位置
-      right: 20px;
-      z-index: 1000;
-      visibility: visible;
+    display: flex;             
+    justify-content: flex-end; 
+    padding-right: 10px;       
+    
+      
       &.hide {
         visibility: hidden;
       }
-      @media (min-resolution: 1.25dppx) {
-        bottom: 5px; 
+      
     }
-    }
-    
   }
 
   .empty-container {

@@ -164,6 +164,7 @@
       Email: email.trim() || null,
       IDCardNo: idCardNumber.trim() || null,
       IDCardType: '居民身份证',
+      Domains: ['cst.school^student'],
     };
     const requestBody = { data: [payload] };
     fetch('/api/user', {
