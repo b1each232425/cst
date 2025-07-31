@@ -12,6 +12,7 @@
   } from '$lib/stores/modules/layoutStore';
   import { onMount } from 'svelte';
 
+  let userInfo = $state(null); // 用户信息
   let userName = '张三'; // 静态数据
   let isMenuOpen = $state(false); // 用户菜单是否打开
   let currentPath = $derived(page.url.pathname); // 当前页面路径
@@ -181,12 +182,11 @@
         color: #007bff;
         cursor: pointer;
 
-        padding: 5px 10px;
+        padding: 2px 4px;
         border-radius: 4px;
         transition:
           color 0.2s,
           background-color 0.2s;
-        margin-right: 5px;
       }
 
       .breadcrumb-item:hover {

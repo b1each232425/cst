@@ -12,6 +12,7 @@
   import Option from "$lib/components/Select/Option.svelte";
   import Button from "$lib/components/Button/Button.svelte";
   import Select from "$lib/components/Select/Select.svelte"
+  import Empty from "$lib/components/Table/Empty.svelte";
 
     let {
         show = $bindable(false),
@@ -369,6 +370,7 @@
                     </div>
 
                     <div class="table-body">
+              {#if currentPageTests.length > 0}
                         {#each currentPageTests as test (test.ID)}
                         
                             <div class="table-row">
@@ -420,6 +422,15 @@
                                 </div>
                             </div>
                         {/each}
+                        {:else}
+                        
+      <div  style="height: 200px; padding: 0;">
+        <div class="empty-wrapper">
+          <Empty text="暂无试卷数据" />
+        </div>
+      </div>
+   
+              {/if}
                     </div>
                 </div>
                 <div class="pagination-container">

@@ -2,7 +2,12 @@
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import StudentImportPanel from "./StudentImportPanel.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
-    
+    import Button from "$lib/components/Button/Button.svelte"
+    $effect(() => {
+    if (showPanel) {
+        console.log("已选中的学生信息：", selectedIDs);
+    }
+});
     let {
         showPanel = false,
         ids = [],
@@ -36,7 +41,7 @@
 
     // 已选择学生的分页参数
     let selectedSearchParams = $state({
-        name: "",
+        OfficialName: "",
         page: 1,
         pageSize: 10,
     });
@@ -50,11 +55,11 @@
 
     function getFilteredSelectedIds() {
         let filtered = selectedIDs;
-        if (selectedSearchParams.name) {
+        if (selectedSearchParams.OfficialName) {
             filtered = selectedIDs.filter(examinee => 
-                (examinee.OfficialName && examinee.OfficialName.toLowerCase().includes(selectedSearchParams.name.toLowerCase())) ||
-                (examinee.MobilePhone && examinee.MobilePhone.includes(selectedSearchParams.name)) ||
-                (examinee.IDCardNo && examinee.IDCardNo.includes(selectedSearchParams.name))
+                (examinee.OfficialName && examinee.OfficialName.toLowerCase().includes(selectedSearchParams.OfficialName.toLowerCase())) ||
+                (examinee.MobilePhone && examinee.MobilePhone.includes(selectedSearchParams.OfficialName)) ||
+                (examinee.IDCardNo && examinee.IDCardNo.includes(selectedSearchParams.OfficialName))
             );
         }
         return filtered;
@@ -128,45 +133,6 @@
         return Math.max(...selectedIDs.map((item) => item.serialNumber || 0));
     }
 
-    /**
-     * @param {string} value
-     * 搜索页数
-     */
-    function onSearchPageFunc(value) {
-        const numericValue = parseFloat(value);
-        if (isNaN(numericValue) || numericValue < 1 || numericValue === null) {
-            searchParams.page = 1;
-        } else {
-            searchParams.page = numericValue;
-        }
-
-        //防抖逻辑
-        if (pageSearchTimer) {
-            clearTimeout(pageSearchTimer);
-        }
-        pageSearchTimer = setTimeout(() => {
-            searchExaminee();
-            pageSearchTimer = null;
-        }, 300);
-    }
-
-    /**
-     * @param {boolean} isNext
-     * 上一页/下一页
-     */
-    function onNextOrLastPage(isNext) {
-        if (loading === true) {
-            return;
-        }
-        if (isNext && searchParams.page < totalPage) {
-            searchParams.page += 1;
-            searchExaminee();
-        }
-        if (!isNext && searchParams.page > 1) {
-            searchParams.page -= 1;
-            searchExaminee();
-        }
-    }
 
     /**
      * @param {number} page
@@ -180,36 +146,9 @@
         searchExaminee();
     }
 
-    /**
-     * @param {string} value
-     * 搜索
-     */
-    function onSearch(event) {
-        const value = event.target.value;
-        searchParams.name = value === "" ? "" : value;
+    
 
-        //防抖逻辑
-        if (nameSearchTimer) {
-            clearTimeout(nameSearchTimer);
-        }
-        nameSearchTimer = setTimeout(() => {
-            nameSearchTimer = null;
-            searchParams.page = 1;
-            searchExaminee();
-        }, 300);
-    }
-
-    /**
-     * @param {string} value
-     * 已选择学生搜索
-     */
-    function onSelectedSearch(event) {
-        const value = event.target.value;
-        selectedSearchParams.name = value;
-        selectedSearchParams.page = 1;
-        // 搜索功能通过响应式更新自动触发，不需要额外调用
-    }
-
+    
     /**
      * @param {boolean} isNext
      * 已选择学生上一页/下一页
@@ -253,8 +192,8 @@
         queryParams.append("page", searchParams.page.toString());
         queryParams.append("pageSize", searchParams.pageSize.toString());
 
-        if (searchParams.name) {
-            queryParams.append("name", searchParams.name);
+        if (searchParams.OfficialName) {
+            queryParams.append("name", searchParams.OfficialName);
         }
 
         await fetch(`/api/user?${queryParams.toString()}`, {
@@ -367,12 +306,11 @@
         isSelectionMode = false;
         // 重置已选择学生的分页参数
         selectedSearchParams.page = 1;
-        selectedSearchParams.name = "";
+        selectedSearchParams.OfficialName = "";
     }
 
     // 判断是否全选
     function isAllSelected() {
-        console.log(examineeList);
         
         if (examineeList !== null && examineeList.length > 0) {
             return examineeList.every((examinee) => examinee.selected);
@@ -417,6 +355,15 @@
         }
     }
 
+   function handleSearchInput(inputValue) {
+    // 注意：这里的参数是输入值，不是event对象
+    searchParams.OfficialName = inputValue.trim();
+    if (nameSearchTimer) clearTimeout(nameSearchTimer);
+    nameSearchTimer = setTimeout(() => {
+        searchParams.page = 1;
+        searchExaminee();
+    }, 300);
+}
     // 修复：单个复选框选择事件处理
     function handleCheckboxChange(examinee, event) {
         const target = /** @type {HTMLInputElement} */ (event.target);
@@ -486,7 +433,7 @@
                             <InputBox
                                 label={"搜索考生"}
                                 placeholder={"请输姓名/手机号/身份证号"}
-                                onInput={onSelectedSearch}
+                                
                             ></InputBox>
                         </div>
                         <div class="button-group">
@@ -543,19 +490,30 @@
                         <InputBox
                                 label={"搜索考生"}
                                 placeholder={"请输姓名/手机号/身份证号"}
-                                onInput={onSearch}
+                                bind:value={searchParams.OfficialName}
+                                onInput={handleSearchInput}
                             ></InputBox>
                     </div>
                     <div class="button-group">
                         <button class="back-btn" onclick={backToViewMode}>返回考生列表</button>
-                        <button class="download-template-button" onclick={downloadTemplate}>
-                            下载模板
-                        </button>
-                        <button class="upload-file-button" onclick={() => {
+                        
+                        <Button
+                            type="primary"
+                            onclick={downloadTemplate}
+                        >
+                        下载模板
+                        </Button> 
+
+                        <!-- <Button
+                            type="primary"
+                            onclick={() => {
                             if (studentImportPanel) {
                                 studentImportPanel.triggerFileInput();
                             }
-                        }}>导入学生</button>
+                            导入学生
+                        }}>
+                        </Button> -->
+
                     </div>
                 </div>
                 <div class="examinee-selection-table-container">

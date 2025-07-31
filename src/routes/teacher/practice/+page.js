@@ -7,6 +7,8 @@
 import { practice_data_list,practice_data_list_display, practice_name_store, practice_type_store, practice_status_store, current_page_store, page_size_store, practice_filter } from "./store/practiceData";
 import { get } from "svelte/store";
 import { pageQueryHandle, transformPracticeData } from "./utils";
+import { toast } from "$lib/components/Toast/Toast.js";
+
 /** @param {Object} params - 加载函数参数
  * @param {Function} params.fetch - SvelteKit提供的fetch函数
  */
@@ -53,6 +55,7 @@ export async function load({ fetch }) {
         };
         }).catch((error)=>{
             console.error('获取练习列表失败:', error);
+            toast.error('获取练习列表失败');
         practice_filter.set(true);
 		return {
 			practices: get(practice_data_list),
@@ -64,4 +67,7 @@ export async function load({ fetch }) {
             page_size: get(page_size_store)
 		};
         })
+        .finally(() => {
+        practice_filter.set(true);
+    });
 }
