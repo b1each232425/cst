@@ -5,18 +5,14 @@
   import Brand from '$lib/components/Brand/Brand.svelte';
   import { sidebarFoldingState } from '$lib/stores/modules/layoutStore';
   import { fly } from 'svelte/transition';
+  import { onMount } from 'svelte';
   let { children } = $props();
 </script>
 
 <div class="app">
-  {#if !$sidebarFoldingState}
-    <nav
-      class="sidebar-container {!$sidebarFoldingState ? '' : 'hide'}"
-      transition:fly={{ x: -235, duration: 200, easing: linear }}
-    >
-      <Sidebar />
-    </nav>
-  {/if}
+  <nav class="sidebar-container">
+    <Sidebar />
+  </nav>
 
   <main class={$sidebarFoldingState ? 'shrink' : ''}>
     <header>
@@ -45,10 +41,10 @@
     .sidebar-container {
       top: 0;
       left: 0;
-      width: 235px;
       height: 100%;
+      width: 235px;
       position: fixed;
-      z-index: 10;
+      z-index: 2;
     }
 
     main {
@@ -59,45 +55,46 @@
       overflow: hidden;
       transition: margin-left 0.2s linear;
       margin-left: 235px;
-    }
 
-    main.shrink {
-      margin-left: 0;
-    }
+      &.shrink {
+        margin-left: 0;
+      }
 
-    header {
-      display: flex;
-      flex-direction: row;
-      position: relative;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: max-content;
-      z-index: 1;
-      background-color: #f5f5f5;
-    }
+      header {
+        display: flex;
+        flex-direction: row;
+        position: relative;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: max-content;
+        z-index: 2;
+        background-color: #f5f5f5;
+      }
 
-    .content-container {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      width: 100%;
-      height: 100%;
-      background-color: var(--bg-primary);
-      box-sizing: border-box;
-      padding-bottom: 52px;
-    }
+      .content-container {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background-color: var(--bg-primary);
+        box-sizing: border-box;
+        padding: 30px;
+        z-index: 1;
+      }
 
-    footer {
-      display: flex;
-      position: relative;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 52px;
-      z-index: 2;
-      background-color: #f5f5f5;
-      text-align: center;
+      footer {
+        display: flex;
+        position: relative;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 52px;
+        z-index: 1;
+        background-color: #f5f5f5;
+        text-align: center;
+      }
     }
   }
 </style>

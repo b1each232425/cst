@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 
 // 存储 sidebar 数据
 export const navStore = writable([
@@ -100,7 +100,7 @@ export const navStore = writable([
     isSelect: false,
   },
   {
-    name: 'student',
+    name: 'student-management',
     title: '学生管理',
     path: '/teacher/student-management',
     icon: '/sidebar/nav_icon/student.svg',
@@ -108,7 +108,7 @@ export const navStore = writable([
     isSelect: false,
   },
   {
-    name: 'user',
+    name: 'user-management',
     title: '用户管理',
     path: '/teacher/user-management',
     icon: '/sidebar/nav_icon/user.svg',
@@ -136,9 +136,9 @@ export const crumbStore = writable([
     parentId: 'question-bank',
   },
   {
-    id: '[bankid]',
-    title: '题目管理',
-    path: '/teacher/question-bank/theory/[bankid]',
+    id: 'editBank',
+    title: '编辑题目',
+    path: '/teacher/question-bank/theory/editBank',
     isSelect: false,
     isFilter: false,
     parentId: 'theory',
@@ -160,12 +160,60 @@ export const crumbStore = writable([
     parentId: null,
   },
   {
+    id: 'create',
+    title: '创建练习',
+    path: '/teacher/practice/create',
+    isSelect: false,
+    isFilter: false,
+    parentId: 'practice',
+  },
+  {
+    id: 'edit',
+    title: '编辑练习',
+    path: '/teacher/practice/create/edit',
+    isSelect: false,
+    isFilter: true,
+    parentId: 'practice',
+  },
+  {
+    id: '[id]',
+    title: '编辑练习',
+    path: '/teacher/practice/create/edit/[id]',
+    isSelect: false,
+    isFilter: false,
+    parentId: 'edit',
+  },
+  {
     id: 'exam',
     title: '考试管理',
     path: '/teacher/exam',
     isSelect: false,
     isFilter: false,
     parentId: null,
+  },
+  {
+    id: 'addExam',
+    title: '创建考试',
+    path: '/teacher/exam/addExam',
+    isSelect: false,
+    isFilter: false,
+    parentId: 'exam',
+  },
+  {
+    id: 'editExam',
+    title: '编辑考试',
+    path: '/teacher/exam/editExam',
+    isSelect: false,
+    isFilter: true,
+    parentId: 'exam',
+  },
+  {
+    id: '[examID]',
+    title: '编辑考试',
+    path: '/teacher/exam/editExam/[examID]',
+    isSelect: false,
+    isFilter: false,
+    parentId: 'editExam',
   },
   {
     id: 'correct',
@@ -224,7 +272,7 @@ export const crumbStore = writable([
     parentId: null,
   },
   {
-    id: 'student',
+    id: 'student-management',
     title: '学生管理',
     path: '/teacher/student-management',
     isSelect: false,
@@ -232,14 +280,62 @@ export const crumbStore = writable([
     parentId: null,
   },
   {
-    id: 'user',
+    id: 'addStudent',
+    title: '创建学生',
+    path: '/teacher/student-management/addStudent',
+    isSelect: false,
+    isFilter: false,
+    parentId: 'student-management',
+  },
+  {
+    id: 'user-management',
     title: '用户管理',
     path: '/teacher/user-management',
     isSelect: false,
     isFilter: false,
     parentId: null,
   },
+  {
+    id: 'addUser',
+    title: '创建用户',
+    path: '/teacher/user-management/addUser',
+    isSelect: false,
+    isFilter: false,
+    parentId: 'user-management',
+  },
 ]);
 
 // 控制侧边栏折叠状态
 export const sidebarFoldingState = writable(false);
+
+// 控制侧边栏悬浮
+export const sidebarFloatState = writable(false);
+
+// 用于保存定时器ID
+export let timerId = writable(null);
+
+// 处理鼠标进入事件
+export function sidebarMouseEnter() {
+  const currentTimerId = get(timerId);
+
+  if (currentTimerId) {
+    clearTimeout(currentTimerId);
+  }
+
+  sidebarFloatState.set(true);
+}
+
+// 处理鼠标离开事件
+export function sidebarMouseLeave() {
+  const currentTimerId = get(timerId);
+
+  if (currentTimerId) {
+    clearTimeout(currentTimerId);
+  }
+
+  const newTimerId = setTimeout(() => {
+    sidebarFloatState.set(false);
+  }, 1000);
+
+  timerId.set(newTimerId);
+}
