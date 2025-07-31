@@ -86,46 +86,44 @@
 
 <!-- 侧边栏主要导航区域 -->
 {#snippet sideBar(navStore)}
-  <div class="sidebar-content">
-    <div class="sidebar-content-main">
-      <!-- 遍历路由 -->
-      {#each navStore as item}
-        <div class="sidebar-item" class:active={isPathActive(item)}>
-          <!-- 有子路由 -->
-          {#if item.children}
-            <button class="sidebar-item-btn" onclick={() => handleItemButtonClick(item)}>
-              <div class="sidebar-item-content">
-                <img class="sidebar-item-icon" src={item.icon} alt={item.title} />
-                <span class="sidebar-item-text">{item.title}</span>
-                {#if item.isOpen}
-                  <img class="img-flod" src="/sidebar/nav_icon/fold.svg" alt="" />
-                {:else}
-                  <img class="img-unflod" src="/sidebar/nav_icon/unfold.svg" alt="" />
-                {/if}
-              </div>
-            </button>
-            <!-- 无子路由 -->
-          {:else}
-            <button class="sidebar-item-btn" onclick={() => handleItemButtonClick(item)}>
-              <div class="sidebar-item-content">
-                <img class="sidebar-item-icon" src={item.icon} alt={item.title} />
-                <span class="sidebar-item-text">{item.title}</span>
-              </div>
-            </button>
-          {/if}
-        </div>
-        <!-- 处理子路由 -->
-        {#if item.isOpen && item.children}
-          {#each item.children as child}
-            <div transition:slide|global class="sidebar-subitem" class:active={isPathActive(child)}>
-              <button class="sidebar-subitem-btn" onclick={() => handleItemButtonClick(child)}>
-                {child.title}
-              </button>
+  <div class="sidebar-content-main">
+    <!-- 遍历路由 -->
+    {#each navStore as item}
+      <div class="sidebar-item" class:active={isPathActive(item)}>
+        <!-- 有子路由 -->
+        {#if item.children}
+          <button class="sidebar-item-btn" onclick={() => handleItemButtonClick(item)}>
+            <div class="sidebar-item-content">
+              <img class="sidebar-item-icon" src={item.icon} alt={item.title} />
+              <span class="sidebar-item-text">{item.title}</span>
+              {#if item.isOpen}
+                <img class="img-flod" src="/sidebar/nav_icon/fold.svg" alt="" />
+              {:else}
+                <img class="img-unflod" src="/sidebar/nav_icon/unfold.svg" alt="" />
+              {/if}
             </div>
-          {/each}
+          </button>
+          <!-- 无子路由 -->
+        {:else}
+          <button class="sidebar-item-btn" onclick={() => handleItemButtonClick(item)}>
+            <div class="sidebar-item-content">
+              <img class="sidebar-item-icon" src={item.icon} alt={item.title} />
+              <span class="sidebar-item-text">{item.title}</span>
+            </div>
+          </button>
         {/if}
-      {/each}
-    </div>
+      </div>
+      <!-- 处理子路由 -->
+      {#if item.isOpen && item.children}
+        {#each item.children as child}
+          <div transition:slide|global class="sidebar-subitem" class:active={isPathActive(child)}>
+            <button class="sidebar-subitem-btn" onclick={() => handleItemButtonClick(child)}>
+              {child.title}
+            </button>
+          </div>
+        {/each}
+      {/if}
+    {/each}
   </div>
 {/snippet}
 
@@ -133,6 +131,7 @@
   .sidebar-container {
     position: relative;
     display: block;
+    width: 235px;
     height: 100%;
     background-color: var(--bg-thirdary);
 
@@ -181,94 +180,88 @@
   }
 
   .floating-sidebar-container {
+    display: flex;
     position: fixed;
-    height: 60%;
-    top: 35%;
+    width: 235px;
     left: 0;
-    transform: translateY(-50%);
+    top: 50px;
     z-index: 9999;
-    background-color: var(--bg-thirdary);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     pointer-events: auto;
+    background-color: var(--bg-thirdary);
   }
 
-  .sidebar-content {
-    position: relative;
-    display: flex;
+  .sidebar-content-main {
+    display: inline;
     flex-direction: column;
-    height: 100%;
-    box-sizing: border-box;
-    overflow: hidden;
+    position: relative;
+    top: 20px;
+    width: 100%;
+    background-color: var(--bg-thirdary);
 
-    .sidebar-content-main {
-      display: inline;
-      flex-direction: column;
-      position: relative;
-      top: 20px;
-      height: 80%;
+    .sidebar-item {
+      display: flex;
       width: 100%;
+      height: 40px;
+      background-color: rgba(255, 255, 255, 0);
+      font-size: 18px;
+      border-radius: 3px;
+      color: rgba(0, 0, 0, 0.6);
+      cursor: pointer;
 
-      .sidebar-item {
-        display: flex;
-        width: 100%;
-        height: 40px;
-        background-color: rgba(255, 255, 255, 0);
-        font-size: 18px;
-        border-radius: 3px;
-        color: rgba(0, 0, 0, 0.6);
-
-        &:hover {
-          background-color: #d1d1d1;
-        }
-
-        &.active {
-          background-color: #d1d1d1;
-          border-left: 4px solid blue;
-        }
-
-        .sidebar-item-content {
-          padding-left: 2rem;
-          display: flex;
-          align-items: center;
-          gap: 5px;
-        }
-
-        .sidebar-item-icon {
-          width: 16px;
-        }
-
-        .sidebar-item-text {
-          font-size: 18px;
-        }
-
-        .img-unflod,
-        .img-flod {
-          width: 20px;
-          margin-left: 3.5rem;
-        }
+      &:hover {
+        background-color: #d1d1d1;
       }
 
-      .sidebar-subitem {
-        &:hover {
-          background-color: #d1d1d1;
-        }
+      &.active {
+        background-color: #d1d1d1;
+        border-left: 4px solid blue;
+      }
 
-        &.active {
-          background-color: #d1d1d1;
-          border-left: 4px solid blue;
-        }
+      .sidebar-item-content {
+        padding-left: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .sidebar-item-icon {
+        width: 16px;
+      }
+
+      .sidebar-item-text {
+        font-size: 18px;
+      }
+
+      .img-unflod,
+      .img-flod {
+        width: 20px;
+        margin-left: 3.5rem;
       }
 
       .sidebar-item-btn {
         all: unset;
         width: 235px;
-        height: 40px;
         color: rgba(0, 0, 0, 0.6);
+      }
+    }
+
+    .sidebar-subitem {
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      &:hover {
+        background-color: #d1d1d1;
+      }
+
+      &.active {
+        background-color: #d1d1d1;
+        border-left: 4px solid blue;
       }
 
       .sidebar-subitem-btn {
         all: unset;
-        width: 100%;
+        width: 235px;
         height: 40px;
         font-size: 17px;
         color: rgba(0, 0, 0, 0.6);
