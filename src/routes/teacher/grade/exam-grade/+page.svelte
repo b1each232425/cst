@@ -51,13 +51,14 @@
 	}
 
 	.table-container {
-		flex-grow: 1;
 		display: flex;
 		flex-direction: column;
 		padding: 0 1px; /* 移除顶部的 padding */
 	}
 	.pagination-wrapper {
-		margin-top: auto; /* 将分页器推到底部 */
-		padding-bottom: 35px;
+		display: flex;
+		justify-content: flex-end; /* 右对齐 */
+		margin-top: 16px; /* 与表格保持适当间距 */
+		padding: 16px 0; /* 上下内边距 */
 	}
 </style> 
