@@ -13,5 +13,5 @@
 </script>
 
 <div class="piptap-content">
-  {@html option.value}
+  {@html option.Value}
 </div>

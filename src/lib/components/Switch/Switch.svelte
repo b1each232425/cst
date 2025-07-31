@@ -24,7 +24,7 @@
      uncheckedBackgroundColor="#ccc"           // 关闭状态的背景色，设置为灰色
      leftText="Off"                            // 左侧文本，显示为 "Off"
      rightText="On"                            // 右侧文本，显示为 "On"
-     width="80px"                              // 控制开关的宽度，设置为 80px
+     width={"80px"}                             // 控制开关的宽度，设置为 80px
      clickSwitchButton={handleClickSwitchButton} // 点击开关按钮时触发的事件
    />
 
@@ -36,6 +36,8 @@
 -->
 
 <script>
+  import { onMount } from 'svelte';
+
   let {
     isChecked = false,
     ballColor = 'white',
@@ -47,30 +49,58 @@
     clickSwitchButton, // 点击事件
   } = $props();
 
-  // 计算高度，保持 8:3 的比例
-  let height = (parseInt(width) * 3) / 8 + 'px';
+  let lTextElement; // 绑定左文本span
+  let switchButtonElement; // 绑定switch按钮
+  let ballElement; // 绑定小球span
+  let rTextElement; // 绑定右文本span
 
-  // 计算白球的大小，取高度的 0.66 作为球的直径，保持比例
-  let ballSize = parseInt(height) * 0.66 + 'px';
+  onMount(() => {
+    // 计算高度，保持 8:3 的比例
+    let height = (parseInt(width) * 3) / 8 + 'px';
 
-  // 计算文本的字体大小，按宽度的比例来设置
-  let textSize = parseInt(width) / 5 + 'px';
+    // 计算白球的大小，取高度的 0.66 作为球的直径，保持比例
+    let ballSize = parseInt(height) * 0.66 + 'px';
+
+    // 计算文本的字体大小，按宽度的比例来设置
+    let textSize = parseInt(width) / 5 + 'px';
+
+    // 初始化文本大小
+    lTextElement.style.setProperty('--left-size', textSize);
+    rTextElement.style.setProperty('--right-size', textSize);
+
+    // 初始化按钮样式
+    switchButtonElement.style.setProperty(
+      '--background-color',
+      isChecked ? checkedBackgroundColor : uncheckedBackgroundColor,
+    );
+    switchButtonElement.style.setProperty('--button-width', width);
+    switchButtonElement.style.setProperty('--button-height', height);
+    switchButtonElement.style.setProperty('--ball-size', ballSize);
+
+    //初始化小球大小
+    ballElement.style.setProperty('--ball-color', ballColor);
+  });
+
+  $effect(() => {
+    switchButtonElement.style.setProperty(
+      '--background-color',
+      isChecked ? checkedBackgroundColor : uncheckedBackgroundColor,
+    );
+  });
 </script>
 
 <div class="switch-wrapper">
-  <span class="left-text" style="font-size: {textSize};">{leftText}</span>
+  <span bind:this={lTextElement} class="left-text">{leftText}</span>
   <!-- svelte-ignore a11y_consider_explicit_label -->
   <button
+    bind:this={switchButtonElement}
     class="switch"
     aria-pressed={isChecked ? 'true' : 'false'}
     onclick={clickSwitchButton}
-    style="--background-color: {isChecked
-      ? checkedBackgroundColor
-      : uncheckedBackgroundColor}; width: {width}; height: {height}; --ball-size: {ballSize}; "
   >
-    <span class={isChecked ? 'checked' : 'unchecked'} style="background-color:{ballColor}"></span>
+    <span bind:this={ballElement} class={isChecked ? 'checked' : 'unchecked'}></span>
   </button>
-  <span class="right-text" style="font-size: {textSize};">{rightText}</span>
+  <span bind:this={rTextElement} class="right-text">{rightText}</span>
 </div>
 
 <style>
@@ -81,16 +111,18 @@
     width: fit-content;
 
     .switch {
+      width: var(--button-width);
+      height: var(--button-height);
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: var(--background-color, #ccc);
+      background-color: var(--background-color);
       border-radius: 50px;
       cursor: pointer;
       border: none;
       position: relative;
       padding: 0;
-      transition: background-color 0.3s ease;
+      transition: var(--background-color) 0.3s ease;
 
       /* 计算白球大小 */
       .checked,
@@ -107,19 +139,27 @@
       /* 白球在开启状态下的样式 */
       .checked {
         left: calc(100% - var(--ball-size) - 5px);
+        background-color: var(--ball-color);
       }
 
       /* 白球在关闭状态下的样式 */
       .unchecked {
         left: 5px;
+        background-color: var(--ball-color);
       }
     }
 
-    .left-text,
+    .left-text {
+      font-weight: bold;
+      color: #000;
+      margin: 0 15px;
+      font-size: var(--left-size);
+    }
     .right-text {
       font-weight: bold;
       color: #000;
       margin: 0 15px;
+      font-size: var(--right-size);
     }
   }
 </style>
