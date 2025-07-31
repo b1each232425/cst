@@ -823,29 +823,30 @@
   }
 
   .examinee-panel-container {
-    position: fixed;
+    position: absolute;
     top: 0%;
     left: 0%;
-    width: 100vw;
-    height: 100vh;
+    right: 0%;
+    bottom: 0%;
     background-color: rgba(0, 0, 0, 0.25); /* 半透明遮罩层 */
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 100;
+    
   }
 
   .examinee-panel {
-    width: 1000px;
+    width: 900px;
     min-width: 800px;
-    max-height: 90vh;
+    max-height: 85vh;
     overflow-y: auto;
     background-color: white;
     display: flex;
     flex-direction: column;
     border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     z-index: 1001;
+     
   }
 
   .panel-header {

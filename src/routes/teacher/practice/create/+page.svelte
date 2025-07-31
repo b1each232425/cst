@@ -11,6 +11,7 @@
     import MessageBox from "$lib/components/MessageBox/MessageBox.svelte";
   import  {toast}  from "$lib/components/Toast/Toast.js";
   import { transFormType } from "../utils";
+  import Title  from "$lib/components/Title/Title.svelte";
   
     
     // Dialog状态
@@ -100,8 +101,8 @@
     }
 </script>
 
-<main>
-    <div class="page-header">创建练习</div>
+
+    <Title title="创建练习"></Title>
 
     <PracticeForm onSubmitFunc={handleSubmit} onCancelFunc={handleCancel} />
     <!-- todo,等组件封装好 -->
@@ -116,7 +117,7 @@
     confirm_text = '确定'
     /> 
     
-</main>
+
 
 <style>
     :global(*) {
