@@ -1,6 +1,7 @@
 <script>
 	import DropdownGray from '../shared/DropdownGray.svelte';
 	import SearchInput from '../shared/SearchInput.svelte';
+	import { handleFeatureNotImplemented, handleSelectionError } from '../../_utils/errorHandler';
 	/**
 	 * @typedef {ReturnType<import('$lib/stores/modules/grade.svelte.js').createGradeStore>} GradeStore
 	 */
@@ -34,7 +35,8 @@
 	}
 
 	function handleBatchExport() {
-		console.log('Batch Export');
+		// TODO: 实现批量导出功能
+		handleFeatureNotImplemented('批量导出');
 	}
 	function handleBatchSubmit() {
 		const selectedIds = Object.keys(store.state.selected)
@@ -44,12 +46,13 @@
 		if (selectedIds.length > 0) {
 			store.submitGrades(selectedIds);
 		} else {
-			// Optional: show a message to the user
-			console.log('No exams selected for submission.');
+			// 提示用户未选择任何项目
+			handleSelectionError('提交');
 		}
 	}
 	function handleShowLogs() {
-		console.log('Show Logs');
+		// TODO: 实现查看日志功能
+		handleFeatureNotImplemented('查看日志');
 	}
 </script>
 

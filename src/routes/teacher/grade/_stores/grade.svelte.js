@@ -1,6 +1,7 @@
 import { getExams, submitExamGrades, getExamineeGradeList, getGradeLogs } from '../_api/score';
 import { formatISOString } from '../_utils/dateFormatter';
 import { sget } from '$lib/utils';
+import { handleApiError, handleSuccess } from '../_utils/errorHandler';
 
 /**
  * @typedef {object} ExamSessionInfo
@@ -51,6 +52,8 @@ function formatExamData(examData) {
 	}
 	return examData;
 }
+
+
 
 export function createGradeStore() {
 	let state = $state({
@@ -104,7 +107,7 @@ export function createGradeStore() {
 					state.totalRecords = sget(data, 'rowCount', 0);
 				})
 				.catch((error) => {
-					console.error('获取考试列表失败:', error);
+					handleApiError(error, '获取考试列表');
 				})
 				.finally(() => {
 					state.loading = false;
@@ -149,9 +152,12 @@ export function createGradeStore() {
 		submitGrades(examIds) {
 			submitExamGrades(examIds)
 				.then(() => {
+					handleSuccess('成绩提交');
 					actions.fetchExams(); // Refresh data after submission
 				})
-				.catch((err) => console.error('提交成绩失败:', err));
+				.catch((error) => {
+					handleApiError(error, '提交成绩');
+				});
 		},
 		/** @param {number[]} examIds */
 		exportGrades(examIds) {
