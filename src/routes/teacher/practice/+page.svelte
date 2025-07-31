@@ -28,7 +28,8 @@
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
-  import { on } from 'events';
+  import {sget} from '$lib/utils/index.js';
+  
 
   // 使用runes接收页面数据
   const { data } = $props();
@@ -60,6 +61,7 @@
    * @property {number} AllowedAttempts - 可作答的次数
    */
 
+ 
   // 练习列表数据类型
   /** @type {Practice[]} */
   let displayed_practice_list = $state(Array.isArray(data.practices_display) ? data.practices_display : []);
@@ -668,7 +670,7 @@
             <tr>
               <td style="text-align: center;" title={practice.Name}>{practice.Name}</td>
               <td style="text-align: center;" title={practice.Type}>{practice.Type}</td>
-              <td style="text-align: center;" title={practice.student_count.toString()}>{practice.student_count}</td>
+              <td style="text-align: center;" title={sget(practice,"student_count","").toString()}>{practice.student_count}</td>
               <td style="text-align: center;">
                 <span class="Status-tag {practice.Status === '已发布' ? 'published' : 'unpublished'}">
                   {practice.Status}
@@ -846,10 +848,11 @@
       min-width: 225px;
 
       .filter-label {
-        font-size: 14px;
-        color: #333;
-        margin-right: 8px;
-        white-space: nowrap;
+        color: rgba(0, 0, 0, 0.6);
+      font-size: 14px;
+      width: 75px;
+      white-space: nowrap;
+      text-align: right;
       }
 
       .dropdown-wrapper {
