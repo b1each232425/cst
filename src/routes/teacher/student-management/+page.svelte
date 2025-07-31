@@ -316,80 +316,82 @@
   </div>
   <div class="table-container">
     <!-- 表格 -->
-    <table class="student-table">
-      <thead>
-        <tr class="table-head-row">
-          <th class="col-checkbox table-head">
-            <input type="checkbox" class="checkbox-all" bind:checked={selectAll} onchange={toggleSelectAll} />
-          </th>
-          <th class="col-account table-head">账号</th>
-          <th class="col-name table-head">姓名</th>
-          <th class="col-id table-head">身份证号</th>
-          <th class="col-status table-head">账号状态</th>
-          <th class="col-gender table-head">性别</th>
-          <th class="col-phone table-head">电话</th>
-          <th class="col-actions table-head">操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each students as student (student.id)}
-          <tr class="table-row" data-id={student.id}>
-            <td class="col-checkbox">
-              <input type="checkbox" class="checkbox-item" bind:checked={student.selected} />
-            </td>
-            <td class="col-account" title={student.account}>
-              {student.account}
-            </td>
-            <td class="col-name" title={student.name}>
-              {student.name}
-            </td>
-            <td class="col-id" title={student.identityCard}>
-              {student.identityCard}
-            </td>
-            <td class="col-status">
-              <span class="status-text {StateClassMap[student.status]}">
-                {StateMap[student.status] || '-'}
-              </span>
-            </td>
-            <td class="col-gender">{student.gender}</td>
-            <td class="col-phone">{student.phone}</td>
-            <td class="col-actions">
-              <div class="actions">
-                <button class="btn-link btn-detail" onclick={() => handleDetail(student.id)}>详情</button>
-                <button class="btn-link btn-edit" onclick={() => handleEdit(student.id)}>修改</button>
-                <button
-                  class="btn-link {student.status === '02' ? 'btn-enable' : 'btn-disable'}"
-                  onclick={() => toggleStatus(student.id)}
-                >
-                  {student.status === '02' ? '启用' : '停用'}
-                </button>
-                <!-- 移除按钮 -->
-                <button
-                  class="btn-link btn-unbind"
-                  style="display: {student.has_relation ? 'inline-block' : 'none'}"
-                  onclick={() => handleUnbind(student.id)}>移除</button
-                >
+    <div class="table-scroll">
+      <table class="student-table">
+        <thead>
+          <tr class="table-head-row">
+            <th class="col-checkbox table-head">
+              <input type="checkbox" class="checkbox-all" bind:checked={selectAll} onchange={toggleSelectAll} />
+            </th>
+            <th class="col-account table-head">账号</th>
+            <th class="col-name table-head">姓名</th>
+            <th class="col-id table-head">身份证号</th>
+            <th class="col-status table-head">账号状态</th>
+            <th class="col-gender table-head">性别</th>
+            <th class="col-phone table-head">电话</th>
+            <th class="col-actions table-head">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each students as student (student.id)}
+            <tr class="table-row" data-id={student.id}>
+              <td class="col-checkbox">
+                <input type="checkbox" class="checkbox-item" bind:checked={student.selected} />
+              </td>
+              <td class="col-account" title={student.account}>
+                {student.account}
+              </td>
+              <td class="col-name" title={student.name}>
+                {student.name}
+              </td>
+              <td class="col-id" title={student.identityCard}>
+                {student.identityCard}
+              </td>
+              <td class="col-status">
+                <span class="status-text {StateClassMap[student.status]}">
+                  {StateMap[student.status] || '-'}
+                </span>
+              </td>
+              <td class="col-gender">{student.gender}</td>
+              <td class="col-phone">{student.phone}</td>
+              <td class="col-actions">
+                <div class="actions">
+                  <button class="btn-link btn-detail" onclick={() => handleDetail(student.id)}>详情</button>
+                  <button class="btn-link btn-edit" onclick={() => handleEdit(student.id)}>修改</button>
+                  <button
+                    class="btn-link {student.status === '02' ? 'btn-enable' : 'btn-disable'}"
+                    onclick={() => toggleStatus(student.id)}
+                  >
+                    {student.status === '02' ? '启用' : '停用'}
+                  </button>
+                  <!-- 移除按钮 -->
+                  <button
+                    class="btn-link btn-unbind"
+                    style="display: {student.has_relation ? 'inline-block' : 'none'}"
+                    onclick={() => handleUnbind(student.id)}>移除</button
+                  >
 
-                <!-- 删除按钮 -->
-                <button
-                  class="btn-link btn-delete"
-                  style="display: {student.has_relation ? 'none' : 'inline-block'}"
-                  onclick={() => handleDelete(student.id)}>删除</button
-                >
+                  <!-- 删除按钮 -->
+                  <button
+                    class="btn-link btn-delete"
+                    style="display: {student.has_relation ? 'none' : 'inline-block'}"
+                    onclick={() => handleDelete(student.id)}>删除</button
+                  >
+                </div>
+              </td>
+            </tr>
+          {/each}
+          <!-- 空页面 -->
+          <tr class="empty-row {students.length > 0 ? 'hide' : ''}">
+            <td colspan="8" class="empty-cell">
+              <div class="empty-container">
+                <Empty text="暂无学生数据" />
               </div>
             </td>
           </tr>
-        {/each}
-        <!-- 空页面 -->
-        <tr class="empty-row {students.length > 0 ? 'hide' : ''}">
-          <td colspan="8" class="empty-cell">
-            <div class="empty-container">
-              <Empty text="暂无学生数据" />
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
     <!-- 分页器 -->
     <div class="pagination-wrapper">
       <div class="pagination-container {totalItems > 0 ? '' : 'hide'}">
@@ -421,22 +423,18 @@
     width: 100%;
     height: 100%;
     min-width: 1000px;
+    height: 100vh;
   }
 
   .table-action-container {
-    padding: 17px 0 0 30px; //TODO：后续删除
-    @media (max-width: 1200px) {
-      padding: 17px 20px 0 20px;
-    }
-    @media (max-width: 768px) {
-      padding: 17px 10px 0 10px;
-    }
+    padding: 17px 0 0 18px; //TODO：后续调整
+
     .action-layout {
       display: flex;
       justify-content: space-between;
       flex-wrap: wrap;
       width: 100%;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       gap: 20px;
       @media (max-width: 1200px) {
         gap: 15px;
@@ -452,6 +450,7 @@
       flex: 1;
       gap: 20px;
       align-items: center;
+      
 
       @media (max-width: 1200px) {
         min-width: 500px;
@@ -461,26 +460,40 @@
         min-width: 400px;
       }
 
+      @media (min-resolution: 1.25dppx) {
+        gap:10px;
+      }
+
+
       .filter-item {
         display: flex;
         font-size: $normal-font-size;
         min-width: 100px;
         color: $gray-font-color;
         white-space: nowrap;
-        margin-right: 10px;
         align-items: center;
         justify-items: center;
         gap: 20px;
+
+        @media (min-resolution: 1.25dppx) {
+          gap: 10px;
+        }
       }
 
       .search-container {
         position: relative;
         display: flex;
+        @media (min-resolution: 1.25dppx) {
+          max-width:180px;
+        }
       }
 
       .dropdown-container {
         position: relative;
         display: flex;
+        @media (min-resolution: 1.25dppx) {
+          max-width:180px;
+        }
       }
     }
 
@@ -491,7 +504,11 @@
       min-width: 280px;
       min-height: 32px;
       flex-wrap: wrap;
-      margin-right: 50px; //TODO：后续删除
+      margin-right: 30px; //TODO：后续调整
+
+      @media (min-resolution: 1.25dppx) {
+          margin-right: 0px; 
+        }
 
       @media (max-width: 1200px) {
         gap: 15px;
@@ -552,13 +569,24 @@
   }
 
   .table-container {
-    overflow-x: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
 
     @media (max-width: 1200px) {
       padding: 5px 20px 50px 20px;
     }
     @media (max-width: 768px) {
       padding: 5px 10px 50px 10px;
+    }
+
+    .table-scroll {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+      max-height: calc(100vh - 290px);
     }
   }
 
@@ -613,10 +641,10 @@
       width: 6.76%;
     }
     .col-phone {
-      width: 13.92%;
+      width: 13%;
     }
     .col-actions {
-      width: 23.15%;
+      width: 25%;
     }
   }
 
@@ -674,14 +702,18 @@
   .pagination-wrapper {
     .pagination-container {
       position: fixed;
-      bottom: 40px; //留出页脚位置
+      bottom: 10px; //留出页脚位置
       right: 20px;
       z-index: 1000;
       visibility: visible;
       &.hide {
         visibility: hidden;
       }
+      @media (min-resolution: 1.25dppx) {
+        bottom: 5px; 
     }
+    }
+    
   }
 
   .empty-container {
