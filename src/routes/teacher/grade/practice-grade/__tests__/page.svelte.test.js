@@ -5,11 +5,11 @@ import Page from '../+page.svelte';
 // 模拟全局组件
 vi.mock('$lib/components/Title/Title.svelte');
 vi.mock('$lib/components/Pagination/Pagination.svelte');
-vi.mock('../_components/practice/PracticeFilterPanel.svelte');
-vi.mock('../_components/practice/PracticeTable.svelte');
+vi.mock('../../_components/practice/PracticeFilterPanel.svelte');
+vi.mock('../../_components/practice/PracticeTable.svelte');
 
 // 模拟 store 工厂函数
-vi.mock('../_stores/practiceGrade.svelte.js', () => {
+vi.mock('../../_stores/practiceGrade.svelte.js', () => {
     const mockState = {
         loading: false,
         practices: [],
@@ -42,7 +42,7 @@ vi.mock('../_stores/practiceGrade.svelte.js', () => {
 });
 
 
-import { createPracticeGradeStore } from '../_stores/practiceGrade.svelte.js';
+import { createPracticeGradeStore } from '../../_stores/practiceGrade.svelte.js';
 
 describe('练习成绩管理页面', () => {
     beforeEach(() => {
@@ -81,7 +81,7 @@ describe('练习成绩管理页面', () => {
         createPracticeGradeStore.mockReturnValue(mockStore);
 
         render(Page);
-        const PracticeTable = (await import('../_components/practice/PracticeTable.svelte')).default;
+        const PracticeTable = (await import('../../_components/practice/PracticeTable.svelte')).default;
         
         expect(screen.queryByText('加载中...')).not.toBeInTheDocument();
         expect(PracticeTable).toHaveBeenCalled();
@@ -89,7 +89,7 @@ describe('练习成绩管理页面', () => {
 
     it('renders filter panel and pagination', async () => {
         render(Page);
-        const PracticeFilterPanel = (await import('../_components/practice/PracticeFilterPanel.svelte')).default;
+        const PracticeFilterPanel = (await import('../../_components/practice/PracticeFilterPanel.svelte')).default;
         const Pagination = (await import('$lib/components/Pagination/Pagination.svelte')).default;
 
         expect(PracticeFilterPanel).toHaveBeenCalled();

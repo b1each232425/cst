@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createGradeStore } from '../grade.svelte.js';
-import * as scoreApi from '../_api/score';
+import * as scoreApi from '../../_api/score';
 
 // 模拟 API 模块
-vi.mock('../_api/score', () => ({
+vi.mock('../../_api/score', () => ({
 	getExams: vi.fn(),
 	submitExamGrades: vi.fn(),
 	getExamineeGradeList: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock('$lib/utils', () => ({
 }));
 
 // 模拟错误处理工具
-vi.mock('../_utils/errorHandler', () => ({
+vi.mock('../../_utils/errorHandler', () => ({
 	handleApiError: vi.fn(),
 	handleSuccess: vi.fn()
 }));
@@ -84,7 +84,7 @@ describe('考试成绩 Store', () => {
 		});
 
 		it('应该处理获取考试数据失败的情况', async () => {
-			const { handleApiError } = await import('../_utils/errorHandler');
+			const { handleApiError } = await import('../../_utils/errorHandler');
 			const error = new Error('Network Error');
 			scoreApi.getExams.mockRejectedValue(error);
 
@@ -203,7 +203,7 @@ describe('考试成绩 Store', () => {
 	
 	describe('submitGrades', () => {
 		it('should call submitExamGrades and refresh data on success', async () => {
-			const { handleSuccess } = await import('../_utils/errorHandler');
+			const { handleSuccess } = await import('../../_utils/errorHandler');
 			const fetchExamsSpy = vi.spyOn(gradeStore, 'fetchExams').mockImplementation(() => Promise.resolve());
 			scoreApi.submitExamGrades.mockResolvedValue({});
 
@@ -216,7 +216,7 @@ describe('考试成绩 Store', () => {
 		});
 
 		it('should handle submission failure with error handler', async () => {
-			const { handleApiError } = await import('../_utils/errorHandler');
+			const { handleApiError } = await import('../../_utils/errorHandler');
 			const error = new Error('Submission Failed');
 			scoreApi.submitExamGrades.mockRejectedValue(error);
 

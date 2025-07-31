@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createPracticeGradeStore } from '../practiceGrade.svelte.js';
-import * as scoreApi from '../_api/score';
+import * as scoreApi from '../../_api/score';
 
 // 模拟 API 模块
-vi.mock('../_api/score', () => ({
+vi.mock('../../_api/score', () => ({
 	getPractices: vi.fn(),
 	exportPracticeGrades: vi.fn()
 }));
@@ -17,7 +17,7 @@ vi.mock('$lib/utils', () => ({
 }));
 
 // 模拟错误处理工具
-vi.mock('../_utils/errorHandler', () => ({
+vi.mock('../../_utils/errorHandler', () => ({
 	handleApiError: vi.fn(),
 	handleSuccess: vi.fn(),
 	handleSelectionError: vi.fn()
@@ -72,7 +72,7 @@ describe('练习成绩 Store', () => {
 		});
 
 		it('should handle fetch practices failure', async () => {
-			const { handleApiError } = await import('../_utils/errorHandler');
+			const { handleApiError } = await import('../../_utils/errorHandler');
 			const error = new Error('Fetch Failed');
 			scoreApi.getPractices.mockRejectedValue(error);
 
@@ -132,7 +132,7 @@ describe('练习成绩 Store', () => {
 
 	describe('exportGrades', () => {
 		it('should show selection error when no items are selected', async () => {
-			const { handleSelectionError } = await import('../_utils/errorHandler');
+			const { handleSelectionError } = await import('../../_utils/errorHandler');
 			practiceStore.state.selected = {};
 
 			await practiceStore.exportGrades();
@@ -142,7 +142,7 @@ describe('练习成绩 Store', () => {
 		});
 
 		it('should call export API with selected IDs and show success', async () => {
-			const { handleSuccess } = await import('../_utils/errorHandler');
+			const { handleSuccess } = await import('../../_utils/errorHandler');
 			scoreApi.exportPracticeGrades.mockResolvedValue({});
 			practiceStore.state.selected = { 1: true, 2: false, 3: true };
 
@@ -154,7 +154,7 @@ describe('练习成绩 Store', () => {
 		});
 
 		it('should handle export failure with error handler', async () => {
-			const { handleApiError } = await import('../_utils/errorHandler');
+			const { handleApiError } = await import('../../_utils/errorHandler');
 			const error = new Error('Export Failed');
 			scoreApi.exportPracticeGrades.mockRejectedValue(error);
 			practiceStore.state.selected = { 1: true };

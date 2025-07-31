@@ -14,15 +14,15 @@ vi.mock('$lib/components/Pagination/Pagination.svelte', () => ({
 }));
 
 // 模拟页面组件
-vi.mock('../_components/exam/ExamFilterPanel.svelte', () => ({
+vi.mock('../../_components/exam/ExamFilterPanel.svelte', () => ({
 	default: vi.fn()
 }));
-vi.mock('../_components/exam/ExamTable.svelte', () => ({
+vi.mock('../../_components/exam/ExamTable.svelte', () => ({
 	default: vi.fn()
 }));
 
 // 模拟 store 工厂函数
-vi.mock('../_stores/grade.svelte.js', () => ({
+vi.mock('../../_stores/grade.svelte.js', () => ({
 	createGradeStore: vi.fn(() => {
 		// 返回模拟的 store 结构
 		return {
@@ -55,7 +55,7 @@ vi.mock('../_stores/grade.svelte.js', () => ({
 	})
 }));
 
-import { createGradeStore } from '../_stores/grade.svelte.js';
+import { createGradeStore } from '../../_stores/grade.svelte.js';
 
 describe('考试成绩管理页面', () => {
 	beforeEach(() => {
@@ -84,7 +84,7 @@ describe('考试成绩管理页面', () => {
 		expect(screen.getByText('加载中...')).toBeInTheDocument();
 	});
 
-	it('renders ExamTable when not loading', () => {
+	it('renders ExamTable when not loading', async () => {
 		createGradeStore.mockImplementationOnce(() => ({
 			state: {
 				loading: false,
@@ -95,17 +95,17 @@ describe('考试成绩管理页面', () => {
 		}));
 
 		const { container } = render(Page);
-		// Check that the loading message is not present
+		// 检查加载消息不存在
 		expect(screen.queryByText('加载中...')).not.toBeInTheDocument();
 
 		//ExamTable 已被模拟，仅检查是否被调用
-		const ExamTable = (await import('../_components/exam/ExamTable.svelte')).default;
+		const ExamTable = (await import('../../_components/exam/ExamTable.svelte')).default;
 		expect(ExamTable).toHaveBeenCalled();
 	});
 
 	it('renders filter panel and pagination', async () => {
 		render(Page);
-		const ExamFilterPanel = (await import('../_components/exam/ExamFilterPanel.svelte')).default;
+		const ExamFilterPanel = (await import('../../_components/exam/ExamFilterPanel.svelte')).default;
 		const Pagination = (await import('$lib/components/Pagination/Pagination.svelte')).default;
 
 		expect(ExamFilterPanel).toHaveBeenCalled();
