@@ -701,7 +701,6 @@
             currentPage={search_params.page}
             on:pageChange={onPageChooseFunc}
             on:pageSizeChange={handle_page_size_change}
-            jumpPage={onSearchPageFunc}
           ></Pagination>
         </div>
       {/if}

@@ -428,7 +428,6 @@
                         pageSize={pageSize}
                         on:pageChange={handlePageChoose}
                         on:pageSizeChange={handlePageSizeChange}
-                        jumpPage={handlePageChoose}
                     /> 
                 </div>
             </div>
