@@ -182,12 +182,11 @@
         color: #007bff;
         cursor: pointer;
 
-        padding: 5px 10px;
+        padding: 2px 4px;
         border-radius: 4px;
         transition:
           color 0.2s,
           background-color 0.2s;
-        margin-right: 5px;
       }
 
       .breadcrumb-item:hover {

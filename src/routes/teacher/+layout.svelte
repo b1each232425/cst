@@ -41,10 +41,10 @@
     .sidebar-container {
       top: 0;
       left: 0;
+      width: auto;
       height: 100%;
-      width: 235px;
       position: fixed;
-      z-index: 2;
+      z-index: 3;
     }
 
     main {
@@ -68,8 +68,8 @@
         left: 0;
         width: 100%;
         height: max-content;
-        z-index: 2;
         background-color: #f5f5f5;
+        z-index: 3;
       }
 
       .content-container {
@@ -81,7 +81,6 @@
         background-color: var(--bg-primary);
         box-sizing: border-box;
         padding: 30px;
-        z-index: 1;
       }
 
       footer {
@@ -91,7 +90,6 @@
         left: 0;
         width: 100%;
         height: 52px;
-        z-index: 1;
         background-color: #f5f5f5;
         text-align: center;
       }
