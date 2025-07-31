@@ -61,7 +61,7 @@
 	}
 
 	.search-wrapper {
-		width: 250px;
+		width: 300px;
 	}
 
     .actions {
