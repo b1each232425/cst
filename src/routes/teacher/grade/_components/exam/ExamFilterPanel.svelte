@@ -1,5 +1,6 @@
 <script>
-	import DropdownGray from '../shared/DropdownGray.svelte';
+	import Select from '$lib/components/Select/Select.svelte';
+	import Option from '$lib/components/Select/Option.svelte';
 	import InputBox from '$lib/components/Input/InputBox.svelte';
 	import { handleFeatureNotImplemented, handleSelectionError } from '../../_utils/errorHandler';
 	/**
@@ -14,17 +15,7 @@
 	let selectedCount = $derived(Object.keys(state.selected).filter(k => state.selected[Number(k)]).length);
 	let hasSelection = $derived(selectedCount > 0);
 
-	const examTypeOptions = [
-		{ value: '', label: '全部' },
-		{ value: '00', label: '平时考试' },
-		{ value: '04', label: '资格证考试' }
-	];
-
-	const submittedStatusOptions = [
-		{ value: '', label: '全部' },
-		{ value: 1, label: '已提交' },
-		{ value: 0, label: '未提交' }
-	];
+	// 选项数组已内联到组件中，不再需要
 
 	/**
 	 * @param {keyof typeof state.filters} key
@@ -41,6 +32,8 @@
 	function handleSearchInput(value) {
 		handleFilterChange('name', value);
 	}
+
+	// 事件处理函数已移除，使用双向绑定
 
 	function handleBatchExport() {
 		// TODO: 实现批量导出功能
@@ -69,12 +62,11 @@
 		<div class="filter-group">
 			<span class="filter-hint">考试类别</span>
 			<div class="dropdown-wrapper">
-				<DropdownGray
-					options={examTypeOptions}
-					selected={state.filters.type}
-					onchange={(e) => handleFilterChange('type', e.detail.value)}
-					placeholder="全部"
-				/>
+				<Select bind:value={state.filters.type}>
+					<Option value="" label="全部" />
+					<Option value="00" label="平时考试" />
+					<Option value="04" label="资格证考试" />
+				</Select>
 			</div>
 		</div>
 		<div class="search-wrapper">
@@ -89,12 +81,11 @@
 		<div class="filter-group">
 			<span class="filter-hint">提交状态</span>
 			<div class="dropdown-wrapper">
-				<DropdownGray
-					options={submittedStatusOptions}
-					selected={state.filters.submitted}
-					onchange={(e) => handleFilterChange('submitted', e.detail.value)}
-					placeholder="全部"
-				/>
+				<Select bind:value={state.filters.submitted}>
+					<Option value="" label="全部" />
+					<Option value="1" label="已提交" />
+					<Option value="0" label="未提交" />
+				</Select>
 			</div>
 		</div>
 	</div>
@@ -142,7 +133,34 @@
 	.dropdown-wrapper {
 		min-width: 116px;
 		width: 116px;
+	}
+
+	// 适配新的 Select 组件样式
+	.dropdown-wrapper :global(.dropdown-container) {
+		width: 100%;
+		min-width: 116px;
+	}
+
+	.dropdown-wrapper :global(.dropdown-input) {
 		height: 32px;
+		border: 1px solid #ddd;
+		border-radius: 3px;
+		font-size: 14px;
+		padding: 5px 36px 5px 12px;
+		box-sizing: border-box;
+	}
+
+	.dropdown-wrapper :global(.dropdown-input:hover) {
+		border-color: #0052d9;
+	}
+
+	.dropdown-wrapper :global(.dropdown-input:focus) {
+		border-color: #0052d9;
+		box-shadow: 0 0 0 2px rgba(0, 82, 217, 0.1);
+	}
+
+	.dropdown-wrapper :global(.dropdown-options) {
+		z-index: 1000;
 	}
 	.search-wrapper {
 		width: 200px;

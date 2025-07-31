@@ -44,14 +44,15 @@
 	}
 
 	.filter-container {
-		padding: 16px 33px 10px 33px; /* 控制筛选区和表格的间距 */
+		padding: 0 1px; /* 控制筛选区和表格的间距 */
+		padding-bottom: 10px;
 	}
 
 	.table-container {
 		flex-grow: 1;
 		display: flex;
 		flex-direction: column;
-		padding: 0 37px; /* 移除顶部的 padding */
+		padding: 0 23px; /* 移除顶部的 padding */
 	}
 	.pagination-wrapper {
 		margin-top: auto; /* 将分页器推到底部 */

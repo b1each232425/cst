@@ -65,7 +65,7 @@ export function createGradeStore() {
 		filters: {
 			name: '',
 			type: '',
-			/** @type {boolean | ''} */
+			/** @type {string} */
 			submitted: '',
 			teacherID: -1, // -1 代表所有教师
 			examID: ''

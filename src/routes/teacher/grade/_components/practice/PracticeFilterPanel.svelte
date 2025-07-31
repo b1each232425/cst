@@ -50,14 +50,15 @@
 		display: flex;
 		justify-content: flex-start;
 		align-items: center;
-		padding: 0 0 16px 0;
-		gap: 100px;
+		padding: 16px 0 0 0;
 	}
 
 	.filters {
 		display: flex;
 		align-items: center;
 		gap: 5px;
+		margin-right: 100px;
+		margin-left: -10px; /* 向左偏移以与标题文字对齐 */
 	}
 
 	.search-wrapper {

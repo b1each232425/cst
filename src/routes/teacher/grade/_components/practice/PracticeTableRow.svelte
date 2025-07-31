@@ -43,7 +43,7 @@
 		td {
 			font-size: 14px;
 			color: #3d3d3d;
-			padding: 8px 4px;
+			padding: 8px 0;
 			vertical-align: middle;
 				text-align: center;
 		}
@@ -51,7 +51,6 @@
 
 	.practice-select {
 		width: 5%;
-		padding-left: 15px;
 	}
 	.practice-name {
 		width: 35%;
@@ -91,7 +90,7 @@
 		cursor: pointer;
 		border: 1px solid #919191;
 		border-radius: 3px;
-		margin: 0 auto;
+		margin: 0; /* 移除自动居中，让它左对齐 */
 		padding: 0;
 		width: 16px;
 		height: 16px;
