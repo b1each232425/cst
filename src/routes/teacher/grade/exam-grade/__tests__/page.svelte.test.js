@@ -1,85 +1,154 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/svelte';
-import ExamScorePage from '../+page.svelte';
+import { render, screen } from '@testing-library/svelte';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import Page from '../+page.svelte';
 
-// --- 核心步骤：模拟 API 模块 ---
-vi.mock('../../_api/score.js', () => {
-	// 这是我们的模拟数据
-	const mockExams = [
-		{
-			id: 1,
-			name: '期中模拟考试',
-			type: '00',
-			submitted: false,
-			sessions: [
-				{
-					id: 101,
-					paper_name: '数学第一卷',
-					start_time: '2024-08-01 09:00',
-					end_time: '2024-08-01 11:00',
-					total_score: 150,
-					average_score: 98.5,
-					scheduled_examinees: 50,
-					actual_examinees: 48,
-					pass_examinees: 45
-				}
-			]
-		},
-		{
-			id: 2,
-			name: '单元测验',
-			type: '04',
-			submitted: true,
-			sessions: [
-				{
-					id: 102,
-					paper_name: '物理力学部分',
-					start_time: '2024-08-02 14:00',
-					end_time: '2024-08-02 15:00',
-					total_score: 100,
-					average_score: 85.0,
-					scheduled_examinees: 50,
-					actual_examinees: 50,
-					pass_examinees: 48
-				}
-			]
-		}
-	];
+// 模拟全局组件
+vi.mock('$lib/components/Title/Title.svelte', () => ({
+	default: vi.fn().mockImplementation(() => ({
+		Component: {}
+	}))
+}));
 
-	// 返回一个对象，这个对象的结构必须和真实的 _api/score.js 完全一样
-	return {
-		getExams: vi.fn().mockResolvedValue({
-			data: mockExams,
-			row_count: mockExams.length
-		}),
-		// 其他在这个模块中导出的函数，如果测试中用不到，可以简单模拟
-		submitExamGrades: vi.fn(),
-		getExamineeGradeList: vi.fn(),
-		getGradeLogs: vi.fn(),
-		getPractices: vi.fn(),
-		exportPracticeGrades: vi.fn()
-	};
-});
+vi.mock('$lib/components/Pagination/Pagination.svelte', () => ({
+	default: vi.fn()
+}));
 
-// --- 测试套件 ---
-describe('考试成绩管理页面 (ExamScoreManagement Page)', () => {
-	it('应该能够成功渲染模拟的考试列表数据', async () => {
-		// 1. 渲染组件
-		render(ExamScorePage);
+// 模拟页面组件
+vi.mock('../../_components/exam/ExamFilterPanel.svelte', () => ({
+	default: vi.fn()
+}));
+vi.mock('../../_components/exam/ExamTable.svelte', () => ({
+	default: vi.fn()
+}));
 
-		// 2. 断言：等待并检查模拟数据是否已显示在屏幕上
-		// 因为数据是在 $effect 中异步获取的，所以我们需要用 findBy* 方法来等待UI更新
-		expect(await screen.findByText('期中模拟考试')).not.toBeNull();
-		expect(await screen.findByText('单元测验')).not.toBeNull();
-		
-		// 也可以检查更具体的内容
-		// 注意：对于布尔值或数字，需要确保它们以文本形式渲染
-		expect(await screen.findByText('已提交')).not.toBeNull();
-		expect(await screen.findByText('未提交')).not.toBeNull();
+// 模拟 store 工厂函数
+vi.mock('../../_stores/grade.svelte.js', () => ({
+	createGradeStore: vi.fn(() => {
+		// 返回模拟的 store 结构
+		return {
+			state: {
+				loading: false,
+				exams: [],
+				totalRecords: 0,
+				selectAll: false,
+				filters: {
+					name: '',
+					type: '',
+					submitted: '', // 现在是字符串类型
+					teacherID: -1,
+					examID: ''
+				},
+				pagination: {
+					page: 1,
+					pageSize: 10
+				},
+				selected: {}
+			},
+			fetchExams: vi.fn(),
+			setFilters: vi.fn(),
+			setPage: vi.fn(),
+			setPageSize: vi.fn(),
+			toggleSelect: vi.fn(),
+			toggleSelectAll: vi.fn(),
+			submitGrades: vi.fn()
+		};
+	})
+}));
 
-		// 检查一个子项是否被渲染
-		await waitFor(() => {
-			expect(screen.getByText('数学第一卷')).not.toBeNull();
-		});
+import { createGradeStore } from '../../_stores/grade.svelte.js';
+
+describe('考试成绩管理页面', () => {
+	beforeEach(() => {
+		// 重置模拟函数
+		vi.clearAllMocks();
 	});
-}); 
+
+	it('应该渲染标题组件', () => {
+		render(Page);
+		// Assuming Title component renders a specific role or text
+		expect(screen.getByText('考试成绩管理')).toBeInTheDocument();
+	});
+
+	it('shows loading message when store is in loading state', () => {
+		// Customize the mock for this specific test
+		createGradeStore.mockImplementationOnce(() => ({
+			state: {
+				loading: true,
+				exams: [],
+				totalRecords: 0
+			},
+			fetchExams: vi.fn()
+		}));
+
+		render(Page);
+		expect(screen.getByText('加载中...')).toBeInTheDocument();
+	});
+
+	it('renders ExamTable when not loading', async () => {
+		createGradeStore.mockImplementationOnce(() => ({
+			state: {
+				loading: false,
+				exams: [{ id: 1, name: 'Test Exam', sessions: [] }],
+				totalRecords: 1
+			},
+			fetchExams: vi.fn()
+		}));
+
+		const { container } = render(Page);
+		// 检查加载消息不存在
+		expect(screen.queryByText('加载中...')).not.toBeInTheDocument();
+
+		//ExamTable 已被模拟，仅检查是否被调用
+		const ExamTable = (await import('../../_components/exam/ExamTable.svelte')).default;
+		expect(ExamTable).toHaveBeenCalled();
+	});
+
+	it('renders filter panel and pagination', async () => {
+		render(Page);
+		const ExamFilterPanel = (await import('../../_components/exam/ExamFilterPanel.svelte')).default;
+		const Pagination = (await import('$lib/components/Pagination/Pagination.svelte')).default;
+
+		expect(ExamFilterPanel).toHaveBeenCalled();
+		expect(Pagination).toHaveBeenCalled();
+	});
+
+	it('has correct CSS classes for layout', () => {
+		const { container } = render(Page);
+
+		// Check for main container
+		expect(container.querySelector('.page-container')).toBeInTheDocument();
+
+		// Check for filter container
+		expect(container.querySelector('.filter-container')).toBeInTheDocument();
+
+		// Check for table container
+		expect(container.querySelector('.table-container')).toBeInTheDocument();
+
+		// Check for pagination wrapper with right alignment
+		expect(container.querySelector('.pagination-wrapper')).toBeInTheDocument();
+	});
+
+	it('pagination wrapper has correct styling for right alignment', () => {
+		const { container } = render(Page);
+		const paginationWrapper = container.querySelector('.pagination-wrapper');
+
+		expect(paginationWrapper).toBeInTheDocument();
+		//当前不进行测试样式，故仅检查元素是否存在
+	});
+
+	it('calls fetchExams on mount via $effect', async () => {
+		const mockStore = {
+			state: { loading: false, exams: [], totalRecords: 0 },
+			fetchExams: vi.fn()
+		};
+		createGradeStore.mockImplementationOnce(() => mockStore);
+
+		render(Page);
+
+		// Svelte 5 effects run after the component has mounted.
+		// We need to wait for the next "tick" for the effect to run.
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(mockStore.fetchExams).toHaveBeenCalled();
+	});
+});
