@@ -1,19 +1,20 @@
 <script>
+  import { linear } from 'svelte/easing';
   import Sidebar from '$lib/components/SideBar/SideBar.svelte';
   import Crumb from '$lib/components/Crumb/Crumb.svelte';
   import Brand from '$lib/components/Brand/Brand.svelte';
-  import { sidebarWidth } from '$lib/stores/modules/layoutStore';
-  import DatePicker from '$lib/components/DatePicker/DatePicker.svelte';
-
+  import { sidebarFoldingState } from '$lib/stores/modules/layoutStore';
+  import { fly } from 'svelte/transition';
+  import { onMount } from 'svelte';
   let { children } = $props();
 </script>
 
 <div class="app">
-  <nav class="sidebar-container" style="width: {$sidebarWidth};">
+  <nav class="sidebar-container">
     <Sidebar />
   </nav>
 
-  <main style="margin-left: {$sidebarWidth};">
+  <main class={$sidebarFoldingState ? 'shrink' : ''}>
     <header>
       <Crumb />
     </header>
@@ -31,46 +32,68 @@
 <style lang="scss" scoped>
   .app {
     display: flex;
-    position: relative;
+    position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
+    width: 100%;
     height: 100vh;
-    background-color: var(--bg-primary);
 
     .sidebar-container {
+      top: 0;
+      left: 0;
       height: 100%;
-      background-color: var(--bg-thirdary);
+      width: 235px;
       position: fixed;
-      transition: width 0.5s ease;
+      z-index: 2;
     }
 
     main {
       display: flex;
       flex-direction: column;
-      flex: 1;
-      transition: margin-left 0.5s ease;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      transition: margin-left 0.2s linear;
+      margin-left: 235px;
+
+      &.shrink {
+        margin-left: 0;
+      }
 
       header {
         display: flex;
+        flex-direction: row;
+        position: relative;
+        top: 0;
+        left: 0;
         width: 100%;
-        height: 60px;
+        height: max-content;
+        z-index: 2;
+        background-color: #f5f5f5;
       }
 
       .content-container {
-        flex-grow: 1;
         display: flex;
         flex-direction: column;
-        padding: 20px;
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background-color: var(--bg-primary);
+        box-sizing: border-box;
+        padding: 30px;
+        z-index: 1;
       }
 
       footer {
         display: flex;
-        justify-content: center;
-        align-items: center;
+        position: relative;
+        bottom: 0;
+        left: 0;
         width: 100%;
-        height: 55px;
-        position: sticky;
+        height: 52px;
+        z-index: 1;
+        background-color: #f5f5f5;
+        text-align: center;
       }
     }
   }

@@ -1,18 +1,58 @@
+<!-- /**
+  * 输入框组件使用说明
+  *
+  * 作者：段春茂
+  * 邮箱：2162105974@qq.com
+  *
+  * 参数配置：
+  * @param {String}  value        输入框的值（支持双向绑定）
+  * @param {String}  label        标签文字，默认："标签文字"
+  * @param {String}  type         输入框类型，如 text、password 等，默认："text"
+  * @param {String}  placeholder  占位符文本，默认："请输入信息"
+  * @param {Boolean} request      是否为必填项，显示红色 * 号，默认：false
+  * @param {Boolean} showLabel    是否显示标签，默认：true
+  * @param {Boolean} readonly     是否为只读状态，默认：false
+  * @param {Boolean} disabled     是否禁用输入，默认：false
+  * @param {Boolean} clearable    是否显示清除按钮（有内容时），默认：true
+  * @param {Boolean} round        输入框是否为圆角样式，默认：false
+  * @param {Function} onInput     输入事件回调函数，参数为输入值，默认：()=>{}
+  *
+  * 功能说明：
+  * - 支持输入框类型切换（如密码可点击切换明文/密文）
+  * - 支持清除按钮
+  * - 支持圆角风格和响应式布局
+  *
+  * 使用示例：
+  * <InputBox
+  *   value={form.name}
+  *   label="姓名"
+  *   placeholder="请输入姓名"
+  *   request={true}
+  *   onInput={val => form.name = val}
+  * />
+  *
+  * <InputBox
+  *   value={form.password}
+  *   label="登录密码"
+  *   type="password"
+  *   clearable={false}
+  *   onInput={val => form.password = val}
+  * />
+  *
+  * <InputBox
+  *   value="不可编辑"
+  *   label="只读字段"
+  *   readonly={true}
+  *   disabled={true}
+  *   showLabel={false}
+  * />
+  *
+  * 注意事项：
+  * - `value` 支持双向绑定（$bindable）
+  * - `type=password` 时支持点击切换明文显示
+  * - 若设置 `readonly` 或 `disabled`，用户无法编辑内容
+  */ -->
 <script>
-  /**
-   * @description 输入框组件
-   * @param {string} value 输入框的值
-   * @param {string} label 标签文字
-   * @param {string} type 输入框类型
-   * @param {string} placeholder 占位符
-   * @param {boolean} request 是否需要*号
-   * @param {boolean} showLabel 是否显示标签
-   * @param {boolean} readonly 是否只读
-   * @param {boolean} disabled 是否禁用
-   * @param {boolean} clearable 是否可清除
-   * @param {boolean} round 是否圆角
-   * @param {function} onInput 输入框值改变时的回调函数
-   */
   let {
     value = $bindable(),
     label = '标签文字',
@@ -86,9 +126,10 @@
     gap: 8px;
     width: 100%;
     .InputBox-label {
-      color: #555;
+      color: rgba(0, 0, 0, 0.6);
       font-size: 14px;
       width: 90px;
+      white-space: nowrap;
       text-align: right;
       .required {
         color: red;

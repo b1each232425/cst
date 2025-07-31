@@ -1,32 +1,57 @@
+<!--
+  /**
+   * 上传图片组件
+   * 
+   * 作者：段春茂
+   * 邮箱：2162105974@qq.com
+   *
+   * 参数配置：
+   * @param {Boolean} required       是否为必填项，显示红色 * 标记
+   * @param {Boolean} show_label     是否显示标签文字
+   * @param {Boolean} show_message   是否显示提示说明信息
+   * @param {String}  label          标签文字
+   * @param {String}  mode           模式，可选值：upload | preview（默认：upload）
+   * @param {Boolean} disabled       是否禁用文件上传
+   * @param {String}  accept         接受的文件类型（默认：image/*）
+   * @param {String}  message        上传提示信息
+   * @param {String}  previewUrl     图片预览地址（后端返回 URL）
+   * @param {Number}  limit_size     上传文件大小限制（单位：MB，默认 10MB）
+   * @param {Function} onfile        文件上传成功后触发的回调函数，返回上传的 File 
+   *
+   * 事件：
+   * @event onfile - 文件上传成功后触发，携带上传的 File 
+   * 
+   * 使用示例：
+   * <UploadImage
+   *   label="上传头像"
+   *   required
+   *   show_label
+   *   show_message
+   *   previewUrl="/static/avatar.jpg"
+   *   onfile={(file) => console.log(file)}
+   * />
+   *
+   * 注意事项：
+   * - 支持图片格式：由 accept 控制（如 image/* 或 .png,.jpg）
+   * - 会限制文件大小，默认不能超过 10MB
+   * - 提交时函数返回上传的 File 
+   */
+-->
 <script>
   import { toast } from '$lib/components/Toast/Toast.js';
-  import { createEventDispatcher } from 'svelte';
-  /**
-   * @description 上传图片组件组件
-   * @param {Boolean} required - 是否必填   显示红色 * 标记
-   * @param {Boolean} show_label - 是否显示标签
-   * @param {String} mode - 模式，upload 上传，  preview 后端返回的url传递到previewUrl属性，preview 预览
-   * @param {String} label - 标签文字
-   * @param {Boolean} disabled - 是否禁用
-   * @param {Boolean} drag - 是否支持拖拽上传
-   * @param {String} accept - 接受的文件类型
-   * @param {String} message - 提示信息
-   * @param {String} previewUrl - 预览图地址
-   */
   let {
     required = false,
     show_label = false,
     show_message = false,
     mode = 'upload',
-    drag = false,
     disabled = false,
     label = '',
     accept = 'image/*',
     message = '仅支持 PDF、JPG 和 PNG 格式。最大文件尺寸 10 MB。',
     previewUrl = '',
     limit_size = 10, // 1MB
+    onfile = () => {},
   } = $props();
-  const dispatch = createEventDispatcher();
   function handleChange(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -35,7 +60,7 @@
       return;
     }
     previewUrl = URL.createObjectURL(file);
-    dispatch('file', { file });
+    onfile(file);
   }
 </script>
 

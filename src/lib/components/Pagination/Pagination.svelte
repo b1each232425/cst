@@ -1,53 +1,54 @@
-<!-- /**
-   * 分页器组件使用说明
-   *
-   * 作者：熊炜
-   * 邮箱：1062051028@qq.com
-   *
-   * 参数配置：
-   * @param {Number} totalItems        总数据条数  number
-   * @param {Number} pageSize          每页显示的数据条数  number
-   * @param {Number} currentPage       当前页数  number
-   * @param {Number} jumpPage          跳转目标页  number
-   * @param {Array} pageSizeOptions    每页条数选项  array
-   *
-   * 函数说明：
-   * @event pageChange                页码发生变化时触发，传递当前页码  { page: number }
-   * @event pageSizeChange            每页条数变化时触发，传递新的每页条数  { pageSize: number }
-   *
-   * 使用示例：
-   * <Pagination
-   *   totalItems={100}               // 总数据条数
-   *   pageSize={10}                  // 每页条数
-   *   currentPage={1}                // 当前页
-   *   pageSizeOptions={[10, 20, 30]} // 每页条数选择项
-   *   on:pageChange={handlePageChange}  // 监听页码变化
-   *   on:pageSizeChange={handlePageSizeChange}  // 监听每页条数变化
-   * />
-   *
-   * // 父组件控制分页器的行为
-   * function handlePageChange(event) {
-   *   currentPage = event.detail;
-   *   // 做分页逻辑处理
-   * }
-   *
-   * function handlePageSizeChange(event) {
-   *   pageSize = event.detail;
-   *   // 做每页条数变化逻辑处理
-   * }
-   */ -->
+<!--
+   分页器组件使用说明
+
+   作者：熊炜
+   邮箱：1062051028@qq.com
+
+   参数配置：
+   @param {Number} totalItems        总数据条数  number
+   @param {Number} pageSize          每页显示的数据条数  number
+   @param {Number} currentPage       当前页数  number
+   @param {Number} jumpPage          跳转目标页  number
+   @param {Array} pageSizeOptions    每页条数选项  array
+
+   函数说明：
+   @event pageChange                页码发生变化时触发，传递当前页码  { page: number }
+   @event pageSizeChange            每页条数变化时触发，传递新的每页条数  { pageSize: number }
+
+   使用示例：
+   <Pagination
+     totalItems={100}               // 总数据条数
+     pageSize={10}                  // 每页条数
+     currentPage={1}                // 当前页
+     pageSizeOptions={[10, 20, 30]} // 每页条数选择项
+     on:pageChange={handlePageChange}  // 监听页码变化
+     on:pageSizeChange={handlePageSizeChange}  // 监听每页条数变化
+   />
+
+   // 父组件控制分页器的行为
+   function handlePageChange(event) {
+     currentPage = event.detail;
+     // 做分页逻辑处理
+   }
+
+   function handlePageSizeChange(event) {
+     pageSize = event.detail;
+     // 做每页条数变化逻辑处理
+   }
+-->
 
 <script>
   // @ts-nocheck
-  import left_jt from '/static/pagination/left_jt.svg';
-  import right_jt from '/static/pagination/right_jt.svg';
+  import left_jt from '/static/pagination/left.svg';
+  import right_jt from '/static/pagination/right.svg';
   import { createEventDispatcher } from 'svelte';
+  import DropdownGray from '../DiaryLogPanel/DropdownGray.svelte';
 
   let {
     totalItems = 0, // 总数据条数
     pageSize = 10, // 每页显示的数据条数
     currentPage = 1, // 当前页数
-    jumpPage = 0, // 跳转的目标页
+    jumpPage = 1, // 跳转的目标页
     pageSizeOptions = [10, 20, 30, 40, 50], // 每页条数选项
   } = $props(); // 从父组件获取的属性
 
@@ -267,6 +268,7 @@
       display: flex;
       align-items: center;
       gap: 0.3rem;
+      margin-left: 10px;
 
       span {
         font-size: 0.9rem;
@@ -274,12 +276,13 @@
       }
 
       input {
-        width: 60px;
+        width: 50px;
         padding: 0.3rem 0.5rem;
         font-size: 0.9rem;
         border: none;
         border-radius: 4px;
         background-color: #f5f5f5;
+        text-align: center;
       }
 
       input:focus {

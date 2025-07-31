@@ -1,11 +1,11 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 
 // 存储 sidebar 数据
-export const navMap = writable([
+export const navStore = writable([
   {
-    name: 'question-bank-management',
+    name: 'question-bank',
     title: '题库管理',
-    path: '',
+    path: '/teacher/question-bank',
     icon: '/sidebar/nav_icon/question_bank.svg',
     isOpen: true,
     isSelect: false,
@@ -13,92 +13,92 @@ export const navMap = writable([
       {
         name: 'theory',
         title: '理论题库管理',
-        path: '/teacher/question-bank-management/theory',
+        path: '/teacher/question-bank/theory',
         isOpen: true,
         isSelect: true,
       },
     ],
   },
   {
-    name: 'paper-management',
+    name: 'paper',
     title: '试卷管理',
-    path: '/teacher/paper-management',
+    path: '/teacher/paper',
     icon: '/sidebar/nav_icon/paper.svg',
     isOpen: true,
     isSelect: false,
   },
   {
-    name: 'practice-management',
+    name: 'practice',
     title: '练习管理',
-    path: '/teacher/practice-management',
+    path: '/teacher/practice',
     icon: '/sidebar/nav_icon/practice.svg',
     isOpen: true,
     isSelect: false,
   },
   {
-    name: 'exam-management',
+    name: 'exam',
     title: '考试管理',
-    path: '/teacher/exam-management',
+    path: '/teacher/exam',
     icon: '/sidebar/nav_icon/examination.svg',
     isOpen: true,
     isSelect: false,
   },
+  // {
+  //   name: 'correct',
+  //   title: '试卷批改',
+  //   path: '/teacher/correct',
+  //   icon: '/sidebar/nav_icon/correct.svg',
+  //   isOpen: true,
+  //   isSelect: false,
+  //   children: [
+  //     {
+  //       name: 'exam-correct',
+  //       title: '考试批改',
+  //       path: '/teacher/correct/exam-correct',
+  //       isOpen: true,
+  //       isSelect: false,
+  //     },
+  //     {
+  //       name: 'practice-correct',
+  //       title: '练习批改',
+  //       path: '/teacher/correct/practice-correct',
+  //       isOpen: true,
+  //       isSelect: false,
+  //     },
+  //   ],
+  // },
   {
-    name: 'paper-correction',
-    title: '试卷批改',
-    path: '/teacher/paper-correction',
-    icon: '/sidebar/nav_icon/correct.svg',
-    isOpen: true,
-    isSelect: false,
-    children: [
-      {
-        name: 'exam-correction',
-        title: '考试批改',
-        path: '/teacher/paper-correction/exam-correction',
-        isOpen: true,
-        isSelect: false,
-      },
-      {
-        name: 'practice-correction',
-        title: '练习批改',
-        path: '/teacher/paper-correction/practice-correction',
-        isOpen: true,
-        isSelect: false,
-      },
-    ],
-  },
-  {
-    name: 'score-management',
+    name: 'grade',
     title: '成绩管理',
-    path: '/teacher/score-management',
+    path: '/teacher/grade',
     icon: '/sidebar/nav_icon/grade.svg',
     isOpen: true,
     isSelect: false,
     children: [
       {
-        name: 'exam-score-management',
+        name: 'exam-grade',
         title: '考试成绩管理',
-        path: '/teacher/score-management/exam-score-management',
+        path: '/teacher/grade/exam-grade',
         isOpen: true,
         isSelect: false,
       },
       {
-        name: 'practice-score-management',
+        name: 'practice-grade',
         title: '练习成绩管理',
-        path: '/teacher/score-management/practice-score-management',
+        path: '/teacher/grade/practice-grade',
         isOpen: true,
         isSelect: false,
       },
     ],
   },
-  {
-    name: 'exam-point-management',
-    title: '考点管理',
-    path: '/teacher/exam-point-management',
-    icon: '/sidebar/nav_icon/exam_site.svg',
-    isOpen: true,
-    isSelect: false,
-  },
+  // {
+  //   name: 'exam-site',
+  //   title: '考点管理',
+  //   path: '/teacher/exam-site',
+  //   icon: '/sidebar/nav_icon/exam_site.svg',
+  //   isOpen: true,
+  //   isSelect: false,
+  // },
   {
     name: 'student-management',
     title: '学生管理',
@@ -120,9 +120,9 @@ export const navMap = writable([
 // 存储面包屑数据映射表
 export const crumbStore = writable([
   {
-    id: 'question-bank-management',
+    id: 'question-bank',
     title: '题库管理',
-    path: '/teacher/question-bank-management',
+    path: '/teacher/question-bank',
     isSelect: false,
     isFilter: true,
     parentId: null,
@@ -130,23 +130,23 @@ export const crumbStore = writable([
   {
     id: 'theory',
     title: '理论题库管理',
-    path: '/teacher/question-bank-management/theory',
+    path: '/teacher/question-bank/theory',
     isSelect: false,
     isFilter: false,
-    parentId: 'question-bank-management',
+    parentId: 'question-bank',
   },
   {
-    id: '[bankid]',
-    title: '理论题目管理',
-    path: '/teacher/question-bank-management/theory/[bankid]',
+    id: 'editBank',
+    title: '编辑题目',
+    path: '/teacher/question-bank/theory/editBank',
     isSelect: false,
     isFilter: false,
     parentId: 'theory',
   },
   {
-    id: 'paper-management',
+    id: 'paper',
     title: '试卷管理',
-    path: '/teacher/paper-management',
+    path: '/teacher/paper',
     isSelect: false,
     isFilter: false,
     parentId: null,
@@ -160,6 +160,30 @@ export const crumbStore = writable([
     parentId: null,
   },
   {
+    id: 'create',
+    title: '创建练习',
+    path: '/teacher/practice/create',
+    isSelect: false,
+    isFilter: false,
+    parentId: 'practice',
+  },
+  {
+    id: 'edit',
+    title: '编辑练习',
+    path: '/teacher/practice/create/edit',
+    isSelect: false,
+    isFilter: true,
+    parentId: 'practice',
+  },
+  {
+    id: '[id]',
+    title: '编辑练习',
+    path: '/teacher/practice/create/edit/[id]',
+    isSelect: false,
+    isFilter: false,
+    parentId: 'edit',
+  },
+  {
     id: 'exam',
     title: '考试管理',
     path: '/teacher/exam',
@@ -168,57 +192,81 @@ export const crumbStore = writable([
     parentId: null,
   },
   {
-    id: 'paper-correction',
+    id: 'addExam',
+    title: '创建考试',
+    path: '/teacher/exam/addExam',
+    isSelect: false,
+    isFilter: false,
+    parentId: 'exam',
+  },
+  {
+    id: 'editExam',
+    title: '编辑考试',
+    path: '/teacher/exam/editExam',
+    isSelect: false,
+    isFilter: true,
+    parentId: 'exam',
+  },
+  {
+    id: '[examID]',
+    title: '编辑考试',
+    path: '/teacher/exam/editExam/[examID]',
+    isSelect: false,
+    isFilter: false,
+    parentId: 'editExam',
+  },
+  {
+    id: 'correct',
     title: '试卷批改',
-    path: '/teacher/paper-correction',
+    path: '/teacher/correct',
     isSelect: false,
     isFilter: false,
     parentId: null,
   },
   {
-    id: 'exam-correction',
+    id: 'exam-correct',
     title: '考试批改',
-    path: '/teacher/exam-correction',
+    path: '/teacher/correct/exam-correct',
     isSelect: false,
     isFilter: false,
-    parentId: 'paper-correction',
+    parentId: 'correct',
   },
   {
-    id: 'practice-correction',
+    id: 'practice-correct',
     title: '练习批改',
-    path: '/teacher/practice-correction',
+    path: '/teacher/correct/practice-correct',
     isSelect: false,
     isFilter: false,
-    parentId: 'paper-correction',
+    parentId: 'correct',
   },
   {
-    id: 'score-management',
+    id: 'grade',
     title: '成绩管理',
-    path: '/teacher/score-management',
+    path: '/teacher/grade',
     isSelect: false,
-    isFilter: false,
+    isFilter: true,
     parentId: null,
   },
   {
-    id: 'exam-score-management',
+    id: 'exam-grade',
     title: '考试成绩管理',
-    path: '/teacher/score-management/exam-score-management',
+    path: '/teacher/grade/exam-grade',
     isSelect: false,
     isFilter: false,
-    parentId: 'score-management',
+    parentId: 'grade',
   },
   {
-    id: 'practice-score-management',
+    id: 'practice-grade',
     title: '练习成绩管理',
-    path: '/teacher/score-management/practice-score-management',
+    path: '/teacher/grade/practice-grade',
     isSelect: false,
     isFilter: false,
-    parentId: 'score-management',
+    parentId: 'grade',
   },
   {
-    id: 'exam-point-management',
+    id: 'exam-site',
     title: '考点管理',
-    path: '/teacher/exam-point-management',
+    path: '/teacher/exam-site',
     isSelect: false,
     isFilter: false,
     parentId: null,
@@ -232,6 +280,14 @@ export const crumbStore = writable([
     parentId: null,
   },
   {
+    id: 'addStudent',
+    title: '创建学生',
+    path: '/teacher/student-management/addStudent',
+    isSelect: false,
+    isFilter: false,
+    parentId: 'student-management',
+  },
+  {
     id: 'user-management',
     title: '用户管理',
     path: '/teacher/user-management',
@@ -239,10 +295,47 @@ export const crumbStore = writable([
     isFilter: false,
     parentId: null,
   },
+  {
+    id: 'addUser',
+    title: '创建用户',
+    path: '/teacher/user-management/addUser',
+    isSelect: false,
+    isFilter: false,
+    parentId: 'user-management',
+  },
 ]);
 
 // 控制侧边栏折叠状态
 export const sidebarFoldingState = writable(false);
 
-// 控制侧边栏宽度
-export const sidebarWidth = writable('235px');
+// 控制侧边栏悬浮
+export const sidebarFloatState = writable(false);
+
+// 用于保存定时器ID
+export let timerId = writable(null);
+
+// 处理鼠标进入事件
+export function sidebarMouseEnter() {
+  const currentTimerId = get(timerId);
+
+  if (currentTimerId) {
+    clearTimeout(currentTimerId);
+  }
+
+  sidebarFloatState.set(true);
+}
+
+// 处理鼠标离开事件
+export function sidebarMouseLeave() {
+  const currentTimerId = get(timerId);
+
+  if (currentTimerId) {
+    clearTimeout(currentTimerId);
+  }
+
+  const newTimerId = setTimeout(() => {
+    sidebarFloatState.set(false);
+  }, 1000);
+
+  timerId.set(newTimerId);
+}
