@@ -29,3 +29,5 @@ vite.config.ts.timestamp-*
 .trae
 
 coverage
+
+pnpm-lock.yaml
