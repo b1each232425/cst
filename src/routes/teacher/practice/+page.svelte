@@ -720,7 +720,6 @@
         pageSize={data_per_page}
         currentPage={current_page_num}
         on:pageChange={handle_page_choose}
-        jumpPage={handle_page_choose}
         on:pageSizeChange={handle_page_size_change}
       />
     </div>

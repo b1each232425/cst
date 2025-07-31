@@ -701,7 +701,6 @@
             currentPage={search_params.page}
             on:pageChange={onPageChooseFunc}
             on:pageSizeChange={handle_page_size_change}
-            jumpPage={onSearchPageFunc}
           ></Pagination>
         </div>
       {/if}
@@ -832,7 +831,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 100;
+    z-index:100;
+    
   }
 
   .examinee-panel {
@@ -846,6 +846,7 @@
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     z-index: 1001;
+     
   }
 
   .panel-header {

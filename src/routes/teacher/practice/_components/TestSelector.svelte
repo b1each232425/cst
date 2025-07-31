@@ -327,19 +327,6 @@
                         />
                     </div>
 
-                    <div class="search-item">
-                        <label>组卷方式</label>
-                    <Select
-                            bind:value={selectedStructure}
-                            filterable
-                            remote
-                            remote_method={searchPapers}
-                        >
-                        {#each structureOptions as structureOption}
-                        <Option value={structureOption} label= {structureOption}></Option>
-                        {/each}
-                    </Select>
-                    </div>
                 </div>
 
                 <div class="search-btns">
@@ -441,7 +428,6 @@
                         pageSize={pageSize}
                         on:pageChange={handlePageChoose}
                         on:pageSizeChange={handlePageSizeChange}
-                        jumpPage={handlePageChoose}
                     /> 
                 </div>
             </div>
@@ -457,6 +443,7 @@
 {/if}
 
 <style lang="scss">
+    
     /* 基础样式 */
     .modal-overlay {
         position: fixed;
@@ -469,18 +456,20 @@
         align-items: center;
         justify-content: center;
         z-index: 1000;
+        
     }
 
     .modal-content {
         background-color: white;
         border-radius: 4px;
-        width: 90%;
+        width:  90%;
         max-width: 1200px;
         height: 80vh; /* 固定高度而不是max-height */
         display: flex;
         flex-direction: column;
         overflow: hidden;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        
     }
 
     .modal-header {
