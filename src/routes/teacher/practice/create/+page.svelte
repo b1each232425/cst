@@ -101,7 +101,7 @@
     }
 </script>
 
-
+<main>
     <Title title="创建练习"></Title>
 
     <PracticeForm onSubmitFunc={handleSubmit} onCancelFunc={handleCancel} />
@@ -116,7 +116,7 @@
          cancel_text = '取消'
     confirm_text = '确定'
     /> 
-    
+    </main>
 
 
 <style>
