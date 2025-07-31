@@ -1,27 +1,12 @@
-/*
- * @Author: Mayux && dbs45412@163.com
- * @Date: 2025-04-27 21:01:50
- * @LastEditors: Mayux && 1243805308@qq.com
- * @LastEditTime: 2025-06-14 16:10:21
- * @FilePath: \tutorial-platform-fe\src\lib\batch_check\check_examinee.js
- * @Description: 批量导入考生
- * @Copyright: Copyright (c) 2025 by Mayux, All Rights Reserved. 
- */
-// @ts-nocheck
 import ExcelJS from 'exceljs';
 const { Workbook } = ExcelJS;
 
-/**
- * @param {string} phone
- */
 function isValidPhone(phone) {
     const phonePattern = /^1[3-9]\d{9}$/;
     return phonePattern.test(phone);
 }
 
-/**
- * @param {string} idCard
- */
+
 function isValidIDCard(idCard) {
     const idCardPattern = /(^\d{15}$)|(^\d{17}(\d|X|x)$)/;
     return idCardPattern.test(idCard);
@@ -154,8 +139,8 @@ export async function checkData(file) {
 
                     //行数据
                     let rowData = {
-                        error_type: "",
-                        is_ok: true
+                        errorType: "",
+                        isOk: true
                     };
 
                     // 存储当前行的身份证号
@@ -180,22 +165,22 @@ export async function checkData(file) {
 
                         // 必填项非空检查
                         if (isRequired && (cellValue == null || cellValue === '')) {
-                            rowData.error_type = "缺少必填项";
-                            rowData.is_ok = false;
+                            rowData.errorType = "缺少必填项";
+                            rowData.isOk = false;
                             break; // 如果是缺失必填，就跳过后面的格式校验
                         }
 
                         // 格式校验
                         if (column === 3 && cellValue != null && !isValidPhone(`${cellValue}`)) {
-                            rowData.error_type = "手机号格式错误";
-                            rowData.is_ok = false;
+                            rowData.errorType = "手机号格式错误";
+                            rowData.isOk = false;
                         }
 
                         if (column === 4 && cellValue != null) {
                             currentIdCard = `${cellValue}`;
                             if (!isValidIDCard(currentIdCard)) {
-                                rowData.error_type = "身份证号格式错误";
-                                rowData.is_ok = false;
+                                rowData.errorType = "身份证号格式错误";
+                                rowData.isOk = false;
                             }else {
                                 idCardSet.add(currentIdCard);
                             }
