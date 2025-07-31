@@ -182,8 +182,8 @@
 
   .floating-sidebar-container {
     position: fixed;
-    height: 80%;
-    top: 50%;
+    height: 60%;
+    top: 35%;
     left: 0;
     transform: translateY(-50%);
     z-index: 9999;
@@ -196,7 +196,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    height: var(--sidebar-height, 100%);
+    height: 100%;
     box-sizing: border-box;
     overflow: hidden;
 
