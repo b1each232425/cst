@@ -83,6 +83,7 @@
     let examRooms = $state([]); //考试场地
     let invigilators = $state([]); //监考人员
     let examID = $state();
+    let examineeID = $state([])
     //考试场次数组
     let paperConfigs = $state([
         {
@@ -263,23 +264,23 @@
     async function handleSubmit() {
     /* 1. 必填字段校验（保持原逻辑） */
     if (examName === "") {
-         actionToast.show("error", "请输入考试名称");
+        actionToast.show("error", "请输入考试名称");
         return;
     }
     if (examName.length > 50) {
-         actionToast.show("error", "考试名称不得超过50个字符");
+        actionToast.show("error", "考试名称不得超过50个字符");
         return;
     }
     if (examRules === "") {
-         actionToast.show("error", "请输入考试规则");
+        actionToast.show("error", "请输入考试规则");
         return;
     }
     if (examRules.length > 1000) {
-         actionToast.show("error", "考试规则不得超过1000个字符");
+        actionToast.show("error", "考试规则不得超过1000个字符");
         return;
     }
     if (paperConfigs.length <= 0) {
-         actionToast.show("error", "请至少添加一个考试场次");
+        actionToast.show("error", "请至少添加一个考试场次");
         return;
     }
 
@@ -288,7 +289,7 @@
         const session = paperConfigs[i];
 
         if (!session.startTime || session.startTime === "") {
-             actionToast.show("error", `第${i + 1}个场次未设置时间段`);
+            // actionToast.show("error", `第${i + 1}个场次未设置时间段`);
             return;
         }
         if (!session.endTime || session.endTime === "") {
@@ -299,17 +300,17 @@
         const startTime = new Date(session.startTime);
         const endTime   = new Date(session.endTime);
         const now       = new Date();
+        
         if (startTime < now) {
             // actionToast.show("error", `第${i + 1}个场次的开始时间不能早于当前时间`);
             return;
         }
         if (endTime <= startTime) {
-             actionToast.show("error", `第${i + 1}个场次的结束时间必须晚于开始时间`);
+            // actionToast.show("error", `第${i + 1}个场次的结束时间必须晚于开始时间`);
             return;
         }
     }
-    
-    console.log("examExaminee", examExaminee);
+
     /* 3. 预处理场次数据（保持原逻辑） */
     for (let i = 0; i < paperConfigs.length; i++) {
         paperConfigs[i].sessionNum = i + 1;
@@ -358,23 +359,25 @@
         : [];
 
     const examData = {
-        examInfo: {
+        data:{
+            examInfo: {
             Name:   examName,
             Rules:  examRules,
             Type:   examType,
             Mode:   examMode,
-            status: "00",
             Files:  fileArr,
         },
         examSessions: examSessionsdata,
-        examinee:     examExaminee,          // 用户选中的考生 id 数组
+        examinee:     examExaminee.map(e => e.id ?? e),          // 用户选中的考生 id 数组
         invigilators: invigilators.map(i => i.id), // 监考员 id 数组
+        }
     };
-
+         
     console.log("examDATA",examData);
+    /* 5. 发送请求（去掉写死的 DATA，直接发送 examData） */
     try {
         const res = await fetch("/api/exam", {
-            method:  "POST",
+            method:  "PUT",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
             body:    JSON.stringify(examData),
@@ -391,6 +394,27 @@
     }
 }
 
+    async function fetchSelectedStudents(){
+        fetch(`/api/exam/examinee?exam_id=${examID}`,{
+            method:'GET',
+            credentials:"include",
+            headers:{
+                "Content-Type":"application/json",
+            },
+        })
+        .then((response)=>response.json())
+        .then((data)=>{
+            if(data.status === 0)
+            {
+                examExaminee=data.data;
+                return;
+            }
+        })
+        .catch((e) => {
+            console.error("获取考试信息失败", e);
+        });
+    }
+
     async function fetchExamInfo() {
         //const examSessionsdata
         fetch(`/api/exam?exam_id=${examID}`,{
@@ -404,12 +428,13 @@
         .then((data) =>{
             if(data.status === 0)
             {
+                // console.log("data",data);
                 const examData = data.data;
                 examName = examData.examInfo.Name;
                 examRules = examData.examInfo.Rules;
                 examType = examData.examInfo.Type;
                 examMode = examData.examInfo.Mode;
-                examExaminee = examData.examinee ||[1];
+                examineeID = examData.examinee ||[1];
                 // invigilators = examData.invigilators.map(i => ({ id: i }));
                 paperConfigs = examData.examSessions.map((s, idx) => {
                 /* 根据 QuestionShuffledMode 还原两个 checkbox */
@@ -444,7 +469,7 @@
                     earlySubmisstionTime: s.EarlySubmissionTime || 0,
                 };
             });
-                    console.log(paperConfigs);
+                   
             }
         })
         .catch((e) => {
@@ -454,9 +479,11 @@
     onMount(()=>{
         page.subscribe(value => {
         examID = value.params.examID;
-        console.log('examID from params:', examID);
+        //console.log('examID from params:', examID);
     });
+        fetchSelectedStudents();
         fetchExamInfo();
+        // console.log("examinee",examExaminee);
     })
 </script>
 <Title title="创建考试" line={true} />
@@ -514,7 +541,7 @@
                     />
                     期末成绩考试
                     <span class="tip-wrapper">
-                        <img class="tip" alt="提示" src="/tip.png" />
+                        <img class="tip" alt="提示" src="/exam_list/tip.png" />
                         <div class="tooltip-text">{TIP_TEXT["final_exam"]}</div>
                     </span>
                 </label>
@@ -527,7 +554,7 @@
                     />
                     资格证考试
                     <span class="tip-wrapper">
-                       <img class="tip" alt="提示" src="/tip.png" />
+                       <img class="tip" alt="提示" src="/exam_list/tip.png" />
                         <div class="tooltip-text">
                             {TIP_TEXT["qualifying_exams"]}
                         </div>
@@ -549,7 +576,7 @@
                     />
                     线上考试
                     <span class="tip-wrapper">
-                        <img class="tip" alt="提示" src="/tip.png" />
+                        <img class="tip" alt="提示" src="/exam_list/tip.png" />
                         <div class="tooltip-text">{TIP_TEXT["online"]}</div>
                     </span>
                 </label>
@@ -634,7 +661,7 @@
                     // 清空考场选择
                      examRooms = [];
                      invigilators = [];
-                }}><img src="/delete.svg" alt="删除" /></button
+                }}><img src="/exam_list/delete.svg" alt="删除" /></button
             >
             <button
                 class="arrow"
@@ -710,7 +737,7 @@
                                 固定时段考试
 
                                 <span class="tip-wrapper">
-                                    <img class="tip" alt="提示" src="/tip.png" />
+                                    <img class="tip" alt="提示" src="/exam_list/tip.png" />
                                     <div class="tooltip-text" style="min-width: 255px;">
                                         {TIP_TEXT["fixed"]}
                                     </div>
@@ -737,15 +764,30 @@
                                 on:endDateSelected={onChooseTime(paperConfigIndex)}
                             ></DateTimePicker> -->
                             
-                            <DatePicker
-                                isTimeSelection={true}
-                                initialStartDate={paperConfigs[paperConfigIndex].startTime ? new Date(paperConfigs[paperConfigIndex].startTime) : null}
-                                initialEndDate={paperConfigs[paperConfigIndex].endTime ? new Date(paperConfigs[paperConfigIndex].endTime) : null}
-                                inputWidth={'350px'}
-                                singleDateSelection={false}
-                                on:startDateSelected={onChooseStartTime(paperConfigIndex)}
-                                on:endDateSelected={onChooseEndTime(paperConfigIndex)}
-                            ></DatePicker>
+                           <!-- 只有在paperConfigs数据准备好后才渲染DatePicker -->
+                            {#if paperConfigs[paperConfigIndex] && paperConfigs[paperConfigIndex].startTime}
+                                <DatePicker
+                                    key={`${paperConfigIndex}-${paperConfigs[paperConfigIndex].startTime}`}
+                                    isTimeSelection={true}
+                                    initialStartDate={new Date(paperConfigs[paperConfigIndex].startTime)}
+                                    initialEndDate={paperConfigs[paperConfigIndex].endTime ? new Date(paperConfigs[paperConfigIndex].endTime) : null}
+                                    inputWidth={'350px'}
+                                    singleDateSelection={false}
+                                    on:startDateSelected={onChooseStartTime(paperConfigIndex)}
+                                    on:endDateSelected={onChooseEndTime(paperConfigIndex)}
+                                />
+                            {:else}
+                                <DatePicker
+                                    key={paperConfigIndex}
+                                    isTimeSelection={true}
+                                    initialStartDate={null}
+                                    initialEndDate={null}
+                                    inputWidth={'350px'}
+                                    singleDateSelection={false}
+                                    on:startDateSelected={onChooseStartTime(paperConfigIndex)}
+                                    on:endDateSelected={onChooseEndTime(paperConfigIndex)}
+                                />
+                            {/if}
                         </div>
                     </div>
 
@@ -932,7 +974,7 @@
                                     }}
                                 >
                                     <img
-                                        src="/add.svg"
+                                        src="/exam_list/add.svg"
                                         alt="添加"
                                         style="height: 10px; margin-right:5px"
                                     />添加批阅员

@@ -313,7 +313,7 @@ function updateDuration(index) {
 
     /* 4. 构造真正要提交的 JSON（完全使用用户输入） */
     const examSessionsdata = paperConfigs.map(cfg => ({
-        PaperID:              cfg.paperID,
+        PaperID:              61,
         PeriodMode:           cfg.periodMode,
         StartTime:            cfg.startTime  ? new Date(cfg.startTime).getTime() : 0,
         EndTime:              cfg.endTime    ? new Date(cfg.endTime).getTime()   : 0,
@@ -336,19 +336,20 @@ function updateDuration(index) {
         : [];
 
     const examData = {
-        examInfo: {
+        data:{
+            examInfo: {
             Name:   examName,
             Rules:  examRules,
             Type:   examType,
             Mode:   examMethod,
-            status: "00",
             Files:  fileArr,
         },
         examSessions: examSessionsdata,
-        examinee:     examExaminee,          // 用户选中的考生 id 数组
+        examinee:     examExaminee.map(e => e.id ?? e),          // 用户选中的考生 id 数组
         invigilators: invigilators.map(i => i.id), // 监考员 id 数组
+        }
     };
-
+         
     console.log("examDATA",examData);
     /* 5. 发送请求（去掉写死的 DATA，直接发送 examData） */
     try {
@@ -425,7 +426,7 @@ function updateDuration(index) {
                     />
                     期末成绩考试
                     <span class="tip-wrapper">
-                        <img class="tip" alt="提示" src="/tip.png" />
+                        <img class="tip" alt="提示" src="/exam_list/tip.png" />
                         <div class="tooltip-text">{TIP_TEXT["final_exam"]}</div>
                     </span>
                 </label>
@@ -438,7 +439,7 @@ function updateDuration(index) {
                     />
                     资格证考试
                     <span class="tip-wrapper">
-                       <img class="tip" alt="提示" src="/tip.png" />
+                       <img class="tip" alt="提示" src="/exam_list/tip.png" />
                         <div class="tooltip-text">
                             {TIP_TEXT["qualifying_exams"]}
                         </div>
@@ -460,7 +461,7 @@ function updateDuration(index) {
                     />
                     线上考试
                     <span class="tip-wrapper">
-                        <img class="tip" alt="提示" src="/tip.png" />
+                        <img class="tip" alt="提示" src="/exam_list/tip.png" />
                         <div class="tooltip-text">{TIP_TEXT["online"]}</div>
                     </span>
                 </label>
@@ -545,7 +546,7 @@ function updateDuration(index) {
                     // 清空考场选择
                      examRooms = [];
                      invigilators = [];
-                }}><img src="/delete.svg" alt="删除" /></button
+                }}><img src="/exam_list/delete.svg" alt="删除" /></button
             >
             <button
                 class="arrow"
@@ -621,7 +622,7 @@ function updateDuration(index) {
                                 固定时段考试
 
                                 <span class="tip-wrapper">
-                                    <img class="tip" alt="提示" src="/tip.png" />
+                                    <img class="tip" alt="提示" src="/exam_list/tip.png" />
                                     <div class="tooltip-text" style="min-width: 255px;">
                                         {TIP_TEXT["fixed"]}
                                     </div>
@@ -841,7 +842,7 @@ function updateDuration(index) {
                                     }}
                                 >
                                     <img
-                                        src="/add.svg"
+                                        src="/exam_list/add.svg"
                                         alt="添加"
                                         style="height: 10px; margin-right:5px"
                                     />添加批阅员
