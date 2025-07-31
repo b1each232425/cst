@@ -296,7 +296,7 @@
           <div class="input-wrapper">
             <div class="form-input-container">
               <InputBox
-                label="练习名称:"
+                label="练习名称："
                 request
                 type="text"
                 id="practice-name"
@@ -314,11 +314,13 @@
       {#if !practiceData || (practiceData && practiceData.data.practice.Status === '00')}
         <div class="form-group">
           <label for="test-select">
-            <span class="required">*</span> 练习试卷：
+            <span class="required">*</span> <span class="filter-label">练习试卷：</span>
           </label>
           <div class="input-wrapper">
             {#if !testConfirmed}
-              <Button id="test-select" class="select-btn" onclick={openTestModal} plain>选择试卷</Button>
+            <div class="select-wrapper"> 
+              <Button id="test-select"  onclick={openTestModal} plain>选择试卷</Button>
+              </div>
             {:else}
               <div class="selected-test-display">
                 <div class="test-info-container">
@@ -329,7 +331,7 @@
                     <span class="test-name" title={selectedTestObj?.name}>{selectedTestObj?.name}</span>
                   </div>
                 </div>
-                <button id="test-select" class="change-test-btn" onclick={openTestModal}>更换试卷</button>
+                <Button id="test-select"  onclick={openTestModal} plain>更换试卷</Button>
               </div>
             {/if}
             <div class="error-message" class:hidden={!errors.test}>
@@ -340,7 +342,7 @@
 
         <div class="form-group">
           <label for="grading-method-auto">
-            <span class="required">*</span> 批改方式：
+            <span class="required">*</span> <span class="filter-label">批改方式：</span>
           </label>
           <div class="radio-group">
             <label class="radio-option">
@@ -363,14 +365,14 @@
                 checked={grading_method === '自动批改'}
                 onchange={() => (grading_method = '自动批改')}
               />
-              <span class="radio-text">自动批改</span>
+              <span class="radio-text">AI批改</span>
             </label>
           </div>
         </div>
 
         <div class="form-group">
           <label for="allowed-attempts-not-limit">
-            <span class="required">*</span> 可作答次数：
+            <span class="required">*</span> <span class="filter-label">可作答次数：</span>
           </label>
           <div class="radio-group">
             <label class="radio-option">
@@ -414,7 +416,7 @@
         </div>
       {/if}
       <div class="form-group">
-        <label for="student-select"> 参与学生： </label>
+        <label for="student-select"> <span class="filter-label">参与学生：</span></label> 
         <div class="input-wrapper">
           <div class="class-selection-area">
             <div class="select-wrapper">
@@ -493,6 +495,7 @@
     display: flex;
     justify-content: center;
     padding: 20px;
+   
   }
 
   .practice-form {
@@ -523,18 +526,27 @@
 
       .required {
         color: red;
-        margin-right: 4px;
+        font-size: 14px;
+      }
+      .filter-label{
+         color: rgba(0, 0, 0, 0.6);
+      font-size: 14px;
+      width: 75px;
+      white-space: nowrap;
+      text-align: right;
       }
     }
   }
 
   // 输入包装器样式
   .input-wrapper {
+    
     flex: 1; // 输入区域占剩余空间
     display: flex;
     align-items: center; // 内容垂直居中
     // 学生选择区域特殊处理，保持文本区域的overflow控制
     .form-input-container {
+      margin-left: 10px;
       overflow: hidden;
       width: 80%;
     }
@@ -586,6 +598,7 @@
       display: flex;
       align-items: center;
       margin-right: 20px;
+      margin-left: -10px;
       cursor: pointer;
 
       input[type='radio'] {
@@ -621,6 +634,7 @@
 
   // 学生选择相关样式
   .select-wrapper {
+     margin-left: -6px;
     position: relative;
     display: inline-block;
   }
