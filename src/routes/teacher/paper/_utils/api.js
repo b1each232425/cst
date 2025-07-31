@@ -199,3 +199,37 @@ export function savePaper(
             return null;
         });
 }
+
+// 删除试卷
+export function deletePaper(
+    toDeletePapers = []
+){
+
+    const data = {
+        data: toDeletePapers
+    };
+
+    const headers = {
+        "Content-Type": "application/json"
+    };
+
+    return fetch(`/api/paper`, {
+        headers: headers,
+        method: "DELETE",
+        credentials: "include",
+        body: JSON.stringify(data)
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`请求失败，状态码：${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            return data;
+        })
+        .catch(error => {
+            console.error('删除试卷出错：', error);
+            return null;
+        });
+}

@@ -12,6 +12,8 @@
     import Toast from "$lib/components/Toast/Toast.svelte";
     import { toast } from "$lib/components/Toast/Toast";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
+    import QuestionPreview from "../_components/QuestionPreview/QuestionPreview.svelte";
+    import { debounce } from "$lib/utils/optimize";
     
     /*************** 控制开关区 ****************/
 
@@ -38,6 +40,37 @@
     let questionCount = $state(0);
     let description = $state("");
     let tags = $state(["测试","简单","常识","English", "牛逼", "WDF"]);
+
+    // 防抖更新试卷信息
+    const debounceUpDatePaperInfo = debounce(() => {
+        isLoading = true;
+        const actions = [
+            {
+                action: "update_info",
+                payload: {
+                    name: paperName,
+                    category: category,
+                    level: level,
+                    duration: suggestedDuration,
+                    description: description,
+                    tags: tags
+                }
+            }
+        ];
+
+        savePaper(paperID, actions)
+            .then(result => {
+                console.log(result);
+            })
+            .finally(() => {
+                isLoading = false;
+            });
+    }, 1000, false);
+
+    $effect(() => {
+        paperName; category; level; suggestedDuration; description; tags;
+        debounceUpDatePaperInfo();
+    });
 
     /*************** 试卷信息区 ****************/
 
@@ -81,9 +114,17 @@
     let paperGroups = $state([]);
     let toAddGroupName = $state("");
     let toAddGroup = $state(null);
+    let toEditGroupID = $state(null);
+    let toEditGroupName = $state("");
+    let toEditGroup = $state(null);
 
     // 删除题组
-    function deleteGroup(paperID, groupID) {
+    function deleteGroup(groupID) {
+        // 判断是否为最后一个题组
+        if (paperGroups.length === 1) {
+            toast.error("至少保留一个题组", 1000);
+            return;
+        }
 
         MessageBox({
             title: "删除确认",
@@ -93,14 +134,22 @@
             onConfirm: () => {
                 isLoading = true;
 
+                // 删除后重新排序
+                let groupIDs = paperGroups.map(group => group.id);
+                groupIDs = groupIDs.filter(id => id !== groupID)
+
                 const actions = [
                     {
                         action: "delete_group",
                         payload: groupID
+                    },
+                    {
+                        action: "move_group",
+                        payload: groupIDs
                     }
                 ];
 
-                savePaper(paperID,actions)
+                savePaper(paperID, actions)
                     .then(result => {
                         console.log(result);
                     })
@@ -161,6 +210,95 @@
         }
     }
 
+    // 编辑题组名称
+    async function editGroupName(id, name) {
+        toEditGroupID = id;
+        toEditGroupName = name;
+        await tick();
+        toEditGroup.focus();
+    }
+
+    // 确认编辑题组名称
+    function confirmEditGroupName() {
+        if(event.key === "Enter" && toEditGroupName.trim() !== "") {
+
+            toEditGroup.blur();
+            
+            isLoading = true;
+
+            const actions = [
+                {
+                    action: "update_group",
+                    payload: {
+                        id: toEditGroupID,
+                        name: toEditGroupName
+                    }
+                }
+            ];
+            
+            savePaper(paperID, actions)
+                    .then(result => {
+                        console.log(result);
+                    })
+                    .finally(() => {
+                        isLoading = false;
+                        toast.success("编辑题组名称成功", 1000);
+
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    });
+        }
+    }
+
+    // 删除题目
+    function deleteQuestion(questionID, group) {
+        // 检查是否为最后一道题目
+        if(group.questions.length === 1) {
+            toast.error("至少保留一道题目", 1000);
+            return;
+        }
+
+        MessageBox({
+            title: "删除确认",
+            content: "请问是否要删除该题目？",
+            confirm_button_type: "danger",
+
+            onConfirm: () => {
+                isLoading = true;
+
+                // 删除后重新排序
+                const groupQuestions = group.questions;
+                let questionIDs = groupQuestions.map(question => question.id);
+                questionIDs = questionIDs.filter(id => id !== questionID)
+
+                const actions = [
+                    {
+                        action: "delete_question",
+                        payload: [questionID]
+                    },
+                    {
+                        action: "move_question",
+                        payload: questionIDs
+                    }
+                ];
+
+                savePaper(paperID, actions)
+                    .then(result => {
+                        console.log(result);
+                    })
+                    .finally(() => {
+                        isLoading = false;
+                        toast.success("删除题目成功", 1000);
+
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    });
+            }
+        });
+    }
+
     /**************** 题组列表区 ****************/
 
     // 挂载区
@@ -176,6 +314,7 @@
                 category = paperInfo.Category;
                 level = paperInfo.Level;
                 suggestedDuration = paperInfo.SuggestedDuration;
+                description = paperInfo.Description;
                 tags = paperInfo.Tags;
         }).finally(() => {
             isLoading = false;
@@ -192,7 +331,7 @@
 
 </script>
 
-<button onclick={test}>点我</button>
+<!-- <button onclick={test}>点我</button> -->
 
 {#if importModalIsOpen}
     <ImportQuestion onclose={closeImportModal}/>
@@ -212,8 +351,8 @@
         
         <!-- 操作区 -->
         <div class="operation">
-            <Button plain={true}>一键展开</Button>
-            <Button plain={true}>一键收取</Button>
+            <!-- <Button plain={true}>一键展开</Button>
+            <Button plain={true}>一键收取</Button> -->
             <Button onclick={()=>{importModalIsOpen=true}}>从题库中导入</Button>
             <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper')}>退出</Button>
         </div>
@@ -259,18 +398,18 @@
                 </div>
 
                 <!-- 试卷总分 -->
-                <div class="single-line">
+                <!-- <div class="single-line">
                     <span class="info-label">试卷总分</span>
                     <span class="total-score-number">{totalScore}</span>
                     <span class="total-score-span">分</span>
-                </div>
+                </div> -->
 
                 <!-- 试题数量 -->
-                <div class="single-line">
+                <!-- <div class="single-line">
                     <span class="info-label">试题数量</span>
                     <span class="question-count-number">{questionCount}</span>
                     <span class="question-count-span">道</span>
-                </div>
+                </div> -->
 
                 <!-- 试卷说明 -->
                 <div class="paper-description">
@@ -321,31 +460,41 @@
                     <!-- 已有题组 -->
                     {#if paperGroups.length !== 0}
                         {#each paperGroups as group}
-                            <div class="single-group">
-                                <span>{group.name}（共0题，共0分）</span>
-                                <div class="btn-box">
-                                    <!-- 编辑按钮 -->
-                                    <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
-                                        <svg
-                                            viewBox="0 0 1024 1024"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            width="10"
-                                            height="10"
-                                        >
-                                            <path
-                                                d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                                fill="currentColor"
-                                            />
-                                        </svg>
-                                    </button>
-                                    <!-- 删除按钮 -->
-                                    <button onclick={()=>deleteGroup(paperID,group.id)} class="delete-group-btn" title="删除">✖</button>
+                            {#if toEditGroupID === group.id}
+                               <div class="single-group">
+                                    <input bind:value={toEditGroupName} onkeydown={()=>confirmEditGroupName()} bind:this={toEditGroup} class="add-group-input" type="text">
+                                    <div class="btn-box">
+                                        <!-- 删除按钮 -->
+                                        <button onclick={()=>{toEditGroupID=null}} class="delete-group-btn" title="删除">✖</button>
+                                    </div>
                                 </div>
-                            </div>
+                            {:else}
+                                <div class="single-group">
+                                    <span>{group.name}</span>
+                                    <div class="btn-box">
+                                        <!-- 编辑按钮 -->
+                                        <button onclick={()=>editGroupName(group.id,group.name)} class="edit-group-btn" title="编辑" aria-label="编辑题目">
+                                            <svg
+                                                viewBox="0 0 1024 1024"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                width="10"
+                                                height="10"
+                                            >
+                                                <path
+                                                    d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                                    fill="currentColor"
+                                                />
+                                            </svg>
+                                        </button>
+                                        <!-- 删除按钮 -->
+                                        <button onclick={()=>deleteGroup(group.id)} class="delete-group-btn" title="删除">✖</button>
+                                    </div>
+                                </div>
+                            {/if}
                         {/each}
                     {/if}
 
@@ -375,8 +524,8 @@
                             <!-- svelte-ignore a11y_click_events_have_key_events -->
                             <!-- svelte-ignore a11y_no_static_element_interactions -->
                             <div class="header-left" onclick={()=>{group.isOpen=!group.isOpen}}>
-                                <button class="toggle-btn">∨</button>
-                                <span>{group.name}（共0题，共0分）</span>
+                                <button class="toggle-btn">{group.isOpen?"∨":"∧"}</button>
+                                <span>{group.name}</span>
                             </div>
 
                             <!-- 编辑按钮 -->
@@ -409,15 +558,17 @@
                         <!-- 题目列表 -->
                         {#if group.isOpen}
                             <div class="group-question-list">
-                                <!-- 暂无题目 -->
+                                
                                 {#if group.questions.length !== 0}
                                     {#each group.questions as question}
                                         <div class="single-question">
                                             <!-- 头部下拉栏 -->
                                             <div class="question-header">
                                                 <!-- 左侧区域 -->
-                                                <div class="header-left">
-                                                    <button class="toggle-btn-down">∨</button>
+                                                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                                <div class="header-left"  onclick={()=>{question.isOpen=!question.isOpen}}>
+                                                    <button class="toggle-btn-down">{question.isOpen?"∨":"∧"}</button>
                                                     <span class="sequence">{question.order}</span>
                                                     <span class="question-type">{questionTypeTrans[question.type]}</span>
                                                     <span class={questionDifficultyTrans[questionDifficultyTrans[question.difficulty]]}>{questionDifficultyTrans[question.difficulty]}</span>
@@ -425,8 +576,8 @@
 
                                                 <!-- 右侧区域 -->
                                                 <div class="header-right">
-                                                    <span>分值：</span>
-                                                    <input value={10} id="temp-per-question-score-input" type="number">
+                                                    <span>分值：{question.score} 分</span>
+                                                    <!-- <input value={question.score} id="temp-per-question-score-input" type="number"> -->
 <!-- 
                                                     <button class="move-btn" title="上移">↑</button>
                                                     <button class="move-btn" title="下移">↓</button>
@@ -448,33 +599,21 @@
                                                         </svg>
                                                     </button>
                                                      -->
-                                                    <button class="delete-question-btn" title="删除">✕</button>
+                                                    <button onclick={()=>deleteQuestion(question.id,group)} class="delete-question-btn" title="删除">✕</button>
                                                 </div>
                                             </div>
 
                                             <!-- 题目内容 -->
-                                            <div class="question-container">
-                                                <!-- 问题 -->
-                                                <div class="question-box">
-                                                    IP地址 202.135.111.77 对应的自然分类网段的广播地址为__ 。
+                                            {#if question.isOpen}
+                                                <div class="question-container">
+                                                    <QuestionPreview {question}/>
                                                 </div>
-
-                                                <!-- 答案 -->
-                                                <div class="answer-container">
-                                                    <span class="prompt">【答案】</span>
-                                                    <span class="sequence">(1)</span>
-                                                    <span>202.135.111.255</span>
-                                                </div>
-
-                                                <!-- 解析 -->
-                                                <div class="analysis-container">
-                                                    <span class="prompt">【解析】</span>
-                                                    <span>略</span>
-                                                </div>
-                                            </div>
+                                            {/if}
                                         </div>
                                     {/each}
-                                {:else}
+                                
+                                    <!-- 暂无题目 -->
+                                    {:else}
                                     <div class="no-questions-container">
                                         <div class="no-questions-box">
                                             <span class="title">题组暂无题目</span>
@@ -488,184 +627,6 @@
                     </div>
                 {/each}
             {/if}
-
-            <div class="single-group-content">
-                <!-- 头部下拉栏 -->
-                <div class="group-header">
-                    <!-- 左侧区域 -->
-                    <div class="header-left">
-                        <button class="toggle-btn">∨</button>
-                        <span>一、单选题（共0题，共0分）</span>
-                    </div>
-
-                    <!-- 编辑按钮 -->
-                    <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
-                        <svg
-                            viewBox="0 0 1024 1024"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            width="14"
-                            height="14"
-                        >
-                            <path
-                                d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                fill="currentColor"
-                            />
-                        </svg>
-                    </button>
-
-                    <!-- 右侧区域 -->
-                    <div class="header-right">
-                        <span>每题分值：</span>
-                        <input value={10} id="temp-average-question-score-input" type="number">
-                        <Button>导入题目</Button>
-                    </div>
-                </div>
-
-                <!-- 题目列表 -->
-                <div class="group-question-list">
-                    <div class="single-question">
-                        <!-- 头部下拉栏 -->
-                        <div class="question-header">
-                            <!-- 左侧区域 -->
-                            <div class="header-left">
-                                <button class="toggle-btn-left">∨</button>
-                                <span class="sequence">1</span>
-                                <span class="question-type">单选题</span>
-                                <span class="level-easy">简单</span>
-                            </div>
-
-                            <!-- 右侧区域 -->
-                            <div class="header-right">
-                                <span>分值：</span>
-                                <input value={10} id="temp-per-question-score-input" type="number">
-                                <button class="move-btn" title="上移">↑</button>
-                                <button class="move-btn" title="下移">↓</button>
-                                <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
-                                    <svg
-                                        viewBox="0 0 1024 1024"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        width="12"
-                                        height="12"
-                                    >
-                                        <path
-                                            d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                            fill="currentColor"
-                                        />
-                                    </svg>
-                                </button>
-                                <button class="delete-question-btn" title="删除">✕</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="single-question">
-                        <!-- 头部下拉栏 -->
-                        <div class="question-header">
-                            <!-- 左侧区域 -->
-                            <div class="header-left">
-                                <button class="toggle-btn-left">∨</button>
-                                <span class="sequence">2</span>
-                                <span class="question-type">多选题</span>
-                                <span class="level-normal">中等</span>
-                            </div>
-
-                            <!-- 右侧区域 -->
-                            <div class="header-right">
-                                <span>分值：</span>
-                                <input value={10} id="temp-per-question-score-input" type="number">
-                                <button class="move-btn" title="上移">↑</button>
-                                <button class="move-btn" title="下移">↓</button>
-                                <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
-                                    <svg
-                                        viewBox="0 0 1024 1024"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        width="12"
-                                        height="12"
-                                    >
-                                        <path
-                                            d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                            fill="currentColor"
-                                        />
-                                    </svg>
-                                </button>
-                                <button class="delete-question-btn" title="删除">✕</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="single-question">
-                        <!-- 头部下拉栏 -->
-                        <div class="question-header">
-                            <!-- 左侧区域 -->
-                            <div class="header-left">
-                                <button class="toggle-btn-down">∨</button>
-                                <span class="sequence">3</span>
-                                <span class="question-type">填空题</span>
-                                <span class="level-hard">困难</span>
-                            </div>
-
-                            <!-- 右侧区域 -->
-                            <div class="header-right">
-                                <span>分值：</span>
-                                <input value={10} id="temp-per-question-score-input" type="number">
-                                <button class="move-btn" title="上移">↑</button>
-                                <button class="move-btn" title="下移">↓</button>
-                                <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
-                                    <svg
-                                        viewBox="0 0 1024 1024"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        width="12"
-                                        height="12"
-                                    >
-                                        <path
-                                            d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                            fill="currentColor"
-                                        />
-                                    </svg>
-                                </button>
-                                <button class="delete-question-btn" title="删除">✕</button>
-                            </div>
-                        </div>
-
-                        <!-- 题目内容 -->
-                        <div class="question-container">
-                            <!-- 问题 -->
-                            <div class="question-box">
-                                IP地址 202.135.111.77 对应的自然分类网段的广播地址为__ 。
-                            </div>
-
-                            <!-- 答案 -->
-                            <div class="answer-container">
-                                <span class="prompt">【答案】</span>
-                                <span class="sequence">(1)</span>
-                                <span>202.135.111.255</span>
-                            </div>
-
-                            <!-- 解析 -->
-                            <div class="analysis-container">
-                                <span class="prompt">【解析】</span>
-                                <span>略</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -1290,7 +1251,7 @@
 
                             /* 题目内容 */
                             .question-container {
-                                padding: 20px;
+                                /* padding: 20px; */
 
                                 .prompt {
                                     font-size: 14px;

@@ -193,8 +193,6 @@
                     </div>
                 </div>
 
-                {toAddbankID}
-
                 <!-- 题库列表 -->
                 <div class="question-bank-list">
                     {#if bankList.length !== 0}
@@ -214,20 +212,20 @@
             <!-- 右侧区域 -->
             <div class="body-right">
                 <!-- 上半区 -->
-                <div class="top-area">
+                <!-- <div class="top-area">
                     <div class="input-box">
                         <InputBox placeholder="搜索题目内容" showLabel={false}/>
-                    </div>
+                    </div> -->
 
                     <!-- 下拉筛选栏 -->
                     <!-- svelte-ignore a11y_click_events_have_key_events -->
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
-                    <div class="filter-header" onmouseenter={()=>{filterIsOpen=true}} onmouseleave={()=>{filterIsOpen=false}}>
+                    <!-- <div class="filter-header" onmouseenter={()=>{filterIsOpen=true}} onmouseleave={()=>{filterIsOpen=false}}> -->
                         <!-- 筛选菜单 -->
-                        {#if filterIsOpen}
-                            <div class="filter-container"  onmouseenter={()=>{filterIsOpen=true}} onmouseleave={()=>{filterIsOpen=false}}>
+                        <!-- {#if filterIsOpen}
+                            <div class="filter-container"  onmouseenter={()=>{filterIsOpen=true}} onmouseleave={()=>{filterIsOpen=false}}> -->
                                 <!-- 题型 -->
-                                <div class="type">
+                                <!-- <div class="type">
                                     <span class="prompt">题型：</span>
                                     <button>单选题</button>
                                     <button>多选题</button>
@@ -235,27 +233,27 @@
                                     <button>填空题</button>
                                     <button>简答题</button>
                                     <button>编程题</button>
-                                </div>
+                                </div> -->
 
                                 <!-- 难度 -->
-                                <div class="level">
+                                <!-- <div class="level">
                                     <span class="prompt">难度：</span>
                                     <button>简单</button>
                                     <button>中等</button>
                                     <button>困难</button>
-                                </div>
+                                </div> -->
 
                                 <!-- 标签 -->
-                                <div class="question-tags">
+                                <!-- <div class="question-tags">
                                     <span class="level-prompt">标签：</span>
                                     <div class="tags-box">
                                         <button>测试</button>
                                         <button>常识</button>
                                     </div>
-                                </div>
+                                </div> -->
 
                                 <!-- 清空条件 -->
-                                <div class="clear-condition">
+                                <!-- <div class="clear-condition">
                                     <button>清空条件</button>
                                 </div>
                             </div>
@@ -265,13 +263,12 @@
                     </div>
 
                     
-                </div>
+                </div> -->
 
                 <!-- 下半区 -->
                 <div class="bottom-area">
                     <!-- 表格区域 -->
                     <div class="questions-table-container">
-                        {toAddQuestionID}
                         <table>
                             <thead>
                                 <tr>
@@ -286,7 +283,7 @@
                             </thead>
 
                             <tbody>
-                                {#if questionList.length !== 0}
+                                {#if questionList && questionList.length !== 0}
                                     {#each questionList as question}
                                     <tr class={toAddQuestionID===question.ID?"selected":""} onclick={()=>toggleQuestion(question.ID)}>
                                         <td class="checkbox"><input type="checkbox" checked={toAddQuestionID === question.ID} onclick={(e) => {e.stopPropagation(); toggleQuestion(question.ID);}}></td>
@@ -318,7 +315,7 @@
 
                     <!-- 翻页控制 -->
                     <div class="page-control-container">
-                        <Pagination/>
+                        <!-- <Pagination/> -->
                     </div>
                 </div>
             </div>
@@ -326,8 +323,7 @@
 
         <!-- 底部 -->
         <div class="container-footer">
-            {toAddGroupID}
-            <span class="selected-span">已选择 <span>2</span> 道题目</span>
+            <!-- <span class="selected-span">已选择 <span>2</span> 道题目</span> -->
             <span class="import-span">导入到题组：</span>
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div class="dropup-toggle" onmouseenter={()=>{dropUpToggleIsOpen=true}} onmouseleave={()=>{dropUpToggleIsOpen=false}}>
@@ -348,7 +344,11 @@
             </div>
             <div class="btn-box">
                 <Button onclick={onclose} plain={true}>取消</Button>
-                <Button onclick={()=>concfirmImport()}>确认导入</Button>
+                {#if toAddbankID!=="" && toAddGroupID!==0 && toAddQuestionID}
+                    <Button onclick={()=>concfirmImport()}>确认导入</Button>
+                {:else}
+                    <Button disabled={true}>确认导入</Button>
+                {/if}
             </div>
         </div>
     </div>
@@ -650,7 +650,7 @@
                         .questions-table-container {
                             padding: 0 16px;
                             flex-grow: 1;
-                            max-height: calc(90vh - 320px);
+                            max-height: calc(90vh - 180px);
                             overflow: auto;
                             display: flex;
                             flex-direction: column;

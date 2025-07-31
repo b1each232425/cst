@@ -10,8 +10,10 @@
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import Tag from "$lib/components/Tag/Tag.svelte";
     import Loading from "$lib/components/Loading/Loading.svelte";
-    import { createEmptyPaper, fetchPaperList } from "./_utils/api";
+    import { createEmptyPaper, deletePaper, fetchPaperList } from "./_utils/api";
     import { debounce } from "$lib/utils/optimize";
+  import MessageBox from "$lib/components/MessageBox/MessageBox";
+  import { toast } from "$lib/components/Toast/Toast";
 
     // 模拟数据
     let analogyData = [
@@ -544,11 +546,11 @@
         paperPage = 1;
     }
 
-    function handlePageChange() {
+    function handlePageChange(event) {
         paperPage = event.detail;
     }
 
-    function handlePageSizeChange() {
+    function handlePageSizeChange(event) {
         paperPageSize = event.detail;
         paperPage = 1; // 改变每页数量时通常要跳回第一页
     }
@@ -562,11 +564,13 @@
             })
             .finally(() => {
                 isLoading = false;
+                // console.log(paperList)
             });
     }, 1000, false);
 
     $effect(() => {
         paperName; paperTags; paperPage; paperPageSize; paperCategory;
+        paperPage; paperPageSize;
         debouncedFetchPaperList();
     });
 
@@ -578,6 +582,38 @@
         }).finally(() => {
             isLoading = false;
             goto('/teacher/paper/manual');
+        });
+    }
+
+    // 编辑试卷
+    function editPaper(ID) {
+        localStorage.setItem('currentPaperID', JSON.stringify(ID));
+        goto('/teacher/paper/manual');
+    }
+
+    // 删除试卷
+    function deleteSinglePaper(ID) {
+        MessageBox({
+            title: "删除确认",
+            content: "请问是否要删除该试卷？",
+            confirm_button_type: "danger",
+
+            onConfirm: () => {
+                isLoading = true;
+
+                deletePaper([ID])
+                    .then(result => {
+                        // console.log(result);
+                    })
+                    .finally(() => {
+                        isLoading = false;
+                        toast.success("删除试卷成功", 1000);
+
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    });
+            }
         });
     }
 
@@ -621,7 +657,7 @@
         <!-- 右侧 -->
         <div class="right-side">
             <Button onclick={()=>resetSearch()} plain={true}>重置</Button>
-            <Button plain={true} type="danger">删除</Button>
+            <!-- <Button plain={true} type="danger">删除</Button> -->
             <Button onclick={()=>manual()} plain={true}>自定义组卷</Button>
         </div>
     </div>
@@ -632,7 +668,7 @@
         <table>
             <thead>
                 <tr>
-                    <th><input class="checkbox" type="checkbox"></th>
+                    <!-- <th><input class="checkbox" type="checkbox"></th> -->
                     <th>试卷名称</th>
                     <th>组卷方式</th>
                     <th>试卷用途</th>
@@ -651,7 +687,7 @@
             <tbody>
                 {#each paperList as paper}
                     <tr>
-                        <td><input class="checkbox" type="checkbox"></td>
+                        <!-- <td><input class="checkbox" type="checkbox"></td> -->
                         <td class="paper-name">{paper.Name}</td>
                         <td class="assembly-type">{paperAssemblyTypeTrans[paper.AssemblyType]}</td>
                         <td class="category">{paperCategoryTrans[paper.Category]}</td>
@@ -684,16 +720,16 @@
                             <div class="operation">
                                 <!-- 第一行按钮 -->
                                 <div class="operation-line">
-                                    <button class="blue-btn">修改</button>
-                                    <button class="blue-btn">共享</button>
-                                    <button class="blue-btn">预览</button>
+                                    <button onclick={()=>editPaper(paper.ID)} class="blue-btn">修改</button>
+                                    <!-- <button class="blue-btn">共享</button> -->
+                                    <!-- <button class="blue-btn">预览</button> -->
+                                    <button onclick={()=>deleteSinglePaper(paper.ID)} class="red-btn">删除</button>
                                 </div>
     
                                 <!-- 第二行按钮 -->
-                                <div class="operation-line">
-                                    <button class="blue-btn">日志</button>
-                                    <button class="red-btn">删除</button>
-                                </div>
+                                <!-- <div class="operation-line"> -->
+                                    <!-- <button class="blue-btn">日志</button> -->
+                                <!-- </div> -->
                             </div>
                         </td>
                     </tr>
@@ -707,8 +743,8 @@
         <div class="page-control">
             <Pagination
                 totalItems={totalPapers}
-                pageSize={paperPageSize}   
                 currentPage={paperPage}                
+                pageSize={paperPageSize}   
                 pageSizeOptions={paperPageSizeOptions}
                 on:pageChange={handlePageChange}
                 on:pageSizeChange={handlePageSizeChange}
