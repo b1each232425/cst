@@ -44,7 +44,6 @@ export function createPracticeGradeStore() {
 		selectAll: false,
 		filters: {
 			name: '',
-			teacherID: -1, // -1 代表所有教师
 			practiceID: ''
 		},
 		pagination: {
@@ -66,9 +65,11 @@ export function createPracticeGradeStore() {
 				return;
 			}
 			state.loading = true;
+			// 构建 API 参数，普通用户不传递 teacherID
 			const params = {
 				practiceName: state.filters.name,
-				...state.filters,
+				name: state.filters.name,
+				practiceID: state.filters.practiceID,
 				...state.pagination
 			};
 			getPractices(params)

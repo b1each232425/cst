@@ -39,7 +39,6 @@ describe('练习成绩 Store', () => {
 		expect(state.selectAll).toBe(false);
 		expect(state.filters).toEqual({
 			name: '',
-			teacherID: -1,
 			practiceID: ''
 		});
 		expect(state.pagination).toEqual({
@@ -64,7 +63,13 @@ describe('练习成绩 Store', () => {
 			expect(practiceStore.state.loading).toBe(true);
 			await promise;
 
-			expect(scoreApi.getPractices).toHaveBeenCalled();
+			expect(scoreApi.getPractices).toHaveBeenCalledWith({
+				practiceName: '',
+				name: '',
+				practiceID: '',
+				page: 1,
+				pageSize: 10
+			});
 			expect(practiceStore.state.practices.length).toBe(2);
 			expect(practiceStore.state.practices[0].name).toBe('Basic Algebra');
 			expect(practiceStore.state.totalRecords).toBe(2);
