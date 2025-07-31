@@ -1,6 +1,6 @@
 <script>
 	import { createPracticeGradeStore } from '../_stores/practiceGrade.svelte.js';
-	import Title from '../_components/shared/Title.svelte';
+	import Title from '$lib/components/Title/Title.svelte';
 	import Pagination from '$lib/components/Pagination/Pagination.svelte';
 	import PracticeFilterPanel from '../_components/practice/PracticeFilterPanel.svelte';
 	import PracticeTable from '../_components/practice/PracticeTable.svelte';

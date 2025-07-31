@@ -1,5 +1,5 @@
 <script>
-	import SearchInput from '../shared/SearchInput.svelte';
+	import InputBox from '$lib/components/Input/InputBox.svelte';
 
 	/**
 	 * @typedef {ReturnType<import('../../../_stores/practiceGrade.svelte.js').createPracticeGradeStore>} PracticeGradeStore
@@ -12,15 +12,25 @@
 
 	let selectedCount = $derived(Object.keys(state.selected).filter(k => state.selected[Number(k)]).length);
 	let hasSelection = $derived(selectedCount > 0);
+
+	/**
+	 * 处理搜索输入变化
+	 * @param {string} value - 搜索值
+	 */
+	function handleSearchInput(value) {
+		setFilters({ name: value });
+	}
 </script>
 
 <div class="top-action-bar">
     <div class="filters">
         <div class="search-wrapper">
-            <SearchInput
-                purpose_text="搜索练习"
-                place_holder="请输入练习名称"
-                oninput={(e) => setFilters({ practiceName: e.detail.value })}
+            <InputBox
+                label="搜索练习"
+                placeholder="请输入练习名称"
+                showLabel={true}
+                clearable={true}
+                onInput={handleSearchInput}
             />
         </div>
     </div>
@@ -51,7 +61,7 @@
 	}
 
 	.search-wrapper {
-		--search_input_container_width: 250px;
+		width: 250px;
 	}
 
     .actions {

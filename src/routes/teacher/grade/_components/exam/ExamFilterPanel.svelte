@@ -1,6 +1,6 @@
 <script>
 	import DropdownGray from '../shared/DropdownGray.svelte';
-	import SearchInput from '../shared/SearchInput.svelte';
+	import InputBox from '$lib/components/Input/InputBox.svelte';
 	import { handleFeatureNotImplemented, handleSelectionError } from '../../_utils/errorHandler';
 	/**
 	 * @typedef {ReturnType<import('$lib/stores/modules/grade.svelte.js').createGradeStore>} GradeStore
@@ -32,6 +32,14 @@
 	 */
 	function handleFilterChange(key, value) {
 		setFilters({ [key]: value });
+	}
+
+	/**
+	 * 处理搜索输入变化
+	 * @param {string} value - 搜索值
+	 */
+	function handleSearchInput(value) {
+		handleFilterChange('name', value);
 	}
 
 	function handleBatchExport() {
@@ -70,10 +78,12 @@
 			</div>
 		</div>
 		<div class="search-wrapper">
-			<SearchInput
-				purpose_text="搜索考试"
-				place_holder="请输入考试名称"
-				oninput={(e) => handleFilterChange('name', e.detail.value)}
+			<InputBox
+				label="搜索考试"
+				placeholder="请输入考试名称"
+				showLabel={true}
+				clearable={true}
+				onInput={handleSearchInput}
 			/>
 		</div>
 		<div class="filter-group">
@@ -135,7 +145,7 @@
 		height: 32px;
 	}
 	.search-wrapper {
-		--search_input_container_width: 200px;
+		width: 200px;
 	}
 	.actions {
 		display: flex;
