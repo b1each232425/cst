@@ -21,7 +21,7 @@
   function logout() {
     fetch(`/api/logout`)
       .then((res) => {
-        if (!res.ok) throw new Error('网络错误');
+        if (!res.ok) throw new Error('请求失败');
         return res.json();
       })
       .then((res) => {

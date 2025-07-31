@@ -2,24 +2,13 @@
 	import SearchInput from '../shared/SearchInput.svelte';
 
 	/**
-	 * @typedef {ReturnType<import('$lib/stores/modules/practiceGrade.svelte.js').createPracticeGradeStore>} PracticeGradeStore
+	 * @typedef {ReturnType<import('../../../_stores/practiceGrade.svelte.js').createPracticeGradeStore>} PracticeGradeStore
 	 */
 
 	/** @type {{ store: PracticeGradeStore }} */
 	let { store } = $props();
 
-	const { state, setFilters, exportGrades, toggleSelect, toggleSelectAll } = store;
-
-	/**
-	 * @param {string} value
-	 */
-	function handleSearch(value) {
-		setFilters({ practiceName: value });
-	}
-
-	function handleBatchExport() {
-		exportGrades();
-	}
+	const { state, setFilters, exportGrades } = store;
 
 	let selectedCount = $derived(Object.keys(state.selected).filter(k => state.selected[Number(k)]).length);
 	let hasSelection = $derived(selectedCount > 0);
@@ -31,7 +20,7 @@
             <SearchInput
                 purpose_text="搜索练习"
                 place_holder="请输入练习名称"
-                onSearchFunc={handleSearch}
+                oninput={(e) => setFilters({ practiceName: e.detail.value })}
             />
         </div>
     </div>
@@ -41,7 +30,7 @@
             <span class="count">{selectedCount}</span>
             <span>项</span>
         </div>
-        <button class="action-btn export" disabled={!hasSelection} on:click={handleBatchExport}>批量导出</button>
+        <button class="action-btn export" disabled={!hasSelection} onclick={exportGrades}>批量导出</button>
     </div>
 </div>
 
@@ -51,8 +40,8 @@
 		display: flex;
 		justify-content: flex-start;
 		align-items: center;
-		padding: 16px 0;
-		gap: 24px;
+		padding: 0 0 16px 0;
+		gap: 100px;
 	}
 
 	.filters {
@@ -68,14 +57,14 @@
     .actions {
 		display: flex;
 		align-items: center;
-		gap: 12px;
+		gap: 30px;
 		color: #595959;
 		font-size: 14px;
 
 		.selection-info {
 			display: flex;
 			align-items: center;
-			gap: 4px;
+			gap: 10px;
 
 			.count {
 				color: #0052d9;
