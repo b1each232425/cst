@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createPracticeGradeStore } from '../practiceGrade.svelte.js';
 import * as scoreApi from '../_api/score';
 
-// Mock the API module
+// 模拟 API 模块
 vi.mock('../_api/score', () => ({
 	getPractices: vi.fn(),
 	exportPracticeGrades: vi.fn()
 }));
 
-// Mock the sget utility from a relative path if needed, or from $lib/utils
+// 模拟工具函数
 vi.mock('$lib/utils', () => ({
 	sget: (obj, path, def) => {
 		const result = path.split('.').reduce((o, k) => (o || {})[k], obj);
@@ -16,7 +16,14 @@ vi.mock('$lib/utils', () => ({
 	}
 }));
 
-describe('createPracticeGradeStore', () => {
+// 模拟错误处理工具
+vi.mock('../_utils/errorHandler', () => ({
+	handleApiError: vi.fn(),
+	handleSuccess: vi.fn(),
+	handleSelectionError: vi.fn()
+}));
+
+describe('练习成绩 Store', () => {
 	let practiceStore;
 
 	beforeEach(() => {
@@ -24,7 +31,7 @@ describe('createPracticeGradeStore', () => {
 		practiceStore = createPracticeGradeStore();
 	});
 
-	it('should have correct initial state', () => {
+	it('应该有正确的初始状态', () => {
 		const state = practiceStore.state;
 		expect(state.practices).toEqual([]);
 		expect(state.totalRecords).toBe(0);
@@ -65,7 +72,7 @@ describe('createPracticeGradeStore', () => {
 		});
 
 		it('should handle fetch practices failure', async () => {
-			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+			const { handleApiError } = await import('../_utils/errorHandler');
 			const error = new Error('Fetch Failed');
 			scoreApi.getPractices.mockRejectedValue(error);
 
@@ -73,8 +80,7 @@ describe('createPracticeGradeStore', () => {
 
 			expect(practiceStore.state.loading).toBe(false);
 			expect(practiceStore.state.practices).toEqual([]);
-			expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to fetch practices', error);
-			consoleErrorSpy.mockRestore();
+			expect(handleApiError).toHaveBeenCalledWith(error, '获取练习列表');
 		});
 	});
 
@@ -125,37 +131,37 @@ describe('createPracticeGradeStore', () => {
 	});
 
 	describe('exportGrades', () => {
-		beforeEach(() => {
-			// Mock window.alert
-			global.alert = vi.fn();
-		});
+		it('should show selection error when no items are selected', async () => {
+			const { handleSelectionError } = await import('../_utils/errorHandler');
+			practiceStore.state.selected = {};
 
-		it('should not call export API if no items are selected', () => {
-			practiceStore.exportGrades();
+			await practiceStore.exportGrades();
+
 			expect(scoreApi.exportPracticeGrades).not.toHaveBeenCalled();
-			expect(global.alert).toHaveBeenCalledWith('请至少选择一项进行导出。');
+			expect(handleSelectionError).toHaveBeenCalledWith('导出');
 		});
 
-		it('should call export API with selected IDs', async () => {
+		it('should call export API with selected IDs and show success', async () => {
+			const { handleSuccess } = await import('../_utils/errorHandler');
 			scoreApi.exportPracticeGrades.mockResolvedValue({});
 			practiceStore.state.selected = { 1: true, 2: false, 3: true };
 
 			await practiceStore.exportGrades();
-			
+
 			const selectedIds = [1, 3];
 			expect(scoreApi.exportPracticeGrades).toHaveBeenCalledWith(selectedIds);
+			expect(handleSuccess).toHaveBeenCalledWith('练习成绩导出');
 		});
 
-		it('should log an error on export failure', async () => {
-			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		it('should handle export failure with error handler', async () => {
+			const { handleApiError } = await import('../_utils/errorHandler');
 			const error = new Error('Export Failed');
 			scoreApi.exportPracticeGrades.mockRejectedValue(error);
 			practiceStore.state.selected = { 1: true };
 
 			await practiceStore.exportGrades();
-			
-			expect(consoleErrorSpy).toHaveBeenCalledWith('导出练习成绩失败:', error);
-			consoleErrorSpy.mockRestore();
+
+			expect(handleApiError).toHaveBeenCalledWith(error, '导出练习成绩');
 		});
 	});
 });

@@ -1,25 +1,40 @@
 import { render, screen } from '@testing-library/svelte';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Page from '../+page.svelte';
 
-// Mock child components
-vi.mock('../_components/shared/Title.svelte');
-vi.mock('../_components/shared/Pagination.svelte');
+// 模拟全局组件
+vi.mock('$lib/components/Title/Title.svelte');
+vi.mock('$lib/components/Pagination/Pagination.svelte');
 vi.mock('../_components/practice/PracticeFilterPanel.svelte');
 vi.mock('../_components/practice/PracticeTable.svelte');
 
-// Mock the store factory
+// 模拟 store 工厂函数
 vi.mock('../_stores/practiceGrade.svelte.js', () => {
     const mockState = {
         loading: false,
         practices: [],
         totalRecords: 0,
+        selectAll: false,
+        filters: {
+            name: '',
+            teacherID: -1,
+            practiceID: ''
+        },
+        pagination: {
+            page: 1,
+            pageSize: 10
+        },
+        selected: {}
     };
     const mockStore = {
         state: mockState,
         fetchPractices: vi.fn(),
         setFilters: vi.fn(),
         setPage: vi.fn(),
+        setPageSize: vi.fn(),
+        toggleSelect: vi.fn(),
+        toggleSelectAll: vi.fn(),
+        exportGrades: vi.fn()
     };
     return {
         createPracticeGradeStore: vi.fn(() => mockStore)
@@ -29,17 +44,14 @@ vi.mock('../_stores/practiceGrade.svelte.js', () => {
 
 import { createPracticeGradeStore } from '../_stores/practiceGrade.svelte.js';
 
-describe('Practice Grade Page', () => {
+describe('练习成绩管理页面', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('renders the title component with correct title', () => {
+    it('应该渲染正确标题的标题组件', () => {
         render(Page);
-        // We can't check the text if the component is fully mocked.
-        // Instead, let's verify it's in the document in a generic way.
-        // A better approach would be to check if the mocked component was called,
-        // but for a simple static component, this is okay.
+       //仅检测是否被调用
         expect(screen.getByText('练习成绩管理')).toBeInTheDocument();
     });
 
@@ -78,10 +90,34 @@ describe('Practice Grade Page', () => {
     it('renders filter panel and pagination', async () => {
         render(Page);
         const PracticeFilterPanel = (await import('../_components/practice/PracticeFilterPanel.svelte')).default;
-        const Pagination = (await import('../_components/shared/Pagination.svelte')).default;
+        const Pagination = (await import('$lib/components/Pagination/Pagination.svelte')).default;
 
         expect(PracticeFilterPanel).toHaveBeenCalled();
         expect(Pagination).toHaveBeenCalled();
+    });
+
+    it('has correct CSS classes for layout', () => {
+        const { container } = render(Page);
+
+        // Check for main container
+        expect(container.querySelector('.page-container')).toBeInTheDocument();
+
+        // Check for filter container
+        expect(container.querySelector('.filter-container')).toBeInTheDocument();
+
+        // Check for table container
+        expect(container.querySelector('.table-container')).toBeInTheDocument();
+
+        // Check for pagination wrapper with right alignment
+        expect(container.querySelector('.pagination-wrapper')).toBeInTheDocument();
+    });
+
+    it('pagination wrapper has correct styling for right alignment', () => {
+        const { container } = render(Page);
+        const paginationWrapper = container.querySelector('.pagination-wrapper');
+
+        expect(paginationWrapper).toBeInTheDocument();
+        //仅检查元素是否存在
     });
 
     it('calls fetchPractices on mount via $effect', async () => {

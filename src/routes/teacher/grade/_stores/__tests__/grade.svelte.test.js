@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createGradeStore } from '../grade.svelte.js';
 import * as scoreApi from '../_api/score';
 
-// Mock the API module
+// 模拟 API 模块
 vi.mock('../_api/score', () => ({
 	getExams: vi.fn(),
 	submitExamGrades: vi.fn(),
@@ -10,7 +10,7 @@ vi.mock('../_api/score', () => ({
 	getGradeLogs: vi.fn()
 }));
 
-// Mock the sget utility
+// 模拟工具函数
 vi.mock('$lib/utils', () => ({
 	sget: (obj, path, def) => {
 		const result = path.split('.').reduce((o, k) => (o || {})[k], obj);
@@ -18,17 +18,23 @@ vi.mock('$lib/utils', () => ({
 	}
 }));
 
-describe('createGradeStore', () => {
+// 模拟错误处理工具
+vi.mock('../_utils/errorHandler', () => ({
+	handleApiError: vi.fn(),
+	handleSuccess: vi.fn()
+}));
+
+describe('考试成绩 Store', () => {
 	let gradeStore;
 
 	beforeEach(() => {
-		// Reset mocks before each test
+		// 重置模拟函数
 		vi.resetAllMocks();
-		// Create a new store instance for each test
+		// 为每个测试创建新的 store 实例
 		gradeStore = createGradeStore();
 	});
 
-	it('should have correct initial state', () => {
+	it('应该有正确的初始状态', () => {
 		const state = gradeStore.state;
 		expect(state.exams).toEqual([]);
 		expect(state.totalRecords).toBe(0);
@@ -37,7 +43,7 @@ describe('createGradeStore', () => {
 		expect(state.filters).toEqual({
 			name: '',
 			type: '',
-			submitted: '',
+			submitted: '', // 现在是字符串类型，支持 "", "1", "0"
 			teacherID: -1,
 			examID: ''
 		});
@@ -48,8 +54,8 @@ describe('createGradeStore', () => {
 		expect(state.selected).toEqual({});
 	});
 
-	describe('fetchExams', () => {
-		it('should fetch exams successfully and update state', async () => {
+	describe('获取考试数据', () => {
+		it('应该成功获取考试数据并更新状态', async () => {
 			const mockExamData = {
 				data: [
 					{ id: 1, name: 'Midterm Exam', sessions: [] },
@@ -77,8 +83,8 @@ describe('createGradeStore', () => {
 			expect(gradeStore.state.loading).toBe(false);
 		});
 
-		it('should handle fetch exams failure', async () => {
-			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		it('应该处理获取考试数据失败的情况', async () => {
+			const { handleApiError } = await import('../_utils/errorHandler');
 			const error = new Error('Network Error');
 			scoreApi.getExams.mockRejectedValue(error);
 
@@ -87,8 +93,7 @@ describe('createGradeStore', () => {
 			expect(gradeStore.state.loading).toBe(false);
 			expect(gradeStore.state.exams).toEqual([]);
 			expect(gradeStore.state.totalRecords).toBe(0);
-			expect(consoleErrorSpy).toHaveBeenCalledWith('获取考试列表失败:', error);
-			consoleErrorSpy.mockRestore();
+			expect(handleApiError).toHaveBeenCalledWith(error, '获取考试列表');
 		});
 
 		it('should reset selection state before fetching', async () => {
@@ -198,26 +203,41 @@ describe('createGradeStore', () => {
 	
 	describe('submitGrades', () => {
 		it('should call submitExamGrades and refresh data on success', async () => {
+			const { handleSuccess } = await import('../_utils/errorHandler');
 			const fetchExamsSpy = vi.spyOn(gradeStore, 'fetchExams').mockImplementation(() => Promise.resolve());
 			scoreApi.submitExamGrades.mockResolvedValue({});
-			
+
 			const examIds = [1, 2];
 			await gradeStore.submitGrades(examIds);
 
 			expect(scoreApi.submitExamGrades).toHaveBeenCalledWith(examIds);
+			expect(handleSuccess).toHaveBeenCalledWith('成绩提交');
 			expect(fetchExamsSpy).toHaveBeenCalled();
 		});
 
-		it('should log an error on failure', async () => {
-			const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		it('should handle submission failure with error handler', async () => {
+			const { handleApiError } = await import('../_utils/errorHandler');
 			const error = new Error('Submission Failed');
 			scoreApi.submitExamGrades.mockRejectedValue(error);
 
 			await gradeStore.submitGrades([1]);
 
 			expect(scoreApi.submitExamGrades).toHaveBeenCalledWith([1]);
-			expect(consoleErrorSpy).toHaveBeenCalledWith('提交成绩失败:', error);
-			consoleErrorSpy.mockRestore();
+			expect(handleApiError).toHaveBeenCalledWith(error, '提交成绩');
+		});
+	});
+
+	describe('Filter types', () => {
+		it('should handle string-based submitted filter values', () => {
+			// 测试新的字符串类型筛选值
+			gradeStore.setFilters({ submitted: '1' }); // 已提交
+			expect(gradeStore.state.filters.submitted).toBe('1');
+
+			gradeStore.setFilters({ submitted: '0' }); // 未提交
+			expect(gradeStore.state.filters.submitted).toBe('0');
+
+			gradeStore.setFilters({ submitted: '' }); // 全部
+			expect(gradeStore.state.filters.submitted).toBe('');
 		});
 	});
 });
