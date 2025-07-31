@@ -22,6 +22,7 @@
     //发布考试确认框
     let publishExamDialog = $state(false);
     let examIdToPublish = $state(false);
+    let totalItems = $state();
     // 映射关系
     const TypeMap = {
         "00": "平时考试",
@@ -38,7 +39,7 @@
         "00": "未发布",
         "02": "待开始",
         "04": "进行中",
-        "08": "已结束",
+        "06": "已结束",
         "10": "已归档",
         "12": "考试异常",
     };
@@ -47,7 +48,7 @@
         "00": "unpublished",
         "02": "to-start",
         "04": "on-going",
-        "08": "ended",
+        "06": "ended",
         "10": "archived",
         "12": "error",
     };
@@ -67,8 +68,8 @@
 
     // 构建后端期望的查询对象
     const queryObject = {
-        Action: "select",
-        OrderBy: [{"ID": "DESC"}],
+        // Action: "select",
+        OrderBy: [{ "Duration": "DESC", "Time": "DESC"}],
         Filter: {
             Name: searchParams.name || "",
             Status: searchParams.status || "",
@@ -82,7 +83,7 @@
     const queryParams = new URLSearchParams();
     queryParams.append("q", JSON.stringify(queryObject));
 
-    console.log("查询参数:", queryObject);
+    // console.log("查询参数:", queryObject);
     
     fetch(`/api/exam/list?${queryParams.toString()}&role=2`, {
         method: "GET",
@@ -94,6 +95,7 @@
     .then((response) => response.json())
     .then((data) => {
         examList = data.data;
+        totalItems = data.rowCount;
     })
     .catch((error) => {
         console.error("搜索失败:", error);
@@ -264,13 +266,13 @@
             examIdToPublish = examList[index].id;
         }}>
         发布考试</button>
-        <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}">删除考试</button>
-        <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}">取消考试</button>
+        <!-- <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}">删除考试</button> -->
+        <!-- <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}">取消考试</button> -->
         <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">监考管理</button>
-        <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">操作日志</button>
-        <button class="unpublished-more-action-button action-button {status !== '00' ? 'hideButton' : ''}"
+        <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">操作日志</button> -->
+        <!-- <button class="unpublished-more-action-button action-button {status !== '00' ? 'hideButton' : ''}"
         onclick={() => toggleMoreActions(index)}
-        >更多...</button>
+        >更多...</button> -->
 
     </div>
 {/snippet}
@@ -303,7 +305,7 @@
             </div>
             <button class="tip "
                 ><img
-                    src="/tip.png"
+                    src="/exam_list/tip.png"
                     alt="提示"
                     style="width: 16px; height:auto"
                 />
@@ -314,9 +316,10 @@
         <div class="statusTag {StateClassMap[status]}">{StateMap[status]}</div>
     {/if}
 {/snippet}
-
+ <Title title="考试管理"  />
 <div class="examManagementContainer">
-    <Title title="考试管理" />
+    
+   
     <div class="tableFilterContainer">
         <div class="actionPart">      
 
@@ -340,7 +343,7 @@
                     <Option value="00" label="未发布" />
                     <Option value="02" label="待开始" />
                     <Option value="04" label="进行中" />
-                    <Option value="08" label="已结束" />
+                    <Option value="06" label="已结束" />
                     <Option value="10" label="已归档" />
                     <Option value="12" label="考试异常" />
                 </Select>
@@ -371,14 +374,7 @@
             >
             新增考试
             </Button>
-            <!-- <button
-                class="addExamButton"
-                onclick={() => {
-                    goto("/teacher/examManagement/addExam");
-                }}
-            >
-                + 新增考试
-            </button> -->
+
             </div>
     </div>
 
@@ -408,7 +404,7 @@
     
     <div class="paginationContainer">
         <Pagination
-            totalItems={examList.length}
+            totalItems={totalItems}
             pageSize={10}
             currentPage={1}
             on:pageChange={handlePageChange}
@@ -436,11 +432,14 @@
         font-weight: bold;                  // 悬停时加粗
     }
     .examManagementContainer {
+        width:105%;
+        margin-left: -3%;
         position: relative;
         background-color: white;
         display: flex;
         flex-direction: column;
         overflow: auto;
+        
         .tableFilterContainer {
             display: flex;
             flex-direction: row;
@@ -469,6 +468,7 @@
                 display: flex;
                 justify-content: flex-end;
                 padding:10px 15px;
+                margin-right:3%;
                 gap:15px;
             }
 

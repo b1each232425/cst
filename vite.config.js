@@ -77,6 +77,10 @@ export default defineConfig({
 			"/api/ws":{
 				target: "ws://localhost:6612",
 				ws: true
+			},
+			'/api/time-sync': {
+				target: 'ws://localhost:6612',
+				ws: true,
 			}
 		},
 	},
