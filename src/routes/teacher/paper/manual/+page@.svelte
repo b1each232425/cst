@@ -60,7 +60,7 @@
 
         savePaper(paperID, actions)
             .then(result => {
-                console.log(result);
+                // console.log(result);
             })
             .finally(() => {
                 isLoading = false;
@@ -151,7 +151,7 @@
 
                 savePaper(paperID, actions)
                     .then(result => {
-                        console.log(result);
+                        // console.log(result);
                     })
                     .finally(() => {
                         isLoading = false;
@@ -197,7 +197,7 @@
             
             savePaper(paperID, actions)
                     .then(result => {
-                        console.log(result);
+                        // console.log(result);
                     })
                     .finally(() => {
                         isLoading = false;
@@ -238,7 +238,7 @@
             
             savePaper(paperID, actions)
                     .then(result => {
-                        console.log(result);
+                        // console.log(result);
                     })
                     .finally(() => {
                         isLoading = false;
@@ -285,7 +285,7 @@
 
                 savePaper(paperID, actions)
                     .then(result => {
-                        console.log(result);
+                        // console.log(result);
                     })
                     .finally(() => {
                         isLoading = false;
@@ -319,8 +319,8 @@
         }).finally(() => {
             isLoading = false;
 
-            console.log(paperInfo);
-            console.log(paperGroups);
+            // console.log(paperInfo);
+            // console.log(paperGroups);
         })
     })
 

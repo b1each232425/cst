@@ -35,7 +35,7 @@
         toAddGroupID = group.id;
         toAddgroupName = group.name; 
         toAddgroupLength = group.questions.length;
-        console.log(toAddgroupLength)
+        // console.log(toAddgroupLength)
     }
 
     /**************** 信息区 ****************/
@@ -112,7 +112,7 @@
             
             savePaper(paperID, actions)
                     .then(result => {
-                        console.log(result);
+                        // console.log(result);
                     })
                     .finally(() => {
                         isLoading = false;
@@ -139,7 +139,7 @@
             ).then( result => {
                 questionList = result.data;
                 totalQuestions = result.rowCount;
-                console.log(result);
+                // console.log(result);
             }).finally(()=>{
                 isLoading = false;
             });
