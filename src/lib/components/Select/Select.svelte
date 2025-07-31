@@ -72,7 +72,7 @@
         if (value.includes(optionValue)) return true;
         return false;
       }
-      if (value == optionValue) return true;
+      if (value === optionValue) return true;
       return false;
     },
     handerSelectValue: ({ selectValue, selectLabel }) => {

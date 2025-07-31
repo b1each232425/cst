@@ -139,7 +139,6 @@
     }
   }
   onMount(() => {
-    console.log("attachmentContainer:", files);
     // 检查附件内容是否超出默认高度
     if (attachmentContainer) {
       // 使用setTimeout确保DOM已完全渲染
