@@ -4,19 +4,48 @@
     import Loading from "$lib/components/Loading/Loading.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import { debounce } from "$lib/utils/optimize";
-    import { fetchBankQuestionList, fetchQuestionBankList } from "../../_utils/api";
+    import { onMount } from "svelte";
+    import { fetchBankQuestionList, fetchPaper, fetchQuestionBankList, savePaper } from "../../_utils/api";
     import { questionDifficultyTrans, questionTypeTrans, tagColorList } from "../../_utils/data";
     import { formatTimestamp, getColorIndex } from "../../_utils/func";
+    import { toast } from "$lib/components/Toast/Toast";
+
+    /**************** 开关控制区 ****************/
 
     let { onclose } = $props();                 // 关闭弹窗
     let dropUpToggleIsOpen = $state(false);     // 上拉题组栏
     let filterIsOpen = $state(false);           // 下拉筛选栏
     let isLoading = $state(false);              // 加载中
     
+    /**************** 开关控制区 ****************/
+    
+
+
+    /**************** 信息区 ****************/
+
+    let paperID = $state(0);
+    let paperInfo = $state(null);
+    let paperGroups = $state([]); 
+    let toAddGroupID = $state(0);
+    let toAddgroupName = $state("");
+    let toAddgroupLength = $state(0);
+
+    // 选中题组
+    function selectGroup(group) {
+        toAddGroupID = group.id;
+        toAddgroupName = group.name; 
+        toAddgroupLength = group.questions.length;
+        console.log(toAddgroupLength)
+    }
+
+    /**************** 信息区 ****************/
+
+    
+
     /**************** 题库列表 ****************/
 
     let bankKeyWord = $state("");
-    let bankID = $state("");
+    let toAddbankID = $state("");
     let bankList = $state([]);
 
     // 防抖搜索题库列表
@@ -38,7 +67,7 @@
 
     // 单选题库功能
     function toggleBank(id) {
-        bankID = bankID === id ? "" : id;
+        toAddbankID = toAddbankID === id ? "" : id;
     }
 
     /**************** 题库列表 ****************/
@@ -55,13 +84,52 @@
     let questionDifficulty = $state("");
     let totalQuestions = $state(0);
     let questionList = $state([]);
+
+    let toAddQuestionID = $state(null);
+
+    function toggleQuestion(id) {
+        toAddQuestionID = toAddQuestionID === id ? "" : id;
+    }
+
+    // 确认导入题目
+    function concfirmImport() {
+        isLoading = true;
+
+            const actions = [
+                {
+                    action: "add_question",
+                    payload: [
+                        {
+                            temp_id: "temp_question_1",
+                            group_id: toAddGroupID,
+                            order: toAddgroupLength + 1,
+                            bank_question_id: toAddQuestionID,
+                            score: 10
+                        }
+                    ]
+                }
+            ];
+            
+            savePaper(paperID, actions)
+                    .then(result => {
+                        console.log(result);
+                    })
+                    .finally(() => {
+                        isLoading = false;
+                        toast.success("添加题目成功", 1000);
+
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    });
+    }
     
     $effect(() => {
-        bankID;
-        if(bankID !== "") {
+        toAddbankID;
+        if(toAddbankID !== "") {
             isLoading = true;
             fetchBankQuestionList(
-                bankID,
+                toAddbankID,
                 questionPage,
                 questionPageSize,
                 questionName,
@@ -79,6 +147,20 @@
     });
 
     /**************** 题目列表 ****************/
+
+
+    // 挂载区
+    onMount(() => {
+        isLoading = true;
+        paperID = JSON.parse(localStorage.getItem('currentPaperID'));
+        fetchPaper(paperID)
+            .then(result => {
+                paperInfo = result.data;
+                paperGroups = result.data.GroupsData;
+        }).finally(() => {
+            isLoading = false;
+        })
+    })
 
 </script>
 
@@ -111,7 +193,7 @@
                     </div>
                 </div>
 
-                {bankID}
+                {toAddbankID}
 
                 <!-- 题库列表 -->
                 <div class="question-bank-list">
@@ -120,7 +202,7 @@
                             <!-- svelte-ignore a11y_click_events_have_key_events -->
                             <!-- svelte-ignore a11y_no_static_element_interactions -->
                             <div class="single-bank" onclick={()=>toggleBank(bank.ID)}>
-                                <input type="checkbox" checked={bankID === bank.ID} onclick={(e) => {e.stopPropagation(); toggleBank(bank.ID);}}>
+                                <input type="checkbox" checked={toAddbankID === bank.ID} onclick={(e) => {e.stopPropagation(); toggleBank(bank.ID);}}>
                                 <span class="bank-name">{bank.Name}</span>
                                 <span class="questions-number">{bank.QuestionCount}</span>
                             </div>
@@ -169,32 +251,6 @@
                                     <div class="tags-box">
                                         <button>测试</button>
                                         <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-                                        <button>常识</button>
-
                                     </div>
                                 </div>
 
@@ -215,6 +271,7 @@
                 <div class="bottom-area">
                     <!-- 表格区域 -->
                     <div class="questions-table-container">
+                        {toAddQuestionID}
                         <table>
                             <thead>
                                 <tr>
@@ -231,8 +288,8 @@
                             <tbody>
                                 {#if questionList.length !== 0}
                                     {#each questionList as question}
-                                    <tr>
-                                        <td class="checkbox"><input type="checkbox"></td>
+                                    <tr class={toAddQuestionID===question.ID?"selected":""} onclick={()=>toggleQuestion(question.ID)}>
+                                        <td class="checkbox"><input type="checkbox" checked={toAddQuestionID === question.ID} onclick={(e) => {e.stopPropagation(); toggleQuestion(question.ID);}}></td>
                                         <td class="question-content">{@html question.Content}</td>
                                         <td class="question-type">{questionTypeTrans[question.Type]}</td>
                                         <td class="question-level"><span class={questionDifficultyTrans[questionDifficultyTrans[question.Difficulty]]}>{questionDifficultyTrans[question.Difficulty]}</span></td>
@@ -269,45 +326,29 @@
 
         <!-- 底部 -->
         <div class="container-footer">
+            {toAddGroupID}
             <span class="selected-span">已选择 <span>2</span> 道题目</span>
             <span class="import-span">导入到题组：</span>
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div class="dropup-toggle" onmouseenter={()=>{dropUpToggleIsOpen=true}} onmouseleave={()=>{dropUpToggleIsOpen=false}}>
                 {#if dropUpToggleIsOpen}
                     <div class="dropup-menu">
-                        <div class="menu-option selected">
-                            <span>
-                                一、单选题（共0题，共0分）
-                            </span>
-                        </div>
-                        <div class="menu-option">
-                            <span>
-                                二、多选题（共0题，共0分）
-                            </span>
-                        </div>
-                        <div class="menu-option">
-                            <span>
-                                三、判断题（共0题，共0分）
-                            </span>
-                        </div>
-                        <div class="menu-option">
-                            <span>
-                                四、填空题（共0题，共0分）
-                            </span>
-                        </div>
-                        <div class="menu-option">
-                            <span>
-                                五、多选题（共0题，共0分）
-                            </span>
-                        </div>
+                        {#each paperGroups as group}
+                            <!-- svelte-ignore a11y_click_events_have_key_events -->
+                            <div class="menu-option {toAddGroupID===group.id?"selected":""}" onclick={()=>selectGroup(group)}>
+                                <span>
+                                    {group.name}（共0题，共0分）
+                                </span>
+                            </div>
+                        {/each}
                     </div>  
                 {/if}
-                <span class="selected-group">一、单选题（共0题，共0分）</span>
+                <span class="selected-group">{toAddGroupID===0?"请选择题组":toAddgroupName+"（共0题，共0分）"}</span>
                 <button class="toggle-btn">∨</button>
             </div>
             <div class="btn-box">
                 <Button onclick={onclose} plain={true}>取消</Button>
-                <Button>确认导入</Button>
+                <Button onclick={()=>concfirmImport()}>确认导入</Button>
             </div>
         </div>
     </div>
@@ -616,6 +657,14 @@
 
                             table {
                                 border-collapse: collapse;
+
+                                .selected {
+                                    background-color: rgb(208, 232, 255);
+
+                                    &:hover {
+                                        background-color: rgb(192, 216, 255);
+                                    }
+                                }
 
                                 tbody tr {
                                     cursor: pointer;
