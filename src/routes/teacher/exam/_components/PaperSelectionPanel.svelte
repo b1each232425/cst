@@ -202,9 +202,9 @@
                 },
             },
         );
-
+        
         const result = await response.json();
-        console.log(result);
+        console.log("result",result);
         if (result.status!== 0 ) {
             error = result.msg || "搜索失败";
             paperList = [];
@@ -214,7 +214,7 @@
             
         } else {
             paperList = result.data;
-            totals = result.RowCount;
+            totals = result.rowCount;
             currentPage = searchParams.page;
         }
         
@@ -253,9 +253,9 @@
         selected_paper_type = value;
         // 根据选择的值设置搜索参数
         if (value === "04") {
-            searchParams.assemblyType = ""; // 全部，不筛选
+            searchParams.AssemblyType = ""; // 全部，不筛选
         } else {
-            searchParams.assemblyType = value;
+            searchParams.AssemblyType = value;
         }
         searchParams.page = 1;
         searchPaper();
