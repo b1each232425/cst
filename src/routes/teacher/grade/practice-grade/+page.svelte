@@ -1,11 +1,12 @@
 <script>
 	import { createPracticeGradeStore } from '../_stores/practiceGrade.svelte.js';
-	import Title from '../_components/shared/Title.svelte';
-	import Pagination from '../_components/shared/Pagination.svelte';
+	import Title from '$lib/components/Title/Title.svelte';
+	import Pagination from '$lib/components/Pagination/Pagination.svelte';
 	import PracticeFilterPanel from '../_components/practice/PracticeFilterPanel.svelte';
 	import PracticeTable from '../_components/practice/PracticeTable.svelte';
 
 	const practiceGradeStore = createPracticeGradeStore();
+	const { state, setPage, setPageSize } = practiceGradeStore;
 
 	$effect(() => {
 		practiceGradeStore.fetchPractices();
@@ -24,7 +25,13 @@
 			<PracticeTable store={practiceGradeStore} />
 		{/if}
 		<div class="pagination-wrapper">
-			<Pagination store={practiceGradeStore} />
+			<Pagination
+				totalItems={state.totalRecords}
+				pageSize={state.pagination.pageSize}
+				currentPage={state.pagination.page}
+				on:pageChange={(e) => setPage(e.detail)}
+				on:pageSizeChange={(e) => setPageSize(e.detail)}
+			/>
 		</div>
 	</div>
 </div>
@@ -37,17 +44,19 @@
 	}
 
 	.filter-container {
-		padding: 16px 33px 10px 33px; /* 控制筛选区和表格的间距 */
+		padding: 0 1px; /* 控制筛选区和表格的间距 */
+		padding-bottom: 10px;
 	}
 
 	.table-container {
-		flex-grow: 1;
 		display: flex;
 		flex-direction: column;
-		padding: 0 37px; /* 移除顶部的 padding */
+		padding: 0 23px; /* 移除顶部的 padding */
 	}
 	.pagination-wrapper {
-		margin-top: auto; /* 将分页器推到底部 */
-		padding-bottom: 35px;
+		display: flex;
+		justify-content: flex-end; /* 右对齐 */
+		margin-top: 16px; /* 与表格保持适当间距 */
+		padding: 16px 0; /* 上下内边距 */
 	}
 </style> 

@@ -1,6 +1,7 @@
 import { getPractices, exportPracticeGrades } from '../_api/score';
 import { formatISOString } from '../_utils/dateFormatter';
 import { sget } from '$lib/utils';
+import { handleApiError, handleSuccess, handleSelectionError } from '../_utils/errorHandler';
 
 /**
  * @typedef {object} PracticeInfo
@@ -31,6 +32,8 @@ function formatPracticeData(practiceData) {
 	}
 	return practiceData;
 }
+
+
 
 export function createPracticeGradeStore() {
 	let state = $state({
@@ -73,7 +76,9 @@ export function createPracticeGradeStore() {
 					state.practices = formatPracticeData(sget(data, 'data', []));
 					state.totalRecords = sget(data, 'rowCount', 0);
 				})
-				.catch((err) => console.error('Failed to fetch practices', err))
+				.catch((error) => {
+					handleApiError(error, '获取练习列表');
+				})
 				.finally(() => (state.loading = false));
 		},
 		/** @param {Partial<typeof state.filters>} newFilters */
@@ -126,16 +131,16 @@ export function createPracticeGradeStore() {
 			.map(Number);
 
 		if (selectedIds.length === 0) {
-			alert('请至少选择一项进行导出。');
+			handleSelectionError('导出');
 			return;
 		}
 
 		exportPracticeGrades(selectedIds)
 			.then(() => {
-				// Success
+				handleSuccess('练习成绩导出');
 			})
-			.catch((/** @type {any} */ err) => {
-				console.error('导出练习成绩失败:', err);
+			.catch((error) => {
+				handleApiError(error, '导出练习成绩');
 			});
 	}
 
