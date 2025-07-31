@@ -17,7 +17,6 @@ vi.mock('../../_stores/practiceGrade.svelte.js', () => {
         selectAll: false,
         filters: {
             name: '',
-            teacherID: -1,
             practiceID: ''
         },
         pagination: {

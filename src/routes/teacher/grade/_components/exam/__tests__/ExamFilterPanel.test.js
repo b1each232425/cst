@@ -39,7 +39,7 @@ describe('考试筛选面板', () => {
                 filters: {
                     name: '',
                     type: '',
-                    submitted: ''
+                    submitted: -1 // -1=全部, 0=未提交, 1=已提交
                 },
                 selected: {},
                 exams: []
