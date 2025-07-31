@@ -5,6 +5,7 @@
   import Brand from '$lib/components/Brand/Brand.svelte';
   import { sidebarFoldingState } from '$lib/stores/modules/layoutStore';
   import { fly } from 'svelte/transition';
+  import { onMount } from 'svelte';
   let { children } = $props();
 </script>
 
@@ -41,6 +42,7 @@
       top: 0;
       left: 0;
       height: 100%;
+      width: 235px;
       position: fixed;
       z-index: 2;
     }
@@ -66,7 +68,7 @@
         left: 0;
         width: 100%;
         height: max-content;
-        z-index: 1;
+        z-index: 2;
         background-color: #f5f5f5;
       }
 

@@ -38,9 +38,16 @@
       // 遍历仓库数据，找到与 part 对应的项
       const matchedItem = crumbData.find((item) => {
         // 如果 item.id 是 '[bankid]'，检查路径前缀部分是否匹配
-        if (item.id === '[bankid]') {
+        if (item.id === '[examID]') {
           // 检查路径前缀部分是否相同
-          const basePath = '/teacher/question-bank/theory';
+          const basePath = '/teacher/exam/editExam';
+          const isBasePathMatch = currentPath.startsWith(basePath);
+          const isDynamicPath = currentPath.split('/').length === basePath.split('/').length + 1;
+
+          return isBasePathMatch && (isDynamicPath || currentPath === basePath);
+        } else if (item.id === '[id]') {
+          // 检查路径前缀部分是否相同
+          const basePath = '/teacher/practice/create/edit';
           const isBasePathMatch = currentPath.startsWith(basePath);
           const isDynamicPath = currentPath.split('/').length === basePath.split('/').length + 1;
 
