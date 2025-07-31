@@ -597,7 +597,7 @@ o888o o888o   "888" o888o o888o o888o o888o
     </div>
 
     <div class="operation-btns">
-      <button class="button-delete" onclick={onBatchDeleteBank}>
+      <button class="button-delete" >
         <img src={icons.delete} alt="批量删除" />
         <span>批量删除</span>
       </button>
@@ -656,8 +656,7 @@ o888o o888o   "888" o888o o888o o888o o888o
                 discardChanges(item);
               },
               edit: () => onGoToEditBank(item),
-              delete: () => onDeleteBankData(item, index),
-              save: () => onSaveBankData(item, index),
+             
             }}
           />
         </div>
