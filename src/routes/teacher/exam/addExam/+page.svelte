@@ -110,7 +110,7 @@
             showPaperSelectionPanel: false,
             showGraderSelectionPanel: false,
            lateEntryTime: 1,
-           earlySubmisstionTime: 0,
+           earlySubmissionTime: 0,
         },
     ]);
     
@@ -153,7 +153,7 @@
             showPaperSelectionPanel: false,
             showGraderSelectionPanel: false,
            lateEntryTime: 1,
-           earlySubmisstionTime: 0,
+           earlySubmissionTime: 0,
         };
         paperConfigs = [...paperConfigs, default_paper_config];
 
@@ -308,18 +308,20 @@ function updateDuration(index) {
         }
 
         paperConfigs[i].lateEntryTime   = paperConfigs[i].lateEntryTime   <= 0 ? 1 : paperConfigs[i].lateEntryTime;
-        paperConfigs[i].earlySubmisstionTime = paperConfigs[i].earlySubmisstionTime <= 0 ? 0 : paperConfigs[i].earlySubmisstionTime;
+        paperConfigs[i].earlySubmissionTime = paperConfigs[i].earlySubmissionTime <= 0 ? 0 : paperConfigs[i].earlySubmissionTime;
+        
     }
 
+    
     /* 4. 构造真正要提交的 JSON（完全使用用户输入） */
     const examSessionsdata = paperConfigs.map(cfg => ({
-        PaperID:              61,
+        PaperID:              cfg.paperID,
         PeriodMode:           cfg.periodMode,
         StartTime:            cfg.startTime  ? new Date(cfg.startTime).getTime() : 0,
         EndTime:              cfg.endTime    ? new Date(cfg.endTime).getTime()   : 0,
         Duration:             Number(cfg.duration) || 0,
         LateEntryTime:        Number(cfg.lateEntryTime)        || 0,
-        EarlySubmissionTime:  Number(cfg.earlySubmisstionTime) || 0,
+        EarlySubmissionTime:  Number(cfg.earlySubmissionTime) || 0,
         QuestionShuffledMode: cfg.questionShuffledMode,
         MarkMethod:           cfg.markMethod,
         NameVisibilityIn:     !!cfg.nameVisibility,
@@ -701,7 +703,7 @@ function updateDuration(index) {
                             <span style="font-size: 14px;">分钟内可进入考场，可提前</span>
                             <input
                                 class="duration-input"
-                                bind:value={paperConfigs[paperConfigIndex].earlySubmissonTime}
+                                bind:value={paperConfigs[paperConfigIndex].earlySubmissionTime}
                                 type="number"
                                 min="0"
                                 max="{paperConfigs[paperConfigIndex].duration}"
@@ -711,7 +713,7 @@ function updateDuration(index) {
                                     const val = Number(event.target.value);
                                     if (val > max) {
                                         event.target.value = max;
-                                        paperConfigs[paperConfigIndex].earlySubmissonTime = max;
+                                        paperConfigs[paperConfigIndex].earlySubmissionTime = max;
                                     }
                                 }}
                             />

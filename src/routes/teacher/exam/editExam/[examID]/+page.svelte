@@ -115,7 +115,7 @@
             showPaperSelectionPanel: false,
             showGraderSelectionPanel: false,
            lateEntryTime: 1,
-           earlySubmisstionTime: 0,
+           earlySubmissionTime: 0,
         },
     ]);
     
@@ -155,7 +155,7 @@
             showPaperSelectionPanel: false,
             showGraderSelectionPanel: false,
            lateEntryTime: 1,
-           earlySubmisstionTime: 0,
+           earlySubmissionTime: 0,
         };
         paperConfigs = [...paperConfigs, default_paper_config];
 
@@ -331,7 +331,7 @@
         }
 
         paperConfigs[i].lateEntryTime   = paperConfigs[i].lateEntryTime   <= 0 ? 1 : paperConfigs[i].lateEntryTime;
-        paperConfigs[i].earlySubmisstionTime = paperConfigs[i].earlySubmisstionTime <= 0 ? 0 : paperConfigs[i].earlySubmisstionTime;
+        paperConfigs[i].earlySubmissionTime = paperConfigs[i].earlySubmissionTime <= 0 ? 0 : paperConfigs[i].earlySubmissionTime;
     }
 
     /* 4. 构造真正要提交的 JSON（完全使用用户输入） */
@@ -342,7 +342,7 @@
         EndTime:              cfg.endTime    ? new Date(cfg.endTime).getTime()   : 0,
         Duration:             Number(cfg.duration) || 0,
         LateEntryTime:        Number(cfg.lateEntryTime)        || 0,
-        EarlySubmissionTime:  Number(cfg.earlySubmisstionTime) || 0,
+        EarlySubmissionTime:  Number(cfg.EarlySubmissionTime) || 0,
         QuestionShuffledMode: cfg.questionShuffledMode,
         MarkMethod:           cfg.markMethod,
         NameVisibilityIn:     !!cfg.nameVisibility,
@@ -395,7 +395,7 @@
 }
 
     async function fetchSelectedStudents(){
-        fetch(`/api/exam/examinee?exam_id=${examID}`,{
+        fetch(`/api/exam/examinee`,{
             method:'GET',
             credentials:"include",
             headers:{
@@ -404,7 +404,7 @@
         })
         .then((response)=>response.json())
         .then((data)=>{
-            if(data.status === 0)
+            if(data.status===0)
             {
                 examExaminee=data.data;
                 return;
@@ -466,7 +466,7 @@
                     showPaperSelectionPanel: false,
                     showGraderSelectionPanel: false,
                     lateEntryTime: s.LateEntryTime   || 1,
-                    earlySubmisstionTime: s.EarlySubmissionTime || 0,
+                    earlySubmissionTime: s.EarlySubmissionTime || 0,
                 };
             });
                    
@@ -479,11 +479,10 @@
     onMount(()=>{
         page.subscribe(value => {
         examID = value.params.examID;
-        //console.log('examID from params:', examID);
     });
         fetchSelectedStudents();
         fetchExamInfo();
-        // console.log("examinee",examExaminee);
+         console.log("examinee",examExaminee);
     })
 </script>
 <Title title="创建考试" line={true} />
@@ -833,7 +832,7 @@
                             <span style="font-size: 14px;">分钟内可进入考场，可提前</span>
                             <input
                                 class="duration-input"
-                                bind:value={paperConfigs[paperConfigIndex].earlySubmissonTime}
+                                bind:value={paperConfigs[paperConfigIndex].earlySubmissionTime}
                                 type="number"
                                 min="0"
                                 max="{paperConfigs[paperConfigIndex].duration}"
@@ -843,7 +842,7 @@
                                     const val = Number(event.target.value);
                                     if (val > max) {
                                         event.target.value = max;
-                                        paperConfigs[paperConfigIndex].earlySubmissonTime = max;
+                                        paperConfigs[paperConfigIndex].earlySubmissionTime = max;
                                     }
                                 }}
                             />

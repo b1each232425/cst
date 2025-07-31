@@ -39,14 +39,14 @@
   let { question=$bindable(), ifPreview, query_url, saveAnswer, editor_height } = $props();
 
   // 状态管理
-  let question_id = $state(question.id);
+  let question_id = $state(question.ID);
   let student_answer = $state({ answer: initialAnswer(question) });
   
   /**
    * 富文本编辑器组件实例
    * @type {Array<any | null>}
    */
-  let rich_text_editors = $state(Array(question.answer_num || 1).fill(null));
+  let rich_text_editors = $state(Array(question.Answer_num || 1).fill(null));
 
   /**
    * 初始化答案类型
@@ -54,7 +54,7 @@
    * @returns {Array} 初始化的答案数组
    */
   function initialAnswer(question) {
-    switch (question.type) {
+    switch (question.Type) {
       case QUESTION_TYPES.SINGLE_CHOICE: // "00"
       return [];
       case QUESTION_TYPES.MULTIPLE_CHOICE: // "02"
@@ -62,9 +62,9 @@
       case QUESTION_TYPES.TRUE_FALSE: // "04"
         return [];
       case QUESTION_TYPES.ESSAY: // "08"
-      return Array(question.answer_num || 1).fill(""); // 简答题，初始化为空字符串数组
+      return Array(question.Answer_num || 1).fill(""); // 简答题，初始化为空字符串数组
       case QUESTION_TYPES.FILL_BLANK: // "06"
-        return Array(question.answer_num || 1).fill("");
+        return Array(question.Answer_num || 1).fill("");
       default:
         return [];
     }
@@ -72,12 +72,14 @@
 
   // 生命周期钩子
   onMount(async () => {
+    
     await getStudentAnswer();
   });
 
   $effect(() => {
-    question.answer = student_answer.answer;
-    if (question.id != question_id) {
+    question.Answer = student_answer.answer;
+    if (question.ID != question_id) {
+      question_id = question.ID;
       getStudentAnswer();
     }
   });
@@ -142,9 +144,9 @@
 
             // 构建答案数据并保存
             const answer = {
-              question_id: Number(question.id),
+     //         question_id: Number(question.Id),
               answer: student_answer.answer,
-              type: question.type,
+     //         type: question.Type,
             };
 
             // 获取作答中的文件路径
@@ -160,10 +162,11 @@
    * 获取学生题目的答题情况
    */
   async function getStudentAnswer() {
+
     if (ifPreview) return;
     
     try {
-      const res = await fetch(`${query_url}&question_id=${question.id}`, {
+      const res = await fetch(`${query_url}&question_id=${question.ID}`, {
         method: "GET",
         credentials: "include",
       });
@@ -190,7 +193,7 @@
         student_answer.answer = answer.answer;
         
         // 对于填空题和简答题，需要更新富文本编辑器内容
-        if (question.type === QUESTION_TYPES.FILL_BLANK || question.type === QUESTION_TYPES.ESSAY) {
+        if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {
           updateRichTextEditors();
         }
       } else {
@@ -220,9 +223,9 @@
   async function resetAndSaveEmptyAnswer() {
     student_answer.answer = initialAnswer(question);
     const answer = {
-      question_id: Number(question.id),
+   //   question_id: Number(question.Id),
       answer: student_answer.answer,
-      type: question.type,
+  //    type: question.Type,
     };
     await saveAnswer(answer, question, false, []);
   }
@@ -272,9 +275,9 @@
    */
   async function createAndSaveAnswer(question_id) {
     const answer = {
-      question_id: Number(question_id),
+  //    question_id: Number(question_id),
       answer: student_answer.answer,
-      type: question.type,
+  //    type: question.Type,
     };
     
     await saveAnswer(answer, question, false, []);
@@ -284,48 +287,48 @@
 <div class="layout">
   <!-- 单选题 -->
   <!-- 判断题 -->
-  {#if question.type === QUESTION_TYPES.SINGLE_CHOICE||question.type === QUESTION_TYPES.TRUE_FALSE}
+  {#if question.Type === QUESTION_TYPES.SINGLE_CHOICE||question.Type === QUESTION_TYPES.TRUE_FALSE}
     <div class="options">
-      {#each question.options as option}
+      {#each question.Options as option}
         <label class="option">
           <input
             type="radio"
-            name="question-{question.id}"
-            value={option.label}
-            checked={student_answer.answer?.includes(option.label)}
-            onchange={() => handleOptionSelect(question.id, option.label)}
+            name="question-{question.ID}"
+            value={option.Label}
+            checked={student_answer.answer?.includes(option.Label)}
+            onchange={() => handleOptionSelect(question.ID, option.Label)}
             class="hidden-radio"
             disabled={ifPreview}
           />
-          <span class="option-id">{option.label}</span>
+          <span class="option-id">{option.Label}</span>
           <Option {option} />
         </label>
       {/each}
     </div>
     <!-- 多选题 -->
-  {:else if question.type === QUESTION_TYPES.MULTIPLE_CHOICE}
+  {:else if question.Type === QUESTION_TYPES.MULTIPLE_CHOICE}
     <div class="options">
-      {#each question.options as option}
+      {#each question.Options as option}
         <label class="option">
           <input
             type="checkbox"
-            name="question-{question.id}"
-            value={option.label}
-            checked={student_answer.answer?.includes(option.label)}
-            onchange={() => handleMultiOptionSelect(question.id, option.label)}
+            name="question-{question.ID}"
+            value={option.Label}
+            checked={student_answer.answer?.includes(option.Label)}
+            onchange={() => handleMultiOptionSelect(question.ID, option.Label)}
             class="hidden-radio"
             disabled={ifPreview}
           />
-          <span class="option-id-multiple">{option.label}</span>
+          <span class="option-id-multiple">{option.Label}</span>
           <Option {option} />
         </label>
       {/each}
     </div>
     <!-- 简答题 -->
-  {:else if question.type === QUESTION_TYPES.ESSAY}
-    {#each Array(question.answer_num) as _, index}
+  {:else if question.Type === QUESTION_TYPES.ESSAY}
+    {#each Array(question.Answer_num) as _, index}
       <div class="fill-blank">
-        {#if question.answer_num > 1}
+        {#if question.Answer_num > 1}
           <div class="question-id">（{index + 1}）</div>
         {/if}
 

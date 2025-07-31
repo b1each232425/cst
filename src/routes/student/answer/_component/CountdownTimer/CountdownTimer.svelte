@@ -13,6 +13,7 @@
     start_timestamp = Date.now(), //正着数需要的开始时间戳，用于和后端对时
   } = $props();
 
+
   /**
    * @type {WebSocket|null}
    */
@@ -73,7 +74,7 @@
 
   function openWebSocket() {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    let url = `${protocol}://${window.location.host}/api/ws/timesync?`;
+    let url = `${protocol}://${window.location.host}/api/time-sync?`;
 
     if (examinee_id) {
       url += `examinee_id=${examinee_id}`;
@@ -83,16 +84,16 @@
     ws = new WebSocket(url);
 
     ws.onopen = () => {
-      console.log("WebSocket opened");
+   //   console.log("WebSocket opened");
     };
+    
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      switch (data.type_num) {
+      switch (data.msg_type) {
         case 1: // 服务器时间戳消息
           const now_ts = data.timestamp;
-          // console.log("WebSocket message received:", data);
           if (countUp) {
             current_seconds =
               Math.floor((now_ts - start_timestamp) / 1000) + elapsed_seconds;
@@ -125,8 +126,6 @@
       console.log("预览模式");
       return;
     }
-    console.log("elapsed", elapsed_seconds);
-    console.log("current", formatTime(current_seconds));
     openWebSocket();
     startTimer();
   });
