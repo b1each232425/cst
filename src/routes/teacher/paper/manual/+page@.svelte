@@ -697,7 +697,7 @@
                 font-size: 20px;
                 transition: all 0.3s;
                 width: 30%;
-                margin-left: auto;
+                /* margin-left: auto; */
                 min-width: 108px;
 
                 &:focus {
