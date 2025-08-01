@@ -57,6 +57,10 @@
 
   let totalPages = $derived(Math.ceil(totalItems / pageSize)); // 总页数
   let pagesToShow = $derived(calculatePagesArray(totalPages)); // 用于保存要显示的页码数组
+  let options = pageSizeOptions.map((size) => ({
+    value: size,
+    label: `${size}条/页`,
+  }));
 
   // 处理跳转到指定页面
   function goToPage(page) {
@@ -98,6 +102,7 @@
     }
     pageSize = sizeOption;
     dispatch('pageSizeChange', pageSize);
+    dispatch('pageChange', currentPage);
   }
 
   // 处理分页的页面列表逻辑
@@ -175,6 +180,8 @@
         <option value={sizeOption}>{sizeOption}条/页</option>
       {/each}
     </select>
+    <!-- <DropdownGray {options} selectOptionFunc={handlePageSizeChange} expand_direction={'up'} --font_size="12px"
+    ></DropdownGray> -->
   </div>
 
   <div class="jump-to">

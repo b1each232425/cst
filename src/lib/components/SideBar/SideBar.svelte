@@ -9,10 +9,15 @@
     timerId,
     sidebarMouseEnter,
     sidebarMouseLeave,
+    getCookie,
   } from '$lib/stores/modules/layoutStore';
   import { linear } from 'svelte/easing';
+  import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
 
   let currentPath = $derived(page.url.pathname); // 当前页面路径
+  let assesableNav = $state([]); // 存储当前用户可以访问的模块数据
+  let userInfo = $state(null); // 存储用户信息
 
   // 折叠、展开侧边栏
   const toggleSidebar = () => {
@@ -23,17 +28,12 @@
   const handleItemButtonClick = (item) => {
     if (!item.children) {
       // 如果没有子路由，直接跳转
-      item.isOpen = !item.isOpen;
-      navStore.update((map) => {
-        return map.map((i) => (i === item ? { ...i, isOpen: item.isOpen } : i));
-      });
       goto(item.path);
     } else {
       // 如果有子路由，切换 isOpen 状态
       item.isOpen = !item.isOpen;
-      navStore.update((map) => {
-        return map.map((i) => (i === item ? { ...i, isOpen: item.isOpen } : i));
-      });
+      // 更新 assesableNav
+      assesableNav = assesableNav.map((i) => (i.path === item.path ? { ...i, isOpen: item.isOpen } : i));
     }
   };
 
@@ -52,6 +52,52 @@
       return currentPathWithoutBase.startsWith(itemPathWithoutBase);
     }
   }
+
+  // 过滤侧边栏数据，匹配后端返回的 API 权限
+  const filterNavItems = async (apis) => {
+    const filteredNavItems = $navStore.filter((item) => {
+      // 遍历 APIs，检查当前路径是否与后端权限路径匹配
+      return apis.some((api) => api.APIExposePath === item.path);
+    });
+
+    return filteredNavItems;
+  };
+
+  // 获取用户信息
+  async function getUserInfo() {
+    // 获取 qNearSessions cookie
+    let qNearSessions = getCookie('qNearSessions');
+
+    // 获取用户信息
+    fetch(`/api/user/me?qNearSessions=${qNearSessions}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then(async (res) => {
+        if (res.status !== 0) {
+          console.log('获取用户信息失败', res.msg || '获取用户信息失败，请重试');
+        } else {
+          userInfo = res.data;
+          assesableNav = await filterNavItems(userInfo.APIs);
+        }
+      })
+      .catch(() => {
+        console.log('获取用户信息失败', '网络错误，请检查网络连接后重试');
+      });
+  }
+
+  onMount(async () => {
+    await getUserInfo();
+  });
 </script>
 
 {#if !$sidebarFoldingState}
@@ -67,7 +113,7 @@
     <div class="logo">3min</div>
 
     <!-- 侧边栏主要导航区域 -->
-    {@render sideBar($navStore)}
+    {@render sideBar(assesableNav)}
   </div>
 {/if}
 
@@ -80,7 +126,7 @@
     onmouseenter={() => sidebarMouseEnter()}
     onmouseleave={() => sidebarMouseLeave()}
   >
-    {@render sideBar($navStore)}
+    {@render sideBar(assesableNav)}
   </div>
 {/if}
 
