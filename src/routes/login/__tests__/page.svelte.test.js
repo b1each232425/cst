@@ -1,6 +1,12 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
-import {fireEvent, render, screen} from '@testing-library/svelte';
+import {fireEvent, render, screen, waitFor} from '@testing-library/svelte';
 import LoginPage from '../+page.svelte';
+import { goto } from '$app/navigation';
+
+// 模拟导航函数
+vi.mock('$app/navigation', () => ({
+	goto: vi.fn()
+}));
 
 /**
  * 登录页面单元测试
@@ -88,7 +94,7 @@ describe('登录页面组件测试', () => {
 
 		// 验证MessageBox显示
 		expect(screen.getByText('提示')).toBeInTheDocument();
-		expect(screen.getByText('请输入令牌和密码')).toBeInTheDocument();
+		expect(screen.getByText('请输入登录凭证和密码')).toBeInTheDocument();
 	});
 
 	/**
@@ -108,7 +114,7 @@ describe('登录页面组件测试', () => {
 
 		// 验证MessageBox显示
 		expect(screen.getByText('提示')).toBeInTheDocument();
-		expect(screen.getByText('请输入令牌和密码')).toBeInTheDocument();
+		expect(screen.getByText('请输入登录凭证和密码')).toBeInTheDocument();
 	});
 
 	/**
@@ -282,7 +288,7 @@ describe('登录页面组件测试', () => {
 
 		// 验证MessageBox显示
 		expect(screen.getByText('提示')).toBeInTheDocument();
-		expect(screen.getByText('请输入令牌和密码')).toBeInTheDocument();
+		expect(screen.getByText('请输入登录凭证和密码')).toBeInTheDocument();
 
 		// 点击确定按钮关闭MessageBox
 		const confirmButton = screen.getByRole('button', { name: '确定' });
@@ -290,7 +296,7 @@ describe('登录页面组件测试', () => {
 
 		// 验证MessageBox已关闭
 		expect(screen.queryByText('提示')).not.toBeInTheDocument();
-		expect(screen.queryByText('请输入令牌和密码')).not.toBeInTheDocument();
+		expect(screen.queryByText('请输入登录凭证和密码')).not.toBeInTheDocument();
 	});
 
 	/**
@@ -303,5 +309,347 @@ describe('登录页面组件测试', () => {
 		expect(screen.getByText('用户协议')).toBeInTheDocument();
 		expect(screen.getByText('隐私政策')).toBeInTheDocument();
 		expect(screen.getByText('产品服务协议')).toBeInTheDocument();
+	});
+
+	/**
+	 * 测试单角色用户自动确认登录
+	 */
+	it('应该为单角色用户自动确认登录', async () => {
+		// 模拟登录成功响应
+		const mockLoginFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ status: 0, msg: '登录成功' })
+		});
+
+		// 模拟角色查询响应（单角色）
+		const mockRoleFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({
+				status: 0,
+				data: {
+					Domains: ["cst.school^student"]
+				}
+			})
+		});
+
+		// 模拟角色确认响应
+		const mockConfirmFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ status: 0, msg: '角色确认成功' })
+		});
+
+		global.fetch = vi.fn()
+			.mockImplementationOnce(() => mockLoginFetch())
+			.mockImplementationOnce(() => mockRoleFetch())
+			.mockImplementationOnce(() => mockConfirmFetch());
+
+		render(LoginPage);
+
+		const credentialInput = screen.getByPlaceholderText('请输入ID/帐号/手机号/邮箱/姓名');
+		const passwordInput = screen.getByPlaceholderText('请输入密码');
+		const checkbox = screen.getByRole('checkbox');
+		const loginButton = screen.getByRole('button', { name: '登录' });
+
+		// 填写表单并登录
+		await fireEvent.input(credentialInput, { target: { value: 'student1' } });
+		await fireEvent.input(passwordInput, { target: { value: 'password' } });
+		await fireEvent.click(checkbox);
+		await fireEvent.click(loginButton);
+
+		// 等待异步操作完成
+		await waitFor(() => {
+			// 验证角色确认API被调用
+			expect(global.fetch).toHaveBeenCalledWith('/api/user/login-domain', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ data: 'cst.school^student' })
+			});
+		});
+
+		// 验证导航被调用
+		expect(goto).toHaveBeenCalledWith('/student/practice');
+	});
+
+	/**
+	 * 测试多角色用户显示角色选择对话框
+	 */
+	it('应该为多角色用户显示角色选择对话框', async () => {
+		// 模拟登录成功响应
+		const mockLoginFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ status: 0, msg: '登录成功' })
+		});
+
+		// 模拟角色查询响应（多角色）
+		const mockRoleFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({
+				status: 0,
+				data: {
+					Domains: ["cst.school^teacher", "cst.school^admin"]
+				}
+			})
+		});
+
+		global.fetch = vi.fn()
+			.mockImplementationOnce(() => mockLoginFetch())
+			.mockImplementationOnce(() => mockRoleFetch());
+
+		render(LoginPage);
+
+		const credentialInput = screen.getByPlaceholderText('请输入ID/帐号/手机号/邮箱/姓名');
+		const passwordInput = screen.getByPlaceholderText('请输入密码');
+		const checkbox = screen.getByRole('checkbox');
+		const loginButton = screen.getByRole('button', { name: '登录' });
+
+		// 填写表单并登录
+		await fireEvent.input(credentialInput, { target: { value: 'teacher1' } });
+		await fireEvent.input(passwordInput, { target: { value: 'password' } });
+		await fireEvent.click(checkbox);
+		await fireEvent.click(loginButton);
+
+		// 等待角色选择对话框显示
+		await waitFor(() => {
+			expect(screen.getByText('选择登录角色')).toBeInTheDocument();
+		});
+
+		// 验证角色选项显示
+		expect(screen.getByText('教师')).toBeInTheDocument();
+		expect(screen.getByText('管理员')).toBeInTheDocument();
+
+		// 验证按钮存在
+		expect(screen.getByRole('button', { name: '取消' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: '确定' })).toBeInTheDocument();
+	});
+
+	/**
+	 * 测试角色选择确认功能
+	 */
+	it('应该正确处理角色选择确认', async () => {
+		// 模拟登录成功响应
+		const mockLoginFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ status: 0, msg: '登录成功' })
+		});
+
+		// 模拟角色查询响应（多角色）
+		const mockRoleFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({
+				status: 0,
+				data: {
+					Domains: ["cst.school^teacher", "cst.school^admin"]
+				}
+			})
+		});
+
+		// 模拟角色确认响应
+		const mockConfirmFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ status: 0, msg: '角色确认成功' })
+		});
+
+		global.fetch = vi.fn()
+			.mockImplementationOnce(() => mockLoginFetch())
+			.mockImplementationOnce(() => mockRoleFetch())
+			.mockImplementationOnce(() => mockConfirmFetch());
+
+		render(LoginPage);
+
+		const credentialInput = screen.getByPlaceholderText('请输入ID/帐号/手机号/邮箱/姓名');
+		const passwordInput = screen.getByPlaceholderText('请输入密码');
+		const checkbox = screen.getByRole('checkbox');
+		const loginButton = screen.getByRole('button', { name: '登录' });
+
+		// 填写表单并登录
+		await fireEvent.input(credentialInput, { target: { value: 'teacher1' } });
+		await fireEvent.input(passwordInput, { target: { value: 'password' } });
+		await fireEvent.click(checkbox);
+		await fireEvent.click(loginButton);
+
+		// 等待角色选择对话框显示
+		await waitFor(() => {
+			expect(screen.getByText('选择登录角色')).toBeInTheDocument();
+		});
+
+		// 选择教师角色
+		const teacherRadio = screen.getByRole('radio', { name: /教师/ });
+		await fireEvent.click(teacherRadio);
+
+		// 点击确认按钮
+		const confirmButton = screen.getByRole('button', { name: '确定' });
+		await fireEvent.click(confirmButton);
+
+		// 等待异步操作完成
+		await waitFor(() => {
+			// 验证角色确认API被调用
+			expect(global.fetch).toHaveBeenCalledWith('/api/user/login-domain', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ data: 'cst.school^teacher' })
+			});
+		});
+
+		// 验证导航被调用
+		expect(goto).toHaveBeenCalledWith('/teacher/question-bank/theory');
+	});
+
+	/**
+	 * 测试角色选择取消功能
+	 */
+	it('应该正确处理角色选择取消', async () => {
+		// 模拟登录成功响应
+		const mockLoginFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ status: 0, msg: '登录成功' })
+		});
+
+		// 模拟角色查询响应（多角色）
+		const mockRoleFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({
+				status: 0,
+				data: {
+					Domains: ["cst.school^teacher", "cst.school^admin"]
+				}
+			})
+		});
+
+		global.fetch = vi.fn()
+			.mockImplementationOnce(() => mockLoginFetch())
+			.mockImplementationOnce(() => mockRoleFetch());
+
+		render(LoginPage);
+
+		const credentialInput = screen.getByPlaceholderText('请输入ID/帐号/手机号/邮箱/姓名');
+		const passwordInput = screen.getByPlaceholderText('请输入密码');
+		const checkbox = screen.getByRole('checkbox');
+		const loginButton = screen.getByRole('button', { name: '登录' });
+
+		// 填写表单并登录
+		await fireEvent.input(credentialInput, { target: { value: 'teacher1' } });
+		await fireEvent.input(passwordInput, { target: { value: 'password' } });
+		await fireEvent.click(checkbox);
+		await fireEvent.click(loginButton);
+
+		// 等待角色选择对话框显示
+		await waitFor(() => {
+			expect(screen.getByText('选择登录角色')).toBeInTheDocument();
+		});
+
+		// 点击取消按钮
+		const cancelButton = screen.getByRole('button', { name: '取消' });
+		await fireEvent.click(cancelButton);
+
+		// 验证对话框已关闭
+		expect(screen.queryByText('选择登录角色')).not.toBeInTheDocument();
+
+		// 验证没有调用导航
+		expect(goto).not.toHaveBeenCalled();
+	});
+
+	/**
+	 * 测试角色数据格式错误处理
+	 */
+	it('应该正确处理角色数据格式错误', async () => {
+		// 模拟登录成功响应
+		const mockLoginFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ status: 0, msg: '登录成功' })
+		});
+
+		// 模拟角色查询响应（格式错误）
+		const mockRoleFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({
+				status: 0,
+				data: null // 数据格式错误
+			})
+		});
+
+		global.fetch = vi.fn()
+			.mockImplementationOnce(() => mockLoginFetch())
+			.mockImplementationOnce(() => mockRoleFetch());
+
+		render(LoginPage);
+
+		const credentialInput = screen.getByPlaceholderText('请输入ID/帐号/手机号/邮箱/姓名');
+		const passwordInput = screen.getByPlaceholderText('请输入密码');
+		const checkbox = screen.getByRole('checkbox');
+		const loginButton = screen.getByRole('button', { name: '登录' });
+
+		// 填写表单并登录
+		await fireEvent.input(credentialInput, { target: { value: 'user1' } });
+		await fireEvent.input(passwordInput, { target: { value: 'password' } });
+		await fireEvent.click(checkbox);
+		await fireEvent.click(loginButton);
+
+		// 等待错误消息显示
+		await waitFor(() => {
+			expect(screen.getByText('获取角色失败')).toBeInTheDocument();
+		});
+	});
+
+	/**
+	 * 测试角色确认失败处理
+	 */
+	it('应该正确处理角色确认失败', async () => {
+		// 模拟登录成功响应
+		const mockLoginFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ status: 0, msg: '登录成功' })
+		});
+
+		// 模拟角色查询响应（多角色）
+		const mockRoleFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({
+				status: 0,
+				data: {
+					Domains: ["cst.school^teacher", "cst.school^admin"]
+				}
+			})
+		});
+
+		// 模拟角色确认失败响应
+		const mockConfirmFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: () => Promise.resolve({ status: 1, msg: '角色确认失败' })
+		});
+
+		global.fetch = vi.fn()
+			.mockImplementationOnce(() => mockLoginFetch())
+			.mockImplementationOnce(() => mockRoleFetch())
+			.mockImplementationOnce(() => mockConfirmFetch());
+
+		render(LoginPage);
+
+		const credentialInput = screen.getByPlaceholderText('请输入ID/帐号/手机号/邮箱/姓名');
+		const passwordInput = screen.getByPlaceholderText('请输入密码');
+		const checkbox = screen.getByRole('checkbox');
+		const loginButton = screen.getByRole('button', { name: '登录' });
+
+		// 填写表单并登录
+		await fireEvent.input(credentialInput, { target: { value: 'teacher1' } });
+		await fireEvent.input(passwordInput, { target: { value: 'password' } });
+		await fireEvent.click(checkbox);
+		await fireEvent.click(loginButton);
+
+		// 等待角色选择对话框显示
+		await waitFor(() => {
+			expect(screen.getByText('选择登录角色')).toBeInTheDocument();
+		});
+
+		// 选择教师角色并确认
+		const teacherRadio = screen.getByRole('radio', { name: /教师/ });
+		await fireEvent.click(teacherRadio);
+		const confirmButton = screen.getByRole('button', { name: '确定' });
+		await fireEvent.click(confirmButton);
+
+		// 等待错误消息显示
+		await waitFor(() => {
+			expect(screen.getByText('选择角色失败')).toBeInTheDocument();
+			expect(screen.getByText('角色确认失败')).toBeInTheDocument();
+		});
 	});
 });

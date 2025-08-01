@@ -6,6 +6,7 @@
   import { goto } from "$app/navigation";
   import { toast } from '$lib/components/Toast/Toast';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+  import { sget } from '$lib/utils/index.js';
 
   /**
    * @typedef {Object} ExamineeSession
@@ -240,13 +241,13 @@
         if (data.status !== 0) {
           throw new Error(data.Msg);
         } else {
-          title = data.data.examInfo.Name;
-          exam_notes = data.data.examInfo.Rules;
-          exam_info = data.data.examInfo;
-          exam_sessions = data.data.examSessions.map(session => ({
+          title = sget(data, "data.examInfo.Name", "无标题");
+          exam_notes = sget(data, "data.examInfo.Rules", "暂无规则说明");
+          exam_info = sget(data, "data.examInfo", {});
+          exam_sessions = sget(data, "data.examSessions", []).map(session => ({
             ...session,
-            StartTimeTimestamp: new Date(session.StartTime).getTime(),
-            EndTimeTimestamp: new Date(session.EndTime).getTime()
+            StartTimeTimestamp: new Date(sget(session, "StartTime", 0)).getTime(),
+            EndTimeTimestamp: new Date(sget(session, "EndTime", 0)).getTime()
           }));
         }
       })
