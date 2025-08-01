@@ -9,11 +9,11 @@
     timerId,
     sidebarMouseEnter,
     sidebarMouseLeave,
+    getCookie,
   } from '$lib/stores/modules/layoutStore';
   import { onMount } from 'svelte';
 
-  let userInfo = $state(null); // 用户信息
-  let userName = '张三'; // 静态数据
+  let userInfo = $state(null);
   let isMenuOpen = $state(false); // 用户菜单是否打开
   let currentPath = $derived(page.url.pathname); // 当前页面路径
   let crumbArray = []; // url分割后的字段数组
@@ -72,10 +72,47 @@
 
   // 退出登录
   const loginOut = () => {
+    // 清空 qNearSessions cookie
+    document.cookie = 'qNearSessions=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+
     goto('/login');
   };
 
-  onMount(() => {
+  // 获取用户信息
+  async function getUserInfo() {
+    // 获取 qNearSessions cookie
+    let qNearSessions = getCookie('qNearSessions');
+
+    // 获取用户信息
+    fetch(`/api/user/me?qNearSessions=${qNearSessions}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((res) => {
+        if (res.status !== 0) {
+          console.log('获取用户信息失败', res.msg || '获取用户信息失败，请重试');
+        } else {
+          userInfo = res.data;
+        }
+      })
+      .catch(() => {
+        console.log('获取用户信息失败', '网络错误，请检查网络连接后重试');
+      });
+  }
+
+  onMount(async () => {
+    // 获取用户信息
+    await getUserInfo();
+
     // 点击外部关闭菜单栏
     const handleClickOutside = (event) => {
       if (!event.target.closest('.header-container')) {
@@ -114,7 +151,7 @@
 
   <!-- 用户信息 -->
   <div class="user-container">
-    <span class="welcome-text">{`你好，${userName}`}</span>
+    <span class="welcome-text">{`你好，${userInfo == undefined ? '' : userInfo.OfficialName}`}</span>
 
     <button class="avatar-btn" onclick={() => (isMenuOpen = !isMenuOpen)}>
       <img class="avatar-img" src="/user_icons/defaultAvatar.svg" alt="头像" />

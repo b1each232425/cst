@@ -12,8 +12,8 @@
     import Loading from "$lib/components/Loading/Loading.svelte";
     import { createEmptyPaper, deletePaper, fetchPaperList } from "./_utils/api";
     import { debounce } from "$lib/utils/optimize";
-  import MessageBox from "$lib/components/MessageBox/MessageBox";
-  import { toast } from "$lib/components/Toast/Toast";
+    import MessageBox from "$lib/components/MessageBox/MessageBox";
+    import { toast } from "$lib/components/Toast/Toast";
 
     // 模拟数据
     let analogyData = [
