@@ -127,9 +127,9 @@
         let session = exam_sessions[current_session];
 
         let now = new Date().getTime();
-        console.log("进入考试", session.StartTime, session.EndTime, now);
+  //      console.log("进入考试", session.StartTime, session.EndTime, now);
         await goto(
-          `/student/studentAnswerExam?examineeId=${session.ExamineeID}&examId=${session.ExamID}`
+          `/student/answer/exam/?exam-id=${exam_id}&exam-session-id=${session.ID}`
         );
       } catch (e) {
         console.log(e);
