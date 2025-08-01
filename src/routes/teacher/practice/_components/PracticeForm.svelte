@@ -266,6 +266,7 @@
 
   // 提交表单
   function handleSubmit() {
+    handleNameInput();
     if (validateForm()) {
       // 准备提交数据
       const practiceData = {

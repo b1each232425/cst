@@ -592,7 +592,7 @@
               currentPage={selected_search_params.page}
               on:pageChange={onSelectedPageChooseFunc}
               on:pageSizeChange={handle_page_size_change}
-              jumpPage={onSelectedPageChooseFunc}
+              
             ></Pagination>
           </div>
         </div>
@@ -718,12 +718,13 @@
         plain>取消</Button
       >
       <Button
-        type="info"
+        
         onclick={() => {
           show_panel = false;
           search_params.page = 1;
           onConfirm(selected_ids);
-        }}>确定</Button
+         
+        }} >确定</Button
       >
     </div>
   </div>
