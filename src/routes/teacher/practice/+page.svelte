@@ -28,8 +28,7 @@
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
-  import {sget} from '$lib/utils/index.js';
-  
+  import { sget } from '$lib/utils/index.js';
 
   // 使用runes接收页面数据
   const { data } = $props();
@@ -61,7 +60,6 @@
    * @property {number} AllowedAttempts - 可作答的次数
    */
 
- 
   // 练习列表数据类型
   /** @type {Practice[]} */
   let displayed_practice_list = $state(Array.isArray(data.practices_display) ? data.practices_display : []);
@@ -347,11 +345,14 @@
 
         // 显示发布成功提示
         toast.success('发布练习成功', 1000);
+         
       })
       .catch((error) => {
         console.error('发布练习请求异常:', error);
         toast.error('发布练习请求异常', 1000);
-      });
+      }).finally(()=>{
+        publishDialogOpen =false
+      })
   }
 
   /**
@@ -416,11 +417,12 @@
       .catch((error) => {
         console.error('取消发布练习请求异常:', error);
         toast.error('取消发布练习请求异常', 1000);
+      }).finally(() => {
+       cancelPublishDialogOpen=false;
       });
   }
 
-
-  let practiceID =$state()
+  let practiceID = $state();
 
   /**
    * 选择学生按钮点击事件
@@ -433,7 +435,7 @@
     await fetchSelectedStudents(practice.ID);
     // 打开学生选择面板
     show_student_selectionPanel = true;
-    practiceID = practice.ID
+    practiceID = practice.ID;
   }
 
   /**
@@ -483,11 +485,7 @@
         practice: {
           ID: currentPractice.ID,
         },
-        student: {
-          students: selected.map((s) => ({
-            id: s.id,
-          })),
-        },
+        student: selected.map((s) => s.id),
       }),
       credentials: 'include',
     })
@@ -580,6 +578,8 @@
       .catch((error) => {
         console.error('删除练习请求异常:', error);
         toast.error('error', '删除练习请求异常', '', 1000);
+      }).finally(() => {
+       deleteDialogOpen=false
       });
   }
 
@@ -666,51 +666,53 @@
         </thead>
         <tbody>
           {#if displayed_practice_list.length > 0}
-          {#each displayed_practice_list as practice}
+            {#each displayed_practice_list as practice}
+              <tr>
+                <td style="text-align: center;" title={practice.Name}>{practice.Name}</td>
+                <td style="text-align: center;" title={practice.Type}>{practice.Type}</td>
+                <td style="text-align: center;" title={sget(practice, 'student_count', '').toString()}
+                  >{practice.student_count}</td
+                >
+                <td style="text-align: center;">
+                  <span class="Status-tag {practice.Status === '已发布' ? 'published' : 'unpublished'}">
+                    {practice.Status}
+                  </span>
+                </td>
+                <td title={String(practice.AllowedAttempts)} style="text-align: center;">
+                  {practice.AllowedAttempts === 0 ? '不限作答次数' : practice.AllowedAttempts}
+                </td>
+                <td class="operation-column">
+                  <div class="operation-row">
+                    {#if practice.Status !== '未发布'}
+                      <button class="op-btn edit" onclick={() => selectStudents(practice)}> 选择学生 </button>
+                      <button class="op-btn unpublish" onclick={() => cancel_publish(practice)}> 取消发布 </button>
+                    {/if}
+
+                    {#if practice.Status === '未发布'}
+                      <button class="op-btn edit" onclick={() => continue_edit(practice)}> 继续编辑 </button>
+                      <button class="op-btn publish" onclick={() => publish_practice(practice)}> 发布练习 </button>
+                    {/if}
+                  </div>
+                  <!-- 添加下载学生名单按钮 -->
+
+                  <div class="operation-row">
+                    <button class="op-btn download" onclick={() => getStudentInfos(practice)}> 下载学生名单 </button>
+                    {#if practice.Status === '未发布'}
+                      <button class="op-btn delete" onclick={() => delete_practice(practice)}> 删除练习 </button>
+                    {/if}
+                  </div>
+                </td>
+              </tr>
+            {/each}
+          {:else}
             <tr>
-              <td style="text-align: center;" title={practice.Name}>{practice.Name}</td>
-              <td style="text-align: center;" title={practice.Type}>{practice.Type}</td>
-              <td style="text-align: center;" title={sget(practice,"student_count","").toString()}>{practice.student_count}</td>
-              <td style="text-align: center;">
-                <span class="Status-tag {practice.Status === '已发布' ? 'published' : 'unpublished'}">
-                  {practice.Status}
-                </span>
-              </td>
-              <td title={String(practice.AllowedAttempts)} style="text-align: center;">
-                {practice.AllowedAttempts === 0 ? '不限作答次数' : practice.AllowedAttempts}
-              </td>
-              <td class="operation-column">
-                <div class="operation-row">
-                  {#if practice.Status !== '未发布'}
-                    <button class="op-btn edit" onclick={() => selectStudents(practice)}> 选择学生 </button>
-                    <button class="op-btn unpublish" onclick={() => cancel_publish(practice)}> 取消发布 </button>
-                  {/if}
-
-                  {#if practice.Status === '未发布'}
-                    <button class="op-btn edit" onclick={() => continue_edit(practice)}> 继续编辑 </button>
-                    <button class="op-btn publish" onclick={() => publish_practice(practice)}> 发布练习 </button>
-                  {/if}
-                </div>
-                <!-- 添加下载学生名单按钮 -->
-
-                <div class="operation-row">
-                  <button class="op-btn download" onclick={() => getStudentInfos(practice)}> 下载学生名单 </button>
-                  {#if practice.Status === '未发布'}
-                    <button class="op-btn delete" onclick={() => delete_practice(practice)}> 删除练习 </button>
-                  {/if}
+              <td colspan="6" style="height: 200px; padding: 0;">
+                <div class="empty-wrapper">
+                  <Empty text="暂无练习数据" />
                 </div>
               </td>
             </tr>
-          {/each}
-          {:else}
-           <tr>
-      <td colspan="6" style="height: 200px; padding: 0;">
-        <div class="empty-wrapper">
-          <Empty text="暂无练习数据" />
-        </div>
-      </td>
-    </tr>
-        {/if}
+          {/if}
         </tbody>
       </table>
     </div>
@@ -733,7 +735,7 @@
     confirm_text="确定"
     cancel_text="取消"
     onConfirm={confirm_publish}
-    onCancel={()=>{
+    onCancel={() => {
       publishDialogOpen = false;
     }}
   />
@@ -747,10 +749,9 @@
     cancel_text="取消"
     confirmTextBackgroundColor="#E34D59"
     onConfirm={confirm_delete}
-    onCancel={()=>{
+    onCancel={() => {
       deleteDialogOpen = false;
     }}
-  
   />
 
   <!-- 取消发布确认对话框 -->
@@ -761,7 +762,7 @@
     confirm_text="确定"
     cancel_text="取消"
     onConfirm={confirm_cancel_publish}
-    onCancel={()=>{
+    onCancel={() => {
       cancelPublishDialogOpen = false;
     }}
   />
@@ -774,7 +775,6 @@
       show_student_selectionPanel = false;
     }}
     practice_id={practiceID}
-    
     onConfirm={(selected) => {
       handleStudentSelectionConfirm(selected);
       show_student_selectionPanel = false;
@@ -848,10 +848,10 @@
 
       .filter-label {
         color: rgba(0, 0, 0, 0.6);
-      font-size: 14px;
-      width: 75px;
-      white-space: nowrap;
-      text-align: right;
+        font-size: 14px;
+        width: 75px;
+        white-space: nowrap;
+        text-align: right;
       }
 
       .dropdown-wrapper {
@@ -968,12 +968,11 @@
     position: relative;
     z-index: 10;
   }
-  .empty-wrapper{
+  .empty-wrapper {
     display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          gap: 8px;
-          margin-bottom: 8px;
-
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
   }
 </style>
