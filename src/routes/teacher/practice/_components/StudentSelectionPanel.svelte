@@ -390,6 +390,8 @@
           totals = 0;
           search_params.page = current_page;
           toast.error(error);
+        }else if (selected_ids.length > 0 && selected_ids.length != result.data.length){
+
         } else {
           selected_ids = result.data === null ? [] : result.data;
         }
@@ -451,7 +453,6 @@
 
       if (practice_id) {
         //每次打开时将外部选中的id赋值给当前面板记录的已选中的id 在搜索前执行是为了能正常显示每个列表项的选中效果
-        selected_ids = [];
 
         /**
          * @type {number[]}
@@ -460,7 +461,7 @@
         ids.forEach((element) => {
           search_ids.push(element.id);
         });
-
+        filtered_selected_ids = selected_ids;
         // 获取已选学生的信息
         getStudentInfo(practice_id);
 
@@ -476,7 +477,7 @@
         ids.forEach((element) => {
           search_ids.push(element.id);
         });
-        current_page_selected_ids = selected_ids;
+        filtered_selected_ids = selected_ids;
 
         // 初始化为查看模式，不自动搜索
         is_selection_mode = false;
