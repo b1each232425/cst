@@ -342,7 +342,7 @@
         EndTime:              cfg.endTime    ? new Date(cfg.endTime).getTime()   : 0,
         Duration:             Number(cfg.duration) || 0,
         LateEntryTime:        Number(cfg.lateEntryTime)        || 0,
-        EarlySubmissionTime:  Number(cfg.EarlySubmissionTime) || 0,
+        EarlySubmissionTime:  Number(cfg.earlySubmissionTime) || 0,
         QuestionShuffledMode: cfg.questionShuffledMode,
         MarkMethod:           cfg.markMethod,
         NameVisibilityIn:     !!cfg.nameVisibility,
@@ -485,6 +485,7 @@
          console.log("examinee",examExaminee);
     })
 </script>
+
 <Title title="创建考试" line={true} />
 <div class="createExamWrapper">
     <div class="createExamContainer">

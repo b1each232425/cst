@@ -420,6 +420,7 @@
     position: absolute;
     pointer-events: none;
   }
+
   .action-button {
     border: none;
     background-color: rgb(0, 0, 0, 0);  // 透明背景
@@ -432,20 +433,23 @@
         font-weight: bold;                  // 悬停时加粗
     }
     .examManagementContainer {
-        width:105%;
-        margin-left: -3%;
+        
+        // width:105%;
+        // margin-left: -3%;
         position: relative;
         background-color: white;
         display: flex;
         flex-direction: column;
-        overflow: auto;
+        overflow-x: auto;
+        overflow-y: hidden;
+        margin-bottom:5%;
         
         .tableFilterContainer {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
             gap: 15px;
-            padding: 17px 0 0 76px;
+            padding: 0px 0 0 0px;
             align-items: center;
             justify-content: space-between;
             min-width: 1000px;
@@ -470,9 +474,30 @@
                 padding:10px 15px;
                 margin-right:3%;
                 gap:15px;
+                
             }
 
         }
+
+        @media (max-width: 1919px) {
+        // 小于1080p（如1366×768、1440×900等）
+        .tableFilterContainer {
+            flex-wrap: nowrap; // 禁止换行
+            min-width: auto;   // 不再强制1000px
+
+            .actionPart {
+            min-width: auto;
+            flex: 1 1 0; // 占剩余空间
+            gap: 15px;   // 缩小间距
+            }
+
+            .buttonPart {
+            min-width: 260px; // 强制按钮区域宽度
+            flex-shrink: 0;   // 禁止被压缩
+            }
+        }
+
+    }
         .paginationContainer{
         display: flex;
         justify-content: flex-end;
@@ -480,7 +505,9 @@
         }
     }
     
+    
     .examListContainer {
+        overflow: auto;
          padding: 33px 37px 40px 37px;
          display: flex;
          flex-direction: column;

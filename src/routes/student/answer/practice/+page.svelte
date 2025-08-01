@@ -20,6 +20,7 @@
   import { toast } from '$lib/components/Toast/Toast';
   import Button from '$lib/components/Button/Button.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+  import { sget } from '$lib/utils/index.js';
 
   /**
    * @typedef {Object} Question
@@ -99,7 +100,7 @@
   let elapsedSeconds = $state(0); // 考试已用时，单位为秒
   let totalscore = $state(0); // 考试总分
   let practice_record = $state(null); //练习建议时长
-  let load_success = $state(false);  //是否加载成功
+  let load_success = $state(true);  //是否加载成功
   let ifPreview = $state(false); //查看当前是否为预览模式
   let is_full_examMode = $state(true); // 是否为全卷模式
   let title = $state("");  //考试试卷的标题
@@ -195,6 +196,7 @@
       const groupId = groupInfo.ID; // 题组 id
       const groupQuestions = examQuestionsMap.get(String(groupId)) || []; // 该分组下的题目数组
 
+      if (groupQuestions.length === 0) return; // 如果没有题目则跳过
       groups.push({ // 组装 QuestionGroup 对象
         name: groupInfo.Name,
         type: groupQuestions[0].type,
@@ -403,21 +405,21 @@
           console.error(`接口错误: ${data.msg}`);
           throw new Error(data.msg);
         }
-
         // 赋值到变量
         //题目
-        examQuestionsMap = new Map(Object.entries(data.data.Questions));
-        questionGroupsMap = new Map(Object.entries(data.data.QuestionGroupInfo));
+        examQuestionsMap = new Map(Object.entries(sget(data, "data.Questions", {})));
+        questionGroupsMap = new Map(Object.entries(sget(data, "data.QuestionGroupInfo", {})));
         //时间类
-        elapsed_seconds = data.data.ElapsedSeconds;
+        elapsed_seconds = sget(data, "data.ElapsedSeconds", 0);
         //考试信息类
-        title = data.data.Info.PaperName;
-        totalscore = data.data.Info.TotalScore;
-        practice_submission_id = data.data.Info.PracticeSubmissionID;
+        title = sget(data, "data.Info.PaperName", "无标题");
+        totalscore = sget(data, "data.Info.TotalScore", 0);
+        practice_submission_id = sget(data, "data.Info.PracticeSubmissionID", "");
 
         load_success = true;
         ifPreview = false;
         query_url = `/api/respondent?practice_submission_id=${encodeURIComponent(practice_submission_id || '')}`;
+
 
         //加载题目
         examQuestions.length = 0;

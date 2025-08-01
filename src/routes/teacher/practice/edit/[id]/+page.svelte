@@ -39,7 +39,8 @@
         AllowedAttempts: practiceData.allowed_attempts,
         duration: practiceData.test.suggest_duration,
       },
-      student: practiceData.student,
+      student: practiceData.student[0]  ? practiceData.student : []
+,
     };
 
     // 发送请求
