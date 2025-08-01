@@ -585,6 +585,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     const data = response.data || [];
     request_lock = false;
     if (init == 1) {
+      (data!=[])
       question_count = response.rowCount;
     }
     question_filtered_count = response.rowCount;
@@ -1086,8 +1087,8 @@ o888o o888o   "888" o888o o888o o888o o888o
 
     .bankMsgBar {
       display: flex;
-      // height: 150px;
-      min-width: 1000px;
+     
+       max-width: 100%;
       background-color: #fff;
       border-radius: 5px;
       flex-shrink: 0;
@@ -1121,7 +1122,7 @@ o888o o888o   "888" o888o o888o o888o o888o
         justify-content: space-between;
         flex: 1;
         margin-left: 50px;
-
+        max-width: 100%;
         .bankNameContainer {
           display: flex;
           align-items: center;
@@ -1284,6 +1285,7 @@ o888o o888o   "888" o888o o888o o888o o888o
         flex-direction: column;
         background-color: var(--bg-primary);
         border-radius: 5px;
+        max-height:66vh;
         max-width: 21%;
         min-width: 200px;
         flex: 1;
@@ -1341,8 +1343,8 @@ o888o o888o   "888" o888o o888o o888o o888o
         flex-direction: column;
         min-width: 800px;
         min-height: 0;
-        overflow-y: auto;
-        max-height: 600px;
+        overflow: auto;
+        max-height:66vh;
         border-radius: 5px;
         margin-left: 10px;
         padding: 5px;
