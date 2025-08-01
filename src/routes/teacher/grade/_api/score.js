@@ -3,7 +3,7 @@
  * @param {object} params - 查询参数
  * @param {string} [params.name] - 考试名称
  * @param {string} [params.type] - 考试类型
- * @param {1 | 0 | ''} [params.submitted] - 提交状态 (1: 已提交, 0: 未提交, '': 全部)
+ * @param {-1 | 1 | 0} [params.submitted] - 提交状态 (-1: 全部, 1: 已提交, 0: 未提交)
  * @param {number} [params.page] - 页码
  * @param {number} [params.pageSize] - 每页数量
  * @param {number} [params.teacherID] - 教师ID
@@ -15,7 +15,7 @@ export function getExams(params) {
 	const {
 		name = '',
 		type = '',
-		submitted = '',
+		submitted = -1, // 默认值改为 -1（全部）
 		page = 1,
 		pageSize = 10,
 		teacherID,
@@ -33,10 +33,8 @@ export function getExams(params) {
 	if (teacherID) queryParams.append('teacherID', teacherID.toString());
 	if (examID) queryParams.append('examID', examID.toString());
 
-	// 仅当 submitted 的值为 1 或 0 时，才将其作为查询参数
-	if (submitted === 1 || submitted === 0) {
-		queryParams.append('submitted', submitted.toString());
-	}
+	// 修复：submitted 参数必传，包括 -1（全部）
+	queryParams.append('submitted', submitted.toString());
 
 	const url = `/api/grade/list?${queryParams.toString()}`;
 

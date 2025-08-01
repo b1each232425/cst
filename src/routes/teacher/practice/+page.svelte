@@ -27,6 +27,9 @@
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
+  import Empty from '$lib/components/Table/Empty.svelte';
+  import {sget} from '$lib/utils/index.js';
+  
 
   // 使用runes接收页面数据
   const { data } = $props();
@@ -58,6 +61,7 @@
    * @property {number} AllowedAttempts - 可作答的次数
    */
 
+ 
   // 练习列表数据类型
   /** @type {Practice[]} */
   let displayed_practice_list = $state(Array.isArray(data.practices_display) ? data.practices_display : []);
@@ -661,11 +665,12 @@
           </tr>
         </thead>
         <tbody>
+          {#if displayed_practice_list.length > 0}
           {#each displayed_practice_list as practice}
             <tr>
               <td style="text-align: center;" title={practice.Name}>{practice.Name}</td>
               <td style="text-align: center;" title={practice.Type}>{practice.Type}</td>
-              <td style="text-align: center;" title={practice.student_count.toString()}>{practice.student_count}</td>
+              <td style="text-align: center;" title={sget(practice,"student_count","").toString()}>{practice.student_count}</td>
               <td style="text-align: center;">
                 <span class="Status-tag {practice.Status === '已发布' ? 'published' : 'unpublished'}">
                   {practice.Status}
@@ -697,6 +702,15 @@
               </td>
             </tr>
           {/each}
+          {:else}
+           <tr>
+      <td colspan="6" style="height: 200px; padding: 0;">
+        <div class="empty-wrapper">
+          <Empty text="暂无练习数据" />
+        </div>
+      </td>
+    </tr>
+        {/if}
         </tbody>
       </table>
     </div>
@@ -706,7 +720,6 @@
         pageSize={data_per_page}
         currentPage={current_page_num}
         on:pageChange={handle_page_choose}
-        jumpPage={handle_page_choose}
         on:pageSizeChange={handle_page_size_change}
       />
     </div>
@@ -720,6 +733,9 @@
     confirm_text="确定"
     cancel_text="取消"
     onConfirm={confirm_publish}
+    onCancel={()=>{
+      publishDialogOpen = false;
+    }}
   />
 
   <!-- 删除确认对话框 -->
@@ -731,6 +747,10 @@
     cancel_text="取消"
     confirmTextBackgroundColor="#E34D59"
     onConfirm={confirm_delete}
+    onCancel={()=>{
+      deleteDialogOpen = false;
+    }}
+  
   />
 
   <!-- 取消发布确认对话框 -->
@@ -741,6 +761,9 @@
     confirm_text="确定"
     cancel_text="取消"
     onConfirm={confirm_cancel_publish}
+    onCancel={()=>{
+      cancelPublishDialogOpen = false;
+    }}
   />
 
   <!-- 学生选择面板 -->
@@ -821,13 +844,14 @@
     .filter-box {
       display: flex;
       align-items: center;
-      min-width: 315px;
+      min-width: 225px;
 
       .filter-label {
-        font-size: 14px;
-        color: #333;
-        margin-right: 8px;
-        white-space: nowrap;
+        color: rgba(0, 0, 0, 0.6);
+      font-size: 14px;
+      width: 75px;
+      white-space: nowrap;
+      text-align: right;
       }
 
       .dropdown-wrapper {
@@ -943,5 +967,13 @@
     margin-top: 15px;
     position: relative;
     z-index: 10;
+  }
+  .empty-wrapper{
+    display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 8px;
+          margin-bottom: 8px;
+
   }
 </style>

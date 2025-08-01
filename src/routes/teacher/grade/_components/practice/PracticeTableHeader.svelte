@@ -37,14 +37,13 @@
 			font-size: 14px;
 			font-weight: normal;
 			color: rgb(0, 0, 0, 0.3);
-			padding: 0 4px;
 			vertical-align: middle;
 			text-align: center;
 		}
 	}
 
 	.practice-select {
-		width: 5%;
+		width: 5%;	
 	}
 	.practice-name {
 		width: 35%;
@@ -71,7 +70,7 @@
 		cursor: pointer;
 		border: 1px solid #919191;
 		border-radius: 3px;
-		margin: 0 auto;
+		margin: 0; /* 移除自动居中，让它左对齐 */
 		padding: 0;
 		width: 16px;
 		height: 16px;

@@ -8,7 +8,7 @@
    * @Description: 考试练习作答布局
    */
   
-  
+  import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { page } from "$app/state";
   import CountdownTimer from '../_component/CountdownTimer/CountdownTimer.svelte';
@@ -132,7 +132,7 @@
     if (window.history.length > 1) {
       history.back();
     } else {
-      goto("/teacher/paperManagement"); // 或你想返回的页面
+      goto("/teacher/practice"); // 或你想返回的页面
     }
   }
   function nextQuestion() { // 切换到下一题
@@ -150,7 +150,7 @@
     if (window.history.length > 1) {
       history.back();
     } else {
-      goto("/teacher/paperManagement"); // 或你想返回的页面
+      goto("/teacher/practice"); // 或你想返回的页面
     }
   }
   function goBackToPracticeList() { //返回上一个页面 学生
@@ -265,7 +265,7 @@
       })
       .then((resp_data) => {
         if (resp_data.status === 0) {
-          toast.success('考试结束，提交成功！', 2000);
+          toast.success('练习结束，提交成功！', 2000);
           goto(`/student/practice`);
         } else {
           toast.error('提交失败！', 2000);
