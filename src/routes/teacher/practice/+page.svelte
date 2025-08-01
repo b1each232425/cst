@@ -345,11 +345,14 @@
 
         // 显示发布成功提示
         toast.success('发布练习成功', 1000);
+         
       })
       .catch((error) => {
         console.error('发布练习请求异常:', error);
         toast.error('发布练习请求异常', 1000);
-      });
+      }).finally(()=>{
+        publishDialogOpen =false
+      })
   }
 
   /**
@@ -414,6 +417,8 @@
       .catch((error) => {
         console.error('取消发布练习请求异常:', error);
         toast.error('取消发布练习请求异常', 1000);
+      }).finally(() => {
+       cancelPublishDialogOpen=false;
       });
   }
 
@@ -573,6 +578,8 @@
       .catch((error) => {
         console.error('删除练习请求异常:', error);
         toast.error('error', '删除练习请求异常', '', 1000);
+      }).finally(() => {
+       deleteDialogOpen=false
       });
   }
 
