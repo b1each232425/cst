@@ -476,17 +476,17 @@
   async function handleStudentSelectionConfirm(selected) {
     if (!currentPractice) return;
     // 调用API更新练习的学生
-    const response = await fetch('/api/practice', {
+      const requestBody = {
+        practice_id: currentPractice.ID,
+        student: selected.map((s) => s.id) // 发送学生 ID 数组
+    };
+
+    const response = await fetch('/api/practiceStudentList', {
       method: 'POST',
-      headers: {
+      body: JSON.stringify(requestBody),
+       headers: {
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        practice: {
-          ID: currentPractice.ID,
-        },
-        student: selected.map((s) => s.id),
-      }),
+    },
       credentials: 'include',
     })
       .then(async (response) => {
