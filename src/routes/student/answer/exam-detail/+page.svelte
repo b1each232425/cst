@@ -69,7 +69,7 @@
   let exam_info = $state(null); // 考试信息
   let exam_sessions = $state([]); //考场
   let exam_id = $state(""); //考试id
-  let exam_session_id = $state(""); //考场id
+ // let exam_session_id = $state(""); //考场id
   let exam_notes = $state(""); // 考生须知内容
   let current_session = $state(0); // 当前考场
   let button_text = $state("等待考试开始"); // 按钮文本
@@ -203,16 +203,15 @@
 
   $effect(() => { // 当current_session变化时，重新调用API获取考试状态
     if (exam_id && exam_sessions && exam_sessions.length > 0) {
-       fetchExamStatus(exam_session_id);
+       fetchExamStatus(exam_sessions[current_session].ID);
     }
   });
   
   onMount(async () => { //加载函数
     const params = page.url.searchParams;
     exam_id = params.get("exam-id");
-    exam_session_id=params.get("exam-session-id");
 
-    if (!exam_id || !exam_session_id) { // 检查参数是否存在
+    if (!exam_id ) { // 检查参数是否存在
       MessageBox({
         title: '未知路径',
          content: '未知路径',
@@ -258,7 +257,7 @@
       });
 
     if (exam_id && exam_sessions && exam_sessions.length > 0) { // 调用/api/student/exam/status接口查看当前状态
-      await fetchExamStatus(exam_session_id);
+      await fetchExamStatus(exam_sessions[current_session].ID);
     }
 
     if (exam_sessions && exam_sessions.length > 0) {
