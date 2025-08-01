@@ -21,6 +21,8 @@
   import { toast } from '$lib/components/Toast/Toast';
   import Button from '$lib/components/Button/Button.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+  import { formatTimestamp } from '$lib/utils/time_utils.js';
+  import { sget } from '$lib/utils/index.js';
 
 
   /**
@@ -118,6 +120,7 @@
   let answeredCount = $state(0); // 已答题数量
   let total_seconds = $state(0); // 考试总时长（秒）
 
+
   //实时检测出是否加载失败
   $effect(() => {
     if (!load_success) {
@@ -149,6 +152,7 @@
       const groupId = groupInfo.ID; // 题组 id
       const groupQuestions = examQuestionsMap.get(String(groupId)) || []; // 该分组下的题目数组
 
+      if (groupQuestions.length === 0) return; // 如果没有题目则跳过
       groups.push({ // 组装 QuestionGroup 对象
         name: groupInfo.Name,
         type: groupQuestions[0].type,
@@ -304,7 +308,6 @@
   }
 
 
-
   //按钮控制事件类
   function goBack() { //预览返回按钮
     if (window.history.length > 1) {
@@ -356,19 +359,6 @@
    function toggleMarkQuestion(index, event) {
     event.stopPropagation();
     markedQuestions[index] = !markedQuestions[index];
-  }
-
-  //格式化时间
-   function formatTimestamp(timestamp) {
-    if (!timestamp) return "--";
-    const date = new Date(Number(timestamp));
-    const yyyy = date.getFullYear();
-    const MM = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-    const hh = String(date.getHours()).padStart(2, "0");
-    const mm = String(date.getMinutes()).padStart(2, "0");
-    const ss = String(date.getSeconds()).padStart(2, "0");
-    return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`;
   }
 
 
@@ -452,24 +442,26 @@
         const currentTime = new Date().getTime();
         const remainingSeconds = Math.floor((data.data.ExamineeInfo.ActualEndTime - currentTime) / 1000);
 
-        // 赋值到变量
+        // 赋值到变量 使用sget安全获取
         //题目
-        examQuestionsMap = new Map(Object.entries(data.data.Questions));
-        questionGroupsMap = new Map(Object.entries(data.data.QuestionGroupInfo));
-        examinee_id = data.data.ExamineeInfo.ID;
-        //时间类
+        examQuestionsMap = new Map(Object.entries(sget(data, "data.Questions", {})));
+        questionGroupsMap = new Map(Object.entries(sget(data, "data.QuestionGroupInfo", {})));
+        examinee_id = sget(data, "data.ExamineeInfo.ID", "");
+        //时间控制类
         total_seconds = remainingSeconds > 0 ? remainingSeconds : 0;
-        start_time = data.data.ExamineeInfo.StartTime;
-        end_time = data.data.ExamineeInfo.ActualEndTime;
-        exam_duration = matchedSession.Duration * 60;
+        start_time = sget(data, "data.ExamineeInfo.StartTime", 0);
+        end_time = sget(data, "data.ExamineeInfo.ActualEndTime", 0);
+        exam_duration = sget(matchedSession, "Duration", 0) * 60;
         //考试信息类
-        title = data.data.exam_info.Name;
-        exam_notes = data.data.exam_info.Rules;
-        exam_status = data.data.exam_info.Status;
-        files = data.data.exam_info.Files;
+        title = sget(data, "data.exam_info.Name", "无标题");
+        exam_notes = sget(data, "data.exam_info.Rules", "暂无规则说明");
+        exam_status = sget(data, "data.exam_info.Status", "");
+        files = sget(data, "data.exam_info.Files", []);
         load_success = true;
         ifPreview = false;
         query_url = `/api/respondent?examinee_id=${encodeURIComponent(examinee_id || '')}`;
+
+   //     is_full_examMode = false;
 
         //加载题目
         examQuestions.length = 0;
@@ -561,7 +553,7 @@
         <div class="box preference-info">
           <label for="试卷作答偏好">试卷作答偏好</label>
           <div class="answer-mode">逐题模式</div>
-          <BulmaSwitch bind:is_full_examMode></BulmaSwitch>
+          <BulmaSwitch bind:is_full_examMode data-testid="switch-mode"></BulmaSwitch>
           <div class="answer-mode">全卷模式</div>
         </div>
       </div>
