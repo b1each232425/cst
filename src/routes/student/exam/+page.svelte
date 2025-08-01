@@ -414,7 +414,9 @@
                 {isMarked(status) ? (isPass(student_score, total_score) ? '已通过' : '未通过') : '--'}
               </td>
               <td
-                >{#if status === '04'}<button class="option" onclick={gotoExamDetail(exam.id, id)}>进入考试</button>
+                >{#if status === '02' || status === '04'}<button class="option" onclick={gotoExamDetail(exam.id, id)}
+                    >进入考试</button
+                  >
                 {:else if status === '10' || status === '12'}
                   <button class="option" onclick={gotoExamResult}>查看试卷</button>
                 {:else}
