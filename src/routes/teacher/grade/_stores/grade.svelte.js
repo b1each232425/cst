@@ -65,9 +65,8 @@ export function createGradeStore() {
 		filters: {
 			name: '',
 			type: '',
-			/** @type {string} */
-			submitted: '',
-			teacherID: -1, // -1 代表所有教师
+			/** @type {number} */
+			submitted: -1, // -1=全部, 0=未提交, 1=已提交
 			examID: ''
 		},
 		pagination: {
@@ -97,8 +96,12 @@ export function createGradeStore() {
 			// When fetching, reset selection
 			state.selected = {};
 			state.selectAll = false;
+			// 构建 API 参数，普通用户不传递 teacherID
 			const params = {
-				...state.filters,
+				name: state.filters.name,
+				type: state.filters.type,
+				submitted: state.filters.submitted, // -1=全部, 0=未提交, 1=已提交
+				examID: state.filters.examID,
 				...state.pagination
 			};
 			getExams(params)

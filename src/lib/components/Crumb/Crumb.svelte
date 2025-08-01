@@ -70,6 +70,11 @@
     filterCrumbs = newFilterCrumbs;
   };
 
+  // 退出登录
+  const loginOut = () => {
+    goto('/login');
+  };
+
   onMount(() => {
     // 点击外部关闭菜单栏
     const handleClickOutside = (event) => {
@@ -86,11 +91,11 @@
   <!-- 展开按钮 -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
-    class="sidebar-unflod-btn {$sidebarFoldingState ? '' : 'hide'}"
+    class="crumb-unflod-btn {$sidebarFoldingState ? '' : 'hide'}"
     onmouseenter={() => sidebarMouseEnter()}
     onmouseleave={() => sidebarMouseLeave()}
   >
-    <button class="sidebar-toggle-btn" onclick={() => toggleSidebar()}>
+    <button class="crumb-toggle-btn" onclick={() => toggleSidebar()}>
       <img src="/sidebar/unfold.svg" alt="展开侧边栏" />
     </button>
   </div>
@@ -124,7 +129,7 @@
   <div class="user-menu-container {isMenuOpen ? '' : 'hide'}">
     <button class="user-menu-item"> 个人中心 </button>
     <button class="user-menu-item"> 设置 </button>
-    <button class="user-menu-item logout"> 退出登录 </button>
+    <button class="user-menu-item logout" onclick={loginOut}> 退出登录 </button>
   </div>
 </div>
 
@@ -140,7 +145,7 @@
     justify-content: flex-start;
     align-items: center;
 
-    .sidebar-unflod-btn {
+    .crumb-unflod-btn {
       width: 50px;
       height: 50px;
       display: flex;
@@ -157,7 +162,7 @@
         background-color: #d1d1d1;
       }
 
-      .sidebar-toggle-btn {
+      .crumb-toggle-btn {
         all: unset;
         width: 30px;
         height: 30px;

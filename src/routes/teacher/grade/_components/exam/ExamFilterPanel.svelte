@@ -82,9 +82,9 @@
 			<span class="filter-hint">提交状态</span>
 			<div class="dropdown-wrapper">
 				<Select bind:value={state.filters.submitted}>
-					<Option value="" label="全部" />
-					<Option value="1" label="已提交" />
-					<Option value="0" label="未提交" />
+					<Option value={-1} label="全部" />
+					<Option value={1} label="已提交" />
+					<Option value={0} label="未提交" />
 				</Select>
 			</div>
 		</div>

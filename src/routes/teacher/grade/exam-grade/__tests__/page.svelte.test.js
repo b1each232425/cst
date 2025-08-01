@@ -34,8 +34,7 @@ vi.mock('../../_stores/grade.svelte.js', () => ({
 				filters: {
 					name: '',
 					type: '',
-					submitted: '', // 现在是字符串类型
-					teacherID: -1,
+					submitted: -1, // 现在是数字类型：-1=全部, 0=未提交, 1=已提交
 					examID: ''
 				},
 				pagination: {

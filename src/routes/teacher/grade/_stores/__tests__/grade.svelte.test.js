@@ -43,8 +43,7 @@ describe('考试成绩 Store', () => {
 		expect(state.filters).toEqual({
 			name: '',
 			type: '',
-			submitted: '', // 现在是字符串类型，支持 "", "1", "0"
-			teacherID: -1,
+			submitted: -1, // 现在是数字类型：-1=全部, 0=未提交, 1=已提交
 			examID: ''
 		});
 		expect(state.pagination).toEqual({
@@ -73,8 +72,12 @@ describe('考试成绩 Store', () => {
 			await promise;
 
 			expect(scoreApi.getExams).toHaveBeenCalledWith({
-				...gradeStore.state.filters,
-				...gradeStore.state.pagination
+				name: '',
+				type: '',
+				submitted: -1, // 数字类型：-1=全部, 0=未提交, 1=已提交
+				examID: '',
+				page: 1,
+				pageSize: 10
 			});
 
 			expect(gradeStore.state.exams.length).toBe(2);
@@ -227,17 +230,17 @@ describe('考试成绩 Store', () => {
 		});
 	});
 
-	describe('Filter types', () => {
-		it('should handle string-based submitted filter values', () => {
-			// 测试新的字符串类型筛选值
-			gradeStore.setFilters({ submitted: '1' }); // 已提交
-			expect(gradeStore.state.filters.submitted).toBe('1');
+	describe('筛选类型', () => {
+		it('应该处理数字类型的提交状态筛选值', () => {
+			// 测试新的数字类型筛选值
+			gradeStore.setFilters({ submitted: 1 }); // 已提交
+			expect(gradeStore.state.filters.submitted).toBe(1);
 
-			gradeStore.setFilters({ submitted: '0' }); // 未提交
-			expect(gradeStore.state.filters.submitted).toBe('0');
+			gradeStore.setFilters({ submitted: 0 }); // 未提交
+			expect(gradeStore.state.filters.submitted).toBe(0);
 
-			gradeStore.setFilters({ submitted: '' }); // 全部
-			expect(gradeStore.state.filters.submitted).toBe('');
+			gradeStore.setFilters({ submitted: -1 }); // 全部
+			expect(gradeStore.state.filters.submitted).toBe(-1);
 		});
 	});
 });
