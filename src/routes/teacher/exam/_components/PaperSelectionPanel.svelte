@@ -157,17 +157,14 @@
     searchPaper();
 }
 
-    /**
-     * @param {number} page
-     * 页数跳转
-     */
-    function onPageChooseFunc(page) {
-        if (loading === true) {
-            return;
-        }
-        searchParams.page = page;
-        searchPaper();
+    // 处理每页条数变化
+    function handlePageSizeChange(event) {
+        console.log("每页条数变化:", event.detail);
+        searchParams.pageSize = event.detail;
+        searchParams.page = 1; // 重置到第一页
+        searchExam();
     }
+    
 
     //请求考试列表
     async function searchPaper() {
@@ -262,26 +259,16 @@
         searchPaper();
     }
 
-    // 添加处理每页条数变化的函数
-    function handlePageSizeChange(event) {
-        if (loading === true) {
-            return;
-        }
-        searchParams.pageSize = event.detail;
-        searchParams.page = 1; // 重置到第一页
-        searchPaper();
-    }
-        let initial_load = $derived(showPanel);
+    
 
         //当打开面板时自动搜索试卷列表
         $effect(() => {
-            if (showPanel && initial_load) {
-                initial_load = false;
+           
                 
                 paperSelectedID = selectedID;
 
                 searchPaper();
-            }
+            
         });
 
     onDestroy(() => {
@@ -414,16 +401,19 @@
                     <div class="no-data-text">暂无数据</div>
                 {/if} -->
             </div>
-            <div class="pagination-container">
-                <Pagination
-                    totalItems={totals}
-                    currentPage={currentPage}
-                    pageSize={totalPage}
-                    on:pageChange={handlePageChange}
-                    pageSizeOptions={[10, 20, 30]}
-                ></Pagination>
-            </div>
+               
+
         </div>
+         <div class="pagination-container">
+                    <Pagination
+                        totalItems={totals}
+                        currentPage={currentPage}
+                        pageSize={10}
+                        on:pageChange={handlePageChange}
+                        on:pageSizeChange={handlePageSizeChange}
+                        pageSizeOptions={[10, 20, 30]}
+                    ></Pagination>
+                </div>
         <div class="panel-footer">
             <button class="btn" onclick={() => {
                 paperSelectedID = selectedID;
@@ -456,9 +446,10 @@
         width: 100%;
         border-collapse: collapse;
         flex: 1;
-        max-height:100px;
+        // max-height:100px;
 
         th, td {
+            position: relative;
             font-size: 14px;
             color: var(--text-primary);
             border: none;
@@ -473,6 +464,30 @@
             white-space: normal;
             vertical-align: middle;
             height: 40px;
+             // 小屏幕适配 - 降低行高和字体大小
+        @media (max-width: 1440px) {
+            height: 36px;
+            padding: 6px;
+            font-size: 13px;
+        }
+        
+        @media (max-width: 1080px) {
+            height: 32px;
+            padding: 4px;
+            font-size: 12px;
+        }
+        
+        @media (max-width: 768px) {
+            height: 28px;
+            padding: 3px;
+            font-size: 11px;
+        }
+        
+        @media (max-width: 480px) {
+            height: 24px;
+            padding: 2px;
+            font-size: 10px;
+        }
         }
 
         td {
@@ -494,9 +509,11 @@
                 }
             }
         }
+        
     }
 
     .paper-table-head {
+        position: relative;
         background-color: #ffffff;
         font-size: 14px;
         font-weight: normal;
@@ -536,14 +553,15 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 100;
+        z-index: 2000;
+
     }
 
     .paper-selection-panel {
         margin-left: 130px;
         justify-content: center;
         width: 60%;
-        min-width: 1000px;
+        min-width: 900px;
         max-height: 90vh;
         overflow-y: auto;
         background-color: white;
@@ -552,19 +570,28 @@
         border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
         z-index: 1001;
-         /* 小屏幕适配 */
-        @media (max-width: 1440px) {
-            width: 60%;
-            min-width: 600px;
-            height:70%;
-            margin-left: 180px;
+         @media (max-width: 1440px) {
+            width: 75%;
+            min-width: 800px;
+            height: 85vh;
+            margin-left: 12%;
         }
         
-        // @media (max-width: 768px) {
-        //     width: 60%;
-        //     min-width: 320px;
-        //     max-height: 85vh;
-        // }
+        @media (max-width: 768px) {
+            width: 95%;
+            min-width: 320px;
+            max-height: 90vh;
+            height: 90vh;
+            margin-left: 0;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 480px) {
+            width: 98%;
+            height: 95vh;
+            max-height: 95vh;
+            border-radius: 8px;
+        }
     }
 
     .panel-header {
@@ -607,6 +634,7 @@
         flex-direction: column;
         min-height: 0;
         overflow-y: auto;
+        position:relative;
     }
 
     .action-container {
@@ -641,21 +669,30 @@
     }
 
     .paper-selection-table-container {
-        margin: 20px 0px 0 0px;
+        margin: 10px 0px 0 0px;
         flex: 1;
-        min-height: 450px;
+        min-height: 0px;
         position: relative;
         display: flex;
         flex-direction: column;
+       
     }
 
     .pagination-container {
         display: flex;
-        justify-content: right;
+        justify-content: flex-end;
         align-items: center;
         margin: 16px 0;
-        padding: 0 16px;
+        //padding: 0px 16px;
+        
         position: relative;
+         @media (max-width: 1080px) {
+        padding: 8px 12px;
+    }
+    
+    @media (max-width: 480px) {
+        justify-content: center; /* 小屏幕下居中显示 */
+    }
     }
 
     .btn {
