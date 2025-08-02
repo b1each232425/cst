@@ -714,9 +714,10 @@
             </tr>
           {/if}
         </tbody>
+        
       </table>
     </div>
-    <div class="pagination-container">
+       <div class="pagination-container">
       <Pagination
         totalItems={total_data_num}
         pageSize={data_per_page}
@@ -726,6 +727,9 @@
       />
     </div>
   </div>
+
+  
+  
 
   <!-- 发布确认对话框 -->
   <MessageBox
@@ -795,15 +799,16 @@
     background-color: #fff;
     box-shadow: none;
     position: relative;
-    display: block;
+     display: block;
     height: 100%;
-    overflow: auto;
+    overflow: hidden;
 
     .table-action-container {
       display: flex;
       flex-direction: column;
-      padding: 17px 30px 0 30px;
+      padding: 17px 30px 0 30px;   
     }
+
 
     .search-and-add-button-container {
       display: flex;
@@ -862,12 +867,16 @@
   }
 
   .practice-table {
-    border: none;
-    border-radius: 0;
-    overflow: auto;
-    margin-bottom: 20px;
-    position: relative;
-    z-index: 1;
+      position: absolute;
+  top: 120px; /* 根据实际情况调整 */
+  left: 0;
+  width: 100%;
+  height: calc(87vh - 200px);
+  border: none;
+  border-radius: 0;
+  overflow: auto;
+  margin-bottom: 20px;
+  z-index: 1;
     table {
       width: 100%;
       border-collapse: collapse;
@@ -883,6 +892,9 @@
         border: none;
         padding: 8px;
         text-align: center;
+         position: sticky; /* 添加这行 */
+      top: 0; /* 添加这行 */
+      z-index: 1; /* 确保它在其他内容之上 */
       }
       th,
       td {
@@ -964,9 +976,12 @@
   .pagination-container {
     display: flex;
     justify-content: flex-end;
-    margin-top: 15px;
-    position: relative;
+     position: fixed;      /* 改为 fixed */
+    bottom: 50px;         /* 距离底部 20px */
+   right: 40px;          /* 距离右边 40px */
     z-index: 10;
+    padding: 0 40px 0px 0;
+    
   }
   .empty-wrapper {
     display: flex;

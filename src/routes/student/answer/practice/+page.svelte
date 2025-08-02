@@ -106,7 +106,7 @@
   let title = $state("");  //考试试卷的标题
   let showLeftInfo = $state(true); //是否显示左边信息栏
   let  query_url = $state(""); //获取已经作答过的答案的url
-  const questionGroups = $state([]); //渲染题组
+  let questionGroups = $state([]); //渲染题组
   let examQuestions = $state([]); //考试题目变量
   let currentQuestion = $state(examQuestions[0]); // 当前显示的问题
   let currentQuestionIndex = $state(0); // 当前显示的问题索引
@@ -187,7 +187,7 @@
 
 
   //渲染题目信息类
-  function getQuestionGroups() { // 获取题目分组信息，用于生成答题卡
+  function getQuestionGroups() { // 获取题目分组信息，用于生成答题卡 用来生成题组
     const groups = [];
 
     const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序出一个数组
@@ -196,6 +196,8 @@
       const groupId = groupInfo.ID; // 题组 id
       const groupQuestions = examQuestionsMap.get(String(groupId)) || []; // 该分组下的题目数组
 
+      
+
       if (groupQuestions.length === 0) return; // 如果没有题目则跳过
       groups.push({ // 组装 QuestionGroup 对象
         name: groupInfo.Name,
@@ -203,12 +205,13 @@
         questions: groupQuestions.map((question, index) => ({
           question,
           index
-        }))
+        })),
       });
     });
+    
     return groups;
   }
-  function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组
+  function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组 用来生成题目
     const result = [];
     const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序数组
 
@@ -216,7 +219,20 @@
       const groupId = groupInfo.ID;
       const groupQuestions = examQuestionsMap.get(String(groupId)) || [];
 
-      groupQuestions.forEach(q => result.push(q)); // 将每个题目添加到结果数组中
+      let totalScore = 0;
+      for (const item of groupQuestions) {
+        // 如果每道题的分数字段是 question.Score
+        totalScore += Number(item.Score || 0);
+      }
+
+
+        groupQuestions.forEach(q => {
+        result.push({
+          ...q,
+          group_name: groupInfo.Name,
+          group_score : totalScore, // 该组的总分
+        });
+      });
     });
     return result;
   }
@@ -270,7 +286,7 @@
           toast.success('练习结束，提交成功！', 2000);
           goto(`/student/practice`);
         } else {
-          toast.error('提交失败！', 2000);
+          toast.error(`提交失败！${resp_data.msg || ''}`, 2000);
         }
       })
       .catch((e) => {
@@ -324,12 +340,12 @@
           }
         } else {
           console.error("答案保存失败:", resp.msg);
-          toast.error('答案保存失败！', 2000);
+          toast.error(`答案保存失败！${resp.msg || ''}`, 2000);
         }
       })
       .catch((error) => {
         console.error("保存答案时出错:", error);
-        toast.error('保存答案时出错！', 2000);
+        toast.error(`保存答案时出错！${error.message || ''}`, 2000);
       });
   }
 
@@ -549,7 +565,7 @@
                 <!-- 如果是新的分组就显示分组标题 -->
                 {#if index === 0 || question.group_name !== examQuestions[index - 1].group_name}
                   <div class="question-header">
-                    <h2>{question.group_name}</h2>
+                    <h2>{question.group_name} <span class="group-score">（{question.group_score}分）</span></h2>
                   </div>
                 {/if}
                 <div class="question-mark-container" id={`question-${index}`}>
@@ -580,7 +596,7 @@
               {/each}
             {:else}
               <div class="question-header">
-                <h2>{currentQuestion.group_name}</h2>
+                 <h2>{currentQuestion.group_name} <span class="group-score">（{currentQuestion.group_score}分）</span></h2>
               </div>
               <!-- 逐题模式：只显示当前题目 -->
 
@@ -671,13 +687,13 @@
                         class="question-btn"
                         onclick={() => goToQuestion(question.index)}
                         class:marked={markedQuestions[question.index]}
-                        class:active={question.question?.answer !== null &&
-                          question.question?.answer !== undefined &&
-                          Array.isArray(question.question.answer) &&
-                          !question.question.answer.every(
-                            (str) => str === ""
-                          ) &&
-                          question.question.answer.length !== 0}
+                        class:active={
+                            examQuestions[question.index]?.Answer !== null &&
+                            examQuestions[question.index]?.Answer !== undefined &&
+                            Array.isArray(examQuestions[question.index].Answer) &&
+                            !examQuestions[question.index].Answer.every((str) => str === "") &&
+                            examQuestions[question.index].Answer.length !== 0
+                          }
                       >
                         {question.index + 1}
                       </button>

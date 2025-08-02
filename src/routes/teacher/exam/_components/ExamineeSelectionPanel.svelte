@@ -191,7 +191,7 @@
         const queryParams = new URLSearchParams();
         queryParams.append("page", searchParams.page.toString());
         queryParams.append("pageSize", searchParams.pageSize.toString());
-
+        queryParams.append("domain","cst.school^student");
         if (searchParams.OfficialName) {
             queryParams.append("name", searchParams.OfficialName);
         }

@@ -12,8 +12,8 @@
     import Toast from "$lib/components/Toast/Toast.svelte";
     import { toast } from "$lib/components/Toast/Toast";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
-    import QuestionPreview from "../_components/QuestionPreview/QuestionPreview.svelte";
     import { debounce } from "$lib/utils/optimize";
+    import QuestionPreviewPanel from "../../question-bank/_components/QuestionPreviewPanel.svelte";
     
     /*************** 控制开关区 ****************/
 
@@ -314,6 +314,8 @@
                 category = paperInfo.Category;
                 level = paperInfo.Level;
                 suggestedDuration = paperInfo.SuggestedDuration;
+                totalScore = paperInfo.TotalScore;
+                questionCount = paperInfo.QuestionCount;
                 description = paperInfo.Description;
                 tags = paperInfo.Tags;
         }).finally(() => {
@@ -398,18 +400,18 @@
                 </div>
 
                 <!-- 试卷总分 -->
-                <!-- <div class="single-line">
+                <div class="single-line">
                     <span class="info-label">试卷总分</span>
                     <span class="total-score-number">{totalScore}</span>
                     <span class="total-score-span">分</span>
-                </div> -->
+                </div>
 
                 <!-- 试题数量 -->
-                <!-- <div class="single-line">
+                <div class="single-line">
                     <span class="info-label">试题数量</span>
                     <span class="question-count-number">{questionCount}</span>
                     <span class="question-count-span">道</span>
-                </div> -->
+                </div>
 
                 <!-- 试卷说明 -->
                 <div class="paper-description">
@@ -606,7 +608,7 @@
                                             <!-- 题目内容 -->
                                             {#if question.isOpen}
                                                 <div class="question-container">
-                                                    <QuestionPreview {question}/>
+                                                    <QuestionPreviewPanel question={question} showHeader={false}/>
                                                 </div>
                                             {/if}
                                         </div>
@@ -1251,7 +1253,7 @@
 
                             /* 题目内容 */
                             .question-container {
-                                /* padding: 20px; */
+                                padding: 0 20px;
 
                                 .prompt {
                                     font-size: 14px;
@@ -1266,7 +1268,7 @@
                                 }
 
                                 /* 答案 */
-                                .answer-container {
+                                .answer-box {
                                     display: flex;
                                     padding: 12px 0;
                                     background:linear-gradient(to right, #ddd 0%, #ddd 8px, transparent 8px, transparent 15px) repeat-x bottom;
@@ -1281,7 +1283,7 @@
                                 }
 
                                 /* 解析 */
-                                .analysis-container {
+                                .analysis-box {
                                     display: flex;
                                     padding: 12px 0;
                                 }

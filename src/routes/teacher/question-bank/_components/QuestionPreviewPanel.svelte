@@ -9,7 +9,7 @@
      *      displayClosePanelBtn?: boolean
      * }}
      */
-    let { question, closePanel, displayClosePanelBtn } = $props();
+    let { question, closePanel, displayClosePanelBtn, showHeader = true } = $props();
 
     let question_content = $state("")
 
@@ -485,27 +485,31 @@
 {/snippet}
 
 <div class="previewContainer">
-    <div class="topBar">
-        <div>
-            <span
-                style="font-size: 18px;font-family: PingFang FC;margin-left:20px"
-                >预览</span
-            >
-            <button
-                bind:this={closePanelBtn}
-                class="close-button"
-                onclick={closePanel}
-                style="visibility: {displayClosePanelBtn === false
-                    ? 'hidden'
-                    : 'visible'};">×</button
-            >
+    {#if showHeader}
+        <div class="topBar">
+            <div>
+                <span
+                    style="font-size: 18px;font-family: PingFang FC;margin-left:20px"
+                    >预览</span
+                >
+                <button
+                    bind:this={closePanelBtn}
+                    class="close-button"
+                    onclick={closePanel}
+                    style="visibility: {displayClosePanelBtn === false
+                        ? 'hidden'
+                        : 'visible'};">×</button
+                >
+            </div>
         </div>
-    </div>
+    {/if}
     <div class="content">
         <div class="questionBasic">
-            <span class="type">题型：{quesiton_type}</span>
-            <span class="difficulty">难度：{question_difficulty}</span>
-            <span class="score">分值：{question?.score}分</span>
+            {#if showHeader}
+                <span class="type">题型：{quesiton_type}</span>
+                <span class="difficulty">难度：{question_difficulty}</span>
+                <span class="score">分值：{question?.score}分</span>
+            {/if}
         </div>
 
         <div class="question-container">

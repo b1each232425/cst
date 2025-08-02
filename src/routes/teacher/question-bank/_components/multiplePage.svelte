@@ -1013,12 +1013,12 @@
         bottom: 0;
         left: 0;
 
-        z-index: 999;
+        z-index: 1002;
         background-color: #fff;
 
         transition: all 0.3s ease-in-out;
 
-        overflow-x: auto;
+        overflow: auto;
         .topBar {
             display: flex;
             justify-content: space-between;

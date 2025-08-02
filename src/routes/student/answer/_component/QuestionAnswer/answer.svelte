@@ -294,13 +294,13 @@
           <input
             type="radio"
             name="question-{question.ID}"
-            value={option.Label}
-            checked={student_answer.answer?.includes(option.Label)}
-            onchange={() => handleOptionSelect(question.ID, option.Label)}
+            value={option.label}
+            checked={student_answer.answer?.includes(option.label)}
+            onchange={() => handleOptionSelect(question.ID, option.label)}
             class="hidden-radio"
             disabled={ifPreview}
           />
-          <span class="option-id">{option.Label}</span>
+          <span class="option-id">{option.label}</span>
           <Option {option} />
         </label>
       {/each}
@@ -313,13 +313,13 @@
           <input
             type="checkbox"
             name="question-{question.ID}"
-            value={option.Label}
-            checked={student_answer.answer?.includes(option.Label)}
-            onchange={() => handleMultiOptionSelect(question.ID, option.Label)}
+            value={option.label}
+            checked={student_answer.answer?.includes(option.label)}
+            onchange={() => handleMultiOptionSelect(question.ID, option.label)}
             class="hidden-radio"
             disabled={ifPreview}
           />
-          <span class="option-id-multiple">{option.Label}</span>
+          <span class="option-id-multiple">{option.label}</span>
           <Option {option} />
         </label>
       {/each}
