@@ -11,7 +11,8 @@
   import { debounce } from './_utils/debounce.js';
   import { goto } from '$app/navigation';
 
-  let students = $state([]); // 用户列表
+  // 学生列表
+  let students = $state([]); 
 
   //全选状态
   let selectAll = $state(false);
@@ -90,10 +91,10 @@
           students = filteredData.map((student) => ({
             id: student.ID,
             account: student.Account,
-            name: student.OfficialName || '',
-            identityCard: student.IDCardNo || '',
-            gender: student.Gender || '',
-            phone: student.MobilePhone || '',
+            name: student.OfficialName || '-',
+            identityCard: student.IDCardNo || '-',
+            gender: student.Gender || '-',
+            phone: student.MobilePhone || '-',
             status: student.Status,
             selected: false,
             has_relation: student.HasRelation || false,
@@ -418,18 +419,15 @@
 
   .student-management-container {
     position: relative;
-    background-color: var(--bg-primary);
     display: flex;
     flex-direction: column;
     width: 100%;
-    min-width: 1000px;
     overflow-y: auto;
-
     height: 100vh;
   }
 
   .table-action-container {
-    padding: 10px 0 0 10px; //TODO：后续调整
+    padding: 10px 0 0 10px; 
 
     .action-layout {
       display: flex;

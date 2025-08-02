@@ -280,12 +280,13 @@
             if (json.status !== 0 || typeof json.data !== 'string') {
               throw new Error(json.msg || '获取账号失败');
             }
-            // 组装单条 payload
+            // payload
             return {
               IDCardNo: student.idCardNo?.trim() || null,
               OfficialName: student.officialName?.trim() || null,
               MobilePhone: student.phone?.trim() || null,
-              Account: json.data, // ← 后端给的账号
+              Account: json.data,
+              Domains: ['cst.school^student'],
               Gender: null,
               Email: null,
               IDCardType: '居民身份证',

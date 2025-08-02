@@ -12,7 +12,8 @@
   import { debounce } from './_utils/debounce.js';
   import { goto } from '$app/navigation';
 
-  let users = $state([]); // 用户列表
+  // 用户列表
+  let users = $state([]); 
 
   //全选状态
   let selectAll = $state(false);
@@ -82,7 +83,7 @@
     '02': '停用',
   };
 
-  //处理获取用户列表 TODO：替换为统一接口请求
+  //处理获取用户列表 
   function fetchUsers() {
     loading = true;
     error = null;
@@ -133,7 +134,7 @@
           totalItems = res.rowCount || res.data.length;
           totalPages = Math.ceil(totalItems / pageSize);
           selectAll = false;
-          console.log('filterRole:', filterRole);
+          //console.log('filterRole:', filterRole);
         } else {
           users = [];
           totalItems = 0;
@@ -356,12 +357,15 @@
           <span class="item-label">角色</span>
           <div class="input-container">
             <Select
-              bind:value={filterRole}
+              value={filterRole} 
               placeholder="请选择角色"
               onChangeValue={(value) => {
+                // console.log('角色筛选 onChangeValue 触发，新值:', value, '旧值:', filterRole);
+                if (value !== filterRole) {
                 filterRole = value;
                 currentPage = 1;
                 fetchUsers();
+                }
               }}
             >
               {#each roleOptions as option}
@@ -530,13 +534,11 @@
 
   .user-management-container {
     position: relative;
-    background-color: var(--bg-primary);
     display: flex;
     flex-direction: column;
     width: 100%;
     min-height: 100vh;
     overflow-y: auto;
-    min-width: 1000px;
   }
 
   .table-action-container {
@@ -596,7 +598,7 @@
           color: $gray-font-color;
           min-width: 60px;
           display: inline-block;
-          text-align: right; //放在容器右侧TODO:后续需确定放哪
+          text-align: right; 
 
           @media (min-resolution: 1.25dppx) {
             min-width: 50px;
@@ -617,7 +619,7 @@
       gap: 20px;
       flex: 0 0 auto;
       min-width: 280px;
-      margin-right: 30px; //TODO：后续删除
+      margin-right: 30px; 
       @media (max-width: 1400px) and (min-width: 1201px) {
         grid-template-columns: repeat(3, minmax(60px, 1fr));
         grid-template-rows: repeat(3, 1fr);
@@ -656,8 +658,7 @@
         text-align: center;
         white-space: nowrap;
         overflow: hidden;
-        text-overflow: ellipsis;
-        transition: all 0.3s ease;
+
         @media (max-width: 1400px) and (min-width: 1201px) {
           padding: 0 8px;
           min-width: 50px;
