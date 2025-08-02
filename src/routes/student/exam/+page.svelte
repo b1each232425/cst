@@ -256,7 +256,7 @@
 
   // 是否已经批改好
   function isMarked(status) {
-    return status === '10' || status === '12';
+    return status === '12';
   }
 
   // 判断考试是否通过
