@@ -428,7 +428,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`添加题目失败: HTTP错误`);
         }
         return response.json();
       })
@@ -440,7 +440,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         return getQuestionList().then(() => result); // 确保 getQuestionList() 执行后再返回 result
       })
       .catch((error) => {
-        toast.error(`添加题目失败: ${error.message}`);
+        toast.error(`添加题目失败: 网络错误`);
         return;
       });
   }
@@ -507,7 +507,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`保存题库数据失败: HTTP错误`);
         }
         return response.json();
       })
@@ -535,7 +535,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         return result;
       })
       .catch((error) => {
-        toast.error(`保存题库数据失败: ${error.message}`);
+        toast.error(`保存题库数据失败: 网络错误`);
         return;
       });
   }
@@ -558,7 +558,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-          toast.error(`HTTP错误: ${response.status}`);
+          toast.error(`获取题库列表失败: HTTP错误`);
           return;
         }
         return response.json();
@@ -571,7 +571,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         return data;
       })
       .catch((error) => {
-        toast.error(`获取题库列表失败: ${error.message}`);
+        toast.error(`获取题库列表失败: 网络错误`);
         return;
       });
   }
