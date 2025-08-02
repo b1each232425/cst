@@ -590,14 +590,12 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     if(data!=null){
       question_count=response.rowCount;
     }
-   
-   
-
-
-      
-
     }
-    question_filtered_count = response.rowCount;
+
+     if(data!=null){
+       question_filtered_count = response.rowCount;
+    }
+   
     questions = [];
     for (let i = 0; i < data.length; i++) {
       questions.push({

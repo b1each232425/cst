@@ -71,7 +71,57 @@ it('获取题库列表正确处理HTTP错误', async () => {
 	});
   });
 
-  
+/**
+	 * 成功获取题库列表数据
+	 */
+	it('成功获取题库列表并渲染', async () => {
+		  //mock获取题库列表api返回数据
+	global.fetch = vi.fn().mockResolvedValue({
+     ok: true,
+      json: async () => ({
+        status: 0,
+        msg: "success",
+        rowCount: 2,
+        data: [
+          {
+            ID: 10,
+            Type: "00",
+            Name: "无标签题库",
+            Tags: [],
+            Creator: 1000,
+            CreateTime: 1754114107180,
+            UpdateTime: 1754114107180,
+          },
+          {
+            ID: 11,
+            Type: "00",
+            Name: "有标签题库",
+            Tags: ["go"],
+            Creator: 1000,
+            CreateTime: 1754114107180,
+            UpdateTime: 1754114107180,
+          }
+        ]
+      }),
+    });
+
+	 render(bankPage);
+    //toast是否显示成功
+    await waitFor(() => {
+    expect(screen.getByText('获取题库列表成功')).toBeInTheDocument();
+	});
+
+ //是否成功渲染获取的题库 
+ expect(screen.getByText('无标签题库')).toBeInTheDocument();
+ expect(screen.getByText('有标签题库')).toBeInTheDocument();
+expect(screen.getByTitle('go')).toBeInTheDocument();
+ expect(screen.getAllByPlaceholderText('+标签')).toHaveLength(3)
+   const imgElement = document.querySelector('img[src="/programming_question_bank/icons/check_mark.svg"]')
+   expect(imgElement).toBeInTheDocument()
+  });
+
+
+
 
 
 
