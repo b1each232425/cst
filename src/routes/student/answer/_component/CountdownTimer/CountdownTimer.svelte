@@ -94,6 +94,7 @@
       switch (data.msg_type) {
         case 1: // 服务器时间戳消息
           const now_ts = data.timestamp;
+   //       console.log("服务器时间戳:", now_ts);
           if (countUp) {
             current_seconds =
               Math.floor((now_ts - start_timestamp) / 1000) + elapsed_seconds;
