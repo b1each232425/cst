@@ -35,6 +35,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { TheoryQuestion } from '../type';
   import SinglePage from '../../_components/singlePage.svelte';
   import { get } from 'svelte/store';
+  import Error from '../../../../+error.svelte';
 
   /**
    * @description ICON集合
@@ -428,19 +429,20 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error(`添加题目失败: HTTP错误`);
+          throw new Error(`HTTP错误`);
         }
         return response.json();
       })
       .then((result) => {
         if (result.status !== 0) {
-          toast.error(`添加土木是该: ${result.msg}`);
+          throw new Error(`${result.msg}`);
         }
+        question_count++;
         toast.success('添加题目成功');
         return getQuestionList().then(() => result); // 确保 getQuestionList() 执行后再返回 result
       })
       .catch((error) => {
-        toast.error(`添加题目失败: 网络错误`);
+        toast.error(`添加题目失败:${error.message}`);
         return;
       });
   }
@@ -507,13 +509,13 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error(`保存题库数据失败: HTTP错误`);
+          throw new Error(`HTTP错误`);
         }
         return response.json();
       })
       .then((result) => {
         if (result.status !== 0) {
-          toast.error(`题库数据保存失败: ${result.msg}`);
+          throw new Error(`${result.msg}`);
           return;
         }
         toast.success('题库数据保存成功');
@@ -535,7 +537,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         return result;
       })
       .catch((error) => {
-        toast.error(`保存题库数据失败: 网络错误`);
+        toast.error(`保存题库数据失败:${error.message}`);
         return;
       });
   }
@@ -558,20 +560,20 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-          toast.error(`获取题库列表失败: HTTP错误`);
-          return;
+         throw new Error(`HTTP错误`);
+        
         }
         return response.json();
       })
       .then((data) => {
         if (data.status !== 0) {
-          toast.error(`获取题库列表失败: ${data.msg}`);
-          return;
+         throw new Error (`${data.msg}`);
+         
         }
         return data;
       })
       .catch((error) => {
-        toast.error(`获取题库列表失败: 网络错误`);
+        toast.error(`获取题库列表失败:${error.message}`);
         return;
       });
   }
@@ -582,11 +584,18 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     // 拉取题目列表
     request_lock = true;
     const response = await getBankWithQuestions();
-    const data = response.data || [];
+    const data = response.data || null;
     request_lock = false;
     if (init == 1) {
-      (data!=[])
-      question_count = response.rowCount;
+    if(data!=null){
+      question_count=response.rowCount;
+    }
+   
+   
+
+
+      
+
     }
     question_filtered_count = response.rowCount;
     questions = [];
@@ -630,7 +639,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         bank_update_time = formatTimestamp(question_bank_data.update_time);
       }
     } else {
-      toast.error('无法获得提题库数据');
+      toast.error('无法获得题库数据');
       return;
     }
 

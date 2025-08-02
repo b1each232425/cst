@@ -39,26 +39,6 @@ it('应该正确渲染题库页面的基本元素', async () => {
 });
 
 /**
- * 测试获取题库列表网络错误
- */
-it('获取题库列表网络错误', async () => {
-  
-	// 模拟HTTP错误响应
-		global.fetch = vi.fn().mockResolvedValue({
-			ok: false,
-			status: 500
-		});
-
-     render(bankPage);
-
-      //等待toast报错
-    await waitFor(() => {
-    expect(screen.getByText('获取题库列表失败: 网络错误')).toBeInTheDocument();
-  });
-});
-
-
-/**
  * 测试获取题库列表HTTP错误响应
  */
 it('获取题库列表正确处理HTTP错误', async () => {
