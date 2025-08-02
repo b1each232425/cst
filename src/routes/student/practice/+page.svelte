@@ -365,8 +365,10 @@
 
   // 处理对应操作
   function handleAction(action, index, practiceID) {
-    const handler = actionHandlers[action];
-    handler(index, practiceID);
+    if (action && actionMap.has(action)) {
+      const handler = actionHandlers[action];
+      handler(index, practiceID);
+    }
   }
 
   // 练习列表
@@ -555,7 +557,7 @@
                 >{#each actionMap.get(practice.Action) as action, index (index)}
                   <button
                     class="option"
-                    class:can-click={practice.Action !== '06'}
+                    class:can-click={practice.Action && actionMap.has(practice.Action) && practice.Action !== '06'}
                     onclick={() => handleAction(practice.Action, index, practice.ID)}>{action}</button
                   >{/each}</td
               >
