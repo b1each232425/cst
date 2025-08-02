@@ -13,205 +13,205 @@
   import { formatTimestamp } from '$lib/utils/time_utils';
 
   // mock 数据
-  const mockExam = [
-    {
-      id: 5,
-      name: 'H34',
-      exam_sessions: [
-        {
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '04',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-        {
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '06',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-      action: '00', // 存在进行中 => 进入考试
-    },
-    {
-      id: 6,
-      name: 'H34',
-      exam_sessions: [
-        {
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '10',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-      action: '02', // 既不是可进入也不是全 no-op => 查看试卷
-    },
-    {
-      id: 7,
-      name: 'H34',
-      exam_sessions: [
-        {
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '08',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-      action: null, // 全部批改中 => 无操作
-    },
-    {
-      id: 8,
-      name: 'H34',
-      exam_sessions: [
-        {
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '10',
-          examinee_status: '02',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-      action: '02', // 查看试卷
-    },
-    {
-      id: 9,
-      name: 'H34',
-      exam_sessions: [
-        {
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '06',
-          examinee_status: '04',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-      action: null, // 全部已结束 => 无操作
-    },
-    {
-      id: 12,
-      name: 'H34',
-      exam_sessions: [
-        {
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '10',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-      action: '02',
-    },
-    {
-      id: 15,
-      name: 'H34',
-      exam_sessions: [
-        {
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '10',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-      action: '02',
-    },
-    {
-      id: 16,
-      name: 'H34',
-      exam_sessions: [
-        {
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '10',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-      action: '02',
-    },
-    {
-      id: 17,
-      name: 'H34',
-      exam_sessions: [
-        {
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '10',
-          examinee_status: '00',
-          student_score: 55,
-          total_score: 100,
-        },
-      ],
-      action: '02',
-    },
-    {
-      id: 18,
-      name: 'H34',
-      exam_sessions: [
-        {
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '10',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-      action: '02',
-    },
-    {
-      id: 19,
-      name: 'H34',
-      exam_sessions: [
-        {
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          session_num: '001',
-          paper_name: '语文试卷A',
-          status: '10',
-          examinee_status: '00',
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-      action: '02',
-    },
-  ];
+  // const mockExam = [
+  //   {
+  //     id: 5,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '04',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '06',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '00', // 存在进行中 => 进入考试
+  //   },
+  //   {
+  //     id: 6,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02', // 既不是可进入也不是全 no-op => 查看试卷
+  //   },
+  //   {
+  //     id: 7,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '08',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: null, // 全部批改中 => 无操作
+  //   },
+  //   {
+  //     id: 8,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '02',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02', // 查看试卷
+  //   },
+  //   {
+  //     id: 9,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '06',
+  //         examinee_status: '04',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: null, // 全部已结束 => 无操作
+  //   },
+  //   {
+  //     id: 12,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02',
+  //   },
+  //   {
+  //     id: 15,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02',
+  //   },
+  //   {
+  //     id: 16,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02',
+  //   },
+  //   {
+  //     id: 17,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 55,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02',
+  //   },
+  //   {
+  //     id: 18,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02',
+  //   },
+  //   {
+  //     id: 19,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02',
+  //   },
+  // ];
 
   // 日期选择器对象
   let datePicker = null;
@@ -265,7 +265,7 @@
   }
 
   // 考试列表
-  let examList = $state([...mockExam]);
+  let examList = $state([]);
 
   // 总数据数
   let totalCount = $state(0);
