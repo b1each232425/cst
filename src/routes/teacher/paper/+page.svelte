@@ -887,7 +887,7 @@
 
         /* 表格区域 */
         .table-container {
-            height: calc(87vh - 200px);
+            height: calc(87vh - 215px);
             overflow: auto;
 
             /* 表格内容 */
