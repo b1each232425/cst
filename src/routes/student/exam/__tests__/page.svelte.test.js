@@ -16,13 +16,21 @@ const MOCK_EXAMS = [
     name: '考试一',
     exam_sessions: [
       {
-        id: 101,
         paper_name: '试卷A',
         start_time: new Date('2025-08-01T09:00').getTime(),
         end_time: new Date('2025-08-01T11:00').getTime(),
         status: '10',
         examinee_status: '10',
         student_score: 85,
+        total_score: 100,
+      },
+      {
+        paper_name: '试卷C',
+        start_time: new Date('2025-08-02T09:00').getTime(),
+        end_time: new Date('2025-08-02T11:00').getTime(),
+        status: '10',
+        examinee_status: '10',
+        student_score: 66,
         total_score: 100,
       },
     ],
@@ -32,7 +40,6 @@ const MOCK_EXAMS = [
     name: '考试二',
     exam_sessions: [
       {
-        id: 101,
         paper_name: '试卷B',
         start_time: new Date('2025-08-02T09:00').getTime(),
         end_time: new Date('2025-08-02T11:00').getTime(),
@@ -48,11 +55,10 @@ const MOCK_EXAMS = [
     name: '考试三',
     exam_sessions: [
       {
-        id: 104,
         paper_name: '试卷B',
         start_time: new Date('2025-08-02T09:00').getTime(),
         end_time: new Date('2025-08-02T11:00').getTime(),
-        status: '10',
+        status: '06',
         examinee_status: '10',
         student_score: 50,
         total_score: 100,
@@ -124,14 +130,14 @@ describe('考试列表组件测试', () => {
 
   describe('搜索功能', () => {
     it('成功加载考试数据', async () => {
-      mockFetch({ status: 0, data: MOCK_EXAMS, rowCount: 1 });
+      mockFetch({ status: 0, data: [...MOCK_EXAMS, { id: 55, name: '无场次考试' }], rowCount: 1 });
       const { search } = setup();
       await search();
 
       await waitFor(() => {
         expect(screen.getByText('考试一')).toBeInTheDocument();
         expect(screen.getByText('试卷A')).toBeInTheDocument();
-        expect(screen.getByText('2025-08-01 09:00~2025-08-01 11:00')).toBeInTheDocument();
+        expect(screen.getByText('2025-08-01 09:00 ~ 2025-08-01 11:00')).toBeInTheDocument();
         expect(screen.getByText('85')).toBeInTheDocument();
       });
     });
