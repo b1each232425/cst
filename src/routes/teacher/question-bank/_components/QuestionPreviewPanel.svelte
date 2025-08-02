@@ -288,7 +288,7 @@
                 </div>
                 <div class="option-value">
                     <div class="piptap-content">
-                        {option.value}
+                        {@html option.value}
                     </div>
                 </div>
             </div>
@@ -362,7 +362,7 @@
                 {#each question.answers as answer}
                     {#if typeof answer !== "string"}
                         <span class="answer-label">({answer.index})</span>
-                        <span class="answer-content">{answer.answer}</span>
+                        <span class="answer-content">{@html answer.answer}</span>
                         <br />
                         <div class="alternative_answers-container">
                             {#if answer.alternative_answers && answer.alternative_answers.length > 0}
@@ -378,7 +378,7 @@
                                             >{index + 1}.</span
                                         >
                                         <span class="answer-content"
-                                            >{alternativeAnswer}</span
+                                            >{@html alternativeAnswer}</span
                                         >
                                         <br />
                                     {/each}
@@ -443,7 +443,7 @@
                 {#each question.answers as answer}
                     {#if typeof answer !== "string"}
                         <span class="answer-label">({answer.index})</span>
-                        <span class="answer-content">{answer.answer}</span>
+                        <span class="answer-content">{@html answer.answer}</span>
                         <br />
                     {/if}
                 {/each}
