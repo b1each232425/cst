@@ -352,6 +352,7 @@
   }
 
   .orderBtn {
+     gap: 8px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -364,7 +365,8 @@
     }
 
     svg {
-      position: absolute;
+      width: 20px;
+     height: 20px;
       right: 0;
     }
 

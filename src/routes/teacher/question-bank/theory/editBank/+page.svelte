@@ -428,7 +428,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`添加题目失败: HTTP错误`);
         }
         return response.json();
       })
@@ -440,7 +440,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         return getQuestionList().then(() => result); // 确保 getQuestionList() 执行后再返回 result
       })
       .catch((error) => {
-        toast.error(`添加题目失败: ${error.message}`);
+        toast.error(`添加题目失败: 网络错误`);
         return;
       });
   }
@@ -507,7 +507,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`保存题库数据失败: HTTP错误`);
         }
         return response.json();
       })
@@ -535,7 +535,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         return result;
       })
       .catch((error) => {
-        toast.error(`保存题库数据失败: ${error.message}`);
+        toast.error(`保存题库数据失败: 网络错误`);
         return;
       });
   }
@@ -558,7 +558,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-          toast.error(`HTTP错误: ${response.status}`);
+          toast.error(`获取题库列表失败: HTTP错误`);
           return;
         }
         return response.json();
@@ -571,7 +571,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         return data;
       })
       .catch((error) => {
-        toast.error(`获取题库列表失败: ${error.message}`);
+        toast.error(`获取题库列表失败: 网络错误`);
         return;
       });
   }
@@ -585,6 +585,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     const data = response.data || [];
     request_lock = false;
     if (init == 1) {
+      (data!=[])
       question_count = response.rowCount;
     }
     question_filtered_count = response.rowCount;
@@ -1086,8 +1087,8 @@ o888o o888o   "888" o888o o888o o888o o888o
 
     .bankMsgBar {
       display: flex;
-      // height: 150px;
-      min-width: 1000px;
+     
+       max-width: 100%;
       background-color: #fff;
       border-radius: 5px;
       flex-shrink: 0;
@@ -1121,7 +1122,7 @@ o888o o888o   "888" o888o o888o o888o o888o
         justify-content: space-between;
         flex: 1;
         margin-left: 50px;
-
+        max-width: 100%;
         .bankNameContainer {
           display: flex;
           align-items: center;
@@ -1284,6 +1285,7 @@ o888o o888o   "888" o888o o888o o888o o888o
         flex-direction: column;
         background-color: var(--bg-primary);
         border-radius: 5px;
+        max-height:66vh;
         max-width: 21%;
         min-width: 200px;
         flex: 1;
@@ -1341,8 +1343,8 @@ o888o o888o   "888" o888o o888o o888o o888o
         flex-direction: column;
         min-width: 800px;
         min-height: 0;
-        overflow-y: auto;
-        max-height: 600px;
+        overflow: auto;
+        max-height:66vh;
         border-radius: 5px;
         margin-left: 10px;
         padding: 5px;

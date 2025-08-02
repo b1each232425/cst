@@ -8,6 +8,7 @@
     import Button from "$lib/components/Button/Button.svelte";
     import DatePicker from "$lib/components/DatePicker/DatePicker.svelte"
     import Title from "$lib/components/Title/Title.svelte";
+    import {toast} from "$lib/components/Toast/Toast.js"
     const TIP_TEXT = {
         final_exam:
             "当一门考试的考试性质为期末成绩考试时，它将决定学生在此课程的最终期末成绩",
@@ -94,7 +95,7 @@
             isQuestionShuffled: false,
             questionShuffledMode: "00",
             markMethod: "00",
-           nameVisibility: false,
+            nameVisibility: false,
             markMode: "10",
             gradingConfig: [],
             isHide: false,
@@ -120,7 +121,6 @@
     let showPaperSelectionPanel = $state(false);
     let showExamineePanel = $state(false);
     let showActionToast = $state(false);
-    let actionToast = $state(null);
     function addNewPaper() {
         let default_paper_config = {
             paperID: 0, //试卷ID
@@ -184,28 +184,28 @@
     
 
     function onChooseStartTime(index) {
-    return function(event) {
-        const startDate = event.detail.date;
-        if (startDate) {
-            startDate.setSeconds(0, 0);
-            const startISO = startDate.toISOString();
-            paperConfigs[index].startTime = startISO;
-            updateDuration(index);
-        }
-    };
+        return function(event) {
+            const startDate = event.detail.date;
+            if (startDate) {
+                startDate.setSeconds(0, 0);
+                const startISO = startDate.toISOString();
+                paperConfigs[index].startTime = startISO;
+                updateDuration(index);
+            }
+        };
 }
 
-function onChooseEndTime(index) {
-    return function(event) {
-        const endDate = event.detail.date;
-        if (endDate) {
-            endDate.setSeconds(0, 0);
-            const endISO = endDate.toISOString();
-            paperConfigs[index].endTime = endISO;
-            updateDuration(index);
-        }
-    };
-}
+    function onChooseEndTime(index) {
+        return function(event) {
+            const endDate = event.detail.date;
+            if (endDate) {
+                endDate.setSeconds(0, 0);
+                const endISO = endDate.toISOString();
+                paperConfigs[index].endTime = endISO;
+                updateDuration(index);
+            }
+        };
+    }
 
 function updateDuration(index) {
     const startTime = paperConfigs[index].startTime;
@@ -241,23 +241,23 @@ function updateDuration(index) {
     async function handleSubmit() {
     /* 1. 必填字段校验（保持原逻辑） */
     if (examName === "") {
-        actionToast.show("error", "请输入考试名称");
+        toast.warning("请输入考试名称");
         return;
     }
     if (examName.length > 50) {
-        actionToast.show("error", "考试名称不得超过50个字符");
+       toast.warning("考试名称不得超过五十个字符");
         return;
     }
     if (examRules === "") {
-        actionToast.show("error", "请输入考试规则");
+        toast.warning("请输入考试规则");
         return;
     }
     if (examRules.length > 1000) {
-        actionToast.show("error", "考试规则不得超过1000个字符");
+        toast.warning("考试规则不得超过1000个字符");
         return;
     }
     if (paperConfigs.length <= 0) {
-        actionToast.show("error", "请至少添加一个考试场次");
+        toast.warning("请至少添加一个考试场次");
         return;
     }
 
@@ -266,11 +266,11 @@ function updateDuration(index) {
         const session = paperConfigs[i];
 
         if (!session.startTime || session.startTime === "") {
-            // actionToast.show("error", `第${i + 1}个场次未设置时间段`);
+            toast.warning(`第${i + 1}个场次未设置时间段`);
             return;
         }
         if (!session.endTime || session.endTime === "") {
-            // actionToast.show("error", `第${i + 1}个场次未设置时间段`);
+             toast.warning(`第${i + 1}个场次未设置时间段`);
             return;
         }
 
@@ -279,10 +279,12 @@ function updateDuration(index) {
         const now       = new Date();
         
         if (startTime < now) {
+            toast.warning(`第${i + 1}个场次的开始时间不能早于当前时间`);
             // actionToast.show("error", `第${i + 1}个场次的开始时间不能早于当前时间`);
             return;
         }
         if (endTime <= startTime) {
+             toast.warning(`第${i + 1}个场次的结束时间必须晚于开始时间`);
             // actionToast.show("error", `第${i + 1}个场次的结束时间必须晚于开始时间`);
             return;
         }
@@ -315,7 +317,8 @@ function updateDuration(index) {
     
     /* 4. 构造真正要提交的 JSON（完全使用用户输入） */
     const examSessionsdata = paperConfigs.map(cfg => ({
-        PaperID:              cfg.paperID,
+         PaperID:              cfg.paperID,
+        // PaperID:              61,
         PeriodMode:           cfg.periodMode,
         StartTime:            cfg.startTime  ? new Date(cfg.startTime).getTime() : 0,
         EndTime:              cfg.endTime    ? new Date(cfg.endTime).getTime()   : 0,
@@ -332,6 +335,13 @@ function updateDuration(index) {
         SessionNum:           cfg.sessionNum,
     }));
 
+    // Add this validation in handleSubmit()
+    for (let i = 0; i < paperConfigs.length; i++) {
+        if (paperConfigs[i].paperID === 0) {
+            toast.warning(`第${i + 1}个场次未选择试卷`);
+            return;
+        }
+    }
     // 附加文件：若用户上传了文件，则遍历填充；否则留空数组
     const fileArr = files.length
         ? files.map(f => ({ Name: f.name, Url: f.url || "" }))
@@ -353,7 +363,7 @@ function updateDuration(index) {
     };
          
     console.log("examDATA",examData);
-    /* 5. 发送请求（去掉写死的 DATA，直接发送 examData） */
+
     try {
         const res = await fetch("/api/exam", {
             method:  "POST",
@@ -409,45 +419,45 @@ function updateDuration(index) {
 
             <div class="examTypeChooseContainer">
                 <RequiredLabel text="考试类型" />
-            <div class="exam-choice-container">
-                <label class="label">
-                    <input
-                        type="radio"
-                        bind:group={examType}
-                        value={"00"}
-                        class="choice-radio-input"
-                    />
-                    平时考试
-                </label>
-                <label class="label">
-                    <input
-                        type="radio"
-                        bind:group={examType}
-                        value={"02"}
-                        class="choice-radio-input"
-                    />
-                    期末成绩考试
-                    <span class="tip-wrapper">
+                <div class="exam-choice-container">
+                    <label class="label">
+                        <input
+                            type="radio"
+                            bind:group={examType}
+                            value={"00"}
+                            class="choice-radio-input"
+                        />
+                        平时考试
+                    </label>
+                    <label class="label">
+                        <input
+                            type="radio"
+                            bind:group={examType}
+                            value={"02"}
+                            class="choice-radio-input"
+                        />
+                        期末成绩考试
+                        <span class="tip-wrapper">
+                            <img class="tip" alt="提示" src="/exam_list/tip.png" />
+                            <div class="tooltip-text">{TIP_TEXT["final_exam"]}</div>
+                        </span>
+                    </label>
+                    <label class="label">
+                        <input
+                            type="radio"
+                            bind:group={examType}
+                            value={"04"}
+                            class="choice-radio-input"
+                        />
+                        资格证考试
+                        <span class="tip-wrapper">
                         <img class="tip" alt="提示" src="/exam_list/tip.png" />
-                        <div class="tooltip-text">{TIP_TEXT["final_exam"]}</div>
-                    </span>
-                </label>
-                <label class="label">
-                    <input
-                        type="radio"
-                        bind:group={examType}
-                        value={"04"}
-                        class="choice-radio-input"
-                    />
-                    资格证考试
-                    <span class="tip-wrapper">
-                       <img class="tip" alt="提示" src="/exam_list/tip.png" />
-                        <div class="tooltip-text">
-                            {TIP_TEXT["qualifying_exams"]}
-                        </div>
-                    </span>
-                </label>
-            </div>
+                            <div class="tooltip-text">
+                                {TIP_TEXT["qualifying_exams"]}
+                            </div>
+                        </span>
+                    </label>
+                </div>
         </div>
 
         <div class="exam-type-choose-container">
@@ -502,11 +512,10 @@ function updateDuration(index) {
                     <Button
                         type="primary"
                         size="small"
-                        onclick={() => {
-                            showExamineePanel = true;
-                            }}>
+                        onclick={() => {showExamineePanel = true; }}>
                             考生选择
                     </Button>
+
                 <div class="examinee-number-container">
                     <span class="examinee-number-text">已选择 </span>
                     <span
@@ -570,10 +579,9 @@ function updateDuration(index) {
                                     size="small"
                                     type="primary"
                                     onclick={() => {
-                                        paperConfigs[
-                                            paperConfigIndex
-                                        ].showPaperSelectionPanel = true;
-                                    }}>试卷选择</Button>
+                                        paperConfigs[ paperConfigIndex].showPaperSelectionPanel = true; }}>
+                                        试卷选择
+                                    </Button>
 
                                 {:else}
                                 <div class="paper-item-container">
@@ -782,7 +790,7 @@ function updateDuration(index) {
                         class="show-name-container {paperConfigs[paperConfigIndex]
                             .markMethod !== '00'
                             ? 'hide'
-                            : ' config-row'}"
+                            : 'config-row'}"
                     >
                         <RequiredLabel text="批改时是否显示考生姓名：" Asterisk={false} colon={false} />
                         <div class="config-row-content">
@@ -823,19 +831,6 @@ function updateDuration(index) {
                         <RequiredLabel text="批改配置" Asterisk={false} />
                         <div class="config-row-content graders-container">
                             <div class = "graders-type-1">
-                                <!-- <button
-                                    class="add-graders-button"
-                                    onclick={() => {
-                                        paperConfigs[
-                                            paperConfigIndex
-                                        ].showGraderSelectionPanel = true;
-                                    }}
-                                    ><img
-                                        src="/add.svg"
-                                        alt="添加"
-                                        style="height: 14px; margin-right:5px"
-                                    />添加批阅员</button
-                                > -->
 
                                 <Button
                                     size="small"
@@ -854,9 +849,7 @@ function updateDuration(index) {
                     </div>
 
                     <div
-                        class="grading-mode-container {paperConfigs[
-                            paperConfigIndex
-                        ].markMethod !== '00'
+                        class="grading-mode-container {paperConfigs[paperConfigIndex].markMethod !== '00'
                             ? 'hide'
                             : ' config-row'}"
                     >
@@ -870,9 +863,17 @@ function updateDuration(index) {
                         </div>    
                     </div>
 
-                    <div class="grading-mode-button-container">
+                    <div class="grading-mode-button-container {paperConfigs[
+                            paperConfigIndex
+                        ].markMethod !== '00'
+                            ? 'hide'
+                            : ' config-row'}">
                         <RequiredLabel text="" Asterisk={false} colon={false} />
-                                <div class="config-row-content">
+                                <div class="config-row-content {paperConfigs[
+                            paperConfigIndex
+                        ].markMethod !== '00'
+                            ? 'hide'
+                            : ''}">
                                     <label class="label" style="color: #757575;">
                                         <input
                                             type="radio"
@@ -938,19 +939,22 @@ function updateDuration(index) {
         position: relative;
         display: block;
         background: #fff;
-        margin: 0 auto;
+        // margin: 0 auto;
         overflow-y: auto;
         overflow-x: auto;
         padding-bottom: 5%;
         padding-top:10px;
+        margin-bottom: 4%;
+        box-sizing: border-box;
         .createExamContainer {
+            width:70%;
             margin: 0 auto;
             position: relative;
             background-color: white;
             display: grid;
             gap: 20px; //垂直间距
             align-items: center;
-            overflow-y: auto;
+            // overflow-y: auto;
             overflow-x: auto;
             .examNameInputContainer,
             .examRuleInputContainer,

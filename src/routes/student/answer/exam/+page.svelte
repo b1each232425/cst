@@ -21,6 +21,8 @@
   import { toast } from '$lib/components/Toast/Toast';
   import Button from '$lib/components/Button/Button.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+  import { formatTimestamp } from '$lib/utils/time_utils.js';
+  import { sget } from '$lib/utils/index.js';
 
 
   /**
@@ -118,6 +120,7 @@
   let answeredCount = $state(0); // 已答题数量
   let total_seconds = $state(0); // 考试总时长（秒）
 
+
   //实时检测出是否加载失败
   $effect(() => {
     if (!load_success) {
@@ -149,6 +152,7 @@
       const groupId = groupInfo.ID; // 题组 id
       const groupQuestions = examQuestionsMap.get(String(groupId)) || []; // 该分组下的题目数组
 
+      if (groupQuestions.length === 0) return; // 如果没有题目则跳过
       groups.push({ // 组装 QuestionGroup 对象
         name: groupInfo.Name,
         type: groupQuestions[0].type,
@@ -160,7 +164,8 @@
     });
     return groups;
   }
-  function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组
+
+  function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组 用来生成题目
     const result = [];
     const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序数组
 
@@ -168,7 +173,20 @@
       const groupId = groupInfo.ID;
       const groupQuestions = examQuestionsMap.get(String(groupId)) || [];
 
-      groupQuestions.forEach(q => result.push(q)); // 将每个题目添加到结果数组中
+      let totalScore = 0;
+      for (const item of groupQuestions) {
+        // 如果每道题的分数字段是 question.Score
+        totalScore += Number(item.Score || 0);
+      }
+
+
+        groupQuestions.forEach(q => {
+        result.push({
+          ...q,
+          group_name: groupInfo.Name,
+          group_score : totalScore, // 该组的总分
+        });
+      });
     });
     return result;
   }
@@ -237,12 +255,12 @@
           }
         } else {
           console.error("答案保存失败:", resp.msg);
-          toast.error('答案保存失败！', 2000);
+          toast.error(`答案保存失败！${resp.msg || ''}`, 2000);
         }
       })
       .catch((error) => {
         console.error("保存答案时出错:", error);
-        toast.error('保存答案时出错！', 2000);
+        toast.error(`保存答案时出错！${error.message || ''}`, 2000);
       });
   }
   function submitMessageBox() { //考试提交提示框
@@ -272,7 +290,6 @@
     const requestBody = {
       data: body_data,
     };
-    console.log(examinee_id, exam_session_id);
 
     fetch("/api/respondent/submit", {  //发起请求
       method: "POST",
@@ -294,7 +311,7 @@
           toast.success('考试结束，提交成功！', 2000);
           goto(`/student/answer/exam-detail?exam-id=${exam_id}&exam-session-id=${exam_session_id}`); //跳转到考试详情页
         } else {
-          toast.error('提交失败！', 2000);
+          toast.error(`提交失败！${resp_data.msg || ''}`, 2000);
         }
       })
       .catch((e) => {
@@ -302,7 +319,6 @@
         toast.error('提交失败', 2000);
       });
   }
-
 
 
   //按钮控制事件类
@@ -356,19 +372,6 @@
    function toggleMarkQuestion(index, event) {
     event.stopPropagation();
     markedQuestions[index] = !markedQuestions[index];
-  }
-
-  //格式化时间
-   function formatTimestamp(timestamp) {
-    if (!timestamp) return "--";
-    const date = new Date(Number(timestamp));
-    const yyyy = date.getFullYear();
-    const MM = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-    const hh = String(date.getHours()).padStart(2, "0");
-    const mm = String(date.getMinutes()).padStart(2, "0");
-    const ss = String(date.getSeconds()).padStart(2, "0");
-    return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`;
   }
 
 
@@ -452,24 +455,26 @@
         const currentTime = new Date().getTime();
         const remainingSeconds = Math.floor((data.data.ExamineeInfo.ActualEndTime - currentTime) / 1000);
 
-        // 赋值到变量
+        // 赋值到变量 使用sget安全获取
         //题目
-        examQuestionsMap = new Map(Object.entries(data.data.Questions));
-        questionGroupsMap = new Map(Object.entries(data.data.QuestionGroupInfo));
-        examinee_id = data.data.ExamineeInfo.ID;
-        //时间类
+        examQuestionsMap = new Map(Object.entries(sget(data, "data.Questions", {})));
+        questionGroupsMap = new Map(Object.entries(sget(data, "data.QuestionGroupInfo", {})));
+        examinee_id = sget(data, "data.ExamineeInfo.ID", "");
+        //时间控制类
         total_seconds = remainingSeconds > 0 ? remainingSeconds : 0;
-        start_time = data.data.ExamineeInfo.StartTime;
-        end_time = data.data.ExamineeInfo.ActualEndTime;
-        exam_duration = matchedSession.Duration * 60;
+        start_time = sget(data, "data.ExamineeInfo.StartTime", 0);
+        end_time = sget(data, "data.ExamineeInfo.ActualEndTime", 0);
+        exam_duration = sget(matchedSession, "Duration", 0) * 60;
         //考试信息类
-        title = data.data.exam_info.Name;
-        exam_notes = data.data.exam_info.Rules;
-        exam_status = data.data.exam_info.Status;
-        files = data.data.exam_info.Files;
+        title = sget(data, "data.exam_info.Name", "无标题");
+        exam_notes = sget(data, "data.exam_info.Rules", "暂无规则说明");
+        exam_status = sget(data, "data.exam_info.Status", "");
+        files = sget(data, "data.exam_info.Files", []);
         load_success = true;
         ifPreview = false;
         query_url = `/api/respondent?examinee_id=${encodeURIComponent(examinee_id || '')}`;
+
+   //     is_full_examMode = false;
 
         //加载题目
         examQuestions.length = 0;
@@ -561,7 +566,7 @@
         <div class="box preference-info">
           <label for="试卷作答偏好">试卷作答偏好</label>
           <div class="answer-mode">逐题模式</div>
-          <BulmaSwitch bind:is_full_examMode></BulmaSwitch>
+          <BulmaSwitch bind:is_full_examMode data-testid="switch-mode"></BulmaSwitch>
           <div class="answer-mode">全卷模式</div>
         </div>
       </div>
@@ -591,7 +596,7 @@
                   <!-- 如果是新的分组就显示分组标题 -->
                   {#if index === 0 || question.group_name !== examQuestions[index - 1].group_name}
                     <div class="question-header">
-                      <h2>{question.group_name}</h2>
+                      <h2>{question.group_name} <span class="group-score">（{question.group_score}分）</span></h2>
                     </div>
                   {/if}
                   <div class="question-mark-container" id={`question-${index}`}>
@@ -623,7 +628,7 @@
                 {/each}
               {:else}
                 <div class="question-header">
-                  <h2>{currentQuestion.group_name}</h2>
+                  <h2>{currentQuestion.group_name} <span class="group-score">（{currentQuestion.group_score}分）</span></h2>
                 </div>
                 <!-- 逐题模式：只显示当前题目 -->
 
@@ -717,13 +722,13 @@
                           class="question-btn"
                           onclick={() => goToQuestion(question.index)}
                           class:marked={markedQuestions[question.index]}
-                          class:active={question.question?.answer !== null &&
-                            question.question?.answer !== undefined &&
-                            Array.isArray(question.question.answer) &&
-                            !question.question.answer.every(
-                              (str) => str === ""
-                            ) &&
-                            question.question.answer.length !== 0}
+                          class:active={
+                            examQuestions[question.index]?.Answer !== null &&
+                            examQuestions[question.index]?.Answer !== undefined &&
+                            Array.isArray(examQuestions[question.index].Answer) &&
+                            !examQuestions[question.index].Answer.every((str) => str === "") &&
+                            examQuestions[question.index].Answer.length !== 0
+                            }
                         >
                           {question.index + 1}
                         </button>

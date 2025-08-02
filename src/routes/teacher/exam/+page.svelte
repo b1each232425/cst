@@ -61,6 +61,10 @@
         endTime: null,
     });
 
+    async function publishAndSearch(examId){
+        await publishExam(examId);
+        searchExam();
+    }
 
     async function searchExam() {
     loading = true;
@@ -95,6 +99,14 @@
     .then((response) => response.json())
     .then((data) => {
         examList = data.data;
+         if (examList && Array.isArray(examList)) {
+            examList.sort((a, b) => {
+                // 确保 ID 字段存在且为数字，按降序排序
+                const idA = parseInt(a.id || a.ID || 0);
+                const idB = parseInt(b.id || b.ID || 0);
+                return idB - idA; // 降序：大的在前
+            });
+        }
         totalItems = data.rowCount;
     })
     .catch((error) => {
@@ -155,17 +167,6 @@
         searchExam();
     }
 
-    // function onNextOrLastPage(is_next) {
-    //     if (loading === true) return;
-    //     if (is_next && searchParams.page < totalPage) {
-    //         searchParams.page += 1;
-    //         searchExam();
-    //     }
-    //     if (!is_next && searchParams.page > 1) {
-    //         searchParams.page -= 1;
-    //         searchExam();
-    //     }
-    // }
 
     async function publishExam(examId) {
         loading = true;
@@ -189,19 +190,34 @@
                 data: { ID: parseInt(examId), Status: "02" }
                 })
             };
+            //占位
             const url = `/api/exam/status?${new URLSearchParams(params).toString()}`;
-            return fetch(url, {
+            fetch(url, {
                 method: "PUT",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" }
             });
             })
             .then((res) => res.json())
-            .then((data) => {
-            if (data.Status === 0) {
+            .then(() => {
+                // console.log("res",res);
+            if (res.status === 0) {
+                console.log("考试发布成功");
                 message = "考试发布成功";
-                return searchExam();
-            } else {
+                //searchExam();
+                return;
+                const examIndex = examList.findIndex(exam => exam.id === examId);
+            //     if (examIndex !== -1) {
+            //         examList[examIndex] = {
+            //             ...examList[examIndex],
+            //             status: "02" // 更新为"待开始"状态
+            //         };
+            //         // 触发 Svelte 响应式更新
+            //         examList = [...examList];
+            //         console.log("examL",examList);
+            //     return;
+            // }
+         } else {
                 return Promise.reject(new Error(`发布失败：${data.Msg || "未知错误"}`));
             }
             })
@@ -399,7 +415,7 @@
     content="是否确认发布该考试?"
     cancel_text="取消"
     confirm_text="确认发布"
-    onConfirm={() => publishExam(examIdToPublish)}
+    onConfirm={() => publishAndSearch(examIdToPublish)}
     />
     
     <div class="paginationContainer">
@@ -420,6 +436,7 @@
     position: absolute;
     pointer-events: none;
   }
+
   .action-button {
     border: none;
     background-color: rgb(0, 0, 0, 0);  // 透明背景
@@ -432,20 +449,23 @@
         font-weight: bold;                  // 悬停时加粗
     }
     .examManagementContainer {
-        width:105%;
-        margin-left: -3%;
+        
+        // width:105%;
+        // margin-left: -3%;
         position: relative;
         background-color: white;
         display: flex;
         flex-direction: column;
-        overflow: auto;
+        overflow-x: auto;
+        overflow-y: hidden;
+        margin-bottom:5%;
         
         .tableFilterContainer {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
             gap: 15px;
-            padding: 17px 0 0 76px;
+            padding: 0px 0 0 0px;
             align-items: center;
             justify-content: space-between;
             min-width: 1000px;
@@ -470,9 +490,30 @@
                 padding:10px 15px;
                 margin-right:3%;
                 gap:15px;
+                
             }
 
         }
+
+        @media (max-width: 1919px) {
+        // 小于1080p（如1366×768、1440×900等）
+        .tableFilterContainer {
+            flex-wrap: nowrap; // 禁止换行
+            min-width: auto;   // 不再强制1000px
+
+            .actionPart {
+            min-width: auto;
+            flex: 1 1 0; // 占剩余空间
+            gap: 15px;   // 缩小间距
+            }
+
+            .buttonPart {
+            min-width: 260px; // 强制按钮区域宽度
+            flex-shrink: 0;   // 禁止被压缩
+            }
+        }
+
+    }
         .paginationContainer{
         display: flex;
         justify-content: flex-end;
@@ -480,7 +521,9 @@
         }
     }
     
+    
     .examListContainer {
+        overflow: auto;
          padding: 33px 37px 40px 37px;
          display: flex;
          flex-direction: column;

@@ -9,7 +9,7 @@
      *      displayClosePanelBtn?: boolean
      * }}
      */
-    let { question, closePanel, displayClosePanelBtn } = $props();
+    let { question, closePanel, displayClosePanelBtn, showHeader = true } = $props();
 
     let question_content = $state("")
 
@@ -288,7 +288,7 @@
                 </div>
                 <div class="option-value">
                     <div class="piptap-content">
-                        {option.value}
+                        {@html option.value}
                     </div>
                 </div>
             </div>
@@ -362,7 +362,7 @@
                 {#each question.answers as answer}
                     {#if typeof answer !== "string"}
                         <span class="answer-label">({answer.index})</span>
-                        <span class="answer-content">{answer.answer}</span>
+                        <span class="answer-content">{@html answer.answer}</span>
                         <br />
                         <div class="alternative_answers-container">
                             {#if answer.alternative_answers && answer.alternative_answers.length > 0}
@@ -378,7 +378,7 @@
                                             >{index + 1}.</span
                                         >
                                         <span class="answer-content"
-                                            >{alternativeAnswer}</span
+                                            >{@html alternativeAnswer}</span
                                         >
                                         <br />
                                     {/each}
@@ -443,7 +443,7 @@
                 {#each question.answers as answer}
                     {#if typeof answer !== "string"}
                         <span class="answer-label">({answer.index})</span>
-                        <span class="answer-content">{answer.answer}</span>
+                        <span class="answer-content">{@html answer.answer}</span>
                         <br />
                     {/if}
                 {/each}
@@ -485,27 +485,31 @@
 {/snippet}
 
 <div class="previewContainer">
-    <div class="topBar">
-        <div>
-            <span
-                style="font-size: 18px;font-family: PingFang FC;margin-left:20px"
-                >预览</span
-            >
-            <button
-                bind:this={closePanelBtn}
-                class="close-button"
-                onclick={closePanel}
-                style="visibility: {displayClosePanelBtn === false
-                    ? 'hidden'
-                    : 'visible'};">×</button
-            >
+    {#if showHeader}
+        <div class="topBar">
+            <div>
+                <span
+                    style="font-size: 18px;font-family: PingFang FC;margin-left:20px"
+                    >预览</span
+                >
+                <button
+                    bind:this={closePanelBtn}
+                    class="close-button"
+                    onclick={closePanel}
+                    style="visibility: {displayClosePanelBtn === false
+                        ? 'hidden'
+                        : 'visible'};">×</button
+                >
+            </div>
         </div>
-    </div>
+    {/if}
     <div class="content">
         <div class="questionBasic">
-            <span class="type">题型：{quesiton_type}</span>
-            <span class="difficulty">难度：{question_difficulty}</span>
-            <span class="score">分值：{question?.score}分</span>
+            {#if showHeader}
+                <span class="type">题型：{quesiton_type}</span>
+                <span class="difficulty">难度：{question_difficulty}</span>
+                <span class="score">分值：{question?.score}分</span>
+            {/if}
         </div>
 
         <div class="question-container">

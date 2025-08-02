@@ -9,11 +9,11 @@
     timerId,
     sidebarMouseEnter,
     sidebarMouseLeave,
+    getCookie,
   } from '$lib/stores/modules/layoutStore';
   import { onMount } from 'svelte';
 
-  let userInfo = $state(null); // 用户信息
-  let userName = '张三'; // 静态数据
+  let userInfo = $state(null);
   let isMenuOpen = $state(false); // 用户菜单是否打开
   let currentPath = $derived(page.url.pathname); // 当前页面路径
   let crumbArray = []; // url分割后的字段数组
@@ -48,7 +48,7 @@
           return isBasePathMatch && (isDynamicPath || currentPath === basePath);
         } else if (item.id === '[id]') {
           // 检查路径前缀部分是否相同
-          const basePath = '/teacher/practice/create/edit';
+          const basePath = '/teacher/practice/edit';
           const isBasePathMatch = currentPath.startsWith(basePath);
           const isDynamicPath = currentPath.split('/').length === basePath.split('/').length + 1;
 
@@ -70,7 +70,49 @@
     filterCrumbs = newFilterCrumbs;
   };
 
-  onMount(() => {
+  // 退出登录
+  const loginOut = () => {
+    // 清空 qNearSessions cookie
+    document.cookie = 'qNearSessions=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+
+    goto('/login');
+  };
+
+  // 获取用户信息
+  async function getUserInfo() {
+    // 获取 qNearSessions cookie
+    let qNearSessions = getCookie('qNearSessions');
+
+    // 获取用户信息
+    fetch(`/api/user/me?qNearSessions=${qNearSessions}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((res) => {
+        if (res.status !== 0) {
+          console.log('获取用户信息失败', res.msg || '获取用户信息失败，请重试');
+        } else {
+          userInfo = res.data;
+        }
+      })
+      .catch(() => {
+        console.log('获取用户信息失败', '网络错误，请检查网络连接后重试');
+      });
+  }
+
+  onMount(async () => {
+    // 获取用户信息
+    await getUserInfo();
+
     // 点击外部关闭菜单栏
     const handleClickOutside = (event) => {
       if (!event.target.closest('.header-container')) {
@@ -86,11 +128,11 @@
   <!-- 展开按钮 -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
-    class="sidebar-unflod-btn {$sidebarFoldingState ? '' : 'hide'}"
+    class="crumb-unflod-btn {$sidebarFoldingState ? '' : 'hide'}"
     onmouseenter={() => sidebarMouseEnter()}
     onmouseleave={() => sidebarMouseLeave()}
   >
-    <button class="sidebar-toggle-btn" onclick={() => toggleSidebar()}>
+    <button class="crumb-toggle-btn" onclick={() => toggleSidebar()}>
       <img src="/sidebar/unfold.svg" alt="展开侧边栏" />
     </button>
   </div>
@@ -109,7 +151,7 @@
 
   <!-- 用户信息 -->
   <div class="user-container">
-    <span class="welcome-text">{`你好，${userName}`}</span>
+    <span class="welcome-text">{`你好，${userInfo == undefined ? '' : userInfo.OfficialName}`}</span>
 
     <button class="avatar-btn" onclick={() => (isMenuOpen = !isMenuOpen)}>
       <img class="avatar-img" src="/user_icons/defaultAvatar.svg" alt="头像" />
@@ -124,7 +166,7 @@
   <div class="user-menu-container {isMenuOpen ? '' : 'hide'}">
     <button class="user-menu-item"> 个人中心 </button>
     <button class="user-menu-item"> 设置 </button>
-    <button class="user-menu-item logout"> 退出登录 </button>
+    <button class="user-menu-item logout" onclick={loginOut}> 退出登录 </button>
   </div>
 </div>
 
@@ -140,7 +182,7 @@
     justify-content: flex-start;
     align-items: center;
 
-    .sidebar-unflod-btn {
+    .crumb-unflod-btn {
       width: 50px;
       height: 50px;
       display: flex;
@@ -157,7 +199,7 @@
         background-color: #d1d1d1;
       }
 
-      .sidebar-toggle-btn {
+      .crumb-toggle-btn {
         all: unset;
         width: 30px;
         height: 30px;

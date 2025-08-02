@@ -6,6 +6,7 @@
   import { goto } from "$app/navigation";
   import { toast } from '$lib/components/Toast/Toast';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+  import { sget } from '$lib/utils/index.js';
 
   /**
    * @typedef {Object} ExamineeSession
@@ -68,7 +69,7 @@
   let exam_info = $state(null); // 考试信息
   let exam_sessions = $state([]); //考场
   let exam_id = $state(""); //考试id
-  let exam_session_id = $state(""); //考场id
+ // let exam_session_id = $state(""); //考场id
   let exam_notes = $state(""); // 考生须知内容
   let current_session = $state(0); // 当前考场
   let button_text = $state("等待考试开始"); // 按钮文本
@@ -94,7 +95,7 @@
       toast.success(`正在下载: ${file.file_name}`); // 显示下载成功提示
     } catch (error) {
       console.error("下载文件失败:", error);
-      toast.error("下载文件失败");
+      toast.error(`下载文件失败！${error.message || ''}`);
     }
   }
   async function downloadAllAttachments() { // 下载所有附件
@@ -126,9 +127,9 @@
         let session = exam_sessions[current_session];
 
         let now = new Date().getTime();
-        console.log("进入考试", session.StartTime, session.EndTime, now);
+  //      console.log("进入考试", session.StartTime, session.EndTime, now);
         await goto(
-          `/student/studentAnswerExam?examineeId=${session.ExamineeID}&examId=${session.ExamID}`
+          `/student/answer/exam/?exam-id=${exam_id}&exam-session-id=${session.ID}`
         );
       } catch (e) {
         console.log(e);
@@ -184,7 +185,7 @@
       })
       .catch(error => {
         console.error("获取考试状态失败:", error);
-        toast.error("获取考试状态失败");
+        toast.error(`获取考试状态失败！${error.message || ''}`, 2000);
       });
   }
   function nextSession() { //下一场
@@ -202,16 +203,15 @@
 
   $effect(() => { // 当current_session变化时，重新调用API获取考试状态
     if (exam_id && exam_sessions && exam_sessions.length > 0) {
-       fetchExamStatus(exam_session_id);
+       fetchExamStatus(exam_sessions[current_session].ID);
     }
   });
   
   onMount(async () => { //加载函数
     const params = page.url.searchParams;
     exam_id = params.get("exam-id");
-    exam_session_id=params.get("exam-session-id");
 
-    if (!exam_id || !exam_session_id) { // 检查参数是否存在
+    if (!exam_id ) { // 检查参数是否存在
       MessageBox({
         title: '未知路径',
          content: '未知路径',
@@ -240,24 +240,24 @@
         if (data.status !== 0) {
           throw new Error(data.Msg);
         } else {
-          title = data.data.examInfo.Name;
-          exam_notes = data.data.examInfo.Rules;
-          exam_info = data.data.examInfo;
-          exam_sessions = data.data.examSessions.map(session => ({
+          title = sget(data, "data.examInfo.Name", "无标题");
+          exam_notes = sget(data, "data.examInfo.Rules", "暂无规则说明");
+          exam_info = sget(data, "data.examInfo", {});
+          exam_sessions = sget(data, "data.examSessions", []).map(session => ({
             ...session,
-            StartTimeTimestamp: new Date(session.StartTime).getTime(),
-            EndTimeTimestamp: new Date(session.EndTime).getTime()
+            StartTimeTimestamp: new Date(sget(session, "StartTime", 0)).getTime(),
+            EndTimeTimestamp: new Date(sget(session, "EndTime", 0)).getTime()
           }));
         }
       })
       .catch(error => {
         console.error("Error fetching exam info:", error);
-        toast.error("获取考试信息失败");
+        toast.error(`获取考试信息失败！${error.message || ''}`, 2000);
         return;
       });
 
     if (exam_id && exam_sessions && exam_sessions.length > 0) { // 调用/api/student/exam/status接口查看当前状态
-      await fetchExamStatus(exam_session_id);
+      await fetchExamStatus(exam_sessions[current_session].ID);
     }
 
     if (exam_sessions && exam_sessions.length > 0) {

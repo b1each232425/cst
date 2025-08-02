@@ -3,7 +3,7 @@
   import Sidebar from '$lib/components/SideBar/SideBar.svelte';
   import Crumb from '$lib/components/Crumb/Crumb.svelte';
   import Brand from '$lib/components/Brand/Brand.svelte';
-  import { sidebarFoldingState } from '$lib/stores/modules/layoutStore';
+  import { sidebarFoldingState, navStore } from '$lib/stores/modules/layoutStore';
   import { fly } from 'svelte/transition';
   import { onMount } from 'svelte';
   let { children } = $props();
@@ -29,7 +29,7 @@
   </main>
 </div>
 
-<style lang="scss" scoped>
+<style lang="scss">
   .app {
     display: flex;
     position: fixed;
@@ -37,6 +37,7 @@
     left: 0;
     width: 100%;
     height: 100vh;
+    overflow: hidden;
 
     .sidebar-container {
       top: 0;
@@ -44,7 +45,7 @@
       width: auto;
       height: 100%;
       position: fixed;
-      z-index: 3;
+      z-index: 1000;
     }
 
     main {
@@ -52,46 +53,32 @@
       flex-direction: column;
       width: 100%;
       height: 100%;
-      overflow: hidden;
-      transition: margin-left 0.2s linear;
       margin-left: 235px;
+      transition: margin-left 0.2s linear;
 
       &.shrink {
         margin-left: 0;
       }
 
       header {
-        display: flex;
-        flex-direction: row;
         position: relative;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: max-content;
+        flex-shrink: 0; /* 禁止压缩 */
+        height: 50px;
         background-color: #f5f5f5;
-        z-index: 3;
+        z-index: 1001;
       }
 
       .content-container {
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        width: 100%;
-        height: 100%;
+        flex: 1;
+        overflow-y: auto;
         background-color: var(--bg-primary);
-        box-sizing: border-box;
         padding: 30px;
       }
 
       footer {
-        display: flex;
-        position: relative;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 52px;
+        flex-shrink: 0;
+        height: 50px;
         background-color: #f5f5f5;
-        text-align: center;
       }
     }
   }

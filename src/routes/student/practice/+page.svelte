@@ -272,7 +272,7 @@
   //     Type: '00',
   //     AttemptCount: 1,
   //     Difficulty: '04',
-  //     AllowedAttempts: 3,
+  //     AllowedAttempts: 0,
   //     QuestionCount: 15,
   //     WrongCount: 5,
   //     TotalScore: 92,
@@ -335,10 +335,10 @@
     }
 
     // 已提交但未批改（本次作答未批改，不能进行下一次作答）（这里并不能确定是不是第一次作答）
-    if (TotalScore === null) return '06';
+    if (TotalScore === null && TotalScore !== 0) return '06';
 
-    // 达到最大尝试次数
-    if (AttemptCount >= AllowedAttempts) return '08';
+    // 达到最大尝试次数（AllowedAttempts <= 0 表示可以无限作答）
+    if (AllowedAttempts > 0 && AttemptCount >= AllowedAttempts) return '08';
 
     // 正常可重新作答
     return '02';
@@ -365,8 +365,10 @@
 
   // 处理对应操作
   function handleAction(action, index, practiceID) {
-    const handler = actionHandlers[action];
-    handler(index, practiceID);
+    if (action && actionMap.has(action)) {
+      const handler = actionHandlers[action];
+      handler(index, practiceID);
+    }
   }
 
   // 练习列表
@@ -376,7 +378,7 @@
   // 获取练习列表
   function getPracticeList(q) {
     fetch(
-      `/api/practiceS?name=${q.name}&difficulty=${q.difficulty}&page=${q.page}&page_size=${q.pageSize}&type=${q.type}`,
+      `/api/practice?name=${q.name}&difficulty=${q.difficulty}&page=${q.page}&page_size=${q.pageSize}&type=${q.type}`,
     )
       .then((res) => {
         if (!res.ok) throw new Error('请求失败');
@@ -511,7 +513,7 @@
                 class:unknown={!difficultyMap.has(practice.Difficulty)}
                 >{difficultyMap.get(practice.Difficulty) ?? '未知'}</td
               >
-              <td>{practice.AllowedAttempts}</td>
+              <td>{practice.AllowedAttempts === 0 ? '不限次数' : practice.AllowedAttempts}</td>
               {#if currentPracticeTypeTab === '00'}
                 <td>{practice.QuestionCount}</td>
                 <td
@@ -555,7 +557,7 @@
                 >{#each actionMap.get(practice.Action) as action, index (index)}
                   <button
                     class="option"
-                    class:can-click={practice.Action !== '06'}
+                    class:can-click={practice.Action && actionMap.has(practice.Action) && practice.Action !== '06'}
                     onclick={() => handleAction(practice.Action, index, practice.ID)}>{action}</button
                   >{/each}</td
               >
