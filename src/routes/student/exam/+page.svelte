@@ -12,6 +12,207 @@
   import Dialog from '../answer/_component/Dialog.svelte';
   import { formatTimestamp } from '$lib/utils/time_utils';
 
+  // mock 数据
+  // const mockExam = [
+  //   {
+  //     id: 5,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '04',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '06',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '00', // 存在进行中 => 进入考试
+  //   },
+  //   {
+  //     id: 6,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02', // 既不是可进入也不是全 no-op => 查看试卷
+  //   },
+  //   {
+  //     id: 7,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '08',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: null, // 全部批改中 => 无操作
+  //   },
+  //   {
+  //     id: 8,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '02',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02', // 查看试卷
+  //   },
+  //   {
+  //     id: 9,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '06',
+  //         examinee_status: '04',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: null, // 全部已结束 => 无操作
+  //   },
+  //   {
+  //     id: 12,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02',
+  //   },
+  //   {
+  //     id: 15,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02',
+  //   },
+  //   {
+  //     id: 16,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02',
+  //   },
+  //   {
+  //     id: 17,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 55,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02',
+  //   },
+  //   {
+  //     id: 18,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02',
+  //   },
+  //   {
+  //     id: 19,
+  //     name: 'H34',
+  //     exam_sessions: [
+  //       {
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         session_num: '001',
+  //         paper_name: '语文试卷A',
+  //         status: '10',
+  //         examinee_status: '00',
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //     action: '02',
+  //   },
+  // ];
+
   // 日期选择器对象
   let datePicker = null;
 
@@ -34,196 +235,24 @@
     ['10', '已交卷'],
   ]);
 
-  // mock 数据
-  // const mockExam = [
-  //   {
-  //     id: 5,
-  //     name: 'H34',
-  //     exam_sessions: [
-  //       {
-  //         id: 201,
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         session_num: '001',
-  //         paper_name: '语文试卷A',
-  //         status: '04',
-  //         examinee_status: '00',
-  //         student_score: 92,
-  //         total_score: 100,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: 6,
-  //     name: 'H34',
-  //     exam_sessions: [
-  //       {
-  //         id: 201,
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         session_num: '001',
-  //         paper_name: '语文试卷A',
-  //         status: '10',
-  //         examinee_status: '00',
-  //         student_score: 92,
-  //         total_score: 100,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: 7,
-  //     name: 'H34',
-  //     exam_sessions: [
-  //       {
-  //         id: 201,
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         session_num: '001',
-  //         paper_name: '语文试卷A',
-  //         status: '08',
-  //         examinee_status: '00',
-  //         student_score: 92,
-  //         total_score: 100,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: 8,
-  //     name: 'H34',
-  //     exam_sessions: [
-  //       {
-  //         id: 201,
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         session_num: '001',
-  //         paper_name: '语文试卷A',
-  //         status: '10',
-  //         examinee_status: '02',
-  //         student_score: 92,
-  //         total_score: 100,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: 9,
-  //     name: 'H34',
-  //     exam_sessions: [
-  //       {
-  //         id: 201,
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         session_num: '001',
-  //         paper_name: '语文试卷A',
-  //         status: '06',
-  //         examinee_status: '04',
-  //         student_score: 92,
-  //         total_score: 100,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: 12,
-  //     name: 'H34',
-  //     exam_sessions: [
-  //       {
-  //         id: 201,
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         session_num: '001',
-  //         paper_name: '语文试卷A',
-  //         status: '10',
-  //         examinee_status: '00',
-  //         student_score: 92,
-  //         total_score: 100,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: 15,
-  //     name: 'H34',
-  //     exam_sessions: [
-  //       {
-  //         id: 201,
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         session_num: '001',
-  //         paper_name: '语文试卷A',
-  //         status: '10',
-  //         examinee_status: '00',
-  //         student_score: 92,
-  //         total_score: 100,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: 16,
-  //     name: 'H34',
-  //     exam_sessions: [
-  //       {
-  //         id: 201,
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         session_num: '001',
-  //         paper_name: '语文试卷A',
-  //         status: '10',
-  //         examinee_status: '00',
-  //         student_score: 92,
-  //         total_score: 100,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: 17,
-  //     name: 'H34',
-  //     exam_sessions: [
-  //       {
-  //         id: 201,
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         session_num: '001',
-  //         paper_name: '语文试卷A',
-  //         status: '10',
-  //         examinee_status: '00',
-  //         student_score: 55,
-  //         total_score: 100,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: 18,
-  //     name: 'H34',
-  //     exam_sessions: [
-  //       {
-  //         id: 201,
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         session_num: '001',
-  //         paper_name: '语文试卷A',
-  //         status: '10',
-  //         examinee_status: '00',
-  //         student_score: 92,
-  //         total_score: 100,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: 19,
-  //     name: 'H34',
-  //     exam_sessions: [
-  //       {
-  //         id: 201,
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         session_num: '001',
-  //         paper_name: '语文试卷A',
-  //         status: '10',
-  //         examinee_status: '00',
-  //         student_score: 92,
-  //         total_score: 100,
-  //       },
-  //     ],
-  //   },
-  // ];
+  // 操作映射表
+  const actionMap = new Map([
+    ['00', '进入考试'],
+    ['02', '查看试卷'],
+  ]);
+
+  const actionHandlers = {
+    '00': (examId) => gotoExamDetail(examId),
+    '02': () => gotoExamResult(),
+  };
+
+  // 处理对应操作
+  function handleAction(action, examId) {
+    if (action && actionMap.has(action)) {
+      const handler = actionHandlers[action];
+      handler(examId);
+    }
+  }
 
   // 是否已经批改好
   function isMarked(status) {
@@ -255,13 +284,13 @@
   }
 
   // 前往考试详情页进行考试
-  function gotoExamDetail(examId, examSessionId) {
-    goto(`/student/answer/exam-detail?exam-id=${examId}&exam-session-id=${examSessionId}`);
+  function gotoExamDetail(examId) {
+    goto(`/student/answer/exam-detail?exam-id=${examId}`);
   }
 
   // 获取考试列表
   function getExamList(q) {
-    fetch(`/api/exam/list?q=${q}&role=1`)
+    fetch(`/api/exam/list?q=${q}`)
       .then((res) => {
         if (!res.ok) throw new Error('请求失败');
         return res.json();
@@ -270,6 +299,22 @@
         if (!res.status) {
           examList = res.data ?? [];
           totalCount = res.rowCount ?? 0;
+
+          // 计算每个考试的 action，用于判断在表格中的操作类型
+          examList.forEach((exam) => {
+            // 如果某个 session 是 “已结束” 或 “批改中”，这类 session 本身不能做任何操作
+            // 但只要存在一个可以进入考试的 session（状态 02 或 04），整个 exam 还是可以“进入考试”
+            const sessions = Array.isArray(exam.exam_sessions) ? exam.exam_sessions : [];
+
+            const hasEnterable = sessions.some((s) => s.status === '02' || s.status === '04');
+            const allSessionsNoOp = sessions.every((s) => s.status === '06' || s.status === '08');
+
+            if (allSessionsNoOp)
+              exam.action = null; // 全部都是不可操作的（比如都已结束/批改中），清空 action
+            else if (hasEnterable)
+              exam.action = '00'; // 进入考试 // 存在一个可以进入的场次
+            else exam.action = '02'; // 查看试卷 // 没有可进入的，但不是全部不可操作（可能是已提交/已批改之类）
+          });
         } else throw new Error(res.msg ?? '获取考试列表失败');
       })
       .catch((err) => {
@@ -381,50 +426,90 @@
       </thead>
       <tbody>
         {#each examList as exam (exam.id)}
-          {#each exam.exam_sessions as { id, paper_name, start_time, end_time, status, examinee_status, student_score, total_score } (id)}
-            <tr>
-              <td>{exam.name}</td>
-              <td>{paper_name}</td>
-              <td>{formatTimestamp(start_time)}~{formatTimestamp(end_time)}</td>
-              <td
-                class="status"
-                class:incoming={status === '02'}
-                class:underway={status === '04'}
-                class:ended={status === '06'}
-                class:marking={status === '08'}
-                class:marked={status === '10'}
-                class:submitted={status === '12'}
-                class:unknown={!statusMap.has(status)}>{statusMap.get(status) ?? '未知状态'}</td
-              >
-              <td class:unknown={examinee_status !== '00' && examinee_status !== '10'}
-                >{examineeStatusMap.get(examinee_status) ?? '未知状态'}</td
-              >
-              <td>{total_score}</td>
-              <td
-                class="score"
-                class:pass={isMarked(status) && isPass(student_score, total_score)}
-                class:failed={isMarked(status) && !isPass(student_score, total_score)}
-                >{isMarked(status) ? student_score : '--'}</td
-              >
-              <td
-                class="score"
-                class:pass={isMarked(status) && isPass(student_score, total_score)}
-                class:failed={isMarked(status) && !isPass(student_score, total_score)}
-              >
-                {isMarked(status) ? (isPass(student_score, total_score) ? '已通过' : '未通过') : '--'}
-              </td>
-              <td
-                >{#if status === '02' || status === '04'}<button class="option" onclick={gotoExamDetail(exam.id, id)}
-                    >进入考试</button
+          <tr>
+            <td>{exam.name}</td>
+            <td
+              ><div class="stack">
+                {#each exam.exam_sessions as { paper_name }, index (index)}
+                  <span>{paper_name}</span>
+                {/each}
+              </div></td
+            >
+            <td
+              ><div class="stack">
+                {#each exam.exam_sessions as { start_time, end_time }, index (index)}
+                  <span>{formatTimestamp(start_time)} ~ {formatTimestamp(end_time)}</span>
+                {/each}
+              </div></td
+            >
+            <td
+              ><div class="stack">
+                {#each exam.exam_sessions as { status }, index (index)}
+                  <span
+                    class="status"
+                    class:incoming={status === '02'}
+                    class:underway={status === '04'}
+                    class:ended={status === '06'}
+                    class:marking={status === '08'}
+                    class:marked={status === '10'}
+                    class:submitted={status === '12'}
+                    class:unknown={!statusMap.has(status)}>{statusMap.get(status) ?? '未知状态'}</span
                   >
-                {:else if status === '10' || status === '12'}
-                  <button class="option" onclick={gotoExamResult}>查看试卷</button>
-                {:else}
-                  --
-                {/if}</td
+                {/each}
+              </div></td
+            >
+            <td
+              ><div class="stack">
+                {#each exam.exam_sessions as { examinee_status }, index (index)}
+                  <span class:unknown={examinee_status !== '00' && examinee_status !== '10'}
+                    >{examineeStatusMap.get(examinee_status) ?? '未知状态'}</span
+                  >
+                {/each}
+              </div></td
+            >
+            <td
+              ><div class="stack">
+                {#each exam.exam_sessions as { total_score }, index (index)}
+                  <span> {total_score}</span>
+                {/each}
+              </div></td
+            >
+            <td>
+              <!-- TODO 应该是一个考试只有一个成绩结果 -->
+              <div class="stack">
+                {#each exam.exam_sessions as { status, student_score, total_score }, index (index)}
+                  <span
+                    class="score"
+                    class:pass={isMarked(status) && isPass(student_score, total_score)}
+                    class:failed={isMarked(status) && !isPass(student_score, total_score)}
+                    >{isMarked(status) ? student_score : '--'}</span
+                  >
+                {/each}
+              </div></td
+            >
+            <td>
+              <div class="stack">
+                {#each exam.exam_sessions as { status, student_score, total_score }, index (index)}
+                  <span
+                    class="score is-pass"
+                    class:pass={isMarked(status) && isPass(student_score, total_score)}
+                    class:failed={isMarked(status) && !isPass(student_score, total_score)}
+                  >
+                    {isMarked(status) ? (isPass(student_score, total_score) ? '已通过' : '未通过') : '--'}</span
+                  >
+                {/each}
+              </div>
+            </td>
+            <td>
+              <button
+                class="option"
+                class:can-click={exam.action && actionMap.has(exam.action)}
+                onclick={() => handleAction(exam.action, exam.id)}
               >
-            </tr>
-          {/each}
+                {actionMap.has(exam.action) ? actionMap.get(exam.action) : '--'}</button
+              >
+            </td>
+          </tr>
         {/each}
       </tbody>
     </table>
@@ -505,44 +590,67 @@
               font-size: 0.9rem;
               text-align: center;
               vertical-align: middle;
+              padding: 5px 0;
 
-              $status-color: (
-                'incoming': #ff8100,
-                'underway': #39bb4c,
-                'ended': #787d81,
-                'marking': #c6690b,
-                'marked': #027213,
-                'submitted': #0052d9,
-              );
+              .stack {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: center; // 需要时
 
-              &.status {
-                @each $name, $color in $status-color {
-                  &.#{$name} {
-                    color: $color;
+                span {
+                  $status-color: (
+                    'incoming': #ff8100,
+                    'underway': #39bb4c,
+                    'ended': #787d81,
+                    'marking': #c6690b,
+                    'marked': #027213,
+                    'submitted': #0052d9,
+                  );
+
+                  &.status {
+                    @each $name, $color in $status-color {
+                      &.#{$name} {
+                        color: $color;
+                      }
+                    }
                   }
-                }
-              }
 
-              &.unknown {
-                color: #f55151;
-              }
+                  &.unknown {
+                    color: #f55151;
+                  }
 
-              &.score {
-                &.pass {
-                  color: #197f29;
-                }
-                &.failed {
-                  color: #f55151;
+                  &.score {
+                    &.pass {
+                      color: green;
+                      &.is-pass {
+                        border: 0.5px solid green;
+                        border-radius: 5px;
+                        padding: 0.05rem 0.1rem;
+                        background: #e6f9e6;
+                      }
+                    }
+                    &.failed {
+                      color: red;
+
+                      &.is-pass {
+                        border: 0.5px solid red;
+                        border-radius: 5px;
+                        padding: 0.05rem 0.1rem;
+                        background: #ffe6e6;
+                      }
+                    }
+                  }
                 }
               }
 
               .option {
                 border: 0;
                 background-color: white;
-                cursor: pointer;
                 color: blue;
 
-                &:hover {
+                &.can-click:hover {
+                  cursor: pointer;
                   font-weight: bold;
                 }
               }
