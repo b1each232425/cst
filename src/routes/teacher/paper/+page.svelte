@@ -601,7 +601,7 @@
             })
             .finally(() => {
                 isLoading = false;
-                console.log(paperList)
+                // console.log(paperList)
             });
     }, 1000, false);
 

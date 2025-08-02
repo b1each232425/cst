@@ -183,7 +183,7 @@
             ).then( result => {
                 questionList = result.data;
                 totalQuestions = result.rowCount;
-                console.log(questionList);
+                // console.log(questionList);
             }).finally(()=>{
                 isLoading = false;
             });
