@@ -3,7 +3,7 @@
   import Sidebar from '$lib/components/SideBar/SideBar.svelte';
   import Crumb from '$lib/components/Crumb/Crumb.svelte';
   import Brand from '$lib/components/Brand/Brand.svelte';
-  import { sidebarFoldingState } from '$lib/stores/modules/layoutStore';
+  import { sidebarFoldingState, navStore } from '$lib/stores/modules/layoutStore';
   import { fly } from 'svelte/transition';
   import { onMount } from 'svelte';
   let { children } = $props();
@@ -44,7 +44,7 @@
       width: auto;
       height: 100%;
       position: fixed;
-      z-index: 3;
+      z-index: 1000;
     }
 
     main {
@@ -69,7 +69,7 @@
         width: 100%;
         height: max-content;
         background-color: #f5f5f5;
-        z-index: 3;
+        z-index: 1001;
       }
 
       .content-container {

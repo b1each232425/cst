@@ -249,12 +249,12 @@
   let page = $state(1);
   let pageSize = $state(10);
 
-  // TODO：前往考试
-  function gotoExam(id) {
-    goto('/student/');
+  // 前往考试批改后的页面
+  function gotoExamResult(id) {
+    // goto('/student/');
   }
 
-  // 前往考试详情页
+  // 前往考试详情页进行考试
   function gotoExamDetail(examId, examSessionId) {
     goto(`/student/answer/exam-detail?exam-id=${examId}&exam-session-id=${examSessionId}`);
   }
@@ -414,9 +414,11 @@
                 {isMarked(status) ? (isPass(student_score, total_score) ? '已通过' : '未通过') : '--'}
               </td>
               <td
-                >{#if status === '04'}<button class="option" onclick={gotoExam}>进入考试</button>
+                >{#if status === '02' || status === '04'}<button class="option" onclick={gotoExamDetail(exam.id, id)}
+                    >进入考试</button
+                  >
                 {:else if status === '10' || status === '12'}
-                  <button class="option" onclick={gotoExamDetail(exam.id, id)}>查看试卷</button>
+                  <button class="option" onclick={gotoExamResult}>查看试卷</button>
                 {:else}
                   --
                 {/if}</td

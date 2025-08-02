@@ -5,16 +5,8 @@
   import { fly } from "svelte/transition";
   import { goto } from "$app/navigation";
   import { toast } from '$lib/components/Toast/Toast';
-
-  // 附件区域是否展开
-  let isAttachmentExpanded = $state(false);
-  // 是否显示展开按钮
-  let showExpandButton = $state(false);
-  // 附件容器引用
-  /**
-   * @type {HTMLDivElement}
-   */
-  let attachmentContainer;
+  import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+  import { sget } from '$lib/utils/index.js';
 
   /**
    * @typedef {Object} ExamineeSession
@@ -31,9 +23,9 @@
    * @property {number} EarlySubmissionTime - 最早可交卷时间（单位：分钟）
    * @property {number} StartTimeTimestamp - 开始时间戳
    * @property {number} EndTimeTimestamp - 结束时间戳
-   */
+   *
 
-  /**
+   *
    * 文件信息对象
    * @typedef {Object} FileInfo
    * @property {string} save_path - 文件在服务器保存的相对位置
@@ -41,212 +33,85 @@
    * @property {string} save_path - 文件在服务器上的保存路径，用于下载
    * @property {string} storage_name - 文件在存储系统中的名称
    * @property {string} upload_time - 文件的上传时间，格式为ISO字符串
-   */
+   *
 
-   // 考试标题
-  let title = $state("");
-
-  // 考试信息
-  let exam_info = $state(null);
-
-  /**
+   *
    * 考试场次信息
    * @type {ExamineeSession[]}
-   */
-
-  let exam_sessions = $state([]);
-
-  /**
+   *
+   *
    * 获取考试信息
    * @type {string | null}
-   */
+   *
 
-  let exam_id = $state("");
-
-  let exam_session_id = $state("");
-
-  // 考生须知内容
-  let exam_notes = $state(0);
-
-
-  let current_session = $state(0);
-
-  let button_text = $state("等待考试开始");
-
-  let pre_text = $state("<<上一场");
-
-  let flyDirection = $state(1); // 1代表下一场（向左飞入），-1代表上一场（向右飞入）
-
-
-  //下一场
-  function nextSession() {
-    if (current_session < exam_sessions.length - 1) {
-      flyDirection = 1; // 下一场，往左飞
-      current_session++;
-    }
-  }
-
-
-  //上一场
-  function prevSession() {
-    if (current_session > 0) {
-      flyDirection = -1; // 上一场，往右飞
-      current_session--;
-    }
-  }
-
-  /**
+   *
    * 下载考试附件
    * @param {FileInfo} file - 文件信息对象
+   *
+
+   * attachmentContainer
+   * @type {HTMLDivElement}
+   *
+
+   *
+   * 获取考试状态并设置按钮文本 function fetchExamStatus
+   * @param {string|number} exam_id - 考试ID
+   * @param {number} examinee_id - 考生ID
+   * @returns {Promise<void>}
+   *
+
+   *
+   * 下载文件
+   * @param {{ save_path: string, file_name: string }} file
    */
-  async function downloadAttachment(file) {
+
+  let title = $state(""); // 考试标题
+  let exam_info = $state(null); // 考试信息
+  let exam_sessions = $state([]); //考场
+  let exam_id = $state(""); //考试id
+ // let exam_session_id = $state(""); //考场id
+  let exam_notes = $state(""); // 考生须知内容
+  let current_session = $state(0); // 当前考场
+  let button_text = $state("等待考试开始"); // 按钮文本
+  let pre_text = $state("<<上一场"); // 上一场文本
+  let flyDirection = $state(1); // 1代表下一场（向左飞入），-1代表上一场（向右飞入）
+  let isAttachmentExpanded = $state(false); // 附件区域是否展开
+  let showExpandButton = $state(false); // 是否显示展开按钮
+  let attachmentContainer = $state(null); // 附件容器引用
+  
+  //文件下载类  
+  async function downloadAttachment(file) { // 使用文件的save_path构建下载URL
     try {
-      // 使用文件的save_path构建下载URL
       const downloadUrl = `/api/files/${file.save_path}`;
-
- //     console.log("downloadUrl:", downloadUrl);
-
-      // 创建一个a标签来触发下载
-      const a = document.createElement("a");
+      const a = document.createElement("a"); // 创建一个a标签来触发下载
       a.href = downloadUrl;
-      // 使用原始文件名
-      a.download = file.file_name;
-      //防止跳转到新窗口
-      a.target = "_blank";
-
-      // 添加到DOM并触发点击
-      document.body.appendChild(a);
+      a.download = file.file_name; // 使用原始文件名
+      a.target = "_blank"; //防止跳转到新窗口
+      document.body.appendChild(a); // 添加到DOM并触发点击
       a.click();
-
-      // 清理DOM
-      setTimeout(() => {
+      setTimeout(() => { // 清理DOM
         document.body.removeChild(a);
       }, 100);
-
-      // 显示下载成功提示
-      toast.success(`正在下载: ${file.file_name}`);
+      toast.success(`正在下载: ${file.file_name}`); // 显示下载成功提示
     } catch (error) {
       console.error("下载文件失败:", error);
       toast.error("下载文件失败");
     }
   }
-  /**
-   * 下载所有附件
-   */
-  async function downloadAllAttachments() {
+  async function downloadAllAttachments() { // 下载所有附件
     if (!exam_info?.Files || exam_info.Files.length === 0) {
       toast.error("没有可下载的附件");
       return;
     }
-
-    // 遍历所有文件并下载
-    for (const file of exam_info.Files) {
+    for (const file of exam_info.Files) { // 遍历所有文件并下载
       await downloadAttachment(file);
-      // 添加小延迟，避免浏览器同时触发太多下载
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300)); // 添加小延迟，避免浏览器同时触发太多下载
     }
   }
+  function downloadFile(file) { //下载文件
+    const url = `/api/files/${file.save_path}`; // 拼接文件 URL
 
-
-
-  //进入考试
-  async function clickButton() {
-    if (button_text === "进入考试") {
-      try {
-        let session = exam_sessions[current_session];
-
-        let now = new Date().getTime();
-        console.log("进入考试", session.StartTime, session.EndTime, now);
-        await goto(
-          `/student/studentAnswerExam?examineeId=${session.ExamineeID}&examId=${session.ExamID}`
-        );
-      } catch (e) {
-        console.log(e);
-      }
-    }
-  }
-
-  //返回考试列表
-  async function backToExamList() {
-    window.location.href = "/student/exam";
-  }
-
-  /**
-   * 获取考试状态并设置按钮文本
-   * @param {string|number} exam_id - 考试ID
-   * @param {number} examinee_id - 考生ID
-   * @returns {Promise<void>}
-   */
-  async function fetchExamStatus(exam_session_id) {
-    try {
-      const response = await fetch(
-        `/api/respondent/exam/status?exam_session_id=${exam_session_id}`,
-        {
-          method: "GET",
-        }
-      );
-
-      if (!response.ok) {
-        let error_text = await response.text();
-        throw new Error(`获取考试状态失败: ${error_text}`);
-      }
-
-      const data = await response.json();
-      if (data.status !== 0) {
-        throw new Error(`获取考试状态失败: ${data.msg}`);
-      }
-
-      // 根据返回的状态设置button_text
-      // StartTimeNotArrived = 1: 考试开始时间未到
-      // EndTimeArrived = 2: 考试结束时间已到
-      // ExamSubmitted = 3: 考试已提交
-      // LastEntryTimeArrived = 4: 最晚进入时间已到
-      // ExamCanBeEnter = 5: 考试可以进入
-      const examStatus = data.data;
-      console.log("examStatus:", examStatus);
-      switch (examStatus) {
-        case 1: // StartTimeNotArrived
-          button_text = "等待考试开始";
-          break;
-        case 2: // EndTimeArrived
-          button_text = "考试已结束";
-          break;
-        case 3: // ExamSubmitted
-          button_text = "考试已提交";
-          break;
-        case 4: // LastEntryTimeArrived
-          button_text = "进入考试时间已过";
-          break;
-        case 5: // ExamCanBeEnter
-          button_text = "进入考试";
-          break;
-        default:
-          button_text = "等待考试开始";
-      }
-
-      return examStatus;
-    } catch (error) {
-      console.error("获取考试状态失败:", error);
-      toast.error("获取考试状态失败");
-    }
-  }
-
-  $effect(() => {
-    // 当current_session变化时，重新调用API获取考试状态
-    if (exam_id && exam_sessions && exam_sessions.length > 0) {
-       fetchExamStatus(exam_session_id);
-    }
-  });
-  /**
-   * 下载文件
-   * @param {{ save_path: string, file_name: string }} file
-   */
-  function downloadFile(file) {
-    // 拼接文件 URL
-    const url = `/api/files/${file.save_path}`;
-
-    // 创建 a 标签触发下载
-    const a = document.createElement("a");
+    const a = document.createElement("a"); // 创建 a 标签触发下载
     a.href = url;
     a.download = file.file_name || "downloaded_file";
     document.body.appendChild(a);
@@ -254,129 +119,145 @@
 
     document.body.removeChild(a);
   }
-/*
-// 静态模拟数据
-  const staticData = {
-    "status": "0",
-    "API": "/api/exam",
-    "method": "GET",
-    "data": {
-      "examinee": [1575, 1578, 1582],
-      "examInfo": {
-        "Files": [
-          {
-            "Name": "附件1.pdf",
-            "Url": "files/attachment1.pdf"
-          },
-          {
-            "Name": "附件2.docx",
-            "Url": "files/attachment2.docx"
-          }
-        ],
-        "Mode": "线上",
-        "Name": "期末考试",
-        "Rules": "请提前10分钟进入考场，考试期间禁止切屏。",
-        "Type": "闭卷"
-      },
-      "examRooms": {
-        "capacity": 50,
-        "invigilator_count": 2,
-        "roomID": 101
-      },
-      "examSessions": [
-        {
-          "Duration": 120,
-          "EarlySubmissionTime": 30,
-          "EndTime": 1725000000000,
-          "LateEntryTime": 15,
-          "MarkMethod": "自动",
-          "MarkMode": "标准",
-          "NameVisibilityIn": true,
-          "PaperID": 1001,
-          "PeriodMode": "00",
-          "QuestionShuffledMode": "random",
-          "ReviewerIds": [201, 202],
-          "SessionNum": 1,
-          "StartTime": 1724996400000
-        },
-        {
-          "Duration": 90,
-          "EarlySubmissionTime": 20,
-          "EndTime": 1725086400000,
-          "LateEntryTime": 10,
-          "MarkMethod": "人工",
-          "MarkMode": "灵活",
-          "NameVisibilityIn": false,
-          "PaperID": 1002,
-          "PeriodMode": "01",
-          "QuestionShuffledMode": "none",
-          "ReviewerIds": [203],
-          "SessionNum": 2,
-          "StartTime": 1725082800000
-        }
-      ],
-      "invigilators": [301, 302],
-      "timeStamp": 1724990000000
-    }
-  };
 
-   title = staticData.data.examInfo.Name;
-           exam_notes = staticData.data.examInfo.Rules;
-           exam_info = staticData.data.examInfo;
-            exam_sessions = staticData.data.examSessions.map(session => ({
-              ...session,
-              StartTimeTimestamp: session.StartTime,
-              EndTimeTimestamp: session.EndTime
-            }));*/
+  //按钮逻辑类
+  async function clickButton() { //进入考试
+    if (button_text === "进入考试") {
+      try {
+        let session = exam_sessions[current_session];
+
+        let now = new Date().getTime();
+  //      console.log("进入考试", session.StartTime, session.EndTime, now);
+        await goto(
+          `/student/answer/exam/?exam-id=${exam_id}&exam-session-id=${session.ID}`
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  }
+  async function backToExamList() { //返回考试列表
+    window.location.href = "/student/exam";
+  }
+  function fetchExamStatus(exam_session_id) { // 获取考试状态并且设置按钮文本
+    return fetch(`/api/respondent/exam/status?exam_session_id=${exam_session_id}`, {
+      method: "GET",
+    })
+      .then(response => {
+        if (!response.ok) {
+          return response.text().then(error_text => {
+            throw new Error(`获取考试状态失败: ${error_text}`);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.status !== 0) {
+          throw new Error(`获取考试状态失败: ${data.msg}`);
+        }
+        // 根据返回的状态设置button_text
+        // StartTimeNotArrived = 1: 考试开始时间未到
+        // EndTimeArrived = 2: 考试结束时间已到
+        // ExamSubmitted = 3: 考试已提交
+        // LastEntryTimeArrived = 4: 最晚进入时间已到
+        // ExamCanBeEnter = 5: 考试可以进入
+        const examStatus = data.data;
+        switch (examStatus) {
+          case 1:
+            button_text = "等待考试开始";
+            break;
+          case 2:
+            button_text = "考试已结束";
+            break;
+          case 3:
+            button_text = "考试已提交";
+            break;
+          case 4:
+            button_text = "进入考试时间已过";
+            break;
+          case 5:
+            button_text = "进入考试";
+            break;
+          default:
+            button_text = "等待考试开始";
+        }
+        return examStatus;
+      })
+      .catch(error => {
+        console.error("获取考试状态失败:", error);
+        toast.error("获取考试状态失败");
+      });
+  }
+  function nextSession() { //下一场
+    if (current_session < exam_sessions.length - 1) {
+      flyDirection = 1; // 下一场，往左飞
+      current_session++;
+    }
+  }
+  function prevSession() {  //上一场
+    if (current_session > 0) {
+      flyDirection = -1; // 上一场，往右飞
+      current_session--;
+    }
+  }
+
+  $effect(() => { // 当current_session变化时，重新调用API获取考试状态
+    if (exam_id && exam_sessions && exam_sessions.length > 0) {
+       fetchExamStatus(exam_sessions[current_session].ID);
+    }
+  });
   
-  onMount(async () => {
+  onMount(async () => { //加载函数
     const params = page.url.searchParams;
     exam_id = params.get("exam-id");
-    exam_session_id=params.get("exam-session-id");
 
-    console.log("exam_id:", exam_id);
-    console.log("exam_session_id:", exam_session_id);
-
-
-    if (!exam_id) {
-      alert("exam_id is null");
+    if (!exam_id ) { // 检查参数是否存在
+      MessageBox({
+        title: '未知路径',
+         content: '未知路径',
+        show_cancel_button: false,
+          onConfirm: () => {
+             goto("/student/exam"); 
+        },
+      });
       return;
     }
-    try {
-      const response = await fetch(`/api/exam?exam_id=${exam_id}`, {
-        method: "GET",
-        credentials: "include"
-      });
-      if (response.ok) {
-        const data = await response.json();
+
+    fetch(`/api/exam?exam_id=${exam_id}`, {
+      method: "GET",
+      credentials: "include"
+    })
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          return response.text().then(err_text => {
+            throw new Error(`Failed to fetch exam info: ${err_text}`);
+          });
+        }
+      })
+      .then(data => {
         if (data.status !== 0) {
           throw new Error(data.Msg);
         } else {
-            title = data.data.examInfo.Name;
-            exam_notes = data.data.examInfo.Rules;
-            exam_info = data.data.examInfo;
-            exam_sessions = data.data.examSessions.map(session => ({
-              ...session,
-              StartTimeTimestamp: new Date(session.StartTime).getTime(),
-              EndTimeTimestamp: new Date(session.EndTime).getTime()
-            }));
+          title = sget(data, "data.examInfo.Name", "无标题");
+          exam_notes = sget(data, "data.examInfo.Rules", "暂无规则说明");
+          exam_info = sget(data, "data.examInfo", {});
+          exam_sessions = sget(data, "data.examSessions", []).map(session => ({
+            ...session,
+            StartTimeTimestamp: new Date(sget(session, "StartTime", 0)).getTime(),
+            EndTimeTimestamp: new Date(sget(session, "EndTime", 0)).getTime()
+          }));
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching exam info:", error);
+        toast.error("获取考试信息失败");
+        return;
+      });
 
-
-          
-           }
-      } else {
-        let err_text = await response.text();
-        throw new Error(`Failed to fetch exam info: ${err_text}`);
-      }
-    } catch (error) {
-      console.error("Error fetching exam info:", error);
-      toast.error("获取考试信息失败");
-      return;
-    }
-
-    // 调用/api/student/exam/status接口查看当前状态
-    if (exam_id && exam_sessions && exam_sessions.length > 0) {
-      await fetchExamStatus(exam_session_id);
+    if (exam_id && exam_sessions && exam_sessions.length > 0) { // 调用/api/student/exam/status接口查看当前状态
+      await fetchExamStatus(exam_sessions[current_session].ID);
     }
 
     if (exam_sessions && exam_sessions.length > 0) {
@@ -387,61 +268,41 @@
       let hasOngoingSession = false;
       let ongoingSessionIndex = 0;
 
-      // 首先检查是否有正在进行中的考试
-      exam_sessions.forEach((session, index) => {
-        // 检查是否所有考试都已结束
-        if (now <= session.EndTimeTimestamp) {
+      
+      exam_sessions.forEach((session, index) => { // 首先检查是否有正在进行中的考试
+        if (now <= session.EndTimeTimestamp) { // 检查是否所有考试都已结束
           allEnded = false;
         }
-
-        // 检查是否有正在进行中的考试（开始时间已过，结束时间未到）
-        if (
+        if ( // 检查是否有正在进行中的考试（开始时间已过，结束时间未到）
           now >= session.StartTimeTimestamp &&
           now <= session.EndTimeTimestamp
         ) {
           hasOngoingSession = true;
           ongoingSessionIndex = index;
         }
-
-        // 查找还未开始但最近要开始的考试
-        const timeDiff = session.StartTimeTimestamp - now;
+        const timeDiff = session.StartTimeTimestamp - now; // 查找还未开始但最近要开始的考试
         if (timeDiff > 0 && timeDiff < minTimeDiff) {
           minTimeDiff = timeDiff;
           upcomingSessionIndex = index;
         }
       });
 
-      if (allEnded) {
-        // 所有考试都已结束，跳到最后一个
+      if (allEnded) { // 所有考试都已结束，跳到最后一个
         current_session = exam_sessions.length - 1;
-        console.log("所有考试已结束，跳转到最后一场");
-      } else if (hasOngoingSession) {
-        // 有正在进行中的考试，优先跳转到该场次
+      } else if (hasOngoingSession) { // 有正在进行中的考试，优先跳转到该场次
         current_session = ongoingSessionIndex;
-        console.log("跳转到正在进行的考试场次:", current_session + 1);
-      } else {
-        // 没有正在进行的考试，跳转到最近要开始的考试
+      } else { // 没有正在进行的考试，跳转到最近要开始的考试
         current_session = upcomingSessionIndex;
-        console.log(
-          "设置当前场次为即将开始的考试:",
-          current_session + 1,
-          "共",
-          exam_sessions.length,
-          "场"
-        );
       }
     }
 
-    // 检查附件内容是否超出默认高度
-    if (attachmentContainer) {
-      // 使用setTimeout确保DOM已完全渲染
-      setTimeout(() => {
-        // 获取内容实际高度和容器最大高度
-        const contentHeight = attachmentContainer.scrollHeight;
+    
+    if (attachmentContainer) { // 检查附件内容是否超出默认高度
+      setTimeout(() => { // 使用setTimeout确保DOM已完全渲染
+        const contentHeight = attachmentContainer.scrollHeight; // 获取内容实际高度和容器最大高度
         const containerMaxHeight = 35; // 默认最大高度，与CSS中保持一致
 
-        // 如果内容高度超过容器最大高度，显示展开按钮
-        showExpandButton = contentHeight > containerMaxHeight;
+        showExpandButton = contentHeight > containerMaxHeight; // 如果内容高度超过容器最大高度，显示展开按钮
         console.log(
           "附件内容高度:",
           contentHeight,
@@ -461,6 +322,7 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.4/css/bulma.min.css"
   />
 </svelte:head>
+
 {#if exam_sessions.length > 0}
   <div class="exam-detail-container">
     <div class="nav">

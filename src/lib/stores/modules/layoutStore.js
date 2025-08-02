@@ -43,30 +43,30 @@ export const navStore = writable([
     isOpen: true,
     isSelect: false,
   },
-  // {
-  //   name: 'correct',
-  //   title: '试卷批改',
-  //   path: '/teacher/correct',
-  //   icon: '/sidebar/nav_icon/correct.svg',
-  //   isOpen: true,
-  //   isSelect: false,
-  //   children: [
-  //     {
-  //       name: 'exam-correct',
-  //       title: '考试批改',
-  //       path: '/teacher/correct/exam-correct',
-  //       isOpen: true,
-  //       isSelect: false,
-  //     },
-  //     {
-  //       name: 'practice-correct',
-  //       title: '练习批改',
-  //       path: '/teacher/correct/practice-correct',
-  //       isOpen: true,
-  //       isSelect: false,
-  //     },
-  //   ],
-  // },
+  {
+    name: 'correct',
+    title: '试卷批改',
+    path: '/teacher/correct',
+    icon: '/sidebar/nav_icon/correct.svg',
+    isOpen: true,
+    isSelect: false,
+    children: [
+      {
+        name: 'exam-correct',
+        title: '考试批改',
+        path: '/teacher/correct/exam-correct',
+        isOpen: true,
+        isSelect: false,
+      },
+      {
+        name: 'practice-correct',
+        title: '练习批改',
+        path: '/teacher/correct/practice-correct',
+        isOpen: true,
+        isSelect: false,
+      },
+    ],
+  },
   {
     name: 'grade',
     title: '成绩管理',
@@ -91,14 +91,14 @@ export const navStore = writable([
       },
     ],
   },
-  // {
-  //   name: 'exam-site',
-  //   title: '考点管理',
-  //   path: '/teacher/exam-site',
-  //   icon: '/sidebar/nav_icon/exam_site.svg',
-  //   isOpen: true,
-  //   isSelect: false,
-  // },
+  {
+    name: 'exam-site',
+    title: '考点管理',
+    path: '/teacher/exam-site',
+    icon: '/sidebar/nav_icon/exam_site.svg',
+    isOpen: true,
+    isSelect: false,
+  },
   {
     name: 'student-management',
     title: '学生管理',
@@ -338,4 +338,10 @@ export function sidebarMouseLeave() {
   }, 1000);
 
   timerId.set(newTimerId);
+}
+
+// 获取cookies
+export function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
 }
