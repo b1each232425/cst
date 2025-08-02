@@ -14,35 +14,38 @@
 
   // 用户列表
   let users = $state([]); 
+  
 
   //全选状态
-  let selectAll = $state(false);
+  let select_all = $state(false);
+  // 全局选中的用户ID集合（跨页面保持）
+  let selectedUserIds = $state(new Set());
 
   // 搜索状态
-  let searchAccount = $state('');
-  let searchName = $state('');
-  let searchPhone = $state('');
-  let searchEmail = $state('');
+  let search_account = $state('');
+  let search_name = $state('');
+  let search_phone = $state('');
+  let search_email = $state('');
 
   // 选择筛选状态
-  let filterCreateTime = $state(null);
-  let filterRole = $state('');
-  let filterGender = $state('all'); // 性别值(发送后端)
-  let filterStatus = $state('all'); // 状态值(发送后端)
+  let filter_create_time = $state(null);
+  let filter_role = $state('');
+  let filter_gender = $state('all'); // 性别值(发送后端)
+  let filter_status = $state('all'); // 状态值(发送后端)
 
   // 分页相关状态
-  let currentPage = $state(1);
-  let pageSize = $state(10);
-  let totalItems = $state(0); // 总记录数
-  let totalPages = $state(0); // 总页数
+  let current_page = $state(1);
+  let page_size = $state(10);
+  let total_items = $state(0); // 总记录数
+  let total_pages = $state(0); // 总页数
 
   // 加载状态
   let loading = $state(false);
   let error = $state(null);
 
-  let datePicker; //创建日期选择器对象
+  let date_picker; //创建日期选择器对象
 
-  const TypeMap = {
+  const TYPEMAP = {
     '00': '匿名用户',
     '02': '注册用户',
     '04': '试用用户',
@@ -51,7 +54,7 @@
     '80': '系统上帝',
   };
 
-  const roleLabelMap = {
+  const ROLELABELMAP = {
     'cst.school^superAdmin': '超级管理员',
     'cst.school^admin': '普通管理员',
     'cst.school.academicAffair^admin': '教务员',
@@ -64,20 +67,20 @@
   };
 
   // 角色下拉选项(用于筛选)
-  const roleOptions = [
+  const ROLEOPTIONS = [
     { value: '', label: '全部' },
-    ...Object.entries(roleLabelMap).map(([value, label]) => ({ value, label })),
+    ...Object.entries(ROLELABELMAP).map(([value, label]) => ({ value, label })),
   ];
 
   // 状态码到CSS类名的映射(用于CSS样式不同值显示不同颜色)
-  const StateClassMap = {
+  const STATECLASSMAP = {
     '00': 'enabled',
     '02': 'disabled',
     '04': 'deleted',
   };
 
   // 状态映射(将值转换为显示文本)
-  const statusLabelMap = {
+  const STATUSLABELMAP = {
     all: '全部',
     '00': '启用',
     '02': '停用',
@@ -90,20 +93,20 @@
 
     //构建请求参数
     const params = {
-      page: String(currentPage),
-      pageSize: String(pageSize),
+      page: String(current_page),
+      pageSize: String(page_size),
     };
-    if (searchName) params.officialName = searchName;
-    if (searchPhone) params.mobilePhone = searchPhone;
-    if (searchEmail) params.email = searchEmail;
-    if (filterGender && filterGender !== 'all') params.gender = filterGender;
-    if (filterStatus && filterStatus !== 'all') params.status = filterStatus; //all则不传值，显示全部
-    if (searchAccount) params.account = searchAccount;
-    if (filterCreateTime) {
-      params.createTime = filterCreateTime.getTime(); // 直接获取时间戳
+    if (search_name) params.officialName = search_name;
+    if (search_phone) params.mobilePhone = search_phone;
+    if (search_email) params.email = search_email;
+    if (filter_gender && filter_gender !== 'all') params.gender = filter_gender;
+    if (filter_status && filter_status !== 'all') params.status = filter_status; //all则不传值，显示全部
+    if (search_account) params.account = search_account;
+    if (filter_create_time) {
+      params.create_time = filter_create_time.getTime(); // 直接获取时间戳
     }
-    if (filterRole) {
-      params.domain = filterRole;
+    if (filter_role) {
+      params.domain = filter_role;
     }
 
     fetch(`/api/user?${new URLSearchParams(params)}`, {
@@ -119,43 +122,49 @@
           users = res.data.map((user) => ({
             id: user.ID,
             account: user.Account,
-            roles: user.Domains.map((r) => roleLabelMap[r] || r),
+            roles: user.Domains.map((r) => ROLELABELMAP[r] || r),
             name: user.OfficialName || '-',
             gender: user.Gender || '-',
             phone: user.MobilePhone || '-',
             email: user.Email || '-',
-            type: TypeMap[user.Type] || user.Type || '-',
+            type: TYPEMAP[user.Type] || user.Type || '-',
             category: user.Category || '-',
-            createTime: user.CreateTime ? new Date(user.CreateTime).toLocaleDateString() : '',
-            Status: user.Status,
-            selected: false,
+            create_time: user.CreateTime ? new Date(user.CreateTime).toLocaleDateString() : '',
+            status: user.Status,
+            selected: selectedUserIds.has(user.ID), // 根据全局选中状态设置
             has_relation: false,
           }));
-          totalItems = res.rowCount || res.data.length;
-          totalPages = Math.ceil(totalItems / pageSize);
-          selectAll = false;
-          //console.log('filterRole:', filterRole);
+          total_items = res.rowCount || res.data.length;
+          total_pages = Math.ceil(total_items / page_size);
+          // 更新全选状态
+          updateSelectAllState();
+          //console.log('filter_role:', filter_role);
         } else {
           users = [];
-          totalItems = 0;
-          totalPages = 0;
-          selectAll = false;
+          total_items = 0;
+          total_pages = 0;
+          select_all = false;
         }
+        // 更新全选状态
+        updateSelectAllState();
         loading = false;
       })
       .catch((errorInfo) => {
         error = `获取用户列表失败: ${errorInfo.message}`;
         users = [];
-        totalItems = 0;
-        totalPages = 0;
-        selectAll = false;
+        total_items = 0;
+        total_pages = 0;
+        select_all = false;
         loading = false;
       });
   }
 
   // 防抖处理搜索函数
   const handleSearchDebounced = debounce(() => {
-    currentPage = 1;
+    current_page = 1;
+    // 搜索时清除选中状态
+    selectedUserIds.clear();
+    select_all = false;
     fetchUsers();
   }, 400);
 
@@ -164,17 +173,61 @@
     const d = event.detail.date;
     console.log('选择的日期是：', formatDate(d));
 
-    filterCreateTime = new Date(d.getFullYear(), d.getMonth(), d.getDate()); // 去掉时分秒
-    currentPage = 1;
+    filter_create_time = new Date(d.getFullYear(), d.getMonth(), d.getDate()); // 去掉时分秒
+    current_page = 1;
+    // 筛选条件改变时清除选中状态
+    selectedUserIds.clear();
+    select_all = false;
     fetchUsers();
   }
 
   //切换全选状态
   function toggleSelectAll() {
+    if (select_all) {
+      // 用户刚刚选中了全选框：将当前页面所有用户ID添加到选中集合
+      users.forEach(user => selectedUserIds.add(user.id));
+    } else {
+      // 用户刚刚取消了全选框：从选中集合中移除当前页面所有用户ID
+      users.forEach(user => selectedUserIds.delete(user.id));
+    }
+    // 更新当前页面用户的选中状态
     users = users.map((user) => ({
       ...user,
-      selected: selectAll,
+      selected: selectedUserIds.has(user.id),
     }));
+  }
+
+  // 更新全选状态（根据当前页面的选中情况）
+  function updateSelectAllState() {
+    if (users.length === 0) {
+      select_all = false;
+      return;
+    }
+    // 检查当前页面所有用户是否都在全局选中集合中
+    const allSelected = users.every(user => selectedUserIds.has(user.id));
+    select_all = allSelected;
+  }
+
+  // 处理单个复选框变化
+  function handleUserSelectChange(userId) {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+    
+    if (user.selected) {
+      // 当前是选中状态，点击后取消选中
+      selectedUserIds.delete(userId);
+    } else {
+      // 当前是未选中状态，点击后选中
+      selectedUserIds.add(userId);
+    }
+    
+    // 更新用户列表中的选中状态
+    users = users.map(u => 
+      u.id === userId ? { ...u, selected: selectedUserIds.has(userId) } : u
+    );
+    
+    // 立即更新全选状态
+    updateSelectAllState();
   }
 
   //处理用户状态切换
@@ -187,14 +240,14 @@
 
   // 页码选择处理
   function handlePageChange(event) {
-    currentPage = event.detail;
+    current_page = event.detail;
     fetchUsers();
   }
 
   // 每页大小变更处理
   function handlePageSizeChange(event) {
-    pageSize = event.detail;
-    currentPage = 1;
+    page_size = event.detail;
+    current_page = 1;
     fetchUsers();
   }
 
@@ -210,32 +263,29 @@
 
   // 删除选中用户
   function handleBatchDelete() {
-    const selectedIds = users.filter((user) => user.selected).map((user) => user.id);
-
-    if (selectedIds.length === 0) {
+    if (selectedUserIds.size === 0) {
       return;
     }
     // TODO: 实现批量删除逻辑
+    console.log('批量删除用户ID:', Array.from(selectedUserIds));
   }
 
   // 启用选中用户
   function handleBatchEnable() {
-    const selectedIds = users.filter((user) => user.selected).map((user) => user.id);
-
-    if (selectedIds.length === 0) {
+    if (selectedUserIds.size === 0) {
       return;
     }
     // TODO: 实现批量启用逻辑
+    console.log('批量启用用户ID:', Array.from(selectedUserIds));
   }
 
   // 停用选中用户
   function handleBatchDisable() {
-    const selectedIds = users.filter((user) => user.selected).map((user) => user.id);
-
-    if (selectedIds.length === 0) {
+    if (selectedUserIds.size === 0) {
       return;
     }
     // TODO: 实现批量停用逻辑
+    console.log('批量停用用户ID:', Array.from(selectedUserIds));
   }
 
   // 查看操作日志
@@ -283,7 +333,7 @@
             <div class="search-container">
               <InputBox
                 type="text"
-                bind:value={searchAccount}
+                bind:value={search_account}
                 placeholder="请输入账号"
                 showLabel={false}
                 oninput={handleSearchDebounced}
@@ -298,7 +348,7 @@
             <div class="search-container">
               <InputBox
                 type="text"
-                bind:value={searchName}
+                bind:value={search_name}
                 placeholder="请输入姓名"
                 showLabel={false}
                 oninput={handleSearchDebounced}
@@ -313,7 +363,7 @@
             <div class="search-container">
               <InputBox
                 type="text"
-                bind:value={searchPhone}
+                bind:value={search_phone}
                 placeholder="请输入电话"
                 showLabel={false}
                 oninput={handleSearchDebounced}
@@ -328,7 +378,7 @@
             <div class="search-container">
               <InputBox
                 type="text"
-                bind:value={searchEmail}
+                bind:value={search_email}
                 placeholder="请输入邮箱"
                 showLabel={false}
                 oninput={handleSearchDebounced}
@@ -343,7 +393,7 @@
           <div class="input-container">
             <div class="date-input">
               <DatePicker
-                bind:this={datePicker}
+                bind:this={date_picker}
                 singleDateSelection={true}
                 inputWidth={'100%'}
                 on:startDateSelected={handleStartDateSelected}
@@ -357,18 +407,21 @@
           <span class="item-label">角色</span>
           <div class="input-container">
             <Select
-              value={filterRole} 
+              value={filter_role} 
               placeholder="请选择角色"
               onChangeValue={(value) => {
-                // console.log('角色筛选 onChangeValue 触发，新值:', value, '旧值:', filterRole);
-                if (value !== filterRole) {
-                filterRole = value;
-                currentPage = 1;
+                // console.log('角色筛选 onChangeValue 触发，新值:', value, '旧值:', filter_role);
+                if (value !== filter_role) {
+                filter_role = value;
+                current_page = 1;
+                // 筛选条件改变时清除选中状态
+                selectedUserIds.clear();
+                select_all = false;
                 fetchUsers();
                 }
               }}
             >
-              {#each roleOptions as option}
+              {#each ROLEOPTIONS as option}
                 <Option value={option.value} label={option.label} />
               {/each}
             </Select>
@@ -380,11 +433,14 @@
           <span class="item-label">性别</span>
           <div class="input-container">
             <Select
-              bind:value={filterGender}
+              bind:value={filter_gender}
               placeholder="全部"
               onChangeValue={(value) => {
-                filterGender = value;
-                currentPage = 1;
+                filter_gender = value;
+                current_page = 1;
+                // 筛选条件改变时清除选中状态
+                selectedUserIds.clear();
+                select_all = false;
                 fetchUsers();
               }}
             >
@@ -400,11 +456,14 @@
           <span class="item-label">账号状态</span>
           <div class="input-container">
             <Select
-              bind:value={filterStatus}
+              bind:value={filter_status}
               placeholder="全部"
               onChangeValue={(value) => {
-                filterStatus = value;
-                currentPage = 1;
+                filter_status = value;
+                current_page = 1;
+                // 筛选条件改变时清除选中状态
+                selectedUserIds.clear();
+                select_all = false;
                 fetchUsers();
               }}
             >
@@ -435,7 +494,7 @@
         <thead>
           <tr class="table-header-row">
             <th class="col-checkbox table-head">
-              <input type="checkbox" class="checkbox-all" bind:checked={selectAll} onchange={toggleSelectAll} />
+              <input type="checkbox" class="checkbox-all" bind:checked={select_all} onchange={toggleSelectAll} />
             </th>
             <th class="col-account table-head">账号</th>
             <th class="col-name table-head">姓名</th>
@@ -454,7 +513,12 @@
           {#each users as user (user.id)}
             <tr class="table-row" data-id={user.id}>
               <td class="col-checkbox">
-                <input type="checkbox" class="checkbox-item" bind:checked={user.selected} />
+                <input 
+                  type="checkbox" 
+                  class="checkbox-item" 
+                  checked={user.selected}
+                  onchange={() => handleUserSelectChange(user.id)}
+                />
               </td>
               <td class="col-account" title={user.account}>
                 {user.account}
@@ -468,10 +532,10 @@
               <td class="col-status">{user.type}</td>
               <td class="col-category">{user.category}</td>
               <td class="col-role">{user.roles.join(', ')}</td>
-              <td class="col-creation">{user.createTime}</td>
+              <td class="col-creation">{user.create_time}</td>
               <td class="col-current-status">
-                <span class="status-text {StateClassMap[user.Status]}">
-                  {statusLabelMap[user.Status] || '-'}
+                <span class="status-text {STATECLASSMAP[user.status]}">
+                  {STATUSLABELMAP[user.status] || '-'}
                 </span>
               </td>
               <td class="col-actions">
@@ -514,11 +578,11 @@
     </div>
     <!-- 分页器 -->
     <div class="pagination-wrapper">
-      <div class="pagination-container {totalItems > 0 ? '' : 'hide'}">
+      <div class="pagination-container {total_items > 0 ? '' : 'hide'}">
         <Pagination
-          {totalItems}
-          {currentPage}
-          {pageSize}
+          totalItems={total_items}
+          currentPage={current_page}
+          pageSize={page_size}
           pageSizeOptions={[10, 20, 50]}
           on:pageChange={handlePageChange}
           on:pageSizeChange={handlePageSizeChange}
@@ -537,7 +601,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    min-height: 100vh;
+    height: 80vh;
     overflow-y: auto;
   }
 
@@ -580,7 +644,19 @@
         gap: 13px;
       }
 
-      @media (max-width: 768px) {
+      @media (max-width: 2500px) and (min-width: 1800px) {
+        grid-template-columns: repeat(4, minmax(180px, 1fr));
+        grid-template-rows: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      @media (max-width: 1000px)and (min-width: 800px) {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+        gap: 10px;
+      }
+
+      @media (max-width: 800px) {
+        grid-template-columns: repeat(1, minmax(140px, 1fr));
         gap: 10px;
       }
 
@@ -620,31 +696,26 @@
       flex: 0 0 auto;
       min-width: 280px;
       margin-right: 30px; 
+
       @media (max-width: 1400px) and (min-width: 1201px) {
         grid-template-columns: repeat(3, minmax(60px, 1fr));
         grid-template-rows: repeat(3, 1fr);
         gap: 10px;
         margin-right: 0;
       }
-      @media (max-width: 768px) {
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: repeat(3, 1fr);
-        gap: 8px;
+      @media (max-width: 1238px) and (min-width: 800px) {
+        grid-template-columns: repeat(7, minmax(60px, 1fr));
+        gap: 10px;
+        margin-right: 0;
+      }
+      @media (max-width: 800px) {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
         margin-right: 0;
       }
       @media (min-resolution: 1.25dppx) {
         gap: 12px;
         margin-right: 10px;
-      }
-
-      .button-item {
-        display: flex;
-        justify-items: center;
-        width: 100%;
-
-        @media (max-width: 1200px) {
-          min-width: 0;
-        }
       }
 
       .action-btn {
@@ -663,7 +734,7 @@
           padding: 0 8px;
           min-width: 50px;
         }
-        @media (max-width: 1200px) and (min-width: 992px) {
+        @media (max-width: 1238px) and (min-width: 992px) {
           padding: 0 6px;
           min-width: 45px;
           font-size: 13px;
@@ -720,7 +791,6 @@
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
-    padding-bottom: 80px; 
 
     @media (max-width: 768px) {
       padding: 5px 10px 50px 10px;
@@ -862,8 +932,7 @@
 
   .pagination-wrapper {
     flex-shrink: 0;            
-    padding: 10px 0;           
-  
+     
     .pagination-container {
     display: flex;             
     justify-content: flex-end; 
