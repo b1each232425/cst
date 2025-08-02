@@ -65,7 +65,7 @@
 				<Select bind:value={state.filters.type}>
 					<Option value="" label="全部" />
 					<Option value="00" label="平时考试" />
-					<Option value="04" label="资格证考试" />
+					<Option value="02" label="资格证考试" />
 				</Select>
 			</div>
 		</div>

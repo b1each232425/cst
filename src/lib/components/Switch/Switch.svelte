@@ -98,7 +98,7 @@
     aria-pressed={isChecked ? 'true' : 'false'}
     onclick={clickSwitchButton}
   >
-    <span bind:this={ballElement} class={isChecked ? 'checked' : 'unchecked'}></span>
+    <span bind:this={ballElement} class={isChecked ? 'checked' : 'unchecked'} data-testid="switch-ball"></span>
   </button>
   <span bind:this={rTextElement} class="right-text">{rightText}</span>
 </div>

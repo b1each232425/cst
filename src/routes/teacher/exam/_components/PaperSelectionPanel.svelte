@@ -6,6 +6,7 @@
     import { onDestroy } from "svelte";
     import Select from "$lib/components/Select/Select.svelte";
     import Option from "$lib/components/Select/Option.svelte";
+    import {toast} from "$lib/components/Toast/Toast.js"
     // 难度颜色常量
     export const DIFFICULTY_COLOR_SIMPLE = "green";
     export const DIFFICULTY_COLOR_MEDIUM = "orange";
@@ -431,6 +432,10 @@
                 onCancel();
             }}>取消</button>
             <button class="btn save" onclick={() => {
+                if(!paperSelectedID){
+                    toast.warning("请选择一张试卷")
+                    return;
+                }
                 //将选中的试卷传递给外部
                 onConfirm(
                     paperSelectedID,
@@ -535,8 +540,10 @@
     }
 
     .paper-selection-panel {
-        width: 1400px;
-        min-width: 1200px;
+        margin-left: 130px;
+        justify-content: center;
+        width: 60%;
+        min-width: 1000px;
         max-height: 90vh;
         overflow-y: auto;
         background-color: white;
@@ -545,6 +552,19 @@
         border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
         z-index: 1001;
+         /* 小屏幕适配 */
+        @media (max-width: 1440px) {
+            width: 60%;
+            min-width: 600px;
+            height:70%;
+            margin-left: 180px;
+        }
+        
+        // @media (max-width: 768px) {
+        //     width: 60%;
+        //     min-width: 320px;
+        //     max-height: 85vh;
+        // }
     }
 
     .panel-header {

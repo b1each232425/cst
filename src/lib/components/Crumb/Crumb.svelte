@@ -48,7 +48,7 @@
           return isBasePathMatch && (isDynamicPath || currentPath === basePath);
         } else if (item.id === '[id]') {
           // 检查路径前缀部分是否相同
-          const basePath = '/teacher/practice/create/edit';
+          const basePath = '/teacher/practice/edit';
           const isBasePathMatch = currentPath.startsWith(basePath);
           const isDynamicPath = currentPath.split('/').length === basePath.split('/').length + 1;
 

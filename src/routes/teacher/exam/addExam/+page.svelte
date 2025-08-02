@@ -317,8 +317,8 @@ function updateDuration(index) {
     
     /* 4. 构造真正要提交的 JSON（完全使用用户输入） */
     const examSessionsdata = paperConfigs.map(cfg => ({
-        //  PaperID:              cfg.paperID,
-        PaperID:              61,
+         PaperID:              cfg.paperID,
+        // PaperID:              61,
         PeriodMode:           cfg.periodMode,
         StartTime:            cfg.startTime  ? new Date(cfg.startTime).getTime() : 0,
         EndTime:              cfg.endTime    ? new Date(cfg.endTime).getTime()   : 0,
@@ -335,6 +335,13 @@ function updateDuration(index) {
         SessionNum:           cfg.sessionNum,
     }));
 
+    // Add this validation in handleSubmit()
+    for (let i = 0; i < paperConfigs.length; i++) {
+        if (paperConfigs[i].paperID === 0) {
+            toast.warning(`第${i + 1}个场次未选择试卷`);
+            return;
+        }
+    }
     // 附加文件：若用户上传了文件，则遍历填充；否则留空数组
     const fileArr = files.length
         ? files.map(f => ({ Name: f.name, Url: f.url || "" }))

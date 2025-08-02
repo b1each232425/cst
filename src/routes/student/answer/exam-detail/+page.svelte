@@ -95,7 +95,7 @@
       toast.success(`正在下载: ${file.file_name}`); // 显示下载成功提示
     } catch (error) {
       console.error("下载文件失败:", error);
-      toast.error("下载文件失败");
+      toast.error(`下载文件失败！${error.message || ''}`);
     }
   }
   async function downloadAllAttachments() { // 下载所有附件
@@ -185,7 +185,7 @@
       })
       .catch(error => {
         console.error("获取考试状态失败:", error);
-        toast.error("获取考试状态失败");
+        toast.error(`获取考试状态失败！${error.message || ''}`, 2000);
       });
   }
   function nextSession() { //下一场
@@ -252,7 +252,7 @@
       })
       .catch(error => {
         console.error("Error fetching exam info:", error);
-        toast.error("获取考试信息失败");
+        toast.error(`获取考试信息失败！${error.message || ''}`, 2000);
         return;
       });
 
