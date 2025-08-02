@@ -110,7 +110,7 @@ export function createGradeStore() {
 					state.totalRecords = sget(data, 'rowCount', 0);
 				})
 				.catch((error) => {
-					handleApiError(error, '获取考试列表');
+					handleApiError(error, '获取考试成绩列表');
 				})
 				.finally(() => {
 					state.loading = false;
