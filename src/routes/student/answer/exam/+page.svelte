@@ -97,7 +97,7 @@
   
   
   //考试类信息变量
-  let load_success = $state(true);
+  let load_success = $state(false);
   let ifPreview = $state();//查看当前是否为预览模式
   let is_full_examMode = $state(true); // 是否为全卷模式
   let start_time = $state();//考试界面的开始时间
@@ -121,18 +121,6 @@
   let total_seconds = $state(0); // 考试总时长（秒）
 
 
-  //实时检测出是否加载失败
-  $effect(() => {
-    if (!load_success) {
-      MessageBox({
-      title: '出错了，请回到考试列表刷新重新进入',
-      show_cancel_button: false,
-      onConfirm: () => {
-         window.location.href = "/student/exam";
-      },
-    });
-    }
-  });
 
   //左上角考试信息类
   function openModal() { //打开考试信息弹窗
@@ -164,7 +152,6 @@
     });
     return groups;
   }
-
   function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组 用来生成题目
     const result = [];
     const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序数组
@@ -274,8 +261,7 @@
   }
   function submitExam() { // 主动提交考试
     if (ifPreview) {
-     toast.warning('预览模式，不需要提交试卷', 2000);
-      console.log("预览模式，不需要提交试卷");
+      toast.warning('预览模式，不需要提交试卷', 2000);
       return;
     }
     submitExamAfterCountdown();
@@ -311,12 +297,13 @@
           toast.success('考试结束，提交成功！', 2000);
           goto(`/student/answer/exam-detail?exam-id=${exam_id}&exam-session-id=${exam_session_id}`); //跳转到考试详情页
         } else {
+          console.error(`提交失败：${resp_data.msg}`);
           toast.error(`提交失败！${resp_data.msg || ''}`, 2000);
         }
       })
       .catch((e) => {
         console.log(`提交失败：${e} `);
-        toast.error('提交失败', 2000);
+        toast.error(`提交失败！${e.message || ''}`, 2000);
       });
   }
 
@@ -411,6 +398,10 @@
           toast.error('获取题目时出错！', 2000);
           return;
         }
+      } else {
+        console.error("没有找到考试题目");
+        toast.error('没有找到考试题目', 2000);
+        return;
       }
     }  else {
       // 初始化考试
@@ -432,6 +423,7 @@
         if (!response.ok) {
           return response.text().then(text => {
             console.error('接口响应失败:', text);
+            toast.error(`接口响应失败: ${text}`, 2000);
             throw new Error(text);
           });
         }
@@ -440,6 +432,7 @@
       .then(data => {
         if (data.status !== 0) {
           console.error(`接口错误: ${data.msg}`);
+          toast.error(`接口错误: ${data.msg}`, 2000);
           throw new Error(data.msg);
         }
 
@@ -485,11 +478,28 @@
       })
       .catch(error => {
         console.error('请求失败:', error);
+        toast.error(`获取题目时出错！${error.message || ''}`, 2000);
         load_success = false;
+
+
+        if (!load_success) {
+          MessageBox({
+              title: '出错了，请回到考试列表刷新重新进入',
+              show_cancel_button: false,
+              onConfirm: () => {
+                window.location.href = "/student/exam";
+              },
+          });
+        }
+
         return;
       });
     }
+
+
   });
+
+  
 </script>
 
 <svelte:head>
