@@ -662,6 +662,7 @@
     function deleteMultiplePapers() {
         if(selectedPaperIDs.length === 0) {
             toast.error("请先选择试卷", 1000);
+            return;
         }
         MessageBox({
             title: "删除确认",
