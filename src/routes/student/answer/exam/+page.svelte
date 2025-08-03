@@ -1103,7 +1103,7 @@
     display: flex;
     flex-direction: column;
     height: calc(100vh - 60px);
-    min-height: 540px;
+    min-height: 100vh;
     overflow-y: scroll;
     padding: 20px;
     min-width: 500px;
