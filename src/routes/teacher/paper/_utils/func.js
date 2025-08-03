@@ -34,3 +34,15 @@ export function getColorIndex(tagName) {
     return charCode % tagColorList.length;
 }
 
+// 将旧的展开状态恢复到新数据中
+export function restoreOpenState(newGroups, oldGroups) {
+  newGroups.forEach((newGroup, i) => {
+    const oldGroup = oldGroups?.find(g => g.id === newGroup.id);
+    newGroup.isOpen = oldGroup?.isOpen ?? true;
+
+    newGroup.questions?.forEach((q, j) => {
+      const oldQuestion = oldGroup?.questions?.find(oq => oq.id === q.id);
+      q.isOpen = oldQuestion?.isOpen ?? true;
+    });
+  });
+}
