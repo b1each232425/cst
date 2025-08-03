@@ -24,7 +24,6 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import FilterBar from '../../_components/FilterBarForQuestionBank.svelte';
   import BankTag from '../../_components/editableTag.svelte';
   import Dropdown from '../../_components/DropDownForQuesitonBank.svelte';
-
   import SingleSelectEditPanel from '../../_components/singlePage.svelte';
   import MultipleSelectEditPanel from '../../_components/multiplePage.svelte';
   import JudgeSelectEditPanel from '../../_components/judgePage.svelte';
@@ -35,7 +34,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { TheoryQuestion } from '../type';
   import SinglePage from '../../_components/singlePage.svelte';
   import { get } from 'svelte/store';
-  import Error from '../../../../+error.svelte';
+
 
   /**
    * @description ICON集合
@@ -222,13 +221,13 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * @description 题目类型筛选条件
    * @type {Array<string>}
    */
-  let question_type_fileter = $state([]);
+  let question_type_fileter = $state(['']);
 
   /**
    * @description 题目难度筛选条件
    * @type {Array<number>}
    */
-  let question_difficulty_fileter = $state([]);
+  let question_difficulty_fileter = $state(['']);
   /**
    * @description 题目标签筛选条件
    * @type {Array<string>}
@@ -555,33 +554,42 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-         throw new Error(`HTTP错误`);
-        
+          throw new Error(`HTTP错误`);
         }
         return response.json();
       })
       .then((data) => {
         if (data.status !== 0) {
          throw new Error (`${data.msg}`);
-         
         }
+         toast.success(`获取试题列表成功`);
         return data;
       })
       .catch((error) => {
-        toast.error(`获取题库列表失败:${error.message}`);
+        toast.error(`获取试题列表失败:${error.message}`);
         return;
       });
   }
+
+  /**
+   * 是否初始化
+  */
+
+  let init=1;
   /**
    * @description 获取题目列表
    */
-  const getQuestionList = async (init) => {
+  const getQuestionList = async () => {
+    if(bank_id==0){
+      return ;
+    }
     // 拉取题目列表
     request_lock = true;
     const response = await getBankWithQuestions();
     const data = response.data || null;
     request_lock = false;
     if (init == 1) {
+      init=0;
     if(data!=null){
       question_count=response.rowCount;
     }
@@ -636,7 +644,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       return;
     }
 
-    getQuestionList(1);
+    
   });
 
   /**

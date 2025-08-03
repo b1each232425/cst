@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
-import {fireEvent, render, screen, waitFor} from '@testing-library/svelte';
+import {fireEvent, render, screen, } from '@testing-library/svelte';
 import bankPage from  '../+page.svelte'
 import { goto } from '$app/navigation';
 
