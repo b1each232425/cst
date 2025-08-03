@@ -31,6 +31,8 @@
 	.practice-table-container {
 		width: 100%;
   		height: 100%;
+		height:500px;
+		max-height: 70vh;
  		overflow: auto;
   		flex: 1;
   		min-height: 0;
@@ -53,6 +55,7 @@
     &:hover {
       background: #a8a8a8;
     }
+	
   }
 	}
 
