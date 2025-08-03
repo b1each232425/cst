@@ -450,22 +450,21 @@
     }
     .examManagementContainer {
         
-        // width:105%;
-        // margin-left: -3%;
+        height:77vh;
         position: relative;
         background-color: white;
         display: flex;
         flex-direction: column;
         overflow-x: auto;
         overflow-y: hidden;
-        margin-bottom:5%;
+        
         
         .tableFilterContainer {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
             gap: 15px;
-            padding: 0px 0 0 0px;
+            padding: 0px 0 10px 0px;
             align-items: center;
             justify-content: space-between;
             min-width: 1000px;
@@ -515,15 +514,16 @@
 
     }
         .paginationContainer{
-        display: flex;
-        justify-content: flex-end;
-        padding: 0 40px 0px 0;
+            display: flex;
+            justify-content: flex-end;
+            padding: 0 40px 0px 0;
         }
     }
     
     
     .examListContainer {
-        overflow: auto;
+         overflow-y: auto;
+         overflow-x:hidden;
          padding: 33px 37px 40px 37px;
          display: flex;
          flex-direction: column;
