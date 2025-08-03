@@ -364,23 +364,23 @@ function updateDuration(index) {
          
     console.log("examDATA",examData);
 
-    try {
-        const res = await fetch("/api/exam", {
-            method:  "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify(examData),
-        });
-        const result = await res.json();
+    fetch("/api/exam", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(examData),
+    })
+    .then((response) => response.json())
+    .then((result) => {
         if (result.status === 0) {
             goto("/teacher/exam");
         } else {
-           
+            toast.warning("用户没有创建考试的权限");
         }
-    } catch (e) {
-        console.error(e);
-       
-    }
+    })
+    .catch((error) => {
+        toast.warning("未知错误");
+    });
 }
 </script>
 <Title title="创建考试" line={true} />
@@ -845,7 +845,7 @@ function updateDuration(index) {
                         </div>
                     </div>
         
-                    <div
+                    <!-- <div
                         class="grading-config-container {paperConfigs[
                             paperConfigIndex
                         ].markMethod !== '00'
@@ -871,7 +871,7 @@ function updateDuration(index) {
                                 </Button>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
                     <div
                         class="grading-mode-container {paperConfigs[paperConfigIndex].markMethod !== '00'
