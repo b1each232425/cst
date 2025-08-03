@@ -228,7 +228,7 @@
 
   // 考生状态映射
   const examineeStatusMap = new Map([
-    ['00', '正常考'],
+    ['00', '未交卷'],
     ['02', '缺考'],
     ['04', '补考'],
     ['06', '作弊'],
@@ -254,9 +254,16 @@
     }
   }
 
+  // TODO 当前阶段使用分数是否为-1作为标准
   // 是否已经批改好
-  function isMarked(status) {
-    return status === '12';
+  function isMarked(status, score) {
+    return status === '10' && score !== -1;
+  }
+
+  //TODO 当前阶段特判
+  function statusText(status, score) {
+    if (status !== '10' || (status === '10' && score === -1)) return statusMap.get(status);
+    return '已提交';
   }
 
   // 判断考试是否通过
@@ -307,7 +314,9 @@
             const sessions = Array.isArray(exam.exam_sessions) ? exam.exam_sessions : [];
 
             const hasEnterable = sessions.some((s) => s.status === '02' || s.status === '04');
-            const allSessionsNoOp = sessions.every((s) => s.status === '06' || s.status === '08' || s.status === '10');
+            const allSessionsNoOp = sessions.every(
+              (s) => s.status === '06' || s.status === '08' || (s.status === '10' && s.student_score === -1), // TODO 当前阶段使用分数是否为-1作为标准
+            );
 
             if (allSessionsNoOp)
               exam.action = null; // 全部都是不可操作的（比如都已结束/批改中），清空 action
@@ -447,7 +456,7 @@
             >
             <td
               ><div class="stack">
-                {#each exam.exam_sessions as { status }, index (index)}
+                {#each exam.exam_sessions as { status, student_score }, index (index)}
                   <span
                     class="status"
                     class:incoming={status === '02'}
@@ -456,7 +465,7 @@
                     class:marking={status === '08'}
                     class:marked={status === '10'}
                     class:submitted={status === '12'}
-                    class:unknown={!statusMap.has(status)}>{statusMap.get(status) ?? '未知状态'}</span
+                    class:unknown={!statusMap.has(status)}>{statusText(status, student_score) ?? '未知状态'}</span
                   >
                 {/each}
               </div></td
@@ -464,7 +473,10 @@
             <td
               ><div class="stack">
                 {#each exam.exam_sessions as { examinee_status }, index (index)}
-                  <span class:unknown={examinee_status !== '00' && examinee_status !== '10'}
+                  <span
+                    class:unSubmitted={examinee_status === '00'}
+                    class:unknown={!examineeStatusMap.has(examinee_status) ||
+                      (examinee_status !== '00' && examinee_status !== '10')}
                     >{examineeStatusMap.get(examinee_status) ?? '未知状态'}</span
                   >
                 {/each}
@@ -483,9 +495,9 @@
                 {#each exam.exam_sessions as { status, student_score, total_score }, index (index)}
                   <span
                     class="score"
-                    class:pass={isMarked(status) && isPass(student_score, total_score)}
-                    class:failed={isMarked(status) && !isPass(student_score, total_score)}
-                    >{isMarked(status) ? student_score : '--'}</span
+                    class:pass={isMarked(status, student_score) && isPass(student_score, total_score)}
+                    class:failed={isMarked(status, student_score) && !isPass(student_score, total_score)}
+                    >{isMarked(status, student_score) ? student_score : '--'}</span
                   >
                 {/each}
               </div></td
@@ -495,10 +507,14 @@
                 {#each exam.exam_sessions as { status, student_score, total_score }, index (index)}
                   <span
                     class="score is-pass"
-                    class:pass={isMarked(status) && isPass(student_score, total_score)}
-                    class:failed={isMarked(status) && !isPass(student_score, total_score)}
+                    class:pass={isMarked(status, student_score) && isPass(student_score, total_score)}
+                    class:failed={isMarked(status, student_score) && !isPass(student_score, total_score)}
                   >
-                    {isMarked(status) ? (isPass(student_score, total_score) ? '已通过' : '未通过') : '--'}</span
+                    {isMarked(status, student_score)
+                      ? isPass(student_score, total_score)
+                        ? '已通过'
+                        : '未通过'
+                      : '--'}</span
                   >
                 {/each}
               </div>
@@ -506,10 +522,10 @@
             <td>
               <button
                 class="option"
-                class:can-click={exam.action && actionMap.has(exam.action)}
+                class:can-click={exam.action && actionMap.has(exam.action) && exam.action !== '02'}
                 onclick={() => handleAction(exam.action, exam.id)}
               >
-                {actionMap.has(exam.action) ? actionMap.get(exam.action) : '--'}</button
+                {actionMap.has(exam.action) && exam.action !== '02' ? actionMap.get(exam.action) : '--'}</button
               >
             </td>
           </tr>
@@ -619,6 +635,10 @@
                     }
                   }
 
+                  &.unSubmitted {
+                    color: #ff8100;
+                  }
+
                   &.unknown {
                     color: #f55151;
                   }
@@ -633,6 +653,7 @@
                         background: #e6f9e6;
                       }
                     }
+
                     &.failed {
                       color: red;
 
