@@ -19,11 +19,13 @@
 		<PracticeFilterPanel store={practiceGradeStore} />
 	</div>
 	<div class="table-container">
-		{#if practiceGradeStore.state.loading}
-			<p>加载中...</p>
-		{:else}
-			<PracticeTable store={practiceGradeStore} />
-		{/if}
+		<div class="table-content">
+			{#if practiceGradeStore.state.loading}
+				<p>加载中...</p>
+			{:else}
+				<PracticeTable store={practiceGradeStore} />
+			{/if}
+		</div>
 		<div class="pagination-wrapper">
 			<Pagination
 				totalItems={state.totalRecords}
@@ -37,26 +39,59 @@
 </div>
 
 <style lang="scss">
+	@import '../_styles/responsive.scss';
+
 	.page-container {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
+		@include page-container;
 	}
 
 	.filter-container {
-		padding: 0 1px; /* 控制筛选区和表格的间距 */
+		@include filter-container;
+		padding: 0 1px;
 		padding-bottom: 10px;
+
+		@include respond-to(xl) {
+			padding-bottom: 8px;
+		}
+
+		@include respond-to(md) {
+			padding-bottom: 6px;
+		}
 	}
 
 	.table-container {
-		display: flex;
-		flex-direction: column;
-		padding: 0 23px; /* 移除顶部的 padding */
+		@include table-container;
+		padding: 0 23px;
+
+		@include respond-to(xl) {
+			padding: 0 16px;
+		}
+
+		@include respond-to(md) {
+			padding: 0 8px;
+		}
+
+		@include respond-to(xs) {
+			padding: 0 4px;
+		}
 	}
+
+	.table-content {
+		flex: 1;
+		overflow: hidden;
+		min-height: 0;
+	}
+
 	.pagination-wrapper {
+		flex-shrink: 0;
 		display: flex;
-		justify-content: flex-end; /* 右对齐 */
-		margin-top: 16px; /* 与表格保持适当间距 */
-		padding: 16px 0; /* 上下内边距 */
+		justify-content: flex-end;
+		margin-top: 16px;
+		padding: 16px 0;
+
+		@include respond-to(md) {
+			margin-top: 8px;
+			padding: 8px 0;
+		}
 	}
 </style> 

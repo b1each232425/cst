@@ -1,5 +1,6 @@
 <script>
 	import InputBox from '$lib/components/Input/InputBox.svelte';
+	import { handleFeatureNotImplemented } from '../../_utils/errorHandler.js';
 
 	/**
 	 * @typedef {ReturnType<import('../../../_stores/practiceGrade.svelte.js').createPracticeGradeStore>} PracticeGradeStore
@@ -19,6 +20,10 @@
 	 */
 	function handleSearchInput(value) {
 		setFilters({ name: value });
+	}
+	function handleExportClick() {
+		//TODO: 批量导出
+		handleFeatureNotImplemented("批量导出");
 	}
 </script>
 
@@ -40,17 +45,31 @@
             <span class="count">{selectedCount}</span>
             <span>项</span>
         </div>
-        <button class="action-btn export" disabled={!hasSelection} onclick={exportGrades}>批量导出</button>
+        <button class="action-btn export" disabled={!hasSelection} onclick={handleExportClick}>批量导出</button>
     </div>
 </div>
 
 
 <style lang="scss">
+	@import '../../_styles/responsive.scss';
+
 	.top-action-bar {
 		display: flex;
 		justify-content: flex-start;
 		align-items: center;
 		padding: 16px 0 0 0;
+
+		// 小屏幕时允许换行，避免按钮被截断
+		@include respond-to(lg) {
+			flex-wrap: wrap;
+			gap: 12px;
+		}
+
+		@include respond-to(md) {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 12px;
+		}
 	}
 
 	.filters {
@@ -58,11 +77,30 @@
 		align-items: center;
 		gap: 5px;
 		margin-right: 100px;
-		margin-left: -10px; /* 向左偏移以与标题文字对齐 */
+		margin-left: -10px;
+
+		@include respond-to(lg) {
+			margin-right: 50px;
+		}
+
+		@include respond-to(md) {
+			margin-right: 0;
+			margin-left: 0;
+			margin-bottom: 8px;
+			width: 100%;
+		}
 	}
 
 	.search-wrapper {
 		width: 300px;
+
+		@include respond-to(lg) {
+			width: 240px;
+		}
+
+		@include respond-to(md) {
+			width: 100%;
+		}
 	}
 
     .actions {
@@ -72,10 +110,32 @@
 		color: #595959;
 		font-size: 14px;
 
+		// 关键：小屏幕时允许换行，避免按钮被截断
+		@include respond-to(lg) {
+			gap: 16px;
+			flex-wrap: wrap;
+		}
+
+		@include respond-to(md) {
+			width: 100%;
+			justify-content: flex-start;
+		}
+
+		@include respond-to(sm) {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 12px;
+		}
+
 		.selection-info {
 			display: flex;
 			align-items: center;
 			gap: 10px;
+			white-space: nowrap;
+
+			@include respond-to(sm) {
+				justify-content: center;
+			}
 
 			.count {
 				color: #0052d9;
@@ -92,6 +152,8 @@
 			cursor: pointer;
 			font-size: 14px;
 			transition: background-color 0.2s;
+			white-space: nowrap;
+			flex-shrink: 0;
 
 			&.export {
 				background-color: #0052d9;
@@ -103,6 +165,17 @@
 			&:disabled {
 				background-color: #bbd3fb !important;
 				cursor: not-allowed;
+			}
+
+			@include respond-to(lg) {
+				padding: 0 12px;
+				height: 28px;
+				font-size: 13px;
+			}
+
+			@include respond-to(sm) {
+				width: 100%;
+				text-align: center;
 			}
 		}
 	}

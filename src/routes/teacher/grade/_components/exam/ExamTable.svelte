@@ -31,21 +31,30 @@
 </div>
 
 <style lang="scss">
+	@import '../../_styles/responsive.scss';
+
 	.exam-table-container {
-		width: 100%;
-		overflow-x: auto;
-		flex-grow: 1;
+		@include table-scroll-container;
 	}
 
 	.exam-table {
-		width: 100%;
-		border-collapse: collapse;
-		table-layout: fixed; /* 关键：使用固定表格布局 */
+		@include responsive-table(1200px);
 	}
 
 	.no-data {
 		text-align: center;
 		padding: 40px;
 		color: #999;
+		font-size: 14px;
+
+		@include respond-to(md) {
+			padding: 20px;
+			font-size: 13px;
+		}
+
+		@include respond-to(xs) {
+			padding: 15px;
+			font-size: 12px;
+		}
 	}
-</style> 
+</style>

@@ -1,4 +1,5 @@
 <script>
+	import{handleFeatureNotImplemented}from '../../_utils/errorHandler';
 	/**
 	 * @typedef {import('../../../_stores/grade.svelte.js').ExamInfo} ExamInfo
 	 * @typedef {import('../../../_stores/grade.svelte.js').ExamSessionInfo} ExamSessionInfo
@@ -11,6 +12,16 @@
 	/** @type {{ exam: ExamInfo, store: GradeStore }} */
 	let { exam, store } = $props();
 	const { state, toggleSelect } = store;
+
+	function handleDetailClick(){
+		//TODO:查看详细功能
+		handleFeatureNotImplemented("查看详细");
+
+	}
+	function handleExport(){
+		//TODO:导出功能
+		handleFeatureNotImplemented("导出功能");
+	}
 </script>
 
 <tr class="exam-list-row">
@@ -70,8 +81,8 @@
 		{exam.submitted === null || exam.submitted === undefined ? '-' : exam.submitted ? '已提交' : '未提交'}
 	</td>
 	<td class="operation">
-		<button class="op-btn" onclick={() => console.log('详情', exam.id)}>详情</button>
-		<button class="op-btn" onclick={() => store.exportGrades([exam.id])}>导出</button>
+		<button class="op-btn" onclick={handleDetailClick}>详情</button>
+		<button class="op-btn" onclick={handleExport}>导出</button>
 		{#if !exam.submitted}
 			<button class="op-btn op-btn-submit" onclick={() => store.submitGrades([exam.id])}>
 				提交

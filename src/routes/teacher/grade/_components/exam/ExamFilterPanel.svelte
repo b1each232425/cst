@@ -108,67 +108,133 @@
 </div>
 
 <style lang="scss">
+	@import '../../_styles/responsive.scss';
+
 	.top-action-bar {
 		display: flex;
 		justify-content: flex-start;
 		align-items: center;
 		padding: 16px 0 0 0;
+
+		// 小屏幕时允许换行，避免按钮被截断
+		@include respond-to(lg) {
+			flex-wrap: wrap;
+			gap: 12px;
+		}
+
+		@include respond-to(md) {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 12px;
+		}
 	}
+
 	.filters {
 		display: flex;
 		align-items: center;
-		gap: 5px; // 筛选控件之间的间距
-		margin-right: 32px; // 在筛选器区域和右侧操作区域之间添加一些间距
+		gap: 5px;
+		margin-right: 32px;
+
+		// 小屏幕时调整布局
+		@include respond-to(lg) {
+			margin-right: 16px;
+			flex-wrap: wrap;
+		}
+
+		@include respond-to(md) {
+			margin-right: 0;
+			margin-bottom: 8px;
+			width: 100%;
+		}
+
+		@include respond-to(sm) {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 8px;
+		}
 	}
 	.filter-group {
 		display: flex;
 		align-items: center;
+
+		@include respond-to(sm) {
+			width: 100%;
+			justify-content: space-between;
+		}
 	}
+
 	.filter-hint {
 		font-size: 14px;
 		color: rgb(0, 0, 0, 0.6);
 		padding: 0 9px 0 10px;
 		min-width: 56px;
+		white-space: nowrap;
+
+		@include respond-to(sm) {
+			min-width: 80px;
+		}
 	}
+
 	.dropdown-wrapper {
 		min-width: 116px;
 		width: 116px;
+
+		@include respond-to(lg) {
+			min-width: 100px;
+			width: 100px;
+		}
+
+		@include respond-to(sm) {
+			flex: 1;
+			min-width: 120px;
+			width: auto;
+		}
 	}
 
-	// 适配新的 Select 组件样式
+	// 适配 Select 组件样式 - 控制宽度<=父容器
 	.dropdown-wrapper :global(.dropdown-container) {
 		width: 100%;
 		min-width: 116px;
 	}
 
-	.dropdown-wrapper :global(.dropdown-input) {
-		height: 32px;
-		border: 1px solid #ddd;
-		border-radius: 3px;
-		font-size: 14px;
-		padding: 5px 36px 5px 12px;
-		box-sizing: border-box;
-	}
-
-	.dropdown-wrapper :global(.dropdown-input:hover) {
-		border-color: #0052d9;
-	}
-
-	.dropdown-wrapper :global(.dropdown-input:focus) {
-		border-color: #0052d9;
-		box-shadow: 0 0 0 2px rgba(0, 82, 217, 0.1);
-	}
-
-	.dropdown-wrapper :global(.dropdown-options) {
-		z-index: 1000;
-	}
+	
 	.search-wrapper {
 		width: 200px;
+
+		@include respond-to(lg) {
+			width: 160px;
+		}
+
+		@include respond-to(sm) {
+			width: 100%;
+		}
 	}
+	.search-wrapper :global(.input-box) {
+		width: 100%;
+		min-width: 200px;
+	}
+
 	.actions {
 		display: flex;
 		align-items: center;
 		gap: 12px;
+
+		// 关键：小屏幕时允许换行，避免按钮被截断
+		@include respond-to(lg) {
+			flex-wrap: wrap;
+			gap: 8px;
+		}
+
+		@include respond-to(md) {
+			width: 100%;
+			justify-content: flex-start;
+		}
+
+		@include respond-to(sm) {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 8px;
+		}
 	}
 	.selection-info {
 		font-size: 14px;
@@ -190,15 +256,29 @@
 		font-size: 14px;
 		cursor: pointer;
 		color: #fff;
+		white-space: nowrap;
+		flex-shrink: 0;
+
 		&.export { background-color: #0052d9; }
 		&.submit { background-color: #067945; }
 		&.log { background-color: #0052d9; }
+
 		&:disabled {
 			background-color: #bbd3fb;
 			cursor: not-allowed;
 			&.submit {
 				background-color: #85dbbe;
 			}
+		}
+
+		@include respond-to(lg) {
+			padding: 6px 12px;
+			font-size: 13px;
+		}
+
+		@include respond-to(sm) {
+			width: 100%;
+			text-align: center;
 		}
 	}
 </style> 

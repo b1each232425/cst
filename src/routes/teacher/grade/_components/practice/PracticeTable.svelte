@@ -27,26 +27,30 @@
 </div>
 
 <style lang="scss">
+	@import '../../_styles/responsive.scss';
+
 	.practice-table-container {
-		width: 100%;
-		overflow-x: auto;
-		flex-grow: 1; /* 让表格容器占满剩余空间 */
+		@include table-scroll-container;
 	}
 
 	.practice-table {
-		width: 100%;
-		border-collapse: collapse;
-		table-layout: fixed; /* 关键：使用固定表格布局 */
-	}
-
-	.table-body {
-		flex-grow: 1;
-		overflow-y: auto;
+		@include responsive-table(1000px);
 	}
 
 	.no-data {
 		text-align: center;
 		padding: 40px;
 		color: #999;
+		font-size: 14px;
+
+		@include respond-to(md) {
+			padding: 20px;
+			font-size: 13px;
+		}
+
+		@include respond-to(xs) {
+			padding: 15px;
+			font-size: 12px;
+		}
 	}
 </style> 
