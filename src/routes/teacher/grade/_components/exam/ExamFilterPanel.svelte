@@ -156,11 +156,6 @@
 	.filter-group {
 		display: flex;
 		align-items: center;
-
-		@include respond-to(sm) {
-			width: 100%;
-			justify-content: space-between;
-		}
 	}
 
 	.filter-hint {
@@ -178,17 +173,6 @@
 	.dropdown-wrapper {
 		min-width: 116px;
 		width: 116px;
-
-		@include respond-to(lg) {
-			min-width: 100px;
-			width: 100px;
-		}
-
-		@include respond-to(sm) {
-			flex: 1;
-			min-width: 120px;
-			width: auto;
-		}
 	}
 
 	// 适配 Select 组件样式 - 控制宽度<=父容器
@@ -200,14 +184,7 @@
 	
 	.search-wrapper {
 		width: 200px;
-
-		@include respond-to(lg) {
-			width: 160px;
-		}
-
-		@include respond-to(sm) {
-			width: 100%;
-		}
+		
 	}
 	.search-wrapper :global(.input-box) {
 		width: 100%;
@@ -224,12 +201,7 @@
 			flex-wrap: wrap;
 			gap: 8px;
 		}
-
-		@include respond-to(md) {
-			width: 100%;
-			justify-content: flex-start;
-		}
-
+		//垂直排序
 		@include respond-to(sm) {
 			flex-direction: column;
 			align-items: stretch;
@@ -276,9 +248,5 @@
 			font-size: 13px;
 		}
 
-		@include respond-to(sm) {
-			width: 100%;
-			text-align: center;
-		}
 	}
 </style> 

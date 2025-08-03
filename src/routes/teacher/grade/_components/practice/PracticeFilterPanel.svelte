@@ -98,9 +98,6 @@
 			width: 240px;
 		}
 
-		@include respond-to(md) {
-			width: 100%;
-		}
 	}
 
     .actions {
@@ -116,26 +113,12 @@
 			flex-wrap: wrap;
 		}
 
-		@include respond-to(md) {
-			width: 100%;
-			justify-content: flex-start;
-		}
-
-		@include respond-to(sm) {
-			flex-direction: column;
-			align-items: stretch;
-			gap: 12px;
-		}
-
 		.selection-info {
 			display: flex;
 			align-items: center;
 			gap: 10px;
 			white-space: nowrap;
 
-			@include respond-to(sm) {
-				justify-content: center;
-			}
 
 			.count {
 				color: #0052d9;
@@ -171,11 +154,6 @@
 				padding: 0 12px;
 				height: 28px;
 				font-size: 13px;
-			}
-
-			@include respond-to(sm) {
-				width: 100%;
-				text-align: center;
 			}
 		}
 	}
