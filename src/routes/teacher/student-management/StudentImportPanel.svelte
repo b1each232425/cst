@@ -8,31 +8,31 @@
 
   let search_text = $state(''); // 搜索框文本内容
   let failure_student_list = $state([]); // 失败学生列表
-  let successCount = $derived(failure_student_list.filter((item) => item.isOk).length); // 成功导入学生数量
-  let failureCount = $derived(failure_student_list.filter((item) => !item.isOk).length); // 失败导入学生数量
-  let filteredStudentList = $derived(filterStudentList()); // 过滤后的学生列表
+  let success_count = $derived(failure_student_list.filter((item) => item.isOk).length); // 成功导入学生数量
+  let failure_count = $derived(failure_student_list.filter((item) => !item.isOk).length); // 失败导入学生数量
+  let filtered_student_list = $derived(filterStudentList()); // 过滤后的学生列表
 
   // 分页相关状态
-  let currentPage = $state(1);
-  let pageSize = $state(10);
-  let totalItems = $derived(filteredStudentList.length);
+  let current_page = $state(1);
+  let page_size = $state(10);
+  let total_items = $derived(filtered_student_list.length);
 
-  let currentPageData = $derived(getCurrentPage()); // 当前页数据
+  let current_page_data = $derived(getCurrentPage()); // 当前页数据
 
   // 编辑状态
-  let editingIndex = $state(-1);
-  let editingSerialNumber = $state(null);
-  let editingRow = $state({
-    officialName: '',
+  let editing_index = $state(-1);
+  let editing_serial_number = $state(null);
+  let editing_row = $state({
+    official_name: '',
     phone: '',
-    idCardNo: '',
-    serialNumber: null,
-    errorType: '',
+    id_Card_No: '',
+    serial_number: null,
+    error_type: '',
   });
 
   //报错
   let error = $state('');
-  const ERROR_TYPE = {
+  const ERRORTYPE = {
     duplicate_id_card: '身份证号重复',
     duplicate_phone: '手机号重复',
     phone_used: '手机号已被其他用户使用',
@@ -46,7 +46,7 @@
     onImport = (isAllOk) => {},
   } = $props();
 
-  let fileInput = $state(null); // 文件输入框
+  let file_input = $state(null); // 文件输入框
 
   // 文件上传处理
   async function handleFileUpload(event) {
@@ -80,17 +80,17 @@
       }
       // 转换字段名
       const convertedData = result.data.map((item) => ({
-        officialName: item['姓名'],
+        official_name: item['姓名'],
         phone: item['手机号'],
-        idCardNo: item['身份证号'],
-        serialNumber: item['编号'],
-        errorType: item.errorType,
+        id_Card_No: item['身份证号'],
+        serial_number: item['编号'],
+        error_type: item.error_type,
         isOk: item.isOk,
       }));
       failure_student_list = convertedData;
       show = true;
-      if (fileInput) {
-        fileInput.value = null;
+      if (file_input) {
+        file_input.value = null;
       }
     }
   }
@@ -101,9 +101,9 @@
     // 如果搜索框有内容
     if (search_text) {
       filtered = filtered.filter((student) => {
-        const name = student.officialName || '';
+        const name = student.official_name || '';
         const phone = student.phone || '';
-        const idCard = student.idCardNo || '';
+        const idCard = student.id_Card_No || '';
         return name.includes(search_text) || phone.includes(search_text) || idCard.includes(search_text);
       });
     }
@@ -111,41 +111,41 @@
   }
 
   function getCurrentPage() {
-    const sortedList = [...filteredStudentList].sort((a, b) => {
+    const sortedList = [...filtered_student_list].sort((a, b) => {
       if (a.isOk !== b.isOk) return a.isOk ? 1 : -1; // 失败在前
-      if (a.isOk && b.isOk) return a.serialNumber - b.serialNumber;
+      if (a.isOk && b.isOk) return a.serial_number - b.serial_number;
       return 0;
     });
 
-    const start = (currentPage - 1) * pageSize;
-    const end = start + pageSize;
+    const start = (current_page - 1) * page_size;
+    const end = start + page_size;
     return sortedList.slice(start, end);
   }
 
   //搜索处理
   function onSearch(value) {
     search_text = value;
-    currentPage = 1; // 搜索时重置到第一页
+    current_page = 1; // 搜索时重置到第一页
   }
 
   //与父页面通信
   export function triggerFileInput() {
     //重置数据
     failure_student_list = [];
-    successCount = 0;
+    success_count = 0;
     search_text = '';
-    currentPage = 1;
+    current_page = 1;
 
-    if (fileInput) {
-      fileInput.click();
+    if (file_input) {
+      file_input.click();
     }
   }
 
   //编辑按钮
   function handleEdit(student, idx) {
-    editingIndex = idx;
-    editingSerialNumber = student.serialNumber;
-    editingRow = { ...student };
+    editing_index = idx;
+    editing_serial_number = student.serial_number;
+    editing_row = { ...student };
   }
 
   //关闭按钮
@@ -158,8 +158,8 @@
   function handleSaveEdit() {
     // 先将编辑行的内容应用到列表副本
     let tempList = failure_student_list.map((item) => {
-      if (item.serialNumber === editingSerialNumber) {
-        return { ...editingRow };
+      if (item.serial_number === editing_serial_number) {
+        return { ...editing_row };
       }
       return item;
     });
@@ -168,7 +168,7 @@
 
     tempList.forEach((item) => {
       if (item.phone) phoneCount[item.phone] = (phoneCount[item.phone] || 0) + 1;
-      if (item.idCardNo) idCardCount[item.idCardNo] = (idCardCount[item.idCardNo] || 0) + 1;
+      if (item.id_Card_No) idCardCount[item.id_Card_No] = (idCardCount[item.id_Card_No] || 0) + 1;
     });
 
     // 先处理重复，所有重复项都直接标记为重复错误
@@ -176,13 +176,13 @@
     tempList = tempList.map((item) => {
       if (phoneCount[item.phone] > 1) {
         hasDuplicate = true;
-        return { ...item, errorType: 'duplicate_phone', isOk: false };
+        return { ...item, error_type: 'duplicate_phone', isOk: false };
       }
-      if (idCardCount[item.idCardNo] > 1) {
+      if (idCardCount[item.id_Card_No] > 1) {
         hasDuplicate = true;
         return {
           ...item,
-          errorType: 'duplicate_id_card',
+          error_type: 'duplicate_id_card',
           isOk: false,
         };
       }
@@ -191,62 +191,62 @@
     // 如果有重复，直接更新列表并退出编辑
     if (hasDuplicate) {
       failure_student_list = tempList;
-      editingIndex = -1;
-      editingSerialNumber = null;
-      editingRow = {
-        officialName: '',
+      editing_index = -1;
+      editing_serial_number = null;
+      editing_row = {
+        official_name: '',
         phone: '',
-        idCardNo: '',
-        serialNumber: null,
-        errorType: '',
+        id_Card_No: '',
+        serial_number: null,
+        error_type: '',
       };
       return;
     }
     // 没有重复，再判断格式、缺项等
     tempList = tempList.map((item) => {
-      if (!item.officialName) {
-        return { ...item, errorType: '姓名不能为空', isOk: false };
+      if (!item.official_name) {
+        return { ...item, error_type: '姓名不能为空', isOk: false };
       }
       if (!/^1[3-9]\d{9}$/.test(item.phone)) {
-        return { ...item, errorType: '手机号格式错误', isOk: false };
+        return { ...item, error_type: '手机号格式错误', isOk: false };
       }
-      if (!/(^\d{15}$)|(^\d{17}(\d|X|x)$)/.test(item.idCardNo)) {
+      if (!/(^\d{15}$)|(^\d{17}(\d|X|x)$)/.test(item.id_Card_No)) {
         return {
           ...item,
-          errorType: '身份证号格式错误',
+          error_type: '身份证号格式错误',
           isOk: false,
         };
       }
-      return { ...item, errorType: '', isOk: true };
+      return { ...item, error_type: '', isOk: true };
     });
     failure_student_list = tempList;
-    editingIndex = -1;
-    editingSerialNumber = null;
-    editingRow = {
-      officialName: '',
+    editing_index = -1;
+    editing_serial_number = null;
+    editing_row = {
+      official_name: '',
       phone: '',
-      idCardNo: '',
-      serialNumber: null,
-      errorType: '',
+      id_Card_No: '',
+      serial_number: null,
+      error_type: '',
     };
   }
 
   //取消编辑按钮
   function handleCancelEdit() {
-    editingIndex = -1;
-    editingSerialNumber = null;
-    editingRow = {
-      officialName: '',
+    editing_index = -1;
+    editing_serial_number = null;
+    editing_row = {
+      official_name: '',
       phone: '',
-      idCardNo: '',
-      serialNumber: null,
-      errorType: '',
+      id_Card_No: '',
+      serial_number: null,
+      error_type: '',
     };
   }
 
   // 删除按钮
   function handleDelete(student) {
-    failure_student_list = failure_student_list.filter((item) => item.serialNumber !== student.serialNumber);
+    failure_student_list = failure_student_list.filter((item) => item.serial_number !== student.serial_number);
   }
 
   // 确认导入按钮
@@ -282,8 +282,8 @@
             }
             // payload
             return {
-              IDCardNo: student.idCardNo?.trim() || null,
-              OfficialName: student.officialName?.trim() || null,
+              idCardNo: student.id_Card_No?.trim() || null,
+              officialName: student.official_name?.trim() || null,
               MobilePhone: student.phone?.trim() || null,
               Account: json.data,
               Domains: ['cst.school^student'],
@@ -329,13 +329,13 @@
 
   // 页码选择处理
   function handlePageChange(event) {
-    currentPage = event.detail.page;
+    current_page = event.detail.page;
   }
 
   // 每页大小变更处理
   function handlePageSizeChange(event) {
-    pageSize = event.detail.pageSize;
-    currentPage = 1; // 重置到第一页
+    page_size = event.detail.page_size;
+    current_page = 1; // 重置到第一页
   }
 </script>
 
@@ -365,16 +365,16 @@
           </div>
         </div>
         <div class="checkbox-container">
-          <span class="checkbox-item">导入成功{successCount}名</span>
-          <span class="checkbox-item">导入失败{failureCount}名</span>
+          <span class="checkbox-item">导入成功{success_count}名</span>
+          <span class="checkbox-item">导入失败{failure_count}名</span>
         </div>
         <input
           type="file"
-          id="fileInput"
+          id="file_input"
           class="file-input-hidden"
           accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           onchange={handleFileUpload}
-          bind:this={fileInput}
+          bind:this={file_input}
         />
       </div>
       <div class="student-table-container">
@@ -389,17 +389,17 @@
             </tr>
           </thead>
           <tbody>
-            {#each currentPageData as student, index}
+            {#each current_page_data as student, index}
               <!-- 如果这正在编辑 -->
-              {#if editingSerialNumber === student.serialNumber}
+              {#if editing_serial_number === student.serial_number}
                 <tr class="student failed-row">
-                  <td><input type="text" bind:value={editingRow.officialName} class="input-name" /></td>
-                  <td class="table-data"><input type="text" bind:value={editingRow.phone} class="input-phone" /></td>
-                  <td class="table-data"><input type="text" bind:value={editingRow.idCardNo} class="input-id" /></td>
-                  <td class:error-text={editingRow.errorType}>
-                    {editingRow.errorType === null || editingRow.errorType === ''
+                  <td><input type="text" bind:value={editing_row.official_name} class="input-name" /></td>
+                  <td class="table-data"><input type="text" bind:value={editing_row.phone} class="input-phone" /></td>
+                  <td class="table-data"><input type="text" bind:value={editing_row.id_Card_No} class="input-id" /></td>
+                  <td class:error-text={editing_row.error_type}>
+                    {editing_row.error_type === null || editing_row.error_type === ''
                       ? '--'
-                      : ERROR_TYPE[editingRow.errorType]}
+                      : ERRORTYPE[editing_row.error_type]}
                   </td>
 
                   <td class="table-data action-btn-container">
@@ -409,11 +409,11 @@
                 </tr>
               {:else}
                 <tr class={`student ${!student.isOk ? 'failed-row' : 'selected'}`}>
-                  <td>{student.officialName}</td>
+                  <td>{student.official_name}</td>
                   <td>{student.phone}</td>
-                  <td>{student.idCardNo}</td>
-                  <td class:error-text={student.errorType && student.errorType !== ''}>
-                    {student.errorType === null || student.errorType === '' ? '--' : ERROR_TYPE[student.errorType]}</td
+                  <td>{student.id_Card_No}</td>
+                  <td class:error-text={student.error_type && student.error_type !== ''}>
+                    {student.error_type === null || student.error_type === '' ? '--' : ERRORTYPE[student.error_type]}</td
                   >
                   <td class="action-btn-container">
                     {#if !student.isOk}
@@ -436,9 +436,9 @@
       </div>
       <div class="pagination-container">
         <Pagination
-          {totalItems}
-          {currentPage}
-          {pageSize}
+          totalItems={total_items}
+          currentPage={current_page}
+          pageSize={page_size}
           pageSizeOptions={[10]}
           on:pageChange={handlePageChange}
           on:pageSizeChange={handlePageSizeChange}
