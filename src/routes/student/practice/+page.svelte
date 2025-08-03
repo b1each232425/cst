@@ -371,6 +371,11 @@
     }
   }
 
+  // 是否有上次的作答记录
+  function hasLastRecord(action) {
+    return action != '00' && action != '04' && action != '06' && action != '10';
+  }
+
   // 练习列表
   let practiceList = $state([]);
   let currentPracticeList = $derived(practiceList.filter((p) => p.Type === currentPracticeTypeTab));
@@ -419,7 +424,7 @@
   // 处理练习种类的切换
   function handlePracticeTypeChange(key) {
     currentPracticeTypeTab = key;
-    // handleSearch(); TODO 是否需要
+    // handleSearch(); TODO
   }
 
   // 处理页号改变
@@ -431,7 +436,6 @@
   // 处理页大小改变
   function handlePageSizeChange(event) {
     pageSize = event.detail;
-    handleSearch();
   }
 
   onMount(() => handleSearch());
@@ -460,8 +464,8 @@
         {/each}
       </Select>
     </div>
-    <Button type="info" onclick={handleReset}>重置</Button>
-    <Button type="primary" onclick={handleSearch}>搜索</Button>
+    <div><Button type="info" onclick={handleReset}>重置</Button></div>
+    <div><Button type="primary" onclick={handleSearch}>搜索</Button></div>
   </div>
 
   <div class="practice-show">
@@ -516,22 +520,8 @@
               <td>{practice.AllowedAttempts === 0 ? '不限次数' : practice.AllowedAttempts}</td>
               {#if currentPracticeTypeTab === '00'}
                 <td>{practice.QuestionCount}</td>
-                <td
-                  >{practice.Action !== '00' &&
-                  practice.Action !== '04' &&
-                  practice.Action !== '06' &&
-                  practice.Action !== '10'
-                    ? practice.WrongCount
-                    : '--'}</td
-                >
-                <td
-                  >{practice.Action !== '00' &&
-                  practice.Action !== '04' &&
-                  practice.Action !== '06' &&
-                  practice.Action !== '10'
-                    ? practice.TotalScore
-                    : '--'}</td
-                >
+                <td>{hasLastRecord(practice.Action) ? practice.WrongCount : '--'}</td>
+                <td>{hasLastRecord(practice.Action) ? practice.TotalScore : '--'}</td>
                 <td
                   >{practice.Action !== '00' &&
                   !(
@@ -555,11 +545,15 @@
               {/if}
               <td
                 >{#each actionMap.get(practice.Action) as action, index (index)}
-                  <button
-                    class="option"
-                    class:can-click={practice.Action && actionMap.has(practice.Action) && practice.Action !== '06'}
-                    onclick={() => handleAction(practice.Action, index, practice.ID)}>{action}</button
-                  >{/each}</td
+                  <!-- TODO 当前阶段未实现 -->
+                  {#if action !== '查看上次作答'}
+                    <button
+                      class="option"
+                      class:can-click={practice.Action && actionMap.has(practice.Action) && practice.Action !== '06'}
+                      onclick={() => handleAction(practice.Action, index, practice.ID)}>{action}</button
+                    >
+                  {/if}
+                {/each}</td
               >
             </tr>
           {/each}
@@ -621,7 +615,6 @@
         button {
           border: 0;
           background-color: white;
-
           cursor: pointer;
           display: flex;
           gap: 0.5rem;
@@ -687,9 +680,9 @@
               }
 
               .option {
-                border: 0;
-                background-color: white;
+                all: unset;
                 color: blue;
+                padding: 0 0.3rem;
 
                 &.can-click:hover {
                   cursor: pointer;

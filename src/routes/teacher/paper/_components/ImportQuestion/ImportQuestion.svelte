@@ -1,21 +1,21 @@
 <script>
     import Button from "$lib/components/Button/Button.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
-    import Loading from "$lib/components/Loading/Loading.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import { debounce } from "$lib/utils/optimize";
     import { onMount } from "svelte";
     import { fetchBankQuestionList, fetchPaper, fetchQuestionBankList, savePaper } from "../../_utils/api";
     import { questionDifficultyTrans, questionTypeTrans, tagColorList } from "../../_utils/data";
-    import { formatTimestamp, getColorIndex } from "../../_utils/func";
+    import { formatTimestamp, getColorIndex, restoreOpenState } from "../../_utils/func";
     import { toast } from "$lib/components/Toast/Toast";
+    import Empty from "$lib/components/Table/Empty.svelte";
 
     /**************** 开关控制区 ****************/
 
-    let { onclose } = $props();                 // 关闭弹窗
+    let { onclose, update, toAddGroupID = 0, toAddgroupName = "" } = $props();                 // 关闭弹窗
     let dropUpToggleIsOpen = $state(false);     // 上拉题组栏
     let filterIsOpen = $state(false);           // 下拉筛选栏
-    let isLoading = $state(false);              // 加载中
+    let isFirstEntry = $state(true);            // 是否首次打开弹窗
     
     /**************** 开关控制区 ****************/
     
@@ -26,8 +26,6 @@
     let paperID = $state(0);
     let paperInfo = $state(null);
     let paperGroups = $state([]); 
-    let toAddGroupID = $state(0);
-    let toAddgroupName = $state("");
     let toAddgroupLength = $state(0);
 
     // 选中题组
@@ -50,19 +48,17 @@
 
     // 防抖搜索题库列表
     const debouncedFetchQuestionBankList = debounce(() => {
-        isLoading = true;
         fetchQuestionBankList(bankKeyWord, "", "", "")
             .then(result => {
                 bankList = result.data || [];
-            })
-            .finally(() => {
-                isLoading = false;
             });
-    }, 1000, false);
+    }, 500, false);
 
     $effect(() => {
         bankKeyWord;
-        debouncedFetchQuestionBankList();
+        if(!isFirstEntry) {
+            debouncedFetchQuestionBankList();
+        }
     });
 
     // 单选题库功能
@@ -85,49 +81,87 @@
     let totalQuestions = $state(0);
     let questionList = $state([]);
 
-    let toAddQuestionID = $state(null);
+    let selectedQuestionInfos = $state([]);      // 已选 ID 数组
+    let allQuestionSelected = $state(false);    // 是否为全选状态
 
-    function toggleQuestion(id) {
-        toAddQuestionID = toAddQuestionID === id ? "" : id;
+    // 选中数据
+    function toggleSelection(id, checked) {
+        if (checked) {
+            // 查找对应题目，获取 score
+            const question = questionList.find(q => q.ID === id);
+            if (question) {
+                selectedQuestionInfos.push({ id: question.ID, score: question.Score });
+            }
+        } else {
+            selectedQuestionInfos = selectedQuestionInfos.filter(item => item.id !== id);
+        }
+    }
+
+    // 检查全选
+    $effect(() => {
+        const currentPageIDs = questionList.map(item => item.ID);
+        const selectedIDs = selectedQuestionInfos.map(q => q.id);
+        allQuestionSelected = (
+            questionList.length !== 0 &&
+            currentPageIDs.every(id => selectedIDs.includes(id))
+        );
+    });
+
+    // 全选
+    function selectAllQuestions(checked) {
+        const currentPageQuestions = questionList.map(item => ({ id: item.ID, score: item.Score }));
+        if (checked) {
+            // 只追加未存在的
+            const existingIds = selectedQuestionInfos.map(item => item.id);
+            const toAdd = currentPageQuestions.filter(q => !existingIds.includes(q.id));
+            selectedQuestionInfos = [...selectedQuestionInfos, ...toAdd];
+        } else {
+            // 移除当前页的
+            const currentPageIds = questionList.map(item => item.ID);
+            selectedQuestionInfos = selectedQuestionInfos.filter(q => !currentPageIds.includes(q.id));
+        }
     }
 
     // 确认导入题目
     function concfirmImport() {
-        isLoading = true;
-
-            const actions = [
-                {
-                    action: "add_question",
-                    payload: [
-                        {
-                            temp_id: "temp_question_1",
-                            group_id: toAddGroupID,
-                            order: toAddgroupLength + 1,
-                            bank_question_id: toAddQuestionID,
-                            score: 10
-                        }
-                    ]
-                }
-            ];
-            
-            savePaper(paperID, actions)
+        const actions = [
+            {
+                action: "add_question",
+                payload: selectedQuestionInfos.map((q, index) => ({
+                    temp_id: `temp_question_${index + 1}`,
+                    group_id: toAddGroupID,
+                    order: toAddgroupLength + index + 1,
+                    bank_question_id: q.id,
+                    score: q.score
+                }))
+            }
+        ];
+        
+        savePaper(paperID, actions)
+            .then(() => {
+                fetchPaper(paperID)
                     .then(result => {
-                        // console.log(result);
-                    })
-                    .finally(() => {
-                        isLoading = false;
-                        toast.success("添加题目成功", 1000);
-
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
+                        paperGroups = result.data.GroupsData;
+                        update(paperGroups);
+                        onclose();
+                        toast.success("试卷已同步更新", 1000);
                     });
+            });
+    }
+
+    // 处理页面跳转
+    function handlePageChange(event) {
+        questionPage = event.detail;
+    }
+
+    // 处理页面尺寸更改
+    function handlePageSizeChange(event) {
+        questionPageSize = event.detail;
+        questionPage = 1; // 改变每页数量时通常要跳回第一页
     }
     
     $effect(() => {
-        toAddbankID;
         if(toAddbankID !== "") {
-            isLoading = true;
             fetchBankQuestionList(
                 toAddbankID,
                 questionPage,
@@ -137,11 +171,8 @@
                 questionType,
                 questionDifficulty
             ).then( result => {
-                questionList = result.data;
+                questionList = result.data || [];
                 totalQuestions = result.rowCount;
-                // console.log(result);
-            }).finally(()=>{
-                isLoading = false;
             });
         } else { questionList = []; }
     });
@@ -151,20 +182,21 @@
 
     // 挂载区
     onMount(() => {
-        isLoading = true;
+        fetchQuestionBankList(bankKeyWord, "", "", "")
+            .then(result => {
+                bankList = result.data || [];
+                isFirstEntry = false;
+            });
+
         paperID = JSON.parse(localStorage.getItem('currentPaperID'));
         fetchPaper(paperID)
             .then(result => {
                 paperInfo = result.data;
                 paperGroups = result.data.GroupsData;
-        }).finally(() => {
-            isLoading = false;
-        })
+        });
     })
 
 </script>
-
-<Loading bind:value={isLoading} loadingText="正在加载中"/>
 
 <!-- 遮罩 -->
 <div class="modal-overlay">
@@ -188,9 +220,6 @@
                 <!-- 搜索 -->
                 <div class="search-box">
                     <InputBox bind:value={bankKeyWord} placeholder="搜索题库" showLabel={false}/>
-                    <div class="selected-banks-box">
-                        <span class="selected-banks">已选择 <span>0</span> 个题库</span>
-                    </div>
                 </div>
 
                 <!-- 题库列表 -->
@@ -205,6 +234,8 @@
                                 <span class="questions-number">{bank.QuestionCount}</span>
                             </div>
                         {/each}
+                    {:else}
+                        <Empty text="暂无题库数据"/>
                     {/if}
                 </div>
             </div>
@@ -272,7 +303,13 @@
                         <table>
                             <thead>
                                 <tr>
-                                    <th><input type="checkbox"></th>
+                                    <th>
+                                        <input
+                                            type="checkbox"
+                                            bind:checked={allQuestionSelected}
+                                            onchange={(e) => selectAllQuestions(e.target.checked)}
+                                        >
+                                    </th>
                                     <th>题目内容</th>
                                     <th>题目类型</th>
                                     <th>题目难度</th>
@@ -285,8 +322,16 @@
                             <tbody>
                                 {#if questionList && questionList.length !== 0}
                                     {#each questionList as question}
-                                    <tr class={toAddQuestionID===question.ID?"selected":""} onclick={()=>toggleQuestion(question.ID)}>
-                                        <td class="checkbox"><input type="checkbox" checked={toAddQuestionID === question.ID} onclick={(e) => {e.stopPropagation(); toggleQuestion(question.ID);}}></td>
+                                        <tr class:selected={selectedQuestionInfos.map(q => q.id).includes(question.ID)}
+                                            onclick={() => toggleSelection(question.ID, !selectedQuestionInfos.map(q => q.id).includes(question.ID))}>
+                                        <td class="checkbox">
+                                            <input type="checkbox"
+                                                checked={selectedQuestionInfos.map(q => q.id).includes(question.ID)}
+                                                onclick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleSelection(question.ID, e.target.checked);
+                                                }}>
+                                        </td>
                                         <td class="question-content">{@html question.Content}</td>
                                         <td class="question-type">{questionTypeTrans[question.Type]}</td>
                                         <td class="question-level"><span class={questionDifficultyTrans[questionDifficultyTrans[question.Difficulty]]}>{questionDifficultyTrans[question.Difficulty]}</span></td>
@@ -311,11 +356,23 @@
                                 {/if}
                             </tbody>
                         </table>
+
+                        {#if questionList.length === 0}
+                            <Empty text="暂无题目数据"/>
+                        {/if}
                     </div>
 
                     <!-- 翻页控制 -->
                     <div class="page-control-container">
                         <!-- <Pagination/> -->
+                        <Pagination
+                            totalItems={totalQuestions}
+                            pageSize={questionPageSize}  
+                            currentPage={questionPage}
+                            pageSizeOptions={[5, 10 ,20]}
+                            on:pageChange={handlePageChange}
+                            on:pageSizeChange={handlePageSizeChange}
+                        />
                     </div>
                 </div>
             </div>
@@ -333,18 +390,18 @@
                             <!-- svelte-ignore a11y_click_events_have_key_events -->
                             <div class="menu-option {toAddGroupID===group.id?"selected":""}" onclick={()=>selectGroup(group)}>
                                 <span>
-                                    {group.name}（共0题，共0分）
+                                    {group.name}
                                 </span>
                             </div>
                         {/each}
                     </div>  
                 {/if}
-                <span class="selected-group">{toAddGroupID===0?"请选择题组":toAddgroupName+"（共0题，共0分）"}</span>
+                <span class="selected-group">{toAddGroupID===0?"请选择题组":toAddgroupName}</span>
                 <button class="toggle-btn">∨</button>
             </div>
             <div class="btn-box">
                 <Button onclick={onclose} plain={true}>取消</Button>
-                {#if toAddbankID!=="" && toAddGroupID!==0 && toAddQuestionID}
+                {#if toAddbankID!=="" && toAddGroupID!==0 && selectedQuestionInfos.length!==0}
                     <Button onclick={()=>concfirmImport()}>确认导入</Button>
                 {:else}
                     <Button disabled={true}>确认导入</Button>
@@ -650,7 +707,7 @@
                         .questions-table-container {
                             padding: 0 16px;
                             flex-grow: 1;
-                            max-height: calc(90vh - 180px);
+                            max-height: calc(90vh - 220px);
                             overflow: auto;
                             display: flex;
                             flex-direction: column;

@@ -315,14 +315,21 @@ export const sidebarFloatState = writable(false);
 export let timerId = writable(null);
 
 // 处理鼠标进入事件
-export function sidebarMouseEnter() {
+export function sidebarMouseEnter(fromPage) {
   const currentTimerId = get(timerId);
 
   if (currentTimerId) {
     clearTimeout(currentTimerId);
   }
 
-  sidebarFloatState.set(true);
+  // 如果是面包屑按钮触发的，延迟0.5秒
+  const delay = fromPage === 'crumb' ? 500 : 0;
+
+  const newTimerId = setTimeout(() => {
+    sidebarFloatState.set(true);
+  }, delay);
+
+  timerId.set(newTimerId);
 }
 
 // 处理鼠标离开事件

@@ -97,7 +97,7 @@
   
   
   //考试类信息变量
-  let load_success = $state(true);
+  let load_success = $state(false);
   let ifPreview = $state();//查看当前是否为预览模式
   let is_full_examMode = $state(true); // 是否为全卷模式
   let start_time = $state();//考试界面的开始时间
@@ -121,18 +121,6 @@
   let total_seconds = $state(0); // 考试总时长（秒）
 
 
-  //实时检测出是否加载失败
-  $effect(() => {
-    if (!load_success) {
-      MessageBox({
-      title: '出错了，请回到考试列表刷新重新进入',
-      show_cancel_button: false,
-      onConfirm: () => {
-         window.location.href = "/student/exam";
-      },
-    });
-    }
-  });
 
   //左上角考试信息类
   function openModal() { //打开考试信息弹窗
@@ -148,6 +136,12 @@
 
     const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序出一个数组
 
+    // 构建全局索引映射
+    const globalIndexMap = new Map();
+    examQuestions.forEach((q, idx) => {
+      globalIndexMap.set(q.ID, idx);
+    });
+
     sortedGroups.forEach(groupInfo => {
       const groupId = groupInfo.ID; // 题组 id
       const groupQuestions = examQuestionsMap.get(String(groupId)) || []; // 该分组下的题目数组
@@ -158,13 +152,13 @@
         type: groupQuestions[0].type,
         questions: groupQuestions.map((question, index) => ({
           question,
-          index
+          index: globalIndexMap.get(question.ID) // 这里用全局索引
         }))
       });
     });
     return groups;
   }
-  function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组
+  function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组 用来生成题目
     const result = [];
     const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序数组
 
@@ -172,7 +166,20 @@
       const groupId = groupInfo.ID;
       const groupQuestions = examQuestionsMap.get(String(groupId)) || [];
 
-      groupQuestions.forEach(q => result.push(q)); // 将每个题目添加到结果数组中
+      let totalScore = 0;
+      for (const item of groupQuestions) {
+        // 如果每道题的分数字段是 question.Score
+        totalScore += Number(item.Score || 0);
+      }
+
+
+        groupQuestions.forEach(q => {
+        result.push({
+          ...q,
+          group_name: groupInfo.Name,
+          group_score : totalScore, // 该组的总分
+        });
+      });
     });
     return result;
   }
@@ -241,12 +248,12 @@
           }
         } else {
           console.error("答案保存失败:", resp.msg);
-          toast.error('答案保存失败！', 2000);
+          toast.error(`答案保存失败！${resp.msg || ''}`, 2000);
         }
       })
       .catch((error) => {
         console.error("保存答案时出错:", error);
-        toast.error('保存答案时出错！', 2000);
+        toast.error(`保存答案时出错！${error.message || ''}`, 2000);
       });
   }
   function submitMessageBox() { //考试提交提示框
@@ -260,8 +267,7 @@
   }
   function submitExam() { // 主动提交考试
     if (ifPreview) {
-     toast.warning('预览模式，不需要提交试卷', 2000);
-      console.log("预览模式，不需要提交试卷");
+      toast.warning('预览模式，不需要提交试卷', 2000);
       return;
     }
     submitExamAfterCountdown();
@@ -276,7 +282,6 @@
     const requestBody = {
       data: body_data,
     };
-    console.log(examinee_id, exam_session_id);
 
     fetch("/api/respondent/submit", {  //发起请求
       method: "POST",
@@ -298,12 +303,13 @@
           toast.success('考试结束，提交成功！', 2000);
           goto(`/student/answer/exam-detail?exam-id=${exam_id}&exam-session-id=${exam_session_id}`); //跳转到考试详情页
         } else {
-          toast.error('提交失败！', 2000);
+          console.error(`提交失败：${resp_data.msg}`);
+          toast.error(`提交失败！${resp_data.msg || ''}`, 2000);
         }
       })
       .catch((e) => {
         console.log(`提交失败：${e} `);
-        toast.error('提交失败', 2000);
+        toast.error(`提交失败！${e.message || ''}`, 2000);
       });
   }
 
@@ -398,6 +404,10 @@
           toast.error('获取题目时出错！', 2000);
           return;
         }
+      } else {
+        console.error("没有找到考试题目");
+        toast.error('没有找到考试题目', 2000);
+        return;
       }
     }  else {
       // 初始化考试
@@ -419,6 +429,7 @@
         if (!response.ok) {
           return response.text().then(text => {
             console.error('接口响应失败:', text);
+            toast.error(`接口响应失败: ${text}`, 2000);
             throw new Error(text);
           });
         }
@@ -427,6 +438,7 @@
       .then(data => {
         if (data.status !== 0) {
           console.error(`接口错误: ${data.msg}`);
+          toast.error(`接口错误: ${data.msg}`, 2000);
           throw new Error(data.msg);
         }
 
@@ -472,11 +484,28 @@
       })
       .catch(error => {
         console.error('请求失败:', error);
+        toast.error(`获取题目时出错！${error.message || ''}`, 2000);
         load_success = false;
+
+
+        if (!load_success) {
+          MessageBox({
+              title: '出错了，请回到考试列表刷新重新进入',
+              show_cancel_button: false,
+              onConfirm: () => {
+                window.location.href = "/student/exam";
+              },
+          });
+        }
+
         return;
       });
     }
+
+
   });
+
+  
 </script>
 
 <svelte:head>
@@ -534,7 +563,7 @@
         <!-- 考试信息区域 -->
         <div class="box exam-info">
           <div class="exam-time-info">
-            考试信息: 
+            考试信息: &emsp;
 
             <Button type="primary" plain size="small" onclick={openModal}>
               <span>查看详情</span>
@@ -543,10 +572,10 @@
           </div>
 
           <div class="exam-time-info">
-            开始时间:{ifPreview ? "--" : formatTimestamp(start_time)}
+            开始时间:&emsp;{ifPreview ? "--" : formatTimestamp(start_time)}
           </div>
           <div class="exam-time-info">
-            结束时间:{ifPreview ? "--" : formatTimestamp(end_time)}
+            结束时间:&emsp;{ifPreview ? "--" : formatTimestamp(end_time)}
           </div>
         </div>
         <!-- 考试作答形式选择区域 -->
@@ -583,7 +612,7 @@
                   <!-- 如果是新的分组就显示分组标题 -->
                   {#if index === 0 || question.group_name !== examQuestions[index - 1].group_name}
                     <div class="question-header">
-                      <h2>{question.group_name}</h2>
+                      <h2>{question.group_name} <span class="group-score">（{question.group_score}分）</span></h2>
                     </div>
                   {/if}
                   <div class="question-mark-container" id={`question-${index}`}>
@@ -615,7 +644,7 @@
                 {/each}
               {:else}
                 <div class="question-header">
-                  <h2>{currentQuestion.group_name}</h2>
+                  <h2>{currentQuestion.group_name} <span class="group-score">（{currentQuestion.group_score}分）</span></h2>
                 </div>
                 <!-- 逐题模式：只显示当前题目 -->
 
@@ -709,13 +738,13 @@
                           class="question-btn"
                           onclick={() => goToQuestion(question.index)}
                           class:marked={markedQuestions[question.index]}
-                          class:active={question.question?.answer !== null &&
-                            question.question?.answer !== undefined &&
-                            Array.isArray(question.question.answer) &&
-                            !question.question.answer.every(
-                              (str) => str === ""
-                            ) &&
-                            question.question.answer.length !== 0}
+                          class:active={
+                            examQuestions[question.index]?.Answer !== null &&
+                            examQuestions[question.index]?.Answer !== undefined &&
+                            Array.isArray(examQuestions[question.index].Answer) &&
+                            !examQuestions[question.index].Answer.every((str) => str === "") &&
+                            examQuestions[question.index].Answer.length !== 0
+                            }
                         >
                           {question.index + 1}
                         </button>
@@ -798,8 +827,11 @@
 
   /* 考试头部样式 */
   .exam-header {
-    position: relative; // 新增
+    position: relative;
     height: 60px;
+    min-height: 60px;
+    max-height: 60px;
+    overflow: hidden; // 防止内容撑高
     background-color: white;
     display: flex;
     align-items: center;
@@ -808,7 +840,7 @@
     border-style: solid;
     border-width: 0 0 1px 0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
+}
 
   .exam-title {
     // 居中对齐
@@ -1071,7 +1103,7 @@
     display: flex;
     flex-direction: column;
     height: calc(100vh - 60px);
-    min-height: 540px;
+    min-height: 100vh;
     overflow-y: scroll;
     padding: 20px;
     min-width: 500px;

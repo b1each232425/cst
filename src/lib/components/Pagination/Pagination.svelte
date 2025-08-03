@@ -265,7 +265,13 @@
         border: none;
         border-radius: 4px;
         background-color: #f5f5f5;
+
+        option {
+          background-color: #fff;
+          color: #000;
+        }
       }
+
       select:focus {
         outline: none;
       }
