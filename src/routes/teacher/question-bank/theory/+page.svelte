@@ -229,7 +229,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       })
       .then((result) => {
         if (result.status !== 0) {
-            throw new Error(`${data.msg}`);
+            throw new Error(`${result.msg}`);
         }
         toast.success('新建题库成功');
 
