@@ -57,9 +57,9 @@
         ];
 
         savePaper(paperID, actions)
-        .then(() => {
-            toast.success("试卷已同步更新", 1000);
-        });
+            .then(() => {
+                toast.success("试卷已同步更新", 1000);
+            });
     }, 500, false);
 
     $effect(() => {
@@ -150,6 +150,9 @@
                         .then(result => {
                             restoreOpenState(result.data.GroupsData, paperGroups);
                             paperGroups = result.data.GroupsData;
+                            paperInfo = result.data;
+                            totalScore = paperInfo.TotalScore;
+                            questionCount = paperInfo.QuestionCount;
                             toast.success("试卷已同步更新", 1000);
                         });
                     });
@@ -191,6 +194,7 @@
                         .then(result => {
                             restoreOpenState(result.data.GroupsData, paperGroups);
                             paperGroups = result.data.GroupsData;
+                            paperInfo = result.data;
                             isAddingGroup = false;
                             toAddGroupName = "";
                             toast.success("试卷已同步更新", 1000);
@@ -231,6 +235,7 @@
                         .then(result => {
                             restoreOpenState(result.data.GroupsData, paperGroups);
                             paperGroups = result.data.GroupsData;
+                            paperInfo = result.data;
                             toEditGroupID = null;
                             toast.success("试卷已同步更新", 1000);
                         });
@@ -274,6 +279,9 @@
                             .then(result => {
                                 restoreOpenState(result.data.GroupsData, paperGroups);
                                 paperGroups = result.data.GroupsData;
+                                paperInfo = result.data;
+                                totalScore = paperInfo.TotalScore;
+                                questionCount = paperInfo.QuestionCount;
                                 toast.success("试卷已同步更新", 1000);
                             });
                     });
@@ -286,6 +294,8 @@
         restoreOpenState(updatedGroups, paperGroups);
         paperGroups = updatedGroups;
         paperInfo = updatedInfo;
+        questionCount = updatedInfo.QuestionCount;
+        totalScore = updatedInfo.TotalScore;
     }
 
     // 一键展开所有题组和题目
