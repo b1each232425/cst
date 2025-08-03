@@ -226,34 +226,6 @@
     return sortedList.slice(start, end);
   }
 
-  /**
-   * @param {string} value
-   * 搜索页数
-   */
-  function onSearchPageFunc(value) {
-    const numericValue = parseFloat(value);
-    if (numericValue < 1) {
-      search_params.page = 1;
-    } else {
-      search_params.page = numericValue;
-    }
-  }
-
-  /**
-   * @param {boolean} is_next
-   * 上一页/下一页
-   */
-  function onNextOrLastPage(is_next) {
-    if (loading === true) {
-      return;
-    }
-    if (is_next && search_params.page < total_page) {
-      search_params.page += 1;
-    }
-    if (!is_next && search_params.page > 1) {
-      search_params.page -= 1;
-    }
-  }
 
   /**
    * @param {number} page

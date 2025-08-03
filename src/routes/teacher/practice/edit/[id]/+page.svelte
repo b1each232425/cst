@@ -30,7 +30,9 @@
   async function handleSubmit(practiceData) {
     // 准备请求数据
     const requestData = {
-      practice: {
+      Action :"POST",
+      Data:{
+        practice: {
         ID: practice.data.practice.ID,
         Name: practiceData.practice_name,
         CorrectMode: practiceData.grading_method,
@@ -40,6 +42,7 @@
         duration: practiceData.test.suggest_duration,
       },
       student: practiceData.student[0]  ? practiceData.student : []
+      }
 ,
     };
 
