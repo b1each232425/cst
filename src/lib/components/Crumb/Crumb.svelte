@@ -61,35 +61,24 @@
     }
   });
 
+  // 响应式效果：根据当前路由更新导航数据和页面标题
   $effect(() => {
-    let current_url_path = page.url.pathname;
+    const current_url_path = page.url.pathname;
 
     if (nav_map == null) {
       throw new Error('navigation data is required');
     }
 
     let nav_path_data = getNavData(current_url_path, nav_map);
-
     current_nav_path_data = nav_path_data;
 
-    if (document.title == '') {
-      document.title = `${app_name}`;
-    } else if ((document.title == '' || document.title == `${app_name}`) && nav_path_data.length > 0) {
-      document.title = ``;
-
-      for (let i = current_nav_path_data.length - 1; i >= 0; i--) {
-        if (i == 0) {
-          document.title += ` ${current_nav_path_data[i].title}`;
-          break;
-        }
-
-        document.title += `${current_nav_path_data[i].title} • `;
-      }
-
-      document.title += ` • ${app_name}`;
+    // 设置标题：只使用最后一个导航项的title
+    if (nav_path_data.length > 0) {
+      const currentNavItem = nav_path_data[nav_path_data.length - 1];
+      document.title = `${currentNavItem.title} • ${app_name}`;
+    } else {
+      document.title = app_name;
     }
-
-    console.log(document.title, `当前历史路径: ${JSON.stringify(nav_history_set)}`);
   });
 
   /**
@@ -134,25 +123,29 @@
   }
 
   /**
-   * 获取当前路由路径数据
+   * 获取当前路由路径数据（保持完整层级结构）
    * @param {string} path - 路由路径
    * @param {Array<NavMapData>} nav_map - 导航数据
-   * @returns {Array<NavMapData>} - 当前路由路径数据
+   * @returns {Array<NavMapData>} - 完整的当前路由路径数据
    */
-  function getNavData(path, nav_map) {
+  function getNavData(path, nav_map, parent = null) {
     let result = [];
 
     for (let navData of nav_map) {
-      let path_reg = new RegExp(`\^${navData.path}\$`);
+      // 添加parent引用以便后续处理
+      navData.parent = parent;
+
+      let path_reg = new RegExp(`^${navData.path}$`);
 
       if (path_reg.test(path)) {
-        result.push({
-          ...navData,
-          actual_path: path,
-        });
-
+        // 如果该项标记为isFilter，则跳过不加入结果
+        if (!navData.isFilter) {
+          result.push({
+            ...navData,
+            actual_path: path,
+          });
+        }
         nav_history_set[navData.path] = path;
-
         break;
       }
 
@@ -160,15 +153,18 @@
         continue;
       }
 
-      let childNavData = getNavData(path, navData.children);
+      let childNavData = getNavData(path, navData.children, navData);
 
       if (childNavData.length <= 0) {
         continue;
       }
 
-      result.push({
-        ...navData,
-      });
+      // 如果当前项标记为isFilter，则不加入结果
+      if (!navData.isFilter) {
+        result.push({
+          ...navData,
+        });
+      }
 
       result = result.concat(childNavData);
     }
@@ -177,47 +173,56 @@
   }
 
   /**
-   * 导航跳转函数
+   * 导航跳转函数（处理isFilter的路径）
    * @param {string} curr_path - 路由路径
    * @param {string} first_path - 初始路径
    */
   function navGoto(curr_path, first_path) {
+    // 查找第一个非isFilter的有效路径
+    const findValidPath = (path) => {
+      let target = current_nav_path_data.find((item) => item.path === path);
+
+      // 如果是isFilter的项，找它的第一个有效子项
+      if (target?.isFilter) {
+        if (target.children?.length > 0) {
+          return target.children.find((item) => !item.isFilter)?.path || first_path;
+        }
+        return first_path;
+      }
+      return path;
+    };
+
     let history_path = nav_history_set[curr_path];
+    let target_path = findValidPath(history_path ?? curr_path);
 
-    if (history_path != null && history_path != undefined) {
-      goto(history_path);
-      return;
-    }
-
-    goto(first_path);
+    goto(target_path);
   }
 </script>
 
 <div class="header-container">
   <div class="breadcrumbs-container">
-    {#each current_nav_path_data as { name, title, path, actual_path, children_is_parallel }, index}
-      <div class="breadcrumbs-item-container">
-        {#if index < current_nav_path_data.length - 1}
-          {#if children_is_parallel}
-            <span class="breadcrumbs-item">{title}</span>
+    {#each current_nav_path_data as { name, title, path, actual_path, children_is_parallel, isFilter }, index}
+      {#if !isFilter}
+        <div class="breadcrumbs-item-container">
+          {#if index < current_nav_path_data.length - 1}
+            {#if children_is_parallel}
+              <span class="breadcrumbs-item">{title}</span>
+            {:else}
+              <button
+                class="breadcrumbs-item"
+                class:active={true}
+                title={`跳转至${title}`}
+                onclick={() => navGoto(path, current_nav_path_data[0].path)}
+              >
+                {title}
+              </button>
+            {/if}
+            <span class="breadcrumbs-separator">{'>'}</span>
           {:else}
-            <button
-              class="breadcrumbs-item"
-              class:active={true}
-              title={`跳转至${title}`}
-              onclick={() => {
-                navGoto(path, current_nav_path_data[0].path);
-              }}
-            >
-              {title}
-            </button>
+            <span class="breadcrumbs-item">{title}</span>
           {/if}
-
-          <span class="breadcrumbs-separator">{'>'}</span>
-        {:else}
-          <span class="breadcrumbs-item">{title}</span>
-        {/if}
-      </div>
+        </div>
+      {/if}
     {/each}
   </div>
 
@@ -294,97 +299,97 @@
     padding: 2px 2px 2px 55px;
     justify-content: flex-start;
     align-items: center;
-  }
 
-  .breadcrumbs-container {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    align-items: center;
-    width: max-content;
-    height: 100%;
-    background-color: transparent;
-    box-sizing: border-box;
-    padding: 2px 2px 2px 2px;
-  }
+    .breadcrumbs-container {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      align-items: center;
+      width: max-content;
+      height: 100%;
+      background-color: transparent;
+      box-sizing: border-box;
+      padding: 2px 2px 2px 2px;
 
-  .breadcrumbs-item {
-    text-decoration: none;
-    color: rgba(0, 0, 0, 0.6);
-    padding: 2px 2px 2px 2px;
-    font-size: 16px;
-    border: none;
-    cursor: pointer;
+      .breadcrumbs-item {
+        text-decoration: none;
+        color: rgba(0, 0, 0, 0.6);
+        padding: 2px 2px 2px 2px;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
 
-    &.active {
-      color: #0052d9;
+        &.active {
+          color: #0052d9;
 
-      &:hover {
-        color: #2b36ff;
-        text-decoration: underline;
+          &:hover {
+            color: #2b36ff;
+            text-decoration: underline;
+          }
+        }
+      }
+
+      .breadcrumbs-separator {
+        display: inline-block;
+        font-weight: 600;
+        font-size: 16px;
+        color: rgba(0, 0, 0, 0.6);
+        transform: scaleX(0.5);
       }
     }
-  }
 
-  .breadcrumbs-separator {
-    display: inline-block;
-    font-weight: 600;
-    font-size: 16px;
-    color: rgba(0, 0, 0, 0.6);
-    transform: scaleX(0.5);
-  }
+    .user-container {
+      display: flex;
+      position: absolute;
+      right: 2%;
+      justify-content: flex-start;
+      align-items: center;
 
-  .user-container {
-    display: flex;
-    position: absolute;
-    right: 2%;
-    justify-content: flex-start;
-    align-items: center;
-  }
+      .welcome-text {
+        color: #333333;
+        margin: 10px;
+        box-sizing: border-box;
+      }
 
-  .welcome-text {
-    color: #333333;
-    margin: 10px;
-    box-sizing: border-box;
-  }
+      .avatar-btn,
+      .notification-btn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #f7fafd;
+        box-sizing: border-box;
+        padding: 2px 2px 2px 2px;
+        margin: 5px;
+        border: none;
+        box-sizing: border-box;
+        cursor: pointer;
+      }
+    }
 
-  .avatar-btn,
-  .notification-btn {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #f7fafd;
-    box-sizing: border-box;
-    padding: 2px 2px 2px 2px;
-    margin: 5px;
-    border: none;
-    box-sizing: border-box;
-    cursor: pointer;
-  }
-
-  .user-menu-container {
-    position: absolute;
-    display: flex;
-    right: 2.8%;
-    top: 100%;
-    flex-direction: column;
-    width: 130px;
-    height: max-content;
-    box-sizing: border-box;
-    box-shadow: 0px 2px 10px 0px rgba(0, 0, 0, 0.35);
-  }
-
-  .user-menu-item {
-    border: none;
-    padding: 8px 2px 8px 2px;
-    cursor: pointer;
-
-    &:hover {
-      background-color: #e2e2e2;
+    .user-menu-container {
+      position: absolute;
+      display: flex;
+      right: 2.8%;
+      top: 100%;
+      flex-direction: column;
+      width: 130px;
+      height: max-content;
       box-sizing: border-box;
+      box-shadow: 0px 2px 10px 0px rgba(0, 0, 0, 0.35);
+
+      .user-menu-item {
+        border: none;
+        padding: 8px 2px 8px 2px;
+        cursor: pointer;
+
+        &:hover {
+          background-color: #e2e2e2;
+          box-sizing: border-box;
+        }
+      }
     }
   }
 </style>

@@ -18,7 +18,7 @@ export const baseNavItems = writable([
     icon: '/sidebar/nav_icon/question_bank.svg',
     children_is_parallel: true,
     fold: false,
-    noBreadcrumb: true,
+    isFilter: true,
     children: [
       // {
       //   name: 'programmingQuestionBank',
@@ -122,7 +122,7 @@ export const baseNavItems = writable([
     icon: '/sidebar/nav_icon/grade.svg',
     children_is_parallel: true,
     fold: false,
-    noBreadcrumb: true,
+    isFilter: true,
     children: [
       {
         name: 'examGradeManagement',
