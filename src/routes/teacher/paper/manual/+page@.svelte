@@ -471,7 +471,9 @@
                         <div class="title">题组列表</div>
                         <span>共有 {paperGroups.length} 个题组</span>
                     </div>
-                    <Button onclick={()=>addGroup()} plain={true}>添加题组</Button>
+                    <div class="add-box">
+                        <Button onclick={()=>addGroup()} plain={true}>添加题组</Button>
+                    </div>
                 </div>
 
                 <!-- 列表 -->
@@ -637,7 +639,9 @@
                                         <div class="no-questions-box">
                                             <span class="title">题组暂无题目</span>
                                             <span class="prompt">可以通过以下方式快速添加题目：</span>
-                                            <Button onclick={()=>{groupID=group.id;groupName=group.name;importModalIsOpen=true}}>导入题目</Button>
+                                            <div class="import-box">
+                                                <Button onclick={()=>{groupID=group.id;groupName=group.name;importModalIsOpen=true}}>导入题目</Button>
+                                            </div>
                                         </div>
                                     </div>
                                 {/if}
