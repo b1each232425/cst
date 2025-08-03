@@ -156,14 +156,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       value: '04',
       label: '判断',
     },
-    {
-      value: '06',
-      label: '填空',
-    },
-    {
-      value: '08',
-      label: '简答',
-    },
+   
   ]);
 
   /**
@@ -552,6 +545,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       bankID: bank_id,
       page: current_page,
       pageSize: page_size,
+      type:question_type_fileter,
+      difficulty:question_difficulty_fileter,
     });
 
     return fetch(`/api/questions?${queryParams}`, {
@@ -951,7 +946,9 @@ o888o o888o   "888" o888o o888o o888o o888o
         ]}
         onSelectTag={(value) => filterConditionSelect(value, 'difficulty')}
       ></FilterBar>
+      <div class="hiddenValue">
       <FilterBar
+          
         filter_title="标签"
         all_filter_conditions={all_question_tags.map((tag) => {
           return {
@@ -961,6 +958,7 @@ o888o o888o   "888" o888o o888o o888o o888o
         })}
         onSelectTag={(value) => filterConditionSelect(value, 'tag')}
       ></FilterBar>
+      </div>
     </div>
     <div class="questionListContainer">
       <div class="questionListTitle">
@@ -985,9 +983,7 @@ o888o o888o   "888" o888o o888o o888o o888o
 
           <Dropdown options={question_types} placeholder="添加题目" selectOptionFunc={onAddNewQuestion}></Dropdown>
 
-          <button class="questionListControlBtn normalBtn">
-            <span>批量导入</span>
-          </button>
+          
         </div>
       </div>
       <QuestionList
@@ -1049,6 +1045,9 @@ o888o o888o   "888" o888o o888o o888o o888o
 ></JudgeSelectEditPanel>
 
 <style lang="scss" scoped>
+
+
+
   button {
     margin: 0px;
     padding: 0px;
@@ -1070,6 +1069,10 @@ o888o o888o   "888" o888o o888o o888o o888o
   input {
     font-family: PingFang FC;
   }
+
+.hiddenValue{
+ visibility: hidden;
+}
 
   .pageContainer {
     overflow: auto;
@@ -1435,6 +1438,7 @@ o888o o888o   "888" o888o o888o o888o o888o
   }
 
   .normalBtn {
+    visibility: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
