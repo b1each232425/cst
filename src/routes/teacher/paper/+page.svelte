@@ -660,6 +660,9 @@
 
     // 批量删除试卷
     function deleteMultiplePapers() {
+        if(selectedPaperIDs.length === 0) {
+            toast.error("请先选择试卷", 1000);
+        }
         MessageBox({
             title: "删除确认",
             content: `请问是否要批量删除这 ${selectedPaperIDs.length} 张试卷？`,

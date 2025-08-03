@@ -281,10 +281,11 @@
         });
     }
 
-    // 导入题目更新
-    function updateAfterImport(updatedGroups) {
+    // 导入题目后信息更新
+    function updateAfterImport(updatedGroups, updatedInfo) {
         restoreOpenState(updatedGroups, paperGroups);
         paperGroups = updatedGroups;
+        paperInfo = updatedInfo;
     }
 
     // 一键展开所有题组和题目

@@ -141,8 +141,9 @@
             .then(() => {
                 fetchPaper(paperID)
                     .then(result => {
+                        paperInfo = result.data;
                         paperGroups = result.data.GroupsData;
-                        update(paperGroups);
+                        update(paperGroups, paperInfo);
                         onclose();
                         toast.success("试卷已同步更新", 1000);
                     });
@@ -178,7 +179,6 @@
     });
 
     /**************** 题目列表 ****************/
-
 
     // 挂载区
     onMount(() => {
