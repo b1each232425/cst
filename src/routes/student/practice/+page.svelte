@@ -371,6 +371,11 @@
     }
   }
 
+  // 是否有上次的作答记录
+  function hasLastRecord(action) {
+    return action != '00' && action != '04' && action != '06' && action != '10';
+  }
+
   // 练习列表
   let practiceList = $state([]);
   let currentPracticeList = $derived(practiceList.filter((p) => p.Type === currentPracticeTypeTab));
@@ -419,7 +424,7 @@
   // 处理练习种类的切换
   function handlePracticeTypeChange(key) {
     currentPracticeTypeTab = key;
-    // handleSearch(); TODO 是否需要
+    // handleSearch(); TODO
   }
 
   // 处理页号改变
@@ -431,7 +436,6 @@
   // 处理页大小改变
   function handlePageSizeChange(event) {
     pageSize = event.detail;
-    handleSearch();
   }
 
   onMount(() => handleSearch());
@@ -516,22 +520,8 @@
               <td>{practice.AllowedAttempts === 0 ? '不限次数' : practice.AllowedAttempts}</td>
               {#if currentPracticeTypeTab === '00'}
                 <td>{practice.QuestionCount}</td>
-                <td
-                  >{practice.Action !== '00' &&
-                  practice.Action !== '04' &&
-                  practice.Action !== '06' &&
-                  practice.Action !== '10'
-                    ? practice.WrongCount
-                    : '--'}</td
-                >
-                <td
-                  >{practice.Action !== '00' &&
-                  practice.Action !== '04' &&
-                  practice.Action !== '06' &&
-                  practice.Action !== '10'
-                    ? practice.TotalScore
-                    : '--'}</td
-                >
+                <td>{hasLastRecord(practice.Action) ? practice.WrongCount : '--'}</td>
+                <td>{hasLastRecord(practice.Action) ? practice.TotalScore : '--'}</td>
                 <td
                   >{practice.Action !== '00' &&
                   !(
@@ -621,7 +611,6 @@
         button {
           border: 0;
           background-color: white;
-
           cursor: pointer;
           display: flex;
           gap: 0.5rem;
@@ -687,9 +676,9 @@
               }
 
               .option {
-                border: 0;
-                background-color: white;
+                all: unset;
                 color: blue;
+                padding: 0 0.3rem;
 
                 &.can-click:hover {
                   cursor: pointer;

@@ -77,11 +77,11 @@
         Filter: {
             Name: searchParams.name || "",
             Status: searchParams.status || "",
-            StartTime: searchParams.startTime ? new Date(searchParams.startTime).getTime() : 0,
-            EndTime: searchParams.endTime ? new Date(searchParams.endTime).getTime() : 0
+            // StartTime: searchParams.startTime ? new Date(searchParams.startTime).getTime() : 0,
+            // EndTime: searchParams.endTime ? new Date(searchParams.endTime).getTime() : 0
         },
-        Page: searchParams.page || 1,
-        PageSize: searchParams.pageSize || 10
+        Page: searchParams.page,
+        PageSize: searchParams.pageSize
     };
 
     const queryParams = new URLSearchParams();
@@ -102,8 +102,8 @@
          if (examList && Array.isArray(examList)) {
             examList.sort((a, b) => {
                 // 确保 ID 字段存在且为数字，按降序排序
-                const idA = parseInt(a.id || a.ID || 0);
-                const idB = parseInt(b.id || b.ID || 0);
+                const idA = parseInt(a.id);
+                const idB = parseInt(b.id);
                 return idB - idA; // 降序：大的在前
             });
         }
@@ -124,9 +124,9 @@
     return `${Y}-${M}-${D} ${h}:${m}`;
 }
 
-    function toggleMoreActions(index) {
-        examList[index].actionExpanded = !examList[index].actionExpanded;
-    }
+    // function toggleMoreActions(index) {
+    //     examList[index].actionExpanded = !examList[index].actionExpanded;
+    // }
 
     function onSearchFunc(value) {
         searchParams.name = value;
@@ -154,7 +154,7 @@
 
     // 处理页码变化
     function handlePageChange(event) {
-        console.log("页码变化:", event.detail);
+        // console.log("页码变化:", event.detail);
         searchParams.page = event.detail;
         searchExam();
     }
@@ -202,11 +202,11 @@
             .then(() => {
                 // console.log("res",res);
             if (res.status === 0) {
-                console.log("考试发布成功");
-                message = "考试发布成功";
+                // console.log("考试发布成功");
+                // message = "考试发布成功";
                 //searchExam();
                 return;
-                const examIndex = examList.findIndex(exam => exam.id === examId);
+                // const examIndex = examList.findIndex(exam => exam.id === examId);
             //     if (examIndex !== -1) {
             //         examList[examIndex] = {
             //             ...examList[examIndex],
@@ -222,7 +222,7 @@
             }
             })
             .catch((err) => {
-            message = err.message || "发布失败";
+            message = err.message ;
             })
 
             .finally(() =>
@@ -271,20 +271,21 @@
 
 {#snippet actionRender(status,index)}
     <div class="button-container">
-        <button class="continue-edit-button action-button {status !== '00' && status !== '02' ? 'hideButton' : ''}"
+        <!-- <button class="continue-edit-button action-button {status !== '00' && status !== '02' ? 'hideButton' : ''}"
         onclick={()=>{
             goto(`/teacher/exam/editExam/${examList[index].id}`)
         }}>
-        继续编辑</button>
+        继续编辑</button> -->
         <button class="publish-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
         onclick={() => {
             pushlishExamDialog=true,
             examIdToPublish = examList[index].id;
         }}>
         发布考试</button>
+        <span class = "{status == '00'?'hideButton' : 'EmptyData'} " > -- </span>
         <!-- <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}">删除考试</button> -->
         <!-- <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}">取消考试</button> -->
-        <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">监考管理</button>
+        <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">监考管理</button> -->
         <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">操作日志</button> -->
         <!-- <button class="unpublished-more-action-button action-button {status !== '00' ? 'hideButton' : ''}"
         onclick={() => toggleMoreActions(index)}
@@ -376,12 +377,12 @@
         </div>
         <div class="buttonPart">
 
-            <Button
+            <!-- <Button
             type="primary"
             size="medium"
             >
             下载考生模板
-        </Button>
+        </Button> -->
 
             <Button
                 type="primary"
@@ -431,6 +432,11 @@
 </div>
 
 <style lang="scss" scoped>
+
+   .EmptyData{
+    color:#356ed9;
+   }
+
    .hideButton {
     visibility: hidden;
     position: absolute;
@@ -450,22 +456,21 @@
     }
     .examManagementContainer {
         
-        // width:105%;
-        // margin-left: -3%;
+        height:77vh;
         position: relative;
         background-color: white;
         display: flex;
         flex-direction: column;
         overflow-x: auto;
         overflow-y: hidden;
-        margin-bottom:5%;
+        
         
         .tableFilterContainer {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
             gap: 15px;
-            padding: 0px 0 0 0px;
+            padding: 0px 0 10px 0px;
             align-items: center;
             justify-content: space-between;
             min-width: 1000px;
@@ -515,15 +520,16 @@
 
     }
         .paginationContainer{
-        display: flex;
-        justify-content: flex-end;
-        padding: 0 40px 0px 0;
+            display: flex;
+            justify-content: flex-end;
+            padding: 0 40px 0px 0;
         }
     }
     
     
     .examListContainer {
-        overflow: auto;
+         overflow-y: auto;
+         overflow-x:hidden;
          padding: 33px 37px 40px 37px;
          display: flex;
          flex-direction: column;
