@@ -200,23 +200,11 @@
             })
             .then((res) => res.json())
             .then(() => {
-                // console.log("res",res);
             if (res.status === 0) {
-                // console.log("考试发布成功");
                 // message = "考试发布成功";
                 //searchExam();
                 return;
-                // const examIndex = examList.findIndex(exam => exam.id === examId);
-            //     if (examIndex !== -1) {
-            //         examList[examIndex] = {
-            //             ...examList[examIndex],
-            //             status: "02" // 更新为"待开始"状态
-            //         };
-            //         // 触发 Svelte 响应式更新
-            //         examList = [...examList];
-            //         console.log("examL",examList);
-            //     return;
-            // }
+                
          } else {
                 return Promise.reject(new Error(`发布失败：${data.Msg || "未知错误"}`));
             }
