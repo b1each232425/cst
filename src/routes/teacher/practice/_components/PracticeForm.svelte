@@ -421,7 +421,7 @@
         <div class="input-wrapper">
           <div class="class-selection-area">
             <div class="select-wrapper">
-              <Button id="student-select" class="select-btn" onclick={openStudentModal} plain>选择学生</Button>
+              <Button id="student-select"  onclick={openStudentModal} plain>选择学生</Button>
               {#if selectedStudents.length > 0}
                 <span class="student-badge">{selectedStudents.length}</span>
               {/if}
