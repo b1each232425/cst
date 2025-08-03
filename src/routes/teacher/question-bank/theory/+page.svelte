@@ -143,6 +143,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    */
 
   function getBankList({ keyword = '', page = '', pageSize = '', bankID = '' } = {}) {
+ bank_list=[];
+origin_bank_list=[];
     const queryParams = new URLSearchParams({
       keyword,
       page,
@@ -175,8 +177,6 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 
   onMount(async () => {
     const data = await getBankList();
-    origin_bank_list = [];
-    bank_list = [];
     for (let bank of data) {
       bank_list.push({
         id: bank.ID,

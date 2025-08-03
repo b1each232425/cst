@@ -476,14 +476,14 @@
       </div>
       <!-- 右侧按钮区 -->
       <div class="right-section">
-        <button class="action-btn export-btn" onclick={handleExport}> 导出 </button>
-        <button class="action-btn import-btn" onclick={handleImport}> 导入 </button>
+        <!-- <button class="action-btn export-btn" onclick={handleExport}> 导出 </button>
+        <button class="action-btn import-btn" onclick={handleImport}> 导入 </button> -->
         <button class="action-btn add-btn" onclick={() => goto('/teacher/user-management/addUser')}> 新增 </button>
-        <button class="action-btn delete-btn" onclick={handleBatchDelete}> 删除 </button>
+        <!-- <button class="action-btn delete-btn" onclick={handleBatchDelete}> 删除 </button>
 
         <button class="action-btn enable-btn" onclick={handleBatchEnable}> 启用 </button>
         <button class="action-btn disable-btn" onclick={handleBatchDisable}> 停用 </button>
-        <button class="action-btn view-logs-btn" onclick={handleViewLogs}> 查看操作日志 </button>
+        <button class="action-btn view-logs-btn" onclick={handleViewLogs}> 查看操作日志 </button> -->
       </div>
     </div>
   </div>
@@ -506,7 +506,7 @@
             <th class="col-role table-head">角色</th>
             <th class="col-creation table-head">创建时间</th>
             <th class="col-current-status table-head">当前状态</th>
-            <th class="col-actions table-head">操作</th>
+            <!-- <th class="col-actions table-head">操作</th> -->
           </tr>
         </thead>
         <tbody>
@@ -538,7 +538,8 @@
                   {STATUSLABELMAP[user.status] || '-'}
                 </span>
               </td>
-              <td class="col-actions">
+
+              <!-- <td class="col-actions">
                 <div class="actions">
                   <button class="btn-link btn-detail" onclick={() => handleDetail(user.id)}>详情</button>
                   <button class="btn-link btn-edit" onclick={() => handleEdit(user.id)}>修改</button>
@@ -548,21 +549,19 @@
                   >
                     {user.status === '02' ? '启用' : '停用'}
                   </button>
-                  <!-- 移除按钮 -->
                   <button
                     class="btn-link btn-unbind"
                     style="display: {user.has_relation ? 'inline-block' : 'none'}"
                     onclick={() => handleUnbind(user.id)}>移除</button
                   >
-
-                  <!-- 删除按钮 -->
                   <button
                     class="btn-link btn-delete"
                     style="display: {user.has_relation ? 'none' : 'inline-block'}"
                     onclick={() => handleDelete(user.id)}>删除</button
                   >
                 </div>
-              </td>
+              </td> -->
+              
             </tr>
           {/each}
           <!-- 空页面 -->
@@ -689,12 +688,12 @@
     }
 
     .right-section {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(70px, 1fr));
-      grid-template-rows: repeat(3, 1fr);
-      gap: 20px;
+      //display: grid;
+      //grid-template-columns: repeat(3, minmax(70px, 1fr));
+      //grid-template-rows: repeat(3, 1fr);
+      //gap: 20px;
       flex: 0 0 auto;
-      min-width: 280px;
+      //min-width: 280px;
       margin-right: 30px; 
 
       @media (max-width: 1400px) and (min-width: 1201px) {
