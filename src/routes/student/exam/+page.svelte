@@ -256,7 +256,7 @@
 
   // 是否已经批改好
   function isMarked(status) {
-    return status === '10' || status === '12';
+    return status === '12';
   }
 
   // 判断考试是否通过
@@ -367,7 +367,6 @@
   // 处理页大小改变
   function handlePageSizeChange(event) {
     pageSize = event.detail;
-    handleSearch();
   }
 
   onMount(() => handleSearch());
@@ -596,7 +595,7 @@
                 display: flex;
                 flex-direction: column;
                 gap: 0.5rem;
-                align-items: center; // 需要时
+                align-items: center;
 
                 span {
                   $status-color: (
