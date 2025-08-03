@@ -1,12 +1,10 @@
 <script>
-    // import DropdownGray from "$lib/component/DropdownGray.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
-    // import SearchInput from "$lib/component/SearchInput.svelte";
-    // import UneditableTag from "$lib/component/UneditableTag.svelte";
     import { onDestroy } from "svelte";
     import Select from "$lib/components/Select/Select.svelte";
     import Option from "$lib/components/Select/Option.svelte";
     import {toast} from "$lib/components/Toast/Toast.js"
+    import UneditableTag from '$lib/components/Tag/UneditableTag.svelte';
     // 难度颜色常量
     export const DIFFICULTY_COLOR_SIMPLE = "green";
     export const DIFFICULTY_COLOR_MEDIUM = "orange";
@@ -177,7 +175,7 @@
         // 添加基础参数
         queryParams.append("page", searchParams.page.toString());
         queryParams.append("pageSize", searchParams.pageSize.toString());
-       // queryParams.append("category","00")
+        queryParams.append("category","00")
 
         // 添加可选参数
         if (searchParams.name) {
@@ -187,9 +185,7 @@
             queryParams.append("tags", searchParams.tags);
         }
 
-        if (searchParams.category) {
-        queryParams.append("category", searchParams.category);
-}
+
         const response = await fetch(
             `/api/paper?${queryParams.toString()}`,
             {
@@ -248,16 +244,18 @@
     let selected_paper_type = $state("04");
 
     function onPaperTypeChange(value) {
-        selected_paper_type = value;
-        // 根据选择的值设置搜索参数
+    selected_paper_type = value;
+    searchParams.page = 1;
+    searchPaper().then(() => {
         if (value === "04") {
-            searchParams.AssemblyType = ""; // 全部，不筛选
+            return;
         } else {
-            searchParams.AssemblyType = value;
+            // 根据 AssemblyType 筛选数据
+            paperList = paperList.filter(paper => paper.AssemblyType === value);
+
         }
-        searchParams.page = 1;
-        searchPaper();
-    }
+    });
+}
 
     
 
@@ -381,7 +379,7 @@
                                     {#if paper.Tags && paper?.Tags.length>0}
                                         {#each paper?.Tags ?? [] as tag, index}
                                             <div class="paper-tags-item">
-                                                <!-- <UneditableTag content={tag} /> -->
+                                                <UneditableTag content={tag} />
                                             </div>
                                         {/each}
                                     {:else}
