@@ -417,8 +417,8 @@
         {/each}
       </Select>
     </div>
-    <Button type="info" onclick={handleReset}>重置</Button>
-    <Button type="primary" onclick={handleSearch}>搜索</Button>
+    <div><Button type="info" onclick={handleReset}>重置</Button></div>
+    <div><Button type="primary" onclick={handleSearch}>搜索</Button></div>
   </div>
 
   <div class="table">
