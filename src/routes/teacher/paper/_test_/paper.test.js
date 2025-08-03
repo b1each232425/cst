@@ -14,8 +14,19 @@ describe("API 测试", () => {
   it("返回正常数据", async () => {
     // 模拟数据
     const mockResponse = {
+      list: [{ id: 1, name: '试卷 A'}],
+      total: 1
+    };
+
+    // 配置 fetch mock 返回值
+    fetch.mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse
-    };
+    })
+
+    // 调用接口
+    const result = await fetchPaperList();
+
+    
   });
 });
