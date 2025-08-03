@@ -35,8 +35,7 @@
 	.exam-table-container {
 		width: 100%;
   		height: 100%;
-		height:500px;
-		max-height: 70vh;
+		max-height: 100%;
  		overflow: auto;
   		flex: 1;
   		min-height: 0;

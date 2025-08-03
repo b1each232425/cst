@@ -70,7 +70,7 @@
 	.table-content {
 		flex: 1;
 		overflow: hidden;
-		height: 90vh;
+		min-width: 0;
 	}
 
 	.pagination-wrapper {
