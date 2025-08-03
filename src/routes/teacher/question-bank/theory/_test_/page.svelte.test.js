@@ -6,7 +6,9 @@ import { goto } from '$app/navigation';
 
 // 模拟导航函数
 vi.mock('$app/navigation', () => ({
-	goto: vi.fn()
+  goto: vi.fn(), // 模拟 goto 方法
+  preloadCode: vi.fn(), 
+  invalidate: vi.fn(),
 }));
 
 //题库管理页面单元测试
