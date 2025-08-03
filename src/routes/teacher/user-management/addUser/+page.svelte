@@ -337,8 +337,8 @@
 
   <!-- 按钮区域 -->
   <div class="button-container">
-    <button class="cancel-button" onclick={cancelForm}>取消</button>
-    <button class="submit-button" onclick={submitForm}>提交</button>
+    <Button type="info" plain onclick={cancelForm}>取消</Button>
+    <Button type="primary" onclick={submitForm}>提交</Button>
   </div>
 </div>
 
@@ -356,6 +356,7 @@
     width: 100%;
     height: 100%;
     min-width: 800px;
+    overflow-y:auto;
 
     @media (max-width: 1200px) {
       min-width: 700px;
@@ -573,7 +574,8 @@
     display: flex;
     justify-content: center;
     gap: 20px;
-    margin-top: 90px;
+
+    
 
     @media (max-width: 1200px) {
       gap: 10px;
@@ -590,36 +592,6 @@
       margin-top: 20px;
     }
 
-    .cancel-button {
-      width: 100px;
-      height: 36px;
-      border-radius: 3px;
-      font-size: 14px;
-      cursor: pointer;
-      background-color: white;
-      color: #333;
-      border: 1px solid $border-color;
-
-      @media (min-resolution: 1.25dppx) {
-        width: 85px;
-        height: 33px;
-      }
-    }
-
-    .submit-button {
-      width: 100px;
-      height: 36px;
-      border-radius: 3px;
-      font-size: 14px;
-      cursor: pointer;
-      background-color: $primary-color;
-      color: white;
-      border: none;
-
-      @media (min-resolution: 1.25dppx) {
-        width: 85px;
-        height: 33px;
-      }
-    }
+    
   }
 </style>

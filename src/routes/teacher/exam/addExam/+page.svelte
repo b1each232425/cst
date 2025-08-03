@@ -9,6 +9,7 @@
     import DatePicker from "$lib/components/DatePicker/DatePicker.svelte"
     import Title from "$lib/components/Title/Title.svelte";
     import {toast} from "$lib/components/Toast/Toast.js"
+    import InputBox from "$lib/components/Input/InputBox.svelte"
     const TIP_TEXT = {
         final_exam:
             "当一门考试的考试性质为期末成绩考试时，它将决定学生在此课程的最终期末成绩",
@@ -261,6 +262,12 @@ function updateDuration(index) {
         return;
     }
 
+    for (let i = 0; i < paperConfigs.length; i++) {
+        if (paperConfigs[i].paperID === 0) {
+            toast.warning(`第${i + 1}个场次未选择试卷`);
+            return;
+        }
+    }
     /* 2. 场次级校验（保持原逻辑） */
     for (let i = 0; i < paperConfigs.length; i++) {
         const session = paperConfigs[i];
@@ -313,7 +320,7 @@ function updateDuration(index) {
         paperConfigs[i].earlySubmissionTime = paperConfigs[i].earlySubmissionTime <= 0 ? 0 : paperConfigs[i].earlySubmissionTime;
         
     }
-
+    
     
     /* 4. 构造真正要提交的 JSON（完全使用用户输入） */
     const examSessionsdata = paperConfigs.map(cfg => ({
@@ -483,6 +490,7 @@ function updateDuration(index) {
 
                 
                 <Button
+                    plain={true}
                     size="small"
                     onclick={() => {
                         addNewPaper();
@@ -503,6 +511,7 @@ function updateDuration(index) {
             <RequiredLabel text="考试人员" colon={false}  Asterisk={false}/>
             <div class="examinee-button-container normal-button-container">
                     <Button
+                        plain={true}
                         type="primary"
                         size="small"
                         onclick={() => {showExamineePanel = true; }}>
@@ -569,6 +578,7 @@ function updateDuration(index) {
                         <div class="paper-button-container normal-button-container">
                             {#if paperConfigs[paperConfigIndex].paperID === 0}
                                     <Button
+                                    plain={true}
                                     size="small"
                                     type="primary"
                                     onclick={() => {
@@ -681,7 +691,8 @@ function updateDuration(index) {
                         <div class="exam-duration-container config-row">
                             <RequiredLabel text="考场规则" />
                             <div class="config-row-content">
-                                <span style="font-size: 14px;">考试开始后</span>
+                                 <span style="font-size: 14px;">考试开始后</span> 
+
                                 <input
                                     class="duration-input"
                                     bind:value={paperConfigs[paperConfigIndex].lateEntryTime}
@@ -700,7 +711,26 @@ function updateDuration(index) {
                                             paperConfigs[paperConfigIndex].lateEntryTime = 1;
                                         }
                                     }}
-                                />
+                                /> 
+                                
+                                <!-- <InputBox
+                                bind:value={paperConfigs[paperConfigIndex].lateEntryTime}
+                                label="考试开始后"
+                                onInput={(event)=>{
+                                        const max = paperConfigs[paperConfigIndex].duration;
+                                        const val = Number(event.target.value);
+                                        if (val > max) {
+                                            event.target.value = max;
+                                            paperConfigs[paperConfigIndex].lateEntryTime = max;
+                                        }else if(val < 1){
+                                            event.target.value = 1;
+                                            paperConfigs[paperConfigIndex].lateEntryTime = 1;
+                                        }
+                                    }}
+                                >
+                                </InputBox> -->
+
+
                             <span style="font-size: 14px;">分钟内可进入考场，可提前</span>
                             <input
                                 class="duration-input"
@@ -786,6 +816,7 @@ function updateDuration(index) {
                             : 'config-row'}"
                     >
                         <RequiredLabel text="批改时是否显示考生姓名：" Asterisk={false} colon={false} />
+                        
                         <div class="config-row-content">
                             <label class="label">
                                 <input
@@ -826,6 +857,7 @@ function updateDuration(index) {
                             <div class = "graders-type-1">
 
                                 <Button
+                                    plain={true}
                                     size="small"
                                     onClick={() => {
                                         paperConfigs[paperConfigIndex].showGraderSelectionPanel = true;
@@ -940,7 +972,7 @@ function updateDuration(index) {
         margin-bottom: 4%;
         box-sizing: border-box;
         .createExamContainer {
-            width:70%;
+            width:90%;
             margin: 0 auto;
             position: relative;
             background-color: white;
@@ -1080,7 +1112,7 @@ function updateDuration(index) {
             border: 1px solid #d7d7d7;
             border-radius: 4px;
             padding: 6px 8px;
-            font-size: 12px;
+            font-size: 14px;
             line-height: 1.4;
             z-index: 1;
             max-width: 200px;
@@ -1124,6 +1156,9 @@ function updateDuration(index) {
         font-size: 14px;
     }
     
+    .config-row-content{
+        font-size: 14px;
+    }
     .bottom-action-panel-fixed{
         display: flex;
         position: fixed;

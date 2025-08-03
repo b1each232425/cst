@@ -95,7 +95,7 @@
       toast.success(`正在下载: ${file.file_name}`); // 显示下载成功提示
     } catch (error) {
       console.error("下载文件失败:", error);
-      toast.error("下载文件失败");
+      toast.error(`下载文件失败！${error.message || ''}`);
     }
   }
   async function downloadAllAttachments() { // 下载所有附件
@@ -132,7 +132,8 @@
           `/student/answer/exam/?exam-id=${exam_id}&exam-session-id=${session.ID}`
         );
       } catch (e) {
-        console.log(e);
+        console.log("进入考试时出错：", e.message);
+        toast.error(`进入考试时出错！${e.message || ''}`, 2000);
       }
     }
   }
@@ -146,6 +147,8 @@
       .then(response => {
         if (!response.ok) {
           return response.text().then(error_text => {
+            console.error("获取考试状态失败:", error_text);
+            toast.error(`获取考试状态失败！${error_text}`, 2000);
             throw new Error(`获取考试状态失败: ${error_text}`);
           });
         }
@@ -153,6 +156,8 @@
       })
       .then(data => {
         if (data.status !== 0) {
+          console.error("获取考试状态失败:", data.msg);
+          toast.error(`获取考试状态失败！${data.msg || ''}`, 2000);
           throw new Error(`获取考试状态失败: ${data.msg}`);
         }
         // 根据返回的状态设置button_text
@@ -185,7 +190,7 @@
       })
       .catch(error => {
         console.error("获取考试状态失败:", error);
-        toast.error("获取考试状态失败");
+        toast.error(`获取考试状态失败！${error.message || ''}`, 2000);
       });
   }
   function nextSession() { //下一场
@@ -232,12 +237,16 @@
           return response.json();
         } else {
           return response.text().then(err_text => {
-            throw new Error(`Failed to fetch exam info: ${err_text}`);
+            console.error("获取考试信息失败:", err_text);
+            toast.error(`获取考试信息失败: ${err_text}`, 2000);
+            throw new Error(`获取考试信息失败: ${err_text}`);
           });
         }
       })
       .then(data => {
         if (data.status !== 0) {
+          console.error("获取考试信息失败:", data.msg);
+          toast.error(`获取考试信息失败: ${data.msg || ''}`, 2000);
           throw new Error(data.Msg);
         } else {
           title = sget(data, "data.examInfo.Name", "无标题");
@@ -251,8 +260,8 @@
         }
       })
       .catch(error => {
-        console.error("Error fetching exam info:", error);
-        toast.error("获取考试信息失败");
+        console.error("获取考试信息失败:", error);
+        toast.error(`获取考试信息失败！${error.message || ''}`, 2000);
         return;
       });
 

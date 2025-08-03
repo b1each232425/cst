@@ -17,6 +17,8 @@
   let { question=$bindable(), index, ifPreview, saveAnswer, query_url, editor_height } =
     $props();
 
+  
+
   // 绑定当前题干容器，用于局部查找 input
   let contentWrapper; 
 
@@ -191,10 +193,15 @@
   <div class="question-content">
     {#if index !== null && index !== undefined}
       <h2>{index + 1}.</h2>
+      {#if question.Score !== undefined}
+         <span class="question-score-inline">（{question.Score}分）</span>
+       {/if}
     {/if}
     <div class="piptap-content" style="width: 80%;" bind:this={contentWrapper}>
       {@html question.Content}
     </div>
+
+
   </div>
 
   {#if question.Type !== "06"}
@@ -210,6 +217,13 @@
     width: 100%;
     min-width: 100%;
     max-width: 100%;
+  }
+
+  .question-score-inline {
+    color: #ff7e08;
+    font-weight: bold;
+    font-size: 15px;
+    margin-left: 8px;
   }
 
   .question-content {

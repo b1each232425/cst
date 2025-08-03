@@ -6,10 +6,10 @@
   import { toast } from '$lib/components/Toast/Toast.js';
   import { checkData } from './_utils/batch_check/check_examinee.js';
 
-  let searchText = $state(''); // 搜索框文本内容
-  let failureStudentList = $state([]); // 失败学生列表
-  let successCount = $derived(failureStudentList.filter((item) => item.isOk).length); // 成功导入学生数量
-  let failureCount = $derived(failureStudentList.filter((item) => !item.isOk).length); // 失败导入学生数量
+  let search_text = $state(''); // 搜索框文本内容
+  let failure_student_list = $state([]); // 失败学生列表
+  let successCount = $derived(failure_student_list.filter((item) => item.isOk).length); // 成功导入学生数量
+  let failureCount = $derived(failure_student_list.filter((item) => !item.isOk).length); // 失败导入学生数量
   let filteredStudentList = $derived(filterStudentList()); // 过滤后的学生列表
 
   // 分页相关状态
@@ -87,7 +87,7 @@
         errorType: item.errorType,
         isOk: item.isOk,
       }));
-      failureStudentList = convertedData;
+      failure_student_list = convertedData;
       show = true;
       if (fileInput) {
         fileInput.value = null;
@@ -97,14 +97,14 @@
 
   // 过滤学生列表 TODO:待优化
   function filterStudentList() {
-    let filtered = failureStudentList;
+    let filtered = failure_student_list;
     // 如果搜索框有内容
-    if (searchText) {
+    if (search_text) {
       filtered = filtered.filter((student) => {
         const name = student.officialName || '';
         const phone = student.phone || '';
         const idCard = student.idCardNo || '';
-        return name.includes(searchText) || phone.includes(searchText) || idCard.includes(searchText);
+        return name.includes(search_text) || phone.includes(search_text) || idCard.includes(search_text);
       });
     }
     return filtered;
@@ -124,16 +124,16 @@
 
   //搜索处理
   function onSearch(value) {
-    searchText = value;
+    search_text = value;
     currentPage = 1; // 搜索时重置到第一页
   }
 
   //与父页面通信
   export function triggerFileInput() {
     //重置数据
-    failureStudentList = [];
+    failure_student_list = [];
     successCount = 0;
-    searchText = '';
+    search_text = '';
     currentPage = 1;
 
     if (fileInput) {
@@ -157,7 +157,7 @@
   //编辑后的保存按钮
   function handleSaveEdit() {
     // 先将编辑行的内容应用到列表副本
-    let tempList = failureStudentList.map((item) => {
+    let tempList = failure_student_list.map((item) => {
       if (item.serialNumber === editingSerialNumber) {
         return { ...editingRow };
       }
@@ -190,7 +190,7 @@
     });
     // 如果有重复，直接更新列表并退出编辑
     if (hasDuplicate) {
-      failureStudentList = tempList;
+      failure_student_list = tempList;
       editingIndex = -1;
       editingSerialNumber = null;
       editingRow = {
@@ -219,7 +219,7 @@
       }
       return { ...item, errorType: '', isOk: true };
     });
-    failureStudentList = tempList;
+    failure_student_list = tempList;
     editingIndex = -1;
     editingSerialNumber = null;
     editingRow = {
@@ -246,12 +246,12 @@
 
   // 删除按钮
   function handleDelete(student) {
-    failureStudentList = failureStudentList.filter((item) => item.serialNumber !== student.serialNumber);
+    failure_student_list = failure_student_list.filter((item) => item.serialNumber !== student.serialNumber);
   }
 
   // 确认导入按钮
   function handleImport() {
-    const validStudents = failureStudentList.filter((s) => s.isOk);
+    const validStudents = failure_student_list.filter((s) => s.isOk);
     if (validStudents.length === 0) {
       toast.warning('没有可导入的学生，请先修正错误数据');
       return;
@@ -280,12 +280,13 @@
             if (json.status !== 0 || typeof json.data !== 'string') {
               throw new Error(json.msg || '获取账号失败');
             }
-            // 组装单条 payload
+            // payload
             return {
               IDCardNo: student.idCardNo?.trim() || null,
               OfficialName: student.officialName?.trim() || null,
               MobilePhone: student.phone?.trim() || null,
-              Account: json.data, // ← 后端给的账号
+              Account: json.data,
+              Domains: ['cst.school^student'],
               Gender: null,
               Email: null,
               IDCardType: '居民身份证',
@@ -314,7 +315,7 @@
               throw new Error(result.msg || '导入失败');
             }
             toast.success(`成功导入 ${payloads.length} 名学生`);
-            failureStudentList = failureStudentList.filter((s) => !s.isOk);
+            failure_student_list = failure_student_list.filter((s) => !s.isOk);
             onImport(true);
           });
       })
@@ -357,7 +358,7 @@
             <InputBox
               placeholder="请输入姓名/手机号/身份证号"
               type="text"
-              bind:value={searchText}
+              bind:value={search_text}
               showLabel={false}
               oninput={onSearch}
             ></InputBox>
@@ -423,7 +424,7 @@
                 </tr>
               {/if}
             {/each}
-            <tr class="empty-row {failureStudentList.length > 0 ? 'hide' : ''}">
+            <tr class="empty-row {failure_student_list.length > 0 ? 'hide' : ''}">
               <td colspan="5" class="empty-cell">
                 <div class="empty-container">
                   <Empty text="暂无学生数据" />

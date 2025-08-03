@@ -78,7 +78,7 @@ export function createPracticeGradeStore() {
 					state.totalRecords = sget(data, 'rowCount', 0);
 				})
 				.catch((error) => {
-					handleApiError(error, '获取练习列表');
+					handleApiError(error, '获取练习成绩列表');
 				})
 				.finally(() => (state.loading = false));
 		},

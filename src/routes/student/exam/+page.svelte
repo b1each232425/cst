@@ -256,7 +256,7 @@
 
   // 是否已经批改好
   function isMarked(status) {
-    return status === '10' || status === '12';
+    return status === '12';
   }
 
   // 判断考试是否通过
@@ -307,7 +307,7 @@
             const sessions = Array.isArray(exam.exam_sessions) ? exam.exam_sessions : [];
 
             const hasEnterable = sessions.some((s) => s.status === '02' || s.status === '04');
-            const allSessionsNoOp = sessions.every((s) => s.status === '06' || s.status === '08');
+            const allSessionsNoOp = sessions.every((s) => s.status === '06' || s.status === '08' || s.status === '10');
 
             if (allSessionsNoOp)
               exam.action = null; // 全部都是不可操作的（比如都已结束/批改中），清空 action
@@ -367,7 +367,6 @@
   // 处理页大小改变
   function handlePageSizeChange(event) {
     pageSize = event.detail;
-    handleSearch();
   }
 
   onMount(() => handleSearch());
@@ -596,7 +595,7 @@
                 display: flex;
                 flex-direction: column;
                 gap: 0.5rem;
-                align-items: center; // 需要时
+                align-items: center;
 
                 span {
                   $status-color: (
