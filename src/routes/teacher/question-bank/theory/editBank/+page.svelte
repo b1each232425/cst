@@ -221,13 +221,13 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * @description 题目类型筛选条件
    * @type {Array<string>}
    */
-  let question_type_fileter = $state(['']);
+  let question_type_fileter = $state([]);
 
   /**
    * @description 题目难度筛选条件
    * @type {Array<number>}
    */
-  let question_difficulty_fileter = $state(['']);
+  let question_difficulty_fileter = $state([]);
   /**
    * @description 题目标签筛选条件
    * @type {Array<string>}
@@ -467,12 +467,12 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   const onSearchQuestionKeyInput = (e) => {
     if (e.target && 'value' in e.target && typeof e.target.value === 'string') {
       const value = e.target.value;
-      clearTimeout(search_timer);
+   
       // 抖动
-      search_timer = setTimeout(() => {
+     
         search_question_content = value;
         list_table_component.updateFilteredQuestion(filter_conditions, value);
-      }, 500);
+      
     }
   };
   /**
@@ -546,6 +546,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       pageSize: page_size,
       type:question_type_fileter,
       difficulty:question_difficulty_fileter,
+     
     });
 
     return fetch(`/api/questions?${queryParams}`, {
@@ -600,6 +601,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     }
    
     questions = [];
+    if(data!=null){
     for (let i = 0; i < data.length; i++) {
       questions.push({
         id: data[i].ID,
@@ -616,6 +618,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         question_attachments_path: data[i].QuestionAttachmentsPath,
       });
     }
+  }
   };
 
   /**
@@ -682,7 +685,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       tags: question_tag_fileter,
     };
 
-    list_table_component.updateFilteredQuestion(filter_conditions, search_question_content);
+   
   };
 
   /**
