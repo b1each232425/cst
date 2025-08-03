@@ -161,23 +161,7 @@
     }, 300);
   }
 
-  /**
-   * @param {boolean} is_next
-   * 上一页/下一页
-   */
-  function onNextOrLastPage(is_next) {
-    if (loading === true) {
-      return;
-    }
-    if (is_next && search_params.page < total_page) {
-      search_params.page += 1;
-      searchExaminee();
-    }
-    if (!is_next && search_params.page > 1) {
-      search_params.page -= 1;
-      searchExaminee();
-    }
-  }
+ 
 
   /**
    *
@@ -220,19 +204,6 @@
   }
 
   /**
-   * @param {boolean} is_next
-   * 已选择学生上一页/下一页
-   */
-  function onSelectedNextOrLastPage(is_next) {
-    if (is_next && selected_search_params.page < selected_total_page) {
-      selected_search_params.page += 1;
-    }
-    if (!is_next && selected_search_params.page > 1) {
-      selected_search_params.page -= 1;
-    }
-  }
-
-  /**
    * @param {number} page
    * 已选择学生页数跳转
    */
@@ -242,18 +213,6 @@
     selected_search_params.page = page;
   }
 
-  /**
-   * @param {string} value
-   * 已选择学生搜索页数
-   */
-  function onSelectedSearchPageFunc(value) {
-    const numericValue = parseFloat(value);
-    if (isNaN(numericValue) || numericValue < 1 || numericValue === null) {
-      selected_search_params.page = 1;
-    } else {
-      selected_search_params.page = numericValue;
-    }
-  }
 
   async function searchExaminee() {
     loading = true;
@@ -453,14 +412,6 @@
 
       if (practice_id) {
         //每次打开时将外部选中的id赋值给当前面板记录的已选中的id 在搜索前执行是为了能正常显示每个列表项的选中效果
-
-        /**
-         * @type {number[]}
-         */
-        let search_ids = [];
-        ids.forEach((element) => {
-          search_ids.push(element.id);
-        });
         filtered_selected_ids = selected_ids;
         // 获取已选学生的信息
         getStudentInfo(practice_id);
@@ -469,14 +420,6 @@
         is_selection_mode = false;
       } else {
         //每次打开时将外部选中的id赋值给当前面板记录的已选中的id 在搜索前执行是为了能正常显示每个列表项的选中效果
-
-        /**
-         * @type {number[]}
-         */
-        let search_ids = [];
-        ids.forEach((element) => {
-          search_ids.push(element.id);
-        });
         filtered_selected_ids = selected_ids;
 
         // 初始化为查看模式，不自动搜索
@@ -890,7 +833,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    overflow-y: auto;
+    overflow-y: hidden;
   }
 
   .action-container {
