@@ -273,19 +273,38 @@ describe('考试列表组件测试', () => {
   });
 
   it('重置按钮清空所有筛选条件', async () => {
-    const { nameInput, toggleDropdown, selectOption, reset } = setup();
+    const {
+      nameInput,
+      toggleDropdown,
+      selectOption,
+      datePickerOpen,
+      datePickerSelect0,
+      datePickerSelect2,
+      datePickerClose,
+      reset,
+    } = setup();
 
+    // 考试名称
     await fireEvent.input(nameInput(), { target: { value: '测试考试' } });
     expect(nameInput()).toHaveValue('测试考试');
 
+    // 考试状态
     await toggleDropdown();
     await selectOption('进行中');
     expect(screen.getByTestId('exam-status-select')).toHaveTextContent('进行中');
+
+    // 日期选择
+    await datePickerOpen();
+    await datePickerSelect0();
+    await datePickerSelect2();
+    await datePickerClose();
 
     await reset();
 
     const dropdownInput = within(screen.getByTestId('exam-status-select')).getByRole('textbox');
     expect(nameInput()).toHaveValue('');
     expect(dropdownInput).toHaveValue('全部');
+    expect(screen.getByDisplayValue(/开始日期/)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/结束日期/)).toBeInTheDocument(); // 内部变量无法测试？
   });
 });

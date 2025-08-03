@@ -326,7 +326,11 @@
   function handleReset() {
     examName = '';
     examStatus = '';
-    if (datePicker) datePicker.reset();
+    if (datePicker) {
+      datePicker.reset();
+      startTime = 0;
+      endTime = 0;
+    }
   }
 
   // 搜索
