@@ -464,8 +464,8 @@
         {/each}
       </Select>
     </div>
-    <Button type="info" onclick={handleReset}>重置</Button>
-    <Button type="primary" onclick={handleSearch}>搜索</Button>
+    <div><Button type="info" onclick={handleReset}>重置</Button></div>
+    <div><Button type="primary" onclick={handleSearch}>搜索</Button></div>
   </div>
 
   <div class="practice-show">
@@ -545,11 +545,15 @@
               {/if}
               <td
                 >{#each actionMap.get(practice.Action) as action, index (index)}
-                  <button
-                    class="option"
-                    class:can-click={practice.Action && actionMap.has(practice.Action) && practice.Action !== '06'}
-                    onclick={() => handleAction(practice.Action, index, practice.ID)}>{action}</button
-                  >{/each}</td
+                  <!-- TODO 当前阶段未实现 -->
+                  {#if action !== '查看上次作答'}
+                    <button
+                      class="option"
+                      class:can-click={practice.Action && actionMap.has(practice.Action) && practice.Action !== '06'}
+                      onclick={() => handleAction(practice.Action, index, practice.ID)}>{action}</button
+                    >
+                  {/if}
+                {/each}</td
               >
             </tr>
           {/each}
