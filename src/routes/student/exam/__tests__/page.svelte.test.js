@@ -19,7 +19,7 @@ const MOCK_EXAMS = [
         paper_name: '试卷A',
         start_time: new Date('2025-08-01T09:00').getTime(),
         end_time: new Date('2025-08-01T11:00').getTime(),
-        status: '10',
+        status: '12',
         examinee_status: '10',
         student_score: 85,
         total_score: 100,
@@ -59,6 +59,21 @@ const MOCK_EXAMS = [
         start_time: new Date('2025-08-02T09:00').getTime(),
         end_time: new Date('2025-08-02T11:00').getTime(),
         status: '06',
+        examinee_status: '10',
+        student_score: 50,
+        total_score: 100,
+      },
+    ],
+  },
+  {
+    id: 5,
+    name: '考试四',
+    exam_sessions: [
+      {
+        paper_name: '试卷B',
+        start_time: new Date('2025-08-02T09:00').getTime(),
+        end_time: new Date('2025-08-02T11:00').getTime(),
+        status: '12',
         examinee_status: '10',
         student_score: 50,
         total_score: 100,
@@ -196,9 +211,17 @@ describe('考试列表组件测试', () => {
 
     const { paginationSelect, paginationOption, paginationInput, search } = setup();
 
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(1); // onMount中会发送一次请求
+    });
+
     const input = paginationInput();
     await fireEvent.input(input, { target: { value: 2 } });
     await fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', charCode: 13 }); // 发送一次请求
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(2); // onMount中会发送一次请求
+    });
 
     await paginationOption(paginationSelect(), '20条/页'); // 发送一次请求
 
@@ -250,19 +273,38 @@ describe('考试列表组件测试', () => {
   });
 
   it('重置按钮清空所有筛选条件', async () => {
-    const { nameInput, toggleDropdown, selectOption, reset } = setup();
+    const {
+      nameInput,
+      toggleDropdown,
+      selectOption,
+      datePickerOpen,
+      datePickerSelect0,
+      datePickerSelect2,
+      datePickerClose,
+      reset,
+    } = setup();
 
+    // 考试名称
     await fireEvent.input(nameInput(), { target: { value: '测试考试' } });
     expect(nameInput()).toHaveValue('测试考试');
 
+    // 考试状态
     await toggleDropdown();
     await selectOption('进行中');
     expect(screen.getByTestId('exam-status-select')).toHaveTextContent('进行中');
+
+    // 日期选择
+    await datePickerOpen();
+    await datePickerSelect0();
+    await datePickerSelect2();
+    await datePickerClose();
 
     await reset();
 
     const dropdownInput = within(screen.getByTestId('exam-status-select')).getByRole('textbox');
     expect(nameInput()).toHaveValue('');
     expect(dropdownInput).toHaveValue('全部');
+    expect(screen.getByDisplayValue(/开始日期/)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/结束日期/)).toBeInTheDocument(); // 内部变量无法测试？
   });
 });

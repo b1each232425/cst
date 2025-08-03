@@ -159,6 +159,7 @@
                 <span class="fileterText">{condition.label}</span>
             </button>
         {/each}
+        <div class="hiddenValue">
         <button
             class="filterItem_single changeFilterTypeBtn {filter_muti_select_mode
                 ? 'active'
@@ -171,9 +172,12 @@
             {#if filter_muti_select_mode}
                 <span class="fileterText">取消多选</span>
             {:else}
+           
                 <span class="fileterText">+多选</span>
+           
             {/if}
         </button>
+         </div>
     </div>
 </div>
 
@@ -197,7 +201,10 @@
     span {
         font-family: PingFang FC;
     }
+   .hiddenValue{
+ visibility: hidden;
 
+   }
     .filterContainer {
         user-select: none;
         display: flex;

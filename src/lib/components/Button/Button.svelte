@@ -1,40 +1,31 @@
-<!-- /**
-  * 按钮组件使用说明
-  *
-  * 作者：段春茂
-  * 邮箱：2162105974@qq.com
-  *
-  * 参数配置：
-  * @param {Boolean} plain        是否为朴素按钮，样式为边框加文字，hover 时填充背景
-  * @param {String} size          按钮尺寸，可选值："small" | "medium" | "large"，默认 "medium"
-  * @param {String} type          按钮类型，可选值："primary" | "success" | "danger" | "warning" | "info"，默认 "primary"
-  * @param {Boolean} disabled     是否禁用按钮，禁用后无法点击
-  * @param {Boolean} round        是否为圆角按钮，开启后圆角更大
-  * @param {String} icon          按钮左侧图标地址，支持本地或远程图片
-  * @param {Function} onclick     点击事件处理函数，可传入自定义逻辑
-  *
-  * 插槽：
-  * 默认插槽：用于定义按钮文本内容，可嵌入 HTML 或组件
-  *
-  * 使用示例：
-  * <Button
-  *   type="success"
-  *   size="large"
-  *   plain={true}                  // 或者 plain(表示true)
-  *   round={true}
-  *   icon="/icons/plus.svg"
-  *   disabled={false}
-  *   onclick={handleClick}
-  * >
-  *   添加数据
-  * </Button>
-  *
-  * // 父组件中定义点击处理
-  * function handleClick() {
-  *   console.log('按钮被点击');
-  * }
-  */ -->
 <script>
+  /**
+   * @component Button
+   * @description 通用按钮组件，支持图标、不同样式、尺寸、圆角、插槽等
+   *
+   * @author 段春茂
+   * @email 2162105974@qq.com
+   *
+   * @props
+   * @property {boolean} [plain=false] - 是否为朴素按钮，hover 时填充背景
+   * @property {'small' | 'medium' | 'large'} [size='medium'] - 按钮尺寸
+   * @property {'primary' | 'success' | 'danger' | 'warning' | 'info'} [type='primary'] - 按钮类型
+   * @property {boolean} [disabled=false] - 是否禁用按钮
+   * @property {boolean} [round=false] - 是否圆角按钮
+   * @property {string} [icon=''] - 图标地址（URL 或本地路径）
+   * 
+   * @property {any} children - 默认插槽内容
+   * @property {...any} restProps - 其他传入 button 的原生属性
+   *
+   * @slots
+   * @slot default - 默认插槽,显示在按钮主体位置
+   *
+   * @example
+   * <Button type="primary" size="large" round> 提交 </Button>
+   * <Button type="danger" size="small" icon="/alert.svg"> 警告 </Button>
+   */
+  import { onMount } from 'svelte';
+
   let {
     plain = false,
     size = 'medium',
@@ -42,192 +33,228 @@
     disabled = false,
     round = false,
     icon = '',
-    onclick = null,
+    alt = '',
     children,
+    ...restProps
   } = $props();
+
+  const validTypes = ['primary', 'success', 'danger', 'warning', 'info'];
+  const validSizes = ['small', 'medium', 'large'];
+
+  /**
+   * 组合按钮的类名
+   *  @type {string}
+   * */
   let classes = $state(
-    [
-      'Button',
-      `Button-${size}`,
-      `Button-${type}`,
-      plain && 'Button-plain',
-      disabled && 'Button-disabled',
-      round && 'Button-round',
-    ]
+    ['Button', `${size}`, `${type}`, plain && 'plain', disabled && 'disabled', round && 'round']
       .filter(Boolean)
       .join(' '),
   );
+
+  /**
+   * 检查传入参数的合法性
+   * @type {function}
+   */
+  function checkProps() {
+    if (!validTypes.includes(type.trim())) {
+      console.warn(`Button 类型无效: '${type}'，应为 ${validTypes.join(', ')}`);
+      type = 'primary';
+    }
+    if (!validSizes.includes(size.trim())) {
+      console.warn(`Button 尺寸无效: '${size}'，应为 ${validSizes.join(', ')}`);
+      size = 'medium';
+    }
+    if (typeof round !== 'boolean') {
+      console.warn(`[Button] round 必须是布尔值`);
+      round = false;
+    }
+    if (typeof plain !== 'boolean') {
+      console.warn(`[Button] plain 必须是布尔值`);
+      plain = false;
+    }
+    if (typeof disabled !== 'boolean') {
+      console.warn(`[Button] disabled 必须是布尔值`);
+      disabled = false;
+    }
+  }
+
+  onMount(() => {
+    checkProps();
+  });
 </script>
 
-<button class={classes} {disabled} {onclick}>
+<button class={classes} {disabled} {...restProps}>
   {#if icon}
-    <img class="Button-icon" src={icon} alt="图标" />
+    <img class="icon" src={icon} alt={alt ? alt : '按钮图标'} />
   {/if}
-  <span class="Button-text">{@render children()} </span>
+  <span class="text">{@render children?.()} </span>
 </button>
 
 <style lang="scss" scoped>
-  :root {
-    // 基础颜色
-    --primary: var(--blue);
-    --success: var(--green);
-    --danger: var(--red);
-    --warning: var(--orange);
-    --info: var(--gray);
-    // hover颜色(plain)
-    --primary-hover-plain: var(--blue);
-    --success-hover-plain: var(--green);
-    --danger-hover-plain: var(--red);
-    --warning-hover-plain: var(--orange);
-    --info-hover-plain: var(--gray);
-    // hover颜色(非plain)
-    --primary-hover: #4280d6ff;
-    --success-hover: #4fd872ff;
-    --danger-hover: #ff4d4d;
-    --warning-hover: #f7be58;
-    --info-hover: #bfbfbf;
-  }
-  .Button {
-    all: unset;
-    display: inline-flex;
+  /** 内容居中布局 @mixin content-center*/
+  @mixin content-center {
+    display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5em 1em;
-    font-size: 14px;
-    border-radius: var(--btn-border-radius);
-    transition: all 0.2s ease;
-    color: #333;
+  }
+  /** 默认按钮类型（填充型按钮）@param {Color} $color - 主题颜色 @mixin button-type*/
+  @mixin button-type($color) {
+    color: var(--text-white);
+    background-color: $color;
+    border: 1px solid $color;
+    filter: opacity(0.8) contrast(0.9);
+    transition: filter 0.3s ease;
+    &:hover {
+      filter: opacity(1) contrast(1);
+    }
+  }
+  /** 朴素按钮类型（透明背景，hover 填充） @param {Color} $color - 边框与字体颜色 @mixin plain-button-type*/
+  @mixin plain-button-type($color) {
+    color: $color;
+    border-color: $color;
+    background-color: transparent;
+    transition: all 0.3s ease;
+    &:hover {
+      color: var(--text-white);
+      background-color: $color;
+    }
+  }
+  /** 按钮图标尺寸 @param {Size} $size - 图标尺寸 @mixin icon-size*/
+  @mixin icon-size($size) {
+    width: $size;
+    height: $size;
+  }
+  /** 按钮主样式 @block .Button */
+  .Button {
+    width: 100%;
+    height: 100%;
     cursor: pointer;
-    border: 1px solid #ffffff;
-  }
-  .Button-text {
-    display: inline-block;
-    white-space: nowrap;
-    vertical-align: middle;
-  }
-
-  .Button-small {
-    font-size: 12px;
-    padding: 0.4em 1em;
-  }
-  .Button-medium {
     font-size: 14px;
-    padding: 0.5em 1.1em;
-  }
-  .Button-large {
-    font-size: 16px;
-    padding: 0.6em 1.2em;
-  }
-  .Button-primary {
-    background-color: var(--primary);
-    color: white;
-    &:hover {
-      background-color: var(--primary-hover);
+    padding: 0.3em 0.6em;
+    @include content-center;
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+    border: 1px solid var(--text-white);
+    border-radius: var(--btn-border-radius);
+    &:active {
+      transform: scale(0.96);
     }
-  }
-  .Button-success {
-    background-color: var(--success);
-    color: white;
-    &:hover {
-      background-color: var(--success-hover);
+    $mobile: 480px;
+    $tablet: 768px;
+    $desktop: 1024px;
+    @mixin responsive-styles {
+      @media screen and (max-width: $mobile) {
+        font-size: 12px;
+        padding: 0.4em 0.8em;
+      }
+      @media screen and (min-width: ($mobile + 1)) and (max-width: $tablet) {
+        font-size: 13px;
+        padding: 0.5em 1em;
+      }
+      @media screen and (min-width: ($tablet + 1)) {
+        font-size: 14px;
+        padding: 0.6em 1.2em;
+      }
     }
-  }
-  .Button-danger {
-    background-color: var(--danger);
-    color: white;
-    &:hover {
-      background-color: var(--danger-hover);
+    @include responsive-styles;
+    /** 图标区域 @element .icon*/
+    .icon {
+      margin-right: 0.5em;
+      object-fit: cover;
+      display: inline-block;
+      vertical-align: middle;
+      transition: all 0.3s ease;
+      @mixin icon-responsive {
+        @media screen and (max-width: $mobile) {
+          @include icon-size(1em);
+        }
+        @media screen and (min-width: ($mobile + 1)) and (max-width: $tablet) {
+          @include icon-size(1.1em);
+        }
+        @media screen and (min-width: ($tablet + 1)) {
+          @include icon-size(1.2em);
+        }
+      }
+      @include icon-responsive;
     }
-  }
-  .Button-warning {
-    background-color: var(--warning);
-    color: black;
-    &:hover {
-      background-color: var(--warning-hover);
+    /** 文本区域 @element .text*/
+    .text {
+      display: inline-block;
+      vertical-align: middle;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-  }
-  .Button-info {
-    background-color: var(--info);
-    color: black;
-    &:hover {
-      background-color: var(--info-hover);
+    /** 禁用状态 @modifier .disabled */
+    &.disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      position: relative;
+      &:active {
+        transform: scale(1);
+      }
     }
-  }
-  .Button-plain.Button-primary {
-    background-color: transparent;
-    border: 1px solid var(--primary);
-    color: var(--primary);
-    &:hover {
-      background-color: var(--primary-hover-plain);
-      color: white;
+    /** 圆角样式 @modifier .round */
+    &.round {
+      border-radius: 8px;
     }
-  }
-  .Button-plain.Button-success {
-    background-color: transparent;
-    border: 1px solid var(--success);
-    color: var(--success);
-    &:hover {
-      background-color: var(--success-hover-plain);
-      color: white;
+    // === (type) 按钮类型 ===
+    &.primary {
+      @include button-type(var(--blue));
     }
-  }
-  .Button-plain.Button-danger {
-    background-color: transparent;
-    border: 1px solid var(--danger);
-    color: var(--danger);
-    &:hover {
-      background-color: var(--danger-hover-plain);
-      color: white;
+    &.success {
+      @include button-type(var(--green));
     }
-  }
-  .Button-plain.Button-warning {
-    background-color: transparent;
-    border: 1px solid var(--warning);
-    color: var(--warning);
-    &:hover {
-      background-color: var(--warning-hover-plain);
-      color: black;
+    &.danger {
+      @include button-type(var(--red));
     }
-  }
-  .Button-plain.Button-info {
-    background-color: transparent;
-    border: 1px solid var(--info);
-    color: var(--info);
-    &:hover {
-      background-color: var(--info-hover-plain);
-      color: white;
+    &.warning {
+      @include button-type(var(--orange));
     }
-  }
-  .Button-small .Button-icon {
-    width: 1em;
-    height: 1em;
-    margin-right: 0.5em;
-    display: inline-block;
-    vertical-align: middle;
-    object-fit: contain;
-  }
-  .Button-middle .Button-icon {
-    width: 1.2em;
-    height: 1.2em;
-    margin-right: 0.5em;
-    display: inline-block;
-    vertical-align: middle;
-    object-fit: contain;
-  }
-  .Button-large .Button-icon {
-    width: 1.4em;
-    height: 1.4em;
-    margin-right: 0.5em;
-    display: inline-block;
-    vertical-align: middle;
-    object-fit: cover;
-  }
-  .Button.Button-disabled {
-    opacity: 0.5;
-    pointer-events: none;
-    cursor: not-allowed;
-  }
-  .Button-round {
-    border-radius: 8px;
+    &.info {
+      @include button-type(var(--gray));
+    }
+    // === (size) 按钮尺寸 ===
+    &.small {
+      font-size: 12px;
+      padding: 0.4em 1em;
+      min-width: none;
+      .icon {
+        @include icon-size(1em);
+      }
+    }
+    &.medium {
+      font-size: 14px;
+      padding: 0.5em 1.1em;
+      .icon {
+        @include icon-size(1.2em);
+      }
+    }
+    &.large {
+      font-size: 16px;
+      padding: 0.6em 1.2em;
+      .icon {
+        @include icon-size(1.4em);
+      }
+    }
+    // === 按钮（plain）样式组合 ===
+    &.plain {
+      &.primary {
+        @include plain-button-type(var(--blue));
+      }
+      &.success {
+        @include plain-button-type(var(--green));
+      }
+      &.danger {
+        @include plain-button-type(var(--red));
+      }
+      &.warning {
+        @include plain-button-type(var(--orange));
+      }
+      &.info {
+        @include plain-button-type(var(--gray));
+      }
+    }
   }
 </style>

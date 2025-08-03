@@ -272,7 +272,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 999;
+    z-index: 12000;
     opacity: 1;
     transition: opacity 0.3s ease;
   }
