@@ -62,7 +62,7 @@
 
       header {
         position: relative;
-        flex-shrink: 0; /* 禁止压缩 */
+        flex-shrink: 0;
         height: 50px;
         background-color: #f5f5f5;
         z-index: 1001;

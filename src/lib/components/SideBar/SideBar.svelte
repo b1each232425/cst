@@ -39,17 +39,15 @@
 
   // 处理路径变化
   function isPathActive(item) {
-    if (item.children) {
-      return false;
-    } else {
-      if (item.path === currentPath) return true;
-
+    if (item.children && !item.isOpen) {
       // 判断是否是子路径
       const currentPathWithoutBase = currentPath.replace('/teacher', '');
       const itemPathWithoutBase = item.path.replace('/teacher', '');
 
       // 比较路径去掉公共部分后的结果
       return currentPathWithoutBase.startsWith(itemPathWithoutBase);
+    } else {
+      if (item.path === currentPath) return true;
     }
   }
 
@@ -109,9 +107,6 @@
       </button>
     </div>
 
-    <!-- logo -->
-    <div class="logo">3min</div>
-
     <!-- 侧边栏主要导航区域 -->
     {@render sideBar(assesableNav)}
   </div>
@@ -130,9 +125,11 @@
   </div>
 {/if}
 
-<!-- 侧边栏主要导航区域 -->
 {#snippet sideBar(navStore)}
   <div class="sidebar-content-main">
+    <!-- logo -->
+    <div class="logo">3min</div>
+
     <!-- 遍历路由 -->
     {#each navStore as item}
       <div class="sidebar-item" class:active={isPathActive(item)}>
@@ -161,13 +158,15 @@
       </div>
       <!-- 处理子路由 -->
       {#if item.isOpen && item.children}
-        {#each item.children as child}
-          <div transition:slide|global class="sidebar-subitem" class:active={isPathActive(child)}>
-            <button class="sidebar-subitem-btn" onclick={() => handleItemButtonClick(child)}>
-              {child.title}
-            </button>
-          </div>
-        {/each}
+        <div class="sidebar-subitem-wrap" transition:slide>
+          {#each item.children as child}
+            <div class="sidebar-subitem" class:active={isPathActive(child)}>
+              <button class="sidebar-subitem-btn" onclick={() => handleItemButtonClick(child)}>
+                {child.title}
+              </button>
+            </div>
+          {/each}
+        </div>
       {/if}
     {/each}
   </div>
@@ -178,10 +177,11 @@
     position: relative;
     display: block;
     width: 235px;
-    height: 100%;
+    height: 100vh;
     background-color: var(--bg-thirdary);
 
     .sidebar-header {
+      width: 235px;
       display: flex;
       justify-content: flex-end;
 
@@ -195,33 +195,14 @@
 
         img {
           width: 30px;
-        }
 
-        &:hover {
-          background-color: #d1d1d1;
-          border: 6px;
-          border-radius: 3px;
+          &:hover {
+            background-color: #d1d1d1;
+            border: 6px;
+            border-radius: 3px;
+          }
         }
       }
-    }
-
-    .logo {
-      height: auto;
-      margin-top: 20px;
-      margin-bottom: 10px;
-      border-radius: 3px;
-      background-color: rgba(255, 255, 255, 0);
-      box-sizing: border-box;
-      font-family: 'ComicSansMS-Bold', 'Comic Sans MS Bold', 'Comic Sans MS', sans-serif;
-      font-weight: 700;
-      font-size: 36px;
-      color: #0336ff;
-      text-align: center;
-      line-height: 25px;
-      white-space: nowrap;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
     }
   }
 
@@ -230,25 +211,24 @@
     position: fixed;
     width: 235px;
     left: 0;
-    top: 50px;
+    top: 30px;
     z-index: 9999;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     pointer-events: auto;
-    background-color: var(--bg-thirdary);
   }
 
   .sidebar-content-main {
-    display: inline;
+    display: flex;
     flex-direction: column;
     position: relative;
     top: 20px;
-    width: 100%;
+    width: 235px;
+    height: calc(100vh - min(150px, 20vh));
     background-color: var(--bg-thirdary);
+    overflow-y: auto;
+    overflow-x: hidden;
 
     .sidebar-item {
       display: flex;
-      width: 100%;
-      height: 40px;
       background-color: rgba(255, 255, 255, 0);
       font-size: 18px;
       border-radius: 3px;
@@ -287,14 +267,20 @@
 
       .sidebar-item-btn {
         all: unset;
-        width: 235px;
         color: rgba(0, 0, 0, 0.6);
+        width: 235px;
+        height: 40px;
+        min-height: 40px;
       }
     }
 
     .sidebar-subitem {
       display: flex;
       flex-direction: column;
+      border-radius: 3px;
+      min-height: 40px;
+      overflow: hidden;
+      text-overflow: ellipsis;
       cursor: pointer;
       &:hover {
         background-color: #d1d1d1;
@@ -307,12 +293,35 @@
 
       .sidebar-subitem-btn {
         all: unset;
-        width: 235px;
-        height: 40px;
         font-size: 17px;
         color: rgba(0, 0, 0, 0.6);
-        padding-left: 4rem;
+        width: 235px;
+        height: 40px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
+    }
+
+    .logo {
+      width: 235px;
+      height: auto;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      border-radius: 3px;
+      background-color: rgba(255, 255, 255, 0);
+      box-sizing: border-box;
+      font-family: 'ComicSansMS-Bold', 'Comic Sans MS Bold', 'Comic Sans MS', sans-serif;
+      font-weight: 700;
+      font-size: 36px;
+      color: #0336ff;
+      text-align: center;
+      line-height: 25px;
+      white-space: nowrap;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
     }
   }
 </style>

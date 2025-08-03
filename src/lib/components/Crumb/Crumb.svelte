@@ -126,13 +126,13 @@
 
 <div class="header-container">
   <!-- 展开按钮 -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div
-    class="crumb-unflod-btn {$sidebarFoldingState ? '' : 'hide'}"
-    onmouseenter={() => sidebarMouseEnter()}
-    onmouseleave={() => sidebarMouseLeave()}
-  >
-    <button class="crumb-toggle-btn" onclick={() => toggleSidebar()}>
+  <div class="crumb-unflod-btn {$sidebarFoldingState ? '' : 'hide'}">
+    <button
+      class="crumb-toggle-btn"
+      onclick={() => toggleSidebar()}
+      onmouseenter={() => sidebarMouseEnter('crumb')}
+      onmouseleave={() => sidebarMouseLeave()}
+    >
       <img src="/sidebar/unfold.svg" alt="展开侧边栏" />
     </button>
   </div>
@@ -194,11 +194,6 @@
         visibility: hidden;
       }
 
-      &:hover {
-        border-radius: 3px;
-        background-color: #d1d1d1;
-      }
-
       .crumb-toggle-btn {
         all: unset;
         width: 30px;
@@ -206,6 +201,11 @@
 
         img {
           width: 30px;
+
+          &:hover {
+            border-radius: 3px;
+            background-color: #d1d1d1;
+          }
         }
       }
     }
