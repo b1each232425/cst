@@ -162,8 +162,9 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       })
       .then((data) => {
         if (data.status !== 0) {
-          toast.error(`${data.msg}`);
+          throw new Error(`${data.msg}`);
         }
+        toast.success('获取题库列表成功')
         return data.data; // 返回实际数据
       })
       .catch((error) => {
@@ -222,14 +223,13 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error(`新建题库失败: HTTP错误`);
+          throw new Error(`HTTP错误`);
         }
         return response.json();
       })
       .then((result) => {
         if (result.status !== 0) {
-          toast.error(`新建题库失败: ${result.msg}`);
-          return;
+            throw new Error(`${result.msg}`);
         }
         toast.success('新建题库成功');
 
@@ -250,8 +250,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         return;
       })
       .catch((error) => {
-        toast.error(`新建题库失败: 网络错误`);
-
+        toast.error(`新建题库失败:${error.message}`);
         return;
       });
   }
