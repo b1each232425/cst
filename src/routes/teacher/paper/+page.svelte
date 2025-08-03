@@ -9,10 +9,10 @@
     import Button from "$lib/components/Button/Button.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import Tag from "$lib/components/Tag/Tag.svelte";
-    import Loading from "$lib/components/Loading/Loading.svelte";
     import { createEmptyPaper, deletePaper, fetchPaperList } from "./_utils/api";
     import { debounce } from "$lib/utils/optimize";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
+    import { onMount } from "svelte";
     import { toast } from "$lib/components/Toast/Toast";
 
     // 模拟数据
@@ -525,21 +525,17 @@
         },
     ];
     
-    let isLoading = $state(false);  // 加载中
-    
-    let paperName = $state("");         // 试卷名称
-    let paperTags = $state("");         // 试卷标签
-    let paperCategory = $state("");     // 试卷用途
-    
-    let totalPapers = $state(0);        // 试卷总数
-    let paperPageSize = $state(10);     // 每页条数
-    let paperPage = $state(1);          // 当前页
-    let paperPageSizeOptions = [10, 20]  // 每页条数选择项
-    
-    let paperList = $state([]);
-
-    let selectedPaperIDs = $state([]);      // 已选 ID 数组
+    let paperName = $state("");              // 试卷名称
+    let paperTags = $state("");              // 试卷标签
+    let paperCategory = $state("");          // 试卷用途
+    let totalPapers = $state(0);             // 试卷总数
+    let paperPageSize = $state(10);          // 每页条数
+    let paperPage = $state(1);               // 当前页
+    let paperPageSizeOptions = [10, 20]      // 每页条数选择项
+    let paperList = $state([]);              // 试卷列表
+    let selectedPaperIDs = $state([]);       // 已选 ID 数组
     let allPaperSelected = $state(false);    // 是否为全选状态
+    let isFirstEntry = $state(true);         // 是否首次进入页面
 
     // 选中数据
     function toggleSelection(ID, checked) {
@@ -583,41 +579,54 @@
     // 处理页面跳转
     function handlePageChange(event) {
         paperPage = event.detail;
+        fetchPaperList(paperName, paperTags, paperPage, paperPageSize, paperCategory)
+            .then(result => {
+                totalPapers = result.rowCount;
+                paperList = result.data || [];
+            });
     }
 
     // 处理页面大小更改
     function handlePageSizeChange(event) {
         paperPageSize = event.detail;
-        paperPage = 1; // 改变每页数量时通常要跳回第一页
-    }
-
-    // 防抖搜索试卷
-    const debouncedFetchPaperList = debounce(() => {
-        isLoading = true;
+        paperPage = 1;
         fetchPaperList(paperName, paperTags, paperPage, paperPageSize, paperCategory)
             .then(result => {
                 totalPapers = result.rowCount;
                 paperList = result.data || [];
-            })
-            .finally(() => {
-                isLoading = false;
-                // console.log(paperList)
             });
-    }, 1000, false);
+    }
 
+    // 防抖搜索试卷
+    const debouncedFetchPaperList = debounce(() => {
+        fetchPaperList(paperName, paperTags, paperPage, paperPageSize, paperCategory)
+        .then(result => {
+            totalPapers = result.rowCount;
+            paperList = result.data || [];
+        });
+    }, 500, false);
+        
     $effect(() => {
-        paperName; paperTags; paperPage; paperPageSize; paperCategory;
-        paperPage; paperPageSize;
-        debouncedFetchPaperList();
+        paperName; paperTags; paperCategory;
+        if(isFirstEntry) {
+            debouncedFetchPaperList();
+        }
+    });
+
+    // 挂载区
+    onMount(() => {
+        fetchPaperList(paperName, paperTags, paperPage, paperPageSize, paperCategory)
+            .then(result => {
+                totalPapers = result.rowCount;
+                paperList = result.data || [];
+                isFirstEntry = false;
+            });
     });
 
     // 自定义组卷
     function manual() {
-        isLoading = true;
         createEmptyPaper().then( result => {
             localStorage.setItem('currentPaperID', JSON.stringify(result.data.paper.ID));
-        }).finally(() => {
-            isLoading = false;
             goto('/teacher/paper/manual');
         });
     }
@@ -636,19 +645,14 @@
             confirm_button_type: "danger",
 
             onConfirm: () => {
-                isLoading = true;
-
                 deletePaper([ID])
-                    .then(result => {
-                        // console.log(result);
-                    })
-                    .finally(() => {
-                        isLoading = false;
-                        toast.success("删除试卷成功", 1000);
-
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
+                    .then(() => {
+                        toast.success("删除成功", 1000);
+                        fetchPaperList(paperName, paperTags, paperPage, paperPageSize, paperCategory)
+                            .then(result => {
+                                totalPapers = result.rowCount;
+                                paperList = result.data || [];
+                            })
                     });
             }
         });
@@ -662,19 +666,14 @@
             confirm_button_type: "danger",
 
             onConfirm: () => {
-                isLoading = true;
-
                 deletePaper(selectedPaperIDs)
-                    .then(result => {
-                        // console.log(result);
-                    })
-                    .finally(() => {
-                        isLoading = false;
-                        toast.success("删除试卷成功", 1000);
-
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
+                    .then(() => {
+                        toast.success("删除成功", 1000);
+                        fetchPaperList(paperName, paperTags, paperPage, paperPageSize, paperCategory)
+                            .then(result => {
+                                totalPapers = result.rowCount;
+                                paperList = result.data || [];
+                            })
                     });
             }
         });
@@ -683,8 +682,6 @@
 </script>
 
 <!-- <button onclick={console.log(paperList)}>点我</button> -->
-
-<Loading bind:value={isLoading} loadingText="正在加载中"/>
 
 <div class="paper-management">
     <!-- 标题区域 -->

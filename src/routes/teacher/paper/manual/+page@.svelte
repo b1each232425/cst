@@ -2,7 +2,7 @@
     import { goto } from "$app/navigation";
     import Button from "$lib/components/Button/Button.svelte";
     import { questionDifficultyTrans, questionTypeTrans, tagColorList } from "../_utils/data";
-    import { getColorIndex } from "../_utils/func";
+    import { getColorIndex, restoreOpenState } from "../_utils/func";
     import ImportQuestion from "../_components/ImportQuestion/ImportQuestion.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Select from "$lib/components/Select/Select.svelte";
@@ -14,10 +14,9 @@
     import MessageBox from "$lib/components/MessageBox/MessageBox";
     import { debounce } from "$lib/utils/optimize";
     import QuestionPreviewPanel from "../../question-bank/_components/QuestionPreviewPanel.svelte";
+    import QuestionPreview from "../_components/PreviewQuestion/PreviewQuestion.svelte"
     
     /*************** 控制开关区 ****************/
-
-    let isLoading = $state(false);          // 加载中
     let importModalIsOpen = $state(false);  // 从题库中导入题目弹窗
     let isAddingGroup = $state(false);      // 添加题组
 
@@ -39,11 +38,10 @@
     let totalScore = $state(0);
     let questionCount = $state(0);
     let description = $state("");
-    let tags = $state(["测试","简单","常识","English", "牛逼", "WDF"]);
+    let tags = $state([]);
 
     // 防抖更新试卷信息
     const debounceUpDatePaperInfo = debounce(() => {
-        isLoading = true;
         const actions = [
             {
                 action: "update_info",
@@ -59,13 +57,10 @@
         ];
 
         savePaper(paperID, actions)
-            .then(result => {
-                // console.log(result);
-            })
-            .finally(() => {
-                isLoading = false;
-            });
-    }, 1000, false);
+        .then(() => {
+            toast.success("试卷已同步更新", 1000);
+        });
+    }, 500, false);
 
     $effect(() => {
         paperName; category; level; suggestedDuration; description; tags;
@@ -117,6 +112,8 @@
     let toEditGroupID = $state(null);
     let toEditGroupName = $state("");
     let toEditGroup = $state(null);
+    let groupID = $state(0);
+    let groupName = $state("");
 
     // 删除题组
     function deleteGroup(groupID) {
@@ -132,8 +129,6 @@
             confirm_button_type: "danger",
 
             onConfirm: () => {
-                isLoading = true;
-
                 // 删除后重新排序
                 let groupIDs = paperGroups.map(group => group.id);
                 groupIDs = groupIDs.filter(id => id !== groupID)
@@ -150,12 +145,13 @@
                 ];
 
                 savePaper(paperID, actions)
-                    .then(result => {
-                        // console.log(result);
-                    })
-                    .finally(() => {
-                        isLoading = false;
-                        window.location.reload();
+                    .then(() => {
+                        fetchPaper(paperID)
+                        .then(result => {
+                            restoreOpenState(result.data.GroupsData, paperGroups);
+                            paperGroups = result.data.GroupsData;
+                            toast.success("试卷已同步更新", 1000);
+                        });
                     });
             }
         });
@@ -178,8 +174,6 @@
         if(event.key === "Enter" && toAddGroupName.trim() !== "") {
 
             toAddGroup.blur();
-            
-            isLoading = true;
 
             const actions = [
                 {
@@ -192,13 +186,18 @@
             ];
             
             savePaper(paperID, actions)
-                    .then(result => {
-                        // console.log(result);
-                    })
-                    .finally(() => {
-                        isLoading = false;
-                        window.location.reload();
+                .then(result => {
+                    fetchPaper(paperID)
+                        .then(result => {
+                            restoreOpenState(result.data.GroupsData, paperGroups);
+                            paperGroups = result.data.GroupsData;
+                            isAddingGroup = false;
+                            toAddGroupName = "";
+                            toast.success("试卷已同步更新", 1000);
                     });
+                })
+                .finally(() => {
+                });
         }
     }
 
@@ -215,8 +214,6 @@
         if(event.key === "Enter" && toEditGroupName.trim() !== "") {
 
             toEditGroup.blur();
-            
-            isLoading = true;
 
             const actions = [
                 {
@@ -229,13 +226,15 @@
             ];
             
             savePaper(paperID, actions)
-                    .then(result => {
-                        // console.log(result);
-                    })
-                    .finally(() => {
-                        isLoading = false;
-                        window.location.reload();
-                    });
+                .then(() => {
+                    fetchPaper(paperID)
+                        .then(result => {
+                            restoreOpenState(result.data.GroupsData, paperGroups);
+                            paperGroups = result.data.GroupsData;
+                            toEditGroupID = null;
+                            toast.success("试卷已同步更新", 1000);
+                        });
+                });
         }
     }
 
@@ -253,8 +252,6 @@
             confirm_button_type: "danger",
 
             onConfirm: () => {
-                isLoading = true;
-
                 // 删除后重新排序
                 const groupQuestions = group.questions;
                 let questionIDs = groupQuestions.map(question => question.id);
@@ -272,27 +269,63 @@
                 ];
 
                 savePaper(paperID, actions)
-                    .then(result => {
-                        // console.log(result);
-                    })
-                    .finally(() => {
-                        isLoading = false;
-                        window.location.reload();
+                    .then(() => {
+                        fetchPaper(paperID)
+                            .then(result => {
+                                restoreOpenState(result.data.GroupsData, paperGroups);
+                                paperGroups = result.data.GroupsData;
+                                toast.success("试卷已同步更新", 1000);
+                            });
                     });
             }
         });
+    }
+
+    // 导入题目更新
+    function updateAfterImport(updatedGroups) {
+        restoreOpenState(updatedGroups, paperGroups);
+        paperGroups = updatedGroups;
+    }
+
+    // 一键展开所有题组和题目
+    function expandAll() {
+    paperGroups.forEach(group => {
+        group.isOpen = true;
+        group.questions?.forEach(question => {
+        question.isOpen = true;
+        });
+    });
+    }
+
+    // 一键收起所有题组和题目
+    function collapseAll() {
+    paperGroups.forEach(group => {
+        group.isOpen = false;
+        group.questions?.forEach(question => {
+        question.isOpen = false;
+        });
+    });
     }
 
     /**************** 题组列表区 ****************/
 
     // 挂载区
     onMount(() => {
-        isLoading = true;
         paperID = JSON.parse(localStorage.getItem('currentPaperID'));
         fetchPaper(paperID)
             .then(result => {
                 paperInfo = result.data;
                 paperGroups = result.data.GroupsData;
+
+                paperGroups.forEach(group => {
+                    // 所有题组展开
+                    group.isOpen = true;
+                    
+                    group.questions.forEach(question => {
+                        // 所有题目展开
+                        question.isOpen = true;
+                    });
+                });
 
                 paperName = paperInfo.Name;
                 category = paperInfo.Category;
@@ -302,10 +335,7 @@
                 questionCount = paperInfo.QuestionCount;
                 description = paperInfo.Description;
                 tags = paperInfo.Tags;
-        }).finally(() => {
-            isLoading = false;
-            toast.success("已同步更新试卷信息", 1000);
-        })
+            });
     })
 
     function test() {
@@ -318,7 +348,12 @@
 <!-- <button onclick={test}>点我</button> -->
 
 {#if importModalIsOpen}
-    <ImportQuestion onclose={closeImportModal}/>
+    <ImportQuestion
+        onclose={closeImportModal}
+        update={updateAfterImport}
+        toAddGroupID={groupID}
+        toAddgroupName={groupName}
+    />
 {/if}
 
 <div class="add-paper">
@@ -335,9 +370,9 @@
         
         <!-- 操作区 -->
         <div class="operation">
-            <!-- <Button plain={true}>一键展开</Button>
-            <Button plain={true}>一键收取</Button> -->
-            <Button onclick={()=>{importModalIsOpen=true}}>从题库中导入</Button>
+            <Button onclick={()=>expandAll()} plain={true}>一键展开</Button>
+            <Button onclick={()=>collapseAll()} plain={true}>一键收起</Button>
+            <Button onclick={()=>{groupID=0;importModalIsOpen=true}}>从题库中导入</Button>
             <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper')}>退出</Button>
         </div>
     </div>
@@ -590,7 +625,7 @@
                                             <!-- 题目内容 -->
                                             {#if question.isOpen}
                                                 <div class="question-container">
-                                                    <QuestionPreviewPanel question={question} showHeader={false}/>
+                                                    <QuestionPreview {question}/>                                            
                                                 </div>
                                             {/if}
                                         </div>
@@ -602,7 +637,7 @@
                                         <div class="no-questions-box">
                                             <span class="title">题组暂无题目</span>
                                             <span class="prompt">可以通过以下方式快速添加题目：</span>
-                                            <Button onclick={()=>{importModalIsOpen=true}}>导入题目</Button>
+                                            <Button onclick={()=>{groupID=group.id;groupName=group.name;importModalIsOpen=true}}>导入题目</Button>
                                         </div>
                                     </div>
                                 {/if}
@@ -681,7 +716,7 @@
                 font-size: 20px;
                 transition: all 0.3s;
                 width: 30%;
-                /* margin-left: auto; */
+                margin-left: auto;
                 min-width: 108px;
 
                 &:focus {
@@ -1235,7 +1270,7 @@
 
                             /* 题目内容 */
                             .question-container {
-                                padding: 0 20px;
+                                /* padding: 0 20px; */
 
                                 .prompt {
                                     font-size: 14px;
