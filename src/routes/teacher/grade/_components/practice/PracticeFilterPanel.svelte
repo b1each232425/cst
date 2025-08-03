@@ -51,25 +51,14 @@
 
 
 <style lang="scss">
-	@import '../../_styles/responsive.scss';
 
 	.top-action-bar {
 		display: flex;
 		justify-content: flex-start;
 		align-items: center;
 		padding: 16px 0 0 0;
+		flex-wrap: wrap;
 
-		// 小屏幕时允许换行，避免按钮被截断
-		@include respond-to(lg) {
-			flex-wrap: wrap;
-			gap: 12px;
-		}
-
-		@include respond-to(md) {
-			flex-direction: column;
-			align-items: flex-start;
-			gap: 12px;
-		}
 	}
 
 	.filters {
@@ -79,24 +68,10 @@
 		margin-right: 100px;
 		margin-left: -10px;
 
-		@include respond-to(lg) {
-			margin-right: 50px;
-		}
-
-		@include respond-to(md) {
-			margin-right: 0;
-			margin-left: 0;
-			margin-bottom: 8px;
-			width: 100%;
-		}
 	}
 
 	.search-wrapper {
 		width: 300px;
-
-		@include respond-to(lg) {
-			width: 240px;
-		}
 
 	}
 
@@ -107,19 +82,11 @@
 		color: #595959;
 		font-size: 14px;
 
-		// 关键：小屏幕时允许换行，避免按钮被截断
-		@include respond-to(lg) {
-			gap: 16px;
-			flex-wrap: wrap;
-		}
-
 		.selection-info {
 			display: flex;
 			align-items: center;
 			gap: 10px;
 			white-space: nowrap;
-
-
 			.count {
 				color: #0052d9;
 				font-weight: bold;
@@ -150,11 +117,6 @@
 				cursor: not-allowed;
 			}
 
-			@include respond-to(lg) {
-				padding: 0 12px;
-				height: 28px;
-				font-size: 13px;
-			}
 		}
 	}
 </style> 

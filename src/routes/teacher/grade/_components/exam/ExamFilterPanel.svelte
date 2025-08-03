@@ -108,25 +108,13 @@
 </div>
 
 <style lang="scss">
-	@import '../../_styles/responsive.scss';
 
 	.top-action-bar {
 		display: flex;
 		justify-content: flex-start;
 		align-items: center;
 		padding: 16px 0 0 0;
-
-		// 小屏幕时允许换行，避免按钮被截断
-		@include respond-to(lg) {
-			flex-wrap: wrap;
-			gap: 12px;
-		}
-
-		@include respond-to(md) {
-			flex-direction: column;
-			align-items: flex-start;
-			gap: 12px;
-		}
+		flex-wrap: wrap;//自动换行
 	}
 
 	.filters {
@@ -134,24 +122,7 @@
 		align-items: center;
 		gap: 5px;
 		margin-right: 32px;
-
-		// 小屏幕时调整布局
-		@include respond-to(lg) {
-			margin-right: 16px;
-			flex-wrap: wrap;
-		}
-
-		@include respond-to(md) {
-			margin-right: 0;
-			margin-bottom: 8px;
-			width: 100%;
-		}
-
-		@include respond-to(sm) {
-			flex-direction: column;
-			align-items: stretch;
-			gap: 8px;
-		}
+		flex-wrap: wrap;
 	}
 	.filter-group {
 		display: flex;
@@ -164,10 +135,6 @@
 		padding: 0 9px 0 10px;
 		min-width: 56px;
 		white-space: nowrap;
-
-		@include respond-to(sm) {
-			min-width: 80px;
-		}
 	}
 
 	.dropdown-wrapper {
@@ -195,18 +162,8 @@
 		display: flex;
 		align-items: center;
 		gap: 12px;
-
-		// 关键：小屏幕时允许换行，避免按钮被截断
-		@include respond-to(lg) {
-			flex-wrap: wrap;
-			gap: 8px;
-		}
-		//垂直排序
-		@include respond-to(sm) {
-			flex-direction: column;
-			align-items: stretch;
-			gap: 8px;
-		}
+		flex-wrap: wrap;
+		
 	}
 	.selection-info {
 		font-size: 14px;
@@ -241,11 +198,6 @@
 			&.submit {
 				background-color: #85dbbe;
 			}
-		}
-
-		@include respond-to(lg) {
-			padding: 6px 12px;
-			font-size: 13px;
 		}
 
 	}

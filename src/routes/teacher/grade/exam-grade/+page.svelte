@@ -41,24 +41,31 @@
 </div>
 
 <style lang="scss">
-	@import '../_styles/responsive.scss';
 
 	.page-container {
-		@include page-container;
-	}
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 600px;
+  overflow: hidden;
+}
 
 	.filter-container {
-		@include filter-container;
+		flex-shrink: 0;
+  		background: #fff;
+ 		border-bottom: 1px solid #e5e5e5;
+  		z-index: 20;//下拉菜单优先级高于表头
 		padding: 0 13px;
 		padding-bottom: 5px;
 
-		@include respond-to(md) {
-			padding-bottom: 8px;
-		}
 	}
 
 	.table-container {
-		@include table-container;
+		flex: 1;
+  		display: flex;
+  		flex-direction: column;
+  		overflow: hidden;
+  		min-height: 0;
 		padding: 0 1px;
 	}
 
@@ -75,9 +82,5 @@
 		margin-top: 16px;
 		padding: 16px 0;
 
-		@include respond-to(md) {
-			margin-top: 8px;
-			padding: 8px 0;
-		}
 	}
 </style>
