@@ -45,7 +45,6 @@
 	.page-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
   min-height: 600px;
   overflow: hidden;
 }
@@ -61,7 +60,6 @@
 	}
 
 	.table-container {
-		flex: 1;
   		display: flex;
   		flex-direction: column;
   		overflow: hidden;
