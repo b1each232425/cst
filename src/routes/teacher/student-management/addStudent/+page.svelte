@@ -406,6 +406,8 @@
     width: 100%;
     height: 100%;
     min-width: 800px;
+    overflow-y:auto;
+
 
     @media (max-width: 1200px) {
       min-width: 700px;
@@ -567,21 +569,21 @@
     display: flex;
     justify-content: center;
     gap: 20px;
-    margin-top: 90px;
+    margin-top: 50px;
 
     @media (max-width: 1200px) {
       gap: 10px;
-      margin-top: 80px;
+      margin-top: 40px;
     }
 
     @media (min-resolution: 1.25dppx) {
       gap: 20px;
-      margin-top: 60px;
+      margin-top: 30px;
     }
 
     @media (min-resolution: 2.2dppx) {
       gap: 20px;
-      margin-top: 40px;
+      margin-top: 20px;
     }
   }
 </style>

@@ -100,7 +100,7 @@
   let elapsedSeconds = $state(0); // 考试已用时，单位为秒
   let totalscore = $state(0); // 考试总分
   let practice_record = $state(null); //练习建议时长
-  let load_success = $state(true);  //是否加载成功
+  let load_success = $state(false);  //是否加载成功
   let ifPreview = $state(false); //查看当前是否为预览模式
   let is_full_examMode = $state(true); // 是否为全卷模式
   let title = $state("");  //考试试卷的标题
@@ -117,8 +117,7 @@
   //按钮控制类逻辑
   function submitMessageBox() {
     if (ifPreview) {
-      toast.warning('提交过程中失败！', 2000);
-      console.log("预览模式，不需要提交试卷");
+      toast.warning('预览模式，不需要提交试卷', 2000);
       return;
     }
 		MessageBox({
@@ -276,7 +275,8 @@
     })
       .then((resp) => {
         if (!resp.ok) {
-          console.log(`提交失败：${resp.status} `);
+          console.error(`提交失败：${resp.status} `);
+          toast.error(`提交失败！${resp.status || ''}`, 2000);
           throw new Error(`提交失败：${resp.status} `);
         }
         return resp.json();
@@ -286,6 +286,7 @@
           toast.success('练习结束，提交成功！', 2000);
           goto(`/student/practice`);
         } else {
+          console.error(`提交失败：${resp_data.msg}`);
           toast.error(`提交失败！${resp_data.msg || ''}`, 2000);
         }
       })
@@ -344,7 +345,7 @@
         }
       })
       .catch((error) => {
-        console.error("保存答案时出错:", error);
+        console.error("保存答案时出错:", error.message);
         toast.error(`保存答案时出错！${error.message || ''}`, 2000);
       });
   }
@@ -391,6 +392,10 @@
           toast.error('获取题目时出错！', 2000);
           return;
         }
+      } else {
+        console.error("没有找到练习题目");
+        toast.error('没有找到练习题目', 2000);
+        return;
       }
     }  else {
       // 初始化考试
@@ -411,6 +416,7 @@
         if (!response.ok) {
           return response.text().then(text => {
             console.error('接口响应失败:', text);
+            toast.error(`服务器响应失败！${text || ''}`, 2000);
             throw new Error(text);
           });
         }
@@ -419,6 +425,7 @@
       .then(data => {
         if (data.status !== 0) {
           console.error(`接口错误: ${data.msg}`);
+          toast.error(`服务器错误！${data.msg || ''}`, 2000);
           throw new Error(data.msg);
         }
         // 赋值到变量
@@ -431,6 +438,7 @@
         title = sget(data, "data.Info.PaperName", "无标题");
         totalscore = sget(data, "data.Info.TotalScore", 0);
         practice_submission_id = sget(data, "data.Info.PracticeSubmissionID", "");
+
 
         load_success = true;
         ifPreview = false;
@@ -446,14 +454,15 @@
       })
       .catch(error => {
         console.error('请求失败:', error);
+        toast.error(`请求失败！${error|| ''}`, 2000);
         load_success = false;
             if (!load_success) {
-          MessageBox({
-          title: '出错了，请回到练习列表刷新重新进入',
-            onConfirm: () => {
-                    window.location.href = "/student/practice";
-             },
-            });
+              MessageBox({
+              title: '出错了，请回到练习列表刷新重新进入',
+                onConfirm: () => {
+                        window.location.href = "/student/practice";
+                },
+              });
         }
         return;
       });

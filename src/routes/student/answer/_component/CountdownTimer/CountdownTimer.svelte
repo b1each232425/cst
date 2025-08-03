@@ -6,12 +6,13 @@
     ifPreview,
     init_total_seconds,
     init_end_time,
-    examinee_id,
+    examinee_id = 0,
     practice_submission_id = 0,
     elapsed_seconds = 0, //练习模式中正着数开始的秒数
     countUp = false, //标记是正着数还是倒数
     start_timestamp = Date.now(), //正着数需要的开始时间戳，用于和后端对时
   } = $props();
+
 
 
   /**
