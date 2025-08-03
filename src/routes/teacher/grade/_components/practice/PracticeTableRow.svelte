@@ -35,7 +35,7 @@
 	<td class="practice-completed">{practice.completed_students ?? '-'}</td>
 	<td class="practice-passed">{practice.passed_students ?? '-'}</td>
 	<td class="practice-operation">
-		<button class="detail-btn" onclick={handleDetailClick}>详情</button>		
+		<button class="detail-btn" onclick={handleDetailClick} style="display: none;">详情</button>		
 				</td>
 			</tr>
 

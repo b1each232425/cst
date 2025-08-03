@@ -95,13 +95,13 @@
 			<span class="count">{selectedCount}</span>
 			<span>项</span>
 		</div>
-		<button class="action-btn export" disabled={!hasSelection} onclick={handleBatchExport}>
+		<button class="action-btn export" disabled={!hasSelection} onclick={handleBatchExport} style="display: none;">
 			批量导出
 		</button>
 		<button class="action-btn submit" disabled={!hasSelection} onclick={handleBatchSubmit}>
 			批量提交
 		</button>
-		<button class="action-btn log" onclick={handleShowLogs}>
+		<button class="action-btn log" onclick={handleShowLogs} style="display: none;">
 			查看日志
 		</button>
 	</div>

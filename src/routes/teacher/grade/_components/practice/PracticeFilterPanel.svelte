@@ -45,7 +45,7 @@
             <span class="count">{selectedCount}</span>
             <span>项</span>
         </div>
-        <button class="action-btn export" disabled={!hasSelection} onclick={handleExportClick}>批量导出</button>
+        <button class="action-btn export" disabled={!hasSelection} onclick={handleExportClick} style="display: none;">批量导出</button>
     </div>
 </div>
 

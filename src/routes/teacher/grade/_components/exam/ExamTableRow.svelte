@@ -81,8 +81,8 @@
 		{exam.submitted === null || exam.submitted === undefined ? '-' : exam.submitted ? '已提交' : '未提交'}
 	</td>
 	<td class="operation">
-		<button class="op-btn" onclick={handleDetailClick}>详情</button>
-		<button class="op-btn" onclick={handleExport}>导出</button>
+		<button class="op-btn" onclick={handleDetailClick} style="display: none;">详情</button>
+		<button class="op-btn" onclick={handleExport} style="display: none;">导出</button>
 		{#if !exam.submitted}
 			<button class="op-btn op-btn-submit" onclick={() => store.submitGrades([exam.id])}>
 				提交
@@ -99,7 +99,7 @@
 		td {
 			font-size: 14px;
 			color: #3d3d3d;
-			padding: 8px 4px;
+			padding: 10px 4px;
 			vertical-align: middle;
 			text-align: center;
 		}
