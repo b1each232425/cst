@@ -155,11 +155,7 @@
                     })
                     .finally(() => {
                         isLoading = false;
-                        toast.success("删除题组成功", 1000);
-
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
+                        window.location.reload();
                     });
             }
         });
@@ -201,11 +197,7 @@
                     })
                     .finally(() => {
                         isLoading = false;
-                        toast.success("添加题组成功", 1000);
-
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
+                        window.location.reload();
                     });
         }
     }
@@ -242,11 +234,7 @@
                     })
                     .finally(() => {
                         isLoading = false;
-                        toast.success("编辑题组名称成功", 1000);
-
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
+                        window.location.reload();
                     });
         }
     }
@@ -289,11 +277,7 @@
                     })
                     .finally(() => {
                         isLoading = false;
-                        toast.success("删除题目成功", 1000);
-
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
+                        window.location.reload();
                     });
             }
         });
@@ -320,9 +304,7 @@
                 tags = paperInfo.Tags;
         }).finally(() => {
             isLoading = false;
-
-            // console.log(paperInfo);
-            // console.log(paperGroups);
+            toast.success("已同步更新试卷信息", 1000);
         })
     })
 
