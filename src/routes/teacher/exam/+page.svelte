@@ -240,6 +240,7 @@
 
     onMount(() => {
         searchExam();
+        console.log(examList);
     });
 </script>
 

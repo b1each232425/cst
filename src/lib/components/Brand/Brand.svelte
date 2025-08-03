@@ -1,4 +1,9 @@
 <script>
+  /**
+   * @type {{
+   *   content: string; // 版权信息内容
+   * }}
+   */
   let { content } = $props();
 </script>
 
@@ -11,7 +16,7 @@
     position: relative;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 50px;
     padding: 2px 2px 2px 2px;
     margin: 0;
     color: #333333;

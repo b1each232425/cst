@@ -24,7 +24,6 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import FilterBar from '../../_components/FilterBarForQuestionBank.svelte';
   import BankTag from '../../_components/editableTag.svelte';
   import Dropdown from '../../_components/DropDownForQuesitonBank.svelte';
-
   import SingleSelectEditPanel from '../../_components/singlePage.svelte';
   import MultipleSelectEditPanel from '../../_components/multiplePage.svelte';
   import JudgeSelectEditPanel from '../../_components/judgePage.svelte';
@@ -35,6 +34,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { TheoryQuestion } from '../type';
   import SinglePage from '../../_components/singlePage.svelte';
   import { get } from 'svelte/store';
+
 
   /**
    * @description ICON集合
@@ -155,14 +155,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       value: '04',
       label: '判断',
     },
-    {
-      value: '06',
-      label: '填空',
-    },
-    {
-      value: '08',
-      label: '简答',
-    },
+   
   ]);
 
   /**
@@ -428,19 +421,20 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error(`添加题目失败: HTTP错误`);
+          throw new Error(`HTTP错误`);
         }
         return response.json();
       })
       .then((result) => {
         if (result.status !== 0) {
-          toast.error(`添加土木是该: ${result.msg}`);
+          throw new Error(`${result.msg}`);
         }
+        question_count++;
         toast.success('添加题目成功');
         return getQuestionList().then(() => result); // 确保 getQuestionList() 执行后再返回 result
       })
       .catch((error) => {
-        toast.error(`添加题目失败: 网络错误`);
+        toast.error(`添加题目失败:${error.message}`);
         return;
       });
   }
@@ -473,12 +467,12 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   const onSearchQuestionKeyInput = (e) => {
     if (e.target && 'value' in e.target && typeof e.target.value === 'string') {
       const value = e.target.value;
-      clearTimeout(search_timer);
+   
       // 抖动
-      search_timer = setTimeout(() => {
+     
         search_question_content = value;
         list_table_component.updateFilteredQuestion(filter_conditions, value);
-      }, 500);
+      
     }
   };
   /**
@@ -507,13 +501,13 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error(`保存题库数据失败: HTTP错误`);
+          throw new Error(`HTTP错误`);
         }
         return response.json();
       })
       .then((result) => {
         if (result.status !== 0) {
-          toast.error(`题库数据保存失败: ${result.msg}`);
+          throw new Error(`${result.msg}`);
           return;
         }
         toast.success('题库数据保存成功');
@@ -535,7 +529,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         return result;
       })
       .catch((error) => {
-        toast.error(`保存题库数据失败: 网络错误`);
+        toast.error(`保存题库数据失败:${error.message}`);
         return;
       });
   }
@@ -550,6 +544,9 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       bankID: bank_id,
       page: current_page,
       pageSize: page_size,
+      type:question_type_fileter,
+      difficulty:question_difficulty_fileter,
+     
     });
 
     return fetch(`/api/questions?${queryParams}`, {
@@ -558,38 +555,53 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     })
       .then((response) => {
         if (!response.ok) {
-          toast.error(`获取题库列表失败: HTTP错误`);
-          return;
+          throw new Error(`HTTP错误`);
         }
         return response.json();
       })
       .then((data) => {
         if (data.status !== 0) {
-          toast.error(`获取题库列表失败: ${data.msg}`);
-          return;
+         throw new Error (`${data.msg}`);
         }
+         toast.success(`获取试题列表成功`);
         return data;
       })
       .catch((error) => {
-        toast.error(`获取题库列表失败: 网络错误`);
+        toast.error(`获取试题列表失败:${error.message}`);
         return;
       });
   }
+
+  /**
+   * 是否初始化
+  */
+
+  let init=1;
   /**
    * @description 获取题目列表
    */
-  const getQuestionList = async (init) => {
+  const getQuestionList = async () => {
+    if(bank_id==0){
+      return ;
+    }
     // 拉取题目列表
     request_lock = true;
     const response = await getBankWithQuestions();
-    const data = response.data || [];
+    const data = response.data || null;
     request_lock = false;
     if (init == 1) {
-      (data!=[])
-      question_count = response.rowCount;
+      init=0;
+    if(data!=null){
+      question_count=response.rowCount;
     }
-    question_filtered_count = response.rowCount;
+    }
+
+     if(data!=null){
+       question_filtered_count = response.rowCount;
+    }
+   
     questions = [];
+    if(data!=null){
     for (let i = 0; i < data.length; i++) {
       questions.push({
         id: data[i].ID,
@@ -606,6 +618,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         question_attachments_path: data[i].QuestionAttachmentsPath,
       });
     }
+  }
   };
 
   /**
@@ -630,11 +643,11 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         bank_update_time = formatTimestamp(question_bank_data.update_time);
       }
     } else {
-      toast.error('无法获得提题库数据');
+      toast.error('无法获得题库数据');
       return;
     }
 
-    getQuestionList(1);
+    
   });
 
   /**
@@ -672,7 +685,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       tags: question_tag_fileter,
     };
 
-    list_table_component.updateFilteredQuestion(filter_conditions, search_question_content);
+   
   };
 
   /**
@@ -944,7 +957,9 @@ o888o o888o   "888" o888o o888o o888o o888o
         ]}
         onSelectTag={(value) => filterConditionSelect(value, 'difficulty')}
       ></FilterBar>
+      <div class="hiddenValue">
       <FilterBar
+          
         filter_title="标签"
         all_filter_conditions={all_question_tags.map((tag) => {
           return {
@@ -954,6 +969,7 @@ o888o o888o   "888" o888o o888o o888o o888o
         })}
         onSelectTag={(value) => filterConditionSelect(value, 'tag')}
       ></FilterBar>
+      </div>
     </div>
     <div class="questionListContainer">
       <div class="questionListTitle">
@@ -978,9 +994,7 @@ o888o o888o   "888" o888o o888o o888o o888o
 
           <Dropdown options={question_types} placeholder="添加题目" selectOptionFunc={onAddNewQuestion}></Dropdown>
 
-          <button class="questionListControlBtn normalBtn">
-            <span>批量导入</span>
-          </button>
+          
         </div>
       </div>
       <QuestionList
@@ -1042,6 +1056,9 @@ o888o o888o   "888" o888o o888o o888o o888o
 ></JudgeSelectEditPanel>
 
 <style lang="scss" scoped>
+
+
+
   button {
     margin: 0px;
     padding: 0px;
@@ -1063,6 +1080,10 @@ o888o o888o   "888" o888o o888o o888o o888o
   input {
     font-family: PingFang FC;
   }
+
+.hiddenValue{
+ visibility: hidden;
+}
 
   .pageContainer {
     overflow: auto;
@@ -1428,6 +1449,7 @@ o888o o888o   "888" o888o o888o o888o o888o
   }
 
   .normalBtn {
+    visibility: hidden;
     display: flex;
     justify-content: center;
     align-items: center;

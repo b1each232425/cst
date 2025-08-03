@@ -11,37 +11,38 @@
   import { debounce } from './_utils/debounce.js';
   import { goto } from '$app/navigation';
 
-  let students = $state([]); // 用户列表
+  // 学生列表
+  let students = $state([]); 
 
   //全选状态
-  let selectAll = $state(false);
+  let select_all = $state(false);
 
   // 筛选和搜索状态
-  let searchText = $state(''); // 搜索框文本内容
-  let accountStatus = $state('全部'); // 当前选中的账号状态
+  let search_text = $state(''); // 搜索框文本内容
+  let account_status = $state('全部'); // 当前选中的账号状态
 
   // 分页相关状态
-  let currentPage = $state(1);
-  let pageSize = $state(10);
-  let totalItems = $state(0); // 总记录数
-  let totalPages = $state(0); // 总页数
+  let current_page = $state(1);
+  let page_size = $state(10);
+  let total_items = $state(0); // 总记录数
+  let total_pages = $state(0); // 总页数
 
   // 加载状态
   let loading = $state(false);
   let error = $state(null);
 
-  let showImportPanel = $state(false);
-  let studentImportPanelRef = $state(null);
+  let show_import_panel = $state(false);
+  let student_import_panel = $state(null);
 
   //状态码到显示文字的映射
-  const StateMap = {
+  const STATEMAP = {
     '00': '已启用',
     '02': '已停用',
     '04': '已删除',
   };
 
   // 状态码到CSS类名的映射
-  const StateClassMap = {
+  const STATECLASSMAP = {
     '00': 'enabled',
     '02': 'disabled',
     '04': 'deleted',
@@ -53,14 +54,14 @@
     error = null;
 
     const params = {
-      page: String(currentPage),
-      pageSize: String(pageSize),
+      page: String(current_page),
+      pageSize: String(page_size),
       domain: 'cst.school^student', 
     };
 
     // 添加状态筛选
-    if (accountStatus && accountStatus !== '全部') {
-      params.status = accountStatus;
+    if (account_status && account_status !== '全部') {
+      params.status = account_status;
     }
 
     fetch(`/api/user?${new URLSearchParams(params)}`, {
@@ -76,8 +77,8 @@
           let filteredData = res.data;
 
           // 前端实现多字段搜索
-          if (searchText) {
-            const keyword = searchText.toLowerCase();
+          if (search_text) {
+            const keyword = search_text.toLowerCase();
             filteredData = filteredData.filter(
               (student) =>
                 (student.OfficialName && student.OfficialName.toLowerCase().includes(keyword)) ||
@@ -90,39 +91,39 @@
           students = filteredData.map((student) => ({
             id: student.ID,
             account: student.Account,
-            name: student.OfficialName || '',
-            identityCard: student.IDCardNo || '',
-            gender: student.Gender || '',
-            phone: student.MobilePhone || '',
+            name: student.OfficialName || '-',
+            identity_card: student.IDCardNo || '-',
+            gender: student.Gender || '-',
+            phone: student.MobilePhone || '-',
             status: student.Status,
             selected: false,
             has_relation: student.HasRelation || false,
           }));
 
-          totalItems = res.rowCount || res.data.length;
-          totalPages = Math.ceil(totalItems / pageSize);
-          selectAll = false;
+          total_items = res.rowCount || res.data.length;
+          total_pages = Math.ceil(total_items / page_size);
+          select_all = false;
         } else {
           students = [];
-          totalItems = 0;
-          totalPages = 0;
-          selectAll = false;
+          total_items = 0;
+          total_pages = 0;
+          select_all = false;
         }
         loading = false;
       })
       .catch((errorInfo) => {
         error = `获取用户列表失败: ${errorInfo.message}`;
         students = [];
-        totalItems = 0;
-        totalPages = 0;
-        selectAll = false;
+        total_items = 0;
+        total_pages = 0;
+        select_all = false;
         loading = false;
       });
   }
 
   //防抖处理搜索函数
   const handleSearchDebounced = debounce(() => {
-    currentPage = 1;
+    current_page = 1;
     fetchStudents();
   }, 400);
 
@@ -130,7 +131,7 @@
   function toggleSelectAll() {
     students = students.map((student) => ({
       ...student,
-      selected: selectAll,
+      selected: select_all,
     }));
   }
 
@@ -144,14 +145,14 @@
 
   // 页码选择处理
   function handlePageChange(event) {
-    currentPage = event.detail;
+    current_page = event.detail;
     fetchStudents();
   }
 
   // 每页大小变更处理
   function handlePageSizeChange(event) {
-    pageSize = event.detail;
-    currentPage = 1;
+    page_size = event.detail;
+    current_page = 1;
     fetchStudents();
   }
 
@@ -168,8 +169,8 @@
 
   // 导入学生
   function handleImport() {
-    if (studentImportPanelRef) {
-      studentImportPanelRef.triggerFileInput();
+    if (student_import_panel) {
+      student_import_panel.triggerFileInput();
     }
   }
 
@@ -177,7 +178,7 @@
     if (is_all_ok) {
       fetchStudents();
     }
-    showImportPanel = false;
+    show_import_panel = false;
   }
 
   // 添加学生
@@ -277,7 +278,7 @@
             <InputBox
               placeholder="请输入关键词"
               type="text"
-              bind:value={searchText}
+              bind:value={search_text}
               showLabel={false}
               oninput={handleSearchDebounced}
             ></InputBox>
@@ -287,11 +288,11 @@
           <span class="filter-label">账号状态</span>
           <div class="dropdown-container">
             <Select
-              bind:value={accountStatus}
+              bind:value={account_status}
               placeholder="全部"
               onChangeValue={(value) => {
-                accountStatus = value;
-                currentPage = 1;
+                account_status = value;
+                current_page = 1;
                 fetchStudents();
               }}
             >
@@ -306,12 +307,12 @@
       <div class="right-section">
         <button class="action-btn download-btn" onclick={downloadTemplate}> 下载导入模板 </button>
         <button class="action-btn import-btn" onclick={handleImport}> 导入 </button>
-        <button class="action-btn add-btn" onclick={handleAdd}> 添加 </button>
-        <button class="action-btn unbind-btn" onclick={handleBatchUnbind}> 移除 </button>
+        <!-- <button class="action-btn add-btn" onclick={handleAdd}> 添加 </button>
+        <button class="action-btn unbind-btn" onclick={handleBatchUnbind}> 移除 </button> -->
         <button class="action-btn create-btn" onclick={handleCreate}> 创建 </button>
-        <button class="action-btn delete-btn" onclick={handleBatchDelete}> 删除 </button>
+        <!-- <button class="action-btn delete-btn" onclick={handleBatchDelete}> 删除 </button>
         <button class="action-btn enable-btn" onclick={handleBatchEnable}> 启用 </button>
-        <button class="action-btn disable-btn" onclick={handleBatchDisable}> 停用 </button>
+        <button class="action-btn disable-btn" onclick={handleBatchDisable}> 停用 </button> -->
       </div>
     </div>
   </div>
@@ -322,7 +323,7 @@
         <thead>
           <tr class="table-head-row">
             <th class="col-checkbox table-head">
-              <input type="checkbox" class="checkbox-all" bind:checked={selectAll} onchange={toggleSelectAll} />
+              <input type="checkbox" class="checkbox-all" bind:checked={select_all} onchange={toggleSelectAll} />
             </th>
             <th class="col-account table-head">账号</th>
             <th class="col-name table-head">姓名</th>
@@ -330,7 +331,7 @@
             <th class="col-status table-head">账号状态</th>
             <th class="col-gender table-head">性别</th>
             <th class="col-phone table-head">电话</th>
-            <th class="col-actions table-head">操作</th>
+            <!-- <th class="col-actions table-head">操作</th> -->
           </tr>
         </thead>
         <tbody>
@@ -345,17 +346,17 @@
               <td class="col-name" title={student.name}>
                 {student.name}
               </td>
-              <td class="col-id" title={student.identityCard}>
-                {student.identityCard}
+              <td class="col-id" title={student.identity_card}>
+                {student.identity_card}
               </td>
               <td class="col-status">
-                <span class="status-text {StateClassMap[student.status]}">
-                  {StateMap[student.status] || '-'}
+                <span class="status-text {STATECLASSMAP[student.status]}">
+                  {STATEMAP[student.status] || '-'}
                 </span>
               </td>
               <td class="col-gender">{student.gender}</td>
               <td class="col-phone">{student.phone}</td>
-              <td class="col-actions">
+              <!-- <td class="col-actions">
                 <div class="actions">
                   <button class="btn-link btn-detail" onclick={() => handleDetail(student.id)}>详情</button>
                   <button class="btn-link btn-edit" onclick={() => handleEdit(student.id)}>修改</button>
@@ -365,21 +366,18 @@
                   >
                     {student.status === '02' ? '启用' : '停用'}
                   </button>
-                  <!-- 移除按钮 -->
                   <button
                     class="btn-link btn-unbind"
                     style="display: {student.has_relation ? 'inline-block' : 'none'}"
                     onclick={() => handleUnbind(student.id)}>移除</button
                   >
-
-                  <!-- 删除按钮 -->
                   <button
                     class="btn-link btn-delete"
                     style="display: {student.has_relation ? 'none' : 'inline-block'}"
                     onclick={() => handleDelete(student.id)}>删除</button
                   >
                 </div>
-              </td>
+              </td> -->
             </tr>
           {/each}
           <!-- 空页面 -->
@@ -395,11 +393,11 @@
     </div>
     <!-- 分页器 -->
     <div class="pagination-wrapper">
-      <div class="pagination-container {totalItems > 0 ? '' : 'hide'}">
+      <div class="pagination-container {total_items > 0 ? '' : 'hide'}">
         <Pagination
-          {totalItems}
-          {currentPage}
-          {pageSize}
+          totalItems={total_items}
+          currentPage={current_page}
+          pageSize={page_size}
           pageSizeOptions={[10, 20, 50]}
           on:pageChange={handlePageChange}
           on:pageSizeChange={handlePageSizeChange}
@@ -409,7 +407,7 @@
   </div>
 
   <!-- 导入学生面板 -->
-  <StudentImportPanel bind:show={showImportPanel} onImport={handleImportSuccess} bind:this={studentImportPanelRef} />
+  <StudentImportPanel bind:show={show_import_panel} onImport={handleImportSuccess} bind:this={student_import_panel} />
 </div>
 
 <style lang="scss" scoped>
@@ -418,18 +416,16 @@
 
   .student-management-container {
     position: relative;
-    background-color: var(--bg-primary);
     display: flex;
     flex-direction: column;
     width: 100%;
-    min-width: 1000px;
     overflow-y: auto;
+    height: 80vh;
 
-    height: 100vh;
   }
 
   .table-action-container {
-    padding: 10px 0 0 10px; //TODO：后续调整
+    padding: 10px 0 0 10px; 
 
     .action-layout {
       display: flex;
@@ -576,7 +572,6 @@
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
-    padding-bottom: 20px; 
 
     @media (max-width: 768px) {
       padding: 5px 10px 50px 10px;
@@ -708,8 +703,7 @@
   }
 
   .pagination-wrapper {
-    flex-shrink: 0;            
-    padding: 10px 0;           
+    flex-shrink: 0;                     
   
     .pagination-container {
     display: flex;             

@@ -136,6 +136,12 @@
 
     const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序出一个数组
 
+    // 构建全局索引映射
+    const globalIndexMap = new Map();
+    examQuestions.forEach((q, idx) => {
+      globalIndexMap.set(q.ID, idx);
+    });
+
     sortedGroups.forEach(groupInfo => {
       const groupId = groupInfo.ID; // 题组 id
       const groupQuestions = examQuestionsMap.get(String(groupId)) || []; // 该分组下的题目数组
@@ -146,7 +152,7 @@
         type: groupQuestions[0].type,
         questions: groupQuestions.map((question, index) => ({
           question,
-          index
+          index: globalIndexMap.get(question.ID) // 这里用全局索引
         }))
       });
     });
@@ -557,7 +563,7 @@
         <!-- 考试信息区域 -->
         <div class="box exam-info">
           <div class="exam-time-info">
-            考试信息: 
+            考试信息: &emsp;
 
             <Button type="primary" plain size="small" onclick={openModal}>
               <span>查看详情</span>
@@ -566,10 +572,10 @@
           </div>
 
           <div class="exam-time-info">
-            开始时间:{ifPreview ? "--" : formatTimestamp(start_time)}
+            开始时间:&emsp;{ifPreview ? "--" : formatTimestamp(start_time)}
           </div>
           <div class="exam-time-info">
-            结束时间:{ifPreview ? "--" : formatTimestamp(end_time)}
+            结束时间:&emsp;{ifPreview ? "--" : formatTimestamp(end_time)}
           </div>
         </div>
         <!-- 考试作答形式选择区域 -->
@@ -821,8 +827,11 @@
 
   /* 考试头部样式 */
   .exam-header {
-    position: relative; // 新增
+    position: relative;
     height: 60px;
+    min-height: 60px;
+    max-height: 60px;
+    overflow: hidden; // 防止内容撑高
     background-color: white;
     display: flex;
     align-items: center;
@@ -831,7 +840,7 @@
     border-style: solid;
     border-width: 0 0 1px 0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
+}
 
   .exam-title {
     // 居中对齐
@@ -1094,7 +1103,7 @@
     display: flex;
     flex-direction: column;
     height: calc(100vh - 60px);
-    min-height: 540px;
+    min-height: 100vh;
     overflow-y: scroll;
     padding: 20px;
     min-width: 500px;

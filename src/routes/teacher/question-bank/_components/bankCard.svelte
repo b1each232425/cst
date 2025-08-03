@@ -70,7 +70,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 	/**
 	 * @type {boolean} 显示编辑按钮组
 	 */
-	let show_edit_btns = $state(false);
+	let show_edit_btns = $state(true);
 
 	/**
 	 * @type {boolean} 显示更多选项
@@ -195,10 +195,10 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 			tabindex="0"
 			onfocus={() => {}}
 			onmouseover={() => {
-				show_edit_btns = true;
+				show_edit_btns = false;
 			}}
 			onmouseleave={() => {
-				show_edit_btns = false;
+				show_edit_btns = true;
 			}}
 		>
 			<div class="bank-normal-content">
@@ -286,8 +286,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 				</div>
 
 				<!-- 编辑按钮组 -->
-				{#if show_edit_btns}
-					<div class="bank-edit-btns" transition:slide={{ duration: 100 }}>
+				
+					<div class="bank-edit-btns" transition:slide={{ duration: 100 }} class:hidden={show_edit_btns}>
 						<!-- 放弃修改 -->
 						{#if data?.is_changed}
 							<button
@@ -320,6 +320,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 								normal_handle_funcs?.save?.();
 							}}
 							title="点击保存题库"
+							
 						>
 							<span>保存</span>
 						</button>
@@ -372,7 +373,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 							{/if}
 						</div>
 					</div>
-				{/if}
+				
 			</div>
 
 			<div class="bank-delete-content">
@@ -706,6 +707,7 @@ o.  )88b   888 .    `888'     888  888    .o
 			}
 
 			.bank-edit-btns {
+			   
 				position: absolute;
 				display: flex;
 				justify-content: flex-start;
@@ -715,6 +717,9 @@ o.  )88b   888 .    `888'     888  888    .o
 				width: max-content;
 				height: max-content;
 			}
+			 .hidden {
+              visibility: hidden;
+         }
 
 			.more-options-btns {
 				display: flex;
