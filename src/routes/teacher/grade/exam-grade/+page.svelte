@@ -47,6 +47,7 @@
   flex-direction: column;
   min-height: 600px;
   overflow: hidden;
+  height:84vh;
 }
 
 	.filter-container {
