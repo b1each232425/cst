@@ -89,7 +89,7 @@
         phone: item['手机号'],
         id_Card_No: item['身份证号'],
         serial_number: item['编号'],
-        error_type: item.error_type,
+        error_type: item.errorType,
         isOk: item.isOk,
       }));
       failure_student_list = convertedData;
@@ -379,8 +379,8 @@
           </div>
         </div>
         <div class="checkbox-container">
-          <span class="checkbox-item">导入成功{success_count}名</span>
-          <span class="checkbox-item">导入失败{failure_count}名</span>
+          <span class="checkbox-item">识别成功{success_count}名</span>
+          <span class="checkbox-item">识别失败{failure_count}名</span>
         </div>
         <input
           type="file"
@@ -460,7 +460,7 @@
       </div>
     </div>
     <div class="panel-footer">
-      <Button type="primary" plain onclick={handleCancel}>返回</Button>
+      <Button type="primary" plain onclick={handleCancel}>取消</Button>
       <Button type="primary" onclick={handleImport}>确认导入</Button>
     </div>
   </div>
