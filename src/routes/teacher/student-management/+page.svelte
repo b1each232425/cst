@@ -280,7 +280,7 @@
               type="text"
               bind:value={search_text}
               showLabel={false}
-              oninput={handleSearchDebounced}
+              onInput={handleSearchDebounced}
             ></InputBox>
           </div>
         </div>
@@ -420,7 +420,7 @@
     flex-direction: column;
     width: 100%;
     overflow-y: auto;
-    height: 80vh;
+    height: 85vh;
 
   }
 
