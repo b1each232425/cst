@@ -336,7 +336,7 @@
                 bind:value={search_account}
                 placeholder="请输入账号"
                 showLabel={false}
-                oninput={handleSearchDebounced}
+                onInput={handleSearchDebounced}
               />
             </div>
           </div>
@@ -351,7 +351,7 @@
                 bind:value={search_name}
                 placeholder="请输入姓名"
                 showLabel={false}
-                oninput={handleSearchDebounced}
+                onInput={handleSearchDebounced}
               />
             </div>
           </div>
@@ -366,7 +366,7 @@
                 bind:value={search_phone}
                 placeholder="请输入电话"
                 showLabel={false}
-                oninput={handleSearchDebounced}
+                onInput={handleSearchDebounced}
               />
             </div>
           </div>
@@ -381,7 +381,7 @@
                 bind:value={search_email}
                 placeholder="请输入邮箱"
                 showLabel={false}
-                oninput={handleSearchDebounced}
+                onInput={handleSearchDebounced}
               />
             </div>
           </div>
