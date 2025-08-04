@@ -1,100 +1,115 @@
-<!-- /**
-  * 弹窗提示组件使用说明
-  *
-  * 作者：段春茂
-  * 邮箱：2162105974@qq.com
-  *
-  * 参数配置：
-  * @param {Boolean} visible                是否显示弹窗，默认：false
-  * @param {Boolean} show_cancel_icon       是否显示右上角关闭图标，默认：true
-  * @param {String}  title                  弹窗标题文本，默认："温馨提示"
-  * @param {String}  content                弹窗内容正文，支持 HTML 字符串，默认：""
-  * @param {String}  cancel_text            取消按钮文本，默认："Cancel"
-  * @param {String}  confirm_text           确认按钮文本，默认："Confirm"
-  * @param {Boolean} center                 是否居中显示标题、按钮等，默认：false
-  * @param {Boolean} show_cancel_button     是否显示取消按钮，默认：true
-  * @param {Boolean} show_confirm_button    是否显示确认按钮，默认：true
-  * @param {String}  confirm_button_type    确认按钮类型（样式），如 "primary"、"success"，默认："primary"
-  * @param {String}  cancel_button_type     取消按钮类型，默认："info"
-  * @param {Function} onCancel              点击取消按钮或关闭图标时的回调函数，支持异步
-  * @param {Function} onConfirm             点击确认按钮时的回调函数，支持异步
-  *
-  * 功能说明：
-  * - 支持基本的提示弹窗 UI，包括标题、正文、按钮
-  * - 可自定义是否展示按钮、按钮文案、对齐方式等
-  * - 支持点击确认/取消后自动关闭弹窗
-  * - 样式美观，默认带遮罩背景
-  *
-  * 使用示例：
-  * <MessageBox
-  *   visible={visible}
-  *   title="删除提示"
-  *   content="您确定要删除这条数据吗？"
-  *   cancel_text="取消"
-  *   confirm_text="确定"
-  *   confirm_button_type="danger"
-  *   onCancel={() => visible = false}
-  *   onConfirm={() => {
-  *     // 执行删除操作
-  *     deleteItem();
-  *     visible = false;
-  *   }}
-  * />
-  *
-  * 注意事项：
-  * - `visible` 需要父组件传入控制（如通过状态变量）
-  * - `onCancel` / `onConfirm` 可以为异步函数
-  * - 弹窗内容高度自适应，最大宽度 500px，移动端建议加媒体查询优化
-  */ -->
 <script>
+  /**
+   * @component MessageBox
+   * @description 弹出窗提示组件
+   *
+   * @props
+   * @property {Object} options 配置项
+   * @property {string} [options.title="温馨提示"] 弹窗标题
+   * @property {string} [options.content=""] 弹窗内容
+   * @property {boolean} [options.center=false] 是否居中显示内容
+   * @property {string} [options.cancel_text="取消"] 取消按钮文本
+   * @property {string} [options.confirm_text="确定"] 确认按钮文本
+   * @property {boolean} [options.show_cancel_icon=true] 是否显示右上角取消图标
+   * @property {boolean} [options.show_cancel_button=true] 是否显示取消按钮
+   * @property {boolean} [options.show_confirm_button=true] 是否显示确认按钮
+   * @property {'primary' | 'success' | 'danger' | 'warning' | 'info'} [options.cancel_button_type="info"] 取消按钮类型
+   * @property {'primary' | 'success' | 'danger' | 'warning' | 'info'} [options.confirm_button_type="primary"] 确认按钮类型
+   * @property {Function} [options.cancel] 点击取消的回调函数
+   * @property {Function} [options.confirm] 点击确认的回调函数
+   */
   import Button from '$lib/components/Button/Button.svelte';
+
   let {
     visible = false,
     show_cancel_icon = true,
     title = '温馨提示',
     content = '',
-    cancel_text = 'Cancel',
-    confirm_text = 'Confirm',
+    cancel_text = 'cancel',
+    confirm_text = 'confirm',
     center = false,
     show_cancel_button = true,
     show_confirm_button = true,
     confirm_button_type = 'primary',
     cancel_button_type = 'info',
-    onCancel = () => {},
-    onConfirm = () => {},
+    cancel = () => {},
+    confirm = () => {},
   } = $props();
-  async function handleCancel() {
-    await onCancel();
+
+  /** 取消按钮回调函数 @type {Function} */
+  async function handlecancel() {
+    await cancel();
+    close();
+  }
+
+  /** 确认按钮回调函数 @type {Function} */
+  async function handleconfirm() {
+    await confirm();
+    close();
+  }
+
+  /*** 关闭弹窗 @type {Function} */
+  function close() {
     visible = false;
   }
-  async function handleConfirm() {
-    await onConfirm();
-    visible = false;
+
+  /**
+   * 阻止事件冒泡
+   * @param {ClickEvent} event 事件对象
+   * @type {Function}
+   */
+  function stopPropagation(event) {
+    event.stopPropagation();
+  }
+
+  /**
+   * 键盘按下事件关闭弹窗
+   * @param {KeyboardEvent} event 事件对象
+   * @type {Function}
+   */
+  function handleKeyDownClose(event) {
+    if (event.key === 'Escape') close();
+  }
+
+  /**
+   * 键盘按下事件停止事件冒泡
+   * @param {KeyboardEvent} event 事件对象
+   * @type {Function}
+   */
+  function handleKeyDownStop(event) {
+    if (event.key === 'Escape') stopPropagation(event);
   }
 </script>
 
 {#if visible}
-  <div class="overlay">
-    <div class="message-box {center ? 'center' : ''}">
+  <div class="overlay" onclick={close} role="dialog" tabindex="-1" aria-label="关闭弹窗" onkeydown={handleKeyDownClose}>
+    <div
+      class="MessageBox {center ? 'center' : ''}"
+      onclick={stopPropagation}
+      tabindex="0"
+      role="button"
+      aria-label="弹窗内容"
+      onkeydown={handleKeyDownStop}
+    >
       {#if show_cancel_icon}
-        <button onclick={handleCancel} class="message-box-cancel">
+        <button onclick={handlecancel} class="cancel">
           <img src="/theory_question_bank/icons/Xacross_grey.svg" alt="关闭" />
         </button>
       {/if}
-      <div class="message-box-content">
-        <div class="message-box-title {center ? 'center' : ''}">
-          <img class="message-box-title-icon" src="/dialog/tip.svg" alt="" />
+      <div class="content">
+        <div class="title {center ? 'center' : ''}">
+          <img class="title-icon" src="/dialog/tip.svg" alt="" />
           {title}
         </div>
-        <div class="message-box-text">
+        <div class="text">
           {content}
         </div>
-        <div class="message-box-buttons {center ? 'button-center' : ''}">
+        <div class="buttons {center ? 'button-center' : ''}">
           {#if show_cancel_button && cancel_text}
-            <Button type={cancel_button_type} size="small" onclick={handleCancel}>{cancel_text}</Button>
+            <Button type={cancel_button_type} size="small" onclick={handlecancel}>{cancel_text}</Button>
           {/if}
           {#if confirm_text && show_confirm_button}
-            <Button type={confirm_button_type} size="small" onclick={handleConfirm}>{confirm_text}</Button>
+            <Button type={confirm_button_type} size="small" onclick={handleconfirm}>{confirm_text}</Button>
           {/if}
         </div>
       </div>
@@ -114,7 +129,7 @@
     align-items: center;
     justify-content: center;
     z-index: 1003;
-    .message-box {
+    .MessageBox {
       background: #fff;
       border-radius: 4px;
       padding: 18px;
@@ -127,7 +142,7 @@
         justify-content: center;
         text-align: center;
       }
-      .message-box-cancel {
+      .cancel {
         position: absolute;
         top: 18px;
         right: 18px;
@@ -139,8 +154,8 @@
           height: 100%;
         }
       }
-      .message-box-content {
-        .message-box-title {
+      .content {
+        .title {
           font-size: 18px;
           font-weight: bold;
           margin-bottom: 13px;
@@ -149,19 +164,19 @@
           &.center {
             justify-content: center;
           }
-          .message-box-title-icon {
+          .title-icon {
             width: 22px;
             height: 22px;
             margin-right: 10px;
           }
         }
-        .message-box-text {
+        .text {
           color: rgb(102, 102, 102);
           font-size: 16px;
           margin-bottom: 24px;
           line-height: 1.5;
         }
-        .message-box-buttons {
+        .buttons {
           display: flex;
           justify-content: flex-end;
           gap: 10px;
