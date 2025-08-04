@@ -2,7 +2,8 @@
   /**
    * @component Title
    * @description 页面标题组件，带有前缀蓝色条和可选的横线分割
-   *
+   * 
+   * @props
    * @property {String} [title='Title'] - 标题文本
    * @property {Boolean} [line=true] - 是否显示横向分割线
    *
