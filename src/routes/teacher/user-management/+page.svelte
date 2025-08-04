@@ -231,12 +231,12 @@
   }
 
   //处理用户状态切换
-  function toggleStatus(id) {
-    const user = users.find((s) => s.id === id);
-    if (!user) return;
-    const newStatus = user.currentStatus === '00' ? '02' : '00';
-    users = users.map((s) => (s.id === id ? { ...s, currentStatus: newStatus } : s));
-  }
+  // function toggleStatus(id) {
+  //   const user = users.find((s) => s.id === id);
+  //   if (!user) return;
+  //   const newStatus = user.currentStatus === '00' ? '02' : '00';
+  //   users = users.map((s) => (s.id === id ? { ...s, currentStatus: newStatus } : s));
+  // }
 
   // 页码选择处理
   function handlePageChange(event) {
@@ -251,69 +251,69 @@
     fetchUsers();
   }
 
-  // 导出用户
-  function handleExport() {
-    // TODO: 实现导出逻辑
-  }
+  // // 导出用户
+  // function handleExport() {
+  //   // TODO: 实现导出逻辑
+  // }
 
-  // 导入用户
-  function handleImport() {
-    // TODO: 实现导入逻辑
-  }
+  // // 导入用户
+  // function handleImport() {
+  //   // TODO: 实现导入逻辑
+  // }
 
-  // 删除选中用户
-  function handleBatchDelete() {
-    if (selectedUserIds.size === 0) {
-      return;
-    }
-    // TODO: 实现批量删除逻辑
-    console.log('批量删除用户ID:', Array.from(selectedUserIds));
-  }
+  // // 删除选中用户
+  // function handleBatchDelete() {
+  //   if (selectedUserIds.size === 0) {
+  //     return;
+  //   }
+  //   // TODO: 实现批量删除逻辑
+  //   console.log('批量删除用户ID:', Array.from(selectedUserIds));
+  // }
 
-  // 启用选中用户
-  function handleBatchEnable() {
-    if (selectedUserIds.size === 0) {
-      return;
-    }
-    // TODO: 实现批量启用逻辑
-    console.log('批量启用用户ID:', Array.from(selectedUserIds));
-  }
+  // // 启用选中用户
+  // function handleBatchEnable() {
+  //   if (selectedUserIds.size === 0) {
+  //     return;
+  //   }
+  //   // TODO: 实现批量启用逻辑
+  //   console.log('批量启用用户ID:', Array.from(selectedUserIds));
+  // }
 
-  // 停用选中用户
-  function handleBatchDisable() {
-    if (selectedUserIds.size === 0) {
-      return;
-    }
-    // TODO: 实现批量停用逻辑
-    console.log('批量停用用户ID:', Array.from(selectedUserIds));
-  }
+  // // 停用选中用户
+  // function handleBatchDisable() {
+  //   if (selectedUserIds.size === 0) {
+  //     return;
+  //   }
+  //   // TODO: 实现批量停用逻辑
+  //   console.log('批量停用用户ID:', Array.from(selectedUserIds));
+  // }
 
-  // 查看操作日志
-  function handleViewLogs() {
-    // TODO: 实现查看操作日志逻辑
-  }
+  // // 查看操作日志
+  // function handleViewLogs() {
+  //   // TODO: 实现查看操作日志逻辑
+  // }
 
-  //处理详情按钮
-  function handleDetail(id) {
-    // TODO: 实现查看详情逻辑
-  }
+  // //处理详情按钮
+  // function handleDetail(id) {
+  //   // TODO: 实现查看详情逻辑
+  // }
 
-  //处理编辑按钮
-  function handleEdit(id) {
-    // TODO: 实现编辑逻辑
-  }
+  // //处理编辑按钮
+  // function handleEdit(id) {
+  //   // TODO: 实现编辑逻辑
+  // }
 
-  //处理移除按钮
-  function handleUnbind(id) {
-    const user = users.find((s) => s.id === id);
-    //TODO: 实现移除逻辑
-  }
+  // //处理移除按钮
+  // function handleUnbind(id) {
+  //   const user = users.find((s) => s.id === id);
+  //   //TODO: 实现移除逻辑
+  // }
 
-  //处理删除按钮
-  function handleDelete(id) {
-    const user = users.find((s) => s.id === id);
-    //TODO: 实现删除逻辑
-  }
+  // //处理删除按钮
+  // function handleDelete(id) {
+  //   const user = users.find((s) => s.id === id);
+  //   //TODO: 实现删除逻辑
+  // }
 
   onMount(() => {
     fetchUsers();
@@ -336,7 +336,7 @@
                 bind:value={search_account}
                 placeholder="请输入账号"
                 showLabel={false}
-                oninput={handleSearchDebounced}
+                onInput={handleSearchDebounced}
               />
             </div>
           </div>
@@ -351,7 +351,7 @@
                 bind:value={search_name}
                 placeholder="请输入姓名"
                 showLabel={false}
-                oninput={handleSearchDebounced}
+                onInput={handleSearchDebounced}
               />
             </div>
           </div>
@@ -366,7 +366,7 @@
                 bind:value={search_phone}
                 placeholder="请输入电话"
                 showLabel={false}
-                oninput={handleSearchDebounced}
+                onInput={handleSearchDebounced}
               />
             </div>
           </div>
@@ -381,7 +381,7 @@
                 bind:value={search_email}
                 placeholder="请输入邮箱"
                 showLabel={false}
-                oninput={handleSearchDebounced}
+                onInput={handleSearchDebounced}
               />
             </div>
           </div>
@@ -476,14 +476,14 @@
       </div>
       <!-- 右侧按钮区 -->
       <div class="right-section">
-        <button class="action-btn export-btn" onclick={handleExport}> 导出 </button>
-        <button class="action-btn import-btn" onclick={handleImport}> 导入 </button>
+        <!-- <button class="action-btn export-btn" onclick={handleExport}> 导出 </button>
+        <button class="action-btn import-btn" onclick={handleImport}> 导入 </button> -->
         <button class="action-btn add-btn" onclick={() => goto('/teacher/user-management/addUser')}> 新增 </button>
-        <button class="action-btn delete-btn" onclick={handleBatchDelete}> 删除 </button>
+        <!-- <button class="action-btn delete-btn" onclick={handleBatchDelete}> 删除 </button>
 
         <button class="action-btn enable-btn" onclick={handleBatchEnable}> 启用 </button>
         <button class="action-btn disable-btn" onclick={handleBatchDisable}> 停用 </button>
-        <button class="action-btn view-logs-btn" onclick={handleViewLogs}> 查看操作日志 </button>
+        <button class="action-btn view-logs-btn" onclick={handleViewLogs}> 查看操作日志 </button> -->
       </div>
     </div>
   </div>
@@ -506,7 +506,7 @@
             <th class="col-role table-head">角色</th>
             <th class="col-creation table-head">创建时间</th>
             <th class="col-current-status table-head">当前状态</th>
-            <th class="col-actions table-head">操作</th>
+            <!-- <th class="col-actions table-head">操作</th> -->
           </tr>
         </thead>
         <tbody>
@@ -538,7 +538,8 @@
                   {STATUSLABELMAP[user.status] || '-'}
                 </span>
               </td>
-              <td class="col-actions">
+
+              <!-- <td class="col-actions">
                 <div class="actions">
                   <button class="btn-link btn-detail" onclick={() => handleDetail(user.id)}>详情</button>
                   <button class="btn-link btn-edit" onclick={() => handleEdit(user.id)}>修改</button>
@@ -548,21 +549,19 @@
                   >
                     {user.status === '02' ? '启用' : '停用'}
                   </button>
-                  <!-- 移除按钮 -->
                   <button
                     class="btn-link btn-unbind"
                     style="display: {user.has_relation ? 'inline-block' : 'none'}"
                     onclick={() => handleUnbind(user.id)}>移除</button
                   >
-
-                  <!-- 删除按钮 -->
                   <button
                     class="btn-link btn-delete"
                     style="display: {user.has_relation ? 'none' : 'inline-block'}"
                     onclick={() => handleDelete(user.id)}>删除</button
                   >
                 </div>
-              </td>
+              </td> -->
+              
             </tr>
           {/each}
           <!-- 空页面 -->
@@ -601,7 +600,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 80vh;
+    height: 85vh;
     overflow-y: auto;
   }
 
@@ -689,12 +688,12 @@
     }
 
     .right-section {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(70px, 1fr));
-      grid-template-rows: repeat(3, 1fr);
-      gap: 20px;
+      //display: grid;
+      //grid-template-columns: repeat(3, minmax(70px, 1fr));
+      //grid-template-rows: repeat(3, 1fr);
+      //gap: 20px;
       flex: 0 0 auto;
-      min-width: 280px;
+      //min-width: 280px;
       margin-right: 30px; 
 
       @media (max-width: 1400px) and (min-width: 1201px) {

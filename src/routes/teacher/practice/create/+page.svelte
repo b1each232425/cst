@@ -26,7 +26,9 @@
         
             // 准备请求数据
             const requestData = {
-                practice: {
+                Action : "POST",
+              Data:{
+                  practice: {
                     Name: practiceData.practice_name,
                     CorrectMode: practiceData.grading_method,
                     PaperID: practiceData.test.id,
@@ -35,6 +37,7 @@
                     duration:practiceData.test.suggest_duration
                 },
                  student: practiceData.student,
+              }
             };
             console.log(requestData);
             // 发送请求
@@ -61,16 +64,16 @@
             // 创建成功，将新创建的练习添加到store
             practice_data_list.update((list) => {
                 const newPractice = {
-                    ID: requestData?.id || Date.now(),
-                    Name: requestData.practice.Name,
+                    ID: requestData?.Data.id || Date.now(),
+                    Name: requestData.Data.practice.Name,
                     Type:
-                        requestData.practice.Type === "00"
+                        requestData.Data.practice.Type === "00"
                             ? "经典巩固"
-                            : requestData.practice.Type === "02"
+                            : requestData.Data.practice.Type === "02"
                               ? "随机组卷"
                               : "智能提升",
                     Status: "未发布",
-                    AllowedAttempts:  requestData.practice.AllowedAttempts,
+                    AllowedAttempts:  requestData.Data.practice.AllowedAttempts,
                 };
                 return [newPractice, ...list];
             });

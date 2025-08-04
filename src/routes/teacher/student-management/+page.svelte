@@ -280,7 +280,7 @@
               type="text"
               bind:value={search_text}
               showLabel={false}
-              oninput={handleSearchDebounced}
+              onInput={handleSearchDebounced}
             ></InputBox>
           </div>
         </div>
@@ -307,12 +307,12 @@
       <div class="right-section">
         <button class="action-btn download-btn" onclick={downloadTemplate}> 下载导入模板 </button>
         <button class="action-btn import-btn" onclick={handleImport}> 导入 </button>
-        <button class="action-btn add-btn" onclick={handleAdd}> 添加 </button>
-        <button class="action-btn unbind-btn" onclick={handleBatchUnbind}> 移除 </button>
+        <!-- <button class="action-btn add-btn" onclick={handleAdd}> 添加 </button>
+        <button class="action-btn unbind-btn" onclick={handleBatchUnbind}> 移除 </button> -->
         <button class="action-btn create-btn" onclick={handleCreate}> 创建 </button>
-        <button class="action-btn delete-btn" onclick={handleBatchDelete}> 删除 </button>
+        <!-- <button class="action-btn delete-btn" onclick={handleBatchDelete}> 删除 </button>
         <button class="action-btn enable-btn" onclick={handleBatchEnable}> 启用 </button>
-        <button class="action-btn disable-btn" onclick={handleBatchDisable}> 停用 </button>
+        <button class="action-btn disable-btn" onclick={handleBatchDisable}> 停用 </button> -->
       </div>
     </div>
   </div>
@@ -331,7 +331,7 @@
             <th class="col-status table-head">账号状态</th>
             <th class="col-gender table-head">性别</th>
             <th class="col-phone table-head">电话</th>
-            <th class="col-actions table-head">操作</th>
+            <!-- <th class="col-actions table-head">操作</th> -->
           </tr>
         </thead>
         <tbody>
@@ -356,7 +356,7 @@
               </td>
               <td class="col-gender">{student.gender}</td>
               <td class="col-phone">{student.phone}</td>
-              <td class="col-actions">
+              <!-- <td class="col-actions">
                 <div class="actions">
                   <button class="btn-link btn-detail" onclick={() => handleDetail(student.id)}>详情</button>
                   <button class="btn-link btn-edit" onclick={() => handleEdit(student.id)}>修改</button>
@@ -366,21 +366,18 @@
                   >
                     {student.status === '02' ? '启用' : '停用'}
                   </button>
-                  <!-- 移除按钮 -->
                   <button
                     class="btn-link btn-unbind"
                     style="display: {student.has_relation ? 'inline-block' : 'none'}"
                     onclick={() => handleUnbind(student.id)}>移除</button
                   >
-
-                  <!-- 删除按钮 -->
                   <button
                     class="btn-link btn-delete"
                     style="display: {student.has_relation ? 'none' : 'inline-block'}"
                     onclick={() => handleDelete(student.id)}>删除</button
                   >
                 </div>
-              </td>
+              </td> -->
             </tr>
           {/each}
           <!-- 空页面 -->
@@ -423,7 +420,7 @@
     flex-direction: column;
     width: 100%;
     overflow-y: auto;
-    height: 80vh;
+    height: 85vh;
 
   }
 

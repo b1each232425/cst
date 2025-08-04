@@ -1,4 +1,5 @@
 <script>
+	import{handleFeatureNotImplemented} from '../../_utils/errorHandler.js'
 	/**
 	 * @typedef {import('../../../_stores/practiceGrade.svelte.js').PracticeInfo} PracticeInfo
 	 */
@@ -11,6 +12,10 @@
 	let { practice, store } = $props();
 
 	const { state, toggleSelect } = store;
+
+	function handleDetailClick() {
+		handleFeatureNotImplemented("查看详细");
+	}
 </script>
 
 <tr class="practice-list-row">
@@ -30,7 +35,7 @@
 	<td class="practice-completed">{practice.completed_students ?? '-'}</td>
 	<td class="practice-passed">{practice.passed_students ?? '-'}</td>
 	<td class="practice-operation">
-		<button class="detail-btn">详情</button>
+		<button class="detail-btn" onclick={handleDetailClick} style="display: none;">详情</button>		
 				</td>
 			</tr>
 

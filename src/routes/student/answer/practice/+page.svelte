@@ -99,7 +99,7 @@
   let questionGroupsMap = $state(new Map());  //考试题组map数组 key题目id value包含题组的信息
   let elapsedSeconds = $state(0); // 考试已用时，单位为秒
   let totalscore = $state(0); // 考试总分
-  let practice_record = $state(null); //练习建议时长
+  let duration = $state(null); //练习建议时长
   let load_success = $state(false);  //是否加载成功
   let ifPreview = $state(false); //查看当前是否为预览模式
   let is_full_examMode = $state(true); // 是否为全卷模式
@@ -185,17 +185,20 @@
   }
 
 
-  //渲染题目信息类
-  function getQuestionGroups() { // 获取题目分组信息，用于生成答题卡 用来生成题组
+  function getQuestionGroups() { // 获取题目分组信息，用于生成答题卡
     const groups = [];
 
     const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序出一个数组
 
+    // 构建全局索引映射
+    const globalIndexMap = new Map();
+    examQuestions.forEach((q, idx) => {
+      globalIndexMap.set(q.ID, idx);
+    });
+
     sortedGroups.forEach(groupInfo => {
       const groupId = groupInfo.ID; // 题组 id
       const groupQuestions = examQuestionsMap.get(String(groupId)) || []; // 该分组下的题目数组
-
-      
 
       if (groupQuestions.length === 0) return; // 如果没有题目则跳过
       groups.push({ // 组装 QuestionGroup 对象
@@ -203,11 +206,10 @@
         type: groupQuestions[0].type,
         questions: groupQuestions.map((question, index) => ({
           question,
-          index
-        })),
+          index: globalIndexMap.get(question.ID) // 这里用全局索引
+        }))
       });
     });
-    
     return groups;
   }
   function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组 用来生成题目
@@ -428,12 +430,14 @@
           toast.error(`服务器错误！${data.msg || ''}`, 2000);
           throw new Error(data.msg);
         }
+
         // 赋值到变量
         //题目
         examQuestionsMap = new Map(Object.entries(sget(data, "data.Questions", {})));
         questionGroupsMap = new Map(Object.entries(sget(data, "data.QuestionGroupInfo", {})));
         //时间类
         elapsed_seconds = sget(data, "data.ElapsedSeconds", 0);
+        duration = sget(data, "data.Info.Duration", null);
         //考试信息类
         title = sget(data, "data.Info.PaperName", "无标题");
         totalscore = sget(data, "data.Info.TotalScore", 0);
@@ -525,9 +529,7 @@
         <!-- 考试信息区域 -->
         <div class="box exam-info">
           <div class="exam-time-info">
-            建议时长:{practice_record?.duration
-              ? `${practice_record.duration}分钟`
-              : "--"}
+            建议时长:&emsp;{duration ? `${duration}分钟` : "--"}
           </div>
           <div class="timer-container">
             <img src="/student_answer_practice/timer.svg" alt="" />
@@ -771,7 +773,11 @@
 
   /* 考试头部样式 */
   .exam-header {
+    position: relative;
     height: 60px;
+    min-height: 60px;
+    max-height: 60px;
+    overflow: hidden; // 防止内容撑高
     background-color: white;
     display: flex;
     align-items: center;
@@ -1043,7 +1049,7 @@
     display: flex;
     flex-direction: column;
     height: calc(100vh - 60px);
-    min-height: 540px;
+    min-height: 100vh;
     overflow-y: scroll;
     padding: 20px;
     min-width: 500px;

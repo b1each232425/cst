@@ -229,19 +229,6 @@
     filter_practice_list();
   }
 
-  /**
-   * 页码变更回调
-   * @param {boolean} is_next - 是否点击下一页
-   */
-  function handle_page_change(is_next) {
-    if (is_next && current_page_num < total_page_num) {
-      current_page_num++;
-      filter_practice_list();
-    } else if (!is_next && current_page_num > 1) {
-      current_page_num--;
-      filter_practice_list();
-    }
-  }
 
   /**
    * 页码选择回调
@@ -267,17 +254,6 @@
     }
   }
 
-  /**
-   * 页码搜索回调
-   * @param {string} value - 输入的页码
-   */
-  function handle_page_search(value) {
-    const page = parseInt(value, 10);
-    if (!isNaN(page) && page > 0 && page <= total_page_num && page !== current_page_num) {
-      current_page_num = page;
-      filter_practice_list();
-    }
-  }
 
   // 新建练习按钮点击事件
   function create_new_practice() {
@@ -477,8 +453,11 @@
     if (!currentPractice) return;
     // 调用API更新练习的学生
       const requestBody = {
-        practice_id: currentPractice.ID,
+        Action: "POST",
+        Data:{
+          practice_id: currentPractice.ID,
         student: selected.map((s) => s.id) // 发送学生 ID 数组
+        }
     };
 
     const response = await fetch('/api/practiceStudentList', {

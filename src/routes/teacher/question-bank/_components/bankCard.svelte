@@ -70,7 +70,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 	/**
 	 * @type {boolean} 显示编辑按钮组
 	 */
-	let show_edit_btns = $state(false);
+	let show_edit_btns = $state(true);
 
 	/**
 	 * @type {boolean} 显示更多选项
@@ -320,6 +320,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 								normal_handle_funcs?.save?.();
 							}}
 							title="点击保存题库"
+							
 						>
 							<span>保存</span>
 						</button>

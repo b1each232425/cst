@@ -1,22 +1,21 @@
 <script>
     import Button from "$lib/components/Button/Button.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
-    import Loading from "$lib/components/Loading/Loading.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import { debounce } from "$lib/utils/optimize";
     import { onMount } from "svelte";
     import { fetchBankQuestionList, fetchPaper, fetchQuestionBankList, savePaper } from "../../_utils/api";
     import { questionDifficultyTrans, questionTypeTrans, tagColorList } from "../../_utils/data";
-    import { formatTimestamp, getColorIndex } from "../../_utils/func";
+    import { formatTimestamp, getColorIndex, restoreOpenState } from "../../_utils/func";
     import { toast } from "$lib/components/Toast/Toast";
     import Empty from "$lib/components/Table/Empty.svelte";
 
     /**************** 开关控制区 ****************/
 
-    let { onclose } = $props();                 // 关闭弹窗
+    let { onclose, update, toAddGroupID = 0, toAddgroupName = "" } = $props();                 // 关闭弹窗
     let dropUpToggleIsOpen = $state(false);     // 上拉题组栏
     let filterIsOpen = $state(false);           // 下拉筛选栏
-    let isLoading = $state(false);              // 加载中
+    let isFirstEntry = $state(true);            // 是否首次打开弹窗
     
     /**************** 开关控制区 ****************/
     
@@ -27,8 +26,6 @@
     let paperID = $state(0);
     let paperInfo = $state(null);
     let paperGroups = $state([]); 
-    let toAddGroupID = $state(0);
-    let toAddgroupName = $state("");
     let toAddgroupLength = $state(0);
 
     // 选中题组
@@ -51,19 +48,17 @@
 
     // 防抖搜索题库列表
     const debouncedFetchQuestionBankList = debounce(() => {
-        isLoading = true;
         fetchQuestionBankList(bankKeyWord, "", "", "")
             .then(result => {
                 bankList = result.data || [];
-            })
-            .finally(() => {
-                isLoading = false;
             });
-    }, 1000, false);
+    }, 500, false);
 
     $effect(() => {
         bankKeyWord;
-        debouncedFetchQuestionBankList();
+        if(!isFirstEntry) {
+            debouncedFetchQuestionBankList();
+        }
     });
 
     // 单选题库功能
@@ -129,33 +124,30 @@
 
     // 确认导入题目
     function concfirmImport() {
-        isLoading = true;
-
-            const actions = [
-                {
-                    action: "add_question",
-                    payload: selectedQuestionInfos.map((q, index) => ({
-                        temp_id: `temp_question_${index + 1}`,
-                        group_id: toAddGroupID,
-                        order: toAddgroupLength + index + 1,
-                        bank_question_id: q.id,
-                        score: q.score
-                    }))
-                }
-            ];
-            
-            savePaper(paperID, actions)
+        const actions = [
+            {
+                action: "add_question",
+                payload: selectedQuestionInfos.map((q, index) => ({
+                    temp_id: `temp_question_${index + 1}`,
+                    group_id: toAddGroupID,
+                    order: toAddgroupLength + index + 1,
+                    bank_question_id: q.id,
+                    score: q.score
+                }))
+            }
+        ];
+        
+        savePaper(paperID, actions)
+            .then(() => {
+                fetchPaper(paperID)
                     .then(result => {
-                        // console.log(result);
-                    })
-                    .finally(() => {
-                        isLoading = false;
-                        toast.success("添加题目成功", 1000);
-
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
+                        paperInfo = result.data;
+                        paperGroups = result.data.GroupsData;
+                        update(paperGroups, paperInfo);
+                        onclose();
+                        toast.success("试卷已同步更新", 1000);
                     });
+            });
     }
 
     // 处理页面跳转
@@ -171,7 +163,6 @@
     
     $effect(() => {
         if(toAddbankID !== "") {
-            isLoading = true;
             fetchBankQuestionList(
                 toAddbankID,
                 questionPage,
@@ -181,34 +172,31 @@
                 questionType,
                 questionDifficulty
             ).then( result => {
-                questionList = result.data;
+                questionList = result.data || [];
                 totalQuestions = result.rowCount;
-                // console.log(questionList);
-            }).finally(()=>{
-                isLoading = false;
             });
         } else { questionList = []; }
     });
 
     /**************** 题目列表 ****************/
 
-
     // 挂载区
     onMount(() => {
-        isLoading = true;
+        fetchQuestionBankList(bankKeyWord, "", "", "")
+            .then(result => {
+                bankList = result.data || [];
+                isFirstEntry = false;
+            });
+
         paperID = JSON.parse(localStorage.getItem('currentPaperID'));
         fetchPaper(paperID)
             .then(result => {
                 paperInfo = result.data;
                 paperGroups = result.data.GroupsData;
-        }).finally(() => {
-            isLoading = false;
-        })
+        });
     })
 
 </script>
-
-<Loading bind:value={isLoading} loadingText="正在加载中"/>
 
 <!-- 遮罩 -->
 <div class="modal-overlay">
