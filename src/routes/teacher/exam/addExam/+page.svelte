@@ -257,10 +257,6 @@ function updateDuration(index) {
         toast.warning("考试规则不得超过1000个字符");
         return;
     }
-    if (paperConfigs.length <= 0) {
-        toast.warning("请至少添加一个考试场次");
-        return;
-    }
 
     for (let i = 0; i < paperConfigs.length; i++) {
         if (paperConfigs[i].paperID === 0) {
@@ -521,9 +517,7 @@ function updateDuration(index) {
                 <div class="examinee-number-container">
                     <span class="examinee-number-text">已选择 </span>
                     <span
-                        class="examinee-number-text {(examExaminee.length === 0) && examMethod === "02"
-                            ? 'red-text'
-                            : 'green-text'}">{examExaminee.length}</span
+                        class="examinee-number-text {(examExaminee.length === 0) && examMethod === "02"}">{examExaminee.length}</span
                     >
                     <span class="examinee-number-text"> 名</span>
                 </div>

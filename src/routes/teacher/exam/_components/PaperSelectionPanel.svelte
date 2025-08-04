@@ -34,10 +34,10 @@
         selectedName,
         selectedType,
         onCancel = () => {
-            console.log("取消选择");
+
         },
         onConfirm = (/** @type {any} */ selectedID, /** @type {any} */ selectedName, /** @type {any} */ selectedType) => {
-            console.log("确定选择");
+
         },
     } = $props();
 
@@ -83,19 +83,19 @@
      * @type {number|null}
      * 防抖计时器
      */
-    let nameSearchTimer = null;
+    // let nameSearchTimer = null;
+
+    // /**
+    //  * @type {number|null}
+    //  * 防抖计时器
+    //  */
+    // let tagsSearchTimer = null;
 
     /**
      * @type {number|null}
      * 防抖计时器
      */
-    let tagsSearchTimer = null;
-
-    /**
-     * @type {number|null}
-     * 防抖计时器
-     */
-    let pageSearchTimer = null;
+    // let pageSearchTimer = null;
 
     // 获取难度颜色
     /**
@@ -117,36 +117,36 @@
      * @param {string} value
      * 试卷名搜索
      */
-    function onSearchName(value) {
-        searchParams.name = value;
+    // function onSearchName(value) {
+    //     searchParams.name = value;
 
-        //防抖逻辑
-        if (nameSearchTimer) {
-            clearTimeout(nameSearchTimer);
-        }
-        nameSearchTimer = setTimeout(() => {
-            searchParams.page = 1;
-            searchPaper();
-            nameSearchTimer = null;
-        }, 300);
-    }
+    //     //防抖逻辑
+    //     if (nameSearchTimer) {
+    //         clearTimeout(nameSearchTimer);
+    //     }
+    //     nameSearchTimer = setTimeout(() => {
+    //         searchParams.page = 1;
+    //         searchPaper();
+    //         nameSearchTimer = null;
+    //     }, 300);
+    // }
 
     /**
      * @param {string} value
      * 标签搜索
      */
-    function onSearchTags(value) {
-        searchParams.tags = value;
+    // function onSearchTags(value) {
+    //     searchParams.tags = value;
 
-        //防抖逻辑
-        if (tagsSearchTimer) {
-            clearTimeout(tagsSearchTimer);
-        }
-        tagsSearchTimer = setTimeout(() => {
-            searchPaper();
-            tagsSearchTimer = null;
-        }, 300);
-    }
+    //     //防抖逻辑
+    //     if (tagsSearchTimer) {
+    //         clearTimeout(tagsSearchTimer);
+    //     }
+    //     tagsSearchTimer = setTimeout(() => {
+    //         searchPaper();
+    //         tagsSearchTimer = null;
+    //     }, 300);
+    // }
     function handlePageChange(event) {
     if (loading === true) {
         return;
@@ -215,17 +215,6 @@
         loading = false;
     }
 
-    // 格式化成日期：2025-04-21
-    /**
-     * @param {string} iso_string
-     */
-    function formatDate(iso_string) {
-        const date = new Date(iso_string);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
-    }
 
     // 格式化成日期+时分：2025-04-21 20:00
     /**
@@ -261,28 +250,24 @@
 
         //当打开面板时自动搜索试卷列表
         $effect(() => {
-           
-                
                 paperSelectedID = selectedID;
-
                 searchPaper();
-            
         });
 
-    onDestroy(() => {
-        if (nameSearchTimer !== null) {
-            clearTimeout(nameSearchTimer);
-            nameSearchTimer = null;
-        }
-        if (pageSearchTimer !== null) {
-            clearTimeout(pageSearchTimer);
-            pageSearchTimer = null;
-        }
-        if (tagsSearchTimer !== null) {
-            clearTimeout(tagsSearchTimer);
-            tagsSearchTimer = null;
-        }
-    });
+    // onDestroy(() => {
+    //     if (nameSearchTimer !== null) {
+    //         clearTimeout(nameSearchTimer);
+    //         nameSearchTimer = null;
+    //     }
+    //     if (pageSearchTimer !== null) {
+    //         clearTimeout(pageSearchTimer);
+    //         pageSearchTimer = null;
+    //     }
+    //     if (tagsSearchTimer !== null) {
+    //         clearTimeout(tagsSearchTimer);
+    //         tagsSearchTimer = null;
+    //     }
+    // });
 </script>
 
 <div class={showPanel ? "paper-selection-panel-container" : "hide"}>
@@ -390,7 +375,7 @@
                                 <td class="updated-time body-row">
                                     {formatDateTime(paper.UpdateTime)}
                                 </td>
-                                <td class="body-row">{formatDate(paper.CreateTime)}</td>
+                                <td class="body-row">{formatDateTime(paper.CreateTime)}</td>
                             </tr>
                         {/each}
                     </tbody>

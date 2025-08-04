@@ -9,6 +9,7 @@
     import MessageBox from "$lib/components/MessageBox/MessageBox.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import Title from "$lib/components/Title/Title.svelte";
+  import { toast } from "$lib/components/Toast/Toast";
     let examList=$state([]);
     let Listrows = $state([]); //返回数据行数
     let nameSearchTime = null;
@@ -87,7 +88,6 @@
     const queryParams = new URLSearchParams();
     queryParams.append("q", JSON.stringify(queryObject));
 
-    // console.log("查询参数:", queryObject);
     
     fetch(`/api/exam/list?${queryParams.toString()}&role=2`, {
         method: "GET",
@@ -154,67 +154,75 @@
 
     // 处理页码变化
     function handlePageChange(event) {
-        // console.log("页码变化:", event.detail);
         searchParams.page = event.detail;
         searchExam();
     }
     
     // 处理每页条数变化
     function handlePageSizeChange(event) {
-        console.log("每页条数变化:", event.detail);
         searchParams.pageSize = event.detail;
         searchParams.page = 1; // 重置到第一页
         searchExam();
     }
 
 
-    async function publishExam(examId) {
+    async function publishExam(examID) {
         loading = true;
         message = "";
 
-        return fetch(`/api/exam/lock?exam_id=${examId}`, {
+        return fetch(`/api/exam/lock?exam_id=${examID}`, {
             method: "GET",
             credentials: "include",
             headers: { "Content-Type": "application/json" }
         })
-            .then((res) =>
-            res.ok
-                ? res
+            .then((lockRes) =>
+            lockRes.ok
+                ? lockRes
                 : res.json().then((err) =>
                     Promise.reject(new Error(`获取考试锁失败：${err.Msg || "考试可能正在被其他用户编辑"}`))
                 )
             )
+
             .then(() => {
             const params = {
                 q: JSON.stringify({
-                data: { ID: parseInt(examId), Status: "02" }
+                data: { ID: parseInt(examID), Status: "02" }
                 })
             };
             //占位
             const url = `/api/exam/status?${new URLSearchParams(params).toString()}`;
-            fetch(url, {
+            return fetch(url, {
                 method: "PUT",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" }
             });
             })
-            .then((res) => res.json())
-            .then(() => {
-            if (res.status === 0) {
-                // message = "考试发布成功";
-                //searchExam();
-                return;
-                
-         } else {
-                return Promise.reject(new Error(`发布失败：${data.Msg || "未知错误"}`));
-            }
+            .then((response) => {
+                return response.json();
             })
+            .then((result) => {
+                //console.log('PUT /api/exam/status JSON数据:', result); // 在这里打印JSON数据
+                if (result.status === 0) {
+                    // message = "考试发布成功";
+                    return result;
+                } 
+                else if(result.status === -1)
+                {
+                    message=result.msg;
+                    toast.error(message);
+                }
+                else {
+                    return Promise.reject(new Error(`发布失败：${result.msg || "未知错误"}`));
+                }
+            })
+
             .catch((err) => {
             message = err.message ;
+            console.log('err:',message);
             })
 
             .finally(() =>
-            fetch(`/api/exam/lock?exam_id=${examId}`, {
+            fetch(`/api/exam/lock?exam_id=${examID}`, {
                 method: "DELETE",
                 credentials: "include"
             })
@@ -325,7 +333,6 @@
  <Title title="考试管理"  />
 <div class="examManagementContainer">
     
-   
     <div class="tableFilterContainer">
         <div class="actionPart">      
 
@@ -443,6 +450,7 @@
     .action-button:hover {
         font-weight: bold;                  // 悬停时加粗
     }
+    
     .examManagementContainer {
         
         height:77vh;
@@ -558,17 +566,6 @@
                     
                 }
 
-                .exam-time-sort-button {
-                    border: none;
-                    background-color: white;
-                    font-size: 14px;
-                    font-weight: normal;
-                    color: rgb(0, 0, 0, 0.3);
-                    display: flex;
-                    align-items: center;
-                    margin: auto;
-                    cursor: pointer;
-                }
         }
         
     }
@@ -663,10 +660,6 @@
         &.error {
             background-color: #ff4d4f;
         }
-    }
-
-    .button-container{
-        background-color: rgb(0, 0, 0, 0);
     }
 
     
