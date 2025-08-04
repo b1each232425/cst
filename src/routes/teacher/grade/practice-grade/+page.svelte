@@ -19,11 +19,13 @@
 		<PracticeFilterPanel store={practiceGradeStore} />
 	</div>
 	<div class="table-container">
-		{#if practiceGradeStore.state.loading}
-			<p>加载中...</p>
-		{:else}
-			<PracticeTable store={practiceGradeStore} />
-		{/if}
+		<div class="table-content">
+			{#if practiceGradeStore.state.loading}
+				<p>加载中...</p>
+			{:else}
+				<PracticeTable store={practiceGradeStore} />
+			{/if}
+		</div>
 		<div class="pagination-wrapper">
 			<Pagination
 				totalItems={state.totalRecords}
@@ -37,26 +39,46 @@
 </div>
 
 <style lang="scss">
+
 	.page-container {
 		display: flex;
-		flex-direction: column;
-		height: 100%;
+  		flex-direction: column;
+  		min-height: 600px;
+  		overflow: hidden;
+		height:84vh;
 	}
 
 	.filter-container {
-		padding: 0 1px; /* 控制筛选区和表格的间距 */
+		flex-shrink: 0;
+ 		background: #fff;
+  		border-bottom: 1px solid #e5e5e5;
+  		z-index: 20;//下拉菜单优先级高于表头
+		padding: 0 1px;
 		padding-bottom: 10px;
+	
 	}
 
 	.table-container {
-		display: flex;
-		flex-direction: column;
-		padding: 0 23px; /* 移除顶部的 padding */
+  		display: flex;
+  		flex-direction: column;
+  		overflow: hidden;
+  		min-height: 0;
+		padding: 0 23px;
+
 	}
+
+	.table-content {
+		flex: 1;
+		overflow: hidden;
+		min-width: 0;
+	}
+
 	.pagination-wrapper {
+		flex-shrink: 0;
 		display: flex;
-		justify-content: flex-end; /* 右对齐 */
-		margin-top: 16px; /* 与表格保持适当间距 */
-		padding: 16px 0; /* 上下内边距 */
+		justify-content: flex-end;
+		margin-top: 16px;
+		padding: 16px 0;
+
 	}
 </style> 

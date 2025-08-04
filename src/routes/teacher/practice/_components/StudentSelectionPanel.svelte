@@ -474,8 +474,7 @@
     <div class="panel-header">
       <span class="panel-header-text">{is_selection_mode ? '选择学生' : '学生列表'}</span>
       <Button
-        type="info"
-        class="close-btn"
+        
         onclick={() => {
           show_panel = false;
           search_params.page = 1;
@@ -652,7 +651,6 @@
     <div class="panel-footer">
       <Button
         type="info"
-        class="cancel-btn"
         onclick={() => {
           show_panel = false;
           search_params.page = 1;

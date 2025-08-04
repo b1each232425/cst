@@ -330,10 +330,10 @@
                 </div>
 
                 <div class="search-btns">
-                    <Button class="search-btn" onclick={searchPapers}
+                    <Button  onclick={searchPapers}
                         >搜索</Button
                     >
-                    <Button class="reset-btn" onclick={resetFilters}
+                    <Button  onclick={resetFilters}
                         >重置</Button
                     >
                 </div>
@@ -433,8 +433,8 @@
             </div>
 
             <div class="modal-footer">
-                <Button class="cancel-btn" onclick={closeModal} round>取消</Button>
-                <Button class="confirm-btn" onclick={confirmSelection} round
+                <Button type="info" onclick={closeModal} >取消</Button>
+                <Button  onclick={confirmSelection} 
                     >确定</Button
                 >
             </div>
@@ -530,9 +530,12 @@
     }
 
     .search-btns {
+        margin-top: -7px; /* 向上移动10px */
         display: flex;
         gap: 16px;
         white-space: nowrap;
+        align-items: center;
+        flex-direction: row;
     }
 
     .search-btn {

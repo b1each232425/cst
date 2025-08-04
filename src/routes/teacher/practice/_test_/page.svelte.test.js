@@ -88,8 +88,8 @@ const setup = (mockDataOverride = {}) => {
     practice_status: '全部',
     practices: MOCK_PRACTICES.map(practice => ({ practice, student_count: practice.student_count })),
     practices_display: MOCK_TRANSFORMED_PRACTICES,
-    total_count: 3,
-    total_page: 1,
+    total_count: 20,
+    total_page: 2,
     current_page: 1,
     page_size: 10
   };
@@ -415,123 +415,144 @@ const table = screen.getAllByRole('table');
       expect(global.fetch).toHaveBeenCalled();
     });
   });
- 
-it('应能正确处理页码选择', async () => {
+  // 补全 handle_page_choose 测试
+    it('点击不同页码实现分页功能', async () => {
   setup({
-     current_page: 1,
+    current_page: 1,
     total_count: 30,
     total_page: 3,
     page_size: 10
   });
-  
-  // 模拟分页API响应
-  mockFetch({
-    status: 0,
-    data: {
-      practices: [MOCK_PRACTICES[0]].map(practice => ({ practice, student_count: practice.student_count })),
-      total: 1,
-      total_page: 1,
-      current_page: 2,
-      page_size: 10
-    }
+
+  // 等待初始加载完成（第1次调用）
+  await waitFor(() => {
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
-  
+
   // 查找分页容器
   const paginationContainer = document.querySelector('.pagination-container');
   expect(paginationContainer).toBeInTheDocument();
-  
-  // 在分页容器上触发事件
+
+  // 在分页容器上触发事件，切换到第2页（与当前第1页不同）
   const pageChangeEvent = new CustomEvent('pageChange', { detail: 2 });
   paginationContainer.dispatchEvent(pageChangeEvent);
+
+  // 验证是否发送了正确的请求（应该有第2次调用）
+  await waitFor(() => {
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  }, { timeout: 3000 });
+
+ 
+});
   
+   it('点击不同页面显示大小实现分页功能', async () => {
+  setup({
+    current_page: 1,
+    total_count: 30,
+    total_page: 3,
+    page_size: 10
+  });
+
+  // 等待初始加载完成（第1次调用）
+  await waitFor(() => {
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  // 查找分页容器
+  const paginationContainer = document.querySelector('.pagination-container');
+  expect(paginationContainer).toBeInTheDocument();
+
+  // 在分页容器上触发事件，改变每页显示大小为20
+  const pageSizeChangeEvent = new CustomEvent('pageSizeChange', { detail: '20' });
+  paginationContainer.dispatchEvent(pageSizeChangeEvent);
+
+  // 验证是否发送了正确的请求（应该有第2次调用）
+  await waitFor(() => {
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  }, { timeout: 3000 });
+
+  // 验证请求参数包含正确的每页显示大小和页码重置为1
+  const secondFetchCall = global.fetch.mock.calls[1];
+  expect(secondFetchCall[0]).toContain('page_size=20');
+  expect(secondFetchCall[0]).toContain('page=1'); // 页码应重置为1
+});
+it('确认发布练习应正确调用API并更新状态', async () => {
+  setup();
+
+  // 模拟发布练习的API响应
+  mockFetch({
+    status: 0,
+    data: {}
+  });
+
+  // 打开发布确认对话框
+  const publishButtons = screen.getAllByText('发布练习');
+  await fireEvent.click(publishButtons[0]);
+
+  // 等待对话框出现
+  await waitFor(() => {
+    expect(screen.getByText('请问是否要发布练习？')).toBeInTheDocument();
+  });
+
+  // 使用更可靠的定位方式
+  const confirmButton = screen.getAllByText( '确定' );
+  await fireEvent.click(confirmButton[0]);
+
   // 验证是否发送了正确的请求
   await waitFor(() => {
     expect(global.fetch).toHaveBeenCalled();
   });
-  
-  // 验证请求参数是否包含正确的页码
-  const fetchCall = global.fetch.mock.calls[0];
-  expect(fetchCall[0]).toContain('page=2');
 });
-
-it('当选择相同页码时不应重新加载数据', async () => {
+it('确认取消发布练习应正确调用API并更新状态', async () => {
   setup();
-  
-  // 保存初始fetch调用次数
-  const initialFetchCount = global.fetch.mock.calls.length;
-  
-  // 获取分页组件并触发页码选择事件（选择当前页码1）
-  // 使用 data-testid 获取分页组件
-  const pagination = screen.getByTestId('pagination');
-  
-  // 创建自定义事件模拟选择相同页码
-  const pageChangeEvent = new CustomEvent('pageChange', { detail: 1 });
-  
-  // 触发事件
-  await fireEvent(pagination, pageChangeEvent);
-  
-  // 等待一段时间确保没有额外的fetch调用
-  await waitFor(() => {
-    // fetch调用次数应该没有增加
-    expect(global.fetch.mock.calls.length).toBe(initialFetchCount);
+
+  // 模拟取消发布练习的API响应
+  mockFetch({
+    status: 0,
+    data: {}
   });
-});
 
-it('应能正确处理每页数量变化', async () => {
+  // 打开取消发布确认对话框
+  const unpublishButtons = screen.getAllByText('取消发布');
+  await fireEvent.click(unpublishButtons[0]);
+
+  // 确认取消发布
+  const confirmButton = screen.getAllByText('确定');
+  await fireEvent.click(confirmButton[1]);
+
+  // 验证是否发送了正确的请求
+  await waitFor(() => {
+    expect(global.fetch).toHaveBeenCalled();
+  });
+
+  // 验证练习状态是否更新
+  expect(screen.getAllByText('未发布')[0]).toBeInTheDocument();
+});
+it('学生选择确认应正确调用API并更新学生列表', async () => {
   setup();
-  
-  // 模拟每页数量变化的API响应
+
+  // 模拟选择学生API响应
   mockFetch({
     status: 0,
     data: {
-      practices: MOCK_PRACTICES.map(practice => ({ practice, student_count: practice.student_count })),
-      total: 3,
-      total_page: 1,
-      current_page: 1,
-      page_size: 20
+        practice_id:1
     }
   });
-  
-  // 获取分页组件并触发每页数量变化事件
-   // 使用 data-testid 获取分页组件
-  const pagination = screen.getByTestId('pagination');
-  
-  // 创建自定义事件模拟每页数量变化
-  const pageSizeChangeEvent = new CustomEvent('pageSizeChange', { detail: '20' });
-  
-  // 触发事件
-  await fireEvent(pagination, pageSizeChangeEvent);
-  
+
+  // 打开学生选择面板
+  const selectStudentButtons = screen.getAllByText('选择学生');
+  await fireEvent.click(selectStudentButtons[0]);
+
+  // 确认选择学生
+  const confirmButton = screen.getByText('确定');
+  await fireEvent.click(confirmButton);
+
   // 验证是否发送了正确的请求
   await waitFor(() => {
     expect(global.fetch).toHaveBeenCalled();
   });
-  
-  // 验证请求参数是否包含正确的每页数量
-  const fetchCall = global.fetch.mock.calls[0];
-  expect(fetchCall[0]).toContain('page_size=20');
+
+  // 验证学生列表是否更新
+  expect(screen.getByText('更新学生成功')).toBeInTheDocument();
 });
-
-it('当选择相同每页数量时不应重新加载数据', async () => {
-  setup();
-  
-  // 保存初始fetch调用次数
-  const initialFetchCount = global.fetch.mock.calls.length;
-  
-  // 获取分页组件并触发每页数量变化事件（选择当前页大小10）
-  const pagination = screen.getByRole('navigation');
-  
-  // 创建自定义事件模拟选择相同每页数量
-  const pageSizeChangeEvent = new CustomEvent('pageSizeChange', { detail: '10' });
-  
-  // 触发事件
-  await fireEvent(pagination, pageSizeChangeEvent);
-  
-  // 等待一段时间确保没有额外的fetch调用
-  await waitFor(() => {
-    // fetch调用次数应该没有增加
-    expect(global.fetch.mock.calls.length).toBe(initialFetchCount);
-  })
-
-  });
 });

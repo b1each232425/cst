@@ -698,7 +698,6 @@
     </div>
        <div class="pagination-container">
       <Pagination
-      data-testid="pagination"
         totalItems={total_data_num}
         pageSize={data_per_page}
         currentPage={current_page_num}

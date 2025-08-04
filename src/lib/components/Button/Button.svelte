@@ -45,6 +45,8 @@
   const validTypes = ['primary', 'success', 'danger', 'warning', 'info'];
   const validSizes = ['small', 'medium', 'large'];
 
+  checkProps();
+
   /**
    * 组合按钮的类名
    *  @type {string}
@@ -81,10 +83,6 @@
       disabled = false;
     }
   }
-
-  onMount(() => {
-    checkProps();
-  });
 </script>
 
 <button class={classes} {disabled} {...restProps} style={`width: ${width}; height: ${height};`}>
@@ -139,13 +137,12 @@
   .Button {
     cursor: pointer;
     appearance: none;
-    display: flex;
+    display: inline-block;
     box-sizing: border-box;
-    align-items: center;
-    justify-content: center;
     transition: all 0.3s ease;
     align-self: center;
     border-radius: var(--btn-border-radius);
+    white-space: nowrap;
     &:active {
       transform: scale(0.95);
     }
