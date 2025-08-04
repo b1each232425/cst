@@ -231,12 +231,12 @@
   }
 
   //处理用户状态切换
-  function toggleStatus(id) {
-    const user = users.find((s) => s.id === id);
-    if (!user) return;
-    const newStatus = user.currentStatus === '00' ? '02' : '00';
-    users = users.map((s) => (s.id === id ? { ...s, currentStatus: newStatus } : s));
-  }
+  // function toggleStatus(id) {
+  //   const user = users.find((s) => s.id === id);
+  //   if (!user) return;
+  //   const newStatus = user.currentStatus === '00' ? '02' : '00';
+  //   users = users.map((s) => (s.id === id ? { ...s, currentStatus: newStatus } : s));
+  // }
 
   // 页码选择处理
   function handlePageChange(event) {
@@ -251,69 +251,69 @@
     fetchUsers();
   }
 
-  // 导出用户
-  function handleExport() {
-    // TODO: 实现导出逻辑
-  }
+  // // 导出用户
+  // function handleExport() {
+  //   // TODO: 实现导出逻辑
+  // }
 
-  // 导入用户
-  function handleImport() {
-    // TODO: 实现导入逻辑
-  }
+  // // 导入用户
+  // function handleImport() {
+  //   // TODO: 实现导入逻辑
+  // }
 
-  // 删除选中用户
-  function handleBatchDelete() {
-    if (selectedUserIds.size === 0) {
-      return;
-    }
-    // TODO: 实现批量删除逻辑
-    console.log('批量删除用户ID:', Array.from(selectedUserIds));
-  }
+  // // 删除选中用户
+  // function handleBatchDelete() {
+  //   if (selectedUserIds.size === 0) {
+  //     return;
+  //   }
+  //   // TODO: 实现批量删除逻辑
+  //   console.log('批量删除用户ID:', Array.from(selectedUserIds));
+  // }
 
-  // 启用选中用户
-  function handleBatchEnable() {
-    if (selectedUserIds.size === 0) {
-      return;
-    }
-    // TODO: 实现批量启用逻辑
-    console.log('批量启用用户ID:', Array.from(selectedUserIds));
-  }
+  // // 启用选中用户
+  // function handleBatchEnable() {
+  //   if (selectedUserIds.size === 0) {
+  //     return;
+  //   }
+  //   // TODO: 实现批量启用逻辑
+  //   console.log('批量启用用户ID:', Array.from(selectedUserIds));
+  // }
 
-  // 停用选中用户
-  function handleBatchDisable() {
-    if (selectedUserIds.size === 0) {
-      return;
-    }
-    // TODO: 实现批量停用逻辑
-    console.log('批量停用用户ID:', Array.from(selectedUserIds));
-  }
+  // // 停用选中用户
+  // function handleBatchDisable() {
+  //   if (selectedUserIds.size === 0) {
+  //     return;
+  //   }
+  //   // TODO: 实现批量停用逻辑
+  //   console.log('批量停用用户ID:', Array.from(selectedUserIds));
+  // }
 
-  // 查看操作日志
-  function handleViewLogs() {
-    // TODO: 实现查看操作日志逻辑
-  }
+  // // 查看操作日志
+  // function handleViewLogs() {
+  //   // TODO: 实现查看操作日志逻辑
+  // }
 
-  //处理详情按钮
-  function handleDetail(id) {
-    // TODO: 实现查看详情逻辑
-  }
+  // //处理详情按钮
+  // function handleDetail(id) {
+  //   // TODO: 实现查看详情逻辑
+  // }
 
-  //处理编辑按钮
-  function handleEdit(id) {
-    // TODO: 实现编辑逻辑
-  }
+  // //处理编辑按钮
+  // function handleEdit(id) {
+  //   // TODO: 实现编辑逻辑
+  // }
 
-  //处理移除按钮
-  function handleUnbind(id) {
-    const user = users.find((s) => s.id === id);
-    //TODO: 实现移除逻辑
-  }
+  // //处理移除按钮
+  // function handleUnbind(id) {
+  //   const user = users.find((s) => s.id === id);
+  //   //TODO: 实现移除逻辑
+  // }
 
-  //处理删除按钮
-  function handleDelete(id) {
-    const user = users.find((s) => s.id === id);
-    //TODO: 实现删除逻辑
-  }
+  // //处理删除按钮
+  // function handleDelete(id) {
+  //   const user = users.find((s) => s.id === id);
+  //   //TODO: 实现删除逻辑
+  // }
 
   onMount(() => {
     fetchUsers();
@@ -600,7 +600,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 80vh;
+    height: 85vh;
     overflow-y: auto;
   }
 
