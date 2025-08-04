@@ -366,7 +366,7 @@
                 checked={grading_method === '自动批改'}
                 onchange={() => (grading_method = '自动批改')}
               />
-              <span class="radio-text">AI批改</span>
+              <span class="radio-text">自动批改</span>
             </label>
           </div>
         </div>
@@ -435,9 +435,9 @@
     </div>
 
     <div class="form-footer">
-      <Button type="info" plain size="large" onclick={handleCancel} round>取消</Button>
+      <Button type="info" plain size="large" onclick={handleCancel} >取消</Button>
       <div class="button-spacer"></div>
-      <Button size="large" onclick={handleSubmit} round>保存</Button>
+      <Button size="large" onclick={handleSubmit} >保存</Button>
     </div>
   </div>
 </div>
