@@ -3,21 +3,21 @@ import { render, screen, fireEvent } from '@testing-library/svelte';
 import Switch from '../Switch.svelte';
 
 describe('Switch 组件测试', () => {
-  let isChecked = false;
+  let is_checked = false;
   let handleClickSwitchButton;
 
   beforeEach(() => {
     handleClickSwitchButton = vi.fn(() => {
-      isChecked = !isChecked;
+      is_checked = !is_checked;
     });
   });
 
   it('应该渲染正确的左侧文本和右侧文本', async () => {
     render(Switch, {
       props: {
-        isChecked,
-        leftText: '关闭',
-        rightText: '开启',
+        is_checked,
+        left_text: '关闭',
+        right_text: '开启',
       },
     });
 
@@ -30,9 +30,9 @@ describe('Switch 组件测试', () => {
   it('应该正确设置 --background-color', async () => {
     render(Switch, {
       props: {
-        isChecked: true,
-        checkedBackgroundColor: '#4a90e2',
-        uncheckedBackgroundColor: '#ccc',
+        is_checked: true,
+        checked_background_color: '#4a90e2',
+        unchecked_background_color: '#ccc',
       },
     });
 
@@ -41,12 +41,12 @@ describe('Switch 组件测试', () => {
     expect(bgColorVar).toBe('#4a90e2');
   });
 
-  it('应该在 isChecked 为 false 时应用关闭状态的背景色', async () => {
+  it('应该在 is_checked 为 false 时应用关闭状态的背景色', async () => {
     render(Switch, {
       props: {
-        isChecked: false,
-        checkedBackgroundColor: '#4a90e2',
-        uncheckedBackgroundColor: '#ccc',
+        is_checked: false,
+        checked_background_color: '#4a90e2',
+        unchecked_background_color: '#ccc',
       },
     });
 
@@ -56,16 +56,16 @@ describe('Switch 组件测试', () => {
     expect(bgColorVar).toBe('#ccc');
   });
 
-  it('应该切换 isChecked 状态并调用 clickSwitchButton 事件', async () => {
+  it('应该切换 is_checked 状态并调用 clickSwitchButton 事件', async () => {
     const { rerender } = render(Switch, {
       props: {
-        isChecked,
+        is_checked,
         clickSwitchButton: handleClickSwitchButton,
       },
     });
 
     // 初始状态检查
-    expect(isChecked).toBe(false);
+    expect(is_checked).toBe(false);
     expect(handleClickSwitchButton).not.toHaveBeenCalled();
 
     // 触发点击事件
@@ -73,19 +73,19 @@ describe('Switch 组件测试', () => {
     await fireEvent.click(switchButton);
 
     // 检查状态更新
-    expect(isChecked).toBe(true);
+    expect(is_checked).toBe(true);
     expect(handleClickSwitchButton).toHaveBeenCalledTimes(1);
 
     // 更新 props，重新渲染
-    rerender({ isChecked, clickSwitchButton: handleClickSwitchButton });
-    expect(isChecked).toBe(true); // 确保 isChecked 状态已更新
+    rerender({ is_checked, clickSwitchButton: handleClickSwitchButton });
+    expect(is_checked).toBe(true); // 确保 is_checked 状态已更新
   });
 
-  it('应该根据给定的 ballColor 应用白球颜色', async () => {
+  it('应该根据给定的 ball_color 应用白球颜色', async () => {
     render(Switch, {
       props: {
-        isChecked: true,
-        ballColor: 'red',
+        is_checked: true,
+        ball_color: 'red',
       },
     });
 
@@ -97,7 +97,7 @@ describe('Switch 组件测试', () => {
   it('应该根据给定的 width 控制开关宽度', async () => {
     render(Switch, {
       props: {
-        isChecked,
+        is_checked,
         width: '100px',
       },
     });
@@ -110,7 +110,7 @@ describe('Switch 组件测试', () => {
   it('应该正确计算并显示文本的大小', async () => {
     render(Switch, {
       props: {
-        isChecked,
+        is_checked,
         width: '100px',
       },
     });
