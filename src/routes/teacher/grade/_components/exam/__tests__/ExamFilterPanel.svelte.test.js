@@ -125,7 +125,7 @@ describe('考试筛选面板', () => {
         expect(screen.getByText('项')).toBeInTheDocument();
     });
 
-    it('handles batch submit with no selection', async () => {
+    it('应该在没有选中项目时调用错误处理', async () => {
         const { handleSelectionError } = await import('../../../_utils/errorHandler');
         const { container } = render(ExamFilterPanel, { props: { store: mockStore } });
         
@@ -140,7 +140,7 @@ describe('考试筛选面板', () => {
         expect(mockStore.submitGrades).not.toHaveBeenCalled();
     });
 
-    it('handles batch submit with selection', async () => {
+    it('应该在有选中项目时调用提交方法', async () => {
         // Mock selection first
         mockStore.state.selected = { 1: true, 2: false, 3: true };
 
