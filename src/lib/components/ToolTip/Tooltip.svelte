@@ -3,27 +3,24 @@
    * @component Tooltip
    * @description 气泡提示组件
    *
-   * @author 段春茂
-   * @email 2162105974@qq.com
-   *
    * @props
    * @property {Element} [target='']   - 触发气泡提示的元素，必填
    * @property {'top' | 'left' | 'right' | 'bottom'} [placement='bottom']   - 气泡框位置
    * @property {String} [content='']   - 气泡提示的内容
    * @property {String} [color='#ffffff']   - 组件背景颜色
    * @property {'click' | 'hover'} [hide_method='hover']   - 隐藏方式
-   * @property {Boolean} [showActions=false]   - 使用对话框
-   * @property {Boolean} [showTitle=false]   - 使用标题
-   * @property {Boolean} [showCancel=true]   - 显示取消按钮
+   * @property {Boolean} [show_actions=false]   - 使用对话框
+   * @property {Boolean} [show_title=false]   - 使用标题
+   * @property {Boolean} [show_cancel=true]   - 显示取消按钮
    * @property {Boolean} [title='']   - 标题内容
-   * @property {Function} onConfirm   - 确认按钮回调函数
-   * @property {Function} onCancel   - 取消按钮回调函数
-   * @property {String} [onConfirmText='确认']  - 确认按钮文本
-   * @property {String} [onCancelText='取消']  - 取消按钮文本
+   * @property {Function} Confirm   - 确认按钮回调函数
+   * @property {Function} Cancel   - 取消按钮回调函数
+   * @property {String} [Confirm_text='确认']  - 确认按钮文本
+   * @property {String} [Cancel_text='取消']  - 取消按钮文本
    */
   import { tick, onMount } from 'svelte';
 
-  let { target, placement = 'bottom', content, color = '#ffffff', hide_method = 'hover', showActions = false, showCancel = true, showTitle = false, title, onConfirm = () => {}, onCancel = () => {}, onConfirmText = '确认', onCancelText = '取消' } = $props();
+  let { target, placement = 'bottom', content, color = '#ffffff', hide_method = 'hover', show_actions = false, show_cancel = true, show_title = false, title, Confirm = () => {}, Cancel = () => {}, Confirm_text = '确认', Cancel_text = '取消' } = $props();
 
   // 状态数据
   let hideTimer;
@@ -34,7 +31,7 @@
   let isMouseOverTooltip = $state(false);
   let finalPlacement = $state('');
 
-  // 防抖处理
+  /** 防抖函数 @type {funcrion} */
   const debounce = (fn, delay) => {
     let timer;
     return (...args) => {
@@ -43,7 +40,7 @@
     };
   };
 
-  // 节流函数
+  /** 节流函数 @type {function} */
   function throttle(fn, wait = 100) {
     let lastTime = 0;
     return function (...args) {
@@ -55,7 +52,7 @@
     };
   }
 
-  //动画效果
+  /** 动画效果 @type {function} */
   function AnimatingHide() {
     isShow = false;
     isAnimatingHide = true;
@@ -66,7 +63,11 @@
     });
   }
 
-  // 鼠标移动事件处理
+  /**
+   * 鼠标移动事件处理
+   * @type {function}
+   * @param {Event} event
+  */
   function handleMouseMove(event) {
     if (!target || !Tooltip_Element) return;
     if (isShow === (target.contains(event.target) || Tooltip_Element.contains(event.target))) return;
@@ -77,21 +78,22 @@
       }, 500);
     }
   }
+  /** 经过防抖处理过的鼠标移动事件 @type {function}*/
   const throttledHandleMouseMove = throttle(handleMouseMove, 100);
 
-  // 处理滚轮事件
+  /** 处理滚轮事件 @type {function} */
   function handlescroll() {
     if (isShow && target && Tooltip_Element) requestAnimationFrame(setPosition);
   }
 
-  // 处理点击事件
+  /** 处理点击事件 @type {function} */
   function handleClick(event) {
     if (!target || !Tooltip_Element) return;
     if (target.contains(event.target) && isShow === true) isShow = false;
     else if (isShow !== (target.contains(event.target) || Tooltip_Element.contains(event.target))) isShow = target.contains(event.target) || Tooltip_Element.contains(event.target);
   }
 
-  // 处理气泡框位置
+  /** 处理气泡框位置 @type {function} */
   function setPosition() {
     if (!Tooltip_Element || !target) return;
     const { width: targetWidth, height: targetHeight, x, y } = target.getBoundingClientRect();
@@ -117,6 +119,7 @@
     if (overflows[placement]) finalPlacement = flipMap[placement];
     return position[finalPlacement] ? position[finalPlacement]() : position.top();
   }
+  /** 经过防抖处理过的气泡框位置设置函数 @type {function}*/
   const debouncedSetPosition = debounce(setPosition, 30);
 
   onMount(async () => {
@@ -138,28 +141,28 @@
 
 <div class="Tooltip-wrapper {isShow ? 'show' : ''} {!isShow && isAnimatingHide ? 'fadeout' : ''}{!isShow && !isAnimatingHide ? 'hiddle' : ''}" bind:this={Tooltip_Element} data-placement={finalPlacement} role="tooltip">
   <div class="arrow"></div>
-  <div class="content {showTitle ? 'with-title' : ''}" style="background-color: {color};">
-    {#if showTitle}
+  <div class="content {show_title ? 'with-title' : ''}" style="background-color: {color};">
+    {#if show_title}
       <div class="title">{title}</div>
     {/if}
     {@html content}
-    {#if showActions}
+    {#if show_actions}
       <div class="Actions">
-        {#if showCancel}
+        {#if show_cancel}
           <button
             class="Cancel"
             onclick={async () => {
-              await onCancel?.();
+              await Cancel?.();
               AnimatingHide();
-            }}>{onCancelText}</button
+            }}>{Cancel_text}</button
           >
         {/if}
         <button
           class="Confirm"
           onclick={async () => {
-            await onConfirm?.();
+            await Confirm?.();
             AnimatingHide();
-          }}>{onConfirmText}</button
+          }}>{Confirm_text}</button
         >
       </div>
     {/if}
