@@ -141,15 +141,20 @@ describe('考试筛选面板', () => {
     });
 
     it('handles batch submit with selection', async () => {
-        const { container } = render(ExamFilterPanel, { props: { store: mockStore } });
-        
-        // Mock selection
+        // Mock selection first
         mockStore.state.selected = { 1: true, 2: false, 3: true };
-        
+
+        const { container, rerender } = render(ExamFilterPanel, { props: { store: mockStore } });
+
+        // Re-render to reflect the selection state
+        await rerender({ store: mockStore });
+
         // Find and click the batch submit button
         const submitButton = screen.getByText('批量提交');
+        expect(submitButton).not.toBeDisabled();
+
         await fireEvent.click(submitButton);
-        
+
         expect(mockStore.submitGrades).toHaveBeenCalledWith([1, 3]);
     });
 

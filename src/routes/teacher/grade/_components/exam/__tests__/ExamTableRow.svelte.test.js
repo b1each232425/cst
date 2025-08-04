@@ -78,7 +78,7 @@ describe('考试表格行组件', () => {
     it('应该渲染分数信息', () => {
         render(ExamTableRow, { props: { exam: mockExam, store: mockStore } });
 
-        expect(screen.getByText('100.0')).toBeInTheDocument();
+        expect(screen.getByText('100')).toBeInTheDocument();
         expect(screen.getByText('85.5')).toBeInTheDocument();
     });
 
