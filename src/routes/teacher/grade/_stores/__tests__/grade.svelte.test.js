@@ -105,7 +105,7 @@ describe('考试成绩 Store', () => {
 			expect(handleApiError).toHaveBeenCalledWith(error, '获取考试成绩列表');
 		});
 
-		it('should reset selection state before fetching', async () => {
+		it('应该在获取考试数据之前重置选中状态', async () => {
 			gradeStore.state.selected = { 1: true };
 			gradeStore.state.selectAll = true;
 
@@ -127,7 +127,7 @@ describe('考试成绩 Store', () => {
 			vi.useRealTimers();
 		});
 
-		it('should update filters, reset pagination, and fetch exams with debounce', () => {
+		it('应该更新筛选器，重置分页，并使用防抖功能获取考试数据', () => {
 			// Mock the API call to prevent actual network requests
 			scoreApi.getExams.mockResolvedValue({ data: [], rowCount: 0 });
 
@@ -153,7 +153,7 @@ describe('考试成绩 Store', () => {
 			scoreApi.getExams.mockResolvedValue({ data: [], rowCount: 0 });
 		});
 
-		it('setPage should update page and fetch exams', () => {
+		it('setPage应该更新页面并获取考试数据', () => {
 			gradeStore.setPage(3);
 			expect(gradeStore.state.pagination.page).toBe(3);
 			// Verify API was called with updated pagination
@@ -164,7 +164,7 @@ describe('考试成绩 Store', () => {
 			);
 		});
 
-		it('setPageSize should update page size, reset page, and fetch exams', () => {
+		it('setPageSize应该更新页面大小，重置页面，并获取考试数据', () => {
 			gradeStore.setPageSize(20);
 			expect(gradeStore.state.pagination.pageSize).toBe(20);
 			expect(gradeStore.state.pagination.page).toBe(1);
@@ -190,27 +190,27 @@ describe('考试成绩 Store', () => {
 			gradeStore.state.selectAll = false;
 		});
 
-		it('toggleSelect should select and deselect an item', () => {
+		it('toggleSelect应该选择和取消选择一个项目', () => {
 			gradeStore.toggleSelect(1);
 			expect(gradeStore.state.selected[1]).toBe(true);
 			gradeStore.toggleSelect(1);
 			expect(gradeStore.state.selected[1]).toBe(false);
 		});
 
-		it('toggleSelect should update selectAll to true when all items are selected', () => {
+		it('当所有项目都被选中时，toggleSelect应该将selectAll更新为true', () => {
 			gradeStore.toggleSelect(1);
 			gradeStore.toggleSelect(2);
 			gradeStore.toggleSelect(3);
 			expect(gradeStore.state.selectAll).toBe(true);
 		});
 		
-		it('toggleSelectAll should select all items when none are selected', () => {
+		it('当没有选中项目时，toggleSelectAll应该选择所有项目', () => {
 			gradeStore.toggleSelectAll();
 			expect(gradeStore.state.selectAll).toBe(true);
 			expect(gradeStore.state.selected).toEqual({ 1: true, 2: true, 3: true });
 		});
 
-		it('toggleSelectAll should deselect all items when all are selected', () => {
+		it('当所有项目都被选中时，toggleSelectAll应该取消选择所有项目', () => {
 			// First, select all
 			gradeStore.toggleSelectAll();
 			expect(gradeStore.state.selectAll).toBe(true);
@@ -223,7 +223,7 @@ describe('考试成绩 Store', () => {
 	});
 	
 	describe('submitGrades', () => {
-		it('should call submitExamGrades and refresh data on success', async () => {
+		it('应该调用submitExamGrades并在成功时刷新数据', async () => {
 			const { handleSuccess } = await import('../../_utils/errorHandler');
 			// Mock the API call to prevent actual network requests
 			scoreApi.getExams.mockResolvedValue({ data: [], rowCount: 0 });
@@ -242,7 +242,7 @@ describe('考试成绩 Store', () => {
 			expect(scoreApi.getExams).toHaveBeenCalled();
 		});
 
-		it('should handle submission failure with error handler', async () => {
+		it('应该使用错误处理程序处理提交失败', async () => {
 			const { handleApiError } = await import('../../_utils/errorHandler');
 			const error = new Error('Submission Failed');
 			scoreApi.submitExamGrades.mockRejectedValue(error);
