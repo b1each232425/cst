@@ -473,9 +473,9 @@
                         </span>
                         
                         <Pagination
-                        totalItems={filteredSelectedIDs.length}
-                        currentPage={selectedSearchParams.page}
-                        pageSizeOptions={[10]}
+                        total_items={filteredSelectedIDs.length}
+                        current_page={selectedSearchParams.page}
+                        page_size_options={[10]}
                         on:pageChange={(e) => {
                             selectedSearchParams.page = e.detail;
                         }}
@@ -586,9 +586,9 @@
                         > 条
                     </span>
                     <Pagination
-                        totalItems={totals}
-                        currentPage={searchParams.page}
-                        pageSizeOptions={[10]}
+                        total_items={totals}
+                        current_page={searchParams.page}
+                        page_size_options={[10]}
                         on:pageChange={(e) => {
                         searchParams.page = e.detail;
                         searchExaminee();

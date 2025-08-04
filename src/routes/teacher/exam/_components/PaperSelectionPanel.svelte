@@ -389,12 +389,12 @@
         </div>
          <div class="pagination-container">
                     <Pagination
-                        totalItems={totals}
-                        currentPage={currentPage}
-                        pageSize={10}
+                        total_items={totals}
+                        current_page={currentPage}
+                        page_size={10}
                         on:pageChange={handlePageChange}
                         on:pageSizeChange={handlePageSizeChange}
-                        pageSizeOptions={[10, 20, 30]}
+                        page_size_options={[10, 20, 30]}
                     ></Pagination>
                 </div>
         <div class="panel-footer">

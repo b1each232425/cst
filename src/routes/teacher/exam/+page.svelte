@@ -23,7 +23,7 @@
     //发布考试确认框
     let publishExamDialog = $state(false);
     let examIdToPublish = $state(false);
-    let totalItems = $state();
+    let total_items = $state();
     // 映射关系
     const TypeMap = {
         "00": "平时考试",
@@ -107,7 +107,7 @@
                 return idB - idA; // 降序：大的在前
             });
         }
-        totalItems = data.rowCount;
+        total_items = data.rowCount;
     })
     .catch((error) => {
         console.error("搜索失败:", error);
@@ -417,12 +417,12 @@
     
     <div class="paginationContainer">
         <Pagination
-            totalItems={totalItems}
-            pageSize={10}
-            currentPage={1}
+            total_items={total_items}
+            page_size={10}
+            current_page={1}
             on:pageChange={handlePageChange}
             on:pageSizeChange={handlePageSizeChange}
-            pageSizeOptions = {[10, 20, 30, 40, 50]}
+            page_size_options = {[10, 20, 30, 40, 50]}
         />
     </div>
 </div>
