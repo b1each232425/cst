@@ -189,12 +189,20 @@
       {#if !isFilter}
         <div class="breadcrumbs-item-container">
           {#if index < current_nav_path_data.length - 1}
-            <button class="breadcrumbs-item" class:active={true} title={`跳转至${title}`} onclick={() => goto(path)}>
+            <button
+              class="breadcrumbs-item"
+              class:active={true}
+              title={`跳转至${title}`}
+              onclick={() => goto(path)}
+              data-testid={`breadcrumb-item-${title}`}
+            >
               {title}
             </button>
             <span class="breadcrumbs-separator">{'>'}</span>
           {:else}
-            <span class="breadcrumbs-item">{title}</span>
+            <span class="breadcrumbs-item" data-testid={`breadcrumb-item-${title}`}>
+              {title}
+            </span>
           {/if}
         </div>
       {/if}

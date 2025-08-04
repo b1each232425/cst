@@ -17,8 +17,8 @@
   使用示例：
   <DatePicker
     bind:this={date_picker}                           // 与创建的日期选择器对象绑定
-    initial_start_date={new Date('2023/02/09 20:30')}  // 可选，初始起始日期
-    initial_end_date={new Date('2023/02/09 20:30')}    // 可选，初始结束日期
+    initial_start_date={new Date('2023-02-09 20:30')}  // 可选，初始起始日期
+    initial_end_date={new Date('2023-02-09 20:30')}    // 可选，初始结束日期
     is_time_selection={false}        // 启用具体时间范围选择
     is_single_date_selection={true}     // 选择单日期选择器还是双日期选择器
     input_width={'300px'}           // 自定义宽度
@@ -37,7 +37,7 @@
 
   额外说明：
   - 请注意：因为日期格式因需求而异，组件返回的时间数据是原始的 JavaScript Date 对象。如果需要自定义格式，请使用组件内提供的 `format_date` 函数。
-  - 示例：`formatDate` 函数可以将日期转换为 `yyyy/mm/dd HH:MM` 格式。如果需要其他格式，可以根据需求进行转换。
+  - 示例：`formatDate` 函数可以将日期转换为 `yyyy-mm-dd HH:MM` 格式。如果需要其他格式，可以根据需求进行转换。
 
   例如，父组件处理日期选择事件：
 
@@ -287,9 +287,9 @@
   const formatDate = (date) => {
     if (!date) return '';
     if (is_time_selection) {
-      return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     } else {
-      return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     }
   };
 
@@ -327,18 +327,17 @@
 
   // 重置日期选择器
   export function reset() {
-    const now = new Date();
-    internal_start_date = new Date(now);
-    internal_end_date = new Date(now);
+    internal_start_date = null;
+    internal_end_date = null;
     input_value = is_single_date_selection ? SINGLE_DATE_PROMPT : DEFAULT_PROMPT;
-    start_year = now.getFullYear();
-    start_month = now.getMonth();
-    end_year = now.getFullYear();
-    end_month = now.getMonth();
-    selected_start_hour = now.getHours();
-    selected_start_minute = now.getMinutes();
-    selected_end_hour = now.getHours();
-    selected_end_minute = now.getMinutes();
+    start_year = null;
+    start_month = null;
+    end_year = null;
+    end_month = null;
+    selected_start_hour = null;
+    selected_start_minute = null;
+    selected_end_hour = null;
+    selected_end_minute = null;
     updateInputValue();
   }
 
@@ -380,16 +379,12 @@
     }, 50);
   };
 
-  // 如果日历可见，滚动到选中的时间
-  $effect(() => {
-    if (is_calendars_visible) {
-      scrollToSelectedTime();
+  // 设置初始时间
+  const setInitialTime = () => {
+    is_calendars_visible = !is_calendars_visible;
+    if (internal_start_date) {
+      return;
     }
-  });
-
-  // 初始化日期选择器
-  onMount(() => {
-    date_input_element.style.setProperty('--date-picker-width', input_width);
 
     const now = new Date();
 
@@ -424,6 +419,18 @@
     }
 
     updateInputValue();
+  };
+
+  // 如果日历可见，滚动到选中的时间
+  $effect(() => {
+    if (is_calendars_visible) {
+      scrollToSelectedTime();
+    }
+  });
+
+  // 初始化日期选择器
+  onMount(() => {
+    date_input_element.style.setProperty('--date-picker-width', input_width);
 
     const handleClickOutside = (event) => {
       if (!event.target.closest('.date-picker-container')) {
@@ -444,7 +451,7 @@
       readonly
       bind:value={input_value}
       bind:this={date_input_element}
-      onclick={() => (is_calendars_visible = !is_calendars_visible)}
+      onclick={() => setInitialTime()}
     />
   </div>
 
@@ -453,9 +460,9 @@
       <div class="dual-calendar-popup" class:single-calendar-mode={is_single_date_selection}>
         <div class="calendar">
           <div class="calendar-header">
-            <button onclick={prevStartMonth}>«</button>
-            <span>{start_year}年 {month_names[start_month]}</span>
-            <button onclick={nextStartMonth}>»</button>
+            <button onclick={prevStartMonth} data-testid="start-pre-month">«</button>
+            <span data-testid="start-current-date">{start_year}年 {month_names[start_month]}</span>
+            <button onclick={nextStartMonth} data-testid="start-next-month">»</button>
           </div>
           <div class="calendar-days">
             {#each ['日', '一', '二', '三', '四', '五', '六'] as day}
@@ -470,6 +477,7 @@
                 class:highlighted={isDateInRange(date_obj)}
                 class:non-current-month={date_obj.month !== start_month}
                 onclick={() => selectStartDate(date_obj)}
+                data-testid="start-date-button-{date_obj.day}"
               >
                 <div class="init-circle">{date_obj.day}</div>
               </button>
@@ -486,8 +494,10 @@
                 <button
                   class:selected={hour === selected_start_hour}
                   onclick={() => updateStartTime('hour', hour)}
-                  data-hour={hour}>{String(hour).padStart(2, '0')}</button
-                >
+                  data-hour={hour}
+                  data-testid={`start-hour-${String(hour).padStart(2, '0')}`}
+                  >{String(hour).padStart(2, '0')}
+                </button>
               {/each}
             </div>
             <div class="time-column" bind:this={start_minute_column}>
@@ -497,7 +507,9 @@
                 <button
                   class:selected={minute === selected_start_minute}
                   onclick={() => updateStartTime('minute', minute)}
-                  data-minute={minute}>{String(minute).padStart(2, '0')}</button
+                  data-minute={minute}
+                  data-testid={`start-minute-${String(minute).padStart(2, '0')}`}
+                  >{String(minute).padStart(2, '0')}</button
                 >
               {/each}
             </div>
@@ -507,9 +519,9 @@
         {#if !is_single_date_selection}
           <div class="calendar">
             <div class="calendar-header">
-              <button onclick={prevEndMonth}>«</button>
-              <span>{end_year}年 {month_names[end_month]}</span>
-              <button onclick={nextEndMonth}>»</button>
+              <button onclick={prevEndMonth} data-testid="end-pre-month">«</button>
+              <span data-testid="end-current-date">{end_year}年 {month_names[end_month]}</span>
+              <button onclick={nextEndMonth} data-testid="end-next-month">»</button>
             </div>
             <div class="calendar-days">
               {#each ['日', '一', '二', '三', '四', '五', '六'] as day}
@@ -524,6 +536,7 @@
                   class:highlighted={isDateInRange(date_obj)}
                   class:non-current-month={date_obj.month !== end_month}
                   onclick={() => selectEndDate(date_obj)}
+                  data-testid="end-date-button-{date_obj.day}"
                 >
                   <div class="init-circle">{date_obj.day}</div>
                 </button>
@@ -540,7 +553,10 @@
                   <button
                     class:selected={hour === selected_end_hour}
                     onclick={() => updateEndTime('hour', hour)}
-                    data-hour={hour}>{String(hour).padStart(2, '0')}</button
+                    data-hour={hour}
+                    data-testid={`end-hour-${String(hour).padStart(2, '0')}`}
+                  >
+                    {String(hour).padStart(2, '0')}</button
                   >
                 {/each}
               </div>
@@ -551,7 +567,9 @@
                   <button
                     class:selected={minute === selected_end_minute}
                     onclick={() => updateEndTime('minute', minute)}
-                    data-minute={minute}>{String(minute).padStart(2, '0')}</button
+                    data-minute={minute}
+                    data-testid={`end-minute-${String(minute).padStart(2, '0')}`}
+                    >{String(minute).padStart(2, '0')}</button
                   >
                 {/each}
               </div>
@@ -561,7 +579,7 @@
       </div>
 
       <div class="calendar-footer">
-        <button class="clear-btn" onclick={() => reset()}>清除</button>
+        <button class="clear-btn" onclick={() => reset()} data-testid="clear-btn">清除</button>
         <button class="confirm-btn" onclick={() => (is_calendars_visible = false)}>确定</button>
       </div>
     </div>
