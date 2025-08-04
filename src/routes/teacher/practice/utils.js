@@ -11,24 +11,20 @@ export async function exportToExcel(data) {
 
     // 添加表头
     worksheet.columns = [
-        { header: '学生ID', key: 'id', width: 10 },
         { header: '姓名', key: 'name', width: 20 },
         { header: '手机号', key: 'phone_number', width: 15 },
         { header: '身份证号', key: 'id_card', width: 20 },
         { header: '账号', key: 'account', width: 20 },
-        { header: '密码', key: 'password', width: 20 },
     ];
 
     // 添加数据行
     data.forEach(item => {
         // 确保数据字段与 Golang 结构体字段匹配
         worksheet.addRow({
-            id: item.id,
             name: item.official_name,
             phone_number: item.phone,
             id_card: item.id_card_no,
             account: item.account,
-            password: item.password
         });
     });
 
@@ -47,7 +43,7 @@ export async function exportToExcel(data) {
     URL.revokeObjectURL(url);
 }
 
-export async function pageQueryHandle(total,pageSize){
+export  function pageQueryHandle(total,pageSize){
       // 计算总页数
    return    total/ pageSize
             ? Math.ceil(total/ pageSize)
