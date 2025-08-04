@@ -95,80 +95,75 @@
 			<span class="count">{selectedCount}</span>
 			<span>项</span>
 		</div>
-		<button class="action-btn export" disabled={!hasSelection} onclick={handleBatchExport}>
+		<button class="action-btn export" disabled={!hasSelection} onclick={handleBatchExport} style="display: none;">
 			批量导出
 		</button>
 		<button class="action-btn submit" disabled={!hasSelection} onclick={handleBatchSubmit}>
 			批量提交
 		</button>
-		<button class="action-btn log" onclick={handleShowLogs}>
+		<button class="action-btn log" onclick={handleShowLogs} style="display: none;">
 			查看日志
 		</button>
 	</div>
 </div>
 
 <style lang="scss">
+
 	.top-action-bar {
 		display: flex;
 		justify-content: flex-start;
 		align-items: center;
 		padding: 16px 0 0 0;
+		flex-wrap: wrap;//自动换行
 	}
+
 	.filters {
 		display: flex;
 		align-items: center;
-		gap: 5px; // 筛选控件之间的间距
-		margin-right: 32px; // 在筛选器区域和右侧操作区域之间添加一些间距
+		gap: 5px;
+		margin-right: 32px;
+		flex-wrap: wrap;
 	}
 	.filter-group {
 		display: flex;
 		align-items: center;
 	}
+
 	.filter-hint {
 		font-size: 14px;
 		color: rgb(0, 0, 0, 0.6);
 		padding: 0 9px 0 10px;
 		min-width: 56px;
+		white-space: nowrap;
 	}
+
 	.dropdown-wrapper {
 		min-width: 116px;
 		width: 116px;
 	}
 
-	// 适配新的 Select 组件样式
+	// 适配 Select 组件样式 - 控制宽度<=父容器
 	.dropdown-wrapper :global(.dropdown-container) {
 		width: 100%;
 		min-width: 116px;
 	}
 
-	.dropdown-wrapper :global(.dropdown-input) {
-		height: 32px;
-		border: 1px solid #ddd;
-		border-radius: 3px;
-		font-size: 14px;
-		padding: 5px 36px 5px 12px;
-		box-sizing: border-box;
-	}
-
-	.dropdown-wrapper :global(.dropdown-input:hover) {
-		border-color: #0052d9;
-	}
-
-	.dropdown-wrapper :global(.dropdown-input:focus) {
-		border-color: #0052d9;
-		box-shadow: 0 0 0 2px rgba(0, 82, 217, 0.1);
-	}
-
-	.dropdown-wrapper :global(.dropdown-options) {
-		z-index: 1000;
-	}
+	
 	.search-wrapper {
 		width: 200px;
+		
 	}
+	.search-wrapper :global(.input-box) {
+		width: 100%;
+		min-width: 200px;
+	}
+
 	.actions {
 		display: flex;
 		align-items: center;
 		gap: 12px;
+		flex-wrap: wrap;
+		
 	}
 	.selection-info {
 		font-size: 14px;
@@ -190,9 +185,13 @@
 		font-size: 14px;
 		cursor: pointer;
 		color: #fff;
+		white-space: nowrap;
+		flex-shrink: 0;
+
 		&.export { background-color: #0052d9; }
 		&.submit { background-color: #067945; }
 		&.log { background-color: #0052d9; }
+
 		&:disabled {
 			background-color: #bbd3fb;
 			cursor: not-allowed;
@@ -200,5 +199,6 @@
 				background-color: #85dbbe;
 			}
 		}
+
 	}
 </style> 
