@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PracticeTableRow from '../PracticeTableRow.svelte';
 
 // 模拟错误处理工具
-vi.mock('../../_utils/errorHandler.js', () => ({
+vi.mock('../../../_utils/errorHandler.js', () => ({
     handleFeatureNotImplemented: vi.fn()
 }));
 
@@ -114,7 +114,7 @@ describe('练习表格行组件', () => {
     });
 
     it('点击详情按钮应该调用功能未实现处理', async () => {
-        const { handleFeatureNotImplemented } = await import('../../_utils/errorHandler.js');
+        const { handleFeatureNotImplemented } = await import('../../../_utils/errorHandler.js');
         
         render(PracticeTableRow, { props: { practice: mockPractice, store: mockStore } });
 

@@ -90,12 +90,12 @@ describe('练习表格组件', () => {
         render(PracticeTable, { props: { store: mockStore } });
 
         const PracticeTableHeader = (await import('../PracticeTableHeader.svelte')).default;
-        expect(PracticeTableHeader).toHaveBeenCalledWith(
-            expect.objectContaining({
-                store: mockStore
-            }),
-            expect.any(Object)
-        );
+        // Check that PracticeTableHeader was called with correct props
+        expect(PracticeTableHeader).toHaveBeenCalled();
+        const headerCall = PracticeTableHeader.mock.calls[0];
+        expect(headerCall[1]).toEqual(expect.objectContaining({
+            store: mockStore
+        }));
     });
 
     it('应该传递正确的props给练习行', async () => {
@@ -112,13 +112,13 @@ describe('练习表格组件', () => {
         render(PracticeTable, { props: { store: mockStore } });
 
         const PracticeTableRow = (await import('../PracticeTableRow.svelte')).default;
-        expect(PracticeTableRow).toHaveBeenCalledWith(
-            expect.objectContaining({
-                practice: testPractice,
-                store: mockStore
-            }),
-            expect.any(Object)
-        );
+        // Check that PracticeTableRow was called with correct props
+        expect(PracticeTableRow).toHaveBeenCalled();
+        const rowCall = PracticeTableRow.mock.calls[0];
+        expect(rowCall[1]).toEqual(expect.objectContaining({
+            practice: testPractice,
+            store: mockStore
+        }));
     });
 
     it('应该有正确的CSS类名', () => {

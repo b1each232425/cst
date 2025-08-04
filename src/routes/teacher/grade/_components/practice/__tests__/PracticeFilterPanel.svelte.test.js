@@ -10,7 +10,7 @@ vi.mock('$lib/components/Input/InputBox.svelte', () => ({
 }));
 
 // 模拟错误处理工具
-vi.mock('../../_utils/errorHandler.js', () => ({
+vi.mock('../../../_utils/errorHandler.js', () => ({
     handleFeatureNotImplemented: vi.fn()
 }));
 
@@ -177,7 +177,7 @@ describe('练习筛选面板', () => {
     });
 
     it('应该在点击导出按钮时调用功能未实现处理', async () => {
-        const { handleFeatureNotImplemented } = await import('../../_utils/errorHandler.js');
+        const { handleFeatureNotImplemented } = await import('../../../_utils/errorHandler.js');
         
         // 设置有选中项目的状态
         mockStore.state.selected = { 1: true };

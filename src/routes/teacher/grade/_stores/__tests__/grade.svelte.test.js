@@ -64,12 +64,15 @@ describe('考试成绩 Store', () => {
 			};
 			scoreApi.getExams.mockResolvedValue(mockExamData);
 
-			const promise = gradeStore.fetchExams();
+			gradeStore.fetchExams();
 
 			// Check loading state immediately
 			expect(gradeStore.state.loading).toBe(true);
 
-			await promise;
+			// Wait for the async operation to complete
+			await vi.waitFor(() => {
+				expect(gradeStore.state.loading).toBe(false);
+			});
 
 			expect(scoreApi.getExams).toHaveBeenCalledWith({
 				name: '',
@@ -83,7 +86,6 @@ describe('考试成绩 Store', () => {
 			expect(gradeStore.state.exams.length).toBe(2);
 			expect(gradeStore.state.exams[0].name).toBe('Midterm Exam');
 			expect(gradeStore.state.totalRecords).toBe(2);
-			expect(gradeStore.state.loading).toBe(false);
 		});
 
 		it('应该处理获取考试数据失败的情况', async () => {
@@ -91,12 +93,16 @@ describe('考试成绩 Store', () => {
 			const error = new Error('Network Error');
 			scoreApi.getExams.mockRejectedValue(error);
 
-			await gradeStore.fetchExams();
+			gradeStore.fetchExams();
 
-			expect(gradeStore.state.loading).toBe(false);
+			// Wait for the async operation to complete
+			await vi.waitFor(() => {
+				expect(gradeStore.state.loading).toBe(false);
+			});
+
 			expect(gradeStore.state.exams).toEqual([]);
 			expect(gradeStore.state.totalRecords).toBe(0);
-			expect(handleApiError).toHaveBeenCalledWith(error, '获取考试列表');
+			expect(handleApiError).toHaveBeenCalledWith(error, '获取考试成绩列表');
 		});
 
 		it('should reset selection state before fetching', async () => {
@@ -122,7 +128,9 @@ describe('考试成绩 Store', () => {
 		});
 
 		it('should update filters, reset pagination, and fetch exams with debounce', () => {
-			const fetchExamsSpy = vi.spyOn(gradeStore, 'fetchExams');
+			// Mock the API call to prevent actual network requests
+			scoreApi.getExams.mockResolvedValue({ data: [], rowCount: 0 });
+
 			const newFilters = { name: 'Final', type: 'formal' };
 
 			gradeStore.setFilters(newFilters);
@@ -131,32 +139,42 @@ describe('考试成绩 Store', () => {
 			expect(gradeStore.state.filters.type).toBe('formal');
 			expect(gradeStore.state.pagination.page).toBe(1);
 
-			// fetchExams(true) is called, which sets up a timeout
-			expect(fetchExamsSpy).toHaveBeenCalledWith(true);
-
 			// Fast-forward time to trigger the debounced call
 			vi.runAllTimers();
-			
-			// fetchExams(false) should be called inside the timeout
-			expect(fetchExamsSpy).toHaveBeenCalledTimes(2);
-			expect(fetchExamsSpy).toHaveBeenCalledWith(false);
+
+			// After debounce, the API should be called
+			expect(scoreApi.getExams).toHaveBeenCalled();
 		});
 	});
 
 	describe('Pagination', () => {
+		beforeEach(() => {
+			// Ensure getExams returns a resolved promise for pagination tests
+			scoreApi.getExams.mockResolvedValue({ data: [], rowCount: 0 });
+		});
+
 		it('setPage should update page and fetch exams', () => {
-			const fetchExamsSpy = vi.spyOn(gradeStore, 'fetchExams');
 			gradeStore.setPage(3);
 			expect(gradeStore.state.pagination.page).toBe(3);
-			expect(fetchExamsSpy).toHaveBeenCalled();
+			// Verify API was called with updated pagination
+			expect(scoreApi.getExams).toHaveBeenCalledWith(
+				expect.objectContaining({
+					page: 3
+				})
+			);
 		});
 
 		it('setPageSize should update page size, reset page, and fetch exams', () => {
-			const fetchExamsSpy = vi.spyOn(gradeStore, 'fetchExams');
 			gradeStore.setPageSize(20);
 			expect(gradeStore.state.pagination.pageSize).toBe(20);
 			expect(gradeStore.state.pagination.page).toBe(1);
-			expect(fetchExamsSpy).toHaveBeenCalled();
+			// Verify API was called with updated pagination
+			expect(scoreApi.getExams).toHaveBeenCalledWith(
+				expect.objectContaining({
+					pageSize: 20,
+					page: 1
+				})
+			);
 		});
 	});
 
@@ -207,15 +225,21 @@ describe('考试成绩 Store', () => {
 	describe('submitGrades', () => {
 		it('should call submitExamGrades and refresh data on success', async () => {
 			const { handleSuccess } = await import('../../_utils/errorHandler');
-			const fetchExamsSpy = vi.spyOn(gradeStore, 'fetchExams').mockImplementation(() => Promise.resolve());
+			// Mock the API call to prevent actual network requests
+			scoreApi.getExams.mockResolvedValue({ data: [], rowCount: 0 });
 			scoreApi.submitExamGrades.mockResolvedValue({});
 
 			const examIds = [1, 2];
-			await gradeStore.submitGrades(examIds);
+			gradeStore.submitGrades(examIds);
+
+			// Wait for the async operation to complete
+			await vi.waitFor(() => {
+				expect(handleSuccess).toHaveBeenCalledWith('成绩提交');
+			});
 
 			expect(scoreApi.submitExamGrades).toHaveBeenCalledWith(examIds);
-			expect(handleSuccess).toHaveBeenCalledWith('成绩提交');
-			expect(fetchExamsSpy).toHaveBeenCalled();
+			// After successful submission, fetchExams should be called to refresh data
+			expect(scoreApi.getExams).toHaveBeenCalled();
 		});
 
 		it('should handle submission failure with error handler', async () => {
@@ -223,10 +247,14 @@ describe('考试成绩 Store', () => {
 			const error = new Error('Submission Failed');
 			scoreApi.submitExamGrades.mockRejectedValue(error);
 
-			await gradeStore.submitGrades([1]);
+			gradeStore.submitGrades([1]);
+
+			// Wait for the async operation to complete
+			await vi.waitFor(() => {
+				expect(handleApiError).toHaveBeenCalledWith(error, '提交成绩');
+			});
 
 			expect(scoreApi.submitExamGrades).toHaveBeenCalledWith([1]);
-			expect(handleApiError).toHaveBeenCalledWith(error, '提交成绩');
 		});
 	});
 

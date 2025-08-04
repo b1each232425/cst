@@ -48,10 +48,15 @@ describe('练习成绩管理页面', () => {
         vi.clearAllMocks();
     });
 
-    it('应该渲染正确标题的标题组件', () => {
+    it('应该渲染正确标题的标题组件', async () => {
         render(Page);
-       //仅检测是否被调用
-        expect(screen.getByText('练习成绩管理')).toBeInTheDocument();
+        // Check if Title component was called with correct props
+        const Title = (await import('$lib/components/Title/Title.svelte')).default;
+        expect(Title).toHaveBeenCalled();
+        const titleCall = Title.mock.calls[0];
+        expect(titleCall[1]).toEqual(expect.objectContaining({
+            title: '练习成绩管理'
+        }));
     });
 
     it('shows loading message when store is in loading state', () => {

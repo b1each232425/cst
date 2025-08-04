@@ -22,7 +22,7 @@ vi.mock('$lib/components/Input/InputBox.svelte', () => ({
 }));
 
 // 模拟错误处理工具
-vi.mock('../../_utils/errorHandler', () => ({
+vi.mock('../../../_utils/errorHandler.js', () => ({
     handleFeatureNotImplemented: vi.fn(),
     handleSelectionError: vi.fn()
 }));
@@ -103,7 +103,7 @@ describe('考试筛选面板', () => {
     });
 
     it('calls handleFeatureNotImplemented for unimplemented features', async () => {
-        const { handleFeatureNotImplemented } = await import('../../_utils/errorHandler');
+        const { handleFeatureNotImplemented } = await import('../../../_utils/errorHandler.js');
         const { container } = render(ExamFilterPanel, { props: { store: mockStore } });
         
         // Find and click the batch export button
@@ -126,7 +126,7 @@ describe('考试筛选面板', () => {
     });
 
     it('handles batch submit with no selection', async () => {
-        const { handleSelectionError } = await import('../../_utils/errorHandler');
+        const { handleSelectionError } = await import('../../../_utils/errorHandler');
         const { container } = render(ExamFilterPanel, { props: { store: mockStore } });
         
         // Mock empty selection
@@ -208,7 +208,7 @@ describe('考试筛选面板', () => {
     });
 
     it('应该在没有选中项目时调用错误处理', async () => {
-        const { handleSelectionError } = await import('../../_utils/errorHandler');
+        const { handleSelectionError } = await import('../../../_utils/errorHandler');
 
         // 确保没有选中项目
         mockStore.state.selected = {};

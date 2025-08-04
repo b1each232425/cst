@@ -89,13 +89,13 @@ describe('考试表格组件', () => {
         render(ExamTable, { props: { store: mockStore } });
 
         const ExamTableHeader = (await import('../ExamTableHeader.svelte')).default;
-        expect(ExamTableHeader).toHaveBeenCalledWith(
-            expect.objectContaining({
-                selected: true,
-                onclick: expect.any(Function)
-            }),
-            expect.any(Object)
-        );
+        // Check that ExamTableHeader was called with correct props
+        expect(ExamTableHeader).toHaveBeenCalled();
+        const headerCall = ExamTableHeader.mock.calls[0];
+        expect(headerCall[1]).toEqual(expect.objectContaining({
+            selected: true,
+            onclick: expect.any(Function)
+        }));
     });
 
     it('应该传递正确的props给考试行', async () => {
@@ -111,13 +111,13 @@ describe('考试表格组件', () => {
         render(ExamTable, { props: { store: mockStore } });
 
         const ExamTableRow = (await import('../ExamTableRow.svelte')).default;
-        expect(ExamTableRow).toHaveBeenCalledWith(
-            expect.objectContaining({
-                exam: testExam,
-                store: mockStore
-            }),
-            expect.any(Object)
-        );
+        // Check that ExamTableRow was called with correct props
+        expect(ExamTableRow).toHaveBeenCalled();
+        const rowCall = ExamTableRow.mock.calls[0];
+        expect(rowCall[1]).toEqual(expect.objectContaining({
+            exam: testExam,
+            store: mockStore
+        }));
     });
 
     it('应该有正确的CSS类名', () => {
