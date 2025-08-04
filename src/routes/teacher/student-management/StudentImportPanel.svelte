@@ -15,7 +15,12 @@
   // 分页相关状态
   let current_page = $state(1);
   let page_size = $state(10);
-  let total_items = $derived(filtered_student_list.length);
+  let total_items = $state(0);
+  
+  // 使用 effect 来确保 total_items 正确更新
+  $effect(() => {
+    total_items = filtered_student_list?.length || 0;
+  });
 
   let current_page_data = $derived(getCurrentPage()); // 当前页数据
 
@@ -99,12 +104,15 @@
   function filterStudentList() {
     let filtered = failure_student_list;
     // 如果搜索框有内容
-    if (search_text) {
+    if (search_text && search_text.trim()) {
       filtered = filtered.filter((student) => {
         const name = student.official_name || '';
         const phone = student.phone || '';
         const idCard = student.id_Card_No || '';
-        return name.includes(search_text) || phone.includes(search_text) || idCard.includes(search_text);
+        const searchTerm = search_text.trim().toLowerCase();
+        return name.toLowerCase().includes(searchTerm) || 
+               phone.toLowerCase().includes(searchTerm) || 
+               idCard.toLowerCase().includes(searchTerm);
       });
     }
     return filtered;
@@ -249,6 +257,12 @@
     failure_student_list = failure_student_list.filter((item) => item.serial_number !== student.serial_number);
   }
 
+  // 取消按钮
+  function handleCancel() {
+    show = false;
+    onImport(false);
+  }
+
   // 确认导入按钮
   function handleImport() {
     const validStudents = failure_student_list.filter((s) => s.isOk);
@@ -360,7 +374,7 @@
               type="text"
               bind:value={search_text}
               showLabel={false}
-              oninput={onSearch}
+              onInput={onSearch}
             ></InputBox>
           </div>
         </div>
@@ -434,7 +448,7 @@
           </tbody>
         </table>
       </div>
-      <div class="pagination-container">
+      <div class="pagination-container {total_items > 0 ? '' : 'hide'}">
         <Pagination
           totalItems={total_items}
           currentPage={current_page}
@@ -446,7 +460,7 @@
       </div>
     </div>
     <div class="panel-footer">
-      <Button type="primary" plain>返回</Button>
+      <Button type="primary" plain onclick={handleCancel}>返回</Button>
       <Button type="primary" onclick={handleImport}>确认导入</Button>
     </div>
   </div>
