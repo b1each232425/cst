@@ -14,516 +14,7 @@
     import MessageBox from "$lib/components/MessageBox/MessageBox";
     import { onMount } from "svelte";
     import { toast } from "$lib/components/Toast/Toast";
-
-    // 模拟数据
-    let analogyData = [
-        {
-            ID: 62,
-            // 试卷ID
-            Name: "H3C练习卷",
-            // 试卷名称
-            AssemblyType: "00",
-            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
-            Category: "00",
-            // 试卷用途 00：考试 02：练习
-            Level: "02",
-            // 试卷难度 00：简单 02：中等 04：困难
-            SuggestedDuration: 120,
-            // 建议时长，单位为分钟
-            Tags: ["测试", "简单", "常识", "牛逼", "哈哈", "English"],
-            // 试卷标签
-            Description: "我是整张试卷的介绍",
-            // 试卷说明，介绍整张试卷
-            Creator: 1,
-            // 创建者
-            CreateTime: 1753104023766,
-            // 创建时间
-            UpdatedBy: 1,
-            // 更新者
-            UpdateTime: 1753104023766,
-            // 更新时间
-            Status: "00",
-            // 状态 00：正常， 02：异常
-            AccessMode: "02",
-            // 试卷访问权限，00私有 02共享 04公开
-            TotalScore: 5,
-            QuestionCount: 1,
-            GroupCount: null,
-            TableMap: null,
-            Action: "",
-            Condition: "",
-            Expr: "",
-            Values: null,
-            Columns: null,
-            QryResult: null,
-            Result: null,
-            RowCount: 0,
-            AuthExpr: "",
-            AuthWhereValues: null,
-            AuthWhereBeginPos: 0,
-            AuthProc: false
-        },
-        {
-            ID: 63,
-            // 试卷ID
-            Name: "2025年H3C网络工程师资格证考试综合试卷",
-            // 试卷名称
-            AssemblyType: "00",
-            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
-            Category: "00",
-            // 试卷用途 00：考试 02：练习
-            Level: "00",
-            // 试卷难度 00：简单 02：中等 04：困难
-            SuggestedDuration: 60,
-            // 建议时长，单位为分钟
-            Tags: ["H3C", "无敌"],
-            // 试卷标签
-            Description: "我是这张试卷的试卷说明",
-            // 试卷说明，介绍整张试卷
-            Creator: 1,
-            // 创建者
-            CreateTime: 1753104023766,
-            // 创建时间
-            UpdatedBy: 1,
-            // 更新者
-            UpdateTime: 1753104023766,
-            // 更新时间
-            Status: "00",
-            // 状态 00：正常， 02：异常
-            AccessMode: "00",
-            // 试卷访问权限，00私有 02共享 04公开
-            TotalScore: 240,
-            QuestionCount: 10,
-            GroupCount: null,
-            TableMap: null,
-            Action: "",
-            Condition: "",
-            Expr: "",
-            Values: null,
-            Columns: null,
-            QryResult: null,
-            Result: null,
-            RowCount: 0,
-            AuthExpr: "",
-            AuthWhereValues: null,
-            AuthWhereBeginPos: 0,
-            AuthProc: false
-        },
-        {
-            ID: 64,
-            // 试卷ID
-            Name: "2025年H3C网络工程资格证设计卷",
-            // 试卷名称
-            AssemblyType: "02",
-            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
-            Category: "02",
-            // 试卷用途 00：考试 02：练习
-            Level: "02",
-            // 试卷难度 00：简单 02：中等 04：困难
-            SuggestedDuration: 45,
-            // 建议时长，单位为分钟
-            Tags: ["H3C"],
-            // 试卷标签
-            Description: null,
-            // 试卷说明，介绍整张试卷
-            Creator: 1,
-            // 创建者
-            CreateTime: 1753104023766,
-            // 创建时间
-            UpdatedBy: null,
-            // 更新者
-            UpdateTime: 1753104023766,
-            // 更新时间
-            Status: "00",
-            // 状态 00：正常， 02：异常
-            AccessMode: "04",
-            // 试卷访问权限，00私有 02共享 04公开
-            TotalScore: 19,
-            QuestionCount: 2,
-            GroupCount: null,
-            TableMap: null,
-            Action: "",
-            Condition: "",
-            Expr: "",
-            Values: null,
-            Columns: null,
-            QryResult: null,
-            Result: null,
-            RowCount: 0,
-            AuthExpr: "",
-            AuthWhereValues: null,
-            AuthWhereBeginPos: 0,
-            AuthProc: false
-        },
-        {
-            ID: 65,
-            // 试卷ID
-            Name: "H3C选择题卷",
-            // 试卷名称
-            AssemblyType: "04",
-            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
-            Category: "02",
-            // 试卷用途 00：考试 02：练习
-            Level: "04",
-            // 试卷难度 00：简单 02：中等 04：困难
-            SuggestedDuration: 30,
-            // 建议时长，单位为分钟
-            Tags: ["H3C"],
-            // 试卷标签
-            Description: null,
-            // 试卷说明，介绍整张试卷
-            Creator: 1,
-            // 创建者
-            CreateTime: 1753104023766,
-            // 创建时间
-            UpdatedBy: null,
-            // 更新者
-            UpdateTime: 1753104023766,
-            // 更新时间
-            Status: "00",
-            // 状态 00：正常， 02：异常
-            AccessMode: "00",
-            // 试卷访问权限，00私有 02共享 04公开
-            TotalScore: 290,
-            QuestionCount: 29,
-            GroupCount: null,
-            TableMap: null,
-            Action: "",
-            Condition: "",
-            Expr: "",
-            Values: null,
-            Columns: null,
-            QryResult: null,
-            Result: null,
-            RowCount: 0,
-            AuthExpr: "",
-            AuthWhereValues: null,
-            AuthWhereBeginPos: 0,
-            AuthProc: false
-        },
-
-        {
-            ID: 65,
-            // 试卷ID
-            Name: "H3C选择题卷",
-            // 试卷名称
-            AssemblyType: "04",
-            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
-            Category: "02",
-            // 试卷用途 00：考试 02：练习
-            Level: "04",
-            // 试卷难度 00：简单 02：中等 04：困难
-            SuggestedDuration: 30,
-            // 建议时长，单位为分钟
-            Tags: ["H3C"],
-            // 试卷标签
-            Description: null,
-            // 试卷说明，介绍整张试卷
-            Creator: 1,
-            // 创建者
-            CreateTime: 1753104023766,
-            // 创建时间
-            UpdatedBy: null,
-            // 更新者
-            UpdateTime: 1753104023766,
-            // 更新时间
-            Status: "00",
-            // 状态 00：正常， 02：异常
-            AccessMode: "00",
-            // 试卷访问权限，00私有 02共享 04公开
-            TotalScore: 290,
-            QuestionCount: 29,
-            GroupCount: null,
-            TableMap: null,
-            Action: "",
-            Condition: "",
-            Expr: "",
-            Values: null,
-            Columns: null,
-            QryResult: null,
-            Result: null,
-            RowCount: 0,
-            AuthExpr: "",
-            AuthWhereValues: null,
-            AuthWhereBeginPos: 0,
-            AuthProc: false
-        },
-        {
-            ID: 65,
-            // 试卷ID
-            Name: "H3C选择题卷",
-            // 试卷名称
-            AssemblyType: "04",
-            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
-            Category: "02",
-            // 试卷用途 00：考试 02：练习
-            Level: "04",
-            // 试卷难度 00：简单 02：中等 04：困难
-            SuggestedDuration: 30,
-            // 建议时长，单位为分钟
-            Tags: ["H3C"],
-            // 试卷标签
-            Description: null,
-            // 试卷说明，介绍整张试卷
-            Creator: 1,
-            // 创建者
-            CreateTime: 1753104023766,
-            // 创建时间
-            UpdatedBy: null,
-            // 更新者
-            UpdateTime: 1753104023766,
-            // 更新时间
-            Status: "00",
-            // 状态 00：正常， 02：异常
-            AccessMode: "00",
-            // 试卷访问权限，00私有 02共享 04公开
-            TotalScore: 290,
-            QuestionCount: 29,
-            GroupCount: null,
-            TableMap: null,
-            Action: "",
-            Condition: "",
-            Expr: "",
-            Values: null,
-            Columns: null,
-            QryResult: null,
-            Result: null,
-            RowCount: 0,
-            AuthExpr: "",
-            AuthWhereValues: null,
-            AuthWhereBeginPos: 0,
-            AuthProc: false
-        },
-        {
-            ID: 65,
-            // 试卷ID
-            Name: "H3C选择题卷",
-            // 试卷名称
-            AssemblyType: "04",
-            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
-            Category: "02",
-            // 试卷用途 00：考试 02：练习
-            Level: "04",
-            // 试卷难度 00：简单 02：中等 04：困难
-            SuggestedDuration: 30,
-            // 建议时长，单位为分钟
-            Tags: ["H3C"],
-            // 试卷标签
-            Description: null,
-            // 试卷说明，介绍整张试卷
-            Creator: 1,
-            // 创建者
-            CreateTime: 1753104023766,
-            // 创建时间
-            UpdatedBy: null,
-            // 更新者
-            UpdateTime: 1753104023766,
-            // 更新时间
-            Status: "00",
-            // 状态 00：正常， 02：异常
-            AccessMode: "00",
-            // 试卷访问权限，00私有 02共享 04公开
-            TotalScore: 290,
-            QuestionCount: 29,
-            GroupCount: null,
-            TableMap: null,
-            Action: "",
-            Condition: "",
-            Expr: "",
-            Values: null,
-            Columns: null,
-            QryResult: null,
-            Result: null,
-            RowCount: 0,
-            AuthExpr: "",
-            AuthWhereValues: null,
-            AuthWhereBeginPos: 0,
-            AuthProc: false
-        },
-        {
-            ID: 65,
-            // 试卷ID
-            Name: "H3C选择题卷",
-            // 试卷名称
-            AssemblyType: "04",
-            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
-            Category: "02",
-            // 试卷用途 00：考试 02：练习
-            Level: "04",
-            // 试卷难度 00：简单 02：中等 04：困难
-            SuggestedDuration: 30,
-            // 建议时长，单位为分钟
-            Tags: ["H3C"],
-            // 试卷标签
-            Description: null,
-            // 试卷说明，介绍整张试卷
-            Creator: 1,
-            // 创建者
-            CreateTime: 1753104023766,
-            // 创建时间
-            UpdatedBy: null,
-            // 更新者
-            UpdateTime: 1753104023766,
-            // 更新时间
-            Status: "00",
-            // 状态 00：正常， 02：异常
-            AccessMode: "00",
-            // 试卷访问权限，00私有 02共享 04公开
-            TotalScore: 290,
-            QuestionCount: 29,
-            GroupCount: null,
-            TableMap: null,
-            Action: "",
-            Condition: "",
-            Expr: "",
-            Values: null,
-            Columns: null,
-            QryResult: null,
-            Result: null,
-            RowCount: 0,
-            AuthExpr: "",
-            AuthWhereValues: null,
-            AuthWhereBeginPos: 0,
-            AuthProc: false
-        },{
-            ID: 65,
-            // 试卷ID
-            Name: "H3C选择题卷",
-            // 试卷名称
-            AssemblyType: "04",
-            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
-            Category: "02",
-            // 试卷用途 00：考试 02：练习
-            Level: "04",
-            // 试卷难度 00：简单 02：中等 04：困难
-            SuggestedDuration: 30,
-            // 建议时长，单位为分钟
-            Tags: ["H3C"],
-            // 试卷标签
-            Description: null,
-            // 试卷说明，介绍整张试卷
-            Creator: 1,
-            // 创建者
-            CreateTime: 1753104023766,
-            // 创建时间
-            UpdatedBy: null,
-            // 更新者
-            UpdateTime: 1753104023766,
-            // 更新时间
-            Status: "00",
-            // 状态 00：正常， 02：异常
-            AccessMode: "00",
-            // 试卷访问权限，00私有 02共享 04公开
-            TotalScore: 290,
-            QuestionCount: 29,
-            GroupCount: null,
-            TableMap: null,
-            Action: "",
-            Condition: "",
-            Expr: "",
-            Values: null,
-            Columns: null,
-            QryResult: null,
-            Result: null,
-            RowCount: 0,
-            AuthExpr: "",
-            AuthWhereValues: null,
-            AuthWhereBeginPos: 0,
-            AuthProc: false
-        },
-        {
-            ID: 65,
-            // 试卷ID
-            Name: "H3C选择题卷",
-            // 试卷名称
-            AssemblyType: "04",
-            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
-            Category: "02",
-            // 试卷用途 00：考试 02：练习
-            Level: "04",
-            // 试卷难度 00：简单 02：中等 04：困难
-            SuggestedDuration: 30,
-            // 建议时长，单位为分钟
-            Tags: ["H3C"],
-            // 试卷标签
-            Description: null,
-            // 试卷说明，介绍整张试卷
-            Creator: 1,
-            // 创建者
-            CreateTime: 1753104023766,
-            // 创建时间
-            UpdatedBy: null,
-            // 更新者
-            UpdateTime: 1753104023766,
-            // 更新时间
-            Status: "00",
-            // 状态 00：正常， 02：异常
-            AccessMode: "00",
-            // 试卷访问权限，00私有 02共享 04公开
-            TotalScore: 290,
-            QuestionCount: 29,
-            GroupCount: null,
-            TableMap: null,
-            Action: "",
-            Condition: "",
-            Expr: "",
-            Values: null,
-            Columns: null,
-            QryResult: null,
-            Result: null,
-            RowCount: 0,
-            AuthExpr: "",
-            AuthWhereValues: null,
-            AuthWhereBeginPos: 0,
-            AuthProc: false
-        },
-        {
-            ID: 65,
-            // 试卷ID
-            Name: "H3C选择题卷",
-            // 试卷名称
-            AssemblyType: "04",
-            // 组卷方式 00：自定义组卷 02：随机组卷 04：智能刷题
-            Category: "02",
-            // 试卷用途 00：考试 02：练习
-            Level: "04",
-            // 试卷难度 00：简单 02：中等 04：困难
-            SuggestedDuration: 30,
-            // 建议时长，单位为分钟
-            Tags: ["H3C"],
-            // 试卷标签
-            Description: null,
-            // 试卷说明，介绍整张试卷
-            Creator: 1,
-            // 创建者
-            CreateTime: 1753104023766,
-            // 创建时间
-            UpdatedBy: null,
-            // 更新者
-            UpdateTime: 1753104023766,
-            // 更新时间
-            Status: "00",
-            // 状态 00：正常， 02：异常
-            AccessMode: "00",
-            // 试卷访问权限，00私有 02共享 04公开
-            TotalScore: 290,
-            QuestionCount: 29,
-            GroupCount: null,
-            TableMap: null,
-            Action: "",
-            Condition: "",
-            Expr: "",
-            Values: null,
-            Columns: null,
-            QryResult: null,
-            Result: null,
-            RowCount: 0,
-            AuthExpr: "",
-            AuthWhereValues: null,
-            AuthWhereBeginPos: 0,
-            AuthProc: false
-        },
-    ];
+    import Empty from "$lib/components/Table/Empty.svelte";
     
     let paperName = $state("");              // 试卷名称
     let paperTags = $state("");              // 试卷标签
@@ -608,7 +99,7 @@
         
     $effect(() => {
         paperName; paperTags; paperCategory;
-        if(isFirstEntry) {
+        if(!isFirstEntry) {
             debouncedFetchPaperList();
         }
     });
@@ -652,6 +143,7 @@
                             .then(result => {
                                 totalPapers = result.rowCount;
                                 paperList = result.data || [];
+                                console.log(result);
                             })
                     });
             }
@@ -756,64 +248,70 @@
             </thead>
 
             <tbody>
-                {#each paperList as paper}
-                    <tr>
-                        <td>
-                            <input
-                                class="checkbox" 
-                                type="checkbox"
-                                checked={selectedPaperIDs.includes(paper.ID)}
-                                onchange={(e) => toggleSelection(paper.ID, e.target.checked)}
-                            >
-                        </td>
-                        <td class="paper-name">{paper.Name}</td>
-                        <td class="assembly-type">{paperAssemblyTypeTrans[paper.AssemblyType]}</td>
-                        <td class="category">{paperCategoryTrans[paper.Category]}</td>
-                        <td class="question-count">{paper.QuestionCount}</td>
-                        <td class="total-score">{paper.TotalScore}</td>
-                        <td class="suggested-duration">{paper.SuggestedDuration}</td>
-                        <td class="paper-tag">
-                            <div class="tag-container">
-                                {#if paper.Tags.length !== 0}
-                                    {#each paper.Tags as tag}
-                                        <div class="per-tag">
-                                            <div class="tag-block" style="background-color: {tagColorList[getColorIndex(tag)]};"></div>
-                                            <span class="tag-name">{tag}</span>
-                                        </div>
-                                    {/each}
-                                {:else}
-                                    <span>-</span>
-                                {/if}
-                            </div>
-                        </td>
-                        <td class="level"><span class={paperLevelTrans[paperLevelTrans[paper.Level]]}>{paperLevelTrans[paper.Level]}</span></td>
-                        <td class="access-mode">
-                            <div class="access-mode-box">
-                                <Tag type={paperAccessModeTrans[paperAccessModeTrans[paper.AccessMode]]} them="light">{paperAccessModeTrans[paper.AccessMode]}</Tag>
-                            </div>
-                        </td>
-                        <td class="update-time">{formatTimestamp(paper.UpdateTime)}</td>
-                        <td class="create-time">{formatDate(paper.CreateTime)}</td>
-                        <td>
-                            <div class="operation">
-                                <!-- 第一行按钮 -->
-                                <div class="operation-line">
-                                    <button onclick={()=>editPaper(paper.ID)} class="blue-btn">修改</button>
-                                    <!-- <button class="blue-btn">共享</button> -->
-                                    <!-- <button class="blue-btn">预览</button> -->
-                                    <button onclick={()=>deleteSinglePaper(paper.ID)} class="red-btn">删除</button>
+                {#if paperList.length !== 0}
+                    {#each paperList as paper}
+                        <tr>
+                            <td>
+                                <input
+                                    class="checkbox" 
+                                    type="checkbox"
+                                    checked={selectedPaperIDs.includes(paper.ID)}
+                                    onchange={(e) => toggleSelection(paper.ID, e.target.checked)}
+                                >
+                            </td>
+                            <td class="paper-name">{paper.Name}</td>
+                            <td class="assembly-type">{paperAssemblyTypeTrans[paper.AssemblyType]}</td>
+                            <td class="category">{paperCategoryTrans[paper.Category]}</td>
+                            <td class="question-count">{paper.QuestionCount}</td>
+                            <td class="total-score">{paper.TotalScore}</td>
+                            <td class="suggested-duration">{paper.SuggestedDuration}</td>
+                            <td class="paper-tag">
+                                <div class="tag-container">
+                                    {#if paper.Tags.length !== 0}
+                                        {#each paper.Tags as tag}
+                                            <div class="per-tag">
+                                                <div class="tag-block" style="background-color: {tagColorList[getColorIndex(tag)]};"></div>
+                                                <span class="tag-name">{tag}</span>
+                                            </div>
+                                        {/each}
+                                    {:else}
+                                        <span>-</span>
+                                    {/if}
                                 </div>
-    
-                                <!-- 第二行按钮 -->
-                                <!-- <div class="operation-line"> -->
-                                    <!-- <button class="blue-btn">日志</button> -->
-                                <!-- </div> -->
-                            </div>
-                        </td>
-                    </tr>
-                {/each}
+                            </td>
+                            <td class="level"><span class={paperLevelTrans[paperLevelTrans[paper.Level]]}>{paperLevelTrans[paper.Level]}</span></td>
+                            <td class="access-mode">
+                                <div class="access-mode-box">
+                                    <Tag type={paperAccessModeTrans[paperAccessModeTrans[paper.AccessMode]]} them="light">{paperAccessModeTrans[paper.AccessMode]}</Tag>
+                                </div>
+                            </td>
+                            <td class="update-time">{formatTimestamp(paper.UpdateTime)}</td>
+                            <td class="create-time">{formatDate(paper.CreateTime)}</td>
+                            <td>
+                                <div class="operation">
+                                    <!-- 第一行按钮 -->
+                                    <div class="operation-line">
+                                        <button onclick={()=>editPaper(paper.ID)} class="blue-btn">修改</button>
+                                        <!-- <button class="blue-btn">共享</button> -->
+                                        <!-- <button class="blue-btn">预览</button> -->
+                                        <button onclick={()=>deleteSinglePaper(paper.ID)} class="red-btn">删除</button>
+                                    </div>
+        
+                                    <!-- 第二行按钮 -->
+                                    <!-- <div class="operation-line"> -->
+                                        <!-- <button class="blue-btn">日志</button> -->
+                                    <!-- </div> -->
+                                </div>
+                            </td>
+                        </tr>
+                    {/each}
+                {/if}
             </tbody>
         </table>
+        
+        {#if paperList.length === 0}
+            <Empty text="暂无试卷数据"/>
+        {/if}
     </div>
 
     <!-- 翻页控制 -->
