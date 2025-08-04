@@ -1,5 +1,4 @@
 <script>
-  //@ts-nocheck
   import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
   import { goto } from '$app/navigation';
@@ -488,7 +487,7 @@
               {#snippet ItemContent(i, level)}
                 <div
                   class="sidebar-item-content"
-                  style="left:{25 + level * 10}px;width: {100 - level * 5 < 0 ? 0 : 100 - level * 5}%"
+                  style="left:{25 + level * 10}px; width: {100 - level * 5 < 0 ? 0 : 100 - level * 5}%"
                 >
                   {#if i.icon}
                     <img class="sidebar-item-icon" src={i.icon} alt={i.title} />
@@ -510,10 +509,9 @@
               >
                 {#if it.children != null && it.children.length > 0 && it.children_is_parallel}
                   <img
-                    class="sidebar-item-icon"
+                    class="sidebar-subitem-icon"
                     src={it.fold ? icons.itemUnfold : icons.itemFold}
                     alt={it.fold ? '展开' : '折叠'}
-                    style="position:absolute; right:10%;"
                   />
                 {/if}
 
@@ -554,9 +552,9 @@
     onclick={() => toggleSidebar()}
   >
     {#if sidebar_fold_state}
-      <img src={icons.sidebarUnfold} alt="展开侧边栏" style="width:30px" />
+      <img src={icons.sidebarUnfold} alt="展开侧边栏" />
     {:else}
-      <img src={icons.sidebarFold} alt="收起侧边栏" style="width:30px" />
+      <img src={icons.sidebarFold} alt="收起侧边栏" />
     {/if}
   </button>
 </div>
@@ -747,6 +745,11 @@
           margin: 5px;
         }
 
+        .sidebar-subitem-icon {
+          position: absolute;
+          right: 10%;
+        }
+
         .sidebar-item-text {
           display: block;
           position: relative;
@@ -795,11 +798,10 @@
         border: 6px;
         border-radius: 3px;
       }
-    }
-  }
 
-  img {
-    width: inherit;
-    height: inherit;
+      img {
+        width: 30px;
+      }
+    }
   }
 </style>
