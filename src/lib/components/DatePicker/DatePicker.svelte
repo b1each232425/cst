@@ -4,26 +4,26 @@
   邮箱：1062051028@qq.com
 
   参数配置：
-  @param {Date} initialStartDate    初始起始日期，可选
-  @param {Date} initialEndDate      初始结束日期，可选
-  @param {Boolean} singleDateSelection 是否启用单日期选择模式，默认为true
-  @param {Boolean} isTimeSelection  是否启用时间选择模式，默认为false
-  @param {String} inputWidth        输入框宽度，默认为 '140px'
+  @param {Date} initial_start_date    初始起始日期，可选
+  @param {Date} initial_end_date      初始结束日期，可选
+  @param {Boolean} single_date_selection 是否启用单日期选择模式，默认为true
+  @param {Boolean} is_time_selection  是否启用时间选择模式，默认为false
+  @param {String} input_width        输入框宽度，默认为 '140px'
 
   事件说明：
-  @event startDateSelected          选择起始日期时触发，传递日期对象 { date: Date }
-  @event endDateSelected            选择结束日期时触发，传递日期对象 { date: Date }
+  @event start_date_selected          选择起始日期时触发，传递日期对象 { date: Date }
+  @event end_date_selected            选择结束日期时触发，传递日期对象 { date: Date }
 
   使用示例：
   <DatePicker
-    bind:this={datePicker}                           // 与创建的日期选择器对象绑定
-    initialStartDate={new Date('2023/02/09 20:30')}  // 可选，初始起始日期
-    initialEndDate={new Date('2023/02/09 20:30')}    // 可选，初始结束日期
-    isTimeSelection={false}        // 启用具体时间范围选择
-    singleDateSelection={true}     // 选择单日期选择器还是双日期选择器
-    inputWidth={'300px'}           // 自定义宽度
-    on:startDateSelected={handleStartDateSelected}  // 监听起始日期变化
-    on:endDateSelected={handleEndDateSelected}      // 监听结束日期变化
+    bind:this={date_picker}                           // 与创建的日期选择器对象绑定
+    initial_start_date={new Date('2023/02/09 20:30')}  // 可选，初始起始日期
+    initial_end_date={new Date('2023/02/09 20:30')}    // 可选，初始结束日期
+    is_time_selection={false}        // 启用具体时间范围选择
+    is_single_date_selection={true}     // 选择单日期选择器还是双日期选择器
+    input_width={'300px'}           // 自定义宽度
+    on:start_date_selected={handleStartDateSelected}  // 监听起始日期变化
+    on:end_date_selected={handleEndDateSelected}      // 监听结束日期变化
   />
 
   组件功能：
@@ -36,7 +36,7 @@
   7. 支持时间选择模式（小时、分钟）
 
   额外说明：
-  - 请注意：因为日期格式因需求而异，组件返回的时间数据是原始的 JavaScript Date 对象。如果需要自定义格式，请使用组件内提供的 `formatDate` 函数。
+  - 请注意：因为日期格式因需求而异，组件返回的时间数据是原始的 JavaScript Date 对象。如果需要自定义格式，请使用组件内提供的 `format_date` 函数。
   - 示例：`formatDate` 函数可以将日期转换为 `yyyy/mm/dd HH:MM` 格式。如果需要其他格式，可以根据需求进行转换。
 
   例如，父组件处理日期选择事件：
@@ -45,69 +45,70 @@
   import DatePicker from '$lib/components/DatePicker/DatePicker.svelte';
   import { formatDate } from "$lib/components/DatePicker/datePicker";
 
-  let datePicker; //创建日期选择器对象
+  let date_picker; //创建日期选择器对象
 
   // 处理起始日期选择事件
   function handleStartDateSelected(event) {
-    const newStartDate = event.detail.date;
-    console.log(formatDate(newStartDate));  // 输出格式化后的起始日期
+    const new_start_date = event.detail.date;
+    console.log(formatDate(new_start_date));
     // 处理起始日期逻辑
   }
 
   // 处理结束日期选择事件
   function handleEndDateSelected(event) {
-    const endStartDate = event.detail.date;
+    const new_end_date = event.detail.date;
+    console.log(formatDate(new_end_date));
     // 处理结束日期逻辑
   }
 
-  // 调用日期选择器组件的重置日期函数
-  function resetDate() {
-    datePicker.reset();
+  // 重置日期
+  function resetDate(){
+    date_picker.reset()
   }
 -->
 
 <script>
   import { onMount, createEventDispatcher } from 'svelte';
-  // import { setupTimeColumnScroll } from '$lib/components/DatePicker/datePicker';
 
   // 从外部传入的属性
   let {
-    initialStartDate = null, // 初始起始日期
-    initialEndDate = null, // 初始结束日期
-    singleDateSelection = true, // 是否单日期选择
-    isTimeSelection = false,
-    inputWidth = '140px',
-  } = $props(); // 获取外部传入的 props
+    initial_start_date = null, // 初始的开始日期
+    initial_end_date = null, // 初始的结束日期
+    is_single_date_selection = true, // 是否启用单日期选择模式，默认为true
+    is_time_selection = false, // 是否启用时间选择模式，默认为false
+    input_width = '140px', // 输入框宽度，默认为 '140px'
+  } = $props();
 
   // 组件内部的状态
-  let internalStartDate = $state(new Date()); // 默认初始化为当前时间
-  let internalEndDate = $state(new Date()); // 默认初始化为当前时间
-  let isCalendarsVisible = $state(false); // 控制日历的显示与隐藏
-  let startYear = $state(new Date().getFullYear()); // 存储起始日期的年份
-  let startMonth = $state(new Date().getMonth()); // 存储起始日期的月份
-  let endYear = $state(new Date().getFullYear()); // 存储结束日期的年份
-  let endMonth = $state(new Date().getMonth()); // 存储结束日期的月份
-  let selectedStartHour = $state(new Date().getHours()); // 默认当前小时
-  let selectedStartMinute = $state(new Date().getMinutes()); // 默认当前分钟
-  let selectedEndHour = $state(new Date().getHours()); // 默认当前小时
-  let selectedEndMinute = $state(new Date().getMinutes()); // 默认当前分钟
-  let dateInputElement;
-  // 跟踪时间列的DOM元素
-  let startHourColumn = $state();
-  let startMinuteColumn = $state();
-  let endHourColumn = $state();
-  let endMinuteColumn = $state();
+  let internal_start_date = $state(new Date()); // 当前选择的开始日期
+  let internal_end_date = $state(new Date()); // 当前选择的结束日期
+  let is_calendars_visible = $state(false); // 控制日历的显示或隐藏
+  let start_year = $state(new Date().getFullYear()); // 存储开始日期的年份
+  let start_month = $state(new Date().getMonth()); // 存储开始日期的月份
+  let end_year = $state(new Date().getFullYear()); // 存储结束日期的年份
+  let end_month = $state(new Date().getMonth()); // 存储结束日期的月份
+  let selected_start_hour = $state(new Date().getHours()); // 当前选择的开始小时
+  let selected_start_minute = $state(new Date().getMinutes()); // 当前选择的开始分钟
+  let selected_end_hour = $state(new Date().getHours()); // 当前选择的结束小时
+  let selected_end_minute = $state(new Date().getMinutes()); // 当前选择的结束分钟
+  let date_input_element; // 绑定到输入框的DOM元素
+  let start_hour_column = $state(); // 起始小时列的DOM元素
+  let start_minute_column = $state(); // 起始分钟列的DOM元素
+  let end_hour_column = $state(); // 结束小时列的DOM元素
+  let end_minute_column = $state(); // 结束分钟列的DOM元素
 
-  // 创建事件分发器，允许向父组件发送事件
+  // 创建事件分发器，用于向父组件传递事件
   const dispatch = createEventDispatcher();
 
   // 默认的提示文本
   const DEFAULT_PROMPT = '开始日期   ~   结束日期';
   const SINGLE_DATE_PROMPT = '请选择日期';
-  let inputValue = $derived(singleDateSelection ? SINGLE_DATE_PROMPT : DEFAULT_PROMPT);
+
+  // 根据是否启用单日期选择模式决定显示的默认提示文本
+  let input_value = $derived(is_single_date_selection ? SINGLE_DATE_PROMPT : DEFAULT_PROMPT);
 
   // 月份名称，用于显示月份
-  const monthNames = [
+  const month_names = [
     '一月',
     '二月',
     '三月',
@@ -122,35 +123,35 @@
     '十二月',
   ];
 
-  // 工具函数：获取某个月份的天数
+  // 获取某个月份的天数
   const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 
-  // 生成日历数据（包含前后月份的填充）
+  // 生成日历数据，包括前后月份的填充
   const generateCalendar = (year, month) => {
-    const firstDay = new Date(year, month, 1).getDay(); // 获取该月的第一天是星期几
-    const daysInMonth = getDaysInMonth(year, month); // 获取该月有多少天
+    const first_day = new Date(year, month, 1).getDay(); // 获取该月的第一天是星期几
+    const days_in_month = getDaysInMonth(year, month); // 获取该月的天数
     const calendar = [];
 
     // 填充上个月的日期
-    const prevMonth = month - 1 < 0 ? 11 : month - 1;
-    const prevYear = prevMonth === 11 ? year - 1 : year;
-    const prevMonthDays = getDaysInMonth(prevYear, prevMonth);
-    for (let i = prevMonthDays - firstDay + 1; i <= prevMonthDays; i++) {
-      calendar.push({ day: i, month: prevMonth, year: prevYear });
+    const prev_month = month - 1 < 0 ? 11 : month - 1;
+    const prev_year = prev_month === 11 ? year - 1 : year;
+    const prev_month_days = getDaysInMonth(prev_year, prev_month);
+    for (let i = prev_month_days - first_day + 1; i <= prev_month_days; i++) {
+      calendar.push({ day: i, month: prev_month, year: prev_year });
     }
 
-    // 填充本月的日期
-    for (let i = 1; i <= daysInMonth; i++) {
+    // 填充当前月的日期
+    for (let i = 1; i <= days_in_month; i++) {
       calendar.push({ day: i, month, year });
     }
 
     // 填充下个月的日期
-    const remainingCells = 7 - (calendar.length % 7);
-    if (remainingCells < 7) {
-      const nextMonth = (month + 1) % 12;
-      const nextYear = nextMonth === 0 ? year + 1 : year;
-      for (let i = 1; i <= remainingCells; i++) {
-        calendar.push({ day: i, month: nextMonth, year: nextYear });
+    const remaining_cells = 7 - (calendar.length % 7); // 计算当前月剩余的天数
+    if (remaining_cells < 7) {
+      const next_month = (month + 1) % 12;
+      const next_year = next_month === 0 ? year + 1 : year;
+      for (let i = 1; i <= remaining_cells; i++) {
+        calendar.push({ day: i, month: next_month, year: next_year });
       }
     }
 
@@ -158,277 +159,275 @@
   };
 
   // 动态生成当前月份的日历
-  let startCalendar = $derived(generateCalendar(startYear, startMonth));
-  let endCalendar = $derived(generateCalendar(endYear, endMonth));
+  let start_calendar = $derived(generateCalendar(start_year, start_month));
+  let end_calendar = $derived(generateCalendar(end_year, end_month));
 
-  // 选择起始日期的处理
-  const selectStartDate = (dateObj) => {
-    // 保留之前的时间（如果已选择）
-    const prevHours = internalStartDate ? internalStartDate.getHours() : selectedStartHour;
-    const prevMinutes = internalStartDate ? internalStartDate.getMinutes() : selectedStartMinute;
+  // 选择开始日期
+  const selectStartDate = (date_obj) => {
+    const prev_hours = internal_start_date ? internal_start_date.getHours() : selected_start_hour;
+    const prev_minutes = internal_start_date ? internal_start_date.getMinutes() : selected_start_minute;
 
-    const newDate = new Date(dateObj.year, dateObj.month, dateObj.day, prevHours, prevMinutes);
-    internalStartDate = newDate;
+    const new_date = new Date(date_obj.year, date_obj.month, date_obj.day, prev_hours, prev_minutes);
+    internal_start_date = new_date;
 
-    if (singleDateSelection) {
-      internalEndDate = new Date(newDate);
-      selectedEndHour = selectedStartHour;
-      selectedEndMinute = selectedStartMinute;
-    } else if (internalEndDate && newDate > internalEndDate) {
-      internalEndDate = new Date(newDate);
-      internalEndDate.setDate(internalEndDate.getDate() + 1);
-      endYear = internalEndDate.getFullYear();
-      endMonth = internalEndDate.getMonth();
+    // 如果是单日期选择模式，结束日期与开始日期相同
+    if (is_single_date_selection) {
+      internal_end_date = new Date(new_date);
+      selected_end_hour = selected_start_hour;
+      selected_end_minute = selected_start_minute;
+    } else if (internal_end_date && new_date > internal_end_date) {
+      internal_end_date = new Date(new_date);
+      internal_end_date.setDate(internal_end_date.getDate() + 1);
+      end_year = internal_end_date.getFullYear();
+      end_month = internal_end_date.getMonth();
     }
 
-    // 更新选择的时间状态
-    selectedStartHour = newDate.getHours();
-    selectedStartMinute = newDate.getMinutes();
+    // 更新选择的开始时间
+    selected_start_hour = new_date.getHours();
+    selected_start_minute = new_date.getMinutes();
 
-    dispatch('startDateSelected', { date: newDate });
+    // 触发事件，将选择的日期传递给父组件
+    dispatch('start_date_selected', { date: new_date });
     updateInputValue();
   };
 
-  // 选择结束日期的处理
-  const selectEndDate = (dateObj) => {
-    // 保留之前的时间（如果已选择）
-    const prevHours = internalEndDate ? internalEndDate.getHours() : selectedEndHour;
-    const prevMinutes = internalEndDate ? internalEndDate.getMinutes() : selectedEndMinute;
+  // 选择结束日期
+  const selectEndDate = (date_obj) => {
+    const prev_hours = internal_end_date ? internal_end_date.getHours() : selected_end_hour;
+    const prev_minutes = internal_end_date ? internal_end_date.getMinutes() : selected_end_minute;
 
-    const newDate = new Date(dateObj.year, dateObj.month, dateObj.day, prevHours, prevMinutes);
-    internalEndDate = newDate;
+    const new_date = new Date(date_obj.year, date_obj.month, date_obj.day, prev_hours, prev_minutes);
+    internal_end_date = new_date;
 
-    if (singleDateSelection) {
-      internalStartDate = new Date(newDate);
-      selectedStartHour = selectedEndHour;
-      selectedStartMinute = selectedEndMinute;
-      isCalendarsVisible = false;
-    } else if (internalStartDate && newDate < internalStartDate) {
-      internalStartDate = new Date(newDate);
-      internalStartDate.setDate(internalStartDate.getDate() - 1);
-      startYear = internalStartDate.getFullYear();
-      startMonth = internalStartDate.getMonth();
+    // 如果是单日期选择模式，开始日期与结束日期相同
+    if (is_single_date_selection) {
+      internal_start_date = new Date(new_date);
+      selected_start_hour = selected_end_hour;
+      selected_start_minute = selected_end_minute;
+      is_calendars_visible = false;
+    } else if (internal_start_date && new_date < internal_start_date) {
+      internal_start_date = new Date(new_date);
+      internal_start_date.setDate(internal_start_date.getDate() - 1);
+      start_year = internal_start_date.getFullYear();
+      start_month = internal_start_date.getMonth();
     }
 
-    // 更新选择的时间状态
-    selectedEndHour = newDate.getHours();
-    selectedEndMinute = newDate.getMinutes();
+    // 更新选择的结束时间
+    selected_end_hour = new_date.getHours();
+    selected_end_minute = new_date.getMinutes();
 
-    dispatch('endDateSelected', { date: newDate });
+    // 触发事件，将选择的日期传递给父组件
+    dispatch('end_date_selected', { date: new_date });
     updateInputValue();
   };
 
-  // 切换月份的函数
+  // 上一月
   const prevStartMonth = () => {
-    startMonth--;
-    if (startMonth < 0) {
-      startMonth = 11;
-      startYear--;
+    start_month--;
+    if (start_month < 0) {
+      start_month = 11;
+      start_year--;
     }
   };
 
+  // 下一月
   const nextStartMonth = () => {
-    startMonth++;
-    if (startMonth > 11) {
-      startMonth = 0;
-      startYear++;
+    start_month++;
+    if (start_month > 11) {
+      start_month = 0;
+      start_year++;
     }
   };
 
+  // 上一月
   const prevEndMonth = () => {
-    endMonth--;
-    if (endMonth < 0) {
-      endMonth = 11;
-      endYear--;
+    end_month--;
+    if (end_month < 0) {
+      end_month = 11;
+      end_year--;
     }
   };
 
+  // 下一月
   const nextEndMonth = () => {
-    endMonth++;
-    if (endMonth > 11) {
-      endMonth = 0;
-      endYear++;
+    end_month++;
+    if (end_month > 11) {
+      end_month = 0;
+      end_year++;
     }
   };
 
   // 更新输入框的显示值
   const updateInputValue = () => {
-    if (singleDateSelection) {
-      inputValue = internalStartDate ? formatDate(internalStartDate) : SINGLE_DATE_PROMPT;
-    } else if (internalStartDate && internalEndDate) {
-      inputValue = `${formatDate(internalStartDate)} ~ ${formatDate(internalEndDate)}`;
+    if (is_single_date_selection) {
+      input_value = internal_start_date ? formatDate(internal_start_date) : SINGLE_DATE_PROMPT;
+    } else if (internal_start_date && internal_end_date) {
+      input_value = `${formatDate(internal_start_date)} ~ ${formatDate(internal_end_date)}`;
     } else {
-      inputValue = DEFAULT_PROMPT;
+      input_value = DEFAULT_PROMPT;
     }
   };
 
-  // 日期是否在范围内的判断函数
-  const isDateInRange = (dateObj) => {
-    if (singleDateSelection) {
+  // 判断日期是否在选择范围内
+  const isDateInRange = (date_obj) => {
+    if (is_single_date_selection) {
       return (
-        internalStartDate &&
-        dateObj.day === internalStartDate.getDate() &&
-        dateObj.month === internalStartDate.getMonth() &&
-        dateObj.year === internalStartDate.getFullYear()
+        internal_start_date &&
+        date_obj.day === internal_start_date.getDate() &&
+        date_obj.month === internal_start_date.getMonth() &&
+        date_obj.year === internal_start_date.getFullYear()
       );
     }
-    if (!internalStartDate || !internalEndDate) return false;
-    const date = new Date(dateObj.year, dateObj.month, dateObj.day);
-    return date >= internalStartDate && date <= internalEndDate;
+    if (!internal_start_date || !internal_end_date) return false;
+    const date = new Date(date_obj.year, date_obj.month, date_obj.day);
+    return date >= internal_start_date && date <= internal_end_date;
   };
 
-  // 格式化日期的工具函数
+  // 格式化日期为 'yyyy/mm/dd' 或者带时间的 'yyyy/mm/dd hh:mm'
   const formatDate = (date) => {
     if (!date) return '';
-    if (isTimeSelection) {
+    if (is_time_selection) {
       return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     } else {
       return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
     }
   };
 
-  // 更新小时或分钟
+  // 更新开始时间（小时或分钟）
   const updateStartTime = (type, value) => {
-    if (!internalStartDate) return;
+    if (!internal_start_date) return;
 
     if (type === 'hour') {
-      internalStartDate.setHours(value);
-      selectedStartHour = value;
+      internal_start_date.setHours(value);
+      selected_start_hour = value;
     } else if (type === 'minute') {
-      internalStartDate.setMinutes(value);
-      selectedStartMinute = value;
+      internal_start_date.setMinutes(value);
+      selected_start_minute = value;
     }
 
-    console.log('startDateSelected', { date: internalStartDate });
-    dispatch('startDateSelected', { date: internalStartDate });
+    dispatch('start_date_selected', { date: internal_start_date });
     updateInputValue();
   };
 
+  // 更新结束时间（小时或分钟）
   const updateEndTime = (type, value) => {
-    if (!internalEndDate) return;
+    if (!internal_end_date) return;
 
     if (type === 'hour') {
-      internalEndDate.setHours(value);
-      selectedEndHour = value;
+      internal_end_date.setHours(value);
+      selected_end_hour = value;
     } else if (type === 'minute') {
-      internalEndDate.setMinutes(value);
-      selectedEndMinute = value;
+      internal_end_date.setMinutes(value);
+      selected_end_minute = value;
     }
 
-    console.log('endDateSelected', { date: internalEndDate });
-    dispatch('endDateSelected', { date: internalEndDate });
+    dispatch('end_date_selected', { date: internal_end_date });
     updateInputValue();
   };
 
-  // 重置方法，用于清空选择的日期
+  // 重置日期选择器
   export function reset() {
     const now = new Date();
-    internalStartDate = new Date(now);
-    internalEndDate = new Date(now);
-    inputValue = singleDateSelection ? SINGLE_DATE_PROMPT : DEFAULT_PROMPT;
-    startYear = now.getFullYear();
-    startMonth = now.getMonth();
-    endYear = now.getFullYear();
-    endMonth = now.getMonth();
-    selectedStartHour = now.getHours();
-    selectedStartMinute = now.getMinutes();
-    selectedEndHour = now.getHours();
-    selectedEndMinute = now.getMinutes();
+    internal_start_date = new Date(now);
+    internal_end_date = new Date(now);
+    input_value = is_single_date_selection ? SINGLE_DATE_PROMPT : DEFAULT_PROMPT;
+    start_year = now.getFullYear();
+    start_month = now.getMonth();
+    end_year = now.getFullYear();
+    end_month = now.getMonth();
+    selected_start_hour = now.getHours();
+    selected_start_minute = now.getMinutes();
+    selected_end_hour = now.getHours();
+    selected_end_minute = now.getMinutes();
     updateInputValue();
   }
 
-  // 响应式更新
+  // 监听和更新日期选择器状态
   $effect(() => {
-    if (internalStartDate) {
-      startYear = internalStartDate.getFullYear();
-      startMonth = internalStartDate.getMonth();
+    if (internal_start_date) {
+      start_year = internal_start_date.getFullYear();
+      start_month = internal_start_date.getMonth();
     }
-    if (internalEndDate && !singleDateSelection) {
-      endYear = internalEndDate.getFullYear();
-      endMonth = internalEndDate.getMonth();
+    if (internal_end_date && !is_single_date_selection) {
+      end_year = internal_end_date.getFullYear();
+      end_month = internal_end_date.getMonth();
     }
   });
 
-  // 自动滚动到选中时间的函数
+  // 滚动到选中的时间位置
   const scrollToSelectedTime = () => {
-    if (!isTimeSelection) return;
+    if (!is_time_selection) return;
 
-    // 延迟执行以确保DOM已渲染
     setTimeout(() => {
-      if (startHourColumn && selectedStartHour !== null) {
-        const hourElement = startHourColumn.querySelector(`button[data-hour="${selectedStartHour}"]`);
-        if (hourElement) hourElement.scrollIntoView({ block: 'center' });
+      if (start_hour_column && selected_start_hour !== null) {
+        const hour_element = start_hour_column.querySelector(`button[data-hour="${selected_start_hour}"]`);
+        if (hour_element) hour_element.scrollIntoView({ block: 'center' });
       }
-      if (startMinuteColumn && selectedStartMinute !== null) {
-        const minuteElement = startMinuteColumn.querySelector(`button[data-minute="${selectedStartMinute}"]`);
-        if (minuteElement) minuteElement.scrollIntoView({ block: 'center' });
+      if (start_minute_column && selected_start_minute !== null) {
+        const minute_element = start_minute_column.querySelector(`button[data-minute="${selected_start_minute}"]`);
+        if (minute_element) minute_element.scrollIntoView({ block: 'center' });
       }
-      if (!singleDateSelection) {
-        if (endHourColumn && selectedEndHour !== null) {
-          const hourElement = endHourColumn.querySelector(`button[data-hour="${selectedEndHour}"]`);
-          if (hourElement) hourElement.scrollIntoView({ block: 'center' });
+      if (!is_single_date_selection) {
+        if (end_hour_column && selected_end_hour !== null) {
+          const hour_element = end_hour_column.querySelector(`button[data-hour="${selected_end_hour}"]`);
+          if (hour_element) hour_element.scrollIntoView({ block: 'center' });
         }
-        if (endMinuteColumn && selectedEndMinute !== null) {
-          const minuteElement = endMinuteColumn.querySelector(`button[data-minute="${selectedEndMinute}"]`);
-          if (minuteElement) minuteElement.scrollIntoView({ block: 'center' });
+        if (end_minute_column && selected_end_minute !== null) {
+          const minute_element = end_minute_column.querySelector(`button[data-minute="${selected_end_minute}"]`);
+          if (minute_element) minute_element.scrollIntoView({ block: 'center' });
         }
       }
     }, 50);
   };
 
-  // 当日历显示时自动滚动到选中时间
+  // 如果日历可见，滚动到选中的时间
   $effect(() => {
-    if (isCalendarsVisible) {
+    if (is_calendars_visible) {
       scrollToSelectedTime();
     }
   });
 
+  // 初始化日期选择器
   onMount(() => {
-    // 初始化组件宽度
-    dateInputElement.style.setProperty('--date-picker-width', inputWidth);
+    date_input_element.style.setProperty('--date-picker-width', input_width);
 
-    // 初始化当前时间
     const now = new Date();
 
-    // 如果外部没有传入初始日期，则使用当前时间
-    if (!initialStartDate || !(initialStartDate instanceof Date)) {
-      internalStartDate = new Date(now);
-      selectedStartHour = now.getHours();
-      selectedStartMinute = now.getMinutes();
+    if (!initial_start_date || !(initial_start_date instanceof Date)) {
+      internal_start_date = new Date(now);
+      selected_start_hour = now.getHours();
+      selected_start_minute = now.getMinutes();
     }
 
-    if (!initialEndDate || !(initialEndDate instanceof Date)) {
-      internalEndDate = new Date(now);
-      selectedEndHour = now.getHours();
-      selectedEndMinute = now.getMinutes();
+    if (!initial_end_date || !(initial_end_date instanceof Date)) {
+      internal_end_date = new Date(now);
+      selected_end_hour = now.getHours();
+      selected_end_minute = now.getMinutes();
     }
 
-    // 如果外部传入了初始日期，则使用外部传入的日期
-    if (initialStartDate instanceof Date) {
-      internalStartDate = new Date(initialStartDate);
-      selectedStartHour = internalStartDate.getHours();
-      selectedStartMinute = internalStartDate.getMinutes();
+    if (initial_start_date instanceof Date) {
+      internal_start_date = new Date(initial_start_date);
+      selected_start_hour = internal_start_date.getHours();
+      selected_start_minute = internal_start_date.getMinutes();
     }
 
-    if (initialEndDate instanceof Date) {
-      internalEndDate = new Date(initialEndDate);
-      selectedEndHour = internalEndDate.getHours();
-      selectedEndMinute = internalEndDate.getMinutes();
+    if (initial_end_date instanceof Date) {
+      internal_end_date = new Date(initial_end_date);
+      selected_end_hour = internal_end_date.getHours();
+      selected_end_minute = internal_end_date.getMinutes();
     }
 
-    // 单日期模式下，结束日期等于开始日期
-    if (singleDateSelection) {
-      internalEndDate = new Date(internalStartDate);
-      selectedEndHour = selectedStartHour;
-      selectedEndMinute = selectedStartMinute;
+    if (is_single_date_selection) {
+      internal_end_date = new Date(internal_start_date);
+      selected_end_hour = selected_start_hour;
+      selected_end_minute = selected_start_minute;
     }
 
     updateInputValue();
 
-    // 点击外部关闭日历
     const handleClickOutside = (event) => {
       if (!event.target.closest('.date-picker-container')) {
-        isCalendarsVisible = false;
+        is_calendars_visible = false;
       }
     };
     document.addEventListener('click', handleClickOutside);
@@ -443,61 +442,60 @@
       type="text"
       class="date-picker"
       readonly
-      bind:value={inputValue}
-      bind:this={dateInputElement}
-      onclick={() => (isCalendarsVisible = !isCalendarsVisible)}
+      bind:value={input_value}
+      bind:this={date_input_element}
+      onclick={() => (is_calendars_visible = !is_calendars_visible)}
     />
   </div>
 
-  {#if isCalendarsVisible}
+  {#if is_calendars_visible}
     <div class="calendar-main">
-      <div class="dual-calendar-popup" class:single-calendar-mode={singleDateSelection}>
+      <div class="dual-calendar-popup" class:single-calendar-mode={is_single_date_selection}>
         <div class="calendar">
           <div class="calendar-header">
             <button onclick={prevStartMonth}>«</button>
-            <span>{startYear}年 {monthNames[startMonth]}</span>
+            <span>{start_year}年 {month_names[start_month]}</span>
             <button onclick={nextStartMonth}>»</button>
           </div>
           <div class="calendar-days">
             {#each ['日', '一', '二', '三', '四', '五', '六'] as day}
               <div class="calendar-day-header">{day}</div>
             {/each}
-            {#each startCalendar as dateObj}
+            {#each start_calendar as date_obj}
               <button
                 class="calendar-day"
-                class:selected={dateObj.day === internalStartDate?.getDate() &&
-                  dateObj.month === internalStartDate?.getMonth() &&
-                  dateObj.year === internalStartDate?.getFullYear()}
-                class:highlighted={isDateInRange(dateObj)}
-                class:non-current-month={dateObj.month !== startMonth}
-                onclick={() => selectStartDate(dateObj)}
+                class:selected={date_obj.day === internal_start_date?.getDate() &&
+                  date_obj.month === internal_start_date?.getMonth() &&
+                  date_obj.year === internal_start_date?.getFullYear()}
+                class:highlighted={isDateInRange(date_obj)}
+                class:non-current-month={date_obj.month !== start_month}
+                onclick={() => selectStartDate(date_obj)}
               >
-                <div class="init-circle">{dateObj.day}</div>
+                <div class="init-circle">{date_obj.day}</div>
               </button>
             {/each}
           </div>
         </div>
 
-        <!-- 选择具体时间 -->
-        {#if isTimeSelection}
+        {#if is_time_selection}
           <div class="time-select">
-            <div class="time-column" bind:this={startHourColumn}>
+            <div class="time-column" bind:this={start_hour_column}>
               {#each Array(24)
                 .fill()
                 .map((_, i) => i) as hour}
                 <button
-                  class:selected={hour === selectedStartHour}
+                  class:selected={hour === selected_start_hour}
                   onclick={() => updateStartTime('hour', hour)}
                   data-hour={hour}>{String(hour).padStart(2, '0')}</button
                 >
               {/each}
             </div>
-            <div class="time-column" bind:this={startMinuteColumn}>
+            <div class="time-column" bind:this={start_minute_column}>
               {#each Array(60)
                 .fill()
                 .map((_, i) => i) as minute}
                 <button
-                  class:selected={minute === selectedStartMinute}
+                  class:selected={minute === selected_start_minute}
                   onclick={() => updateStartTime('minute', minute)}
                   data-minute={minute}>{String(minute).padStart(2, '0')}</button
                 >
@@ -506,53 +504,52 @@
           </div>
         {/if}
 
-        {#if !singleDateSelection}
+        {#if !is_single_date_selection}
           <div class="calendar">
             <div class="calendar-header">
               <button onclick={prevEndMonth}>«</button>
-              <span>{endYear}年 {monthNames[endMonth]}</span>
+              <span>{end_year}年 {month_names[end_month]}</span>
               <button onclick={nextEndMonth}>»</button>
             </div>
             <div class="calendar-days">
               {#each ['日', '一', '二', '三', '四', '五', '六'] as day}
                 <div class="calendar-day-header">{day}</div>
               {/each}
-              {#each endCalendar as dateObj}
+              {#each end_calendar as date_obj}
                 <button
                   class="calendar-day"
-                  class:selected={dateObj.day === internalEndDate?.getDate() &&
-                    dateObj.month === internalEndDate?.getMonth() &&
-                    dateObj.year === internalEndDate?.getFullYear()}
-                  class:highlighted={isDateInRange(dateObj)}
-                  class:non-current-month={dateObj.month !== endMonth}
-                  onclick={() => selectEndDate(dateObj)}
+                  class:selected={date_obj.day === internal_end_date?.getDate() &&
+                    date_obj.month === internal_end_date?.getMonth() &&
+                    date_obj.year === internal_end_date?.getFullYear()}
+                  class:highlighted={isDateInRange(date_obj)}
+                  class:non-current-month={date_obj.month !== end_month}
+                  onclick={() => selectEndDate(date_obj)}
                 >
-                  <div class="init-circle">{dateObj.day}</div>
+                  <div class="init-circle">{date_obj.day}</div>
                 </button>
               {/each}
             </div>
           </div>
 
-          <!-- 选择具体时间 -->
-          {#if !singleDateSelection && isTimeSelection}
+          {#if !is_single_date_selection && is_time_selection}
             <div class="time-select">
-              <div class="time-column" bind:this={endHourColumn}>
+              <div class="time-column" bind:this={end_hour_column}>
                 {#each Array(24)
                   .fill()
                   .map((_, i) => i) as hour}
                   <button
-                    class:selected={hour === selectedEndHour}
+                    class:selected={hour === selected_end_hour}
                     onclick={() => updateEndTime('hour', hour)}
                     data-hour={hour}>{String(hour).padStart(2, '0')}</button
                   >
                 {/each}
               </div>
-              <div class="time-column" bind:this={endMinuteColumn}>
+              <div class="time-column" bind:this={end_minute_column}>
                 {#each Array(60)
                   .fill()
                   .map((_, i) => i) as minute}
                   <button
-                    class:selected={minute === selectedEndMinute}
+                    class:selected={minute === selected_end_minute}
                     onclick={() => updateEndTime('minute', minute)}
                     data-minute={minute}>{String(minute).padStart(2, '0')}</button
                   >
@@ -563,10 +560,9 @@
         {/if}
       </div>
 
-      <!-- 底部按钮 -->
       <div class="calendar-footer">
         <button class="clear-btn" onclick={() => reset()}>清除</button>
-        <button class="confirm-btn" onclick={() => (isCalendarsVisible = false)}>确定</button>
+        <button class="confirm-btn" onclick={() => (is_calendars_visible = false)}>确定</button>
       </div>
     </div>
   {/if}
@@ -590,6 +586,7 @@
       background-size: 20px;
       background-position: right 10px center;
       text-align: left;
+      cursor: pointer;
     }
 
     .calendar-main {
