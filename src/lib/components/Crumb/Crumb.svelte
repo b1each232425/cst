@@ -7,13 +7,10 @@
   import { baseNavItems } from '$lib/stores/modules/permission.js';
   import { json } from '@sveltejs/kit';
 
-  let { app_name, curr_url_path = $bindable(''), username, avatar_img, icons, event_handle_funcs } = $props();
-
-  let displayName = $state('');
-
-  let nav_map = $baseNavItems;
-
-  let current_nav_path_data = $state([]);
+  let { app_name, curr_url_path = $bindable(''), avatar_img, icons, event_handle_funcs } = $props();
+  let display_name = $state(''); // 用户名称
+  let nav_map = $baseNavItems; // 导航数据
+  let current_nav_path_data = $state([]); // 当前面包屑路径数据
 
   /**
    * 用户菜单是否打开
@@ -34,14 +31,114 @@
   let user_menu_element = $state(null);
 
   /**
-   * 导航历史记录
-   * @type {record<string, string>}}
+   * 获取用户正式名称
    */
-  let nav_history_set = {};
+  function getUserInfo() {
+    fetch('/api/user/me')
+      .then((response) => response.json())
+      .then(async (data) => {
+        if (!data?.data?.APIs) throw new Error('APIs 数据不存在');
 
-  onMount(async () => {
-    await getUserInfo();
-  });
+        display_name = data.data.OfficialName;
+      })
+      .catch((error) => {
+        console.error('获取用户权限失败:', error);
+        nav_map = []; // 失败时设为空数组
+      });
+  }
+
+  /**
+   * 获取当前路由路径数据（保持完整层级结构）
+   */
+  function getNavData(path, nav_map) {
+    let result = [];
+
+    for (let navData of nav_map) {
+      let path_reg = new RegExp(`^${navData.path}$`);
+
+      if (path_reg.test(path)) {
+        // 如果该项标记为isFilter，则跳过不加入结果
+        if (!navData.isFilter) {
+          result.push({
+            ...navData,
+            actual_path: path,
+          });
+        }
+        break;
+      }
+
+      if (navData.children == null) {
+        continue;
+      }
+
+      // 递归
+      let childNavData = getNavData(path, navData.children);
+
+      if (childNavData.length <= 0) {
+        continue;
+      }
+
+      // 如果当前项标记为isFilter，则不加入结果
+      if (!navData.isFilter) {
+        result.push({
+          ...navData,
+        });
+      }
+
+      result = result.concat(childNavData);
+    }
+
+    return result;
+  }
+
+  /**
+   * 获取cookie值
+   * @param {string} name - cookie名称
+   * @returns {string|null} cookie值
+   */
+  // function getCookie(name) {
+  //   const value = `; ${document.cookie}`;
+  //   const parts = value.split(`; ${name}=`);
+  //   if (parts.length === 2) return parts.pop().split(';').shift();
+  //   return null;
+  // }
+
+  /**
+   * 处理退出登录点击事件
+   */
+  async function handleLogout() {
+    // 清除 qNearSessions
+    document.cookie = 'qNearSessions=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+    // 跳转到登录页
+    goto('/login');
+  }
+
+  /**
+   * 导航跳转函数（处理isFilter的路径）
+   * @param {string} curr_path - 路由路径
+   * @param {string} first_path - 初始路径
+   */
+  // function navGoto(curr_path, first_path) {
+  //   // 查找第一个非isFilter的有效路径
+  //   const findValidPath = (path) => {
+  //     let target = current_nav_path_data.find((item) => item.path === path);
+
+  //     // 过滤isFilter为true的路径
+  //     if (target?.isFilter) {
+  //       if (target.children?.length > 0) {
+  //         return target.children.find((item) => !item.isFilter)?.path || first_path;
+  //       }
+  //       return first_path;
+  //     }
+  //     return path;
+  //   };
+
+  //   let history_path = nav_history_set[curr_path];
+  //   let target_path = findValidPath(history_path ?? curr_path);
+
+  //   goto(target_path);
+  // }
 
   $effect(() => {
     /**
@@ -81,122 +178,9 @@
     }
   });
 
-  /**
-   * 获取cookie值
-   * @param {string} name - cookie名称
-   * @returns {string|null} cookie值
-   */
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-  }
-
-  /**
-   * 获取用户正式名称
-   */
-  // 获取用户权限并生成 nav_map
-  function getUserInfo() {
-    fetch('/api/user/me')
-      .then((response) => response.json())
-      .then(async (data) => {
-        if (!data?.data?.APIs) throw new Error('APIs 数据不存在');
-
-        displayName = data.data.OfficialName;
-      })
-      .catch((error) => {
-        console.error('获取用户权限失败:', error);
-        nav_map = []; // 失败时设为空数组
-      });
-  }
-
-  /**
-   * 处理退出登录点击事件
-   */
-  async function handleLogout() {
-    // 清除 qNearSessions
-    document.cookie = 'qNearSessions=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-
-    // 跳转到登录页
-    goto('/login');
-  }
-
-  /**
-   * 获取当前路由路径数据（保持完整层级结构）
-   * @param {string} path - 路由路径
-   * @param {Array<NavMapData>} nav_map - 导航数据
-   * @returns {Array<NavMapData>} - 完整的当前路由路径数据
-   */
-  function getNavData(path, nav_map, parent = null) {
-    let result = [];
-
-    for (let navData of nav_map) {
-      // 添加parent引用以便后续处理
-      navData.parent = parent;
-
-      let path_reg = new RegExp(`^${navData.path}$`);
-
-      if (path_reg.test(path)) {
-        // 如果该项标记为isFilter，则跳过不加入结果
-        if (!navData.isFilter) {
-          result.push({
-            ...navData,
-            actual_path: path,
-          });
-        }
-        nav_history_set[navData.path] = path;
-        break;
-      }
-
-      if (navData.children == null) {
-        continue;
-      }
-
-      let childNavData = getNavData(path, navData.children, navData);
-
-      if (childNavData.length <= 0) {
-        continue;
-      }
-
-      // 如果当前项标记为isFilter，则不加入结果
-      if (!navData.isFilter) {
-        result.push({
-          ...navData,
-        });
-      }
-
-      result = result.concat(childNavData);
-    }
-
-    return result;
-  }
-
-  /**
-   * 导航跳转函数（处理isFilter的路径）
-   * @param {string} curr_path - 路由路径
-   * @param {string} first_path - 初始路径
-   */
-  function navGoto(curr_path, first_path) {
-    // 查找第一个非isFilter的有效路径
-    const findValidPath = (path) => {
-      let target = current_nav_path_data.find((item) => item.path === path);
-
-      // 如果是isFilter的项，找它的第一个有效子项
-      if (target?.isFilter) {
-        if (target.children?.length > 0) {
-          return target.children.find((item) => !item.isFilter)?.path || first_path;
-        }
-        return first_path;
-      }
-      return path;
-    };
-
-    let history_path = nav_history_set[curr_path];
-    let target_path = findValidPath(history_path ?? curr_path);
-
-    goto(target_path);
-  }
+  onMount(async () => {
+    await getUserInfo();
+  });
 </script>
 
 <div class="header-container">
@@ -205,18 +189,9 @@
       {#if !isFilter}
         <div class="breadcrumbs-item-container">
           {#if index < current_nav_path_data.length - 1}
-            {#if children_is_parallel}
-              <span class="breadcrumbs-item">{title}</span>
-            {:else}
-              <button
-                class="breadcrumbs-item"
-                class:active={true}
-                title={`跳转至${title}`}
-                onclick={() => navGoto(path, current_nav_path_data[0].path)}
-              >
-                {title}
-              </button>
-            {/if}
+            <button class="breadcrumbs-item" class:active={true} title={`跳转至${title}`} onclick={() => goto(path)}>
+              {title}
+            </button>
             <span class="breadcrumbs-separator">{'>'}</span>
           {:else}
             <span class="breadcrumbs-item">{title}</span>
@@ -227,7 +202,7 @@
   </div>
 
   <div class="user-container">
-    <span class="welcome-text">{`你好，${displayName}`}</span>
+    <span class="welcome-text">{`你好，${display_name}`}</span>
 
     <button
       class="avatar-btn"
@@ -296,7 +271,7 @@
     max-height: 52px;
     background-color: var(--bg-secondary);
     box-sizing: border-box;
-    padding: 2px 2px 2px 55px;
+    padding: 2px 2px 2px 30px;
     justify-content: flex-start;
     align-items: center;
 
