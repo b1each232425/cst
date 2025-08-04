@@ -214,10 +214,10 @@
   // ];
 
   // 日期选择器对象
-  let datePicker = null;
+  let date_picker = null;
 
   // 场次状态映射
-  const statusMap = new Map([
+  const status_map = new Map([
     ['02', '待开始'],
     ['04', '进行中'],
     ['06', '已结束'],
@@ -227,7 +227,7 @@
   ]);
 
   // 考生状态映射
-  const examineeStatusMap = new Map([
+  const examinee_status_map = new Map([
     ['00', '未交卷'],
     ['02', '缺考'],
     ['04', '补考'],
@@ -236,20 +236,20 @@
   ]);
 
   // 操作映射表
-  const actionMap = new Map([
+  const action_map = new Map([
     ['00', '进入考试'],
     ['02', '查看试卷'],
   ]);
 
-  const actionHandlers = {
+  const action_handlers = {
     '00': (examId) => gotoExamDetail(examId),
     '02': () => gotoExamResult(),
   };
 
   // 处理对应操作
   function handleAction(action, examId) {
-    if (action && actionMap.has(action)) {
-      const handler = actionHandlers[action];
+    if (action && action_map.has(action)) {
+      const handler = action_handlers[action];
       handler(examId);
     }
   }
@@ -262,7 +262,7 @@
 
   //TODO 当前阶段特判
   function statusText(status, score) {
-    if (status !== '10' || (status === '10' && score === -1)) return statusMap.get(status);
+    if (status !== '10' || (status === '10' && score === -1)) return status_map.get(status);
     return '已提交';
   }
 
@@ -272,18 +272,18 @@
   }
 
   // 考试列表
-  let examList = $state([]);
+  let exam_list = $state([]);
 
   // 总数据数
-  let totalCount = $state(0);
+  let total_count = $state(0);
 
   // 筛选条件
-  let examName = $state('');
-  let examStatus = $state('');
-  let startTime = $state(0);
-  let endTime = $state(0);
+  let exam_name = $state('');
+  let exam_status = $state('');
+  let start_time = $state(0);
+  let end_time = $state(0);
   let page = $state(1);
-  let pageSize = $state(10);
+  let page_size = $state(10);
 
   // 前往考试批改后的页面
   function gotoExamResult(id) {
@@ -291,8 +291,8 @@
   }
 
   // 前往考试详情页进行考试
-  function gotoExamDetail(examId) {
-    goto(`/student/answer/exam-detail?exam-id=${examId}`);
+  function gotoExamDetail(exam_id) {
+    goto(`/student/answer/exam-detail?exam-id=${exam_id}`);
   }
 
   // 获取考试列表
@@ -304,23 +304,23 @@
       })
       .then((res) => {
         if (!res.status) {
-          examList = res.data ?? [];
-          totalCount = res.rowCount ?? 0;
+          exam_list = res.data ?? [];
+          total_count = res.rowCount ?? 0;
 
           // 计算每个考试的 action，用于判断在表格中的操作类型
-          examList.forEach((exam) => {
+          exam_list.forEach((exam) => {
             // 如果某个 session 是 “已结束” 或 “批改中”，这类 session 本身不能做任何操作
             // 但只要存在一个可以进入考试的 session（状态 02 或 04），整个 exam 还是可以“进入考试”
             const sessions = Array.isArray(exam.exam_sessions) ? exam.exam_sessions : [];
 
-            const hasEnterable = sessions.some((s) => s.status === '02' || s.status === '04');
-            const allSessionsNoOp = sessions.every(
+            const has_enterable = sessions.some((s) => s.status === '02' || s.status === '04');
+            const all_sessions_no_op = sessions.every(
               (s) => s.status === '06' || s.status === '08' || (s.status === '10' && s.student_score === -1), // TODO 当前阶段使用分数是否为-1作为标准
             );
 
-            if (allSessionsNoOp)
+            if (all_sessions_no_op)
               exam.action = null; // 全部都是不可操作的（比如都已结束/批改中），清空 action
-            else if (hasEnterable)
+            else if (has_enterable)
               exam.action = '00'; // 进入考试 // 存在一个可以进入的场次
             else exam.action = '02'; // 查看试卷 // 没有可进入的，但不是全部不可操作（可能是已提交/已批改之类）
           });
@@ -333,12 +333,12 @@
 
   // 重置
   function handleReset() {
-    examName = '';
-    examStatus = '';
-    if (datePicker) {
-      datePicker.reset();
-      startTime = 0;
-      endTime = 0;
+    exam_name = '';
+    exam_status = '';
+    if (date_picker) {
+      date_picker.reset();
+      start_time = 0;
+      end_time = 0;
     }
   }
 
@@ -347,13 +347,13 @@
     const q = JSON.stringify({
       orderBy: [{ Duration: 'DESC', Time: 'DESC' }],
       filter: {
-        Name: examName,
-        Status: examStatus,
-        StartTime: startTime,
-        EndTime: endTime,
+        Name: exam_name,
+        Status: exam_status,
+        StartTime: start_time,
+        EndTime: end_time,
       },
       page,
-      pageSize,
+      pageSize: page_size,
     });
 
     getExamList(q);
@@ -361,14 +361,14 @@
 
   // 处理开始时间
   function handleStartDateSelected(event) {
-    const startDate = event.detail.date;
-    startTime = new Date(startDate).getTime();
+    const start_date = event.detail.date;
+    start_time = new Date(start_date).getTime();
   }
 
   // 处理结束时间
   function handleEndDateSelected(event) {
-    const endDate = event.detail.date;
-    endTime = new Date(endDate).getTime();
+    const end_date = event.detail.date;
+    end_time = new Date(end_date).getTime();
   }
 
   // 处理页号改变
@@ -379,38 +379,38 @@
 
   // 处理页大小改变
   function handlePageSizeChange(event) {
-    pageSize = event.detail;
+    page_size = event.detail;
   }
 
   onMount(() => handleSearch());
 </script>
 
 <svelte:head>
-  <title>3min • 考试列表</title>
+  <title>考试列表 • 3min</title>
 </svelte:head>
 
 <div class="exam-body">
   <div class="options">
     <div class="input">
       <div class="label">考试名称：</div>
-      <InputBox placeholder="请输入信息" bind:value={examName} type="text" showLabel={false} />
+      <InputBox placeholder="请输入信息" bind:value={exam_name} type="text" showLabel={false} />
     </div>
     <div class="datePicker" data-testid="datePicker">
       <div class="label">考试时间：</div>
       <DatePicker
-        inputWidth={'21rem'}
-        bind:this={datePicker}
-        singleDateSelection={false}
-        isTimeSelection={true}
-        on:startDateSelected={handleStartDateSelected}
-        on:endDateSelected={handleEndDateSelected}
+        input_width={'21rem'}
+        bind:this={date_picker}
+        is_single_date_selection={false}
+        is_time_selection={true}
+        on:start_date_selected={handleStartDateSelected}
+        on:end_date_selected={handleEndDateSelected}
       />
     </div>
     <div class="select" data-testid="exam-status-select">
       <div class="label">考试状态：</div>
-      <Select bind:value={examStatus}>
+      <Select bind:value={exam_status}>
         <Option value="" label="全部" />
-        {#each statusMap as [key, val], index (index)}
+        {#each status_map as [key, val], index (index)}
           {#if index < 3}
             <Option value={key} label={val} />
           {/if}
@@ -437,7 +437,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each examList as exam (exam.id)}
+        {#each exam_list as exam (exam.id)}
           <tr>
             <td>{exam.name}</td>
             <td
@@ -465,7 +465,7 @@
                     class:marking={status === '08'}
                     class:marked={status === '10'}
                     class:submitted={status === '12'}
-                    class:unknown={!statusMap.has(status)}>{statusText(status, student_score) ?? '未知状态'}</span
+                    class:unknown={!status_map.has(status)}>{statusText(status, student_score) ?? '未知状态'}</span
                   >
                 {/each}
               </div></td
@@ -475,9 +475,9 @@
                 {#each exam.exam_sessions as { examinee_status }, index (index)}
                   <span
                     class:unSubmitted={examinee_status === '00'}
-                    class:unknown={!examineeStatusMap.has(examinee_status) ||
+                    class:unknown={!examinee_status_map.has(examinee_status) ||
                       (examinee_status !== '00' && examinee_status !== '10')}
-                    >{examineeStatusMap.get(examinee_status) ?? '未知状态'}</span
+                    >{examinee_status_map.get(examinee_status) ?? '未知状态'}</span
                   >
                 {/each}
               </div></td
@@ -522,17 +522,17 @@
             <td>
               <button
                 class="option"
-                class:can-click={exam.action && actionMap.has(exam.action) && exam.action !== '02'}
+                class:can-click={exam.action && action_map.has(exam.action) && exam.action !== '02'}
                 onclick={() => handleAction(exam.action, exam.id)}
               >
-                {actionMap.has(exam.action) && exam.action !== '02' ? actionMap.get(exam.action) : '--'}</button
+                {action_map.has(exam.action) && exam.action !== '02' ? action_map.get(exam.action) : '--'}</button
               >
             </td>
           </tr>
         {/each}
       </tbody>
     </table>
-    {#if examList.length === 0}
+    {#if exam_list.length === 0}
       <div class="empty">
         <Empty text="暂无考试数据" />
       </div>
@@ -541,7 +541,7 @@
 </div>
 
 <div class="pagination">
-  <Pagination totalItems={totalCount} on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} />
+  <Pagination totalItems={total_count} on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} />
 </div>
 
 <style lang="scss">
