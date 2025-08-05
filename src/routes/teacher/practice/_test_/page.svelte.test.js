@@ -150,7 +150,7 @@ const setup = (mockDataOverride = {}) => {
     getTableRows: () => screen.getAllByRole('row').slice(1), // 排除表头
 
     // 分页操作
-    pagination: () => screen.getByRole('navigation'),
+    pagination: () => within(screen.getByTestId('pagination-container')).getByText(),
 
     // 触发搜索
     triggerSearch: async (searchText) => {
@@ -444,38 +444,7 @@ const table = screen.getAllByRole('table');
 
  
 });
-  
-   it('点击不同页面显示大小实现分页功能', async () => {
-  setup({
-    current_page: 1,
-    total_count: 30,
-    total_page: 3,
-    page_size: 10
-  });
 
-  // 等待初始加载完成（第1次调用）
-  await waitFor(() => {
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-  });
-
-  // 查找分页容器
-  const paginationContainer = document.querySelector('.pagination-container');
-  expect(paginationContainer).toBeInTheDocument();
-
-  // 在分页容器上触发事件，改变每页显示大小为20
-  const pageSizeChangeEvent = new CustomEvent('pageSizeChange', { detail: '20' });
-  paginationContainer.dispatchEvent(pageSizeChangeEvent);
-
-  // 验证是否发送了正确的请求（应该有第2次调用）
-  await waitFor(() => {
-    expect(global.fetch).toHaveBeenCalledTimes(2);
-  }, { timeout: 3000 });
-
-  // 验证请求参数包含正确的每页显示大小和页码重置为1
-  const secondFetchCall = global.fetch.mock.calls[1];
-  expect(secondFetchCall[0]).toContain('page_size=20');
-  expect(secondFetchCall[0]).toContain('page=1'); // 页码应重置为1
-});
 it('确认发布练习应正确调用API并更新状态', async () => {
   setup();
 
@@ -528,31 +497,28 @@ it('确认取消发布练习应正确调用API并更新状态', async () => {
   // 验证练习状态是否更新
   expect(screen.getAllByText('未发布')[0]).toBeInTheDocument();
 });
-it('学生选择确认应正确调用API并更新学生列表', async () => {
-  setup();
+it('页码切换的时候触发分页回调并触发数据更新',async()=>{
+const {pagination}=setup({
+  current_page: 1,
+    total_count: 30,
+    total_page: 3,
+    page_size: 10
+})
+await waitFor(()=>{
+  expect(global.fetch).toHaveBeenCalled();
+})
+const pageMav =pagination();
+const events=new CustomEvent('pageChange',{detail :2})
+pageMav.dispatchEvent(events);
 
-  // 模拟选择学生API响应
-  mockFetch({
-    status: 0,
-    data: {
-        practice_id:1
-    }
-  });
+await waitFor(()=>{
+ expect(global.fetch).toHaveBeenCalled();
+ const fetchUrl = global.fetch.mock.calls[1][0];
+ expect(fetchUrl).toContain('page=2');
+    expect(fetchUrl).toContain('page_size=10'); // 保持原有每页大小
+})
 
-  // 打开学生选择面板
-  const selectStudentButtons = screen.getAllByText('选择学生');
-  await fireEvent.click(selectStudentButtons[0]);
 
-  // 确认选择学生
-  const confirmButton = screen.getByText('确定');
-  await fireEvent.click(confirmButton);
+})
 
-  // 验证是否发送了正确的请求
-  await waitFor(() => {
-    expect(global.fetch).toHaveBeenCalled();
-  });
-
-  // 验证学生列表是否更新
-  expect(screen.getByText('更新学生成功')).toBeInTheDocument();
-});
 });

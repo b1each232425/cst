@@ -286,39 +286,39 @@
   // ];
 
   // 练习类型映射表
-  const typeMap = new Map([
+  const type_map = new Map([
     ['00', '经典巩固'],
     ['02', '常练常新'],
     ['04', '智能提升'],
   ]);
 
   // 难度映射表
-  const difficultyMap = new Map([
+  const difficulty_map = new Map([
     ['00', '简单'],
     ['02', '中等'],
     ['04', '困难'],
   ]);
 
   // 据此判断显示哪一个表格
-  let currentPracticeTypeTab = $state('00');
+  let current_practice_type_tab = $state('00');
 
   // 总数据数
-  let totalCount = $state(0);
+  let total_count = $state(0);
 
   // 筛选条件
-  let practiceInfo = $state('');
-  let practiceDifficulty = $state('');
+  let practice_info = $state('');
+  let practice_difficulty = $state('');
   let page = $state(1);
-  let pageSize = $state(10);
+  let page_size = $state(10);
 
   // TODO: 前往练习批改结果页面
-  function gotoPracticeResult(practiceId) {
+  function gotoPracticeResult(practice_id) {
     // goto('');
   }
 
   // 前往练习详情页进行作答
-  function gotoPracticeDetail(practiceId) {
-    goto(`/student/answer/practice?practice-id=${practiceId}`);
+  function gotoPracticeDetail(practice_id) {
+    goto(`/student/answer/practice?practice-id=${practice_id}`);
   }
 
   // 判断练习的操作
@@ -345,7 +345,7 @@
   }
 
   // 操作映射表
-  const actionMap = new Map([
+  const action_map = new Map([
     ['00', ['进入练习']],
     ['02', ['重新作答', '查看上次作答']],
     ['04', ['继续作答', '查看上次作答']],
@@ -354,7 +354,7 @@
     ['10', ['继续作答']],
   ]);
 
-  const actionHandlers = {
+  const action_handlers = {
     '00': (index, id) => gotoPracticeDetail(id),
     '02': (index, id) => (index === 0 ? gotoPracticeDetail(id) : gotoPracticeResult(id)),
     '04': (index, id) => (index === 0 ? gotoPracticeDetail(id) : gotoPracticeResult(id)),
@@ -365,8 +365,8 @@
 
   // 处理对应操作
   function handleAction(action, index, practiceID) {
-    if (action && actionMap.has(action)) {
-      const handler = actionHandlers[action];
+    if (action && action_map.has(action)) {
+      const handler = action_handlers[action];
       handler(index, practiceID);
     }
   }
@@ -377,8 +377,8 @@
   }
 
   // 练习列表
-  let practiceList = $state([]);
-  let currentPracticeList = $derived(practiceList.filter((p) => p.Type === currentPracticeTypeTab));
+  let practice_list = $state([]);
+  let current_practice_list = $derived(practice_list.filter((p) => p.Type === current_practice_type_tab));
 
   // 获取练习列表
   function getPracticeList(q) {
@@ -391,11 +391,11 @@
       })
       .then((res) => {
         if (!res.status) {
-          practiceList = res.data?.practices ?? [];
-          totalCount = res.data?.total ?? 0;
+          practice_list = res.data?.practices ?? [];
+          total_count = res.data?.total ?? 0;
 
           // 计算每个练习 action
-          if (Array.isArray(practiceList)) practiceList.forEach((p) => (p.Action = getPracticeAction(p)));
+          if (Array.isArray(practice_list)) practice_list.forEach((p) => (p.Action = getPracticeAction(p)));
         } else throw new Error(res.msg ?? '获取练习列表失败');
       })
       .catch((err) => {
@@ -404,18 +404,18 @@
   }
 
   function handleReset() {
-    practiceInfo = '';
-    practiceDifficulty = '';
+    practice_info = '';
+    practice_difficulty = '';
   }
 
   // 搜索
   function handleSearch() {
     const q = {
-      name: practiceInfo,
-      difficulty: practiceDifficulty,
+      name: practice_info,
+      difficulty: practice_difficulty,
       page,
-      pageSize,
-      type: currentPracticeTypeTab,
+      pageSize: page_size,
+      type: current_practice_type_tab,
     };
 
     getPracticeList(q);
@@ -423,7 +423,7 @@
 
   // 处理练习种类的切换
   function handlePracticeTypeChange(key) {
-    currentPracticeTypeTab = key;
+    current_practice_type_tab = key;
     // handleSearch(); TODO
   }
 
@@ -435,14 +435,14 @@
 
   // 处理页大小改变
   function handlePageSizeChange(event) {
-    pageSize = event.detail;
+    page_size = event.detail;
   }
 
   onMount(() => handleSearch());
 </script>
 
 <svelte:head>
-  <title>3min • 练习列表</title>
+  <title>练习列表 • 3min</title>
 </svelte:head>
 
 {#snippet tip()}
@@ -453,13 +453,13 @@
   <div class="options">
     <div class="input">
       <div class="label">搜索练习：</div>
-      <InputBox placeholder="练习名称 / 知识点" bind:value={practiceInfo} type="text" showLabel={false} />
+      <InputBox placeholder="练习名称 / 知识点" bind:value={practice_info} type="text" showLabel={false} />
     </div>
     <div class="select" data-testid="difficult-select">
       <div class="label">练习难度：</div>
-      <Select bind:value={practiceDifficulty}>
+      <Select bind:value={practice_difficulty}>
         <Option value="" label="全部" />
-        {#each difficultyMap as [key, val], index (index)}
+        {#each difficulty_map as [key, val], index (index)}
           <Option value={key} label={val} />
         {/each}
       </Select>
@@ -470,8 +470,8 @@
 
   <div class="practice-show">
     <div class="practice-category">
-      {#each typeMap as [key, val], index (index)}
-        <button onclick={() => handlePracticeTypeChange(key)} class:selected={currentPracticeTypeTab === key}
+      {#each type_map as [key, val], index (index)}
+        <button onclick={() => handlePracticeTypeChange(key)} class:selected={current_practice_type_tab === key}
           >{val}{@render tip()}</button
         >
       {/each}
@@ -485,13 +485,13 @@
             <th>作答次数</th>
             <th>练习难度</th>
             <th>可作答次数</th>
-            {#if currentPracticeTypeTab === '00'}
+            {#if current_practice_type_tab === '00'}
               <th>试卷题数</th>
               <th>错题数</th>
               <th>得分</th>
               <th>最高得分</th>
               <th>试卷总分</th>
-            {:else if currentPracticeTypeTab === '02'}
+            {:else if current_practice_type_tab === '02'}
               <th>正确率</th>
               <th>时长</th>
               <th>得分</th>
@@ -505,7 +505,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each currentPracticeList as practice (practice.ID)}
+          {#each current_practice_list as practice (practice.ID)}
             <tr>
               <td>{practice.Name}</td>
               <td>{practice.AttemptCount}</td>
@@ -514,11 +514,11 @@
                 class:easy={practice.Difficulty === '00'}
                 class:medium={practice.Difficulty === '02'}
                 class:hard={practice.Difficulty === '04'}
-                class:unknown={!difficultyMap.has(practice.Difficulty)}
-                >{difficultyMap.get(practice.Difficulty) ?? '未知'}</td
+                class:unknown={!difficulty_map.has(practice.Difficulty)}
+                >{difficulty_map.get(practice.Difficulty) ?? '未知'}</td
               >
               <td>{practice.AllowedAttempts === 0 ? '不限次数' : practice.AllowedAttempts}</td>
-              {#if currentPracticeTypeTab === '00'}
+              {#if current_practice_type_tab === '00'}
                 <td>{practice.QuestionCount}</td>
                 <td>{hasLastRecord(practice.Action) ? practice.WrongCount : '--'}</td>
                 <td>{hasLastRecord(practice.Action) ? practice.TotalScore : '--'}</td>
@@ -533,7 +533,7 @@
                     : '--'}</td
                 >
                 <td>{practice.PaperTotalScore}</td>
-              {:else if currentPracticeTypeTab === '02'}
+              {:else if current_practice_type_tab === '02'}
                 <td> </td>
                 <td> </td>
                 <td> </td>
@@ -544,12 +544,12 @@
                 <td> </td>
               {/if}
               <td
-                >{#each actionMap.get(practice.Action) as action, index (index)}
+                >{#each action_map.get(practice.Action) as action, index (index)}
                   <!-- TODO 当前阶段未实现 -->
                   {#if action !== '查看上次作答'}
                     <button
                       class="option"
-                      class:can-click={practice.Action && actionMap.has(practice.Action) && practice.Action !== '06'}
+                      class:can-click={practice.Action && action_map.has(practice.Action) && practice.Action !== '06'}
                       onclick={() => handleAction(practice.Action, index, practice.ID)}>{action}</button
                     >
                   {/if}
@@ -559,7 +559,7 @@
           {/each}
         </tbody>
       </table>
-      {#if currentPracticeList.length === 0}
+      {#if current_practice_list.length === 0}
         <div class="empty">
           <Empty text="暂无练习数据" />
         </div>
@@ -569,7 +569,7 @@
 </div>
 
 <div class="pagination">
-  <Pagination totalItems={totalCount} on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} />
+  <Pagination totalItems={total_count} on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} />
 </div>
 
 <style lang="scss">

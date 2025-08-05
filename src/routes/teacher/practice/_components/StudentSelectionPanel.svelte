@@ -7,7 +7,6 @@
 <script>
   import Pagination from '$lib/components/Pagination/Pagination.svelte'; //分页器
   import InputBox from '$lib/components/Input/InputBox.svelte'; //搜索框
-  import StudentImportPanel from './StudentImportPanel.svelte';
   import Button from '$lib/components/Button/Button.svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
   import Empty from '$lib/components/Table/Empty.svelte';
@@ -530,9 +529,9 @@
               已选 <span style="color: #00A870; margin:0 5px 0 5px;">{filtered_selected_ids.length}</span> 条
             </span>
             <Pagination
-              totalItems={filtered_selected_ids.length}
-              pageSize={selected_search_params.pageSize}
-              currentPage={selected_search_params.page}
+              total_items={filtered_selected_ids.length}
+              page_size={selected_search_params.pageSize}
+              current_page={selected_search_params.page}
               on:pageChange={onSelectedPageChooseFunc}
               on:pageSizeChange={handle_page_size_change}
               
@@ -639,9 +638,9 @@
             已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_ids.length}</span> 条
           </span>
           <Pagination
-            totalItems={totals}
-            pageSize={search_params.pageSize}
-            currentPage={search_params.page}
+            total_items={totals}
+            page_size={search_params.pageSize}
+            current_page={search_params.page}
             on:pageChange={onPageChooseFunc}
             on:pageSizeChange={handle_page_size_change}
           ></Pagination>
@@ -671,38 +670,6 @@
     </div>
   </div>
 </div>
-
-<StudentImportPanel
-  onImport={(/** @type {any[]} */ success_student, /** @type {boolean} */ has_error) => {
-    if (success_student && success_student.length > 0) {
-      // 过滤掉已存在的id
-      const newStudents = success_student
-        .filter((/** @type {any} */ student) => !selected_ids.some((item) => item.id === student))
-        .map((/** @type {any} */ student, /** @type {number} */ index) => ({
-          id: student,
-          serial_number: selected_ids.length + index + 1,
-        }));
-
-      // 更新selected_ids
-      selected_ids = [...selected_ids, ...newStudents];
-
-      searchExaminee();
-
-      // 检查是否需要重新计算序号
-      recalculateSerialNumbers();
-    }
-
-    if (!has_error) {
-      show_student_import_panel = false;
-    }
-  }}
-  onCancel={() => {
-    show_student_import_panel = false;
-  }}
-  bind:show={show_student_import_panel}
-  bind:this={student_import_panel}
-/>
-
 <style lang="scss" scoped>
   .hide {
     display: none;
