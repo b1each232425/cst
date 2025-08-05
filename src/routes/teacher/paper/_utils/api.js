@@ -6,15 +6,15 @@ export function fetchPaperList(
     paperPageSize = 10, 
     paperCategory = ""
 ){
-    const params = new URLSearchParams();
+    const PARAMS = new URLSearchParams();
 
-    if (paperName) params.append("name", paperName);
-    if (paperTags) params.append("tags", paperTags);
-    params.append("page", paperPage);
-    params.append("pageSize", paperPageSize);
-    if (paperCategory) params.append("category", paperCategory);
+    if (paperName) PARAMS.append("name", paperName);
+    if (paperTags) PARAMS.append("tags", paperTags);
+    PARAMS.append("page", paperPage);
+    PARAMS.append("pageSize", paperPageSize);
+    if (paperCategory) PARAMS.append("category", paperCategory);
 
-    return fetch(`/api/paper?${params.toString()}`, {
+    return fetch(`/api/paper?${PARAMS.toString()}`, {
         method: "GET",
         credentials: "include"
     })
@@ -40,14 +40,14 @@ export function fetchQuestionBankList(
     bankPageSize = "",
     bankBankID = ""
 ){
-    const params = new URLSearchParams();
+    const PARAMS = new URLSearchParams();
 
-    if (bankKeyWord) params.append("keyword", bankKeyWord);
-    if (bankPage) params.append("page", bankPage);
-    if (bankPageSize) params.append("pageSize", bankPageSize);
-    if (bankBankID) params.append("bankID", bankBankID);
+    if (bankKeyWord) PARAMS.append("keyword", bankKeyWord);
+    if (bankPage) PARAMS.append("page", bankPage);
+    if (bankPageSize) PARAMS.append("pageSize", bankPageSize);
+    if (bankBankID) PARAMS.append("bankID", bankBankID);
 
-    return fetch(`/api/question-banks?${params.toString()}`, {
+    return fetch(`/api/question-banks?${PARAMS.toString()}`, {
         method: "GET",
         credentials: "include"
     })
@@ -76,17 +76,17 @@ export function fetchBankQuestionList(
     type = "",
     diffculty = ""
 ){
-    const params = new URLSearchParams();
+    const PARAMS = new URLSearchParams();
 
-    params.append("bankID", bankID);
-    params.append("page", page);
-    params.append("pageSize", pageSize);
-    if (name) params.append("name", name);
-    if (tags) params.append("tags", tags);
-    if (type) params.append("type", type);
-    if (diffculty) params.append("diffculty", diffculty);
+    PARAMS.append("bankID", bankID);
+    PARAMS.append("page", page);
+    PARAMS.append("pageSize", pageSize);
+    if (name) PARAMS.append("name", name);
+    if (tags) PARAMS.append("tags", tags);
+    if (type) PARAMS.append("type", type);
+    if (diffculty) PARAMS.append("diffculty", diffculty);
 
-    return fetch(`/api/questions?${params.toString()}`, {
+    return fetch(`/api/questions?${PARAMS.toString()}`, {
         method: "GET",
         credentials: "include"
     })
@@ -108,14 +108,14 @@ export function fetchBankQuestionList(
 // 自定义组卷
 export function createEmptyPaper() {
 
-    const headers = {
+    const HEADERS = {
         "Content-Type": "application/json"
     };
 
     // 发起 POST 请求
     return fetch(`/api/paper/manual`, {
         method: "POST",
-        headers: headers,
+        headers: HEADERS,
         credentials: "include"
     })
         .then(response => {
@@ -137,11 +137,11 @@ export function createEmptyPaper() {
 export function fetchPaper(
     paperID = 0
 ){
-    const params = new URLSearchParams();
+    const PARAMS = new URLSearchParams();
 
-    params.append("paper_id", paperID);
+    PARAMS.append("paper_id", paperID);
 
-    return fetch(`/api/paper/manual?${params.toString()}`, {
+    return fetch(`/api/paper/manual?${PARAMS.toString()}`, {
         method: "GET",
         credentials: "include"
     })
@@ -165,25 +165,25 @@ export function savePaper(
     paperID = 0,
     actionsArr = []
 ){
-    const params = new URLSearchParams();
+    const PARAMS = new URLSearchParams();
 
-    params.append("paper_id", paperID);
+    PARAMS.append("paper_id", paperID);
 
-    const data = {
+    const DATA = {
         data: {
             actions: actionsArr
         }
     };
 
-    const headers = {
+    const HEADERS = {
         "Content-Type": "application/json"
     };
 
-    return fetch(`/api/paper/manual?${params.toString()}`, {
-        headers: headers,
+    return fetch(`/api/paper/manual?${PARAMS.toString()}`, {
+        headers: HEADERS,
         method: "PUT",
         credentials: "include",
-        body: JSON.stringify(data)
+        body: JSON.stringify(DATA)
     })
         .then(response => {
             if (!response.ok) {
@@ -205,19 +205,19 @@ export function deletePaper(
     toDeletePapers = []
 ){
 
-    const data = {
+    const DATA = {
         data: toDeletePapers
     };
 
-    const headers = {
+    const HEADERS = {
         "Content-Type": "application/json"
     };
 
     return fetch(`/api/paper`, {
-        headers: headers,
+        headers: HEADERS,
         method: "DELETE",
         credentials: "include",
-        body: JSON.stringify(data)
+        body: JSON.stringify(DATA)
     })
         .then(response => {
             if (!response.ok) {

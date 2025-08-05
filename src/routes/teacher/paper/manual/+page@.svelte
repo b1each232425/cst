@@ -43,7 +43,7 @@
 
     // 防抖更新试卷信息
     const debounceUpDatePaperInfo = debounce(() => {
-        const actions = [
+        const ACTIONS = [
             {
                 action: "update_info",
                 payload: {
@@ -57,7 +57,7 @@
             }
         ];
 
-        savePaper(paperID, actions);
+        savePaper(paperID, ACTIONS);
     }, 500, false);
 
     $effect(() => {
@@ -131,7 +131,7 @@
                 let groupIDs = paper_groups.map(group => group.id);
                 groupIDs = groupIDs.filter(id => id !== groupID)
 
-                const actions = [
+                const ACTIONS = [
                     {
                         action: "delete_group",
                         payload: groupID
@@ -142,7 +142,7 @@
                     }
                 ];
 
-                savePaper(paperID, actions)
+                savePaper(paperID, ACTIONS)
                     .then(() => {
                         fetchPaper(paperID)
                         .then(result => {
@@ -176,7 +176,7 @@
 
             to_add_group.blur();
 
-            const actions = [
+            const ACTIONS = [
                 {
                     action: "add_group",
                     payload: {
@@ -186,7 +186,7 @@
                 }
             ];
             
-            savePaper(paperID, actions)
+            savePaper(paperID, ACTIONS)
                 .then(result => {
                     fetchPaper(paperID)
                         .then(result => {
@@ -217,7 +217,7 @@
 
             to_edit_group.blur();
 
-            const actions = [
+            const ACTIONS = [
                 {
                     action: "update_group",
                     payload: {
@@ -227,7 +227,7 @@
                 }
             ];
             
-            savePaper(paperID, actions)
+            savePaper(paperID, ACTIONS)
                 .then(() => {
                     fetchPaper(paperID)
                         .then(result => {
@@ -256,11 +256,11 @@
 
             onConfirm: () => {
                 // 删除后重新排序
-                const groupQuestions = group.questions;
-                let questionIDs = groupQuestions.map(question => question.id);
+                const GROUP_QUESTIONS = group.questions;
+                let questionIDs = GROUP_QUESTIONS.map(question => question.id);
                 questionIDs = questionIDs.filter(id => id !== questionID)
 
-                const actions = [
+                const ACTIONS = [
                     {
                         action: "delete_question",
                         payload: [questionID]
@@ -271,7 +271,7 @@
                     }
                 ];
 
-                savePaper(paperID, actions)
+                savePaper(paperID, ACTIONS)
                     .then(() => {
                         fetchPaper(paperID)
                             .then(result => {

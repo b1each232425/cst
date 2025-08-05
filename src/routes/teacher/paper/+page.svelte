@@ -16,15 +16,15 @@
     import { toast } from "$lib/components/Toast/Toast";
     import Empty from "$lib/components/Table/Empty.svelte";
     
-    let paper_name = $state("");              // 试卷名称
-    let paper_tags = $state("");              // 试卷标签
-    let paper_category = $state("");          // 试卷用途
-    let total_papers = $state(0);             // 试卷总数
+    let paper_name = $state("");               // 试卷名称
+    let paper_tags = $state("");               // 试卷标签
+    let paper_category = $state("");           // 试卷用途
+    let total_papers = $state(0);              // 试卷总数
     let paper_page_size = $state(10);          // 每页条数
-    let paper_page = $state(1);               // 当前页
-    let paper_page_size_options = [10, 20]      // 每页条数选择项
-    let paper_list = $state([]);              // 试卷列表
-    let selected_paperIDs = $state([]);       // 已选 ID 数组
+    let paper_page = $state(1);                // 当前页
+    let paper_page_size_options = [10, 20]     // 每页条数选择项
+    let paper_list = $state([]);               // 试卷列表
+    let selected_paperIDs = $state([]);        // 已选 ID 数组
     let all_paper_selected = $state(false);    // 是否为全选状态
     let is_first_entry = $state(true);         // 是否首次进入页面
 
@@ -48,13 +48,13 @@
 
     // 全选
     function selectedAll(checked) {
-        const currentPageIDs = paper_list.map(item => item.ID);
+        const CURRENT_PAGE_IDS = paper_list.map(item => item.ID);
         if(checked) {
-            const currentPageIDs = paper_list.map(item => item.ID);
-            const notYetSelected = currentPageIDs.filter(ID => !selected_paperIDs.includes(ID));
-            selected_paperIDs = [...selected_paperIDs, ...notYetSelected];
+            const CURRENT_PAGE_IDS = paper_list.map(item => item.ID);
+            const NOT_YET_SELECTED = CURRENT_PAGE_IDS.filter(ID => !selected_paperIDs.includes(ID));
+            selected_paperIDs = [...selected_paperIDs, ...NOT_YET_SELECTED];
         } else {
-            selected_paperIDs = selected_paperIDs.filter(ID => !currentPageIDs.includes(ID));
+            selected_paperIDs = selected_paperIDs.filter(ID => !CURRENT_PAGE_IDS.includes(ID));
         }
     }
 
@@ -103,6 +103,8 @@
             debouncedFetchPaperList();
         }
     });
+
+    // 本质：先调用effect，再调用onMount
 
     // 挂载区
     onMount(() => {
@@ -176,8 +178,6 @@
     }
 
 </script>
-
-<!-- <button onclick={console.log(paperList)}>点我</button> -->
 
 <div class="paper-management">
     <!-- 标题区域 -->
