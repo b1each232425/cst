@@ -24,10 +24,10 @@ function ensureContainer() {
  * @param {boolean} [options.show_title=false] - 是否显示标题栏
  * @param {boolean} [options.show_cancel=true] - 是否显示取消按钮
  * @param {string} [options.title=''] - 标题内容文本
- * @param {Function} [options.Confirm] - 点击“确认”按钮后的回调
- * @param {Function} [options.Cancel] - 点击“取消”按钮后的回调
- * @param {string} [options.Confirm_text='确定'] - “确认”按钮文本
- * @param {string} [options.Cancel_text='取消'] - “取消”按钮文本
+ * @param {Function} [options.onConfirm] - 点击“确认”按钮后的回调
+ * @param {Function} [options.onCancel] - 点击“取消”按钮后的回调
+ * @param {string} [options.confirm_text='确定'] - “确认”按钮文本
+ * @param {string} [options.cancel_text='取消'] - “取消”按钮文本
  *
  * @example use指令
  * <button use:tooltip={{ content: '提示内容', placement: 'top' }}>点击</button>

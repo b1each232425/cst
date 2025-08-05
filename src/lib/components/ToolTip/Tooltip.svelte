@@ -13,14 +13,14 @@
    * @property {Boolean} [show_title=false]   - 使用标题
    * @property {Boolean} [show_cancel=true]   - 显示取消按钮
    * @property {Boolean} [title='']   - 标题内容
-   * @property {Function} Confirm   - 确认按钮回调函数
-   * @property {Function} Cancel   - 取消按钮回调函数
-   * @property {String} [Confirm_text='确认']  - 确认按钮文本
-   * @property {String} [Cancel_text='取消']  - 取消按钮文本
+   * @property {Function} onConfirm   - 确认按钮回调函数
+   * @property {Function} onCancel   - 取消按钮回调函数
+   * @property {String} [confirm_text='确认']  - 确认按钮文本
+   * @property {String} [cancel_text='取消']  - 取消按钮文本
    */
   import { tick, onMount } from 'svelte';
 
-  let { target, placement = 'bottom', content, color = '#ffffff', hide_method = 'hover', show_actions = false, show_cancel = true, show_title = false, title, Confirm = () => {}, Cancel = () => {}, Confirm_text = '确认', Cancel_text = '取消' } = $props();
+  let { target, placement = 'bottom', content, color = '#ffffff', hide_method = 'hover', show_actions = false, show_cancel = true, show_title = false, title, onConfirm = () => {}, onCancel = () => {}, confirm_text = '确认', cancel_text = '取消' } = $props();
 
   // 状态数据
   let hideTimer;
@@ -152,17 +152,17 @@
           <button
             class="Cancel"
             onclick={async () => {
-              await Cancel?.();
+              await onCancel?.();
               AnimatingHide();
-            }}>{Cancel_text}</button
+            }}>{cancel_text}</button
           >
         {/if}
         <button
           class="Confirm"
           onclick={async () => {
-            await Confirm?.();
+            await onConfirm?.();
             AnimatingHide();
-          }}>{Confirm_text}</button
+          }}>{confirm_text}</button
         >
       </div>
     {/if}
