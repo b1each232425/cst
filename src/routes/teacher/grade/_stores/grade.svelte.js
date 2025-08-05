@@ -41,12 +41,12 @@ function formatExamData(examData) {
 			if (typeof session.total_score === 'number' && session.total_score !== -1) {
 				session.total_score = session.total_score.toFixed(1);
 			} else if (session.total_score === -1 || session.total_score == null) {
-				session.total_score = '−';
+				session.total_score = '-';
 			}
 			if (typeof session.average_score === 'number' && session.average_score !== -1) {
 				session.average_score = session.average_score.toFixed(1);
 			} else if (session.average_score === -1 || session.average_score == null) {
-				session.average_score = '−';
+				session.average_score = '-';
 			}
 		}
 	}
@@ -61,7 +61,7 @@ export function createGradeStore() {
 		exams: [],
 		totalRecords: 0,
 		loading: false,
-		selectAll: false, // New state for select all checkbox
+		selectAll: false, 
 		filters: {
 			name: '',
 			type: '',

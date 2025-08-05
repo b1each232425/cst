@@ -46,7 +46,7 @@
 		{#if exam.sessions && exam.sessions.length > 0}
 			{#each exam.sessions as session (session.exam_session_id)}
 				<div class="session-item">
-					{session.start_time ? new Date(session.start_time).toLocaleString() : ''} - {session.end_time ? new Date(session.end_time).toLocaleString() : ''}
+					{session.start_time==='-' ? new Date(session.start_time).toLocaleString() : ''} - {session.end_time==='-' ? new Date(session.end_time).toLocaleString() : ''}
 				</div>
 			{/each}
 		{:else}
@@ -54,12 +54,12 @@
 		{/if}
 	</td>
 	<td class="exam-total-score">
-		{exam.sessions && exam.sessions.length > 0&&exam.sessions.every(s => s.total_score!=null)
+		{exam.sessions && exam.sessions.length > 0&&exam.sessions.every(s => s.total_score!='-')
 			? exam.sessions.reduce((acc, s) => acc + Number(s.total_score), 0)
 			: '-'}
 	</td>
 	<td class="exam-average-score">
-		{exam.sessions && exam.sessions.length > 0&&exam.sessions.every(s => s.average_score!=null)
+		{exam.sessions && exam.sessions.length > 0&&exam.sessions.every(s => s.average_score!='-')
 			? (
 					exam.sessions.reduce((acc, s) => acc + Number(s.average_score), 0) /
 					exam.sessions.length
