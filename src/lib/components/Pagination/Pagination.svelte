@@ -41,7 +41,6 @@
   import left_jt from '/static/pagination/left.svg';
   import right_jt from '/static/pagination/right.svg';
   import { createEventDispatcher } from 'svelte';
-  import DropdownGray from '../DiaryLogPanel/DropdownGray.svelte';
 
   // 从父组件接收的属性参数
   let {
@@ -218,7 +217,7 @@
 
   <!-- 每页条数设置 -->
   <div class="page-settings">
-    <select onchange={handlePageSizeChange}>
+    <select onchange={handlePageSizeChange} data-testid="select">
       {#each page_size_options as sizeOption}
         <option value={sizeOption}>{sizeOption}条/页</option>
       {/each}
@@ -234,6 +233,7 @@
       max={total_pages}
       bind:value={jump_page}
       onkeydown={(e) => e.key === 'Enter' && handleJump()}
+      data-testid="jump-to-input"
     />
   </div>
 </div>

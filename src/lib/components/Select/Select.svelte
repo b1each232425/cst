@@ -1,33 +1,29 @@
-<!-- /**
-   * 选择输入搜索框组件使用说明(Select)
+<script>
+  /**
+   * @component Select + (Option)
+   * @description 选择输入搜索框组件
    *
-   * 作者：段春茂
-   * 邮箱：2162105974@qq.com
+   * @props
+   * @property {string|string[]} value - 当前选中的值（单选为 string，多选为 string[]）。
+   * @property {string} [placeholder="请选择"] - 输入框占位符。
+   * @property {'top' | 'bottom'} [direction="bottom"] - 选择器弹出方向.
+   * @property {boolean} [disabled=false] - 是否禁用选择器。
+   * @property {boolean} [multiple=false] - 是否启用多选模式。
+   * @property {boolean} [filterable=false] - 是否允许输入搜索。
+   * @property {functino} [changeValue] - 选中值变化的回调函数。
    *
-   * 参数配置：
-   * @param {string} value - 选择器的值
-   * @param {string} placeholder - 选择器的占位符
-   * @param {boolean} disabled - 选择器是否禁用
-   * @param {boolean} multiple - 选择器是否多选
-   * @param {boolean} filterable - 选择器是否可搜索
-   * @param {boolean} remote - 选择器是否远程搜索
-   * @param {function} remote_method - 远程搜索的方法
+   * @slot - <Option> 子组件
    *
-   * 功能说明：
-   * - 选择器：支持单选/多选，可搜索，可远程搜索，可清除，可禁用
-   * - 选项：支持自定义选项内容，可自定义选项值,贴近原生,方便使用
-   *
-   * 使用示例：
-   * <Select value="1" placeholder="请选择" multiple filterable remote={true} remote_method={handleRemoteSearch}>
+   * @example
+   * <Select value="1" placeholder="请选择" multiple filterable >
    *   <Option value="1" label="选项1"></Option>
    *   <Option value="2" label="选项2"></Option>
    *   <Option value="3" label="选项3"></Option>
    * </Select>
    *
-   * 注意事项：
-   * - 选项的value值不能重复，否则会导致选项显示异常
-   */ -->
-<script>
+   * @tips
+   *  选项的value值不能重复，否则会导致选项显示异常
+   */
   import { setContext, getContext } from 'svelte';
   import { writable } from 'svelte/store';
 
@@ -35,12 +31,11 @@
   let {
     value = $bindable(),
     placeholder = '请选择',
+    direction = 'bottom',
     disabled = false,
     multiple = false,
     filterable = false,
-    remote = false,
-    remote_method = () => {},
-    onChangeValue = () => {},
+    changeValue = () => {},
     children,
   } = $props();
 
@@ -57,7 +52,6 @@
   // 上下文通信
   setContext('SELECT-OPTIONS', {
     filterable,
-    remote,
     filterText,
     getSelectShow: () => isShow,
     add: () => (OptionCounts = OptionCounts + 1),
@@ -83,19 +77,19 @@
           const newSelectedLabel = selectedLabel.filter((l) => l !== selectLabel);
           value = newValue;
           selectedLabel = newSelectedLabel;
-          onChangeValue(newValue);
+          changeValue(newValue);
           return false;
         } else {
           // 创建新数组进行修改
           value = [...value, selectValue];
           selectedLabel = [...selectedLabel, selectLabel];
-          onChangeValue(value);
+          changeValue(value);
           return true;
         }
       } else {
         value = selectValue;
         selectedLabel = [selectLabel];
-        onChangeValue(value);
+        changeValue(value);
         closeSelect();
         return true;
       }
@@ -105,11 +99,11 @@
   // 处理外部传入value
   $effect(() => {
     initLabelvalue();
-    if (value === '') onChangeValue(value);
-    if (value === undefined || value === null) onChangeValue(value);
+    if (value === '') changeValue(value);
+    if (value === undefined || value === null) changeValue(value);
   });
 
-  // 处理初始化value
+  /** 处理初始化value @type {function} */
   function initLabelvalue() {
     if (Array.isArray(value)) {
       const labels = value
@@ -126,50 +120,90 @@
     }
   }
 
-  // 处理输入框的事件
+  /** 取消选择选项
+   *  @type {function}
+   *  @param {number} index 取消选择的选项的索引
+   * */
+  function handleConcelOption(index) {
+    const concelData = OptionData.find((child) => child.selectLabel == selectedLabel[index]);
+    value = value.filter((v) => v !== concelData.selectValue);
+    selectedLabel = selectedLabel.filter((l) => l !== selectedLabel[index]);
+    changeValue(value);
+    closeSelect();
+  }
+
+  /**
+   * 处理键盘事件
+   * @type {function}
+   * @param {KeyboardEvent} event
+   */
+  function handleKeyInput(event) {
+    if (event.key === 'Enter') toggleSelect;
+  }
+
+  let dropdownContainer;
+  /** 点击外部关闭选择器 @type {function} */
+  function handleClickOutside(event) {
+    if (!dropdownContainer.contains(event.target)) closeSelect();
+  }
+
+  /** 处理输入框的事件 @type {function} */
   function onInputChange(e) {
     filterText.set(e.target.value || '');
-    if (remote && typeof remote_method === 'function') remote_method(e.target.value || '');
     openSelect();
   }
 
-  // 关闭选择器
+  /** 关闭选择器 @type {function} */
   function closeSelect() {
     if (isShow) isShow = false;
   }
-  // 打开选择器
+
+  /** 打开选择器 @type {function} */
   function openSelect() {
     if (disabled) return;
     if (!isShow) isShow = true;
   }
-  // 切换选择器
+
+  /** 切换选择器 @type {function} */
   function toggleSelect() {
     if (disabled) return;
     isShow = !isShow;
-  }
-  // 点击外部关闭选择器
-  let dropdownContainer;
-  function handleClickOutside(event) {
-    if (!dropdownContainer.contains(event.target)) closeSelect();
   }
 </script>
 
 <svelte:window on:click={handleClickOutside} />
 
 <div class="dropdown-container" bind:this={dropdownContainer}>
-  <input
-    class="dropdown-input"
-    value={selectedLabel.join(',')}
-    readonly={!filterable}
-    {placeholder}
-    {disabled}
-    oninput={onInputChange}
-    onclick={toggleSelect}
-  />
-  <button class="dropdown-icon" onclick={toggleSelect} aria-label="Toggle dropdown" tabindex="-1">
+  {#if multiple}
+    <div class="input" onclick={toggleSelect} tabindex="-1" role="button" onkeydown={handleKeyInput}>
+      {#if selectedLabel.length > 0}
+        <div class="tags">
+          {#each selectedLabel as label, index (index)}
+            <span class="tag-item">
+              <button onclick={() => handleConcelOption(index)} aria-label="取消选择"></button>
+              <span class="tag-label">{label}</span>
+            </span>
+          {/each}
+        </div>
+      {:else}
+        <span class="placeholder">{placeholder}</span>
+      {/if}
+    </div>
+  {:else}
+    <input
+      class="input"
+      value={selectedLabel.join(',')}
+      readonly={!filterable}
+      {placeholder}
+      {disabled}
+      oninput={onInputChange}
+      onclick={toggleSelect}
+    />
+  {/if}
+  <button class="icon" onclick={toggleSelect} aria-label="Toggle dropdown" tabindex="-1">
     <img src="/dropdown/arrow_black.png" alt="Dropdown icon" style={isShow ? 'transform: rotate(180deg);' : ''} />
   </button>
-  <ul class="dropdown-options {isShow ? '' : 'hidle'}" role="listbox">
+  <ul class="options {direction} {isShow ? '' : 'hidle'}" role="listbox">
     <section>
       {@render children()}
       {#if OptionCounts <= 0}<div class="no-options"><li class="no-data">暂无数据</li></div>{/if}
@@ -182,16 +216,19 @@
   input {
     all: unset;
   }
+  input[placeholder] {
+    color: var(--text-primary);
+  }
   .dropdown-container {
     position: relative;
     display: inline-flex;
     flex-direction: column;
     font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    min-width: 150px;
+    font-size: 12px;
+    min-width: 80px;
     width: 100%;
-    .dropdown-input {
-      padding: 5px 36px 5px 12px;
+    .input {
+      padding: 5px 20px 5px 8px;
       border: 1px solid #dcdfe6;
       border-radius: 4px;
       cursor: pointer;
@@ -206,10 +243,48 @@
       &:focus {
         border-color: #409eff;
       }
+      .tags {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 2px;
+        overflow: hidden;
+        overflow-x: auto;
+        scrollbar-width: none;
+        .tag-item {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #f0f0f0;
+          padding: 1.5px 5px;
+          border-radius: 4px;
+          font-size: 10px;
+          color: var(--text-primary);
+          button {
+            width: 12px;
+            height: 12px;
+            background-image: url('/clear/delete.svg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            border: none;
+            cursor: pointer;
+            &:hover {
+              background-image: url('/clear/delete-active.svg');
+            }
+          }
+          .tag-label {
+            white-space: nowrap;
+          }
+        }
+      }
+      .placeholder {
+        color: var(--text-primary);
+        font-size: 12px;
+      }
     }
-    .dropdown-icon {
+    .icon {
       position: absolute;
-      right: 12px;
+      right: 4px;
       top: 50%;
       transform: translateY(-50%);
       background: transparent;
@@ -225,19 +300,26 @@
         transition: transform 0.3s ease;
       }
     }
-    .dropdown-options {
+    .options {
       position: absolute;
-      top: calc(100% + 2px);
       left: 0;
       width: 100%;
-      max-height: 200px;
+      max-height: 150px;
+      padding: 0;
       overflow-y: auto;
       background-color: #fff;
       border: 1px solid #e4e7ed;
       border-radius: 8px;
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
       z-index: 1000;
-      padding: 0;
+      scrollbar-width: thin;
+      scrollbar-color: #ccc transparent;
+      &.top {
+        bottom: calc(100%);
+      }
+      &.bottom {
+        top: calc(100%);
+      }
       section {
         display: flex;
         flex-direction: column;

@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { tagColorList } from "./data";
+import { TAG_COLOR_LIST } from "./data";
 
 // 获取 Unix 时间戳中的日期与时分
 export function formatTimestamp(timestamp) {
@@ -31,7 +31,7 @@ export function getColorIndex(tagName) {
     const charCode = firstChar.charCodeAt(0);
 
     // 计算并返回颜色数组的索引
-    return charCode % tagColorList.length;
+    return charCode % TAG_COLOR_LIST.length;
 }
 
 // 将旧的展开状态恢复到新数据中
