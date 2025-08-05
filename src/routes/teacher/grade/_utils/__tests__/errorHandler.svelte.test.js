@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { 
     handleApiError, 
     handleValidationError, 
@@ -27,7 +27,7 @@ Object.defineProperty(import.meta, 'env', {
 describe('错误处理工具', () => {
     let mockToast;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
         mockToast = (await import('$lib/components/Toast/Toast.js')).toast;
         vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -173,15 +173,16 @@ describe('错误处理工具', () => {
         });
 
         it('should not log errors in production environment', () => {
-            import.meta.env.DEV = false;
+            // Mock production environment
+            vi.stubEnv('DEV', false);
             const error = new Error('Prod error');
-            
+
             handleApiError(error, '生产测试');
-            
+
             expect(console.error).not.toHaveBeenCalled();
-            
+
             // Reset for other tests
-            import.meta.env.DEV = true;
+            vi.unstubAllEnvs();
         });
     });
 });

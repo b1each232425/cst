@@ -28,9 +28,9 @@
 		</div>
 		<div class="pagination-wrapper">
 			<Pagination
-				totalItems={state.totalRecords}
-				pageSize={state.pagination.pageSize}
-				currentPage={state.pagination.page}
+				total_items={state.totalRecords}
+				page_size={state.pagination.pageSize}
+				current_page={state.pagination.page}
 				on:pageChange={(e) => setPage(e.detail)}
 				on:pageSizeChange={(e) => setPageSize(e.detail)}
 			/>
