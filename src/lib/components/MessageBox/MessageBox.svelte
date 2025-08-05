@@ -15,8 +15,8 @@
    * @property {boolean} [options.show_confirm_button=true] 是否显示确认按钮
    * @property {'primary' | 'success' | 'danger' | 'warning' | 'info'} [options.cancel_button_type="info"] 取消按钮类型
    * @property {'primary' | 'success' | 'danger' | 'warning' | 'info'} [options.confirm_button_type="primary"] 确认按钮类型
-   * @property {Function} [options.cancel] 点击取消的回调函数
-   * @property {Function} [options.confirm] 点击确认的回调函数
+   * @property {Function} [options.onCancel] 点击取消的回调函数
+   * @property {Function} [options.onConfirm] 点击确认的回调函数
    */
   import Button from '$lib/components/Button/Button.svelte';
 
@@ -32,19 +32,19 @@
     show_confirm_button = true,
     confirm_button_type = 'primary',
     cancel_button_type = 'info',
-    cancel = () => {},
-    confirm = () => {},
+    onCancel = () => {},
+    onConfirm = () => {},
   } = $props();
 
   /** 取消按钮回调函数 @type {Function} */
   async function handlecancel() {
-    await cancel();
+    await onCancel();
     close();
   }
 
   /** 确认按钮回调函数 @type {Function} */
   async function handleconfirm() {
-    await confirm();
+    await onConfirm();
     close();
   }
 

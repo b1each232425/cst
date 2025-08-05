@@ -16,8 +16,8 @@ import { mount, unmount } from 'svelte';
  * @param {boolean} [options.show_confirm_button=true] 是否显示确认按钮
  * @param {'primary' | 'success' | 'danger' | 'warning' | 'info'} [options.cancel_button_type="info"] 取消按钮类型
  * @param {'primary' | 'success' | 'danger' | 'warning' | 'info'} [options.confirm_button_type="primary"] 确认按钮类型
- * @param {Function} [options.cancel] 点击取消的回调函数
- * @param {Function} [options.confirm] 点击确认的回调函数
+ * @param {Function} [options.onCancel] 点击取消的回调函数
+ * @param {Function} [options.onConfirm] 点击确认的回调函数
  */
 export default function ({
   title = '温馨提示',
@@ -30,8 +30,8 @@ export default function ({
   show_confirm_button = true,
   cancel_button_type = 'info',
   confirm_button_type = 'primary',
-  cancel = () => {},
-  confirm = () => {},
+  onCancel = () => {},
+  onConfirm = () => {},
 }) {
   const container = document.createElement('div');
   document.body.appendChild(container);
@@ -50,13 +50,13 @@ export default function ({
       show_cancel_button,
       show_confirm_button,
       confirm_button_type,
-      cancel: async () => {
-        await cancel();
+      onCancel: async () => {
+        await onCancel();
         unmount(app, { outro: true });
         container.remove();
       },
-      confirm: async () => {
-        await confirm();
+      onConfirm: async () => {
+        await onConfirm();
         unmount(app, { outro: true });
         container.remove();
       },
