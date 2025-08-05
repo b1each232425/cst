@@ -19,7 +19,7 @@
   //全选状态
   let select_all = $state(false);
   // 全局选中的用户ID集合（跨页面保持）
-  let selectedUserIds = $state(new Set());
+  let selected_user_ids = $state(new Set());
 
   // 搜索状态
   let search_account = $state('');
@@ -131,7 +131,7 @@
             category: user.Category || '-',
             create_time: user.CreateTime ? new Date(user.CreateTime).toLocaleDateString() : '',
             status: user.Status,
-            selected: selectedUserIds.has(user.ID), // 根据全局选中状态设置
+            selected: selected_user_ids.has(user.ID), // 根据全局选中状态设置
             has_relation: false,
           }));
           total_items = res.rowCount || res.data.length;
@@ -163,7 +163,7 @@
   const handleSearchDebounced = debounce(() => {
     current_page = 1;
     // 搜索时清除选中状态
-    selectedUserIds.clear();
+    selected_user_ids.clear();
     select_all = false;
     fetchUsers();
   }, 400);
@@ -171,12 +171,10 @@
   // 处理单日期选择事件
   function handleStartDateSelected(event) {
     const d = event.detail.date;
-    console.log('选择的日期是：', formatDate(d));
-
     filter_create_time = new Date(d.getFullYear(), d.getMonth(), d.getDate()); // 去掉时分秒
     current_page = 1;
     // 筛选条件改变时清除选中状态
-    selectedUserIds.clear();
+    selected_user_ids.clear();
     select_all = false;
     fetchUsers();
   }
@@ -185,15 +183,15 @@
   function toggleSelectAll() {
     if (select_all) {
       // 用户刚刚选中了全选框：将当前页面所有用户ID添加到选中集合
-      users.forEach(user => selectedUserIds.add(user.id));
+      users.forEach(user => selected_user_ids.add(user.id));
     } else {
       // 用户刚刚取消了全选框：从选中集合中移除当前页面所有用户ID
-      users.forEach(user => selectedUserIds.delete(user.id));
+      users.forEach(user => selected_user_ids.delete(user.id));
     }
     // 更新当前页面用户的选中状态
     users = users.map((user) => ({
       ...user,
-      selected: selectedUserIds.has(user.id),
+      selected: selected_user_ids.has(user.id),
     }));
   }
 
@@ -204,7 +202,7 @@
       return;
     }
     // 检查当前页面所有用户是否都在全局选中集合中
-    const allSelected = users.every(user => selectedUserIds.has(user.id));
+    const allSelected = users.every(user => selected_user_ids.has(user.id));
     select_all = allSelected;
   }
 
@@ -215,15 +213,15 @@
     
     if (user.selected) {
       // 当前是选中状态，点击后取消选中
-      selectedUserIds.delete(userId);
+      selected_user_ids.delete(userId);
     } else {
       // 当前是未选中状态，点击后选中
-      selectedUserIds.add(userId);
+      selected_user_ids.add(userId);
     }
     
     // 更新用户列表中的选中状态
     users = users.map(u => 
-      u.id === userId ? { ...u, selected: selectedUserIds.has(userId) } : u
+      u.id === userId ? { ...u, selected: selected_user_ids.has(userId) } : u
     );
     
     // 立即更新全选状态
@@ -263,29 +261,29 @@
 
   // // 删除选中用户
   // function handleBatchDelete() {
-  //   if (selectedUserIds.size === 0) {
+  //   if (selected_user_ids.size === 0) {
   //     return;
   //   }
   //   // TODO: 实现批量删除逻辑
-  //   console.log('批量删除用户ID:', Array.from(selectedUserIds));
+  //   console.log('批量删除用户ID:', Array.from(selected_user_ids));
   // }
 
   // // 启用选中用户
   // function handleBatchEnable() {
-  //   if (selectedUserIds.size === 0) {
+  //   if (selected_user_ids.size === 0) {
   //     return;
   //   }
   //   // TODO: 实现批量启用逻辑
-  //   console.log('批量启用用户ID:', Array.from(selectedUserIds));
+  //   console.log('批量启用用户ID:', Array.from(selected_user_ids));
   // }
 
   // // 停用选中用户
   // function handleBatchDisable() {
-  //   if (selectedUserIds.size === 0) {
+  //   if (selected_user_ids.size === 0) {
   //     return;
   //   }
   //   // TODO: 实现批量停用逻辑
-  //   console.log('批量停用用户ID:', Array.from(selectedUserIds));
+  //   console.log('批量停用用户ID:', Array.from(selected_user_ids));
   // }
 
   // // 查看操作日志
@@ -394,9 +392,10 @@
             <div class="date-input">
               <DatePicker
                 bind:this={date_picker}
-                singleDateSelection={true}
-                inputWidth={'100%'}
-                on:startDateSelected={handleStartDateSelected}
+                single_date_selection={true}
+                input_width={'100%'}
+                on:start_date_selected={handleStartDateSelected}
+
               />
             </div>
           </div>
@@ -415,7 +414,7 @@
                 filter_role = value;
                 current_page = 1;
                 // 筛选条件改变时清除选中状态
-                selectedUserIds.clear();
+                selected_user_ids.clear();
                 select_all = false;
                 fetchUsers();
                 }
@@ -439,7 +438,7 @@
                 filter_gender = value;
                 current_page = 1;
                 // 筛选条件改变时清除选中状态
-                selectedUserIds.clear();
+                selected_user_ids.clear();
                 select_all = false;
                 fetchUsers();
               }}
@@ -462,7 +461,7 @@
                 filter_status = value;
                 current_page = 1;
                 // 筛选条件改变时清除选中状态
-                selectedUserIds.clear();
+                selected_user_ids.clear();
                 select_all = false;
                 fetchUsers();
               }}
@@ -502,7 +501,7 @@
             <th class="col-phone table-head">电话</th>
             <th class="col-email table-head">邮箱</th>
             <th class="col-status table-head">账号状态</th>
-            <th class="col-category table-head">分类</th>
+            <!-- <th class="col-category table-head">分类</th> -->
             <th class="col-role table-head">角色</th>
             <th class="col-creation table-head">创建时间</th>
             <th class="col-current-status table-head">当前状态</th>
@@ -530,7 +529,7 @@
               <td class="col-phone">{user.phone}</td>
               <td class="col-email">{user.email}</td>
               <td class="col-status">{user.type}</td>
-              <td class="col-category">{user.category}</td>
+              <!-- <td class="col-category">{user.category}</td> -->
               <td class="col-role">{user.roles.join(', ')}</td>
               <td class="col-creation">{user.create_time}</td>
               <td class="col-current-status">
@@ -579,10 +578,10 @@
     <div class="pagination-wrapper">
       <div class="pagination-container {total_items > 0 ? '' : 'hide'}">
         <Pagination
-          totalItems={total_items}
-          currentPage={current_page}
-          pageSize={page_size}
-          pageSizeOptions={[10, 20, 50]}
+          total_items={total_items}
+          current_page={current_page}
+          page_size={page_size}
+          page_size_options={[10, 20, 50]}
           on:pageChange={handlePageChange}
           on:pageSizeChange={handlePageSizeChange}
         />
@@ -853,9 +852,9 @@
     .col-status {
       width: 7%;
     }
-    .col-category {
-      width: 7%;
-    }
+    // .col-category {
+    //   width: 7%;
+    // }
     .col-role {
       width: 9%;
     }

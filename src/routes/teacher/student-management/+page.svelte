@@ -135,13 +135,13 @@
     }));
   }
 
-  //处理学生状态切换
-  function toggleStatus(id) {
-    const student = students.find((s) => s.id === id);
-    if (!student) return;
-    const newStatus = student.status === '00' ? '02' : '00';
-    students = students.map((s) => (s.id === id ? { ...s, status: newStatus } : s));
-  }
+  // //处理学生状态切换
+  // function toggleStatus(id) {
+  //   const student = students.find((s) => s.id === id);
+  //   if (!student) return;
+  //   const newStatus = student.status === '00' ? '02' : '00';
+  //   students = students.map((s) => (s.id === id ? { ...s, status: newStatus } : s));
+  // }
 
   // 页码选择处理
   function handlePageChange(event) {
@@ -181,85 +181,85 @@
     show_import_panel = false;
   }
 
-  // 添加学生
-  function handleAdd() {
-    // TODO: 实现添加逻辑
-  }
+  // // 添加学生
+  // function handleAdd() {
+  //   // TODO: 实现添加逻辑
+  // }
 
-  // 移除选中学生
-  function handleBatchUnbind() {
-    const selectedIds = students
-      .filter((student) => student.selected && student.has_relation)
-      .map((student) => student.id);
+  // // 移除选中学生
+  // function handleBatchUnbind() {
+  //   const selectedIds = students
+  //     .filter((student) => student.selected && student.has_relation)
+  //     .map((student) => student.id);
 
-    if (selectedIds.length === 0) {
-      return;
-    }
-    // TODO: 实现批量移除逻辑
-  }
+  //   if (selectedIds.length === 0) {
+  //     return;
+  //   }
+  //   // TODO: 实现批量移除逻辑
+  // }
 
   // 创建学生
   function handleCreate() {
     goto('/teacher/student-management/addStudent');
   }
 
-  // 删除选中学生
-  function handleBatchDelete() {
-    const selectedIds = students.filter((student) => student.selected).map((student) => student.id);
+  // // 删除选中学生
+  // function handleBatchDelete() {
+  //   const selectedIds = students.filter((student) => student.selected).map((student) => student.id);
 
-    if (selectedIds.length === 0) {
-      console.log('没有选中的学生');
-      return;
-    }
-    console.log('批量删除学生:', selectedIds);
-    // TODO: 实现批量删除逻辑
-  }
+  //   if (selectedIds.length === 0) {
+  //     console.log('没有选中的学生');
+  //     return;
+  //   }
+  //   console.log('批量删除学生:', selectedIds);
+  //   // TODO: 实现批量删除逻辑
+  // }
 
-  // 启用选中学生
-  function handleBatchEnable() {
-    const selectedIds = students.filter((student) => student.selected).map((student) => student.id);
+  // // 启用选中学生
+  // function handleBatchEnable() {
+  //   const selectedIds = students.filter((student) => student.selected).map((student) => student.id);
 
-    if (selectedIds.length === 0) {
-      console.log('没有选中的学生');
-      return;
-    }
-    console.log('批量启用学生:', selectedIds);
-    // TODO: 实现批量启用逻辑
-  }
+  //   if (selectedIds.length === 0) {
+  //     console.log('没有选中的学生');
+  //     return;
+  //   }
+  //   console.log('批量启用学生:', selectedIds);
+  //   // TODO: 实现批量启用逻辑
+  // }
 
-  // 停用选中学生
-  function handleBatchDisable() {
-    const selectedIds = students.filter((student) => student.selected).map((student) => student.id);
+  // // 停用选中学生
+  // function handleBatchDisable() {
+  //   const selectedIds = students.filter((student) => student.selected).map((student) => student.id);
 
-    if (selectedIds.length === 0) {
-      console.log('没有选中的学生');
-      return;
-    }
-    console.log('批量停用学生:', selectedIds);
-    // TODO: 实现批量停用逻辑
-  }
+  //   if (selectedIds.length === 0) {
+  //     console.log('没有选中的学生');
+  //     return;
+  //   }
+  //   console.log('批量停用学生:', selectedIds);
+  //   // TODO: 实现批量停用逻辑
+  // }
 
-  //处理详情按钮
-  function handleDetail(id) {
-    // TODO: 实现查看详情逻辑
-  }
+  // //处理详情按钮
+  // function handleDetail(id) {
+  //   // TODO: 实现查看详情逻辑
+  // }
 
-  //处理编辑按钮
-  function handleEdit(id) {
-    // TODO: 实现编辑逻辑
-  }
+  // //处理编辑按钮
+  // function handleEdit(id) {
+  //   // TODO: 实现编辑逻辑
+  // }
 
-  //处理移除按钮
-  function handleUnbind(id) {
-    const student = students.find((s) => s.id === id);
-    //TODO: 实现移除逻辑
-  }
+  // //处理移除按钮
+  // function handleUnbind(id) {
+  //   const student = students.find((s) => s.id === id);
+  //   //TODO: 实现移除逻辑
+  // }
 
-  //处理删除按钮
-  function handleDelete(id) {
-    const student = students.find((s) => s.id === id);
-    //TODO: 实现删除逻辑
-  }
+  // //处理删除按钮
+  // function handleDelete(id) {
+  //   const student = students.find((s) => s.id === id);
+  //   //TODO: 实现删除逻辑
+  // }
 
   onMount(() => {
     fetchStudents();
@@ -395,10 +395,10 @@
     <div class="pagination-wrapper">
       <div class="pagination-container {total_items > 0 ? '' : 'hide'}">
         <Pagination
-          totalItems={total_items}
-          currentPage={current_page}
-          pageSize={page_size}
-          pageSizeOptions={[10, 20, 50]}
+          total_items={total_items}
+          current_page={current_page}
+          page_size={page_size}
+          page_size_options={[10, 20, 50]}
           on:pageChange={handlePageChange}
           on:pageSizeChange={handlePageSizeChange}
         />

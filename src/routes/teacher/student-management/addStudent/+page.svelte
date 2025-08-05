@@ -398,14 +398,10 @@
   $gray-font-color: rgba(0, 0, 0, 0.6);
   $border-color: #ddd;
 
-  .add-user-container {
+  .add-student-container {
     position: relative;
-    background-color: white;
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
-    min-width: 800px;
     overflow-y:auto;
 
 
