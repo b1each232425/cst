@@ -1,18 +1,22 @@
-<!-- /**
-   * @description 页面标题组件，带有前缀蓝色条和可选的横线分割
-   * @property {String} title - 标题文本，默认为 'Title'
-   * @property {Boolean} line - 是否显示横向分割线，默认为 true
-   * @example
-   * <PageTitle title="基本信息" line />
-   */ -->
 <script>
+  /**
+   * @component Title
+   * @description 页面标题组件，带有前缀蓝色条和可选的横线分割
+   * 
+   * @props
+   * @property {String} [title='Title'] - 标题文本
+   * @property {Boolean} [line=true] - 是否显示横向分割线
+   *
+   * @example
+   * <Title title="基本信息" line />
+   */
   let { title = 'Title', line = true } = $props();
 </script>
 
 <section class="Title-container">
-  <header class="Title-title">
-    <span class="Title-title-bar"></span>
-    <h2 class="Title-title-text">{title}</h2>
+  <header class="title">
+    <span class="title-bar"></span>
+    <h2 class="title-text">{title}</h2>
   </header>
   <hr class="Title-line" class:hidden={!line} />
 </section>
@@ -23,16 +27,16 @@
     display: flex;
     gap: 12px;
     align-items: center;
-    .Title-title {
+    .title {
       display: flex;
       align-items: center;
-      .Title-title-bar {
+      .title-bar {
         width: 10px;
         height: 25px;
         border-radius: 6px;
         background-color: #0336ff;
       }
-      .Title-title-text {
+      .title-text {
         font-size: 20px;
         font-weight: bold;
         margin-left: 13px;
