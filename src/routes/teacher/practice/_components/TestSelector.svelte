@@ -423,9 +423,9 @@
                 <div class="pagination-container">
                     <div class="total-count"></div>
                     <Pagination
-                        totalItems={totalTests}
-                        currentPage={currentPage}
-                        pageSize={pageSize}
+                        total_items={totalTests}
+                        current_page={currentPage}
+                        page_size={pageSize}
                         on:pageChange={handlePageChoose}
                         on:pageSizeChange={handlePageSizeChange}
                     /> 

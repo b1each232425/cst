@@ -23,7 +23,6 @@
   import { resolveRoute } from '$app/paths';
   import { onMount } from 'svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
-  import inputBox from '$lib/components/Input/InputBox.svelte';
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
@@ -645,6 +644,7 @@
         </thead>
         <tbody>
           {#if displayed_practice_list.length > 0}
+          
             {#each displayed_practice_list as practice}
               <tr>
                 <td style="text-align: center;" title={practice.Name}>{practice.Name}</td>
@@ -683,24 +683,25 @@
                 </td>
               </tr>
             {/each}
+            
           {:else}
-            <tr>
-              <td colspan="6" style="height: 200px; padding: 0;">
+          <tr>
+            <td colspan="6" style="border: none;">
                 <div class="empty-wrapper">
                   <Empty text="暂无练习数据" />
                 </div>
               </td>
-            </tr>
+              </tr>
           {/if}
         </tbody>
-        
       </table>
     </div>
-       <div class="pagination-container">
+       <div class="pagination-container"data-testid="pagination-container">
       <Pagination
-        totalItems={total_data_num}
-        pageSize={data_per_page}
-        currentPage={current_page_num}
+      
+        total_items={total_data_num}
+        page_size={data_per_page}
+        current_page={current_page_num}
         on:pageChange={handle_page_choose}
         on:pageSizeChange={handle_page_size_change}
       />
@@ -963,7 +964,8 @@
     
   }
   .empty-wrapper {
-    display: flex;
+   
+   display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 8px;
