@@ -29,37 +29,47 @@
     }
 
     let {
-        show_panel = false,
-        selected_ID,
-        selected_name,
-        selected_type,
-        onCancel = () => {},
-        onConfirm = (/** @type {any} */ selected_ID, /** @type {any} */ selected_name, /** @type {any} */ selected_type) => {},
+        showPanel = false,
+        selectedID,
+        selectedName,
+        selectedType,
+        onCancel = () => {
+
+        },
+        onConfirm = (/** @type {any} */ selectedID, /** @type {any} */ selectedName, /** @type {any} */ selectedType) => {
+
+        },
     } = $props();
 
     //选中的试卷ID
-    let paperselected_ID = $state(selected_ID);
+    let paperSelectedID = $state(selectedID);
 
     //选中的试卷名称
-    let paperselected_name = $state(selected_name);
+    let paperSelectedName = $state(selectedName);
 
     //选中的试卷类型
-    let paperselected_type = $state(selected_type);
+    let paperSelectedType = $state(selectedType);
 
     //总数据条数
     let totals = $state(0);
 
     //搜索参数
-    let search_params = $state({
+    let searchParams = $state({
         name: "",
         tags: "",
         page: 1,
-        page_size: 10,
+        pageSize: 10,
         category: "",
     });
 
+    //总页数
+    let totalPage = $derived(
+        totals / searchParams.pageSize
+            ? Math.ceil(totals / searchParams.pageSize)
+            : 1,
+    );
 
-    let current_page = $state(1);
+    let currentPage = $state(1);
 
     //是否加载中
     let loading = $state(false);
@@ -108,14 +118,14 @@
      * 试卷名搜索
      */
     // function onSearchName(value) {
-    //     search_params.name = value;
+    //     searchParams.name = value;
 
     //     //防抖逻辑
     //     if (nameSearchTimer) {
     //         clearTimeout(nameSearchTimer);
     //     }
     //     nameSearchTimer = setTimeout(() => {
-    //         search_params.page = 1;
+    //         searchParams.page = 1;
     //         searchPaper();
     //         nameSearchTimer = null;
     //     }, 300);
@@ -126,7 +136,7 @@
      * 标签搜索
      */
     // function onSearchTags(value) {
-    //     search_params.tags = value;
+    //     searchParams.tags = value;
 
     //     //防抖逻辑
     //     if (tagsSearchTimer) {
@@ -141,15 +151,15 @@
     if (loading === true) {
         return;
     }
-    search_params.page = event.detail;
+    searchParams.page = event.detail;
     searchPaper();
 }
 
     // 处理每页条数变化
     function handlePageSizeChange(event) {
         console.log("每页条数变化:", event.detail);
-        search_params.page_size = event.detail;
-        search_params.page = 1; // 重置到第一页
+        searchParams.pageSize = event.detail;
+        searchParams.page = 1; // 重置到第一页
         searchExam();
     }
     
@@ -163,16 +173,16 @@
         let queryParams = new URLSearchParams();
 
         // 添加基础参数
-        queryParams.append("page", search_params.page.toString());
-        queryParams.append("pageSize", search_params.page_size.toString());
+        queryParams.append("page", searchParams.page.toString());
+        queryParams.append("pageSize", searchParams.pageSize.toString());
         queryParams.append("category","00")
 
         // 添加可选参数
-        if (search_params.name) {
-            queryParams.append("name", search_params.name);
+        if (searchParams.name) {
+            queryParams.append("name", searchParams.name);
         }
-        if (search_params.tags) {
-            queryParams.append("tags", search_params.tags);
+        if (searchParams.tags) {
+            queryParams.append("tags", searchParams.tags);
         }
 
 
@@ -194,12 +204,12 @@
             paperList = [];
             totals = 0;
             console.error(error);
-            search_params.page = current_page;
+            searchParams.page = currentPage;
             
         } else {
             paperList = result.data;
             totals = result.rowCount;
-            current_page = search_params.page;
+            currentPage = searchParams.page;
         }
         
         loading = false;
@@ -224,7 +234,7 @@
 
     function onPaperTypeChange(value) {
     selected_paper_type = value;
-    search_params.page = 1;
+    searchParams.page = 1;
     searchPaper().then(() => {
         if (value === "04") {
             return;
@@ -240,7 +250,7 @@
 
         //当打开面板时自动搜索试卷列表
         $effect(() => {
-                paperselected_ID = selected_ID;
+                paperSelectedID = selectedID;
                 searchPaper();
         });
 
@@ -260,14 +270,14 @@
     // });
 </script>
 
-<div class={show_panel ? "paper-selection-panel-container" : "hide"}>
+<div class={showPanel ? "paper-selection-panel-container" : "hide"}>
     <div class="paper-selection-panel">
         <div class="panel-header">
             <span>选择试卷</span>
             <button class="close-btn" onclick={() => {
-                paperselected_ID = selected_ID;
-                paperselected_name = selected_name;
-                paperselected_type = selected_type;
+                paperSelectedID = selectedID;
+                paperSelectedName = selectedName;
+                paperSelectedType = selectedType;
                 onCancel();
             }}>×</button>
         </div>
@@ -327,15 +337,15 @@
                                         type="radio"
                                         class="custom-checkbox"
                                         value={paper.ID}
-                                        bind:group={paperselected_ID}
+                                        bind:group={paperSelectedID}
                                         onchange={() => {
                                             paperList.forEach((element) => {
                                                 if (
-                                                    element.ID === paperselected_ID
+                                                    element.ID === paperSelectedID
                                                 ) {
-                                                    paperselected_name =
+                                                    paperSelectedName =
                                                         element.Name;
-                                                    paperselected_type =
+                                                    paperSelectedType =
                                                         element.AssemblyType;
                                                 }
                                             });
@@ -380,7 +390,7 @@
          <div class="pagination-container">
                     <Pagination
                         total_items={totals}
-                        current_page={current_page}
+                        current_page={currentPage}
                         page_size={10}
                         on:pageChange={handlePageChange}
                         on:pageSizeChange={handlePageSizeChange}
@@ -389,21 +399,21 @@
                 </div>
         <div class="panel-footer">
             <button class="btn" onclick={() => {
-                paperselected_ID = selected_ID;
-                paperselected_name = selected_name;
-                paperselected_type = selected_type;
+                paperSelectedID = selectedID;
+                paperSelectedName = selectedName;
+                paperSelectedType = selectedType;
                 onCancel();
             }}>取消</button>
             <button class="btn save" onclick={() => {
-                if(!paperselected_ID){
+                if(!paperSelectedID){
                     toast.warning("请选择一张试卷")
                     return;
                 }
                 //将选中的试卷传递给外部
                 onConfirm(
-                    paperselected_ID,
-                    paperselected_name,
-                    paperselected_type,
+                    paperSelectedID,
+                    paperSelectedName,
+                    paperSelectedType,
                 );
             }}>确定</button>
         </div>

@@ -9,15 +9,20 @@
     import MessageBox from "$lib/components/MessageBox/MessageBox.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import Title from "$lib/components/Title/Title.svelte";
-    import { toast } from "$lib/components/Toast/Toast";
-    let exam_list=$state([]);
-    let name_search_time = null;
+  import { toast } from "$lib/components/Toast/Toast";
+    let examList=$state([]);
+    let Listrows = $state([]); //返回数据行数
+    let nameSearchTime = null;
     let loading = $state(false);
     let error = $state("");
     let message = $state("");
-    let page_size = $state(10);
-    let publish_exam_dialog = $state(false);
-    let examID_to_publish = $state(false);
+    let currentPage = $state(1);
+    let pageSize = $state(10);
+    let totalPage = $state(1);
+    let pushlishExamDialog = $state(false);
+    //发布考试确认框
+    let publishExamDialog = $state(false);
+    let examIdToPublish = $state(false);
     let total_items = $state();
     // 映射关系
     const TypeMap = {
@@ -48,17 +53,17 @@
         "10": "archived",
         "12": "error",
     };
-    let search_params = $state({
+    let searchParams = $state({
         page: 1,
-        page_size: 10,
+        pageSize: 10,
         name: "",
         status: "",
         startTime: null,
         endTime: null,
     });
 
-    async function publishAndSearch(examID){
-        await publishExam(examID);
+    async function publishAndSearch(examId){
+        await publishExam(examId);
         searchExam();
     }
 
@@ -68,15 +73,16 @@
 
     // 构建后端期望的查询对象
     const queryObject = {
+        // Action: "select",
         OrderBy: [{ "Duration": "DESC", "Time": "DESC"}],
         Filter: {
-            Name: search_params.name || "",
-            Status: search_params.status || "",
-            // StartTime: search_params.startTime ? new Date(search_params.startTime).getTime() : 0,
-            // EndTime: search_params.endTime ? new Date(search_params.endTime).getTime() : 0
+            Name: searchParams.name || "",
+            Status: searchParams.status || "",
+            // StartTime: searchParams.startTime ? new Date(searchParams.startTime).getTime() : 0,
+            // EndTime: searchParams.endTime ? new Date(searchParams.endTime).getTime() : 0
         },
-        Page: search_params.page,
-        page_size: search_params.page_size
+        Page: searchParams.page,
+        PageSize: searchParams.pageSize
     };
 
     const queryParams = new URLSearchParams();
@@ -92,13 +98,13 @@
     })
     .then((response) => response.json())
     .then((data) => {
-        exam_list = data.data;
-         if (exam_list && Array.isArray(exam_list)) {
-            exam_list.sort((a, b) => {
+        examList = data.data;
+         if (examList && Array.isArray(examList)) {
+            examList.sort((a, b) => {
                 // 确保 ID 字段存在且为数字，按降序排序
                 const idA = parseInt(a.id);
                 const idB = parseInt(b.id);
-                return idB - idA; 
+                return idB - idA; // 降序：大的在前
             });
         }
         total_items = data.rowCount;
@@ -119,43 +125,43 @@
 }
 
     // function toggleMoreActions(index) {
-    //     exam_list[index].actionExpanded = !exam_list[index].actionExpanded;
+    //     examList[index].actionExpanded = !examList[index].actionExpanded;
     // }
 
     function onSearchFunc(value) {
-        search_params.name = value;
+        searchParams.name = value;
 
         //防抖逻辑
-        if (name_search_time) {
-            clearTimeout(name_search_time);
+        if (nameSearchTime) {
+            clearTimeout(nameSearchTime);
         }
-        name_search_time = setTimeout(() => {
+        nameSearchTime = setTimeout(() => {
             searchExam();
-            name_search_time = null;
+            nameSearchTime = null;
         }, 300);
     }
 
     function onSelectExamStatus(value) {
-        let originalValue = search_params.status;
-        search_params.status = value;
+        let originalValue = searchParams.status;
+        searchParams.status = value;
         
         //如果选中的值发生了变化，就触发搜索
-        if (originalValue !== search_params.status) {
-            search_params.page = 1;
+        if (originalValue !== searchParams.status) {
+            searchParams.page = 1;
             searchExam();
         }
     }
 
     // 处理页码变化
     function handlePageChange(event) {
-        search_params.page = event.detail;
+        searchParams.page = event.detail;
         searchExam();
     }
     
     // 处理每页条数变化
-    function handlepage_sizeChange(event) {
-        search_params.page_size = event.detail;
-        search_params.page = 1; // 重置到第一页
+    function handlePageSizeChange(event) {
+        searchParams.pageSize = event.detail;
+        searchParams.page = 1; // 重置到第一页
         searchExam();
     }
 
@@ -183,9 +189,8 @@
                 data: { ID: parseInt(examID), Status: "02" }
                 })
             };
-
             //占位
-            const url = `/api/exam/status?${new URLsearch_params(params).toString()}`;
+            const url = `/api/exam/status?${new URLSearchParams(params).toString()}`;
             return fetch(url, {
                 method: "PUT",
                 credentials: "include",
@@ -196,7 +201,7 @@
                 return response.json();
             })
             .then((result) => {
-                //console.log('PUT /api/exam/status JSON数据:', result); // 
+                //console.log('PUT /api/exam/status JSON数据:', result); // 在这里打印JSON数据
                 if (result.status === 0) {
                     // message = "考试发布成功";
                     return result;
@@ -228,7 +233,7 @@
             });
 }
     // 模拟获取考试列表数据
-        exam_list = [
+        examList = [
             { name: '数学考试', type: '00', method: '00', start_time: '2023-10-01 10:00', end_time: '2023-10-01 12:00', duration: '120分钟', status: '00',delivery_status: '00',addi: '',actionExpanded:false,num_of_examinee:1},
             { name: '英语考试', type: '02', method: '02', start_time: '2023-10-02 14:00', end_time: '2023-10-02 15:30', duration: '90分钟', status: '04' ,delivery_status: '00',addi: '',actionExpanded:false,num_of_examinee:1},
             { name: '物理期中', type: '00', method: '00', start_time: '2023-10-03 09:00', end_time: '2023-10-03 11:00', duration: '120分钟', status: '02' ,delivery_status: '00',addi: '',actionExpanded:false,num_of_examinee:1},
@@ -243,7 +248,7 @@
 
     onMount(() => {
         searchExam();
-        console.log(exam_list);
+        console.log(examList);
     });
 </script>
 
@@ -265,13 +270,13 @@
     <div class="button-container">
         <!-- <button class="continue-edit-button action-button {status !== '00' && status !== '02' ? 'hideButton' : ''}"
         onclick={()=>{
-            goto(`/teacher/exam/editExam/${exam_list[index].id}`)
+            goto(`/teacher/exam/editExam/${examList[index].id}`)
         }}>
         继续编辑</button> -->
         <button class="publish-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
         onclick={() => {
-            publish_exam_dialog=true,
-            examID_to_publish = exam_list[index].id;
+            pushlishExamDialog=true,
+            examIdToPublish = examList[index].id;
         }}>
         发布考试</button>
         <span class = "{status == '00'?'hideButton' : 'EmptyData'} " > -- </span>
@@ -335,7 +340,7 @@
                 <InputBox
                     label="考试名称"
                     placeholder="请输入考试名称搜索"
-                    bind:value={search_params.name}
+                    bind:value={searchParams.name}
                     onInput={onSearchFunc}
                     clearable={true}
                 />
@@ -361,7 +366,7 @@
                     type="text" 
                     class="search-input"
                     placeholder="日期筛选"
-                    bind:value={search_params.name}
+                    bind:value={searchParams.name}
                     oninput={(e) => onSearchFunc(e.target.value)}
                 /> -->
             </div>
@@ -392,7 +397,7 @@
                 {@render tableHead()}
             </thead>
             <tbody class="examListTableData">
-               {#each exam_list as exam,index}
+               {#each examList as exam,index}
                     {@render tableData(exam,index)}
                 {/each}
             </tbody>
@@ -403,12 +408,11 @@
     </div>
 
     <MessageBox
-    bind:visible={publish_exam_dialog}
+    bind:visible={pushlishExamDialog}
     content="是否确认发布该考试?"
     cancel_text="取消"
     confirm_text="确认发布"
-    onConfirm={() => publishAndSearch(examID_to_publish)}
-    onCancel={() => {publish_exam_dialog=false;}}
+    onConfirm={() => publishAndSearch(examIdToPublish)}
     />
     
     <div class="paginationContainer">
@@ -417,7 +421,7 @@
             page_size={10}
             current_page={1}
             on:pageChange={handlePageChange}
-            on:page_sizeChange={handlepage_sizeChange}
+            on:pageSizeChange={handlePageSizeChange}
             page_size_options = {[10, 20, 30, 40, 50]}
         />
     </div>
@@ -426,23 +430,23 @@
 <style lang="scss" scoped>
 
    .EmptyData{
-    color:var(--blue);
+    color:#356ed9;
    }
 
    .hideButton {
-        visibility: hidden;
-        position: absolute;
-        pointer-events: none;
-    }
+    visibility: hidden;
+    position: absolute;
+    pointer-events: none;
+  }
 
   .action-button {
-        border: none;
-        background-color: rgb(0, 0, 0, 0);  // 透明背景
-        color: var(--blue);                 // 蓝色文字
-        cursor: pointer;
-        font-size: 14px;
-        min-width: 70px;
-    }
+    border: none;
+    background-color: rgb(0, 0, 0, 0);  // 透明背景
+    color: #356ed9;                 // 蓝色文字
+    cursor: pointer;
+    font-size: 14px;
+    min-width: 70px;
+}
     .action-button:hover {
         font-weight: bold;                  // 悬停时加粗
     }
@@ -565,7 +569,6 @@
         }
         
     }
-
     .examListTableData {
             tr {
                 display: flex;
@@ -595,7 +598,6 @@
             }
         }
     }
-    
     .statusError{
         display: flex; 
         flex-direction:row; 
