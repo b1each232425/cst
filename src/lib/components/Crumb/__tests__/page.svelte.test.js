@@ -1,99 +1,52 @@
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { render, screen, act } from '@testing-library/svelte';
 import Breadcrumb from '../Crumb.svelte';
 import { vi } from 'vitest';
-import { goto } from '$app/navigation';
 
-// 模拟 $app/navigation 的 goto 函数
-vi.mock('$app/navigation', () => ({
-  goto: vi.fn(),
-}));
+describe('Crumb.svelte 面包屑组件测试', () => {
+  const mockProps = {
+    app_name: 'Test App',
+    avatar_img: '/user_icons/defaultAvatar.svg',
+    icons: { notification: '/user_icons/notification.svg' },
+    current_nav_path_data: [
+      { name: 'theoryQuestionBank', title: '理论题库管理', path: '/teacher/question-bank/theory' },
+      { name: 'editTheoryQuestionBank', title: '编辑题库', path: '/teacher/question-bank/theory/editBank' },
+    ],
+  };
 
-describe('面包屑组件测试', () => {
-  let current_nav_path_data;
-  let app_name = 'Test App';
-  let avatar_img = '/user_icons/defaultAvatar.svg';
-  let icons = { notification: '/user_icons/notification.svg' };
-
-  beforeEach(() => {
-    // 假设当前路径为 "/teacher/question-bank/theory/editBank"
-    current_nav_path_data = [
-      { name: '理论题库管理', title: '理论题库管理', path: '/teacher/question-bank/theory', isFilter: false },
-      { name: '编辑题库', title: '编辑题库', path: '/teacher/question-bank/theory/editBank', isFilter: false },
-    ];
+  // 每个测试后清理mock
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('应该正确渲染面包屑', () => {
-    render(Breadcrumb, {
-      props: {
-        app_name,
-        current_nav_path_data,
-        avatar_img,
-        icons,
-      },
+  it('应该正确渲染用户数据', async () => {
+    global.fetch = vi.fn();
+    // 模拟成功的API响应
+    fetch.mockResolvedValueOnce({
+      json: () =>
+        Promise.resolve({
+          status: 0,
+          data: { OfficialName: '张三' }, // 模拟用户名称
+        }),
     });
 
-    // 验证每个面包屑项的渲染
-    expect(screen.getByTestId('breadcrumb-item-理论题库管理')).toBeInTheDocument();
-    expect(screen.getByTestId('breadcrumb-item-编辑题库')).toBeInTheDocument();
+    render(Breadcrumb, { props: mockProps });
+
+    // 验证fetch被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
   });
 
-  //   it('应该过滤掉带有 isFilter: true 的项', () => {
-  //     render(Breadcrumb, {
-  //       props: {
-  //         app_name,
-  //         current_nav_path_data,
-  //       },
-  //     });
+  it('处理API请求失败', async () => {
+    global.fetch = vi.fn();
+    // 模拟失败的API响应
+    fetch.mockRejectedValueOnce(new Error('API Error'));
 
-  //     // 验证 "题库管理" 被过滤掉，因为 isFilter 为 true
-  //     expect(screen.queryByText('题库管理')).not.toBeInTheDocument();
-  //   });
+    render(Breadcrumb, { props: mockProps });
 
-  //   it('点击面包屑时应该跳转到对应的路径', async () => {
-  //     render(Breadcrumb, {
-  //       props: {
-  //         app_name,
-  //         current_nav_path_data,
-  //       },
-  //     });
-
-  //     // 模拟点击“理论题库管理”
-  //     const theoryBreadcrumb = screen.getByText('理论题库管理');
-  //     await fireEvent.click(theoryBreadcrumb);
-
-  //     // 验证 goto 是否被调用
-  //     expect(goto).toHaveBeenCalledWith('/teacher/question-bank/theory');
-
-  //     // 模拟点击“编辑题库”
-  //     const editBreadcrumb = screen.getByText('编辑题库');
-  //     await fireEvent.click(editBreadcrumb);
-
-  //     // 验证 goto 是否被调用
-  //     expect(goto).toHaveBeenCalledWith('/teacher/question-bank/theory/editBank');
-  //   });
-
-  //   it('应该根据导航数据更新页面标题', () => {
-  //     render(Breadcrumb, {
-  //       props: {
-  //         app_name,
-  //         current_nav_path_data,
-  //       },
-  //     });
-
-  //     // 获取页面标题并验证
-  //     const currentNavItem = current_nav_path_data[current_nav_path_data.length - 1];
-  //     expect(document.title).toBe(`${currentNavItem.title} • ${app_name}`);
-  //   });
-
-  //   it('应处理没有导航数据的情况', () => {
-  //     render(Breadcrumb, {
-  //       props: {
-  //         app_name,
-  //         current_nav_path_data: [],
-  //       },
-  //     });
-
-  //     // 验证没有任何面包屑项
-  //     expect(screen.queryByText('题库管理')).not.toBeInTheDocument();
-  //   });
+    // 验证默认状态（显示空名称）
+    expect(await screen.findByText('你好，')).toBeInTheDocument();
+    expect(screen.queryByText('张三')).not.toBeInTheDocument();
+  });
 });

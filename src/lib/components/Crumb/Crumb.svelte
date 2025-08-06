@@ -1,16 +1,14 @@
 <script>
-  //@ts-nocheck
   import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
   import { afterNavigate, goto } from '$app/navigation';
   import { page } from '$app/state';
   import { baseNavItems } from '$lib/stores/modules/permission.js';
-  import { json } from '@sveltejs/kit';
 
-  let { app_name, curr_url_path = $bindable(''), avatar_img, icons, event_handle_funcs } = $props();
+  let { app_name, avatar_img, icons, event_handle_funcs } = $props();
   let display_name = $state(''); // 用户名称
   let nav_map = $baseNavItems; // 导航数据
-  let current_nav_path_data = $state([]); // 当前面包屑路径数据
+  let current_nav_path_data = $state([]);
 
   /**
    * 用户菜单是否打开
@@ -36,10 +34,12 @@
   function getUserInfo() {
     fetch('/api/user/me')
       .then((response) => response.json())
-      .then(async (data) => {
-        if (!data?.data?.APIs) throw new Error('APIs 数据不存在');
-
-        display_name = data.data.OfficialName;
+      .then((data) => {
+        if (data.status !== 0) {
+          throw new Error('用户数据不存在');
+        } else {
+          display_name = data.data.OfficialName;
+        }
       })
       .catch((error) => {
         console.error('获取用户权限失败:', error);
@@ -92,18 +92,6 @@
   }
 
   /**
-   * 获取cookie值
-   * @param {string} name - cookie名称
-   * @returns {string|null} cookie值
-   */
-  // function getCookie(name) {
-  //   const value = `; ${document.cookie}`;
-  //   const parts = value.split(`; ${name}=`);
-  //   if (parts.length === 2) return parts.pop().split(';').shift();
-  //   return null;
-  // }
-
-  /**
    * 处理退出登录点击事件
    */
   async function handleLogout() {
@@ -113,32 +101,6 @@
     // 跳转到登录页
     goto('/login');
   }
-
-  /**
-   * 导航跳转函数（处理isFilter的路径）
-   * @param {string} curr_path - 路由路径
-   * @param {string} first_path - 初始路径
-   */
-  // function navGoto(curr_path, first_path) {
-  //   // 查找第一个非isFilter的有效路径
-  //   const findValidPath = (path) => {
-  //     let target = current_nav_path_data.find((item) => item.path === path);
-
-  //     // 过滤isFilter为true的路径
-  //     if (target?.isFilter) {
-  //       if (target.children?.length > 0) {
-  //         return target.children.find((item) => !item.isFilter)?.path || first_path;
-  //       }
-  //       return first_path;
-  //     }
-  //     return path;
-  //   };
-
-  //   let history_path = nav_history_set[curr_path];
-  //   let target_path = findValidPath(history_path ?? curr_path);
-
-  //   goto(target_path);
-  // }
 
   $effect(() => {
     /**
@@ -168,6 +130,7 @@
 
     let nav_path_data = getNavData(current_url_path, nav_map);
     current_nav_path_data = nav_path_data;
+    // $inspect(current_nav_path_data);
 
     // 设置标题：只使用最后一个导航项的title
     if (nav_path_data.length > 0) {
@@ -185,32 +148,30 @@
 
 <div class="header-container">
   <div class="breadcrumbs-container">
-    {#each current_nav_path_data as { name, title, path, actual_path, children_is_parallel, isFilter }, index}
-      {#if !isFilter}
-        <div class="breadcrumbs-item-container">
-          {#if index < current_nav_path_data.length - 1}
-            <button
-              class="breadcrumbs-item"
-              class:active={true}
-              title={`跳转至${title}`}
-              onclick={() => goto(path)}
-              data-testid={`breadcrumb-item-${title}`}
-            >
-              {title}
-            </button>
-            <span class="breadcrumbs-separator">{'>'}</span>
-          {:else}
-            <span class="breadcrumbs-item" data-testid={`breadcrumb-item-${title}`}>
-              {title}
-            </span>
-          {/if}
-        </div>
-      {/if}
+    {#each current_nav_path_data as { name, title, path }, index}
+      <div class="breadcrumbs-item-container" data-testid="breadcrumbs-item-container">
+        {#if index < current_nav_path_data.length - 1}
+          <button
+            class="breadcrumbs-item"
+            class:active={true}
+            title={`跳转至${title}`}
+            onclick={() => goto(path)}
+            data-testid={`breadcrumb-item-${name}`}
+          >
+            {title}
+          </button>
+          <span class="breadcrumbs-separator">{'>'}</span>
+        {:else}
+          <span class="breadcrumbs-item" data-testid={`breadcrumb-item-${name}`}>
+            {title}
+          </span>
+        {/if}
+      </div>
     {/each}
   </div>
 
   <div class="user-container">
-    <span class="welcome-text">{`你好，${display_name}`}</span>
+    <span class="welcome-text" data-testid="welcome-text">{`你好，${display_name}`}</span>
 
     <button
       class="avatar-btn"
