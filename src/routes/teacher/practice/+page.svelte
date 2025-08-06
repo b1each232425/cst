@@ -9,6 +9,7 @@
   import { goto } from '$app/navigation';
   import { toast } from '$lib/components/Toast/Toast.js';
   import StudentSelectionPanel from './_components/StudentSelectionPanel.svelte';
+  import { get } from 'svelte/store';
   import {
     practice_data_list,
     practice_data_list_display,
@@ -17,6 +18,7 @@
     practice_status_store,
     current_page_store,
     page_size_store,
+    practice_filter,
   } from './store/practiceData.js';
   import { exportToExcel, pageQueryHandle } from './utils';
   import Title from '$lib/components/Title/Title.svelte';
@@ -28,14 +30,10 @@
   import Option from '$lib/components/Select/Option.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import { sget } from '$lib/utils/index.js';
-
-  // 使用runes接收页面数据
-  const { data } = $props();
-
   // 状态管理
-  let practice_name = $state(data.practice_name || ''); // 练习名称/课程名称输入框的值
-  let practice_type = $state(data.practice_type || '全部'); // 练习类型
-  let practice_status = $state(data.practice_status || '全部'); // 练习状态
+  let practice_name = $state(''); // 练习名称/课程名称输入框的值
+  let practice_type = $state('全部'); // 练习类型
+  let practice_status = $state('全部'); // 练习状态
 
   // 对话框状态管理
   let publishDialogOpen = $state(false); // 发布确认对话框
@@ -61,7 +59,7 @@
 
   // 练习列表数据类型
   /** @type {Practice[]} */
-  let displayed_practice_list = $state(Array.isArray(data.practices_display) ? data.practices_display : []);
+  let displayed_practice_list = $state([]);
 
   // 处理数据转置
   /**
@@ -103,18 +101,18 @@
 
   // 练习列表数据 - 从page.js加载，并进行转置处理
   /** @type {any[]} */
-  let practice_list = $state(transformPracticeData(Array.isArray(data.practices) ? data.practices : []));
+  let practice_list = $state([]);
 
   // 下拉选项配置
   let type_options = ['全部', '经典巩固', '随机组卷', '智能提升'];
 
   let status_options = ['全部', '已发布', '未发布'];
 
-  // 分页配置 - 使用后端返回的分页数据
-  let total_data_num = $state(data.total_count || 0);
-  let total_page_num = $state(data.total_page || 1);
-  let current_page_num = $state(data.current_page || 1);
-  let data_per_page = $state(data.page_size || 10);
+  // 分页配置
+  let total_data_num = $state(0);
+  let total_page_num = $state(1);
+  let current_page_num = $state(1);
+  let data_per_page = $state(10);
 
   /**
    * 从服务器获取指定页的练习数据
@@ -165,6 +163,7 @@
       .then((res) => res.json())
       .then((result) => {
         if (result.status === 0 && result.data && result.data.practices) {
+          practice_filter.set(true);
           // 更新练习列表和分页信息
           const transformedData = transformPracticeData(result.data.practices);
           practice_list = transformedData;
@@ -187,6 +186,16 @@
       })
       .catch((error) => {
         console.error('获取练习列表错误:', error);
+        toast.error('获取练习列表失败');
+        practice_filter.set(true);
+
+        ((practice_list = get(practice_data_list)),
+          (displayed_practice_list = get(practice_data_list_display)),
+          (practice_name = get(practice_name_store)),
+          (practice_type = get(practice_type_store)),
+          (practice_status = get(practice_status_store)),
+          (current_page_num = get(current_page_store)),
+          (data_per_page = get(page_size_store)));
       });
   }
 
@@ -202,13 +211,23 @@
     practice_status_store.set(practice_status || '全部');
     current_page_store.set(current_page_num);
     page_size_store.set(data_per_page);
-
     // 使用本地端分页和筛选
     await fetchPracticesFromServer(current_page_num, data_per_page, practice_name, practice_type, practice_status);
   }
 
   // 初始化时执行一次筛选
   onMount(() => {
+    console.log(get(practice_filter));
+    if (practice_filter) {
+      ((practice_list = get(practice_data_list)),
+        (displayed_practice_list = get(practice_data_list)),
+        (practice_name = get(practice_name_store)),
+        (practice_type = get(practice_type_store)),
+        (practice_status = get(practice_status_store)),
+        (current_page_num = get(current_page_store)),
+        (data_per_page = get(page_size_store)));
+    }
+    // 从API获取练习列表数据
     filter_practice_list();
   });
 
@@ -227,7 +246,6 @@
     current_page_num = 1; // 重置为第一页
     filter_practice_list();
   }
-
 
   /**
    * 页码选择回调
@@ -252,7 +270,6 @@
       filter_practice_list();
     }
   }
-
 
   // 新建练习按钮点击事件
   function create_new_practice() {
@@ -320,14 +337,14 @@
 
         // 显示发布成功提示
         toast.success('发布练习成功', 1000);
-         
       })
       .catch((error) => {
         console.error('发布练习请求异常:', error);
         toast.error('发布练习请求异常', 1000);
-      }).finally(()=>{
-        publishDialogOpen =false
       })
+      .finally(() => {
+        publishDialogOpen = false;
+      });
   }
 
   /**
@@ -392,8 +409,9 @@
       .catch((error) => {
         console.error('取消发布练习请求异常:', error);
         toast.error('取消发布练习请求异常', 1000);
-      }).finally(() => {
-       cancelPublishDialogOpen=false;
+      })
+      .finally(() => {
+        cancelPublishDialogOpen = false;
       });
   }
 
@@ -451,20 +469,20 @@
   async function handleStudentSelectionConfirm(selected) {
     if (!currentPractice) return;
     // 调用API更新练习的学生
-      const requestBody = {
-        Action: "POST",
-        Data:{
-          practice_id: currentPractice.ID,
-        student: selected.map((s) => s.id) // 发送学生 ID 数组
-        }
+    const requestBody = {
+      Action: 'POST',
+      Data: {
+        practice_id: currentPractice.ID,
+        student: selected.map((s) => s.id), // 发送学生 ID 数组
+      },
     };
 
     const response = await fetch('/api/practiceStudentList', {
       method: 'POST',
       body: JSON.stringify(requestBody),
-       headers: {
+      headers: {
         'Content-Type': 'application/json',
-    },
+      },
       credentials: 'include',
     })
       .then(async (response) => {
@@ -556,8 +574,9 @@
       .catch((error) => {
         console.error('删除练习请求异常:', error);
         toast.error('error', '删除练习请求异常', '', 1000);
-      }).finally(() => {
-       deleteDialogOpen=false
+      })
+      .finally(() => {
+        deleteDialogOpen = false;
       });
   }
 
@@ -609,7 +628,7 @@
         <div class="filter-box">
           <span class="filter-label">练习类型：</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={practice_type} onChangeValue={handle_type_change} filterable>
+            <Select bind:value={practice_type} changeValue={handle_type_change} filterable>
               {#each type_options as option}
                 <Option value={option} label={option}></Option>
               {/each}
@@ -619,7 +638,7 @@
         <div class="filter-box">
           <span class="filter-label">练习状态：</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={practice_status} filterable onChangeValue={handle_status_change}>
+            <Select bind:value={practice_status} filterable changeValue={handle_status_change}>
               {#each status_options as option}
                 <Option value={option} label={option}></Option>
               {/each}
@@ -644,7 +663,6 @@
         </thead>
         <tbody>
           {#if displayed_practice_list.length > 0}
-          
             {#each displayed_practice_list as practice}
               <tr>
                 <td style="text-align: center;" title={practice.Name}>{practice.Name}</td>
@@ -683,22 +701,20 @@
                 </td>
               </tr>
             {/each}
-            
           {:else}
-          <tr>
-            <td colspan="6" style="border: none;">
+            <tr>
+              <td colspan="6" style="border: none;">
                 <div class="empty-wrapper">
                   <Empty text="暂无练习数据" />
                 </div>
               </td>
-              </tr>
+            </tr>
           {/if}
         </tbody>
       </table>
     </div>
-       <div class="pagination-container"data-testid="pagination-container">
+    <div class="pagination-container" data-testid="pagination-container">
       <Pagination
-      
         total_items={total_data_num}
         page_size={data_per_page}
         current_page={current_page_num}
@@ -707,9 +723,6 @@
       />
     </div>
   </div>
-
-  
-  
 
   <!-- 发布确认对话框 -->
   <MessageBox
@@ -779,16 +792,15 @@
     background-color: #fff;
     box-shadow: none;
     position: relative;
-     display: block;
+    display: block;
     height: 100%;
     overflow: hidden;
 
     .table-action-container {
       display: flex;
       flex-direction: column;
-      padding: 17px 30px 0 30px;   
+      padding: 17px 30px 0 30px;
     }
-
 
     .search-and-add-button-container {
       display: flex;
@@ -847,16 +859,16 @@
   }
 
   .practice-table {
-      position: absolute;
-  top: 120px; /* 根据实际情况调整 */
-  left: 0;
-  width: 100%;
-  height: calc(87vh - 200px);
-  border: none;
-  border-radius: 0;
-  overflow: auto;
-  margin-bottom: 20px;
-  z-index: 1;
+    position: absolute;
+    top: 120px; /* 根据实际情况调整 */
+    left: 0;
+    width: 100%;
+    height: calc(87vh - 200px);
+    border: none;
+    border-radius: 0;
+    overflow: auto;
+    margin-bottom: 20px;
+    z-index: 1;
     table {
       width: 100%;
       border-collapse: collapse;
@@ -872,9 +884,9 @@
         border: none;
         padding: 8px;
         text-align: center;
-         position: sticky; /* 添加这行 */
-      top: 0; /* 添加这行 */
-      z-index: 1; /* 确保它在其他内容之上 */
+        position: sticky; /* 添加这行 */
+        top: 0; /* 添加这行 */
+        z-index: 1; /* 确保它在其他内容之上 */
       }
       th,
       td {
@@ -956,16 +968,14 @@
   .pagination-container {
     display: flex;
     justify-content: flex-end;
-     position: fixed;      /* 改为 fixed */
-    bottom: 50px;         /* 距离底部 20px */
-   right: 40px;          /* 距离右边 40px */
+    position: fixed; /* 改为 fixed */
+    bottom: 50px; /* 距离底部 20px */
+    right: 40px; /* 距离右边 40px */
     z-index: 10;
     padding: 0 40px 0px 0;
-    
   }
   .empty-wrapper {
-   
-   display: flex;
+    display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 8px;
