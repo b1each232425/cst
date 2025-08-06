@@ -41,6 +41,8 @@
   import left_jt from '/static/pagination/left.svg';
   import right_jt from '/static/pagination/right.svg';
   import { createEventDispatcher } from 'svelte';
+  import Select from '../Select/Select.svelte';
+  import Option from '../Select/Option.svelte';
 
   // 从父组件接收的属性参数
   let {
@@ -114,9 +116,7 @@
    * 处理每页显示条数变化
    * @param {Event} event - 选择框change事件
    */
-  function handlePageSizeChange(event) {
-    const new_size = +event.target.value;
-
+  function handlePageSizeChange(new_size) {
     // 如果当前页超出新的总页数，跳转到最后一页
     if (current_page > Math.ceil(total_items / new_size)) {
       current_page = Math.ceil(total_items / new_size);
@@ -217,11 +217,16 @@
 
   <!-- 每页条数设置 -->
   <div class="page-settings">
-    <select onchange={handlePageSizeChange} data-testid="select">
+    <!-- <select onchange={handlePageSizeChange} data-testid="select">
       {#each page_size_options as sizeOption}
         <option value={sizeOption}>{sizeOption}条/页</option>
       {/each}
-    </select>
+    </select> -->
+    <Select bind:value={page_size} direction="top" changeValue={handlePageSizeChange}>
+      {#each size_options as option}
+        <Option value={option.value} label={option.label}></Option>
+      {/each}
+    </Select>
   </div>
 
   <!-- 页码跳转区 -->
@@ -297,26 +302,9 @@
     .page-settings {
       display: flex;
       align-items: center;
+      width: 100px;
       gap: 0.8rem;
-      background-color: #f5f5f5;
       border-radius: 6px;
-
-      select {
-        padding: 0.3rem 0.5rem;
-        font-size: 0.9rem;
-        border: none;
-        border-radius: 4px;
-        background-color: #f5f5f5;
-
-        option {
-          background-color: #fff;
-          color: #000;
-        }
-      }
-
-      select:focus {
-        outline: none;
-      }
     }
 
     .jump-to {

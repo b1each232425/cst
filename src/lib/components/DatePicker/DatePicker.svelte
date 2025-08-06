@@ -330,14 +330,19 @@
     internal_start_date = null;
     internal_end_date = null;
     input_value = is_single_date_selection ? SINGLE_DATE_PROMPT : DEFAULT_PROMPT;
-    start_year = null;
-    start_month = null;
-    end_year = null;
-    end_month = null;
+
+    // 设置当前年份和月份
+    const now = new Date();
+    start_year = now.getFullYear();
+    start_month = now.getMonth();
+    end_year = now.getFullYear();
+    end_month = now.getMonth();
+
     selected_start_hour = null;
     selected_start_minute = null;
     selected_end_hour = null;
     selected_end_minute = null;
+
     updateInputValue();
   }
 

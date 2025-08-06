@@ -5,10 +5,11 @@
   import { page } from '$app/state';
   import { baseNavItems } from '$lib/stores/modules/permission.js';
 
-  let { app_name, avatar_img, icons, event_handle_funcs } = $props();
+  let { event_handle_funcs } = $props();
   let display_name = $state(''); // 用户名称
   let nav_map = $baseNavItems; // 导航数据
   let current_nav_path_data = $state([]);
+  let app_name = '3min';
 
   /**
    * 用户菜单是否打开
@@ -180,48 +181,23 @@
         user_menu_open = !user_menu_open;
       }}
     >
-      <img class="avatar-img" src={avatar_img} alt="头像" />
+      <img class="avatar-img" src="/user_icons/defaultAvatar.svg" alt="头像" />
     </button>
 
     <button class="notification-btn">
-      <img class="notification-img" src={icons.notification} alt="通知" />
+      <img class="notification-img" src="/user_icons/notification.svg" alt="通知" />
     </button>
   </div>
 
   {#if user_menu_open}
     <div class="user-menu-container" bind:this={user_menu_element} transition:slide={{ duration: 150 }}>
-      <button
-        class="user-menu-item"
-        onclick={(e) => {
-          user_menu_open = false;
-          event_handle_funcs?.onclickPersonalCenter?.();
-        }}
-      >
+      <button class="user-menu-item">
         <span>个人中心</span>
       </button>
-      <button
-        class="user-menu-item"
-        onclick={() => {
-          user_menu_open = false;
-          event_handle_funcs?.onclickSettings?.();
-        }}
-      >
+      <button class="user-menu-item">
         <span>设置</span>
       </button>
-      <button
-        class="user-menu-item"
-        style="color:#e34d59"
-        onclick={() => {
-          user_menu_open = false;
-          // 如果提供了自定义的退出登录函数，则使用它
-          if (event_handle_funcs?.onclickLogout) {
-            event_handle_funcs.onclickLogout();
-          } else {
-            // 否则使用默认的退出登录逻辑
-            handleLogout();
-          }
-        }}
-      >
+      <button class="user-menu-item" style="color:#e34d59" onclick={() => handleLogout()}>
         <span>退出登录</span>
       </button>
     </div>

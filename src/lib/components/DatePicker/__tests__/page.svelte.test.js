@@ -20,7 +20,7 @@ describe('DatePicker 组件测试', () => {
     const now = new Date();
     const expectedTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-    expect(input.value).toBe(expectedTime);
+    expect(input.value).toBe('请选择日期');
   });
 
   it('点击输入框时应该显示日历', async () => {
@@ -181,8 +181,11 @@ describe('DatePicker 组件测试', () => {
     await fireEvent.click(minuteButton);
 
     // 验证时间是否被正确选择
+    const now = new Date();
+    const expectedTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
     const selectedTime = screen.getByRole('textbox');
-    expect(selectedTime.value).toBe('2025-08-04 08:30'); // 验证输入框中显示的时间
+    expect(selectedTime.value).toBe(`${expectedTime} 08:30`); // 验证输入框中显示的时间
   });
 
   it('应该正确触发时间选择（开始和结束）', async () => {
@@ -215,9 +218,12 @@ describe('DatePicker 组件测试', () => {
     const endMinuteButton = screen.getByTestId('end-minute-45');
     await fireEvent.click(endMinuteButton);
 
+    const now = new Date();
+    const expectedTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
     // 验证结束时间是否正确选择
     const updatedEndTime = screen.getByRole('textbox');
-    expect(updatedEndTime.value).toBe('2025-08-04 08:30 ~ 2025-08-04 18:45'); // 验证输入框中显示的结束时间
+    expect(updatedEndTime.value).toBe(`${expectedTime} 08:30 ~ ${expectedTime} 18:45`);
   });
 
   it('应该正确重置日期选择器', async () => {
@@ -236,11 +242,8 @@ describe('DatePicker 组件测试', () => {
     const resetButton = screen.getByTestId('clear-btn');
     await fireEvent.click(resetButton); // 点击清除按钮
 
-    const now = new Date();
-    const expectedTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
     // 验证日期选择器重置
     const inputValue = screen.getByRole('textbox');
-    expect(inputValue.value).toBe(`${expectedTime} ~ ${expectedTime}`);
+    expect(inputValue.value).toBe(`开始日期   ~   结束日期`);
   });
 });

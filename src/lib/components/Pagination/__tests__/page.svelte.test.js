@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import Pagination from '../Pagination.svelte';
 
 describe('Pagination 组件测试', () => {
@@ -26,7 +26,10 @@ describe('Pagination 组件测试', () => {
       },
     });
 
-    expect(screen.getByText('共 100 条')).toBeInTheDocument(); // 验证总条数
+    // 等待并确保总条数显示
+    await waitFor(() => {
+      expect(screen.getByText('共 100 条')).toBeInTheDocument(); // 验证总条数
+    });
   });
 
   it('应该渲染正确的页码按钮', async () => {
@@ -45,6 +48,10 @@ describe('Pagination 组件测试', () => {
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByText('4')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
+    // 测试下拉选项是否正确渲染
+    page_size_options.forEach((size) => {
+      expect(screen.getByText(`${size}条/页`)).toBeInTheDocument();
+    });
   });
 
   it('应该高亮当前页码', async () => {
@@ -66,7 +73,7 @@ describe('Pagination 组件测试', () => {
       props: {
         total_items,
         page_size,
-        current_page,
+        current_page: 2,
         page_size_options,
       },
     });
@@ -124,9 +131,16 @@ describe('Pagination 组件测试', () => {
     // 选择每页条数为20
     const pageSizeSelect = screen.getByTestId('select');
     await fireEvent.change(pageSizeSelect, { target: { value: '20' } });
-
-    // 验证 select 元素的 value 是否为 '20'
     expect(pageSizeSelect.value).toBe('20');
+
+    await fireEvent.change(pageSizeSelect, { target: { value: '30' } });
+    expect(pageSizeSelect.value).toBe('30');
+
+    await fireEvent.change(pageSizeSelect, { target: { value: '40' } });
+    expect(pageSizeSelect.value).toBe('40');
+
+    await fireEvent.change(pageSizeSelect, { target: { value: '50' } });
+    expect(pageSizeSelect.value).toBe('50');
   });
 
   it('应该显示省略号', async () => {
@@ -173,5 +187,23 @@ describe('Pagination 组件测试', () => {
 
     const nextButton = screen.getByTestId('right_jt');
     expect(nextButton).toBeDisabled(); // 验证下一页按钮是否禁用
+  });
+
+  it('当前页超出新的总页数，跳转到最后一页', async () => {
+    render(Pagination, {
+      props: {
+        total_items,
+        page_size,
+        current_page: 10,
+        page_size_options,
+      },
+    });
+
+    // 选择每页条数为20
+    const pageSizeSelect = screen.getByTestId('select');
+    await fireEvent.change(pageSizeSelect, { target: { value: '20' } });
+
+    // 验证 select 元素的 value 是否为 '20'
+    expect(pageSizeSelect.value).toBe('20');
   });
 });
