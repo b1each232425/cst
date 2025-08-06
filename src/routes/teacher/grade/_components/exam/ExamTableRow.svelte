@@ -46,7 +46,7 @@
 		{#if exam.sessions && exam.sessions.length > 0}
 			{#each exam.sessions as session (session.exam_session_id)}
 				<div class="session-item">
-					{session.start_time==='-' ? new Date(session.start_time).toLocaleString() : ''} - {session.end_time==='-' ? new Date(session.end_time).toLocaleString() : ''}
+					{session.start_time!='-' ? new Date(session.start_time).toLocaleString() : ''} - {session.end_time!='-' ? new Date(session.end_time).toLocaleString() : ''}
 				</div>
 			{/each}
 		{:else}

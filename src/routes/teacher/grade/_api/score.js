@@ -97,53 +97,53 @@ export function submitExamGrades(exam_ids) {
 		});
 }
 
-/**
- * 获取考生名单以供导出
- * @param {string} examIDString - 考试ID字符串，以逗号分隔
- * @returns {Promise<any>}
- */
-export function getExamineeGradeList(examIDString) {
-	// 添加参数校验
-	if (typeof examIDString !== 'string' || !examIDString) {
-		return Promise.reject(new Error('获取考生名单失败：examIDString 必须是一个非空字符串。'));
-	}
-	const url = `/api/teacher/exam-grade/examinee-grade-list?examID=${examIDString}&page=-1&pageSize=-1`;
-	return fetch(url, {
-		method: 'GET',
-		credentials: 'include'
-	}).then((response) => {
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-		return response.json();
-	});
-}
+// /**
+//  * 获取考生名单以供导出
+//  * @param {string} examIDString - 考试ID字符串，以逗号分隔
+//  * @returns {Promise<any>}
+//  */
+// export function getExamineeGradeList(examIDString) {
+// 	// 添加参数校验
+// 	if (typeof examIDString !== 'string' || !examIDString) {
+// 		return Promise.reject(new Error('获取考生名单失败：examIDString 必须是一个非空字符串。'));
+// 	}
+// 	const url = `/api/teacher/exam-grade/examinee-grade-list?examID=${examIDString}&page=-1&pageSize=-1`;
+// 	return fetch(url, {
+// 		method: 'GET',
+// 		credentials: 'include'
+// 	}).then((response) => {
+// 		if (!response.ok) {
+// 			throw new Error(`HTTP error! status: ${response.status}`);
+// 		}
+// 		return response.json();
+// 	});
+// }
 
-/**
- * 获取成绩操作日志
- * @param {number} page - 页码
- * @param {number} pageSize - 每页数量
- * @returns {Promise<any>}
- */
-export function getGradeLogs(page = 1, pageSize = 10) {
-	const url = `/api/teacher/exam-grade/log?page=${page}&pageSize=${pageSize}`;
-	return fetch(url, {
-		method: 'GET',
-		credentials: 'include'
-	})
-		.then((response) => {
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return response.json();
-		})
-		.then((data) => {
-			if (data.status !== 0) {
-				throw new Error(data.msg || '获取操作日志失败');
-			}
-			return data;
-		});
-}
+// /**
+//  * 获取成绩操作日志
+//  * @param {number} page - 页码
+//  * @param {number} pageSize - 每页数量
+//  * @returns {Promise<any>}
+//  */
+// export function getGradeLogs(page = 1, pageSize = 10) {
+// 	const url = `/api/teacher/exam-grade/log?page=${page}&pageSize=${pageSize}`;
+// 	return fetch(url, {
+// 		method: 'GET',
+// 		credentials: 'include'
+// 	})
+// 		.then((response) => {
+// 			if (!response.ok) {
+// 				throw new Error(`HTTP error! status: ${response.status}`);
+// 			}
+// 			return response.json();
+// 		})
+// 		.then((data) => {
+// 			if (data.status !== 0) {
+// 				throw new Error(data.msg || '获取操作日志失败');
+// 			}
+// 			return data;
+// 		});
+// }
 
 /**
  * 获取练习成绩列表
@@ -182,41 +182,41 @@ export function getPractices(params) {
 	});
 }
 
-/**
- * @param {number[]} ids
- * @returns {Promise<any>}
- */
-export function exportPracticeGrades(ids) {
-	// 添加参数校验
-	if (!Array.isArray(ids) || ids.length === 0) {
-		return Promise.reject(new Error('导出失败：未选择任何项目。'));
-	}
+// /**
+//  * @param {number[]} ids
+//  * @returns {Promise<any>}
+//  */
+// export function exportPracticeGrades(ids) {
+// 	// 添加参数校验
+// 	if (!Array.isArray(ids) || ids.length === 0) {
+// 		return Promise.reject(new Error('导出失败：未选择任何项目。'));
+// 	}
 
-	return fetch('/api/teacher/practice-grade/export', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			credentials: 'include'
-		},
-		body: JSON.stringify({ ids })
-	})
-		.then((response) => {
-			if (!response.ok) {
-				throw new Error('HTTP error! status: ' + response.status);
-			}
-			return response.blob();
-		})
-		.then((blob) => {
-			const url = window.URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = 'practice_grades.xlsx';
-			document.body.appendChild(a);
-			a.click();
-			a.remove();
-		})
-		.catch((error) => {
-			console.error('导出练习成绩失败:', error);
-			throw error;
-		});
-} 
+// 	return fetch('/api/teacher/practice-grade/export', {
+// 		method: 'POST',
+// 		headers: {
+// 			'Content-Type': 'application/json',
+// 			credentials: 'include'
+// 		},
+// 		body: JSON.stringify({ ids })
+// 	})
+// 		.then((response) => {
+// 			if (!response.ok) {
+// 				throw new Error('HTTP error! status: ' + response.status);
+// 			}
+// 			return response.blob();
+// 		})
+// 		.then((blob) => {
+// 			const url = window.URL.createObjectURL(blob);
+// 			const a = document.createElement('a');
+// 			a.href = url;
+// 			a.download = 'practice_grades.xlsx';
+// 			document.body.appendChild(a);
+// 			a.click();
+// 			a.remove();
+// 		})
+// 		.catch((error) => {
+// 			console.error('导出练习成绩失败:', error);
+// 			throw error;
+// 		});
+// } 

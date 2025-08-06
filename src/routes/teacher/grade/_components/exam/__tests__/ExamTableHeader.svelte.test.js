@@ -132,12 +132,12 @@ describe('考试表格头部组件', () => {
         // 切换到选中状态
         await rerender({ selected: true, onclick: mockOnClick });
 
-        // Wait for DOM update
+        // 等待 DOM 更新
         await new Promise(resolve => setTimeout(resolve, 0));
 
         selectButton = container.querySelector('.square-container');
         expect(selectButton).toBeInTheDocument();
-        // Check if the component shows selected state (may not have .check-square element)
+        // 检查组件是否显示选中状态（可能没有 .check-square 元素）
         const hasSelectedState = container.querySelector('.check-square') ||
                                 selectButton?.classList.contains('checked') ||
                                 selectButton?.getAttribute('aria-checked') === 'true';

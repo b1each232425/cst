@@ -93,7 +93,7 @@ export function createGradeStore() {
 			}
 
 			state.loading = true;
-			// When fetching, reset selection
+			//获取考试数据时，重置选中状态
 			state.selected = {};
 			state.selectAll = false;
 			// 构建 API 参数，普通用户不传递 teacherID
@@ -136,7 +136,7 @@ export function createGradeStore() {
 		/** @param {number} id */
 		toggleSelect(id) {
 			state.selected[id] = !state.selected[id];
-			// Check if all are selected
+			// 检查是否全部选中
 			const allSelected = state.exams.length > 0 && state.exams.every((exam) => state.selected[exam.id]);
 			state.selectAll = allSelected;
 		},
@@ -156,7 +156,7 @@ export function createGradeStore() {
 			submitExamGrades(examIds)
 				.then(() => {
 					handleSuccess('成绩提交');
-					actions.fetchExams(); // Refresh data after submission
+					actions.fetchExams(); // 提交后刷新数据
 				})
 				.catch((error) => {
 					handleApiError(error, '提交成绩');
