@@ -62,10 +62,15 @@ describe('考试成绩管理页面', () => {
 		vi.clearAllMocks();
 	});
 
-	it('应该渲染标题组件', () => {
+	it('应该渲染标题组件', async () => {
 		render(Page);
-		// Assuming Title component renders a specific role or text
-		expect(screen.getByText('考试成绩管理')).toBeInTheDocument();
+		// Check if Title component was called with correct props
+		const Title = (await import('$lib/components/Title/Title.svelte')).default;
+		expect(Title).toHaveBeenCalled();
+		const titleCall = Title.mock.calls[0];
+		expect(titleCall[1]).toEqual(expect.objectContaining({
+			title: '考试成绩管理'
+		}));
 	});
 
 	it('shows loading message when store is in loading state', () => {

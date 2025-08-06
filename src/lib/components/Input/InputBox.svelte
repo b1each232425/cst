@@ -1,122 +1,126 @@
-<!-- /**
-  * 输入框组件使用说明
-  *
-  * 作者：段春茂
-  * 邮箱：2162105974@qq.com
-  *
-  * 参数配置：
-  * @param {String}  value        输入框的值（支持双向绑定）
-  * @param {String}  label        标签文字，默认："标签文字"
-  * @param {String}  type         输入框类型，如 text、password 等，默认："text"
-  * @param {String}  placeholder  占位符文本，默认："请输入信息"
-  * @param {Boolean} request      是否为必填项，显示红色 * 号，默认：false
-  * @param {Boolean} showLabel    是否显示标签，默认：true
-  * @param {Boolean} readonly     是否为只读状态，默认：false
-  * @param {Boolean} disabled     是否禁用输入，默认：false
-  * @param {Boolean} clearable    是否显示清除按钮（有内容时），默认：true
-  * @param {Boolean} round        输入框是否为圆角样式，默认：false
-  * @param {Function} onInput     输入事件回调函数，参数为输入值，默认：()=>{}
-  *
-  * 功能说明：
-  * - 支持输入框类型切换（如密码可点击切换明文/密文）
-  * - 支持清除按钮
-  * - 支持圆角风格和响应式布局
-  *
-  * 使用示例：
-  * <InputBox
-  *   value={form.name}
-  *   label="姓名"
-  *   placeholder="请输入姓名"
-  *   request={true}
-  *   onInput={val => form.name = val}
-  * />
-  *
-  * <InputBox
-  *   value={form.password}
-  *   label="登录密码"
-  *   type="password"
-  *   clearable={false}
-  *   onInput={val => form.password = val}
-  * />
-  *
-  * <InputBox
-  *   value="不可编辑"
-  *   label="只读字段"
-  *   readonly={true}
-  *   disabled={true}
-  *   showLabel={false}
-  * />
-  *
-  * 注意事项：
-  * - `value` 支持双向绑定（$bindable）
-  * - `type=password` 时支持点击切换明文显示
-  * - 若设置 `readonly` 或 `disabled`，用户无法编辑内容
-  */ -->
 <script>
+  /**
+   * @component InputBox
+   * @description 输入框组件
+   *
+   * @props
+   * @property {string} [value=''] - 输入框的值
+   * @property {string} [label='标签文字'] - 标签文字
+   * @property {string} [type='text'] - 输入框类型
+   * @property {string} [placeholder='请输入信息'] - 输入框提示文字
+   * @property {boolean} [request=false] - 是否显示必填符号
+   * @property {boolean} [show_label=true] - 是否显示标签
+   * @property {boolean} [readonly=false] - 是否只读,只读模式下不显示清除按钮
+   * @property {string} [color=''] - 输入框字体颜色,只针对readonly=true模式有效
+   * @property {boolean} [disabled=false] - 是否禁用
+   * @property {boolean} [clearable=true] - 是否显示清除按钮
+   * @property {boolean} [round=false] - 是否圆角
+   * @property {function} [onInput=()=>{}] - 输入框输入事件
+   *
+   * @example
+   * <InputBox bind:value={valueName} onInput={handleInput} />
+   */
   let {
     value = $bindable(),
     label = '标签文字',
     type = 'text',
     placeholder = '请输入信息',
     request = false,
-    showLabel = true,
+    show_label = true,
     readonly = false,
+    color = '',
     disabled = false,
     clearable = true,
     round = false,
     onInput = () => {},
   } = $props();
+
   let inputType = $state(type);
+  let showPassword = $state(false);
+
+  /**
+   * 处理单个输入框的输入事件
+   * @param event
+   */
   function handleInputSingle(event) {
     onInput(event.target.value);
   }
+
+  /**
+   * 清除输入框内容
+   * @type {function}
+   */
   function clearInput() {
     value = '';
     onInput(value);
   }
-  let showPassword = $state(false);
+
+  /**
+   * 切换密码显示
+   * @type {function}
+   */
   function togglePassword() {
     showPassword = !showPassword;
     inputType = showPassword ? 'text' : 'password';
   }
 </script>
 
-<svelte:head>
-  <link rel="stylesheet" href="https://at.alicdn.com/t/c/font_4895803_6bo7d9a3huu.css" />
-</svelte:head>
-
 <div class="InputBox-container">
-  {#if showLabel}
+  <!-- 标签显示 -->
+  {#if show_label}
     <div class="InputBox-label">
+      <!-- request符号显示 -->
       {#if request}
         <span class="required">*</span>
       {/if}
       {label}
     </div>
   {/if}
-  <div class="InputBox-box">
-    <input
-      class="InputBox-input {round ? 'round' : ''}"
-      type={inputType}
-      bind:value
-      {placeholder}
-      {readonly}
-      {disabled}
-      oninput={handleInputSingle}
-    />
-    {#if clearable && value}
-      <button class="clear-icon" onclick={clearInput} aria-label="清除输入">
-        <i class="iconfont icon-shanchu"></i>
+  <!-- 通过readonly属性控制是否可编辑,切换为只读状态用来展示的样式 -->
+  {#if readonly}
+    {#if type.toLowerCase() == 'password'}
+      <div class="InforInput-password {round ? 'round' : ''} {disabled ? 'disabled' : ''}">
+        {#if showPassword}
+          {value || '• • • • • • • •'}
+        {:else}
+          • • • • • • • •
+        {/if}
+      </div>
+      <button onclick={togglePassword} title={showPassword ? '隐藏密码' : '显示密码'}>
+        <img src="/teacher_mgt/{showPassword ? 'hide.svg' : 'show.svg'}" alt="{showPassword ? '隐藏' : '显示'}密码" />
       </button>
+    {:else}
+      <div
+        class="InforInput-value {round ? 'round' : ''} {disabled ? 'disabled' : ''}"
+        style={color ? `color: ${color};` : ''}
+      >
+        {value ? value : placeholder}
+      </div>
     {/if}
-    <button
-      onclick={togglePassword}
-      title={showPassword ? '隐藏密码' : '显示密码'}
-      class="password-icon {type == 'password' ? '' : 'hide'}"
-    >
-      <img src="/teacher_mgt/{showPassword ? 'hide.svg' : 'show.svg'}" alt="{showPassword ? '隐藏' : '显示'}密码" />
-    </button>
-  </div>
+    <!-- 普通通用输入框 -->
+  {:else}
+    <div class="InputBox-box">
+      <input
+        class="InputBox-input {round ? 'round' : ''} {disabled ? 'disabled' : ''}"
+        type={inputType}
+        bind:value
+        {placeholder}
+        {disabled}
+        oninput={handleInputSingle}
+      />
+      <!-- 清除输入按钮 -->
+      {#if clearable && value && !disabled}
+        <button class="clear-icon" onclick={clearInput} aria-label="清除输入"></button>
+      {/if}
+      <button
+        onclick={togglePassword}
+        title={showPassword ? '隐藏密码' : '显示密码'}
+        class="password-icon {type == 'password' ? '' : 'hide'}"
+      >
+        <img src="/teacher_mgt/{showPassword ? 'hide.svg' : 'show.svg'}" alt="{showPassword ? '隐藏' : '显示'}密码" />
+      </button>
+    </div>
+  {/if}
 </div>
 
 <style lang="scss" scoped>
@@ -134,6 +138,30 @@
       .required {
         color: red;
         font-size: 14px;
+      }
+    }
+    .InforInput-value,
+    .InforInput-password {
+      flex: 1;
+      color: #333;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+      padding: 6px 8px;
+      box-sizing: border-box;
+      min-width: 200px;
+    }
+    .InforInput-value {
+      min-width: 230px;
+    }
+    button {
+      margin-left: 8px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      img {
+        width: 16px;
+        height: 16px;
       }
     }
     .InputBox-box {
@@ -158,9 +186,6 @@
         &:focus {
           border-color: #409eff;
         }
-        &.round {
-          border-radius: 20px;
-        }
       }
     }
     .clear-icon {
@@ -168,16 +193,17 @@
       right: 4px;
       top: 50%;
       transform: translateY(-50%);
-      font-size: 14px;
-      color: #aaa;
       cursor: pointer;
       z-index: 2;
-      background: #fff;
-      padding: 2px;
-      border-radius: 50%;
-      transition: color 0.2s;
+      transition: all 0.2s;
+      width: 16px;
+      height: 16px;
+      background-image: url('/clear/delete.svg');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
       &:hover {
-        color: #165dff;
+        background-image: url('/clear/delete-active.svg');
       }
     }
     .password-icon {
@@ -199,26 +225,13 @@
       }
     }
   }
-
+  .round {
+    border-radius: 20px;
+  }
+  .disabled {
+    cursor: not-allowed;
+  }
   button {
     all: unset;
-  }
-  .InputBox-input:hover,
-  .InputBox-input:focus {
-    border-color: #165dff;
-  }
-  input::-ms-reveal,
-  input::-ms-clear {
-    display: none;
-  }
-  input::-webkit-credentials-auto-fill-button {
-    visibility: hidden;
-    display: none !important;
-    pointer-events: none;
-    position: absolute;
-    right: 0;
-  }
-  input::-webkit-textfield-decoration-container {
-    display: none !important;
   }
 </style>
