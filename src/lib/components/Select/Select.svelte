@@ -224,7 +224,7 @@
     display: inline-flex;
     flex-direction: column;
     font-family: 'Inter', sans-serif;
-    font-size: 12px;
+    font-size: 14px;
     min-width: 80px;
     width: 100%;
     .input {
@@ -255,7 +255,7 @@
           align-items: center;
           justify-content: center;
           background: #f0f0f0;
-          padding: 1.5px 5px;
+          padding: 1.6px 5px;
           border-radius: 4px;
           font-size: 10px;
           color: var(--text-primary);
@@ -279,7 +279,7 @@
       }
       .placeholder {
         color: var(--text-primary);
-        font-size: 12px;
+        font-size: 14px;
       }
     }
     .icon {
