@@ -1,3 +1,12 @@
+<!--
+ * @Author: WangKaidun 1597225095@qq.com
+ * @Date: 2025-08-01 21:09:59
+ * @LastEditors: WangKaidun 1597225095@qq.com
+ * @LastEditTime: 2025-08-06 22:33:17
+ * @FilePath: \exam\src\routes\teacher\paper\_components\ImportQuestion\ImportQuestion.svelte
+ * @Description: 从题库导入题目组件
+ * @Copyright (c) 2025 by ${git_name_email}, All Rights Reserved. 
+-->
 <script>
     import Button from "$lib/components/Button/Button.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
@@ -5,17 +14,18 @@
     import { debounce } from "$lib/utils/optimize";
     import { onMount } from "svelte";
     import { fetchBankQuestionList, fetchPaper, fetchQuestionBankList, savePaper } from "../../_utils/api";
-    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS, TAG_COLOR_LIST } from "../../_utils/data";
-    import { formatTimestamp, getColorIndex, restoreOpenState } from "../../_utils/func";
+    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS, TAG_COLOR_LIST } from "../../_utils/func";
+    import { formatTimestamp, getColorIndex } from "../../_utils/func";
     import { toast } from "$lib/components/Toast/Toast";
     import Empty from "$lib/components/Table/Empty.svelte";
+    import { get } from "svelte/store";
+    import { CURRENT_PAPER_ID } from "../../_stores/store";
 
     /**************** 开关控制区 ****************/
 
     let { onclose, update, to_add_groupID = 0, to_add_group_name = "" } = $props();                 // 关闭弹窗
     let drop_up_toggle_is_open = $state(false);     // 上拉题组栏
     let filter_is_open = $state(false);           // 下拉筛选栏
-    let is_first_entry = $state(true);            // 是否首次打开弹窗
     
     /**************** 开关控制区 ****************/
     
@@ -33,7 +43,6 @@
         to_add_groupID = group.id;
         to_add_group_name = group.name; 
         to_add_group_length = group.questions.length;
-        // console.log(toAddgroupLength)
     }
 
     /**************** 信息区 ****************/
@@ -54,16 +63,25 @@
             });
     }, 500, false);
 
-    $effect(() => {
-        bank_key_word;
-        if(!is_first_entry) {
-            debouncedFetchQuestionBankList();
-        }
-    });
-
     // 单选题库功能
     function toggleBank(id) {
         to_add_bankID = to_add_bankID === id ? "" : id;
+
+        // 搜索题库内的题目
+        if(to_add_bankID !== "") {
+            fetchBankQuestionList(
+                to_add_bankID,
+                question_page,
+                question_page_size,
+                question_name,
+                question_gags,
+                question_type,
+                question_difficulty
+            ).then( result => {
+                question_list = result.data || [];
+                total_questions = result.rowCount;
+            });
+        } else { question_list = []; }
     }
 
     /**************** 题库列表 ****************/
@@ -95,17 +113,18 @@
         } else {
             selected_question_infos = selected_question_infos.filter(item => item.id !== id);
         }
+        checkAllSelected();
     }
 
     // 检查全选
-    $effect(() => {
+    function checkAllSelected() {
         const currentPageIDs = question_list.map(item => item.ID);
         const selectedIDs = selected_question_infos.map(q => q.id);
         all_question_selected = (
             question_list.length !== 0 &&
             currentPageIDs.every(id => selectedIDs.includes(id))
         );
-    });
+    }
 
     // 全选
     function selectAllQuestions(checked) {
@@ -120,6 +139,7 @@
             const currentPageIds = question_list.map(item => item.ID);
             selected_question_infos = selected_question_infos.filter(q => !currentPageIds.includes(q.id));
         }
+        checkAllSelected();
     }
 
     // 确认导入题目
@@ -153,15 +173,7 @@
     // 处理页面跳转
     function handlePageChange(event) {
         question_page = event.detail;
-    }
-
-    // 处理页面尺寸更改
-    function handlePageSizeChange(event) {
-        question_page_size = event.detail;
-        question_page = 1; // 改变每页数量时通常要跳回第一页
-    }
-    
-    $effect(() => {
+        // 搜索题库内的题目
         if(to_add_bankID !== "") {
             fetchBankQuestionList(
                 to_add_bankID,
@@ -174,9 +186,32 @@
             ).then( result => {
                 question_list = result.data || [];
                 total_questions = result.rowCount;
+                checkAllSelected();
             });
         } else { question_list = []; }
-    });
+    }
+
+    // 处理页面尺寸更改
+    function handlePageSizeChange(event) {
+        question_page_size = event.detail;
+        question_page = 1; // 改变每页数量时通常要跳回第一页
+        // 搜索题库内的题目
+        if(to_add_bankID !== "") {
+            fetchBankQuestionList(
+                to_add_bankID,
+                question_page,
+                question_page_size,
+                question_name,
+                question_gags,
+                question_type,
+                question_difficulty
+            ).then( result => {
+                question_list = result.data || [];
+                total_questions = result.rowCount;
+                checkAllSelected();
+            });
+        } else { question_list = []; }
+    }
 
     /**************** 题目列表 ****************/
 
@@ -185,10 +220,9 @@
         fetchQuestionBankList(bank_key_word, "", "", "")
             .then(result => {
                 bank_list = result.data || [];
-                is_first_entry = false;
             });
 
-        paperID = JSON.parse(localStorage.getItem('currentPaperID'));
+        paperID = get(CURRENT_PAPER_ID);
         fetchPaper(paperID)
             .then(result => {
                 paper_info = result.data;
@@ -219,7 +253,7 @@
 
                 <!-- 搜索 -->
                 <div class="search-box">
-                    <InputBox bind:value={bank_key_word} placeholder="搜索题库" showLabel={false}/>
+                    <InputBox onInput={()=>debouncedFetchQuestionBankList()} bind:value={bank_key_word} placeholder="搜索题库" show_label={false}/>
                 </div>
 
                 <!-- 题库列表 -->

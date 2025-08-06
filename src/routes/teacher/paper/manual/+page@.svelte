@@ -1,8 +1,17 @@
+<!--
+ * @Author: WangKaidun 1597225095@qq.com
+ * @Date: 2025-08-01 15:21:42
+ * @LastEditors: WangKaidun 1597225095@qq.com
+ * @LastEditTime: 2025-08-06 22:31:18
+ * @FilePath: \exam\src\routes\teacher\paper\manual\+page@.svelte
+ * @Description: 自定义组卷页面
+ * @Copyright (c) 2025 by ${git_name_email}, All Rights Reserved. 
+-->
 <script>
     import { goto } from "$app/navigation";
     import Button from "$lib/components/Button/Button.svelte";
-    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS, TAG_COLOR_LIST } from "../_utils/data";
-    import { getColorIndex, restoreOpenState } from "../_utils/func";
+    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS, TAG_COLOR_LIST } from "../_utils/func";
+    import { getColorIndex } from "../_utils/func";
     import ImportQuestion from "../_components/ImportQuestion/ImportQuestion.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Select from "$lib/components/Select/Select.svelte";
@@ -15,6 +24,8 @@
     import { debounce } from "$lib/utils/optimize";
     import QuestionPreviewPanel from "../../question-bank/_components/QuestionPreviewPanel.svelte";
     import QuestionPreview from "../_components/PreviewQuestion/PreviewQuestion.svelte"
+    import { get } from "svelte/store";
+    import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE } from "../_stores/store";
     
     /*************** 控制开关区 ****************/
     let import_modal_is_open = $state(false);  // 从题库中导入题目弹窗
@@ -41,8 +52,8 @@
     let description = $state("");
     let tags = $state([]);
 
-    // 防抖更新试卷信息
-    const debounceUpDatePaperInfo = debounce(() => {
+    // 保存试卷信息
+    function UpDatePaperInfo() {
         const ACTIONS = [
             {
                 action: "update_info",
@@ -56,14 +67,13 @@
                 }
             }
         ];
-
         savePaper(paperID, ACTIONS);
-    }, 500, false);
+    }
 
-    $effect(() => {
-        paper_name; category; level; suggested_duration; description; tags;
-        debounceUpDatePaperInfo();
-    });
+    // 防抖更新试卷信息
+    const debounceUpDatePaperInfo = debounce(() => {
+        UpDatePaperInfo();
+    }, 500, false);
 
     /*************** 试卷信息区 ****************/
 
@@ -78,6 +88,7 @@
         if (event.key === "Enter" && to_add_tag.trim() !== "") {
             tags = [to_add_tag, ...tags];
             to_add_tag = "";
+            UpDatePaperInfo();
         }
     }
 
@@ -96,6 +107,7 @@
     // 删除旧标签
     function deleteTag(index) {
         tags = tags.toSpliced(index, 1);
+        UpDatePaperInfo();
     }
 
     /**************** 标签处理区 ****************/    
@@ -146,7 +158,6 @@
                     .then(() => {
                         fetchPaper(paperID)
                         .then(result => {
-                            restoreOpenState(result.data.GroupsData, paper_groups);
                             paper_groups = result.data.GroupsData;
                             paper_info = result.data;
                             total_score = paper_info.TotalScore;
@@ -190,7 +201,6 @@
                 .then(result => {
                     fetchPaper(paperID)
                         .then(result => {
-                            restoreOpenState(result.data.GroupsData, paper_groups);
                             paper_groups = result.data.GroupsData;
                             paper_info = result.data;
                             is_adding_group = false;
@@ -231,7 +241,6 @@
                 .then(() => {
                     fetchPaper(paperID)
                         .then(result => {
-                            restoreOpenState(result.data.GroupsData, paper_groups);
                             paper_groups = result.data.GroupsData;
                             paper_info = result.data;
                             to_edit_groupID = null;
@@ -275,7 +284,6 @@
                     .then(() => {
                         fetchPaper(paperID)
                             .then(result => {
-                                restoreOpenState(result.data.GroupsData, paper_groups);
                                 paper_groups = result.data.GroupsData;
                                 paper_info = result.data;
                                 total_score = paper_info.TotalScore;
@@ -289,7 +297,6 @@
 
     // 导入题目后信息更新
     function updateAfterImport(updatedGroups, updatedInfo) {
-        restoreOpenState(updatedGroups, paper_groups);
         paper_groups = updatedGroups;
         paper_info = updatedInfo;
         question_count = updatedInfo.QuestionCount;
@@ -316,11 +323,21 @@
         });
     }
 
+    // 切换展开状态
+    function changeOpenState(type, id) {
+        if(type === "group") {
+            GROUP_OPEN_STATE.update(state => ({ ...state, [id]: !state[id] }));
+        }
+        if(type === "question") {
+            QUESTION_OPEN_STATE.update(state => ({ ...state, [id]: !state[id] }));
+        }
+    }
+
     /**************** 题组列表区 ****************/
 
     // 挂载区
     onMount(() => {
-        paperID = JSON.parse(localStorage.getItem('currentPaperID'));
+        paperID = get(CURRENT_PAPER_ID);
         fetchPaper(paperID)
             .then(result => {
                 paper_info = result.data;
@@ -346,6 +363,9 @@
                 tags = paper_info.Tags;
 
                 page_is_ready = true;
+            })
+            .finally(() => {
+                // console.log(paper_groups);
             });
     })
 
@@ -376,7 +396,7 @@
             </div>
 
             <!-- 试卷名称 -->
-            <input class="paper-name-input {paper_name===""?"name-warn":""}" type="text" bind:value={paper_name} placeholder="试卷名称不能为空">
+            <input onchange={()=>debounceUpDatePaperInfo()} class="paper-name-input {paper_name===""?"name-warn":""}" type="text" bind:value={paper_name} placeholder="试卷名称不能为空">
             
             <!-- 操作区 -->
             <div class="operation">
@@ -397,7 +417,7 @@
                     <!-- 试卷用途 -->
                     <div class="single-line">
                         <span class="info-label">试卷用途</span>
-                        <Select bind:value={category}>
+                        <Select bind:value={category} changeValue={()=>UpDatePaperInfo()}>
                             <Option value="00" label="考试"></Option>
                             <Option value="02" label="练习"></Option>
                         </Select>
@@ -406,7 +426,7 @@
                     <!-- 试卷难度 -->
                     <div class="single-line">
                         <span class="info-label">试卷难度</span>
-                        <div class="level-container">
+                        <div class="level-container" onchange={()=>UpDatePaperInfo()}>
                             <div class="single-level">
                                 <input type="radio" name="paper-level" value="00" bind:group={level}>简单
                             </div>
@@ -422,7 +442,7 @@
                     <!-- 建议时长 -->
                     <div class="single-line">
                         <span class="info-label">建议时长</span>
-                        <InputBox bind:value={suggested_duration} type="number" showLabel={false} clearable={false}/>
+                        <InputBox onInput={()=>debounceUpDatePaperInfo()} bind:value={suggested_duration} type="number" show_label={false} clearable={false}/>
                         <span class="duration-span">分钟</span>
                     </div>
 
@@ -443,7 +463,7 @@
                     <!-- 试卷说明 -->
                     <div class="paper-description">
                         <span class="info-label">试卷说明</span>
-                        <textarea class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
+                        <textarea onchange={()=>debounceUpDatePaperInfo()} class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
                     </div>
 
                     <!-- 试卷标签 -->
@@ -493,7 +513,7 @@
                             {#each paper_groups as group}
                                 {#if to_edit_groupID === group.id}
                                 <div class="single-group">
-                                        <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} bind:this={to_edit_group} class="add-group-input" type="text">
+                                        <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} bind:this={to_edit_group} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
                                         <div class="btn-box">
                                             <!-- 删除按钮 -->
                                             <button onclick={()=>{to_edit_groupID=null}} class="delete-group-btn" title="删除">✖</button>
@@ -532,7 +552,7 @@
                         <!-- 添加题组 -->
                         {#if is_adding_group}
                             <div class="single-group">
-                                <input bind:value={to_add_group_name} onkeydown={confirmAddgroup} bind:this={to_add_group} class="add-group-input" type="text">
+                                <input bind:value={to_add_group_name} onkeydown={confirmAddgroup} bind:this={to_add_group} class="add-group-input" type="text" placeholder="按 Enter 键确认添加">
                                 <div class="btn-box">
                                     <!-- 取消按钮 -->
                                     <button onclick={()=>cancelAddGroup()} class="delete-group-btn" title="删除">✖</button>
@@ -554,8 +574,8 @@
                                 <!-- 左侧区域 -->
                                 <!-- svelte-ignore a11y_click_events_have_key_events -->
                                 <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                <div class="header-left" onclick={()=>{group.isOpen=!group.isOpen}}>
-                                    <button class="toggle-btn">{group.isOpen?"∨":"∧"}</button>
+                                <div class="header-left" onclick={()=>changeOpenState("group",group.id)}>
+                                    <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
                                     <span>{group.name}</span>
                                 </div>
 
@@ -587,7 +607,7 @@
                             </div>
 
                             <!-- 题目列表 -->
-                            {#if group.isOpen}
+                            {#if $GROUP_OPEN_STATE[group.id]}
                                 <div class="group-question-list">
                                     
                                     {#if group.questions.length !== 0}
@@ -598,8 +618,8 @@
                                                     <!-- 左侧区域 -->
                                                     <!-- svelte-ignore a11y_click_events_have_key_events -->
                                                     <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                                    <div class="header-left"  onclick={()=>{question.isOpen=!question.isOpen}}>
-                                                        <button class="toggle-btn-down">{question.isOpen?"∨":"∧"}</button>
+                                                    <div class="header-left"  onclick={()=>changeOpenState("question",question.id)}>
+                                                        <button class="toggle-btn-down">{$QUESTION_OPEN_STATE[question.id]?"∨":"∧"}</button>
                                                         <span class="sequence">{question.order}</span>
                                                         <span class="question-type">{QUESTION_TYPE_TRANS[question.type]}</span>
                                                         <span class={DIFFICULTY_TRANS[DIFFICULTY_TRANS[question.difficulty]]}>{DIFFICULTY_TRANS[question.difficulty]}</span>
@@ -635,7 +655,7 @@
                                                 </div>
 
                                                 <!-- 题目内容 -->
-                                                {#if question.isOpen}
+                                                {#if $QUESTION_OPEN_STATE[question.id]}
                                                     <div class="question-container">
                                                         <QuestionPreview {question}/>                                            
                                                     </div>
@@ -644,7 +664,7 @@
                                         {/each}
                                     
                                         <!-- 暂无题目 -->
-                                        {:else}
+                                    {:else}
                                         <div class="no-questions-container">
                                             <div class="no-questions-box">
                                                 <span class="title">题组暂无题目</span>
@@ -678,7 +698,7 @@
             padding: 16px 32px 16px 24px;
             align-items: center;
             border-bottom: 1.5px solid var(--border-light);
-            height: 75px;
+            min-height: 40px;
             white-space: nowrap;
 
             /* 标题 */

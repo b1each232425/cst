@@ -126,7 +126,7 @@ const EMPTY_PAPER = {
     },
 };
 
-describe("试卷管理测试", () => {
+describe("试卷列表测试", () => {
     // 每个测试用例前的初始化
     beforeEach(() => {
         fetchPaperList.mockReset();

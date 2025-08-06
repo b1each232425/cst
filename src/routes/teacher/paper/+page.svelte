@@ -1,8 +1,17 @@
+<!--
+ * @Author: WangKaidun 1597225095@qq.com
+ * @Date: 2025-08-01 15:21:42
+ * @LastEditors: WangKaidun 1597225095@qq.com
+ * @LastEditTime: 2025-08-06 22:30:57
+ * @FilePath: \exam\src\routes\teacher\paper\+page.svelte
+ * @Description: 试卷列表页面
+ * @Copyright (c) 2025 by ${git_name_email}, All Rights Reserved. 
+-->
 <script>
     // @ts-nocheck
-    
+
     import { formatDate, formatTimestamp, getColorIndex } from "./_utils/func";
-    import { LEVEL_TRANS, CATEGORY_TRANS, ACCESS_MODE_TRANS, ASSEMBLY_TYPE_TRANS, TAG_COLOR_LIST } from "./_utils/data";
+    import { LEVEL_TRANS, CATEGORY_TRANS, ACCESS_MODE_TRANS, ASSEMBLY_TYPE_TRANS, TAG_COLOR_LIST } from "./_utils/func";
     import { goto } from "$app/navigation";
     import Title from "$lib/components/Title/Title.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
@@ -15,118 +24,123 @@
     import { onMount } from "svelte";
     import { toast } from "$lib/components/Toast/Toast";
     import Empty from "$lib/components/Table/Empty.svelte";
+    import { ALL_PAPER_SELECTED, CURRENT_PAPER_ID, PAPER_PAGE, PAPER_PAGE_SIZE, SEARCH_PAPER_NAME, SEARCH_PAPER_TAGS, SELECTED_PAPER_IDS } from "./_stores/store";
+    import { get } from "svelte/store";
     
-    let paper_name = $state("");               // 试卷名称
-    let paper_tags = $state("");               // 试卷标签
-    let paper_category = $state("");           // 试卷用途
     let total_papers = $state(0);              // 试卷总数
-    let paper_page_size = $state(10);          // 每页条数
-    let paper_page = $state(1);                // 当前页
     let paper_page_size_options = [10, 20]     // 每页条数选择项
     let paper_list = $state([]);               // 试卷列表
-    let selected_paperIDs = $state([]);        // 已选 ID 数组
-    let all_paper_selected = $state(false);    // 是否为全选状态
-    let is_first_entry = $state(true);         // 是否首次进入页面
-
+    
     // 选中数据
     function toggleSelection(ID, checked) {
-        if(checked) {
-            selected_paperIDs.push(ID);
-        } else {
-            selected_paperIDs = selected_paperIDs.filter(item => item !== ID);
-        }
+        SELECTED_PAPER_IDS.update(current => {
+            if (checked) {
+                // 添加 ID（防止重复）
+                if (!current.includes(ID)) {
+                    return [...current, ID];
+                }
+                return current;
+            } else {
+                // 移除 ID
+                return current.filter(item => item !== ID);
+            }
+        });
+
+        checkAllSelected();
     }
 
     // 检查全选
-    $effect(() => {
-        if(paper_list.length !== 0 && paper_list.every(item => selected_paperIDs.includes(item.ID))) {
-            all_paper_selected = true;
-        } else {
-            all_paper_selected = false;
-        }
-    });
+    function checkAllSelected() {
+        const selected_paperIDs = get(SELECTED_PAPER_IDS);
+        const allSelected = paper_list.length !== 0 && paper_list.every(p =>
+            selected_paperIDs.includes(p.ID)
+        );
+        ALL_PAPER_SELECTED.set(allSelected);
+    }
 
     // 全选
     function selectedAll(checked) {
         const CURRENT_PAGE_IDS = paper_list.map(item => item.ID);
-        if(checked) {
-            const CURRENT_PAGE_IDS = paper_list.map(item => item.ID);
-            const NOT_YET_SELECTED = CURRENT_PAGE_IDS.filter(ID => !selected_paperIDs.includes(ID));
-            selected_paperIDs = [...selected_paperIDs, ...NOT_YET_SELECTED];
-        } else {
-            selected_paperIDs = selected_paperIDs.filter(ID => !CURRENT_PAGE_IDS.includes(ID));
-        }
+
+        SELECTED_PAPER_IDS.update(current => {
+            if (checked) {
+                const notYetSelected = CURRENT_PAGE_IDS.filter(ID => !current.includes(ID));
+                return [...current, ...notYetSelected];
+            } else {
+                return current.filter(ID => !CURRENT_PAGE_IDS.includes(ID));
+            }
+        });
+
+        checkAllSelected();
     }
 
     // 重置按钮
     function resetSearch() {
-        paper_name = "";
-        paper_tags = "";
-        paper_page = 1;
-        paper_page_size = 10;
-        selected_paperIDs = [];
+        SEARCH_PAPER_NAME.set("");
+        SEARCH_PAPER_TAGS.set("");
+        PAPER_PAGE.set(1);
+        PAPER_PAGE_SIZE.set(10);
+        SELECTED_PAPER_IDS.set([]);
+        
+        fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
+        .then(result => {
+            total_papers = result.rowCount;
+            paper_list = result.data || [];
+        });
     }
 
     // 处理页面跳转
     function handlePageChange(event) {
-        paper_page = event.detail;
-        fetchPaperList(paper_name, paper_tags, paper_page, paper_page_size, paper_category)
+        PAPER_PAGE.set(event.detail);
+        fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
             .then(result => {
                 total_papers = result.rowCount;
                 paper_list = result.data || [];
+                checkAllSelected();
             });
     }
 
     // 处理页面大小更改
     function handlePageSizeChange(event) {
-        paper_page_size = event.detail;
-        paper_page = 1;
-        fetchPaperList(paper_name, paper_tags, paper_page, paper_page_size, paper_category)
+        PAPER_PAGE_SIZE.set(event.detail);
+        PAPER_PAGE.set(1);
+        fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
             .then(result => {
                 total_papers = result.rowCount;
                 paper_list = result.data || [];
+                checkAllSelected();
             });
     }
 
     // 防抖搜索试卷
     const debouncedFetchPaperList = debounce(() => {
-        fetchPaperList(paper_name, paper_tags, paper_page, paper_page_size, paper_category)
+        fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
         .then(result => {
             total_papers = result.rowCount;
             paper_list = result.data || [];
         });
     }, 500, false);
-        
-    $effect(() => {
-        paper_name; paper_tags; paper_category;
-        if(!is_first_entry) {
-            debouncedFetchPaperList();
-        }
-    });
-
-    // 本质：先调用effect，再调用onMount
 
     // 挂载区
     onMount(() => {
-        fetchPaperList(paper_name, paper_tags, paper_page, paper_page_size, paper_category)
+        fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
             .then(result => {
                 total_papers = result.rowCount;
                 paper_list = result.data || [];
-                is_first_entry = false;
             });
     });
 
     // 自定义组卷
     function manual() {
         createEmptyPaper().then( result => {
-            localStorage.setItem('currentPaperID', JSON.stringify(result.data.paper.ID));
+            CURRENT_PAPER_ID.set(result.data.paper.ID);
             goto('/teacher/paper/manual');
         });
     }
 
     // 编辑试卷
     function editPaper(ID) {
-        localStorage.setItem('currentPaperID', JSON.stringify(ID));
+        CURRENT_PAPER_ID.set(ID);
         goto('/teacher/paper/manual');
     }
 
@@ -141,11 +155,10 @@
                 deletePaper([ID])
                     .then(() => {
                         toast.success("删除成功", 1000);
-                        fetchPaperList(paper_name, paper_tags, paper_page, paper_page_size, paper_category)
+                        fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
                             .then(result => {
                                 total_papers = result.rowCount;
                                 paper_list = result.data || [];
-                                console.log(result);
                             })
                     });
             }
@@ -154,20 +167,20 @@
 
     // 批量删除试卷
     function deleteMultiplePapers() {
-        if(selected_paperIDs.length === 0) {
+        if(get(SELECTED_PAPER_IDS).length === 0) {
             toast.error("请先选择试卷", 1000);
             return;
         }
         MessageBox({
             title: "删除确认",
-            content: `请问是否要批量删除这 ${selected_paperIDs.length} 张试卷？`,
+            content: `请问是否要批量删除这 ${get(SELECTED_PAPER_IDS).length} 张试卷？`,
             confirm_button_type: "danger",
 
             onConfirm: () => {
-                deletePaper(selected_paperIDs)
+                deletePaper(get(SELECTED_PAPER_IDS))
                     .then(() => {
                         toast.success("删除成功", 1000);
-                        fetchPaperList(paper_name, paper_tags, paper_page, paper_page_size, paper_category)
+                        fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
                             .then(result => {
                                 total_papers = result.rowCount;
                                 paper_list = result.data || [];
@@ -192,9 +205,10 @@
                 <span class="prompt">试卷名称</span>
                 <InputBox
                     placeholder="搜索试卷名称"
-                    showLabel={false}
+                    show_label={false}
                     type="text"
-                    bind:value={paper_name}
+                    bind:value={$SEARCH_PAPER_NAME}
+                    onInput={()=>debouncedFetchPaperList()}
                 />
             </div>
 
@@ -203,9 +217,10 @@
                 <span class="prompt">试卷标签</span>
                 <InputBox
                     placeholder="搜索试卷标签"
-                    showLabel={false}
+                    show_label={false}
                     type="text"
-                    bind:value={paper_tags}
+                    bind:value={$SEARCH_PAPER_TAGS}
+                    onInput={()=>debouncedFetchPaperList()}
                 />
             </div>
         </div>
@@ -228,7 +243,7 @@
                         <input
                             class="checkbox"
                             type="checkbox"
-                            bind:checked={all_paper_selected}
+                            bind:checked={$ALL_PAPER_SELECTED}
                             onchange={(e) => selectedAll(e.target.checked)}
                         >
                     </th>
@@ -255,7 +270,7 @@
                                 <input
                                     class="checkbox" 
                                     type="checkbox"
-                                    checked={selected_paperIDs.includes(paper.ID)}
+                                    checked={$SELECTED_PAPER_IDS.includes(paper.ID)}
                                     onchange={(e) => toggleSelection(paper.ID, e.target.checked)}
                                 >
                             </td>
@@ -318,8 +333,8 @@
         <div class="page-control">
             <Pagination
                 total_items={total_papers}
-                current_page={paper_page}                
-                page_size={paper_page_size}   
+                current_page={$PAPER_PAGE}                
+                page_size={$PAPER_PAGE_SIZE}   
                 page_size_options={paper_page_size_options}
                 on:pageChange={handlePageChange}
                 on:pageSizeChange={handlePageSizeChange}
