@@ -80,7 +80,7 @@
       page: search_params.page,
       pageSize: search_params.page_size,
     };
-    console.log("pagesize",queryObject);
+    
     const queryParams = new URLSearchParams();
     queryParams.append('q', JSON.stringify(queryObject));
 
@@ -125,6 +125,7 @@
   // }
 
   function onSearchFunc(value) {
+    console.log("调用");
     search_params.name = value;
 
     //防抖逻辑

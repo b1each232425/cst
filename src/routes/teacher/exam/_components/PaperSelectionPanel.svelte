@@ -6,6 +6,8 @@
   import Option from '$lib/components/Select/Option.svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
   import UneditableTag from '$lib/components/Tag/UneditableTag.svelte';
+  import InputBox from '$lib/components/Input/InputBox.svelte';
+  import {onMount} from 'svelte'
   // 难度颜色常量
   export const DIFFICULTY_COLOR_SIMPLE = 'green';
   export const DIFFICULTY_COLOR_MEDIUM = 'orange';
@@ -76,7 +78,7 @@
    * @type {number|null}
    * 防抖计时器
    */
-  // let nameSearchTimer = null;
+  let name_search_timer = null;
 
   // /**
   //  * @type {number|null}
@@ -114,13 +116,13 @@
   //     search_params.name = value;
 
   //     //防抖逻辑
-  //     if (nameSearchTimer) {
-  //         clearTimeout(nameSearchTimer);
+  //     if (name_search_timer) {
+  //         clearTimeout(name_search_timer);
   //     }
-  //     nameSearchTimer = setTimeout(() => {
+  //     name_search_timer = setTimeout(() => {
   //         search_params.page = 1;
   //         searchPaper();
-  //         nameSearchTimer = null;
+  //         name_search_timer = null;
   //     }, 300);
   // }
 
@@ -141,8 +143,19 @@
   //     }, 300);
   // }
 
+  function searchPaperName(value){
+      search_params.name=value;
+      if(name_search_timer)
+      {clearTimeout(name_search_timer);}
+      name_search_timer = setTimeout(() => {
+      searchPaper();
+      console.log("名称变化调用");
+      name_search_timer = null;
+    }, 300);
+  }
   function handlePageChange(event) {
     search_params.page = event.detail;
+    console.log("页数变化调用");
     searchPaper();
   }
 
@@ -150,6 +163,7 @@
   function handlePageSizeChange(event) {
     search_params.page_size = event.detail;
     search_params.page = 1; // 重置到第一页
+    console.log("条数变化调用");
     searchPaper();
   }
 
@@ -211,31 +225,13 @@
   // 添加 Select 相关状态和函数
   let selected_paper_type = $state('04');
 
-  function onPaperTypeChange(value) {
-    search_params.page = 1;
-    if (value === '04')
-    {
-       search_params.assembly_type='';
-       searchPaper();
-       return;
-    }
-    else{
-       search_params.assembly_type=value.toString();
-       searchPaper();
-       return;
-    }
-  }
-
-  //当打开面板时自动搜索试卷列表
-  $effect(() => {
-    paperselected_ID = selected_ID;
-    searchPaper();
-  });
-
+     onMount(() =>{
+        searchPaper();
+     })
   // onDestroy(() => {
-  //     if (nameSearchTimer !== null) {
-  //         clearTimeout(nameSearchTimer);
-  //         nameSearchTimer = null;
+  //     if (name_search_timer !== null) {
+  //         clearTimeout(name_search_timer);
+  //         name_search_timer = null;
   //     }
   //     if (pageSearchTimer !== null) {
   //         clearTimeout(pageSearchTimer);
@@ -265,26 +261,15 @@
     <div class="panel-body">
       <div class="action-container">
         <div class="paper-selection-search-container">
-          <!-- <SearchInput
-                        purpose_text={"搜索试卷"}
-                        place_holder={"请输入试卷名"}
-                        onSearchFunc={onSearchName}
-                    ></SearchInput> -->
-        </div>
-        <div class="paper-selection-search-container">
-          <!-- <SearchInput
-                        purpose_text={"搜索标签"}
-                        place_holder={"请输入标签名"}
-                        onSearchFunc={onSearchTags}
-                    ></SearchInput> -->
-                    <InputBox
-                      label="考试名称"
+              <InputBox
+                      label="试卷名称"
                       placeholder="请输入考试名称搜索"
                       bind:value={search_params.name}
-                      onInput={onSearchFunc}
+                      onInput={searchPaperName}
                       clearable={true}
                     />
         </div>
+        
         <div class="paper-type-container">
           <div class="paper-type-dropdown">
             <!-- <Select  placeholder="试卷类型" changeValue={onPaperTypeChange}>
@@ -294,6 +279,7 @@
             </Select> -->
           </div>
         </div>
+
       </div>
       <div class="paper-selection-table-container">
         <table class="table">
@@ -314,21 +300,19 @@
           </thead>
           <tbody>
             {#each paperList as paper, index}
-              <tr class="paper-list">
+              <tr class="paper-list"
+              onclick={() => {
+                paperselected_ID = paper.ID;
+                paperselected_name = paper.Name;
+                paperselected_type = paper.AssemblyType;
+              }}>
                 <td>
                   <input
                     type="radio"
                     class="custom-checkbox"
                     value={paper.ID}
                     bind:group={paperselected_ID}
-                    onchange={() => {
-                      paperList.forEach((element) => {
-                        if (element.ID === paperselected_ID) {
-                          paperselected_name = element.Name;
-                          paperselected_type = element.AssemblyType;
-                        }
-                      });
-                    }}
+                    readonly
                   />
                 </td>
                 <td class="body-row paper-name-cell">
@@ -360,7 +344,7 @@
           </tbody>
         </table>
 
-        <div class ="{paperList.length ===0 ? "no-data-text" : "hideButton"}"> 
+        <div class ="{paperList&&paperList.length ===0 ? "no-data-text" : "hideButton"}"> 
               <Empty text = "暂无试卷"/>
         </div>
 
@@ -620,7 +604,10 @@
   }
 
   .panel-body {
-    padding: 24px;
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 24px;
+    padding-bottom: 10px;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -635,11 +622,13 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 16px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
   }
 
   .paper-selection-search-container {
+    display: flex;
     flex: 0 0 300px;
+    margin-left: -46px;
   }
 
   .paper-type-container {

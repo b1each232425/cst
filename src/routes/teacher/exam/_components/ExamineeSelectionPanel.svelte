@@ -23,6 +23,7 @@
     OfficialName: '',
     page: 1,
     pageSize: 10,
+    fuzzyCondition:'',
   });
 
   // 已选择学生的分页参数
@@ -30,6 +31,7 @@
     OfficialName: '',
     page: 1,
     pageSize: 10,
+    fuzzyCondition:'',
   });
 
   let selected_examinee = $state([]); //已选择学生
@@ -57,13 +59,13 @@
 
   function getFilteredSelectedExaminee() {
     let filtered = selected_examinee;
-    if (selected_search_params.OfficialName) {
+    if (selected_search_params.fuzzyCondition) {
       filtered = selected_examinee.filter(
         (examinee) =>
           (examinee.OfficialName &&
-            examinee.OfficialName.toLowerCase().includes(selected_search_params.OfficialName.toLowerCase())) ||
-          (examinee.MobilePhone && examinee.MobilePhone.includes(selected_search_params.OfficialName)) ||
-          (examinee.IDCardNo && examinee.IDCardNo.includes(selected_search_params.OfficialName)),
+            examinee.OfficialName.toLowerCase().includes(selected_search_params.fuzzyCondition.toLowerCase())) ||
+          (examinee.MobilePhone && examinee.MobilePhone.includes(selected_search_params.fuzzyCondition)) ||
+          (examinee.IDCardNo && examinee.IDCardNo.includes(selected_search_params.fuzzyCondition)),
       );
     }
     return filtered;
@@ -109,6 +111,12 @@
   }
 
 
+  function searchSelectedExaminee(value) {
+    console.log(selected_search_params)
+    selected_search_params.fuzzyCondition = value;
+    selected_search_params.page = 1;
+}
+
   async function searchExaminee() {
     loading = true;
     error = '';
@@ -118,8 +126,9 @@
     queryParams.append('page', search_params.page.toString());
     queryParams.append('pageSize', search_params.pageSize.toString());
     queryParams.append('domain', 'cst.school^student');
-    if (search_params.OfficialName) {
-      queryParams.append('name', search_params.OfficialName);
+    if(search_params.fuzzyCondition)
+    {
+      queryParams.append('fuzzyCondition',search_params.fuzzyCondition);
     }
 
     await fetch(`/api/user?${queryParams.toString()}`, {
@@ -165,6 +174,19 @@
       });
   }
 
+  function searchExamineeName(value) {
+  search_params.fuzzyCondition = value;
+  search_params.page = 1; // 搜索时重置页码
+  
+  if (name_search_timer) {
+    clearTimeout(name_search_timer);
+  }
+  
+  name_search_timer = setTimeout(() => {
+    searchExaminee();
+    name_search_timer = null;
+  }, 500);
+}
   // 重新计算所有selected_examinee的serialNumber
   function recalculateSerialNumbers() {
     selected_examinee = selected_examinee.map((item, index) => ({
@@ -265,49 +287,42 @@
     }
   }
 
-  function handleSearchInput(inputValue) {
-    search_params.OfficialName = inputValue.trim();
-    if (name_search_timer) clearTimeout(name_search_timer);
-    name_search_timer = setTimeout(() => {
-      search_params.page = 1;
-      searchExaminee();
-    }, 300);
-  }
 
   // 单个复选框选择事件处理
-  function handleCheckboxChange(examinee, event) {
-    const target = /** @type {HTMLInputElement} */ (event.target);
-    const checked = target.checked;
-
-    if (checked) {
-      // 选中：添加到已选列表
-      if (!selected_examinee.find((item) => item.id === examinee.ID)) {
-        selected_examinee.push({
-          id: examinee.ID,
-          OfficialName: examinee.OfficialName || '',
-          Account: examinee.Account || '',
-          Gender: examinee.Gender || '',
-          MobilePhone: examinee.MobilePhone || '',
-          IDCardNo: examinee.IDCardNo || '',
-          serialNumber: 0, // 临时设置，稍后重新计算
-        });
-      }
-      examinee.selected = true;
-    } else {
-      // 取消选中：从已选列表移除
-      const index = selected_examinee.findIndex((item) => item.id === examinee.ID);
-      if (index !== -1) {
-        selected_examinee.splice(index, 1);
-      }
-      examinee.selected = false;
-    }
-
-    // 重新计算序列号
-    recalculateSerialNumbers();
-
-    // 更新全选状态
-    is_total_selected = isAllSelected();
+function handleCheckboxChange(examinee, event) {
+  // 如果是复选框被点击，阻止事件冒泡避免重复触发
+  if (event.target && event.target.type === 'checkbox') {
+    event.stopPropagation();
   }
+  
+  // 直接切换选择状态
+  examinee.selected = !examinee.selected;
+
+  if (examinee.selected) {
+    // 选中：添加到已选列表（如果不存在的话）
+    if (!selected_examinee.find((item) => item.id === examinee.ID)) {
+      selected_examinee.push({
+        id: examinee.ID,
+        OfficialName: examinee.OfficialName || '',
+        Account: examinee.Account || '',
+        Gender: examinee.Gender || '',
+        MobilePhone: examinee.MobilePhone || '',
+        IDCardNo: examinee.IDCardNo || '',
+        serialNumber: 0,
+      });
+    }
+  } else {
+    // 取消选中：从已选列表移除
+    const index = selected_examinee.findIndex((item) => item.id === examinee.ID);
+    if (index !== -1) {
+      selected_examinee.splice(index, 1);
+    }
+  }
+
+  // 重新计算序列号和更新全选状态
+  recalculateSerialNumbers();
+  is_total_selected = isAllSelected();
+}
 
   // 初始化选中的考生
   $effect(() => {
@@ -336,11 +351,19 @@
     </div>
     <div class="panel-body">
       {#if !is_selection_mode}
-        <!-- 查看已选择模式 -->
+        <!-- 查看选择后的列表 -->
         <div class="selected-examinees-container">
           <div class="action-container">
             <div class="examinee-search-container">
-              <InputBox label={'搜索考生'} placeholder={'请输姓名/手机号/身份证号'}></InputBox>
+              <InputBox
+              label={'搜索考生'} 
+              placeholder={'请输姓名/手机号/身份证号'}
+              bind:value={selected_search_params.fuzzyCondition}
+              onInput={searchSelectedExaminee}
+              clearable={true}
+              >
+            </InputBox>
+
             </div>
             <div class="button-group">
               <button class="upload-file-button" onclick={switchToSelectionMode}> 选择考生 </button>
@@ -393,11 +416,13 @@
         <div class="action-container">
           <div class="examinee-search-container">
             <InputBox
-              label={'搜索考生'}
-              placeholder={'请输姓名/手机号/身份证号'}
-              bind:value={search_params.OfficialName}
-              onInput={handleSearchInput}
-            ></InputBox>
+              label='搜索考生'
+              placeholder='请输姓名/手机号/身份证号'
+              bind:value={search_params.fuzzyCondition}
+              onInput={searchExamineeName}
+              clearable={true}
+              >
+            </InputBox>
           </div>
           <div class="button-group">
             <button class="back-btn" onclick={backToViewMode}>返回考生列表</button>
@@ -435,7 +460,10 @@
             </thead>
             <tbody>
               {#each examinee_list as examinee, index}
-                <tr class={`examinee ${examinee.selected ? 'selected' : ''}`}>
+                <tr 
+                class={`examinee ${examinee.selected ? 'selected' : ''}`}
+                onclick= {(event) => handleCheckboxChange(examinee, event)}
+                >
                   <td>
                     <input
                       type="checkbox"
@@ -457,7 +485,7 @@
 
 
 
-          <div class ="{examinee_list.length ===0 ? "no-data-text" : "hideButton"}"> 
+          <div class ="{examinee_list.length ===0 ? "no-data" : "hideButton"}"> 
               <Empty text = "暂无数据"/>
             </div>
 
@@ -864,5 +892,11 @@
         color: var(--text-disabled);
       }
     }
+  }
+
+   .hideButton {
+    visibility: hidden;
+    position: absolute;
+    pointer-events: none;
   }
 </style>

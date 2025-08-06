@@ -260,12 +260,10 @@
 
       if (startTime < now) {
         toast.warning(`第${i + 1}个场次的开始时间不能早于当前时间`);
-        // actionToast.show("error", `第${i + 1}个场次的开始时间不能早于当前时间`);
         return;
       }
       if (endTime <= startTime) {
         toast.warning(`第${i + 1}个场次的结束时间必须晚于开始时间`);
-        // actionToast.show("error", `第${i + 1}个场次的结束时间必须晚于开始时间`);
         return;
       }
     }
@@ -623,16 +621,16 @@
 
       <div class="exam-duration-container config-row">
         <RequiredLabel text="考场规则" />
+
         <div class="config-row-content">
           <span style="font-size: 14px;">考试开始后</span>
 
           <input
-            class="duration-input"
+            class="simple-input"
+            type='number'
             bind:value={paper_configs[paperConfigIndex].lateEntryTime}
-            type="number"
-            min="1"
+            min='0'
             max={paper_configs[paperConfigIndex].duration}
-            style="width:60px;"
             oninput={(event) => {
               const max = paper_configs[paperConfigIndex].duration;
               const val = Number(event.target.value);
@@ -643,26 +641,27 @@
                 event.target.value = 1;
                 paper_configs[paperConfigIndex].lateEntryTime = 1;
               }
-            }}
+            }}  
           />
 
           <span style="font-size: 14px;">分钟内可进入考场，可提前</span>
+            
           <input
-            class="duration-input"
+            class="simple-input"
+            type='number'
             bind:value={paper_configs[paperConfigIndex].earlySubmissionTime}
-            type="number"
-            min="0"
+            min='0'
             max={paper_configs[paperConfigIndex].duration}
-            style="width:60px;"
             oninput={(event) => {
               const max = paper_configs[paperConfigIndex].duration;
               const val = Number(event.target.value);
               if (val > max) {
                 event.target.value = max;
                 paper_configs[paperConfigIndex].earlySubmissionTime = max;
-              }
-            }}
+              } 
+            }}  
           />
+
           <span style="font-size: 14px;">分钟交卷</span>
         </div>
       </div>
@@ -1078,5 +1077,29 @@
     visibility: hidden;
     position: absolute;
     pointer-events: none;
+  }
+
+  .simple-input {
+    border-radius: 3px;
+    height: 26px;
+    width:70px;
+    padding: 0 8px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    box-sizing: border-box;
+    outline: none;
+    transition: border 0.2s;
+    
+    &:hover,
+    &:focus {
+      border-color: #409eff;
+    }
+    
+    &.disabled {
+      cursor: not-allowed;
+      background-color: #f5f5f5;
+      color: #c0c4cc;
+    }
   }
 </style>
