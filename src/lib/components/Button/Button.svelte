@@ -3,9 +3,6 @@
    * @component Button
    * @description 通用按钮组件，支持图标、不同样式、尺寸、圆角、插槽等
    *
-   * @author 段春茂
-   * @email 2162105974@qq.com
-   *
    * @props
    * @property {boolean} [plain=false] - 是否为朴素按钮，hover 时填充背景
    * @property {'small' | 'medium' | 'large'} [size='medium'] - 按钮尺寸
@@ -45,6 +42,7 @@
   const validTypes = ['primary', 'success', 'danger', 'warning', 'info'];
   const validSizes = ['small', 'medium', 'large'];
 
+  // 检查参数
   checkProps();
 
   /**
