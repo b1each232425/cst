@@ -1073,4 +1073,10 @@
   .edit-button:hover {
     text-decoration: underline;
   }
+
+  .hideButton {
+    visibility: hidden;
+    position: absolute;
+    pointer-events: none;
+  }
 </style>

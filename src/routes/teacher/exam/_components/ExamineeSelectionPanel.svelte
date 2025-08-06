@@ -3,7 +3,8 @@
   import StudentImportPanel from './StudentImportPanel.svelte';
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Button from '$lib/components/Button/Button.svelte';
-  $effect(() => {});
+  import Empty from '$lib/components/Table/Empty.svelte';
+  import {toast} from '$lib/components/Toast/toast.js'
 
   let {
     show_panel = false,
@@ -19,56 +20,29 @@
 
   //搜索参数
   let search_params = $state({
-    name: '',
-    page: 1,
-    pageSize: 10,
-  });
-
-  /**
-   * @type {any[]}
-   */
-  let selected_examinee = $state([]);
-
-  // 已选择学生的分页参数
-  let selectedsearch_params = $state({
     OfficialName: '',
     page: 1,
     pageSize: 10,
   });
 
+  // 已选择学生的分页参数
+  let selected_search_params = $state({
+    OfficialName: '',
+    page: 1,
+    pageSize: 10,
+  });
+
+  let selected_examinee = $state([]); //已选择学生
+  // 过滤后的已选择学生列表
+  let filteredselected_examinee = $derived(getFilteredSelectedExaminee());
+  // 当前页显示的已选择学生
+  let current_page_selected_examinee = $derived(getCurrentPageSelectedExaminee());
   // 已选择学生的总页数
   let selectedtotal_page = $derived(
-    selected_examinee.length / selectedsearch_params.pageSize
-      ? Math.ceil(selected_examinee.length / selectedsearch_params.pageSize)
+    selected_examinee.length / selected_search_params.pageSize
+      ? Math.ceil(selected_examinee.length / selected_search_params.pageSize)
       : 1,
   );
-
-  function getFilteredselected_examinee() {
-    let filtered = selected_examinee;
-    if (selectedsearch_params.OfficialName) {
-      filtered = selected_examinee.filter(
-        (examinee) =>
-          (examinee.OfficialName &&
-            examinee.OfficialName.toLowerCase().includes(selectedsearch_params.OfficialName.toLowerCase())) ||
-          (examinee.MobilePhone && examinee.MobilePhone.includes(selectedsearch_params.OfficialName)) ||
-          (examinee.IDCardNo && examinee.IDCardNo.includes(selectedsearch_params.OfficialName)),
-      );
-    }
-    return filtered;
-  }
-
-  function getCurrentPageselected_examinee() {
-    const startIndex = (selectedsearch_params.page - 1) * selectedsearch_params.pageSize;
-    const endIndex = startIndex + selectedsearch_params.pageSize;
-    const filtered = filteredselected_examinee;
-    return filtered.slice(startIndex, endIndex);
-  }
-
-  // 过滤后的已选择学生列表
-  let filteredselected_examinee = $derived(getFilteredselected_examinee());
-
-  // 当前页显示的已选择学生
-  let currentPageselected_examinee = $derived(getCurrentPageselected_examinee());
 
   //总数据条数
   let totals = $state(0);
@@ -80,6 +54,29 @@
   let loading = $state(false);
   //报错
   let error = $state('');
+
+  function getFilteredSelectedExaminee() {
+    let filtered = selected_examinee;
+    if (selected_search_params.OfficialName) {
+      filtered = selected_examinee.filter(
+        (examinee) =>
+          (examinee.OfficialName &&
+            examinee.OfficialName.toLowerCase().includes(selected_search_params.OfficialName.toLowerCase())) ||
+          (examinee.MobilePhone && examinee.MobilePhone.includes(selected_search_params.OfficialName)) ||
+          (examinee.IDCardNo && examinee.IDCardNo.includes(selected_search_params.OfficialName)),
+      );
+    }
+    return filtered;
+  }
+
+  function getCurrentPageSelectedExaminee() {
+    const startIndex = (selected_search_params.page - 1) * selected_search_params.pageSize;
+    const endIndex = startIndex + selected_search_params.pageSize;
+    const filtered = filteredselected_examinee;
+    return filtered.slice(startIndex, endIndex);
+  }
+
+
   /**
    * @type {any}
    * 防抖计时器
@@ -111,51 +108,6 @@
     return Math.max(...selected_examinee.map((item) => item.serialNumber || 0));
   }
 
-  /**
-   * @param {number} page
-   * 页数跳转
-   */
-  function onPageChooseFunc(page) {
-    if (loading === true) {
-      return;
-    }
-    search_params.page = page;
-    searchExaminee();
-  }
-
-  /**
-   * @param {boolean} isNext
-   * 已选择学生上一页/下一页
-   */
-  function onSelectedNextOrLastPage(isNext) {
-    if (isNext && selectedsearch_params.page < selectedtotal_page) {
-      selectedsearch_params.page += 1;
-    }
-    if (!isNext && selectedsearch_params.page > 1) {
-      selectedsearch_params.page -= 1;
-    }
-  }
-
-  /**
-   * @param {number} page
-   * 已选择学生页数跳转
-   */
-  function onSelectedPageChooseFunc(page) {
-    selectedsearch_params.page = page;
-  }
-
-  /**
-   * @param {string} value
-   * 已选择学生搜索页数
-   */
-  function onSelectedSearchPageFunc(value) {
-    const numericValue = parseFloat(value);
-    if (isNaN(numericValue) || numericValue < 1 || numericValue === null) {
-      selectedsearch_params.page = 1;
-    } else {
-      selectedsearch_params.page = numericValue;
-    }
-  }
 
   async function searchExaminee() {
     loading = true;
@@ -178,9 +130,6 @@
       },
     })
       .then((response) => {
-        if (response.status === 404) {
-          throw new Error('404 Not Found');
-        }
         return response.json();
       })
       .then((result) => {
@@ -189,11 +138,10 @@
           examinee_list = [];
           totals = 0;
           search_params.page = currentPage;
-          // actionToast?.show("error", error);
         } else {
           examinee_list = result.data === null ? [] : result.data;
           totals = result.rowCount;
-          currentPage = search_params.page;
+         
 
           if (examinee_list !== null) {
             // 更新选中状态
@@ -203,14 +151,12 @@
             });
           }
 
-          is_total_selected = isAllSelected();
+          //is_total_selected = isAllSelected();
         }
       })
       .catch((error) => {
         console.error('搜索用户失败:', error);
-        if (!error.message.includes('404')) {
-          // actionToast?.show("error", "搜索失败，请稍后重试");
-        }
+        toast.error(error);
         examinee_list = [];
         totals = 0;
       })
@@ -266,7 +212,7 @@
   // 切换到选择模式
   function switchToSelectionMode() {
     is_selection_mode = true;
-    search_params.page = 1;
+   // search_params.page = 1;
     searchExaminee();
   }
 
@@ -274,8 +220,8 @@
   function backToViewMode() {
     is_selection_mode = false;
     // 重置已选择学生的分页参数
-    selectedsearch_params.page = 1;
-    selectedsearch_params.OfficialName = '';
+    selected_search_params.page = 1;
+    selected_search_params.OfficialName = '';
   }
 
   // 判断是否全选
@@ -411,7 +357,7 @@
                 </tr>
               </thead>
               <tbody>
-                {#each currentPageselected_examinee as examinee}
+                {#each current_page_selected_examinee as examinee}
                   <tr class="examinee">
                     <td>{examinee.OfficialName || '--'}</td>
                     <td>{examinee.Gender || '--'}</td>
@@ -421,9 +367,11 @@
                 {/each}
               </tbody>
             </table>
-            {#if filteredselected_examinee.length === 0}
-              <div class="no-data-text">暂无数据</div>
-            {/if}
+
+            <div class ="{filteredselected_examinee.length ===0 ? "no-data-text" : "hideButton"}"> 
+              <Empty text = "暂无数据"/>
+            </div>
+
           </div>
           <div class="pagination-container">
             <span style="font-size: 12px; margin-right:10px">
@@ -432,10 +380,10 @@
 
             <Pagination
               total_items={filteredselected_examinee.length}
-              current_page={selectedsearch_params.page}
+              current_page={selected_search_params.page}
               page_size_options={[10,20,50]}
               on:pageChange={(e) => {
-                selectedsearch_params.page = e.detail;
+                selected_search_params.page = e.detail;
               }}
             />
           </div>
@@ -508,9 +456,11 @@
           </table>
 
 
-          {#if examinee_list.length === 0}
-            <div class="no-data-text">暂无数据</div>
-          {/if}
+
+          <div class ="{examinee_list.length ===0 ? "no-data-text" : "hideButton"}"> 
+              <Empty text = "暂无数据"/>
+            </div>
+
         </div>
 
 
@@ -668,7 +618,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 100;
+    z-index: 1000;
   }
 
   .examinee-panel {

@@ -1,4 +1,5 @@
 <script>
+  import Empty from '$lib/components/Table/Empty.svelte';
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import { onDestroy } from 'svelte';
   import Select from '$lib/components/Select/Select.svelte';
@@ -59,7 +60,7 @@
     tags: '',
     page: 1,
     page_size: 10,
-    category: '',
+    assembly_type: '00',
   });
 
 
@@ -211,16 +212,18 @@
   let selected_paper_type = $state('04');
 
   function onPaperTypeChange(value) {
-    selected_paper_type = value;
     search_params.page = 1;
-    searchPaper().then(() => {
-      if (value === '04') {
-        return;
-      } else {
-        // 根据 AssemblyType 筛选数据
-        paperList = paperList.filter((paper) => paper.AssemblyType === value);
-      }
-    });
+    if (value === '04')
+    {
+       search_params.assembly_type='';
+       searchPaper();
+       return;
+    }
+    else{
+       search_params.assembly_type=value.toString();
+       searchPaper();
+       return;
+    }
   }
 
   //当打开面板时自动搜索试卷列表
@@ -274,14 +277,21 @@
                         place_holder={"请输入标签名"}
                         onSearchFunc={onSearchTags}
                     ></SearchInput> -->
+                    <InputBox
+                      label="考试名称"
+                      placeholder="请输入考试名称搜索"
+                      bind:value={search_params.name}
+                      onInput={onSearchFunc}
+                      clearable={true}
+                    />
         </div>
         <div class="paper-type-container">
           <div class="paper-type-dropdown">
-            <Select bind:value={selected_paper_type} placeholder="试卷类型" onChangeValue={onPaperTypeChange}>
+            <!-- <Select  placeholder="试卷类型" changeValue={onPaperTypeChange}>
               <Option value="04" label="全部" />
               <Option value="00" label="自定义组卷" />
               <Option value="02" label="随机组卷" />
-            </Select>
+            </Select> -->
           </div>
         </div>
       </div>
@@ -349,9 +359,11 @@
             {/each}
           </tbody>
         </table>
-        <!-- {#if paperList.length === 0}
-                    <div class="no-data-text">暂无数据</div>
-                {/if} -->
+
+        <div class ="{paperList.length ===0 ? "no-data-text" : "hideButton"}"> 
+              <Empty text = "暂无试卷"/>
+        </div>
+
       </div>
     </div>
     <div class="pagination-container">
@@ -395,93 +407,122 @@
   }
 
   .table {
-    width: 100%;
-    border-collapse: collapse;
-    flex: 1;
-    // max-height:100px;
+  width: 100%;
+  border-collapse: collapse;
+  flex: 1;
 
-    th,
-    td {
-      position: relative;
-      font-size: 14px;
-      color: var(--text-primary);
-      border: none;
-      padding: 8px;
-      text-align: center;
-      border-top: none;
-      border-left: none;
-      border-right: none;
-      box-sizing: border-box;
-      word-wrap: break-word;
-      word-break: break-all;
-      white-space: normal;
-      vertical-align: middle;
-      height: 40px;
-      // 小屏幕适配 - 降低行高和字体大小
-      @media (max-width: 1440px) {
-        height: 36px;
-        padding: 6px;
-        font-size: 13px;
-      }
-
-      @media (max-width: 1080px) {
-        height: 32px;
-        padding: 4px;
-        font-size: 12px;
-      }
-
-      @media (max-width: 768px) {
-        height: 28px;
-        padding: 3px;
-        font-size: 11px;
-      }
-
-      @media (max-width: 480px) {
-        height: 24px;
-        padding: 2px;
-        font-size: 10px;
-      }
-    }
-
-    td {
-      border-bottom: 1px solid #ddd;
-    }
-
-    th {
-      color: var(--text-disabled);
-      background: #fafafa;
-      white-space: nowrap;
-    }
-
-    // 表格行样式
-    tbody {
-      tr {
-        &:hover {
-          background-color: #e0f0ff;
-          cursor: pointer;
-        }
-      }
-    }
-  }
-
-  .paper-table-head {
+  th,
+  td {
     position: relative;
-    background-color: #ffffff;
     font-size: 14px;
-    font-weight: normal;
-    color: rgb(0, 0, 0, 0.3);
+    color: var(--text-primary);
     border: none;
     padding: 8px;
     text-align: center;
-    .table-head-row {
-      height: 40px;
-      .table-head {
-        font-weight: normal;
-        background: #fff;
-        color: rgb(0, 0, 0, 0.3);
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    word-break: break-all;
+    white-space: normal;
+    vertical-align: middle;
+    height: 40px;
+    
+    // 小屏幕适配 - 降低行高、字体大小和横向间距
+    @media (max-width: 1440px) {
+      height: 32px;
+      padding: 6px 5px; // 减少横向间距
+      font-size: 13px;
+    }
+
+    @media (max-width: 1080px) {
+      height: 28px;
+      padding: 4px 3px; // 进一步减少横向间距
+      font-size: 12px;
+    }
+
+    @media (max-width: 768px) {
+      height: 24px;
+      padding: 3px 2px; // 大幅减少横向间距
+      font-size: 11px;
+    }
+
+    @media (max-width: 480px) {
+      height: 24px;
+      padding: 2px 1px; // 最小横向间距
+      font-size: 10px;
+    }
+  }
+
+  td {
+    border-bottom: 1px solid #ddd;
+  }
+
+  th {
+    color: var(--text-disabled);
+    background: #fafafa;
+    white-space: nowrap;
+  }
+  }
+
+  .paper-table-head {
+  position: relative;
+  background-color: #ffffff;
+  font-size: 14px;
+  font-weight: normal;
+  color: rgb(0, 0, 0, 0.3);
+  border: none;
+  padding: 8px;
+  text-align: center;
+  
+  .table-head-row {
+    height: 40px;
+    
+    @media (max-width: 1440px) {
+      height: 32px;
+    }
+
+    @media (max-width: 1080px) {
+      height: 28px;
+    }
+
+    @media (max-width: 768px) {
+      height: 24px;
+    }
+
+    @media (max-width: 480px) {
+      height: 20px;
+    }
+    
+    .table-head {
+      font-weight: normal;
+      background: #fff;
+      color: rgb(0, 0, 0, 0.3);
+      
+      // 优化表头的横向间距
+      @media (max-width: 1440px) {
+        font-size: 13px;
+        padding: 6px 5px;
+      }
+
+      @media (max-width: 1080px) {
+        font-size: 12px;
+        padding: 4px 3px;
+      }
+
+      @media (max-width: 768px) {
+        font-size: 11px;
+        padding: 3px 2px;
+      }
+
+      @media (max-width: 480px) {
+        font-size: 10px;
+        padding: 2px 1px;
       }
     }
   }
+}
 
   .body-row {
     min-height: 50px;
@@ -509,7 +550,7 @@
   }
 
   .paper-selection-panel {
-    margin-left: 130px;
+    //margin-left: 100px;
     justify-content: center;
     width: 60%;
     min-width: 900px;
@@ -525,23 +566,23 @@
       width: 75%;
       min-width: 800px;
       height: 85vh;
-      margin-left: 12%;
+      // margin-right: 30%;
     }
 
     @media (max-width: 768px) {
-      width: 95%;
+      width: 75%;
       min-width: 320px;
-      max-height: 90vh;
-      height: 90vh;
-      margin-left: 0;
-      margin: 0 auto;
+      max-height: 80vh;
+      height: 70vh;
+      //margin: 0 auto;
     }
 
     @media (max-width: 480px) {
-      width: 98%;
+      width: 88%;
       height: 95vh;
       max-height: 95vh;
       border-radius: 8px;
+     // margin-left:0%;
     }
   }
 
@@ -688,13 +729,25 @@
     padding: 12px 24px 18px;
     border-top: 1px solid #eee;
 
+    // 小屏幕适配 - 降低底部面板高度和内边距
+    @media (max-width: 1440px) {
+      padding: 10px 20px 15px;
+    }
+
+    @media (max-width: 1080px) {
+      padding: 8px 16px 12px;
+      gap: 12px;
+    }
+
     @media (max-width: 768px) {
-      padding: 12px 16px 16px;
+      padding: 6px 12px 10px;
+      gap: 10px;
     }
 
     @media (max-width: 480px) {
       flex-direction: column;
       gap: 8px;
+      padding: 8px 12px 12px;
 
       .btn {
         width: 100%;
@@ -731,5 +784,11 @@
     text-align: left;
     padding-left: 12px;
     padding-right: 12px;
+  }
+  
+  .hideButton {
+    visibility: hidden;
+    position: absolute;
+    pointer-events: none;
   }
 </style>
