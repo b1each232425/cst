@@ -31,7 +31,7 @@
 	.practice-table-container {
 		width: 100%;
   		height: 100%;
-		max-height: 100%;
+		height:62vh;
  		overflow: auto;
   		flex: 1;
   		min-height: 0;
@@ -69,7 +69,6 @@
     top: 0;
     z-index: 10;
     background: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 }
 

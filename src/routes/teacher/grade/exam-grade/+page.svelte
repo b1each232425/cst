@@ -53,7 +53,6 @@
 	.filter-container {
 		flex-shrink: 0;
   		background: #fff;
- 		border-bottom: 1px solid #e5e5e5;
   		z-index: 20;//下拉菜单优先级高于表头
 		padding: 0 13px;
 		padding-bottom: 5px;
