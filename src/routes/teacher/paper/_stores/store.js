@@ -35,15 +35,3 @@ export const GROUP_OPEN_STATE = writable({});
 export const QUESTION_OPEN_STATE = writable({});
 
 //////////////////// 自定义组卷区 //////////////////////
-
-
-
-//////////////////// 从题库导入区 //////////////////////
-
-// 试卷选中状态
-export const PAPER_SELECT_STATE = writable({});
-
-// 试题选中状态
-export const QUESTION_SELECT_STATE = writable({});
-
-//////////////////// 从题库导入区 //////////////////////

@@ -8,6 +8,7 @@
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
 -->
 <script>
+  import InputBox from "$lib/components/Input/InputBox.svelte";
   import UneditableTag from "$lib/components/Tag/UneditableTag.svelte";
   import { filter } from "jszip";
 
@@ -205,16 +206,118 @@
                 {/each}
             </div>
         </div>
+
+        <!-- 分值 -->
+        <div class="score-container">
+            <span class="prompt">【分值】</span>
+
+        </div>
+
+        <!-- 答案 -->
+        <div class="answer-container">
+            <span class="prompt">【答案】</span>
+            <div class="content-box">
+                {#each question.answers as answer}
+                <div>
+                    <span class="sequence">({answer.index})</span>
+                    <span>{answer.answer}</span>
+                </div>
+                {/each}
+            </div>
+        </div>
+
+        <!-- 标签 -->
+        {#if question.tags.length !== 0}
+            <div class="tags-container">
+                <span class="prompt">【标签】</span>
+                <div class="content-box">
+                    {#each question.tags as tag}
+                        <UneditableTag content={tag}/>
+                    {/each}
+                </div>
+            </div>
+        {/if}
+
+        <!-- 解析 -->
+        <div class="analysis-container">
+            <span class="prompt">【解析】</span>
+            <div class="content-box">
+                {#if question.analysis}
+                    {@html filterPTag(question.analysis)}
+                {:else}
+                    略
+                {/if}
+            </div>
+        </div>
     {/if}
 
     <!-- 简答题 -->
     {#if question.type === "08"}
+        <!-- 题目 -->
+        <div class="question-content">
+            <!-- 问题 -->
+            <div class="content">
+                {@html filterPTag(question.content)}
+            </div>
 
-    {/if}
+            <!-- 选项 -->
+            <div class="options-container">
+                {#each question.options as option}
+                    <div class="option">
+                        <div class={question.answers.includes(option.label)?"option-label-true":"option-label-false"}>{option.label}</div>
+                        <div class="option-value">{@html filterPTag(option.value)}</div>
+                    </div>
+                {/each}
+            </div>
+        </div>
 
-    <!-- 编程题 -->
-    {#if question.type === "10"}
+        <!-- 分值 -->
+        <div class="score-container">
+            <span class="prompt">【分值】</span>
+            <div class="content-box">
+                {#each question.sub_score as score, index}
+                    <span class="sequence">({index+1})</span>
+                    <InputBox />
+                {/each}
+            </div>
+        </div>
 
+        <!-- 答案 -->
+        <div class="answer-container">
+            <span class="prompt">【答案】</span>
+            <div class="content-box">
+                {#each question.answers as answer, index}
+                <div>
+                    <span class="sequence">({index+1})</span>
+                    <span>{answer}</span>
+                </div>
+                {/each}
+            </div>
+        </div>
+
+        <!-- 标签 -->
+        {#if question.tags.length !== 0}
+            <div class="tags-container">
+                <span class="prompt">【标签】</span>
+                <div class="content-box">
+                    {#each question.tags as tag}
+                        <UneditableTag content={tag}/>
+                    {/each}
+                </div>
+            </div>
+        {/if}
+
+        <!-- 解析 -->
+        <div class="analysis-container">
+            <span class="prompt">【解析】</span>
+            <div class="content-box">
+                {#if question.analysis}
+                    {@html filterPTag(question.analysis)}
+                {:else}
+                    略
+                {/if}
+            </div>
+        </div>
     {/if}
 </div>
 
@@ -284,8 +387,15 @@
             padding-top: 2px;
         }
 
-        .answer-container, .tags-container, .analysis-container {
+        .answer-container, .tags-container, .analysis-container, .score-container {
             display: flex;
+        }
+
+        /* 分值 */
+        .score-container {
+            background:linear-gradient(to right, #ddd 0%, #ddd 8px, transparent 8px, transparent 15px) repeat-x bottom;
+            background-size: 15px 2px;
+            padding: 12px 0;
         }
 
         /* 答案 */
@@ -293,6 +403,16 @@
             background:linear-gradient(to right, #ddd 0%, #ddd 8px, transparent 8px, transparent 15px) repeat-x bottom;
             background-size: 15px 2px;
             padding: 12px 0;
+
+            /* 序号 */
+            .sequence {
+                color: #619cf5;
+                font-size: 14px;
+            }
+
+            .content-box {
+
+            }
         }
 
         /* 标签 */
