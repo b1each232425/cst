@@ -163,8 +163,8 @@
     }
 
     // onclick 校验
-    if (getType(onclick) !== 'function') {
-      console.warn(`[Button] onclick 必须为函数，当前为 ${getType(onclick)}`);
+    if (!['function', 'asyncfunction'].includes(getType(onclick))) {
+      console.warn(`[Button] onclick 必须为function/asyncfunction，当前为 ${getType(onclick)}`);
       onclick = () => {};
     }
   })();
