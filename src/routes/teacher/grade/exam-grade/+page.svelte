@@ -64,6 +64,7 @@
   		display: flex;
   		flex-direction: column;
   		overflow: hidden;
+		position: relative;
   		min-height: 0;
 		padding: 0 1px;
 		flex: 1;
@@ -78,10 +79,8 @@
 
 	.pagination-wrapper {
 		flex-shrink: 0;
-		position: fixed;
-		bottom: 30px;
-		right: 30px;
-		padding: 16px;
-		z-index: 100;
+		position: absolute;
+		bottom: 10px;
+		right: 20px;
 	}
 </style>
