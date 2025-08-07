@@ -2,7 +2,6 @@
   import Upload from '$lib/components/Upload/UploadImage.svelte';
   import Title from '$lib/components/Title/Title.svelte';
   import InputBox from '$lib/components/Input/InputBox.svelte';
-  import InforInput from '$lib/components/Input/InforInput.svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
   import Button from '$lib/components/Button/Button.svelte';
@@ -189,7 +188,7 @@
       })
       .catch((err) => {
         toast.error(`获取账号失败：${err.message}`);
-        console.error(err);
+        //console.error(err);
       });
 
     // 固定密码 TODO:后续需改为用户输入
