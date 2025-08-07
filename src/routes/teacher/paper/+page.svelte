@@ -10,23 +10,127 @@
 <script>
     // @ts-nocheck
 
-    import { formatDate, formatTimestamp, getColorIndex } from "./_utils/func";
-    import { LEVEL_TRANS, CATEGORY_TRANS, ACCESS_MODE_TRANS, ASSEMBLY_TYPE_TRANS, TAG_COLOR_LIST } from "./_utils/func";
-    import { goto } from "$app/navigation";
     import Title from "$lib/components/Title/Title.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Button from "$lib/components/Button/Button.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import Tag from "$lib/components/Tag/Tag.svelte";
-    import { createEmptyPaper, deletePaper, fetchPaperList } from "./_utils/api";
-    import { debounce } from "$lib/utils/optimize";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
+    import Empty from "$lib/components/Table/Empty.svelte";
+    import UneditableTag from "$lib/components/Tag/UneditableTag.svelte";
+    import { LEVEL_TRANS, CATEGORY_TRANS, ACCESS_MODE_TRANS, ASSEMBLY_TYPE_TRANS } from "./_utils/tool";
+    import { goto } from "$app/navigation";
+    import { debounce } from "$lib/utils/optimize";
     import { onMount } from "svelte";
     import { toast } from "$lib/components/Toast/Toast";
-    import Empty from "$lib/components/Table/Empty.svelte";
     import { ALL_PAPER_SELECTED, CURRENT_PAPER_ID, PAPER_PAGE, PAPER_PAGE_SIZE, SEARCH_PAPER_NAME, SEARCH_PAPER_TAGS, SELECTED_PAPER_IDS } from "./_stores/store";
     import { get } from "svelte/store";
+    import { formatTimestamp } from "$lib/utils/time_utils";
     
+    /******************* API 区 ********************/
+
+    // 自定义组卷
+    export function createEmptyPaper() {
+        // 设置响应头
+        const HEADERS = {
+            "Content-Type": "application/json"
+        };
+
+        // 发起 POST 请求
+        return fetch(`/api/paper/manual`, {
+            method: "POST",
+            headers: HEADERS,
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('自定义组卷出错：', error);
+                return null;
+            });
+    }
+
+    // 删除试卷
+    export function deletePaper(
+        toDeletePapers = []
+    ){
+        const DATA = {
+            data: toDeletePapers
+        };
+
+        const HEADERS = {
+            "Content-Type": "application/json"
+        };
+
+        return fetch(`/api/paper`, {
+            headers: HEADERS,
+            method: "DELETE",
+            credentials: "include",
+            body: JSON.stringify(DATA)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('删除试卷出错：', error);
+                return null;
+            });
+    }
+
+    // 获取试卷列表
+    export function fetchPaperList(
+        paperName = "", 
+        paperTags = "", 
+        paperPage = 1, 
+        paperPageSize = 10, 
+        paperCategory = ""
+    ){
+        const PARAMS = new URLSearchParams();
+
+        if (paperName) PARAMS.append("name", paperName);
+        if (paperTags) PARAMS.append("tags", paperTags);
+        PARAMS.append("page", paperPage);
+        PARAMS.append("pageSize", paperPageSize);
+        if (paperCategory) PARAMS.append("category", paperCategory);
+
+        return fetch(`/api/paper?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('获取试卷列表出错：', error);
+                return null;
+            });
+    }
+
+    /******************* API 区 ********************/
+
+
+
+    /*************** 列表基础功能区 ****************/
+
     let total_papers = $state(0);              // 试卷总数
     let paper_page_size_options = [10, 20]     // 每页条数选择项
     let paper_list = $state([]);               // 试卷列表
@@ -121,14 +225,11 @@
         });
     }, 500, false);
 
-    // 挂载区
-    onMount(() => {
-        fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
-            .then(result => {
-                total_papers = result.rowCount;
-                paper_list = result.data || [];
-            });
-    });
+    /*************** 列表基础功能区 ****************/
+
+
+
+    /******************* 操作区 ********************/
 
     // 自定义组卷
     function manual() {
@@ -189,6 +290,17 @@
             }
         });
     }
+
+    /******************* 操作区 ********************/
+
+    // 挂载区
+    onMount(() => {
+        fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
+            .then(result => {
+                total_papers = result.rowCount;
+                paper_list = result.data || [];
+            });
+    });
 
 </script>
 
@@ -284,10 +396,7 @@
                                 <div class="tag-container">
                                     {#if paper.Tags.length !== 0}
                                         {#each paper.Tags as tag}
-                                            <div class="per-tag">
-                                                <div class="tag-block" style="background-color: {TAG_COLOR_LIST[getColorIndex(tag)]};"></div>
-                                                <span class="tag-name">{tag}</span>
-                                            </div>
+                                            <UneditableTag content={tag}/>
                                         {/each}
                                     {:else}
                                         <span>-</span>
@@ -300,8 +409,8 @@
                                     <Tag type={ACCESS_MODE_TRANS[ACCESS_MODE_TRANS[paper.AccessMode]]} them="light">{ACCESS_MODE_TRANS[paper.AccessMode]}</Tag>
                                 </div>
                             </td>
-                            <td class="update-time">{formatTimestamp(paper.UpdateTime)}</td>
-                            <td class="create-time">{formatDate(paper.CreateTime)}</td>
+                            <td class="update-time">{formatTimestamp(paper.UpdateTime,{show_date:true,show_time:true})}</td>
+                            <td class="create-time">{formatTimestamp(paper.CreateTime,{show_date:true,show_time:false})}</td>
                             <td>
                                 <div class="operation">
                                     <!-- 第一行按钮 -->
@@ -524,21 +633,6 @@
                         overflow-y: auto;
                         flex-wrap: wrap;
                         max-height: 65px;
-
-                        .per-tag {
-                            display: flex;
-                            align-items: center;
-                            width: max-content;
-                            height: max-content;
-    
-                            /* 颜色块 */
-                            .tag-block{
-                                width: 12px;
-                                height: 12px;
-                                border-radius: 2px;
-                                margin-right: 9px;
-                            }
-                        }
                     }
                 }
 

@@ -8,26 +8,96 @@
  * @Copyright (c) 2025 by ${git_name_email}, All Rights Reserved. 
 -->
 <script>
-    import { goto } from "$app/navigation";
     import Button from "$lib/components/Button/Button.svelte";
-    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS, TAG_COLOR_LIST } from "../_utils/func";
-    import { getColorIndex } from "../_utils/func";
     import ImportQuestion from "../_components/ImportQuestion/ImportQuestion.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Select from "$lib/components/Select/Select.svelte";
     import Option from "$lib/components/Select/Option.svelte";
-    import { onMount, tick } from "svelte";
-    import { createEmptyPaper, fetchPaper, savePaper } from "../_utils/api";
     import Toast from "$lib/components/Toast/Toast.svelte";
-    import { toast } from "$lib/components/Toast/Toast";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
-    import { debounce } from "$lib/utils/optimize";
-    import QuestionPreviewPanel from "../../question-bank/_components/QuestionPreviewPanel.svelte";
     import QuestionPreview from "../_components/PreviewQuestion/PreviewQuestion.svelte"
+    import { goto } from "$app/navigation";
+    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../_utils/tool";
+    import { onMount, tick } from "svelte";
+    import { toast } from "$lib/components/Toast/Toast";
+    import { debounce } from "$lib/utils/optimize";
     import { get } from "svelte/store";
     import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE } from "../_stores/store";
+
+    /******************* API 区 ********************/
+
+    // 获取试卷详情
+    export function fetchPaper(
+        paperID = 0
+    ){
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("paper_id", paperID);
+
+        return fetch(`/api/paper/manual?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('获取试卷详情出错：', error);
+                return null;
+            });
+    }
+
+    // 保存试卷
+    export function savePaper(
+        paperID = 0,
+        actionsArr = []
+    ){
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("paper_id", paperID);
+
+        const DATA = {
+            data: {
+                actions: actionsArr
+            }
+        };
+
+        const HEADERS = {
+            "Content-Type": "application/json"
+        };
+
+        return fetch(`/api/paper/manual?${PARAMS.toString()}`, {
+            headers: HEADERS,
+            method: "PUT",
+            credentials: "include",
+            body: JSON.stringify(DATA)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('保存试卷出错：', error);
+                return null;
+            });
+    }
+
+    /******************* API 区 ********************/
+
+
     
-    /*************** 控制开关区 ****************/
+    /******************* 控制开关区 *****************/
     let import_modal_is_open = $state(false);  // 从题库中导入题目弹窗
     let is_adding_group = $state(false);      // 添加题组
     let page_is_ready = $state(false);
@@ -36,10 +106,10 @@
         import_modal_is_open = false;
     }
 
-    /*************** 控制开关区 ****************/
+    /***************** 控制开关区 ******************/
     
 
-    /*************** 试卷信息区 ****************/
+    /***************** 试卷信息区 ******************/
 
     let paperID = $state(0);
     let paper_info = $state(null);
@@ -75,11 +145,33 @@
         UpDatePaperInfo();
     }, 500, false);
 
-    /*************** 试卷信息区 ****************/
+    /**************** 试卷信息区 *****************/
 
 
 
-    /**************** 标签处理区 ****************/
+    /***************** 标签处理区 *****************/
+
+    // 标签颜色
+    const TAG_COLOR_LIST = [
+        "#40d5ff", "#59dcff", "#33c1e8", "#6adbff", "#26caef",
+        "#4dd6eb", "#6dcaf2", "#52c2ff", "#7fd3f3", "#47d0db",
+        "#5bc8f2", "#40c4e0", "#72deff", "#4fd4d9", "#83def5",
+        "#ffa040", "#ffb359", "#ffc26d", "#ffcf85", "#ff9eac",
+        "#ffb3c0", "#ffc6d1", "#ffd9e0", "#c6ff8c", "#d9ff99",
+        "#e0ffb3", "#e6ffcc"
+    ];
+
+    // 根据标签名称计算颜色数组的索引
+    function getColorIndex(tagName) {
+        // 获取标签名称的第一个字符
+        const FIRSTCHAR = tagName.charAt(0);
+
+        // 获取第一个字符的 Unicode 编码
+        const CHARCODE = FIRSTCHAR.charCodeAt(0);
+
+        // 计算并返回颜色数组的索引
+        return CHARCODE % TAG_COLOR_LIST.length;
+    }
 
     let to_add_tag = $state("");
 
@@ -110,11 +202,11 @@
         UpDatePaperInfo();
     }
 
-    /**************** 标签处理区 ****************/    
+    /***************** 标签处理区 *****************/    
 
 
 
-    /**************** 题组列表区 ****************/
+    /***************** 题组列表区 *****************/
 
     let paper_groups = $state([]);
     let to_add_group_name = $state("");
@@ -333,7 +425,7 @@
         }
     }
 
-    /**************** 题组列表区 ****************/
+    /***************** 题组列表区 *****************/
 
     // 挂载区
     onMount(() => {
@@ -382,6 +474,8 @@
         update={updateAfterImport}
         to_add_groupID={groupID}
         to_add_group_name={group_name}
+        fetchPaper={fetchPaper}
+        savePaper={savePaper}
     />
 {/if}
 
@@ -474,7 +568,7 @@
                             <div class="paper-tag" style="border: 1.5px dashed var(--border-medium);">
                                 <div class="color-block" style="background-color: {to_add_tag===""? "#40d5ff":TAG_COLOR_LIST[getColorIndex(to_add_tag)]};"></div>
                                 <div class="btn-box">
-                                    <input type="text" bind:value={to_add_tag} onkeydown={addTag} placeholder="+标签"/>
+                                    <input type="text" bind:value={to_add_tag} onkeydown={addTag} placeholder="+标签" maxlength="30"/>
                                     <button onclick={clearToAddTagContent}>✕</button>
                                 </div>
                             </div>
@@ -484,7 +578,7 @@
                                 <div class="paper-tag">
                                     <div class="color-block" style="background-color: {tag===""? "#40d5ff":TAG_COLOR_LIST[getColorIndex(tag)]};"></div>
                                     <div class="btn-box">
-                                        <input type="text" bind:value={tags[index]} onkeydown={oldTagEnter} placeholder="+标签"/>
+                                        <input type="text" bind:value={tags[index]} onkeydown={oldTagEnter} placeholder="+标签" maxlength="30"/>
                                         <button onclick={()=>deleteTag(index)}>✕</button>
                                     </div>
                                 </div>

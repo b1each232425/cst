@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createEmptyPaper, deletePaper, fetchBankQuestionList, fetchPaper, fetchPaperList, fetchQuestionBankList, savePaper } from '../_utils/api';
+import { createEmptyPaper, deletePaper, fetchPaperList } from "../+page.svelte"
+import { fetchPaper, savePaper } from "../manual/+page@.svelte"
+import { fetchBankQuestionList, fetchQuestionBankList } from "../_components/ImportQuestion/ImportQuestion.svelte"
 
 describe("fetchPaperList 测试", () => {
   // 每个测试前 stub fetch
