@@ -1,11 +1,11 @@
 /*
  * @Author: WangKaidun 1597225095@qq.com
- * @Date: 2025-08-01 15:21:42
+ * @Date: 2025-08-07 11:10:19
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-07 11:07:32
+ * @LastEditTime: 2025-08-07 11:35:22
  * @FilePath: \exam\src\routes\teacher\paper\_utils\tool.js
  * @Description: 对后端返回参数的映射
- * Copyright (c) 2025 by ${git_name_email}, All Rights Reserved. 
+ * Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
  */
 // @ts-nocheck
 

@@ -2,10 +2,10 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 15:21:42
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-06 22:31:18
+ * @LastEditTime: 2025-08-07 11:35:31
  * @FilePath: \exam\src\routes\teacher\paper\manual\+page@.svelte
  * @Description: 自定义组卷页面
- * @Copyright (c) 2025 by ${git_name_email}, All Rights Reserved. 
+ * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
 -->
 <script>
     import Button from "$lib/components/Button/Button.svelte";
@@ -23,6 +23,7 @@
     import { debounce } from "$lib/utils/optimize";
     import { get } from "svelte/store";
     import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE } from "../_stores/store";
+    import MyPreviewQuestion from "../_components/MyPreviewQuestion/MyPreviewQuestion.svelte";
 
     /******************* API 区 ********************/
 
@@ -428,8 +429,13 @@
     /***************** 题组列表区 *****************/
 
     // 挂载区
-    onMount(() => {
+    onMount (async () => {
         paperID = get(CURRENT_PAPER_ID);
+        if(paperID === 0) {
+            await goto("/teacher/paper");
+            toast.success("试卷内容已保存",1000);
+            return;
+        }
         fetchPaper(paperID)
             .then(result => {
                 paper_info = result.data;
@@ -453,10 +459,9 @@
                 question_count = paper_info.QuestionCount;
                 description = paper_info.Description;
                 tags = paper_info.Tags;
-
-                page_is_ready = true;
             })
             .finally(() => {
+                page_is_ready = true;
                 // console.log(paper_groups);
             });
     })
@@ -751,7 +756,8 @@
                                                 <!-- 题目内容 -->
                                                 {#if $QUESTION_OPEN_STATE[question.id]}
                                                     <div class="question-container">
-                                                        <QuestionPreview {question}/>                                            
+                                                        <QuestionPreview {question}/>  
+                                                        <!-- <MyPreviewQuestion question={question}/>                                           -->
                                                     </div>
                                                 {/if}
                                             </div>
@@ -991,13 +997,14 @@
                                         font-size: 12px;
                                         outline: none;
                                         margin-left: 2px;
-                                        margin-right: 8px;
+                                        margin-right: 4px;
                                         color: var(--text-primary);
                                     }
 
                                     button {
                                         font-size: 10px;
                                         padding: 0;
+                                        padding-right: 4px;
                                         background: none;
                                         border: none;
                                         cursor: pointer;
@@ -1381,7 +1388,7 @@
 
                             /* 题目内容 */
                             .question-container {
-                                /* padding: 0 20px; */
+                                padding: 20px;
 
                                 .prompt {
                                     font-size: 14px;

@@ -2,10 +2,10 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 21:09:59
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-06 22:33:17
+ * @LastEditTime: 2025-08-07 11:34:36
  * @FilePath: \exam\src\routes\teacher\paper\_components\ImportQuestion\ImportQuestion.svelte
  * @Description: 从题库导入题目组件
- * @Copyright (c) 2025 by ${git_name_email}, All Rights Reserved. 
+ * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
 -->
 <script>
     import Button from "$lib/components/Button/Button.svelte";

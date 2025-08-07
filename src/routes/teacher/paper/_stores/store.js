@@ -1,11 +1,11 @@
 /*
  * @Author: WangKaidun 1597225095@qq.com
- * @Date: 2025-08-06 16:13:26
+ * @Date: 2025-08-07 11:10:19
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-06 22:32:16
+ * @LastEditTime: 2025-08-07 11:35:06
  * @FilePath: \exam\src\routes\teacher\paper\_stores\store.js
  * @Description: 跨组件临时数据存储
- * Copyright (c) 2025 by ${git_name_email}, All Rights Reserved. 
+ * Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
  */
 // @ts-nocheck
 
