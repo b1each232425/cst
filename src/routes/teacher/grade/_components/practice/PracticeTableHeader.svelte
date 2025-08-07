@@ -21,7 +21,16 @@
 	</th>
 	<th class="practice-name">名称</th>
 	<th class="practice-total-score">总分</th>
-	<th class="practice-avg-score">平均分</th>
+	<th class="practice-avg-score">
+		<span class="header-text">平均分</span>
+		<span class="tooltip-container">
+			<svg class="info-icon" viewBox="0 0 16 16" width="14" height="14">
+				<circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+				<text x="8" y="12" text-anchor="middle" font-size="10" fill="currentColor">i</text>
+			</svg>
+			<div class="tooltip">计算方式:练习总分/练习次数</div>
+		</span>
+	</th>
 	<th class="practice-completed">作答人数</th>
 	<th class="practice-passed">通过人数</th>
 	<th class="practice-operation">操作</th>
@@ -39,6 +48,61 @@
 			color: rgb(0, 0, 0, 0.3);
 			vertical-align: middle;
 			text-align: center;
+			position: relative;
+		}
+
+		.header-text {
+			display: inline-block;
+		}
+
+		.tooltip-container {
+			position: relative;
+			display: inline-block;
+			margin-left: 4px;
+			vertical-align: middle;
+		}
+
+		.info-icon {
+			color: rgba(0, 0, 0, 0.4);
+			cursor: help;
+			transition: color 0.2s ease;
+		}
+
+		.info-icon:hover {
+			color: rgba(0, 0, 0, 0.7);
+		}
+
+		.tooltip {
+			position: absolute;
+			bottom: 100%;
+			left: 50%;
+			transform: translateX(-50%);
+			background-color: #333;
+			color: white;
+			padding: 6px 8px;
+			border-radius: 4px;
+			font-size: 12px;
+			white-space: nowrap;
+			opacity: 0;
+			visibility: hidden;
+			transition: opacity 0.2s ease, visibility 0.2s ease;
+			z-index: 1000;
+			margin-bottom: 4px;
+		}
+
+		.tooltip::after {
+			content: '';
+			position: absolute;
+			top: 100%;
+			left: 50%;
+			transform: translateX(-50%);
+			border: 4px solid transparent;
+			border-top-color: #333;
+		}
+
+		.tooltip-container:hover .tooltip {
+			opacity: 1;
+			visibility: visible;
 		}
 	}
 
