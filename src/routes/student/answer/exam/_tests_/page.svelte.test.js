@@ -9,7 +9,7 @@ import { readable } from 'svelte/store';
 describe('ExamPage 数据加载与渲染', () => {
     beforeEach(() => {
         // mock依赖组件和方法
-        vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+     //   vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
         vi.mock('$app/state', () => ({
         page: readable({
             url: {
@@ -23,27 +23,27 @@ describe('ExamPage 数据加载与渲染', () => {
             }
         })
         }));
-        vi.mock('$lib/components/Toast/Toast', () => ({
+   /*     vi.mock('$lib/components/Toast/Toast', () => ({
         toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
         }));
         vi.mock('../_component/CountdownTimer/CountdownTimer.svelte', () => ({ default: () => null }));
-        vi.mock('../_component/SwitchBtn/BulmaSwitchBlue.svelte', () => ({
+    /*    vi.mock('../_component/SwitchBtn/BulmaSwitchBlue.svelte', () => ({
         default: ({ is_full_examMode }) => {
             // 渲染一个假的按钮，点击后切换模式
             return {
             $$render: () => `<button data-testid="switch-mode" onclick="window.__toggleExamMode && window.__toggleExamMode()">切换模式</button>`
             };
         }
-        }));
+        }));*/
         window.__toggleExamMode = () => {
         // 这里需要能访问到 Svelte 的 is_full_examMode
         // 你可以用 Svelte store 或其它方式暴露出来
         };
-        vi.mock('../_component/WaterMark.svelte', () => ({ default: () => null }));
+     /*   vi.mock('../_component/WaterMark.svelte', () => ({ default: () => null }));
         vi.mock('$lib/components/Button/Button.svelte', () => ({ default: () => null }));
         vi.mock('../_component/ExamInfoModal/ExamInfoModal.svelte', () => ({ default: () => null }));
         vi.mock('../_component/QuestionAnswer/question.svelte', () => ({ default: () => null }));
-        vi.mock('$lib/components/MessageBox/MessageBox.js', () => ({ default: vi.fn() }));
+        vi.mock('$lib/components/MessageBox/MessageBox.js', () => ({ default: vi.fn() }));*/
 
         // mock fetch
         const mockJson = vi.fn();
@@ -330,6 +330,8 @@ describe('ExamPage 数据加载与渲染', () => {
             expect(screen.getByTestId('switch-mode')).toBeTruthy();
         });
         await fireEvent.click(screen.getByTestId('switch-mode'));
+
+        console.log(screen.queryByText('下一题'));
 
         // 等待“下一题”按钮出现
         await waitFor(() => {
