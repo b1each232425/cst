@@ -77,8 +77,8 @@
     is_single_date_selection = true, // 是否启用单日期选择模式，默认为true
     is_time_selection = false, // 是否启用时间选择模式，默认为false
     input_width = '140px', // 输入框宽度，默认为 '140px'
-    onDateReset = reset,
-    onDateConfirm = dateConfirm,
+    onDateReset,
+    onDateConfirm,
   } = $props();
 
   // 组件内部的状态
@@ -346,11 +346,14 @@
     selected_end_minute = null;
 
     updateInputValue();
+
+    onDateReset();
   }
 
   // 确认日期
   export function dateConfirm() {
     is_calendars_visible = false;
+    onDateConfirm();
   }
 
   // 监听和更新日期选择器状态
@@ -591,8 +594,8 @@
       </div>
 
       <div class="calendar-footer">
-        <button class="clear-btn" onclick={onDateReset} data-testid="clear-btn">清除</button>
-        <button class="confirm-btn" onclick={onDateConfirm}>确定</button>
+        <button class="clear-btn" onclick={reset} data-testid="clear-btn">清除</button>
+        <button class="confirm-btn" onclick={dateConfirm}>确定</button>
       </div>
     </div>
   {/if}

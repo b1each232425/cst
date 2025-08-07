@@ -96,25 +96,25 @@ export const baseNavItems = writable([
       // },
     ],
   },
-  // {
-  //   name: 'correctManagement',
-  //   title: '试卷批改',
-  //   path: '/teacher/correct',
-  //   icon: '/sidebar/nav_icon/correct.svg',
-  //   children_is_parallel: true,
-  //   children: [
-  //     {
-  //       name: 'markManagement',
-  //       title: '考试批改',
-  //       path: '/teacher/correct/markManagement',
-  //     },
-  //     {
-  //       name: 'markingResult',
-  //       title: '练习批改',
-  //       path: '/teacher/correct/practiceMarkManagement',
-  //     },
-  //   ],
-  // },
+  {
+    name: 'correctManagement',
+    title: '试卷批改',
+    path: '/teacher/correct',
+    icon: '/sidebar/nav_icon/correct.svg',
+    children_is_parallel: true,
+    children: [
+      {
+        name: 'markManagement',
+        title: '考试批改',
+        path: '/teacher/correct/markManagement',
+      },
+      {
+        name: 'markingResult',
+        title: '练习批改',
+        path: '/teacher/correct/practiceMarkManagement',
+      },
+    ],
+  },
   {
     name: 'gradeManagement',
     title: '成绩管理',

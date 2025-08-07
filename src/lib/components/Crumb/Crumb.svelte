@@ -1,11 +1,10 @@
 <script>
   import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
-  import { afterNavigate, goto } from '$app/navigation';
+  import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { baseNavItems } from '$lib/stores/modules/permission.js';
 
-  let { event_handle_funcs } = $props();
   let display_name = $state(''); // 用户名称
   let nav_map = $baseNavItems; // 导航数据
   let current_nav_path_data = $state([]);
@@ -39,12 +38,12 @@
         if (data.status !== 0) {
           throw new Error('用户数据不存在');
         } else {
+          // 获取用户名称
           display_name = data.data.OfficialName;
         }
       })
       .catch((error) => {
         console.error('获取用户权限失败:', error);
-        nav_map = []; // 失败时设为空数组
       });
   }
 
@@ -125,21 +124,13 @@
   $effect(() => {
     const current_url_path = page.url.pathname;
 
-    if (nav_map == null) {
-      throw new Error('navigation data is required');
-    }
-
     let nav_path_data = getNavData(current_url_path, nav_map);
     current_nav_path_data = nav_path_data;
     // $inspect(current_nav_path_data);
 
     // 设置标题：只使用最后一个导航项的title
-    if (nav_path_data.length > 0) {
-      const currentNavItem = nav_path_data[nav_path_data.length - 1];
-      document.title = `${currentNavItem.title} • ${app_name}`;
-    } else {
-      document.title = app_name;
-    }
+    const currentNavItem = nav_path_data[nav_path_data.length - 1];
+    document.title = `${currentNavItem.title} • ${app_name}`;
   });
 
   onMount(async () => {
