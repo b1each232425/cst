@@ -46,6 +46,7 @@
   		min-height: 600px;
   		overflow: hidden;
 		height:84vh;
+		position: relative;
 	}
 
 	.filter-container {
@@ -63,7 +64,8 @@
   		overflow: hidden;
   		min-height: 0;
 		padding: 0 23px;
-
+		flex: 1;
+		padding-bottom: 60px; /* 为固定分页器留出空间 */
 	}
 
 	.table-content {
@@ -74,10 +76,10 @@
 
 	.pagination-wrapper {
 		flex-shrink: 0;
-		display: flex;
-		justify-content: flex-end;
-		margin-top: 16px;
-		padding: 16px 0;
-
+		position: fixed;
+		bottom: 30px;
+		right: 30px;
+		padding: 16px;
+		z-index: 100;
 	}
 </style> 
