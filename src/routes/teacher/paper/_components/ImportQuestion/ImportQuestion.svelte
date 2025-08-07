@@ -24,7 +24,7 @@
     /******************* API 区 *******************/
 
     // 获取题库列表
-    export function fetchQuestionBankList(
+    function fetchQuestionBankList(
         bankKeyWord = "", 
         bankPage = "",
         bankPageSize = "",
@@ -57,7 +57,7 @@
     }
 
     // 获取题库题目
-    export function fetchBankQuestionList(
+    function fetchBankQuestionList(
         bankID = "", 
         page = 1,
         pageSize = 10,
@@ -103,7 +103,8 @@
 
     let {
         onclose, update,
-        to_add_groupID = 0, to_add_group_name = "",
+        to_import_groupID = 0, to_import_group_name = "",
+        to_import_group_length = 0,
         fetchPaper, savePaper
     } = $props();                 // 关闭弹窗
     let drop_up_toggle_is_open = $state(false);     // 上拉题组栏
@@ -118,13 +119,12 @@
     let paperID = $state(0);
     let paper_info = $state(null);
     let paper_groups = $state([]); 
-    let to_add_group_length = $state(0);
 
     // 选中题组
     function selectGroup(group) {
-        to_add_groupID = group.id;
-        to_add_group_name = group.name; 
-        to_add_group_length = group.questions.length;
+        to_import_groupID = group.id;
+        to_import_group_name = group.name; 
+        to_import_group_length = group.questions.length;
     }
 
     /********************* 信息区 *********************/
@@ -231,14 +231,16 @@
                 action: "add_question",
                 payload: selected_question_infos.map((q, index) => ({
                     temp_id: `temp_question_${index + 1}`,
-                    group_id: to_add_groupID,
-                    order: to_add_group_length + index + 1,
+                    group_id: to_import_groupID,
+                    order: to_import_group_length + index + 1,
                     bank_question_id: q.id,
                     score: q.score
                 }))
             }
         ];
         
+        console.log(actions);
+
         savePaper(paperID, actions)
             .then(() => {
                 fetchPaper(paperID)
@@ -501,7 +503,7 @@
                     <div class="dropup-menu">
                         {#each paper_groups as group}
                             <!-- svelte-ignore a11y_click_events_have_key_events -->
-                            <div class="menu-option {to_add_groupID===group.id?"selected":""}" onclick={()=>selectGroup(group)}>
+                            <div class="menu-option {to_import_groupID===group.id?"selected":""}" onclick={()=>selectGroup(group)}>
                                 <span>
                                     {group.name}
                                 </span>
@@ -509,12 +511,12 @@
                         {/each}
                     </div>  
                 {/if}
-                <span class="selected-group">{to_add_groupID===0?"请选择题组":to_add_group_name}</span>
+                <span class="selected-group">{to_import_groupID===0?"请选择题组":to_import_group_name}</span>
                 <button class="toggle-btn">∨</button>
             </div>
             <div class="btn-box">
                 <Button onclick={onclose} plain={true}>取消</Button>
-                {#if to_add_bankID!=="" && to_add_groupID!==0 && selected_question_infos.length!==0}
+                {#if to_add_bankID!=="" && to_import_groupID!==0 && selected_question_infos.length!==0}
                     <Button onclick={()=>concfirmImport()}>确认导入</Button>
                 {:else}
                     <Button disabled={true}>确认导入</Button>
@@ -994,6 +996,7 @@
                     justify-content: space-between;
                     width: 299px;
                     position: relative;
+                    z-index: 1000;
                     
                     &:hover {
                         transition: all 0.3s ease;
@@ -1043,12 +1046,12 @@
                         border-radius: var(--input-border-radius);
                         padding: 6px 0;
                         box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
-                        max-height: 200px;
+                        max-height: 210px;
                         overflow-y: auto;
                         display: flex;
                         flex-direction: column;
                         gap: 3px;
-                        margin-bottom: 1.5px;
+                        margin-bottom: 1px;
                         margin-left: -1px;
 
                         /* 单项 */

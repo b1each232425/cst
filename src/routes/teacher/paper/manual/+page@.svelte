@@ -28,7 +28,7 @@
     /******************* API 区 ********************/
 
     // 获取试卷详情
-    export function fetchPaper(
+    function fetchPaper(
         paperID = 0
     ){
         const PARAMS = new URLSearchParams();
@@ -55,7 +55,7 @@
     }
 
     // 保存试卷
-    export function savePaper(
+    function savePaper(
         paperID = 0,
         actionsArr = []
     ){
@@ -215,8 +215,9 @@
     let to_edit_groupID = $state(null);
     let to_edit_group_name = $state("");
     let to_edit_group = $state(null);
-    let groupID = $state(0);
-    let group_name = $state("");
+    let to_import_groupID = $state(0);
+    let to_import_group_name = $state("");
+    let to_import_group_length = $state(0);
 
     // 删除题组
     function deleteGroup(groupID) {
@@ -388,12 +389,26 @@
         });
     }
 
+    // 导入题目
+    function importQuestions(group) {
+        to_import_groupID = group.id;
+        to_import_group_name = group.name;
+        to_import_group_length = group.questions.length;
+        import_modal_is_open = true;
+    }
+
     // 导入题目后信息更新
     function updateAfterImport(updatedGroups, updatedInfo) {
+        // 更新试卷信息
         paper_groups = updatedGroups;
         paper_info = updatedInfo;
         question_count = updatedInfo.QuestionCount;
         total_score = updatedInfo.TotalScore;
+        
+        // 重置导入参数
+        to_import_groupID = 0;
+        to_import_group_name = "";
+        to_import_group_length = 0;
     }
 
     // 一键展开所有题组和题目
@@ -462,7 +477,7 @@
             })
             .finally(() => {
                 page_is_ready = true;
-                // console.log(paper_groups);
+                console.log(paper_groups);
             });
     })
 
@@ -477,8 +492,9 @@
     <ImportQuestion
         onclose={closeImportModal}
         update={updateAfterImport}
-        to_add_groupID={groupID}
-        to_add_group_name={group_name}
+        to_import_groupID={to_import_groupID}
+        to_import_group_name={to_import_group_name}
+        to_import_group_length={to_import_group_length}
         fetchPaper={fetchPaper}
         savePaper={savePaper}
     />
@@ -501,7 +517,7 @@
             <div class="operation">
                 <Button onclick={()=>expandAll()} plain={true}>一键展开</Button>
                 <Button onclick={()=>collapseAll()} plain={true}>一键收起</Button>
-                <Button onclick={()=>{groupID=0;import_modal_is_open=true}}>从题库中导入</Button>
+                <Button onclick={()=>{import_modal_is_open=true}}>从题库中导入</Button>
                 <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper')}>保存并退出</Button>
             </div>
         </div>
@@ -700,8 +716,8 @@
                                 <!-- 右侧区域 -->
                                 <div class="header-right">
                                     <!-- <span>每题分值：</span>
-                                    <input value={10} id="temp-average-question-score-input" type="number">
-                                    <Button>导入题目</Button> -->
+                                    <input value={10} id="temp-average-question-score-input" type="number"> -->
+                                    <Button onclick={()=>importQuestions(group)}>导入题目</Button>
                                 </div>
                             </div>
 
@@ -770,7 +786,7 @@
                                                 <span class="title">题组暂无题目</span>
                                                 <span class="prompt">可以通过以下方式快速添加题目：</span>
                                                 <div class="import-box">
-                                                    <Button onclick={()=>{groupID=group.id;group_name=group.name;import_modal_is_open=true}}>导入题目</Button>
+                                                    <Button onclick={()=>importQuestions(group)}>导入题目</Button>
                                                 </div>
                                             </div>
                                         </div>
@@ -1388,7 +1404,7 @@
 
                             /* 题目内容 */
                             .question-container {
-                                padding: 20px;
+                                /* padding: 20px; */
 
                                 .prompt {
                                     font-size: 14px;
