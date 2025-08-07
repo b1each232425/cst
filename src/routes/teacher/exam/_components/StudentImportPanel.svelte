@@ -1,7 +1,6 @@
 <script>  
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
-    import InforInput from "$lib/components/Input/InforInput.svelte";
 
     // 字段映射表
     const errorType = {
