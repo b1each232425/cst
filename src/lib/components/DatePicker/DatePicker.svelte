@@ -77,6 +77,8 @@
     is_single_date_selection = true, // 是否启用单日期选择模式，默认为true
     is_time_selection = false, // 是否启用时间选择模式，默认为false
     input_width = '140px', // 输入框宽度，默认为 '140px'
+    onDateReset = reset,
+    onDateConfirm = dateConfirm,
   } = $props();
 
   // 组件内部的状态
@@ -330,15 +332,25 @@
     internal_start_date = null;
     internal_end_date = null;
     input_value = is_single_date_selection ? SINGLE_DATE_PROMPT : DEFAULT_PROMPT;
-    start_year = null;
-    start_month = null;
-    end_year = null;
-    end_month = null;
+
+    // 设置当前年份和月份
+    const now = new Date();
+    start_year = now.getFullYear();
+    start_month = now.getMonth();
+    end_year = now.getFullYear();
+    end_month = now.getMonth();
+
     selected_start_hour = null;
     selected_start_minute = null;
     selected_end_hour = null;
     selected_end_minute = null;
+
     updateInputValue();
+  }
+
+  // 确认日期
+  export function dateConfirm() {
+    is_calendars_visible = false;
   }
 
   // 监听和更新日期选择器状态
@@ -579,8 +591,8 @@
       </div>
 
       <div class="calendar-footer">
-        <button class="clear-btn" onclick={() => reset()} data-testid="clear-btn">清除</button>
-        <button class="confirm-btn" onclick={() => (is_calendars_visible = false)}>确定</button>
+        <button class="clear-btn" onclick={onDateReset} data-testid="clear-btn">清除</button>
+        <button class="confirm-btn" onclick={onDateConfirm}>确定</button>
       </div>
     </div>
   {/if}

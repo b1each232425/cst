@@ -29,7 +29,7 @@ vi.mock('$app/navigation', () => ({
 // Mock fetch
 global.fetch = vi.fn();
 
-describe('AddUser Page - submitForm() 校验逻辑', () => {
+describe('提交函数校验逻辑', () => {
   let component;
   let mockValidMobile;
   let mockValidEmail;
@@ -470,7 +470,7 @@ describe('AddUser Page - submitForm() 校验逻辑', () => {
   });
 });
 
-describe('AddUser Page - cancelForm() 功能', () => {
+describe('取消功能', () => {
   let component;
   let mockMessageBox;
   let mockGoto;
@@ -535,7 +535,7 @@ describe('AddUser Page - cancelForm() 功能', () => {
   });
 });
 
-describe('AddUser Page - onMount() 获取账号失败', () => {
+describe('获取账号失败', () => {
   let mockToast;
 
   beforeEach(async () => {
@@ -558,7 +558,7 @@ describe('AddUser Page - onMount() 获取账号失败', () => {
     });
   });
 });
-describe('AddUser Page - onMount() 异常分支', () => {
+describe('异常分支', () => {
   let mockToast
 
   beforeEach(async () => {

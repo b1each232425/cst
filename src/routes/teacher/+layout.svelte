@@ -16,11 +16,7 @@
 
   <main>
     <header>
-      <Crumb
-        app_name={'3min'}
-        avatar_img={'/user_icons/defaultAvatar.svg'}
-        icons={{ notification: '/user_icons/notification.svg' }}
-      />
+      <Crumb />
     </header>
 
     <div class="content-wrapper">
