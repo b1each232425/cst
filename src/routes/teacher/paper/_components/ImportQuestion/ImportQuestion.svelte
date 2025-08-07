@@ -156,7 +156,7 @@
                 question_page,
                 question_page_size,
                 question_name,
-                question_gags,
+                question_tags,
                 question_type,
                 question_difficulty
             ).then( result => {
@@ -175,7 +175,7 @@
     let question_page = $state(1);
     let question_page_size = $state(10);
     let question_name = $state("");
-    let question_gags = $state("");
+    let question_tags = $state("");
     let question_type = $state("");
     let question_difficulty = $state("");
     let total_questions = $state(0);
@@ -225,7 +225,7 @@
     }
 
     // 确认导入题目
-    function concfirmImport() {
+    function confirmImport() {
         const actions = [
             {
                 action: "add_question",
@@ -238,8 +238,6 @@
                 }))
             }
         ];
-        
-        console.log(actions);
 
         savePaper(paperID, actions)
             .then(() => {
@@ -264,7 +262,7 @@
                 question_page,
                 question_page_size,
                 question_name,
-                question_gags,
+                question_tags,
                 question_type,
                 question_difficulty
             ).then( result => {
@@ -286,7 +284,7 @@
                 question_page,
                 question_page_size,
                 question_name,
-                question_gags,
+                question_tags,
                 question_type,
                 question_difficulty
             ).then( result => {
@@ -517,7 +515,7 @@
             <div class="btn-box">
                 <Button onclick={onclose} plain={true}>取消</Button>
                 {#if to_add_bankID!=="" && to_import_groupID!==0 && selected_question_infos.length!==0}
-                    <Button onclick={()=>concfirmImport()}>确认导入</Button>
+                    <Button onclick={()=>confirmImport()}>确认导入</Button>
                 {:else}
                     <Button disabled={true}>确认导入</Button>
                 {/if}

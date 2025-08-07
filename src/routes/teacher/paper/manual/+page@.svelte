@@ -413,22 +413,35 @@
 
     // 一键展开所有题组和题目
     function expandAll() {
+         // 创建新的展开状态对象
+        const newGroupState = {};
+        const newQuestionState = {};
+
         paper_groups.forEach(group => {
-            group.isOpen = true;
+            newGroupState[group.id] = true;
             group.questions?.forEach(question => {
-            question.isOpen = true;
+                newQuestionState[question.id] = true;
             });
         });
+
+        GROUP_OPEN_STATE.set(newGroupState);
+        QUESTION_OPEN_STATE.set(newQuestionState);
     }
 
     // 一键收起所有题组和题目
     function collapseAll() {
+        const newGroupState = {};
+        const newQuestionState = {};
+
         paper_groups.forEach(group => {
-            group.isOpen = false;
+            newGroupState[group.id] = false;
             group.questions?.forEach(question => {
-            question.isOpen = false;
+                newQuestionState[question.id] = false;
             });
         });
+
+        GROUP_OPEN_STATE.set(newGroupState);
+        QUESTION_OPEN_STATE.set(newQuestionState);
     }
 
     // 切换展开状态
@@ -456,16 +469,6 @@
                 paper_info = result.data;
                 paper_groups = result.data.GroupsData;
 
-                paper_groups.forEach(group => {
-                    // 所有题组展开
-                    group.isOpen = true;
-                    
-                    group.questions.forEach(question => {
-                        // 所有题目展开
-                        question.isOpen = true;
-                    });
-                });
-
                 paper_name = paper_info.Name;
                 category = paper_info.Category;
                 level = paper_info.Level;
@@ -477,13 +480,11 @@
             })
             .finally(() => {
                 page_is_ready = true;
-                console.log(paper_groups);
+                // console.log(paper_groups);
             });
     })
 
     function test() {
-        console.log(toCreatePaper);
-        console.log(paper_groups);
     }
 
 </script>
