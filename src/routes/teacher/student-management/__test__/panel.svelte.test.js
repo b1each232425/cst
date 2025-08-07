@@ -839,7 +839,7 @@ describe('StudentImportPanel 组件测试', () => {
     });
   });
 
-  describe('导入功能高级测试', () => {
+  describe('导入功能', () => {
     beforeEach(async () => {
       component = render(StudentImportPanel, { props: { show: true } });
       

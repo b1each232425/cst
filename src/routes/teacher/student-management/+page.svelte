@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import Title from '$lib/components/Title/Title.svelte';
   import InputBox from '$lib/components/Input/InputBox.svelte';
-  import InforInput from '$lib/components/Input/InforInput.svelte';
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
@@ -10,12 +9,16 @@
   import StudentImportPanel from './StudentImportPanel.svelte';
   import { debounce } from './_utils/debounce.js';
   import { goto } from '$app/navigation';
+  import { toast } from '$lib/components/Toast/Toast.js';
 
   // 学生列表
-  let students = $state([]); 
+  let students = $state([]);
 
   //全选状态
   let select_all = $state(false);
+
+  // 全局选中的学生 ID 集合
+  let selected_student_ids = $state(new Set());
 
   // 筛选和搜索状态
   let search_text = $state(''); // 搜索框文本内容
@@ -56,9 +59,11 @@
     const params = {
       page: String(current_page),
       pageSize: String(page_size),
-      domain: 'cst.school^student', 
+      domain: 'cst.school^student',
     };
-
+    if (search_text) {
+      params.fuzzyCondition = search_text.trim();
+    }
     // 添加状态筛选
     if (account_status && account_status !== '全部') {
       params.status = account_status;
@@ -73,46 +78,41 @@
     })
       .then((response) => response.json())
       .then((res) => {
+        if (res.status !== 0) {
+          throw new Error(res.msg || '未知错误');
+        }
         if (res && Array.isArray(res.data)) {
-          let filteredData = res.data;
-
-          // 前端实现多字段搜索
-          if (search_text) {
-            const keyword = search_text.toLowerCase();
-            filteredData = filteredData.filter(
-              (student) =>
-                (student.OfficialName && student.OfficialName.toLowerCase().includes(keyword)) ||
-                (student.Account && student.Account.toLowerCase().includes(keyword)) ||
-                (student.IDCardNo && student.IDCardNo.toLowerCase().includes(keyword)) ||
-                (student.MobilePhone && student.MobilePhone.toLowerCase().includes(keyword)),
-            );
-          }
-
-          students = filteredData.map((student) => ({
+          students = res.data.map((student) => ({
             id: student.ID,
             account: student.Account,
             name: student.OfficialName || '-',
             identity_card: student.IDCardNo || '-',
-            gender: student.Gender || '-',
+            gender:
+              student.IDCardNo && student.IDCardNo.length === 18
+                ? parseInt(student.IDCardNo.charAt(16)) % 2 === 0
+                  ? '女'
+                  : '男'
+                : student.Gender || '-',
             phone: student.MobilePhone || '-',
             status: student.Status,
-            selected: false,
+            selected: selected_student_ids.has(student.ID),
             has_relation: student.HasRelation || false,
           }));
-
           total_items = res.rowCount || res.data.length;
           total_pages = Math.ceil(total_items / page_size);
-          select_all = false;
+          updateSelectAllState();
         } else {
           students = [];
           total_items = 0;
           total_pages = 0;
           select_all = false;
         }
+        updateSelectAllState();
         loading = false;
       })
-      .catch((errorInfo) => {
-        error = `获取用户列表失败: ${errorInfo.message}`;
+      .catch((err) => {
+        console.error('Fetch users error:', err);
+        toast.error(`获取学生列表失败：${err.message}`);
         students = [];
         total_items = 0;
         total_pages = 0;
@@ -129,10 +129,33 @@
 
   //切换全选状态
   function toggleSelectAll() {
-    students = students.map((student) => ({
-      ...student,
-      selected: select_all,
-    }));
+    if (select_all) {
+      students.forEach((s) => selected_student_ids.add(s.id));
+    } else {
+      students.forEach((s) => selected_student_ids.delete(s.id));
+    }
+    // 触发响应式更新
+    students = students.map((s) => ({ ...s, selected: selected_student_ids.has(s.id) }));
+  }
+
+  // 更新全选框状态
+  function updateSelectAllState() {
+    if (students.length === 0) {
+      select_all = false;
+      return;
+    }
+    select_all = students.every((s) => selected_student_ids.has(s.id));
+  }
+
+  // 单个复选框变更
+  function handleStudentSelectChange(id) {
+    if (selected_student_ids.has(id)) {
+      selected_student_ids.delete(id);
+    } else {
+      selected_student_ids.add(id);
+    }
+    students = students.map((s) => (s.id === id ? { ...s, selected: selected_student_ids.has(id) } : s));
+    updateSelectAllState();
   }
 
   // //处理学生状态切换
@@ -273,13 +296,12 @@
       <!-- 左侧筛选区 -->
       <div class="left-section">
         <div class="filter-item">
-          <span class="filter-label">姓名/账号/身份证号/手机号</span>
           <div class="search-container">
             <InputBox
-              placeholder="请输入关键词"
+              placeholder="请输入姓名/账号/身份证号/手机号"
               type="text"
               bind:value={search_text}
-              showLabel={false}
+              show_label={false}
               onInput={handleSearchDebounced}
             ></InputBox>
           </div>
@@ -331,14 +353,19 @@
             <th class="col-status table-head">账号状态</th>
             <th class="col-gender table-head">性别</th>
             <th class="col-phone table-head">电话</th>
-            <!-- <th class="col-actions table-head">操作</th> -->
+            <th class="col-actions table-head">操作</th>
           </tr>
         </thead>
         <tbody>
           {#each students as student (student.id)}
             <tr class="table-row" data-id={student.id}>
               <td class="col-checkbox">
-                <input type="checkbox" class="checkbox-item" bind:checked={student.selected} />
+                <input
+  type="checkbox"
+  class="checkbox-item"
+  checked={student.selected}
+  onchange={() => handleStudentSelectChange(student.id)}
+/>
               </td>
               <td class="col-account" title={student.account}>
                 {student.account}
@@ -356,16 +383,16 @@
               </td>
               <td class="col-gender">{student.gender}</td>
               <td class="col-phone">{student.phone}</td>
-              <!-- <td class="col-actions">
+              <td class="col-actions">
                 <div class="actions">
-                  <button class="btn-link btn-detail" onclick={() => handleDetail(student.id)}>详情</button>
+                  <!-- <button class="btn-link btn-detail" onclick={() => handleDetail(student.id)}>详情</button>
                   <button class="btn-link btn-edit" onclick={() => handleEdit(student.id)}>修改</button>
                   <button
                     class="btn-link {student.status === '02' ? 'btn-enable' : 'btn-disable'}"
                     onclick={() => toggleStatus(student.id)}
                   >
                     {student.status === '02' ? '启用' : '停用'}
-                  </button>
+                  </button> -->
                   <button
                     class="btn-link btn-unbind"
                     style="display: {student.has_relation ? 'inline-block' : 'none'}"
@@ -377,7 +404,7 @@
                     onclick={() => handleDelete(student.id)}>删除</button
                   >
                 </div>
-              </td> -->
+              </td>
             </tr>
           {/each}
           <!-- 空页面 -->
@@ -395,9 +422,9 @@
     <div class="pagination-wrapper">
       <div class="pagination-container {total_items > 0 ? '' : 'hide'}">
         <Pagination
-          total_items={total_items}
-          current_page={current_page}
-          page_size={page_size}
+          {total_items}
+          {current_page}
+          {page_size}
           page_size_options={[10, 20, 50]}
           on:pageChange={handlePageChange}
           on:pageSizeChange={handlePageSizeChange}
@@ -412,7 +439,7 @@
 
 <style lang="scss" scoped>
   $normal-font-size: 14px;
-  $gray-font-color: rgb(0, 0, 0, 0.6);
+  $gray-font-color: var(--text-primary);
 
   .student-management-container {
     position: relative;
@@ -421,11 +448,10 @@
     width: 100%;
     overflow-y: auto;
     height: 85vh;
-
   }
 
   .table-action-container {
-    padding: 10px 0 0 10px; 
+    padding: 10px 0 0 10px;
 
     .action-layout {
       display: flex;
@@ -448,7 +474,6 @@
       flex: 1;
       gap: 20px;
       align-items: center;
-      
 
       @media (max-width: 1200px) {
         min-width: 500px;
@@ -459,39 +484,33 @@
       }
 
       @media (min-resolution: 1.25dppx) {
-        gap:10px;
+        gap: 10px;
       }
-
 
       .filter-item {
         display: flex;
         font-size: $normal-font-size;
-        min-width: 100px;
         color: $gray-font-color;
         white-space: nowrap;
         align-items: center;
         justify-items: center;
-        gap: 20px;
-
-        @media (min-resolution: 1.25dppx) {
-          gap: 10px;
-        }
+        gap: 10px;
       }
 
       .search-container {
         position: relative;
         display: flex;
+        min-width: 260px;
+
         @media (min-resolution: 1.25dppx) {
-          max-width:180px;
+          max-width: 180px;
         }
       }
 
       .dropdown-container {
         position: relative;
         display: flex;
-        @media (min-resolution: 1.25dppx) {
-          max-width:180px;
-        }
+        max-width: 180px;
       }
     }
 
@@ -505,9 +524,9 @@
       margin-right: 30px; //TODO：后续调整
 
       @media (min-resolution: 1.25dppx) {
-          margin-right: 0px; 
-          gap:10px;
-        }
+        margin-right: 0px;
+        gap: 10px;
+      }
 
       @media (max-width: 1200px) {
         gap: 15px;
@@ -532,7 +551,7 @@
 
         &.download-btn,
         &.import-btn {
-          background-color: white;
+          background-color: var(--text-white);
           color: #333;
           border-color: #ddd;
         }
@@ -590,10 +609,10 @@
 
     th {
       font-weight: normal;
+      color: var(--text-secondary);
       height: 40px;
       padding: 8px;
       text-align: center;
-      background-color: #ffffff;
       white-space: nowrap;
       min-width: max-content;
     }
@@ -601,8 +620,8 @@
     td {
       padding: 12px 8px;
       text-align: center;
-      border-bottom: 1px solid #eee;
-      color: rgb(0, 0, 0, 0.75);
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-primary);
       height: 60px;
     }
 
@@ -618,28 +637,28 @@
       width: 3%;
     }
     .col-account {
-      width: 12.52%;
+      width: 13%;
       max-width: 142px;
     }
     .col-name {
-      width: 12.52%;
+      width: 12%;
       max-width: 142px;
     }
     .col-id {
-      width: 18.29%;
+      width: 18%;
       max-width: 276px;
     }
     .col-status {
-      width: 6.76%;
+      width: 8%;
     }
     .col-gender {
-      width: 6.76%;
+      width: 8%;
     }
     .col-phone {
       width: 13%;
     }
     .col-actions {
-      width: 25%;
+      width: 5%;
     }
   }
 
@@ -703,18 +722,16 @@
   }
 
   .pagination-wrapper {
-    flex-shrink: 0;                     
-  
+    flex-shrink: 0;
+
     .pagination-container {
-    display: flex;             
-    justify-content: flex-end; 
-    padding-right: 10px;       
-    
-      
+      display: flex;
+      justify-content: flex-end;
+      padding-right: 10px;
+
       &.hide {
         visibility: hidden;
       }
-      
     }
   }
 

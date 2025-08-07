@@ -12,10 +12,6 @@ vi.mock('$lib/components/Input/InputBox.svelte', () => ({
   default: vi.fn()
 }));
 
-vi.mock('$lib/components/Input/InforInput.svelte', () => ({
-  default: vi.fn()
-}));
-
 vi.mock('$lib/components/Pagination/Pagination.svelte', () => ({
   default: vi.fn()
 }));

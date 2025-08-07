@@ -2,7 +2,6 @@
   import Upload from '$lib/components/Upload/UploadImage.svelte';
   import Title from '$lib/components/Title/Title.svelte';
   import InputBox from '$lib/components/Input/InputBox.svelte';
-  import InforInput from '$lib/components/Input/InforInput.svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
   import Button from '$lib/components/Button/Button.svelte';
@@ -21,7 +20,7 @@
   let phone = $state('');
   let email = $state('');
 
-  // 上传文件相关状态TODO:后续需上传后端
+  // 上传文件相关状态TODO:后续需对接后端
   let idCardFrontFile = $state(null);
   let idCardBackFile = $state(null);
 
