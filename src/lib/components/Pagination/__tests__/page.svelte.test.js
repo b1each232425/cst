@@ -1,6 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import Pagination from '../Pagination.svelte';
+
+// Mock Select and Option components
+vi.mock('$lib/components/Select/Select.svelte', () => ({
+  default: vi.fn((props) => {
+    const { value, changeValue } = props;
+    // 模拟选择变化时调用changeValue回调
+    return {
+      $set: vi.fn(),
+      $on: vi.fn(),
+      $destroy: vi.fn(),
+      triggerChange: (newValue) => {
+        changeValue(newValue);
+      },
+    };
+  }),
+}));
+
+// Mock Option component
+vi.mock('$lib/components/Select/Option.svelte', () => ({
+  default: vi.fn(),
+}));
 
 describe('Pagination 组件测试', () => {
   let total_items = 100; // 总数据条数
@@ -26,7 +47,10 @@ describe('Pagination 组件测试', () => {
       },
     });
 
-    expect(screen.getByText('共 100 条')).toBeInTheDocument(); // 验证总条数
+    // 等待并确保总条数显示
+    await waitFor(() => {
+      expect(screen.getByText('共 100 条')).toBeInTheDocument(); // 验证总条数
+    });
   });
 
   it('应该渲染正确的页码按钮', async () => {
@@ -66,7 +90,7 @@ describe('Pagination 组件测试', () => {
       props: {
         total_items,
         page_size,
-        current_page,
+        current_page: 2,
         page_size_options,
       },
     });
@@ -109,24 +133,6 @@ describe('Pagination 组件测试', () => {
 
     // 确认跳转后输入框的值为 '5'
     expect(jumpInput.value).toBe('5');
-  });
-
-  it('应该正确触发每页条数变化', async () => {
-    render(Pagination, {
-      props: {
-        total_items,
-        page_size,
-        current_page,
-        page_size_options,
-      },
-    });
-
-    // 选择每页条数为20
-    const pageSizeSelect = screen.getByTestId('select');
-    await fireEvent.change(pageSizeSelect, { target: { value: '20' } });
-
-    // 验证 select 元素的 value 是否为 '20'
-    expect(pageSizeSelect.value).toBe('20');
   });
 
   it('应该显示省略号', async () => {
@@ -174,4 +180,57 @@ describe('Pagination 组件测试', () => {
     const nextButton = screen.getByTestId('right_jt');
     expect(nextButton).toBeDisabled(); // 验证下一页按钮是否禁用
   });
+
+  it('应该正确触发每页条数变化', async () => {
+    const pageSizeChange = vi.fn();
+    const pageChange = vi.fn();
+
+    render(Pagination, {
+      props: {
+        total_items: 100,
+        page_size: 10,
+        current_page: 1,
+        page_size_options: [10, 20, 30, 40, 50],
+        // 绑定分页器事件
+        pageSizeChange,
+        pageChange,
+      },
+    });
+
+    // 获取 Select 组件
+    const pageSizeSelect = screen.getByTestId('select'); // 确保你的 Select 组件有 testId
+
+    // 模拟选择每页条数为20
+    await fireEvent.change(pageSizeSelect, { target: { value: '20' } });
+
+    // 验证 pageSizeChange 和 pageChange 是否被触发
+    expect(pageSizeChange).toHaveBeenCalledWith(20);
+    expect(pageChange).toHaveBeenCalledWith(1); // 假设当前页码保持为1
+  });
+
+  // it('如果当前页超出新的总页数，跳转到最后一页', async () => {
+  //   const pageSizeChange = vi.fn();
+  //   const pageChange = vi.fn();
+
+  //   render(Pagination, {
+  //     props: {
+  //       total_items: 100,
+  //       page_size: 10,
+  //       current_page: 15, // 当前页是15
+  //       page_size_options: [10, 20, 30, 40, 50],
+  //       pageSizeChange,
+  //       pageChange,
+  //     },
+  //   });
+
+  //   // 获取 Select 组件
+  //   const pageSizeSelect = screen.getByTestId('select');
+
+  //   // 模拟选择每页条数为20
+  //   await fireEvent.change(pageSizeSelect, { target: { value: '20' } });
+
+  //   // 由于当前页大于新的总页数（100 / 20 = 5），所以需要跳转到最后一页（第5页）
+  //   expect(pageSizeChange).toHaveBeenCalledWith(20);
+  //   expect(pageChange).toHaveBeenCalledWith(5); // 现在页码应跳转到5
+  // });
 });
