@@ -5,13 +5,7 @@
   import { baseNavItems } from '$lib/stores/modules/permission.js';
 
   let { options } = $props();
-  let nav_map = $state([]);
-  let icons = $state({
-    itemFold: '/sidebar/nav_icon/fold.svg',
-    itemUnfold: '/sidebar/nav_icon/unfold.svg',
-    sidebarFold: '/sidebar/fold.svg',
-    sidebarUnfold: '/sidebar/unfold.svg',
-  });
+  let nav_map = $state();
 
   /**
    * 侧边栏折叠状态
@@ -89,31 +83,11 @@
 
     sidebar_element.style.setProperty('--sidebar-height', options?.sidebarHeight || '100%');
 
-    // 初始化侧边栏状态
-    sidebar_fold_state = window.localStorage.getItem('sidebar_fold_state') == 'true' ? true : false;
-    sidebar_is_folding = sidebar_fold_state;
-    sidebar_is_folded = sidebar_fold_state;
-
-    let nav_map_storage = null;
-
-    try {
-      nav_map_storage = JSON.parse(window.localStorage.getItem('sidebarNavMap') || '[]');
-    } catch (e) {
-      console.error('sidebarNavMap parse error', e);
-    }
-
-    nav_map_storage = nav_map_storage == null ? [] : nav_map_storage;
-
-    let nav_map_snapshot = $state.snapshot(nav_map);
-
-    // 初始化侧边栏导航项状态
-    for (let i = 0; i < nav_map_snapshot.length; i++) {
-      initItemFoldState(nav_map_snapshot[i], nav_map_storage[i]);
-    }
-
+    // 当窗口大小变化时，调用handleResize函数,当宽度太小自动收起侧边栏
     window.addEventListener('resize', handleResize);
   });
 
+  // 监听侧边栏状态
   $effect(() => {
     if (sidebar_fold_state) {
       sidebar_fold_str = '展开侧边栏';
@@ -122,102 +96,22 @@
     } else {
       sidebar_fold_str = '收起侧边栏';
 
+      // 控制按钮水平位移
       sidebar_toggle_btn.style.setProperty('--sidebar-toggle-btn-translate-x', `${0}px`);
     }
 
+    // 更新当前高亮模块
     current_active = window.location.pathname;
-
-    window.localStorage.setItem('sidebar_fold_state', sidebar_fold_state);
-
-    window.localStorage.setItem('sidebarNavMap', JSON.stringify(nav_map));
+    // console.log(sidebar_fold_state);
+    // console.log(sidebar_fold_str);
   });
 
   /**
-   * 初始化导航项折叠状态
-   * @param {NavMapData} item 导航项数据
-   * @param {NavMapData} itemStorage 导航项存储数据
-   */
-  function initItemFoldState(item, itemStorage) {
-    if (item == null || itemStorage == null) {
-      return;
-    }
-
-    item.fold = itemStorage.fold == null ? true : itemStorage.fold;
-
-    item.children = item.children == null ? [] : item.children;
-
-    item.children_is_parallel = item.children_is_parallel == null ? true : item.children_is_parallel;
-
-    item.children_is_parallel = checkItemHasChildrenNeedShow(item);
-
-    item.force_hide = item.force_hide == null ? false : item.force_hide;
-
-    for (let i = 0; i < item.children.length; i++) {
-      let item_children = item.children == null ? null : item.children[i];
-
-      let itemStorage_children = itemStorage?.children == null ? null : itemStorage.children[i];
-
-      initItemFoldState(item_children, itemStorage_children);
-    }
-  }
-
-  /**
-   * 查找当前选中的导航项
-   * @param {string} path 指定url路径
-   * @param {NavMapData[]} navMapData 导航项数据
-   * @return {NavMapData | null} 返回当前选中的导航项数据,如果没有找到则返回null
-   */
-  function findRouteItem(path, navMapData) {
-    for (let i = 0; i < navMapData.length; i++) {
-      if (navMapData[i].path == path) {
-        return navMapData[i];
-      }
-      if (navMapData[i].children != null && navMapData[i].children.length > 0) {
-        let item = findRouteItem(path, navMapData[i].children);
-        if (item != null) {
-          return item;
-        }
-      }
-    }
-    return null;
-  }
-
-  /**
-   * 滚动到当前选中的导航项
-   * @param {string} [path] 指定url路径,如果不传入则默认使用当前url路径
-   */
-  function scrollToCurrentNavItem(path) {
-    if (current_navItem_element) {
-      current_navItem_element.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-      });
-      return;
-    }
-
-    let currentPath = path == '' || path == null ? window.location.pathname : path;
-
-    let currentItem = findRouteItem(currentPath, nav_map);
-
-    if (currentItem != null) {
-      current_navItem_element = sidebar_element.querySelector(`.sidebar-item[title="${currentItem.title}"]`);
-      if (current_navItem_element != null) {
-        current_navItem_element.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-        });
-      }
-    }
-  }
-
-  /**
    * 切换侧边栏折叠状态
-   * @param {boolean} [foldState] 是否折叠侧边栏,如果不传入则默认使用当前状态
    */
   function toggleSidebar(foldState) {
-    if (sidebar_fold_state == foldState) {
-      return;
-    }
+    // if (!sidebar_element || !sidebar_toggle_btn) return;
+    // if (sidebar_fold_state == foldState) return;
 
     side_float = false;
     sidebar_fold_state = foldState != null ? foldState : !sidebar_fold_state;
@@ -231,16 +125,12 @@
    * 侧边栏折叠动画结束事件处理函数
    */
   function sidebarTransitionendHandle() {
-    sidebar_element.style.setProperty('--sidebar-min-width', options?.sidebarMinWidth || '220px');
-
     if (!sidebar_is_folding) {
       return;
     }
 
     sidebar_is_folding = false;
     sidebar_is_folded = true;
-
-    // console.log(`sidebarTransitionendHandle => sidebar_fold_state: ${sidebar_fold_state} sidebar_is_folding: ${sidebar_is_folding} sidebar_is_folded: ${sidebar_is_folded}`)
   }
 
   /**
@@ -249,8 +139,6 @@
    * 如果侧边栏正在折叠中或者侧边栏已经折叠则不执行任何操作
    */
   function sidebarMouseEnter() {
-    scrollToCurrentNavItem();
-
     if (sidebar_is_folding || !sidebar_is_folded) {
       return;
     }
@@ -277,8 +165,6 @@
    * 如果鼠标在500ms内再次进入侧边栏则不执行任何操作
    */
   function sidebarMouseLeave() {
-    scrollToCurrentNavItem();
-
     if (sidebar_is_folding || !sidebar_is_folded) {
       return;
     }
@@ -301,6 +187,8 @@
    * 如果侧边栏宽度小于等于768px则将侧边栏折叠
    */
   function handleResize() {
+    if (!sidebar_element) return;
+
     if (window.innerWidth <= 768) {
       toggleSidebar(true);
     }
@@ -308,30 +196,22 @@
 
   /**
    * 处理侧边栏导航项点击事件
-   * 跳转到指定路由
    * @param { NavMapData } item 导航项数据
    */
   function handleSidebarItemClick(item) {
-    if (
-      item.children != null &&
-      item.children.length > 0 &&
-      item.children_is_parallel &&
-      !checkItemHasChildrenForceHide(item)
-    ) {
-      item.fold = item.fold == null ? false : !item.fold;
+    if (item.children != null && item.children.length > 0 && item.children_is_parallel) {
+      item.fold = !item.fold;
       return;
     }
 
     current_active = item.path;
 
-    goto(item.path, { replaceState: true });
+    goto(item.path);
   }
 
   /**
    * 检查导航项是否有子路由
-   * @param {NavMapData} item
-   * @param {string} childrenPath
-   * @return {boolean} result
+   * @param { NavMapData } item 导航项数据
    */
   function checkItemHasChildren(item, childrenPath) {
     if (item.children == null || item.children.length <= 0) {
@@ -343,76 +223,11 @@
         return true;
       }
 
-      let childrenResult = checkItemHasChildren(item.children[i], childrenPath);
+      // let childrenResult = checkItemHasChildren(item.children[i], childrenPath);
 
-      if (childrenResult) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * 检查是否有子路由需要显示
-   * @param {NavMapData} item
-   * @return {boolean} result
-   */
-  function checkItemHasChildrenNeedShow(item) {
-    if (item.children == null || item.children.length <= 0) {
-      return false;
-    }
-
-    for (let i = 0; i < item.children.length; i++) {
-      if (item.children[i].force_hide) {
-        continue;
-      }
-
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * 检查当前是否有子路由强制隐藏
-   * @param {NavMapData} item
-   * @param {string} childrenPath
-   * @return {boolean} result
-   */
-  function checkItemHasChildrenForceHide(item) {
-    if (item.children == null || item.children.length <= 0) {
-      return false;
-    }
-
-    for (let i = 0; i < item.children.length; i++) {
-      if (!item.children[i].force_hide) {
-        continue;
-      }
-
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * 检查当前选中的子路由是否强制隐藏
-   * @param {NavMapData} item
-   * @param {string} childrenPath
-   * @return {boolean} result
-   */
-  function checkActiveChildrenIsForceHide(item, childrenPath) {
-    if (item.children == null || item.children.length <= 0) {
-      return false;
-    }
-
-    for (let i = 0; i < item.children.length; i++) {
-      if (item.children[i].path != childrenPath || !item.children[i].force_hide) {
-        continue;
-      }
-
-      return true;
+      // if (childrenResult) {
+      //   return true;
+      // }
     }
 
     return false;
@@ -438,19 +253,16 @@
       });
   }
 
-  onMount(() => {
-    getUserInfo();
-  });
-
   /**
    * 正则匹配路径
-   * @param {string} path
-   * @param {string} path_regex
-   * @return {boolean} result
    */
   function regexMatch(path, path_regex) {
     return new RegExp(`${path_regex}`).test(path);
   }
+
+  onMount(() => {
+    getUserInfo();
+  });
 </script>
 
 <div
@@ -459,6 +271,7 @@
   role="region"
   onmouseenter={() => sidebarMouseEnter()}
   onmouseleave={() => sidebarMouseLeave()}
+  data-testid="sidebar-container"
 >
   <!-- 侧边栏内容 -->
   <div
@@ -468,13 +281,9 @@
     class:float={side_float}
     bind:this={sidebar_element}
     ontransitionend={() => sidebarTransitionendHandle()}
+    data-testid="sidebar-content"
   >
-    <button
-      class="logo"
-      onclick={() => {
-        window.location.href = '/';
-      }}
-    >
+    <button class="logo">
       <div class="logo-svg">3min</div>
     </button>
 
@@ -485,32 +294,27 @@
           {#snippet Item(it, level)}
             {#if !it.force_hide}
               {#snippet ItemContent(i, level)}
-                <div
-                  class="sidebar-item-content"
-                  style="left:{25 + level * 10}px; width: {100 - level * 5 < 0 ? 0 : 100 - level * 5}%"
-                >
+                <div class="sidebar-item-content" style="--level: {level}">
                   {#if i.icon}
                     <img class="sidebar-item-icon" src={i.icon} alt={i.title} />
                   {:else}
                     <span class="sidebar-item-icon"></span>
                   {/if}
-
                   <span class="sidebar-item-text">{i.title}</span>
                 </div>
               {/snippet}
 
               <li
                 class="sidebar-item"
-                class:active={current_active == it.path ||
-                  (!it.children_is_parallel && regexMatch(current_active, it.path)) ||
-                  (checkItemHasChildren(it, current_active) &&
-                    (it.fold || !it.children_is_parallel || checkActiveChildrenIsForceHide(it, current_active)))}
+                class:active={(!it.children_is_parallel && regexMatch(current_active, it.path)) ||
+                  (checkItemHasChildren(it, current_active) && (it.fold || !it.children_is_parallel)) ||
+                  current_active == it.path}
                 title={it.title}
               >
                 {#if it.children != null && it.children.length > 0 && it.children_is_parallel}
                   <img
                     class="sidebar-subitem-icon"
-                    src={it.fold ? icons.itemUnfold : icons.itemFold}
+                    src={it.fold ? '/sidebar/nav_icon/unfold.svg' : '/sidebar/nav_icon/fold.svg'}
                     alt={it.fold ? '展开' : '折叠'}
                   />
                 {/if}
@@ -552,9 +356,9 @@
     onclick={() => toggleSidebar()}
   >
     {#if sidebar_fold_state}
-      <img src={icons.sidebarUnfold} alt="展开侧边栏" />
+      <img src="/sidebar/unfold.svg" alt="展开侧边栏" />
     {:else}
-      <img src={icons.sidebarFold} alt="收起侧边栏" />
+      <img src="/sidebar/fold.svg" alt="收起侧边栏" />
     {/if}
   </button>
 </div>
@@ -562,7 +366,7 @@
 <style lang="scss" scoped>
   .sidebar-container {
     position: relative;
-    display: block;
+    display: flex;
     width: max-content;
     height: 100%;
     background-color: rgba(243, 243, 243, 0);
@@ -577,7 +381,6 @@
       max-width: var(--sidebar-max-width, 250px);
       height: var(--sidebar-height, 100%);
       background-color: var(--bg-thirdary);
-      // box-shadow: 5px 0 5px 1px rgba(0, 0, 0, 0.1);
       transition: width 0.3s ease;
       box-sizing: border-box;
       overflow: hidden;
@@ -593,7 +396,7 @@
         min-width: 0;
         max-width: var(--sidebar-max-width, 250px);
         position: absolute;
-        top: 42px;
+        top: 50px;
         height: 85vh;
         border-radius: 3px;
         box-shadow: 0px 2px 10px 0px rgba(0, 0, 0, 0.35);
@@ -610,7 +413,7 @@
         min-width: var(--sidebar-min-width, 220px);
         max-width: var(--sidebar-max-width, 250px);
         position: absolute;
-        top: 42px;
+        top: 50px;
         height: 85vh;
         border-radius: 3px;
         box-shadow: 0px 2px 10px 0px rgba(0, 0, 0, 0.35);
@@ -640,7 +443,6 @@
         white-space: nowrap;
         z-index: 10;
         text-decoration: none;
-        cursor: pointer;
 
         .logo-svg {
           width: fit-content;
@@ -734,9 +536,18 @@
           position: absolute;
           justify-content: flex-start;
           align-items: center;
-          width: max-content;
           margin: 0;
           transition: all 0.3s ease;
+
+          /* 基础变量 */
+          --left-base: 25px;
+          --level-offset: 10px;
+          --width-base: 100%;
+          --width-reduction: 5%;
+
+          /* 动态计算 */
+          left: calc(var(--left-base) + calc(var(--level, 0) * var(--level-offset)));
+          width: max(0%, calc(var(--width-base) - calc(var(--level, 0) * var(--width-reduction))));
         }
 
         .sidebar-item-icon {

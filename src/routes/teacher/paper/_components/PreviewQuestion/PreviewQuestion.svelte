@@ -1,5 +1,14 @@
+<!--
+ * @Author: WangKaidun 1597225095@qq.com
+ * @Date: 2025-08-03 23:08:23
+ * @LastEditors: WangKaidun 1597225095@qq.com
+ * @LastEditTime: 2025-08-07 11:34:54
+ * @FilePath: \exam\src\routes\teacher\paper\_components\PreviewQuestion\PreviewQuestion.svelte
+ * @Description: 预览题目组件
+ * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
+-->
 <script>
-    import UneditableTag from "../UneditableTag/UneditableTag.svelte"
+    import UneditableTag from '$lib/components/Tag/UneditableTag.svelte';
 
     /**
      * @type {{question:PaperQuestion;

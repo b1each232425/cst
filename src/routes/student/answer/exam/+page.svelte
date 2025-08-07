@@ -4,7 +4,7 @@
    * @Date: 2025-07-23 10:55:37
    * @LastEditors: PENG HAIFENG 1614818457@qq.com
    * @LastEditTime: 2025-07-30 10:28:54
-   * @FilePath: \src\routes\student\answer\+page.svelte
+   * @FilePath: \src\routes\student\answer\exam\+page.svelte
    * @Description: 考试练习作答布局
    */
   
@@ -91,6 +91,7 @@
   let student_name = DEFAULT_NAME; //学生名字
   let student_id = DEFAULT_ID; // 学生的学号
   let avatar_url = "/user_icons/defaultAvatar.svg"; // 头像url
+
   let examinee_id = $state("");  //考生id
   let exam_session_id = $state("");  //考试场次id
   let exam_id = $state(""); //当前考试id
@@ -109,8 +110,8 @@
   let showLeftInfo = $state(true); //是否显示左边信息栏
   let exam_status = $state(0); //考试状态
   let files = $state([]); //考试附件
-  let examQuestionsMap = $state(new Map()); //考试题目map数组 key题目id value包含题目的题组
-  let questionGroupsMap = $state(new Map());  //考试题组map数组 key题目id value包含题组的信息
+  let exam_questions_map = $state(new Map()); //考试题目map数组 key题目id value包含题目的题组
+  let question_groups_map = $state(new Map());  //考试题组map数组 key题目id value包含题组的信息
   let query_url = $state(""); //用于查询考试题目的url 确保作答信息一致
   let questionGroups = $state([]); //考试题组 用于渲染页面
   let examQuestions = $state([]); //考试题目 用于渲染页面
@@ -134,7 +135,7 @@
   function getQuestionGroups() { // 获取题目分组信息，用于生成答题卡
     const groups = [];
 
-    const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序出一个数组
+    const sortedGroups = Array.from(question_groups_map.values()).sort((a, b) => a.order - b.order); //升序排序出一个数组
 
     // 构建全局索引映射
     const globalIndexMap = new Map();
@@ -144,7 +145,7 @@
 
     sortedGroups.forEach(groupInfo => {
       const groupId = groupInfo.ID; // 题组 id
-      const groupQuestions = examQuestionsMap.get(String(groupId)) || []; // 该分组下的题目数组
+      const groupQuestions = exam_questions_map.get(String(groupId)) || []; // 该分组下的题目数组
 
       if (groupQuestions.length === 0) return; // 如果没有题目则跳过
       groups.push({ // 组装 QuestionGroup 对象
@@ -160,20 +161,18 @@
   }
   function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组 用来生成题目
     const result = [];
-    const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序数组
+    const sortedGroups = Array.from(question_groups_map.values()).sort((a, b) => a.order - b.order); //升序排序数组
 
     sortedGroups.forEach(groupInfo => {
       const groupId = groupInfo.ID;
-      const groupQuestions = examQuestionsMap.get(String(groupId)) || [];
+      const groupQuestions = exam_questions_map.get(String(groupId)) || [];
 
       let totalScore = 0;
       for (const item of groupQuestions) {
         // 如果每道题的分数字段是 question.Score
         totalScore += Number(item.Score || 0);
       }
-
-
-        groupQuestions.forEach(q => {
+      groupQuestions.forEach(q => {
         result.push({
           ...q,
           group_name: groupInfo.Name,
@@ -209,6 +208,11 @@
     if_show_toast,
     attachment_paths
   ) {
+    // 作答时自动聚焦到当前题
+    const idx = examQuestions.findIndex(q => q.ID === question.ID);
+    if (idx !== -1) {
+      currentQuestionIndex = idx;
+    }
 
     if (ifPreview) {
       toast.warning('当前为预览模式！', 2000);
@@ -274,7 +278,7 @@
   }
   function submitExamAfterCountdown() { //倒计时结束后的提交逻辑
     const body_data = {  //请求体
-      type: "00", 
+      type: "00",  //考试类型
       exam_id: Number(exam_id),
       exam_session_id: Number(exam_session_id),
       examinee_id: Number(examinee_id),
@@ -381,8 +385,8 @@
       if (stored) {
         try {
           let data = JSON.parse(stored);
-          examQuestionsMap =  data.Questions;
-          questionGroupsMap =  data.QuestionGroupInfo;
+          exam_questions_map =  data.Questions;
+          question_groups_map =  data.QuestionGroupInfo;
           //加载题目
           examQuestions.length = 0;
           examQuestions.push(...flattenExamQuestions());
@@ -391,7 +395,7 @@
 
           //如果是预览的话直接从localStorage获取title
           const exam_title = localStorage.getItem("examTitle");
-          if (!title) {
+          if (!title) { //////////////////
             if (!exam_title) {
               title = "预览考试";
             }
@@ -456,12 +460,12 @@
 
         // 赋值到变量 使用sget安全获取
         //题目
-        examQuestionsMap = new Map(Object.entries(sget(data, "data.Questions", {})));
-        questionGroupsMap = new Map(Object.entries(sget(data, "data.QuestionGroupInfo", {})));
+        exam_questions_map = new Map(Object.entries(sget(data, "data.Questions", {})));
+        question_groups_map = new Map(Object.entries(sget(data, "data.QuestionGroupInfo", {})));
         examinee_id = sget(data, "data.ExamineeInfo.ID", "");
         //时间控制类
         total_seconds = remainingSeconds > 0 ? remainingSeconds : 0;
-        start_time = sget(data, "data.ExamineeInfo.StartTime", 0);
+        start_time = sget(data, "data.ExamineeInfo.StartTime", 0);///////////////
         end_time = sget(data, "data.ExamineeInfo.ActualEndTime", 0);
         exam_duration = sget(matchedSession, "Duration", 0) * 60;
         //考试信息类
@@ -668,7 +672,7 @@
                         : "标记此题"}
                     >
                       <img
-                        src="/student_answer_exam/red_flag.png"
+                        src="/student_answer_exam/red_flag.png"  
                         alt="标记"
                         class="flag-icon"
                       />
