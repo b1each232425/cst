@@ -1,6 +1,8 @@
 import { render, screen, act } from '@testing-library/svelte';
 import Breadcrumb from '../Crumb.svelte';
 import { vi } from 'vitest';
+import { beforeEach } from 'vitest';
+import { expect } from 'vitest';
 
 describe('Crumb.svelte 面包屑组件测试', () => {
   const mockProps = {
@@ -13,13 +15,12 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     ],
   };
 
-  // 每个测试后清理mock
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+  beforeEach(() => {
+    // 在每个测试前，清空所有的模拟
+    vi.restoreAllMocks();
 
-  it('应该正确渲染用户数据', async () => {
     global.fetch = vi.fn();
+
     // 模拟成功的API响应
     fetch.mockResolvedValueOnce({
       json: () =>
@@ -28,7 +29,9 @@ describe('Crumb.svelte 面包屑组件测试', () => {
           data: { OfficialName: '张三' }, // 模拟用户名称
         }),
     });
+  });
 
+  it('应该正确渲染用户数据', async () => {
     render(Breadcrumb, { props: mockProps });
 
     // 验证fetch被调用
@@ -39,7 +42,6 @@ describe('Crumb.svelte 面包屑组件测试', () => {
   });
 
   it('处理API请求失败', async () => {
-    global.fetch = vi.fn();
     // 模拟失败的API响应
     fetch.mockRejectedValueOnce(new Error('API Error'));
 

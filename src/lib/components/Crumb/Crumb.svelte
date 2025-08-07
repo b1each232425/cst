@@ -150,20 +150,14 @@
 <div class="header-container">
   <div class="breadcrumbs-container">
     {#each current_nav_path_data as { name, title, path }, index}
-      <div class="breadcrumbs-item-container" data-testid="breadcrumbs-item-container">
+      <div class="breadcrumbs-item-container">
         {#if index < current_nav_path_data.length - 1}
-          <button
-            class="breadcrumbs-item"
-            class:active={true}
-            title={`跳转至${title}`}
-            onclick={() => goto(path)}
-            data-testid={`breadcrumb-item-${name}`}
-          >
+          <button class="breadcrumbs-item" class:active={true} title={`跳转至${title}`} onclick={() => goto(path)}>
             {title}
           </button>
           <span class="breadcrumbs-separator">{'>'}</span>
         {:else}
-          <span class="breadcrumbs-item" data-testid={`breadcrumb-item-${name}`}>
+          <span class="breadcrumbs-item">
             {title}
           </span>
         {/if}
@@ -172,7 +166,7 @@
   </div>
 
   <div class="user-container">
-    <span class="welcome-text" data-testid="welcome-text">{`你好，${display_name}`}</span>
+    <span class="welcome-text">{`你好，${display_name}`}</span>
 
     <button
       class="avatar-btn"

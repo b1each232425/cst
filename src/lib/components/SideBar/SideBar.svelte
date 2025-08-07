@@ -5,7 +5,7 @@
   import { baseNavItems } from '$lib/stores/modules/permission.js';
 
   let { options } = $props();
-  let nav_map = $state([]);
+  let nav_map = $state();
 
   /**
    * 侧边栏折叠状态
@@ -140,7 +140,6 @@
    */
   function sidebarMouseEnter() {
     if (sidebar_is_folding || !sidebar_is_folded) {
-      console.log('111');
       return;
     }
 
@@ -149,14 +148,7 @@
     sidebar_mouse_enter_timeout = setTimeout(() => {
       clearTimeout(sidebar_mouse_enter_timeout);
 
-      if (sidebar_is_folding || !sidebar_is_folded) {
-        console.log('222');
-        return;
-      }
-
       side_float = true;
-
-      console.log('333');
 
       sidebar_element.style.setProperty('--sidebar-min-width', '0px');
     }, 500);
@@ -178,10 +170,6 @@
     sidebar_mouse_leave_timeout = setTimeout(() => {
       clearTimeout(sidebar_mouse_leave_timeout);
 
-      if (sidebar_is_folding || !sidebar_is_folded) {
-        return;
-      }
-
       side_float = false;
     }, 500);
   }
@@ -200,17 +188,11 @@
 
   /**
    * 处理侧边栏导航项点击事件
-   * 跳转到指定路由
    * @param { NavMapData } item 导航项数据
    */
   function handleSidebarItemClick(item) {
-    if (
-      item.children != null &&
-      item.children.length > 0 &&
-      item.children_is_parallel &&
-      !checkItemHasChildrenForceHide(item)
-    ) {
-      item.fold = item.fold == null ? false : !item.fold;
+    if (item.children != null && item.children.length > 0 && item.children_is_parallel) {
+      item.fold = !item.fold;
       return;
     }
 
@@ -238,28 +220,6 @@
       if (childrenResult) {
         return true;
       }
-    }
-
-    return false;
-  }
-
-  /**
-   * 检查当前是否有子路由强制隐藏
-   * @param {NavMapData} item
-   * @param {string} childrenPath
-   * @return {boolean} result
-   */
-  function checkItemHasChildrenForceHide(item) {
-    if (item.children == null || item.children.length <= 0) {
-      return false;
-    }
-
-    for (let i = 0; i < item.children.length; i++) {
-      if (!item.children[i].force_hide) {
-        continue;
-      }
-
-      return true;
     }
 
     return false;
@@ -325,6 +285,7 @@
   role="region"
   onmouseenter={() => sidebarMouseEnter()}
   onmouseleave={() => sidebarMouseLeave()}
+  data-testid="sidebar-container"
 >
   <!-- 侧边栏内容 -->
   <div
@@ -386,7 +347,6 @@
                     handleSidebarItemClick(it);
                   }}
                   aria-label={it.title}
-                  data-testid={`sidebar-item-btn-${it.title}`}
                 ></button>
               </li>
 
@@ -413,7 +373,6 @@
     bind:this={sidebar_toggle_btn}
     title={sidebar_fold_str}
     onclick={() => toggleSidebar()}
-    data-testid="sidebar-toggle-btn"
   >
     {#if sidebar_fold_state}
       <img src="/sidebar/unfold.svg" alt="展开侧边栏" />

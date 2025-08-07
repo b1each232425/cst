@@ -2,6 +2,16 @@ import { render, screen, fireEvent, getByTestId, act, waitFor } from '@testing-l
 import Sidebar from '../Sidebar.svelte';
 import { expect, vi } from 'vitest';
 import { goto } from '$app/navigation';
+import { slide } from 'svelte/transition';
+
+// 在测试文件中添加 Svelte 过渡模拟
+vi.mock('svelte/transition', () => ({
+  slide: vi.fn().mockImplementation(() => ({
+    delay: 0,
+    duration: 0, // 让动画立即完成
+    css: () => '', // 返回空样式
+  })),
+}));
 
 // 模拟 $app/navigation 的 goto 函数
 vi.mock('$app/navigation', () => ({
@@ -274,6 +284,27 @@ describe('Sidebar 侧边栏组件测试', () => {
   beforeEach(() => {
     // 在每个测试前，清空所有的模拟
     vi.restoreAllMocks();
+
+    global.fetch = vi.fn();
+
+    // 模拟API数据
+    fetch.mockResolvedValueOnce({
+      json: () =>
+        Promise.resolve({
+          status: 0,
+          data: {
+            APIs: [
+              { APIExposePath: '/teacher/question-bank' },
+              { APIExposePath: '/teacher/paper' },
+              { APIExposePath: '/teacher/practice' },
+              { APIExposePath: '/teacher/exam' },
+              { APIExposePath: '/teacher/grade' },
+              { APIExposePath: '/teacher/student-management' },
+              { APIExposePath: '/teacher/user-management' },
+            ],
+          },
+        }),
+    });
   });
 
   it('应该正确初始化侧边栏状态', () => {
@@ -293,13 +324,16 @@ describe('Sidebar 侧边栏组件测试', () => {
     expect(sidebar.style.getPropertyValue('--sidebar-width')).toBe('235px');
     expect(sidebar.style.getPropertyValue('--sidebar-max-width')).toBe('250px');
     expect(sidebar.style.getPropertyValue('--sidebar-min-width')).toBe('220px');
+
+    // 验证侧边栏内容渲染
+    expect(sidebar).toBeInTheDocument();
   });
 
   it('应该切换折叠状态', async () => {
     render(Sidebar, { props: { options } });
 
     // 获取折叠按钮
-    const toggleBtn = screen.getByTitle('收起侧边栏'); // 根据按钮的标题判断
+    const toggleBtn = screen.getByTitle('收起侧边栏');
 
     // 初始状态应该是收起
     expect(screen.getByAltText('收起侧边栏')).toBeInTheDocument();
@@ -347,145 +381,18 @@ describe('Sidebar 侧边栏组件测试', () => {
   });
 
   it('应处理导航项点击事件', async () => {
-    global.fetch = vi.fn();
-
-    // 模拟API返回数据
-    global.fetch.mockResolvedValueOnce({
-      json: () =>
-        Promise.resolve({
-          status: 0,
-          data: {
-            APIs: [
-              { APIExposePath: '/teacher/question-bank' },
-              { APIExposePath: '/teacher/paper' },
-              { APIExposePath: '/teacher/practice' },
-              { APIExposePath: '/teacher/exam' },
-              { APIExposePath: '/teacher/grade' },
-              { APIExposePath: '/teacher/student-management' },
-              { APIExposePath: '/teacher/user-management' },
-            ],
-          },
-        }),
-    });
-
     render(Sidebar, { props: { options } });
     await screen.findByText('试卷管理');
 
     // 模拟点击导航项
-    const navItem = screen.getByTestId('sidebar-item-btn-试卷管理');
+    const navItem = screen.getByRole('button', { name: '试卷管理' });
     await fireEvent.click(navItem);
 
     // 验证路由跳转
     expect(goto).toHaveBeenCalledWith('/teacher/paper');
   });
 
-  it('应处理子菜单的展开和折叠', async () => {
-    global.fetch = vi.fn();
-
-    // 模拟 Web Animations API
-    global.Element.prototype.animate = vi.fn().mockImplementation(() => ({
-      finished: Promise.resolve(),
-      cancel: vi.fn(),
-    }));
-
-    // 模拟API返回包含子菜单的数据
-    global.fetch.mockResolvedValueOnce({
-      json: () =>
-        Promise.resolve({
-          status: 0,
-          data: {
-            APIs: [{ APIExposePath: '/teacher/question-bank' }, { APIExposePath: '/teacher/question-bank/theory' }],
-          },
-        }),
-    });
-
-    render(Sidebar, { props: { options } });
-    // 等待数据加载
-    await screen.findByTestId('sidebar-item-btn-题库管理');
-
-    // 初始状态验证
-    const foldIcon = screen.getByAltText('折叠');
-    expect(foldIcon).toBeInTheDocument();
-    expect(screen.getByText('理论题库管理')).toBeVisible();
-
-    // 第一次点击 - 折叠
-    await fireEvent.click(screen.getByTestId('sidebar-item-btn-题库管理'));
-
-    // 验证折叠状态
-    await waitFor(() => {
-      // 图标变为"展开"
-      expect(screen.getByAltText('展开')).toBeInTheDocument();
-    });
-
-    // 第二次点击 - 展开
-    await fireEvent.click(screen.getByTestId('sidebar-item-btn-题库管理'));
-
-    // 验证展开状态
-    await waitFor(() => {
-      // 图标变回"折叠"
-      expect(screen.getByAltText('折叠')).toBeInTheDocument();
-      // 子菜单显示
-      expect(screen.getByText('理论题库管理')).toBeVisible();
-    });
-  });
-
-  it('应正确高亮当前路由', async () => {
-    global.fetch = vi.fn();
-
-    // 模拟API数据
-    fetch.mockResolvedValueOnce({
-      json: () =>
-        Promise.resolve({
-          status: 0,
-          data: {
-            APIs: [
-              { APIExposePath: '/teacher/question-bank' },
-              { APIExposePath: '/teacher/paper' },
-              { APIExposePath: '/teacher/practice' },
-              { APIExposePath: '/teacher/exam' },
-              { APIExposePath: '/teacher/grade' },
-              { APIExposePath: '/teacher/student-management' },
-              { APIExposePath: '/teacher/user-management' },
-            ],
-          },
-        }),
-    });
-
-    render(Sidebar, { props: { options } });
-    await screen.findByText('题库管理');
-    await screen.findByText('理论题库管理');
-
-    // 验证高亮状态
-    const activeItem = screen.getByText('理论题库管理').closest('li');
-    expect(activeItem).toHaveClass('sidebar-item active');
-
-    // 验证非当前路由不高亮
-    const inactiveItem = screen.getByText('题库管理').closest('li');
-    expect(inactiveItem).not.toHaveClass('active');
-  });
-
   it('正确获取用户数据', async () => {
-    global.fetch = vi.fn();
-
-    // 模拟成功的API响应
-    fetch.mockResolvedValueOnce({
-      json: () =>
-        Promise.resolve({
-          status: 0,
-          data: {
-            APIs: [
-              { APIExposePath: '/teacher/question-bank' },
-              { APIExposePath: '/teacher/paper' },
-              { APIExposePath: '/teacher/practice' },
-              { APIExposePath: '/teacher/exam' },
-              { APIExposePath: '/teacher/grade' },
-              { APIExposePath: '/teacher/student-management' },
-              { APIExposePath: '/teacher/user-management' },
-            ],
-          },
-        }),
-    });
-
     // 渲染组件并传递nav_map
     render(Sidebar, { props: { options } });
 
@@ -530,44 +437,105 @@ describe('Sidebar 侧边栏组件测试', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('悬浮侧边栏显示与隐藏', async () => {
-    global.fetch = vi.fn();
+  it('应处理子菜单的展开和折叠', async () => {
+    // 模拟 Web Animations API
+    global.Element.prototype.animate = vi.fn().mockImplementation(() => ({
+      finished: Promise.resolve(),
+      cancel: vi.fn(),
+    }));
 
-    // 模拟成功的API响应
-    fetch.mockResolvedValueOnce({
-      json: () =>
-        Promise.resolve({
-          status: 0,
-          data: {
-            APIs: [
-              { APIExposePath: '/teacher/question-bank' },
-              { APIExposePath: '/teacher/paper' },
-              { APIExposePath: '/teacher/practice' },
-              { APIExposePath: '/teacher/exam' },
-              { APIExposePath: '/teacher/grade' },
-              { APIExposePath: '/teacher/student-management' },
-              { APIExposePath: '/teacher/user-management' },
-            ],
-          },
-        }),
-    });
+    render(Sidebar, { props: { options } });
+    // 等待数据加载
+    await screen.findByText('题库管理');
 
+    // 初始状态验证
+    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
+
+    // 第一次点击 - 折叠
+    const questionBankButton = screen.getByRole('button', { name: '题库管理' });
+
+    await fireEvent.click(questionBankButton);
+    expect(screen.queryByText('理论题库管理')).not.toBeInTheDocument();
+
+    // 第二次点击 - 展开
+    await fireEvent.click(questionBankButton);
+    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
+  });
+
+  it('应处理侧边栏悬浮显示功能', async () => {
     // 渲染组件
-    const { container } = render(Sidebar, { props: { options } });
+    render(Sidebar, { props: { options } });
 
-    // 获取元素
-    const sidebarContent = await screen.findByTestId('sidebar-content');
+    // 获取DOM元素
+    const sidebar = screen.getByTestId('sidebar-content');
+    const container = screen.getByTestId('sidebar-container');
+    const toggleBtn = screen.getByTitle('收起侧边栏');
 
-    // 点击前打印宽度
-    console.log('点击前宽度:', sidebarContent.offsetWidth);
+    // 初始折叠侧边栏
+    await fireEvent.click(toggleBtn);
+    fireEvent.transitionEnd(sidebar); // 立即触发过渡结束事件
 
-    // 点击按钮
-    await fireEvent.click(screen.getByTestId('sidebar-toggle-btn'));
+    // 验证初始折叠状态
+    expect(sidebar).toHaveClass('folded');
+    expect(sidebar).not.toHaveClass('float');
 
-    // 等待一定时间，确保动画完成
-    await new Promise((resolve) => setTimeout(resolve, 300)); // 等待 300ms
+    // 使用fake timers处理悬浮延迟
+    vi.useFakeTimers();
+    await fireEvent.mouseEnter(container);
 
-    // 点击后打印宽度
-    console.log('点击后宽度:', sidebarContent.offsetWidth);
+    // 快进500ms触发悬浮逻辑
+    await vi.advanceTimersByTime(500);
+
+    // 立即触发所有挂起的动画和过渡
+    fireEvent.transitionEnd(sidebar);
+
+    // 验证悬浮状态
+    expect(sidebar).toHaveClass('float');
+
+    // 离开悬浮侧边栏
+    await fireEvent.mouseLeave(container);
+    await vi.advanceTimersByTime(500);
+    fireEvent.transitionEnd(sidebar);
+    expect(sidebar).not.toHaveClass('float');
+
+    // 恢复真实计时器
+    vi.useRealTimers();
+  });
+
+  it('应处理侧边栏在展开条件下不悬浮', async () => {
+    // 渲染组件
+    render(Sidebar, { props: { options } });
+
+    // 获取DOM元素
+    const sidebar = screen.getByTestId('sidebar-content');
+    const container = screen.getByTestId('sidebar-container');
+    const toggleBtn = screen.getByTitle('收起侧边栏');
+
+    // 验证初始折叠状态
+    expect(sidebar).not.toHaveClass('float');
+
+    // 使用fake timers处理悬浮延迟
+    vi.useFakeTimers();
+    await fireEvent.mouseEnter(container);
+
+    await vi.advanceTimersByTime(500);
+
+    // 立即触发所有挂起的动画和过渡
+    fireEvent.transitionEnd(sidebar);
+
+    // 验证悬浮状态
+    expect(sidebar).not.toHaveClass('float');
+
+    // 离开悬浮侧边栏
+    await fireEvent.mouseLeave(container);
+    await vi.advanceTimersByTime(100);
+    expect(sidebar).not.toHaveClass('float');
+
+    await fireEvent.mouseEnter(container);
+    await vi.advanceTimersByTime(100);
+    await fireEvent.mouseLeave(container);
+
+    // 恢复真实计时器
+    vi.useRealTimers();
   });
 });

@@ -114,15 +114,13 @@
 
   /**
    * 处理每页显示条数变化
-   * @param {Event} event - 选择框change事件
    */
-  function handlePageSizeChange(new_size) {
+  function handlePageSizeChange() {
     // 如果当前页超出新的总页数，跳转到最后一页
-    if (current_page > Math.ceil(total_items / new_size)) {
-      current_page = Math.ceil(total_items / new_size);
+    if (current_page > Math.ceil(total_items / page_size)) {
+      current_page = Math.ceil(total_items / page_size);
     }
 
-    page_size = new_size;
     // 触发两个事件：条数变化和页码变化
     dispatch('pageSizeChange', page_size);
     dispatch('pageChange', current_page);
@@ -217,11 +215,6 @@
 
   <!-- 每页条数设置 -->
   <div class="page-settings">
-    <!-- <select onchange={handlePageSizeChange} data-testid="select">
-      {#each page_size_options as sizeOption}
-        <option value={sizeOption}>{sizeOption}条/页</option>
-      {/each}
-    </select> -->
     <Select bind:value={page_size} direction="top" changeValue={handlePageSizeChange}>
       {#each size_options as option}
         <Option value={option.value} label={option.label}></Option>
