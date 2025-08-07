@@ -29,7 +29,7 @@
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
-  import { sget } from '$lib/utils/index.js';
+
   // 状态管理
   let practice_name = $state(''); // 练习名称/课程名称输入框的值
   let practice_type = $state('全部'); // 练习类型
@@ -40,12 +40,15 @@
   let deleteDialogOpen = $state(false); // 删除确认对话框
   let cancelPublishDialogOpen = $state(false); // 取消发布确认对话框
   let show_student_selectionPanel = $state(false); // 学生选择面板
-  /** @type {Practice | null} */
-  let currentPractice = $state(null); // 当前操作的练习对象
+  /** @type {Practice[] | null} */
+  let currentPractice = $state([]); // 当前操作的练习对象
 
   // 学生选择相关
   /** @type {Array<{id: string, serial_number: number}>} */
   let selectedStudentIds = $state([]);
+
+  //练习复选框状态
+  let is_all_selected = $state(false);
 
   /**
    * @typedef {Object} Practice
@@ -55,6 +58,7 @@
    * @property {string} Type - 练习类型
    * @property {string} Status - 练习状态
    * @property {number} AllowedAttempts - 可作答的次数
+   * @property {string} selected - 是否被选中
    */
 
   // 练习列表数据类型
@@ -95,6 +99,7 @@
         student_count: item.student_count || 0, // 从外层对象获取student_count
         Type: transformedType,
         Status: transformedStatus,
+        selected: false,
       };
     });
   }
@@ -521,8 +526,13 @@
    * @param {Practice} practice - 练习对象
    */
   function delete_practice(practice) {
+    
     // 保存当前操作的练习
     currentPractice = practice;
+    if (!currentPractice||currentPractice.length === 0) {
+      toast.error("请选择要删除的练习");
+      return
+    }
     // 打开删除确认对话框
     deleteDialogOpen = true;
   }
@@ -534,10 +544,9 @@
     if (!currentPractice) return;
 
     // 实现删除练习的逻辑
-    console.log('确认删除练习:', currentPractice.Name);
 
     const queryParams = new URLSearchParams();
-    queryParams.append('id', currentPractice.ID);
+    queryParams.append('id', currentPractice.map(practice => practice.ID));
     queryParams.append('status', '04');
 
     // 调用API删除练习
@@ -562,8 +571,8 @@
           return;
         }
         // 从列表中移除
-        const practiceId = currentPractice?.ID;
-        practice_list = practice_list.filter((p) => p.ID !== practiceId);
+        const practiceIds = currentPractice?.map((p) => p.ID);
+        practice_list = practice_list.filter((p) => !practiceIds.includes(p.ID));
         practice_data_list.set(practice_list);
         // 刷新列表显示
         filter_practice_list();
@@ -578,6 +587,36 @@
       .finally(() => {
         deleteDialogOpen = false;
       });
+  }
+  //全选练习
+  function toggleSelectAll(){
+    //切换全选状态
+    is_all_selected = !is_all_selected
+    displayed_practice_list.forEach(practice => {
+      practice.selected = is_all_selected//更新选中状态
+    });
+    if (is_all_selected){
+      displayed_practice_list.forEach(practice => {
+      const exist=  currentPractice.find(item=>{
+         practice.id === item.id
+        })
+        if (!exist){
+          currentPractice.push(practice)
+        }
+      });
+    }else{
+      displayed_practice_list.forEach(practice=>{
+        const index= currentPractice.findIndex(item=>{
+          practice.id === item.id
+        })
+        if (index !== -1){
+          currentPractice.splice(index,1)
+        }
+      })
+
+    }
+    is_all_selected=isAllSelected();
+   
   }
 
   /**
@@ -607,6 +646,16 @@
         toast.error(`获取参与学生名单异常:${error}`, '', 1000);
       });
   }
+
+  //判断当前是否全选
+  function isAllSelected() {
+    if (displayed_practice_list!= null){
+      return displayed_practice_list.every((practice) => practice.selected);
+    }else{
+      return false;
+
+    }
+  }  
 </script>
 
 <div class="practice-management">
@@ -646,13 +695,19 @@
           </div>
         </div>
       </div>
-      <button class="new-practice-btn" onclick={create_new_practice}> + 新增练习 </button>
+      <div>
+        <button class="new-practice-btn" onclick={create_new_practice}> + 新增练习 </button>
+        <button class="delete-practice-btn" onclick={()=>delete_practice(currentPractice)}> - 批量删除 </button>
+      </div>
     </div>
 
     <div class="practice-table">
       <table>
         <thead>
           <tr>
+            <th class="header" style="width: 10%">
+              <input type="checkbox" class="checkbox" onchange={toggleSelectAll} checked={is_all_selected} />
+            </th>
             <th class="header" style="width: 20%">练习名称</th>
             <th class="header" style="width: 20%">练习类型</th>
             <th class="header" style="width: 20%">学生人数</th>
@@ -665,10 +720,36 @@
           {#if displayed_practice_list.length > 0}
             {#each displayed_practice_list as practice}
               <tr>
+                <td>
+                  <input type="checkbox" class="checkbox" checked={practice.selected}
+                  onchange={
+                    (event)=>{
+                      const target =(event.target)
+                      if (target&&target.checked){
+                        if(!currentPractice.find((g)=>{
+                          g.ID===practice.ID
+                        })){
+                          currentPractice.push(practice)
+                         
+                        } practice.selected=true
+                        is_all_selected=isAllSelected()
+                        
+                      }else{
+                        const index=currentPractice.findIndex((g)=>{
+                          g.ID===practice.ID
+                        })
+                        if (index !==-1){
+                          currentPractice.splice(index,1)
+                        }
+                        practice.selected=false
+                        is_all_selected=isAllSelected()
+                      }
+                    }
+                  } />
+                </td>
                 <td style="text-align: center;" title={practice.Name}>{practice.Name}</td>
                 <td style="text-align: center;" title={practice.Type}>{practice.Type}</td>
-                <td style="text-align: center;" title={sget(practice, 'student_count', '').toString()}
-                  >{practice.student_count}</td
+                <td style="text-align: center;" title={practice?.student_count?.toString()}>{practice.student_count}</td
                 >
                 <td style="text-align: center;">
                   <span class="Status-tag {practice.Status === '已发布' ? 'published' : 'unpublished'}">
@@ -818,8 +899,25 @@
       font-weight: 500;
       white-space: nowrap;
       height: 32px;
+
       &:hover {
         background-color: #0336ff;
+      }
+    }
+    .delete-practice-btn {
+      background-color: #ff4816;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 16px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 500;
+      white-space: nowrap;
+      height: 32px;
+      margin-left: 10px;
+      &:hover {
+        background-color: #ff0b03;
       }
     }
 
@@ -962,6 +1060,18 @@
           }
         }
       }
+    }
+  }
+  .checkbox {
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgb(0, 0, 0, 0.3);
+    cursor: pointer;
+    accent-color: #0052d9;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
   }
 
