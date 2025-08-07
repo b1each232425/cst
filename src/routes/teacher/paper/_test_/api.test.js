@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createEmptyPaper, deletePaper, fetchBankQuestionList, fetchPaper, fetchPaperList, fetchQuestionBankList, savePaper } from '../_utils/api';
+import { createEmptyPaper, deletePaper, fetchPaperList } from "../+page.svelte"
+import { fetchPaper, savePaper } from "../manual/+page@.svelte"
+import { fetchBankQuestionList, fetchQuestionBankList } from "../_components/ImportQuestion/ImportQuestion.svelte"
 
 describe("fetchPaperList 测试", () => {
   // 每个测试前 stub fetch
@@ -20,25 +22,25 @@ describe("fetchPaperList 测试", () => {
     })
 
     // 调用接口
-    const result = await fetchPaperList();
+    const RESULT = await fetchPaperList();
 
-    expect(result).toBeNull();
+    expect(RESULT).toBeNull();
   });
 
   it("返回正常数据", async () => {
     // 模拟数据
-    const mockResponse = "我是返回的数据";
+    const MOCKRESPNSE = "我是返回的数据";
 
     // 配置 fetch mock 返回值
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => mockResponse
+      json: async () => MOCKRESPNSE
     })
 
     // 调用接口
-    const result = await fetchPaperList("试卷", "Svelte", 1, 10, "00");
+    const RESULT = await fetchPaperList("试卷", "Svelte", 1, 10, "00");
 
-    expect(result).toEqual(mockResponse);
+    expect(RESULT).toEqual(MOCKRESPNSE);
   });
 });
 
@@ -61,25 +63,25 @@ describe("fetchQuestionBankList 测试", () => {
     })
 
     // 调用接口
-    const result = await fetchQuestionBankList();
+    const RESUlt = await fetchQuestionBankList();
 
-    expect(result).toBeNull();
+    expect(RESUlt).toBeNull();
   });
 
   it("返回正常数据", async () => {
     // 模拟数据
-    const mockResponse = "我是返回的数据";
+    const MOCKRESPONSE = "我是返回的数据";
 
     // 配置 fetch mock 返回值
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => mockResponse
+      json: async () => MOCKRESPONSE
     })
 
     // 调用接口
-    const result = await fetchQuestionBankList("题库", "1", "10", "205");
+    const RESULT = await fetchQuestionBankList("题库", "1", "10", "205");
 
-    expect(result).toEqual(mockResponse);
+    expect(RESULT).toEqual(MOCKRESPONSE);
   });
 });
 
@@ -102,26 +104,26 @@ describe("fetchBankQuestionList 测试", () => {
     })
 
     // 调用接口
-    const result = await fetchBankQuestionList();
+    const RESULT = await fetchBankQuestionList();
 
-    expect(result).toBeNull();
+    expect(RESULT).toBeNull();
   });
 
   it("返回正常数据", async () => {
     // 模拟数据
-    const mockResponse = "我是返回的数据";
+    const MOCKRESPONSE = "我是返回的数据";
 
     // 配置 fetch mock 返回值
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => mockResponse
+      json: async () => MOCKRESPONSE
     })
 
     // 调用接口
-    const result = await fetchBankQuestionList(
+    const RESULT = await fetchBankQuestionList(
       "205", 1, 10, "题目", "Svelte", "00", "00");
 
-    expect(result).toEqual(mockResponse);
+    expect(RESULT).toEqual(MOCKRESPONSE);
   });
 });
 
@@ -144,25 +146,25 @@ describe("createEmptyPaper 测试", () => {
     })
 
     // 调用接口
-    const result = await createEmptyPaper();
+    const RESULT = await createEmptyPaper();
 
-    expect(result).toBeNull();
+    expect(RESULT).toBeNull();
   });
 
   it("返回正常数据", async () => {
     // 模拟数据
-    const mockResponse = "我是返回的数据";
+    const MOCKRESPNSE = "我是返回的数据";
 
     // 配置 fetch mock 返回值
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => mockResponse
+      json: async () => MOCKRESPNSE
     })
 
     // 调用接口
-    const result = await createEmptyPaper();
+    const RESULT = await createEmptyPaper();
 
-    expect(result).toEqual(mockResponse);
+    expect(RESULT).toEqual(MOCKRESPNSE);
   });
 });
 
@@ -185,25 +187,25 @@ describe("fetchPaper 测试", () => {
     })
 
     // 调用接口
-    const result = await fetchPaper();
+    const RESULT = await fetchPaper();
 
-    expect(result).toBeNull();
+    expect(RESULT).toBeNull();
   });
 
   it("返回正常数据", async () => {
     // 模拟数据
-    const mockResponse = "我是返回的数据";
+    const MOCKRESPONSE = "我是返回的数据";
 
     // 配置 fetch mock 返回值
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => mockResponse
+      json: async () => MOCKRESPONSE
     })
 
     // 调用接口
-    const result = await fetchPaper();
+    const RESULT = await fetchPaper();
 
-    expect(result).toEqual(mockResponse);
+    expect(RESULT).toEqual(MOCKRESPONSE);
   });
 });
 
@@ -226,25 +228,25 @@ describe("savePaper 测试", () => {
     })
 
     // 调用接口
-    const result = await savePaper();
+    const RESULT = await savePaper();
 
-    expect(result).toBeNull();
+    expect(RESULT).toBeNull();
   });
 
   it("返回正常数据", async () => {
     // 模拟数据
-    const mockResponse = "我是返回的数据";
+    const MOCKRESPONSE = "我是返回的数据";
 
     // 配置 fetch mock 返回值
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => mockResponse
+      json: async () => MOCKRESPONSE
     })
 
     // 调用接口
-    const result = await savePaper();
+    const RESULT = await savePaper();
 
-    expect(result).toEqual(mockResponse);
+    expect(RESULT).toEqual(MOCKRESPONSE);
   });
 });
 
@@ -267,24 +269,24 @@ describe("deletePaper 测试", () => {
     })
 
     // 调用接口
-    const result = await deletePaper();
+    const RESULT = await deletePaper();
 
-    expect(result).toBeNull();
+    expect(RESULT).toBeNull();
   });
 
   it("返回正常数据", async () => {
     // 模拟数据
-    const mockResponse = "我是返回的数据";
+    const MOCKRESPONSE = "我是返回的数据";
 
     // 配置 fetch mock 返回值
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => mockResponse
+      json: async () => MOCKRESPONSE
     })
 
     // 调用接口
-    const result = await deletePaper();
+    const RESULT = await deletePaper();
 
-    expect(result).toEqual(mockResponse);
+    expect(RESULT).toEqual(MOCKRESPONSE);
   });
 });

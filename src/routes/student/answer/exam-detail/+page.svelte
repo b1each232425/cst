@@ -1,4 +1,13 @@
 <script>
+  /*
+   * @Author: PENG HAIFENG 1614818457@qq.com
+   * @Date: 2025-07-23 10:55:37
+   * @LastEditors: PENG HAIFENG 1614818457@qq.com
+   * @LastEditTime: 2025-07-30 10:28:54
+   * @FilePath: \src\routes\student\answer\exam-detail\+page.svelte
+   * @Description: 考试详情页
+   */
+
   import { onMount } from "svelte";
   import { formatTimestamp } from "../_utils/time_utils";
   import { page } from "$app/state";

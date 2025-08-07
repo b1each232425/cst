@@ -1,27 +1,119 @@
+<!--
+ * @Author: WangKaidun 1597225095@qq.com
+ * @Date: 2025-08-01 21:09:59
+ * @LastEditors: WangKaidun 1597225095@qq.com
+ * @LastEditTime: 2025-08-07 11:34:36
+ * @FilePath: \exam\src\routes\teacher\paper\_components\ImportQuestion\ImportQuestion.svelte
+ * @Description: 从题库导入题目组件
+ * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
+-->
 <script>
     import Button from "$lib/components/Button/Button.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
+    import Empty from "$lib/components/Table/Empty.svelte";
+    import UneditableTag from "$lib/components/Tag/UneditableTag.svelte";
     import { debounce } from "$lib/utils/optimize";
     import { onMount } from "svelte";
-    import { fetchBankQuestionList, fetchPaper, fetchQuestionBankList, savePaper } from "../../_utils/api";
-    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS, TAG_COLOR_LIST } from "../../_utils/data";
-    import { formatTimestamp, getColorIndex, restoreOpenState } from "../../_utils/func";
+    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../../_utils/tool";
     import { toast } from "$lib/components/Toast/Toast";
-    import Empty from "$lib/components/Table/Empty.svelte";
+    import { get } from "svelte/store";
+    import { CURRENT_PAPER_ID } from "../../_stores/store";
+    import { formatTimestamp } from "$lib/utils/time_utils";
 
-    /**************** 开关控制区 ****************/
+    /******************* API 区 *******************/
 
-    let { onclose, update, to_add_groupID = 0, to_add_group_name = "" } = $props();                 // 关闭弹窗
+    // 获取题库列表
+    export function fetchQuestionBankList(
+        bankKeyWord = "", 
+        bankPage = "",
+        bankPageSize = "",
+        bankBankID = ""
+    ){
+        const PARAMS = new URLSearchParams();
+
+        if (bankKeyWord) PARAMS.append("keyword", bankKeyWord);
+        if (bankPage) PARAMS.append("page", bankPage);
+        if (bankPageSize) PARAMS.append("pageSize", bankPageSize);
+        if (bankBankID) PARAMS.append("bankID", bankBankID);
+
+        return fetch(`/api/question-banks?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('获取题库列表出错：', error);
+                return null;
+            });
+    }
+
+    // 获取题库题目
+    export function fetchBankQuestionList(
+        bankID = "", 
+        page = 1,
+        pageSize = 10,
+        name = "",
+        tags = "",
+        type = "",
+        diffculty = ""
+    ){
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("bankID", bankID);
+        PARAMS.append("page", page);
+        PARAMS.append("pageSize", pageSize);
+        if (name) PARAMS.append("name", name);
+        if (tags) PARAMS.append("tags", tags);
+        if (type) PARAMS.append("type", type);
+        if (diffculty) PARAMS.append("diffculty", diffculty);
+
+        return fetch(`/api/questions?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('获取题库题目列表出错：', error);
+                return null;
+            });
+    }
+
+    /******************* API 区 *******************/
+
+
+    
+    /******************* 开关控制区 *******************/
+
+    let {
+        onclose, update,
+        to_add_groupID = 0, to_add_group_name = "",
+        fetchPaper, savePaper
+    } = $props();                 // 关闭弹窗
     let drop_up_toggle_is_open = $state(false);     // 上拉题组栏
     let filter_is_open = $state(false);           // 下拉筛选栏
-    let is_first_entry = $state(true);            // 是否首次打开弹窗
     
-    /**************** 开关控制区 ****************/
+    /******************* 开关控制区 *******************/
     
 
 
-    /**************** 信息区 ****************/
+    /********************* 信息区 *********************/
 
     let paperID = $state(0);
     let paper_info = $state(null);
@@ -33,14 +125,13 @@
         to_add_groupID = group.id;
         to_add_group_name = group.name; 
         to_add_group_length = group.questions.length;
-        // console.log(toAddgroupLength)
     }
 
-    /**************** 信息区 ****************/
+    /********************* 信息区 *********************/
 
     
 
-    /**************** 题库列表 ****************/
+    /******************** 题库列表 ********************/
 
     let bank_key_word = $state("");
     let to_add_bankID = $state("");
@@ -54,23 +145,32 @@
             });
     }, 500, false);
 
-    $effect(() => {
-        bank_key_word;
-        if(!is_first_entry) {
-            debouncedFetchQuestionBankList();
-        }
-    });
-
     // 单选题库功能
     function toggleBank(id) {
         to_add_bankID = to_add_bankID === id ? "" : id;
+
+        // 搜索题库内的题目
+        if(to_add_bankID !== "") {
+            fetchBankQuestionList(
+                to_add_bankID,
+                question_page,
+                question_page_size,
+                question_name,
+                question_gags,
+                question_type,
+                question_difficulty
+            ).then( result => {
+                question_list = result.data || [];
+                total_questions = result.rowCount;
+            });
+        } else { question_list = []; }
     }
 
-    /**************** 题库列表 ****************/
+    /******************** 题库列表 ********************/
 
 
 
-    /**************** 题目列表 ****************/
+    /******************** 题目列表 ********************/
 
     let question_page = $state(1);
     let question_page_size = $state(10);
@@ -95,17 +195,18 @@
         } else {
             selected_question_infos = selected_question_infos.filter(item => item.id !== id);
         }
+        checkAllSelected();
     }
 
     // 检查全选
-    $effect(() => {
+    function checkAllSelected() {
         const currentPageIDs = question_list.map(item => item.ID);
         const selectedIDs = selected_question_infos.map(q => q.id);
         all_question_selected = (
             question_list.length !== 0 &&
             currentPageIDs.every(id => selectedIDs.includes(id))
         );
-    });
+    }
 
     // 全选
     function selectAllQuestions(checked) {
@@ -120,6 +221,7 @@
             const currentPageIds = question_list.map(item => item.ID);
             selected_question_infos = selected_question_infos.filter(q => !currentPageIds.includes(q.id));
         }
+        checkAllSelected();
     }
 
     // 确认导入题目
@@ -153,15 +255,7 @@
     // 处理页面跳转
     function handlePageChange(event) {
         question_page = event.detail;
-    }
-
-    // 处理页面尺寸更改
-    function handlePageSizeChange(event) {
-        question_page_size = event.detail;
-        question_page = 1; // 改变每页数量时通常要跳回第一页
-    }
-    
-    $effect(() => {
+        // 搜索题库内的题目
         if(to_add_bankID !== "") {
             fetchBankQuestionList(
                 to_add_bankID,
@@ -174,21 +268,43 @@
             ).then( result => {
                 question_list = result.data || [];
                 total_questions = result.rowCount;
+                checkAllSelected();
             });
         } else { question_list = []; }
-    });
+    }
 
-    /**************** 题目列表 ****************/
+    // 处理页面尺寸更改
+    function handlePageSizeChange(event) {
+        question_page_size = event.detail;
+        question_page = 1; // 改变每页数量时通常要跳回第一页
+        // 搜索题库内的题目
+        if(to_add_bankID !== "") {
+            fetchBankQuestionList(
+                to_add_bankID,
+                question_page,
+                question_page_size,
+                question_name,
+                question_gags,
+                question_type,
+                question_difficulty
+            ).then( result => {
+                question_list = result.data || [];
+                total_questions = result.rowCount;
+                checkAllSelected();
+            });
+        } else { question_list = []; }
+    }
+
+    /******************** 题目列表 ********************/
 
     // 挂载区
     onMount(() => {
         fetchQuestionBankList(bank_key_word, "", "", "")
             .then(result => {
                 bank_list = result.data || [];
-                is_first_entry = false;
             });
 
-        paperID = JSON.parse(localStorage.getItem('currentPaperID'));
+        paperID = get(CURRENT_PAPER_ID);
         fetchPaper(paperID)
             .then(result => {
                 paper_info = result.data;
@@ -219,7 +335,7 @@
 
                 <!-- 搜索 -->
                 <div class="search-box">
-                    <InputBox bind:value={bank_key_word} placeholder="搜索题库" showLabel={false}/>
+                    <InputBox onInput={()=>debouncedFetchQuestionBankList()} bind:value={bank_key_word} placeholder="搜索题库" show_label={false}/>
                 </div>
 
                 <!-- 题库列表 -->
@@ -336,15 +452,12 @@
                                         <td class="question-type">{QUESTION_TYPE_TRANS[question.Type]}</td>
                                         <td class="question-level"><span class={DIFFICULTY_TRANS[DIFFICULTY_TRANS[question.Difficulty]]}>{DIFFICULTY_TRANS[question.Difficulty]}</span></td>
                                         <td class="question-score">{question.Score}</td>
-                                        <td class="update-time">{formatTimestamp(question.UpdateTime)}</td>
+                                        <td class="update-time">{formatTimestamp(question.UpdateTime,{show_date:true,show_time:true})}</td>
                                         <td class="question-tags">
                                             <div class="tag-container">
                                                 {#if question.Tags.length !== 0}
                                                     {#each question.Tags as tag}
-                                                        <div class="per-tag">
-                                                            <div class="tag-block" style="background-color: {TAG_COLOR_LIST[getColorIndex(tag)]};"></div>
-                                                            <span class="tag-name">{tag}</span>
-                                                        </div>
+                                                        <UneditableTag content={tag}/>
                                                     {/each}
                                                 {:else}
                                                     <span>-</span>
