@@ -41,7 +41,7 @@
 			font-size: 14px;
 			font-weight: normal;
 			color: rgb(0, 0, 0, 0.3);
-			padding: 0 4px;
+			padding: 20px 4px 0 4px;
 			vertical-align: middle;
 			text-align: center;
 			position: relative;

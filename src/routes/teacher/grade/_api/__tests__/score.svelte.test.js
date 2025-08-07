@@ -211,7 +211,54 @@ describe('成绩API测试', () => {
         });
     });
 
-    
+    describe('getGradeLogs - 获取成绩操作日志', () => {
+        it('应该使用默认参数获取日志', async () => {
+            const mockResponse = { status: 0, data: [] };
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve(mockResponse)
+            });
+
+            const result = await getGradeLogs();
+
+            expect(mockFetch).toHaveBeenCalledWith(
+                '/api/teacher/exam-grade/log?page=1&pageSize=10',
+                {
+                    method: 'GET',
+                    credentials: 'include'
+                }
+            );
+            expect(result).toEqual(mockResponse);
+        });
+
+        it('应该使用自定义参数', async () => {
+            const mockResponse = { status: 0, data: [] };
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve(mockResponse)
+            });
+
+            await getGradeLogs(2, 20);
+
+            expect(mockFetch).toHaveBeenCalledWith(
+                '/api/teacher/exam-grade/log?page=2&pageSize=20',
+                expect.any(Object)
+            );
+        });
+
+        it('应该处理非零状态码', async () => {
+            const errorResponse = { status: 1, msg: '获取日志失败' };
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve(errorResponse)
+            });
+
+            await expect(getGradeLogs()).rejects.toThrow('获取日志失败');
+        });
+    });
 
     describe('getPractices - 获取练习成绩列表', () => {
         it('应该使用默认参数', async () => {
@@ -256,5 +303,65 @@ describe('成绩API测试', () => {
                 expect.any(Object)
             );
         });
-    })
+    });
+
+    describe('exportPracticeGrades - 导出练习成绩', () => {
+        it('应该成功导出成绩', async () => {
+            const ids = [1, 2, 3];
+            const mockBlob = new Blob(['test data']);
+
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                blob: () => Promise.resolve(mockBlob)
+            });
+
+            const mockAnchor = {
+                href: '',
+                download: '',
+                click: vi.fn(),
+                remove: vi.fn()
+            };
+
+            document.createElement.mockReturnValueOnce(mockAnchor);
+
+            await exportPracticeGrades(ids);
+
+            expect(mockFetch).toHaveBeenCalledWith(
+                '/api/teacher/practice-grade/export',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        credentials: 'include'
+                    },
+                    body: JSON.stringify({ ids })
+                }
+            );
+
+            expect(window.URL.createObjectURL).toHaveBeenCalledWith(mockBlob);
+            expect(mockAnchor.href).toBe('mock-blob-url');
+            expect(mockAnchor.download).toBe('practice_grades.xlsx');
+            expect(mockAnchor.click).toHaveBeenCalled();
+            expect(mockAnchor.remove).toHaveBeenCalled();
+        });
+
+        it('应该拒绝空数组', async () => {
+            await expect(exportPracticeGrades([])).rejects.toThrow('导出失败：未选择任何项目。');
+        });
+
+        it('应该拒绝非数组参数', async () => {
+            await expect(exportPracticeGrades('not-array')).rejects.toThrow('导出失败：未选择任何项目。');
+        });
+
+        it('应该处理HTTP错误', async () => {
+            const ids = [1, 2];
+
+            mockFetch.mockResolvedValueOnce({
+                ok: false,
+                status: 500
+            });
+
+            await expect(exportPracticeGrades(ids)).rejects.toThrow('HTTP error! status: 500');
+        });
+    });
 });
