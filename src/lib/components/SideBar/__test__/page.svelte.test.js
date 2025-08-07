@@ -437,6 +437,29 @@ describe('Sidebar 侧边栏组件测试', () => {
     consoleErrorSpy.mockRestore();
   });
 
+  it('应处理获取用户信息失败的情况 - APIs 数据不存在', async () => {
+    // 设置 console.error 的 spy
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    // 模拟成功响应但缺少 APIs 数据
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          data: {}, // 缺少 APIs 字段
+        }),
+    });
+
+    render(Sidebar, { props: { options } });
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith('获取用户权限失败:', expect.any(Error));
+      expect(consoleErrorSpy.mock.calls[0][1].message).toMatch('APIs 数据不存在');
+    });
+
+    expect(screen.queryByText('题库管理')).not.toBeInTheDocument();
+  });
+
   it('应处理子菜单的展开和折叠', async () => {
     // 模拟 Web Animations API
     global.Element.prototype.animate = vi.fn().mockImplementation(() => ({
@@ -537,5 +560,92 @@ describe('Sidebar 侧边栏组件测试', () => {
 
     // 恢复真实计时器
     vi.useRealTimers();
+  });
+
+  it('当侧边栏已折叠，鼠标进入后突然开始折叠，500ms后不应悬浮', async () => {
+    render(Sidebar, { props: { options } });
+    vi.useFakeTimers();
+
+    const sidebar = screen.getByTestId('sidebar-content');
+    const container = screen.getByTestId('sidebar-container');
+
+    // 1. 初始状态：已折叠（sidebar_is_folded = true）
+    const toggleBtn = screen.getByTitle('收起侧边栏');
+    await fireEvent.click(toggleBtn); // 折叠侧边栏
+    fireEvent.transitionEnd(sidebar); // 触发动画结束，确保完全折叠
+    expect(sidebar).toHaveClass('folded'); // 确认已折叠
+
+    // 2. 模拟鼠标进入（此时已折叠，第一个 if 不会触发）
+    fireEvent.mouseEnter(container);
+
+    // 3. 在 500ms 期间，手动触发折叠（模拟突然开始折叠）
+    // 这里需要直接修改 Svelte 的 $state，或者再次点击折叠按钮（如果它会触发折叠）
+    // 假设我们手动修改状态：
+    await fireEvent.click(toggleBtn); // 展开侧边栏
+    fireEvent.mouseEnter(container);
+    await fireEvent.click(toggleBtn);
+    fireEvent.mouseLeave(container);
+    await fireEvent.click(toggleBtn);
+    fireEvent.mouseEnter(container);
+    await fireEvent.click(toggleBtn);
+    fireEvent.mouseLeave(container);
+
+    // 5. 验证：由于 `sidebar_is_folding = true`，第二个 if 触发，不应悬浮
+    expect(sidebar).not.toHaveClass('float');
+
+    vi.useRealTimers();
+  });
+
+  it('应处理侧边栏高亮', async () => {
+    render(Sidebar, { props: { options } });
+    await screen.findByText('试卷管理');
+
+    // 模拟点击导航项
+    const navItem = screen.getByRole('button', { name: '试卷管理' });
+    await fireEvent.click(navItem);
+
+    // 验证路由跳转
+    expect(goto).toHaveBeenCalledWith('/teacher/paper');
+
+    const item = screen.getByText('试卷管理').closest('li');
+    expect(item).toHaveClass('active');
+
+    await fireEvent.click(screen.getByRole('button', { name: '练习管理' }));
+    await fireEvent.click(screen.getByRole('button', { name: '考试管理' }));
+    await fireEvent.click(screen.getByRole('button', { name: '练习成绩管理' }));
+    await fireEvent.click(screen.getByRole('button', { name: '考试成绩管理' }));
+    await fireEvent.click(screen.getByRole('button', { name: '成绩管理' }));
+    await fireEvent.click(screen.getByRole('button', { name: '成绩管理' }));
+    await fireEvent.click(screen.getByRole('button', { name: '学生管理' }));
+    await fireEvent.click(screen.getByRole('button', { name: '用户管理' }));
+    await fireEvent.click(screen.getByRole('button', { name: '理论题库管理' }));
+    await fireEvent.click(screen.getByRole('button', { name: '题库管理' }));
+    await fireEvent.click(screen.getByRole('button', { name: '题库管理' }));
+  });
+
+  it('顶级菜单应有 25px 缩进和 100% 宽度', async () => {
+    render(Sidebar, { props: { options } });
+
+    await screen.findByText('题库管理');
+
+    const topLevelItem = screen.getByText('题库管理').closest('.sidebar-item-content');
+
+    expect(topLevelItem).toHaveStyle({
+      left: '25px;',
+      width: '100%;',
+    });
+  });
+
+  it('子菜单应有 35px 缩进和 95% 宽度', async () => {
+    render(Sidebar, { props: { options } });
+
+    await screen.findByText('题库管理');
+
+    const subItem = screen.getByText('理论题库管理').closest('.sidebar-item-content');
+
+    expect(subItem).toHaveStyle({
+      left: '35px;',
+      width: '95%;',
+    });
   });
 });

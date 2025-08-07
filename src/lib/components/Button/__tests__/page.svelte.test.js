@@ -1336,7 +1336,7 @@ describe('Button 组件测试', () => {
   it('onclick传入null,默认为空函数，控制台输出警告信息', () => {
     const spy = vi.spyOn(console, 'warn');
     render(Button, { props: { children: () => '按钮', onclick: null } });
-    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为函数，当前为 null');
+    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为function/asyncfunction，当前为 null');
   });
 
   it('onclick传入undefined,默认为空函数,因为svelte的props传入undefined,会被忽略，回退为默认值', () => {
@@ -1351,41 +1351,89 @@ describe('Button 组件测试', () => {
     const spy = vi.spyOn(console, 'warn');
     render(Button, { props: { children: () => '按钮', onclick: 'onclick' } });
     expect(screen.getByTestId('button')).toHaveStyle({ width: '' });
-    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为函数，当前为 string');
+    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为function/asyncfunction，当前为 string');
   });
 
   it('onclick传入数字,默认为空函数，控制台输出警告信息', () => {
     const spy = vi.spyOn(console, 'warn');
     render(Button, { props: { children: () => '按钮', onclick: 1 } });
     expect(screen.getByTestId('button')).toHaveStyle({ width: '' });
-    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为函数，当前为 number');
+    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为function/asyncfunction，当前为 number');
   });
 
   it('onclick传入boolean,默认为空函数，控制台输出警告信息', () => {
     const spy = vi.spyOn(console, 'warn');
     render(Button, { props: { children: () => '按钮', onclick: true } });
     expect(screen.getByTestId('button')).toHaveStyle({ width: '' });
-    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为函数，当前为 boolean');
+    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为function/asyncfunction，当前为 boolean');
   });
 
   it('onclick传入对象,默认为空函数，控制台输出警告信息', () => {
     const spy = vi.spyOn(console, 'warn');
     render(Button, { props: { children: () => '按钮', onclick: {} } });
     expect(screen.getByTestId('button')).toHaveStyle({ width: '' });
-    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为函数，当前为 object');
+    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为function/asyncfunction，当前为 object');
   });
 
   it('onclick传入数组,默认为空函数，控制台输出警告信息', () => {
     const spy = vi.spyOn(console, 'warn');
     render(Button, { props: { children: () => '按钮', onclick: [] } });
     expect(screen.getByTestId('button')).toHaveStyle({ width: '' });
-    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为函数，当前为 array');
+    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为function/asyncfunction，当前为 array');
   });
 
   it('onclick传入0,默认为空函数，控制台输出警告信息', () => {
     const spy = vi.spyOn(console, 'warn');
     render(Button, { props: { children: () => '按钮', onclick: 0 } });
     expect(screen.getByTestId('button')).toHaveStyle({ width: '' });
-    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为函数，当前为 number');
+    expect(spy).toHaveBeenCalledWith('[Button] onclick 必须为function/asyncfunction，当前为 number');
+  });
+
+  it('测试onclick为基本的异步函数asyncfunction,点击触发事件', async () => {
+    const handleClick = vi.fn(async () => {});
+    render(Button, { props: { children: () => '按钮', onclick: handleClick } });
+    /** 检测是否触发handleClick事件 */
+    fireEvent.click(screen.getByTestId('button'));
+    expect(handleClick).toHaveBeenCalled(); // 触发
+  });
+
+  it('测试onclick为带有await的异步函数asyncfunction,点击触发事件', async () => {
+    const handleClick = vi.fn(async () => {
+      await new Promise((resolve) => {
+        resolve();
+      });
+    });
+
+    render(Button, { props: { children: () => '按钮', onclick: handleClick } });
+
+    /** 检测是否触发handleClick事件 */
+    fireEvent.click(screen.getByTestId('button'));
+
+    expect(handleClick).toHaveBeenCalled();
+
+    expect(handleClick).toHaveBeenCalledTimes(1);
+
+    // 校验异步函数是否解决问题
+    expect(handleClick()).resolves.toBeUndefined();
+  });
+
+  it('测试onclick为带有await和数据的异步函数asyncfunction,点击触发事件', async () => {
+    const handleClick = vi.fn(async (value) => {
+      let result = await new Promise((resolve) => {
+        resolve(value + 100);
+      });
+      return result;
+    });
+
+    render(Button, { props: { children: () => '按钮', onclick: handleClick } });
+
+    /** 检测是否触发handleClick事件 */
+    fireEvent.click(screen.getByTestId('button'));
+
+    let result = await handleClick(100);
+
+    expect(result).toBe(200);
+
+    await expect(handleClick(300)).resolves.toBe(400);
   });
 });

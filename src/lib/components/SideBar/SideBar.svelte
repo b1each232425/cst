@@ -148,6 +148,10 @@
     sidebar_mouse_enter_timeout = setTimeout(() => {
       clearTimeout(sidebar_mouse_enter_timeout);
 
+      if (sidebar_is_folding || !sidebar_is_folded) {
+        return;
+      }
+
       side_float = true;
 
       sidebar_element.style.setProperty('--sidebar-min-width', '0px');
@@ -169,6 +173,10 @@
 
     sidebar_mouse_leave_timeout = setTimeout(() => {
       clearTimeout(sidebar_mouse_leave_timeout);
+
+      if (sidebar_is_folding || !sidebar_is_folded) {
+        return;
+      }
 
       side_float = false;
     }, 500);
@@ -215,33 +223,11 @@
         return true;
       }
 
-      let childrenResult = checkItemHasChildren(item.children[i], childrenPath);
+      // let childrenResult = checkItemHasChildren(item.children[i], childrenPath);
 
-      if (childrenResult) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * 检查当前选中的子路由是否强制隐藏
-   * @param {NavMapData} item
-   * @param {string} childrenPath
-   * @return {boolean} result
-   */
-  function checkActiveChildrenIsForceHide(item, childrenPath) {
-    if (item.children == null || item.children.length <= 0) {
-      return false;
-    }
-
-    for (let i = 0; i < item.children.length; i++) {
-      if (item.children[i].path != childrenPath || !item.children[i].force_hide) {
-        continue;
-      }
-
-      return true;
+      // if (childrenResult) {
+      //   return true;
+      // }
     }
 
     return false;
@@ -308,26 +294,21 @@
           {#snippet Item(it, level)}
             {#if !it.force_hide}
               {#snippet ItemContent(i, level)}
-                <div
-                  class="sidebar-item-content"
-                  style="left:{25 + level * 10}px; width: {100 - level * 5 < 0 ? 0 : 100 - level * 5}%"
-                >
+                <div class="sidebar-item-content" style="--level: {level}">
                   {#if i.icon}
                     <img class="sidebar-item-icon" src={i.icon} alt={i.title} />
                   {:else}
                     <span class="sidebar-item-icon"></span>
                   {/if}
-
                   <span class="sidebar-item-text">{i.title}</span>
                 </div>
               {/snippet}
 
               <li
                 class="sidebar-item"
-                class:active={current_active == it.path ||
-                  (!it.children_is_parallel && regexMatch(current_active, it.path)) ||
-                  (checkItemHasChildren(it, current_active) &&
-                    (it.fold || !it.children_is_parallel || checkActiveChildrenIsForceHide(it, current_active)))}
+                class:active={(!it.children_is_parallel && regexMatch(current_active, it.path)) ||
+                  (checkItemHasChildren(it, current_active) && (it.fold || !it.children_is_parallel)) ||
+                  current_active == it.path}
                 title={it.title}
               >
                 {#if it.children != null && it.children.length > 0 && it.children_is_parallel}
@@ -555,9 +536,18 @@
           position: absolute;
           justify-content: flex-start;
           align-items: center;
-          width: max-content;
           margin: 0;
           transition: all 0.3s ease;
+
+          /* 基础变量 */
+          --left-base: 25px;
+          --level-offset: 10px;
+          --width-base: 100%;
+          --width-reduction: 5%;
+
+          /* 动态计算 */
+          left: calc(var(--left-base) + calc(var(--level, 0) * var(--level-offset)));
+          width: max(0%, calc(var(--width-base) - calc(var(--level, 0) * var(--width-reduction))));
         }
 
         .sidebar-item-icon {

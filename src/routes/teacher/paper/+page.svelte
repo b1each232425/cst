@@ -30,7 +30,7 @@
     /******************* API 区 ********************/
 
     // 自定义组卷
-    export function createEmptyPaper() {
+    function createEmptyPaper() {
         // 设置响应头
         const HEADERS = {
             "Content-Type": "application/json"
@@ -58,7 +58,7 @@
     }
 
     // 删除试卷
-    export function deletePaper(
+    function deletePaper(
         toDeletePapers = []
     ){
         const DATA = {
@@ -91,7 +91,7 @@
     }
 
     // 获取试卷列表
-    export function fetchPaperList(
+    function fetchPaperList(
         paperName = "", 
         paperTags = "", 
         paperPage = 1, 
@@ -268,19 +268,21 @@
 
     // 批量删除试卷
     function deleteMultiplePapers() {
-        if(get(SELECTED_PAPER_IDS).length === 0) {
+        const SELECTEDIDS = get(SELECTED_PAPER_IDS);
+        if(SELECTEDIDS.length === 0) {
             toast.error("请先选择试卷", 1000);
             return;
         }
         MessageBox({
             title: "删除确认",
-            content: `请问是否要批量删除这 ${get(SELECTED_PAPER_IDS).length} 张试卷？`,
+            content: `请问是否要批量删除这 ${SELECTEDIDS.length} 张试卷？`,
             confirm_button_type: "danger",
 
             onConfirm: () => {
-                deletePaper(get(SELECTED_PAPER_IDS))
+                deletePaper(SELECTEDIDS)
                     .then(() => {
                         toast.success("删除成功", 1000);
+                         SELECTED_PAPER_IDS.update(current => current.filter(id => !SELECTEDIDS.includes(id)));
                         fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
                             .then(result => {
                                 total_papers = result.rowCount;
