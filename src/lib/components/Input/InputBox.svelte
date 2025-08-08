@@ -169,6 +169,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      min-width: 150px;
       flex: 1;
       .InputBox-input {
         border-radius: 3px;
