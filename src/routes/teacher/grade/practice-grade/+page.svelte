@@ -510,6 +510,14 @@
 			position: relative;
 		}
 
+		.practice-name {
+			text-align: left;
+		}
+
+		.practice-operation {
+			text-align: right;
+		}
+
 		.header-text {
 			display: inline-block;
 		}
@@ -565,6 +573,7 @@
 		}
 	}
 
+	/* 表头列样式 */
 	.practice-select {
 		width: 5%;
 	}

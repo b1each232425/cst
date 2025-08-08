@@ -687,8 +687,17 @@
 			text-align: center;
 			position: relative;
 		}
+
+		.exam-name {
+			text-align: left;
+		}
+
+		.operation {
+			text-align: right;
+		}
 	}
 
+	/* 表头列样式 */
 	.exam-select {
 		width: 4%;
 	}
