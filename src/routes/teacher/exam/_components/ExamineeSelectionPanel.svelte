@@ -4,7 +4,7 @@
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Button from '$lib/components/Button/Button.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
-  import {toast} from '$lib/components/Toast/toast.js'
+  import {toast} from '$lib/components/Toast/Toast.js'
 
   let {
     show_panel = false,
