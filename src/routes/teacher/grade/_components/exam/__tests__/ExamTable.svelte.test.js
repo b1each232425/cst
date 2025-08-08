@@ -89,7 +89,7 @@ describe('考试表格组件', () => {
         render(ExamTable, { props: { store: mockStore } });
 
         const ExamTableHeader = (await import('../ExamTableHeader.svelte')).default;
-        // Check that ExamTableHeader was called with correct props
+        // 检查 ExamTableHeader 是否使用正确的 props 调用
         expect(ExamTableHeader).toHaveBeenCalled();
         const headerCall = ExamTableHeader.mock.calls[0];
         expect(headerCall[1]).toEqual(expect.objectContaining({
@@ -111,7 +111,7 @@ describe('考试表格组件', () => {
         render(ExamTable, { props: { store: mockStore } });
 
         const ExamTableRow = (await import('../ExamTableRow.svelte')).default;
-        // Check that ExamTableRow was called with correct props
+        // 检查 ExamTableRow 是否使用正确的 props 调用
         expect(ExamTableRow).toHaveBeenCalled();
         const rowCall = ExamTableRow.mock.calls[0];
         expect(rowCall[1]).toEqual(expect.objectContaining({
@@ -133,7 +133,7 @@ describe('考试表格组件', () => {
         
         const table = container.querySelector('.exam-table');
         expect(table).toBeInTheDocument();
-        // 由于样式是通过CSS设置的，我们只检查类名存在
+        // 由于样式是通过 CSS 设置的，我们只检查类名存在
         expect(table).toHaveClass('exam-table');
     });
 
