@@ -64,7 +64,6 @@
   // 练习列表数据类型
   /** @type {Practice[]} */
   let displayed_practice_list = $state([]);
-
   // 处理数据转置
   /**
    * 转置练习数据中的type和status字段
@@ -288,6 +287,10 @@
   function publish_practice(practice) {
     // 保存当前操作的练习
     currentPractice = practice;
+    if (!currentPractice||currentPractice.length==0){
+      toast.error('请选择要发布的练习');
+      return;
+    }
     publishDialogOpen = true;
   }
 
@@ -298,10 +301,9 @@
     if (!currentPractice) return;
 
     // 实现发布练习的逻辑
-    console.log('确认发布练习:', currentPractice.Name);
     console.log('练习信息:', currentPractice);
     const queryParams = new URLSearchParams();
-    queryParams.append('id', currentPractice.ID);
+    queryParams.append('id', currentPractice.map((practice) => practice.ID));
     queryParams.append('status', '02');
 
     const url = `/api/practice?${queryParams.toString()}`;
@@ -330,15 +332,17 @@
           return;
         }
         // 更新练习状态
-        const practiceId = currentPractice?.ID;
-
-        const index = practice_list.findIndex((p) => p.ID === practiceId);
-        if (index !== -1) {
+        const practiceIds = currentPractice?.map((p) => p.ID);
+        practiceIds.forEach((id) => {
+          const index = practice_list.findIndex((p) => p.ID === id);
+         if (index !== -1) {
           practice_list[index].Status = '已发布';
-          practice_data_list.set(practice_list);
+          
+        }
+        });
+        practice_data_list.set(practice_list);
           // 刷新列表显示
           filter_practice_list();
-        }
 
         // 显示发布成功提示
         toast.success('发布练习成功', 1000);
@@ -357,8 +361,14 @@
    * @param {Practice} practice - 练习对象
    */
   function cancel_publish(practice) {
+
     // 保存当前操作的练习
     currentPractice = practice;
+    if (!currentPractice||currentPractice.length==0) {
+      toast.error('请选择要取消发布的练习', 1000);
+      return;
+    }
+    
     // 打开取消发布确认对话框
     cancelPublishDialogOpen = true;
   }
@@ -370,9 +380,8 @@
     if (!currentPractice) return;
 
     // 实现取消发布的逻辑
-    console.log('确认取消发布练习:', currentPractice.Name);
     const queryParams = new URLSearchParams();
-    queryParams.append('id', currentPractice.ID);
+    queryParams.append('id', currentPractice.map((p)=>p.ID));
     queryParams.append('status', '00');
     const url = `/api/practice?${queryParams.toString()}`;
     // 调用API取消发布练习
@@ -399,14 +408,16 @@
           return;
         }
         // 更新练习状态
-        const practiceId = currentPractice?.ID;
-        const index = practice_list.findIndex((p) => p.ID === practiceId);
+        const practiceIds = currentPractice?.map((p) => p.ID);
+       practiceIds.forEach((id) => {
+         const index = practice_list.findIndex((p) => p.ID === id);
         if (index !== -1) {
           practice_list[index].Status = '未发布';
-          practice_data_list.set(practice_list);
+        }
+        });
+        practice_data_list.set(practice_list);
           // 刷新列表显示
           filter_practice_list();
-        }
 
         // 显示取消发布成功提示
         toast.success('取消发布练习成功', 1000);
@@ -526,12 +537,11 @@
    * @param {Practice} practice - 练习对象
    */
   function delete_practice(practice) {
-    
     // 保存当前操作的练习
     currentPractice = practice;
-    if (!currentPractice||currentPractice.length === 0) {
-      toast.error("请选择要删除的练习");
-      return
+    if (!currentPractice || currentPractice.length === 0) {
+      toast.error('请选择要删除的练习');
+      return;
     }
     // 打开删除确认对话框
     deleteDialogOpen = true;
@@ -546,7 +556,10 @@
     // 实现删除练习的逻辑
 
     const queryParams = new URLSearchParams();
-    queryParams.append('id', currentPractice.map(practice => practice.ID));
+    queryParams.append(
+      'id',
+      currentPractice.map((practice) => practice.ID),
+    );
     queryParams.append('status', '04');
 
     // 调用API删除练习
@@ -589,34 +602,32 @@
       });
   }
   //全选练习
-  function toggleSelectAll(){
+  function toggleSelectAll() {
     //切换全选状态
-    is_all_selected = !is_all_selected
-    displayed_practice_list.forEach(practice => {
-      practice.selected = is_all_selected//更新选中状态
+    is_all_selected = !is_all_selected;
+    displayed_practice_list.forEach((practice) => {
+      practice.selected = is_all_selected; //更新选中状态
     });
-    if (is_all_selected){
-      displayed_practice_list.forEach(practice => {
-      const exist=  currentPractice.find(item=>{
-         practice.id === item.id
-        })
-        if (!exist){
-          currentPractice.push(practice)
+    if (is_all_selected) {
+      displayed_practice_list.forEach((practice) => {
+        const exist = currentPractice.find((item) => {
+          practice.id === item.id;
+        });
+        if (!exist) {
+          currentPractice.push(practice);
         }
       });
-    }else{
-      displayed_practice_list.forEach(practice=>{
-        const index= currentPractice.findIndex(item=>{
-          practice.id === item.id
-        })
-        if (index !== -1){
-          currentPractice.splice(index,1)
+    } else {
+      displayed_practice_list.forEach((practice) => {
+        const index = currentPractice.findIndex((item) => {
+          practice.id === item.id;
+        });
+        if (index !== -1) {
+          currentPractice.splice(index, 1);
         }
-      })
-
+      });
     }
-    is_all_selected=isAllSelected();
-   
+    is_all_selected = isAllSelected();
   }
 
   /**
@@ -649,13 +660,30 @@
 
   //判断当前是否全选
   function isAllSelected() {
-    if (displayed_practice_list!= null){
+    if (displayed_practice_list != null) {
       return displayed_practice_list.every((practice) => practice.selected);
-    }else{
+    } else {
       return false;
-
     }
-  }  
+  }
+
+  function getPracticeData(practice){
+    //todo
+
+  }
+
+  function preview(practice) {
+    // 将练习数据存储到 localStorage
+    localStorage.setItem(
+      'practiceQuestions',
+      JSON.stringify({
+        // 假设你需要存储练习相关数据
+        practiceId: practice.ID,
+        // 其他需要存储的数据
+      }),
+    );
+    goto(`/student/answer/practice`);
+  }
 </script>
 
 <div class="practice-management">
@@ -696,8 +724,10 @@
         </div>
       </div>
       <div>
-        <button class="new-practice-btn" onclick={create_new_practice}> + 新增练习 </button>
-        <button class="delete-practice-btn" onclick={()=>delete_practice(currentPractice)}> - 批量删除 </button>
+        <button class="new-practice-btn" onclick={create_new_practice}> 新增 </button>
+        <button class="delete-practice-btn" onclick={() => delete_practice(currentPractice)}>  删除 </button>
+        <button class="publish-practice-btn" onclick={() => publish_practice(currentPractice)}> 发布 </button>
+        <button class="unpublish-practice-btn" onclick={() => cancel_publish(currentPractice)}> 取消发布 </button>
       </div>
     </div>
 
@@ -721,31 +751,34 @@
             {#each displayed_practice_list as practice}
               <tr>
                 <td>
-                  <input type="checkbox" class="checkbox" checked={practice.selected}
-                  onchange={
-                    (event)=>{
-                      const target =(event.target)
-                      if (target&&target.checked){
-                        if(!currentPractice.find((g)=>{
-                          g.ID===practice.ID
-                        })){
-                          currentPractice.push(practice)
-                         
-                        } practice.selected=true
-                        is_all_selected=isAllSelected()
-                        
-                      }else{
-                        const index=currentPractice.findIndex((g)=>{
-                          g.ID===practice.ID
-                        })
-                        if (index !==-1){
-                          currentPractice.splice(index,1)
+                  <input
+                    type="checkbox"
+                    class="checkbox"
+                    checked={practice.selected}
+                    onchange={(event) => {
+                      const target = event.target;
+                      if (target && target.checked) {
+                        if (
+                          !currentPractice.find((g) => {
+                            g.ID === practice.ID;
+                          })
+                        ) {
+                          currentPractice.push(practice);
                         }
-                        practice.selected=false
-                        is_all_selected=isAllSelected()
+                        practice.selected = true;
+                        is_all_selected = isAllSelected();
+                      } else {
+                        const index = currentPractice.findIndex((g) => {
+                          g.ID === practice.ID;
+                        });
+                        if (index !== -1) {
+                          currentPractice.splice(index, 1);
+                        }
+                        practice.selected = false;
+                        is_all_selected = isAllSelected();
                       }
-                    }
-                  } />
+                    }}
+                  />
                 </td>
                 <td style="text-align: center;" title={practice.Name}>{practice.Name}</td>
                 <td style="text-align: center;" title={practice.Type}>{practice.Type}</td>
@@ -767,16 +800,17 @@
                     {/if}
 
                     {#if practice.Status === '未发布'}
-                      <button class="op-btn edit" onclick={() => continue_edit(practice)}> 继续编辑 </button>
-                      <button class="op-btn publish" onclick={() => publish_practice(practice)}> 发布练习 </button>
+                      <button class="op-btn edit" onclick={() => continue_edit(practice)}> 编辑 </button>
+                      <button class="op-btn publish" onclick={() => publish_practice(practice)}> 发布 </button>
                     {/if}
                   </div>
                   <!-- 添加下载学生名单按钮 -->
 
                   <div class="operation-row">
                     <button class="op-btn download" onclick={() => getStudentInfos(practice)}> 下载学生名单 </button>
+                    <button class="op-btn preview" onclick={() => preview(practice)}> 预览 </button>
                     {#if practice.Status === '未发布'}
-                      <button class="op-btn delete" onclick={() => delete_practice(practice)}> 删除练习 </button>
+                      <button class="op-btn delete" onclick={() => delete_practice(practice)}> 删除 </button>
                     {/if}
                   </div>
                 </td>
@@ -905,7 +939,7 @@
       }
     }
     .delete-practice-btn {
-      background-color: #ff4816;
+      background-color: #ff4d00;
       color: white;
       border: none;
       border-radius: 4px;
@@ -915,9 +949,41 @@
       font-weight: 500;
       white-space: nowrap;
       height: 32px;
-      margin-left: 10px;
+
       &:hover {
-        background-color: #ff0b03;
+        background-color: #ff0000;
+      }
+    }
+    .publish-practice-btn { 
+       background-color: #06e609;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 16px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 500;
+      white-space: nowrap;
+      height: 32px;
+
+      &:hover {
+        background-color: #35c908;
+      }
+    }
+    .unpublish-practice-btn{
+       background-color: #e68c06;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 16px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 500;
+      white-space: nowrap;
+      height: 32px;
+
+      &:hover {
+        background-color: #c95c08;
       }
     }
 
