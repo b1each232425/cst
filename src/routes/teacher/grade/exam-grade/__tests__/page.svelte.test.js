@@ -1,160 +1,270 @@
-import { render, screen } from '@testing-library/svelte';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Page from '../+page.svelte';
 
 // 模拟全局组件
 vi.mock('$lib/components/Title/Title.svelte', () => ({
-	default: vi.fn().mockImplementation(() => ({
-		Component: {}
-	}))
+    default: vi.fn(() => ({ $$: { fragment: null } }))
 }));
 
 vi.mock('$lib/components/Pagination/Pagination.svelte', () => ({
-	default: vi.fn()
+    default: vi.fn(() => ({ $$: { fragment: null } }))
 }));
 
-// 模拟页面组件
-vi.mock('../../_components/exam/ExamFilterPanel.svelte', () => ({
-	default: vi.fn()
-}));
-vi.mock('../../_components/exam/ExamTable.svelte', () => ({
-	default: vi.fn()
+vi.mock('$lib/components/Input/InputBox.svelte', () => ({
+    default: vi.fn(() => ({ $$: { fragment: null } }))
 }));
 
-// 模拟 store 工厂函数
-vi.mock('../../_stores/grade.svelte.js', () => ({
-	createGradeStore: vi.fn(() => {
-		// 返回模拟的 store 结构
-		return {
-			state: {
-				loading: false,
-				exams: [],
-				totalRecords: 0,
-				selectAll: false,
-				filters: {
-					name: '',
-					type: '',
-					submitted: -1, // 现在是数字类型：-1=全部, 0=未提交, 1=已提交
-					examID: ''
-				},
-				pagination: {
-					page: 1,
-					pageSize: 10
-				},
-				selected: {}
-			},
-			fetchExams: vi.fn(),
-			setFilters: vi.fn(),
-			setPage: vi.fn(),
-			setPageSize: vi.fn(),
-			toggleSelect: vi.fn(),
-			toggleSelectAll: vi.fn(),
-			submitGrades: vi.fn()
-		};
-	})
+vi.mock('$lib/components/Select/Select.svelte', () => ({
+    default: vi.fn(() => ({ $$: { fragment: null } }))
 }));
 
-import { createGradeStore } from '../../_stores/grade.svelte.js';
+vi.mock('$lib/components/Select/Option.svelte', () => ({
+    default: vi.fn(() => ({ $$: { fragment: null } }))
+}));
+
+// 模拟工具函数
+vi.mock('$lib/utils', () => ({
+    sget: (obj, path, def) => {
+        const result = path.split('.').reduce((o, k) => (o || {})[k], obj);
+        return result === undefined ? def : result;
+    }
+}));
+
+
+
+// 模拟数据格式化工具
+vi.mock('../../_utils/dataFormatter.js', () => ({
+    formatExamData: vi.fn((data) => data || [])
+}));
+
+// 模拟全局fetch
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
 describe('考试成绩管理页面', () => {
-	beforeEach(() => {
-		// 重置模拟函数
-		vi.clearAllMocks();
-	});
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockFetch.mockClear();
+    });
 
-	it('应该渲染标题组件', async () => {
-		render(Page);
-		// 检查Title是否使用了正确的属性props进行调用
-		const Title = (await import('$lib/components/Title/Title.svelte')).default;
-		expect(Title).toHaveBeenCalled();
-		//第一次调用参数数据
-		const titleCall = Title.mock.calls[0];
-		//props对象
-		expect(titleCall[1]).toEqual(expect.objectContaining({
-			title: '考试成绩管理'
-		}));
-	});
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
 
-	it('当 store 处于加载状态时应显示加载提示', () => {
-		// Customize the mock for this specific test
-		createGradeStore.mockImplementationOnce(() => ({
-			state: {
-				loading: true,
-				exams: [],
-				totalRecords: 0
-			},
-			fetchExams: vi.fn()
-		}));
+    it('应该正确渲染页面', async () => {
+        // 模拟API响应
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+                status: 0,
+                data: [],
+                rowCount: 0
+            })
+        });
 
-		render(Page);
-		expect(screen.getByText('加载中...')).toBeInTheDocument();
-	});
+        render(Page);
 
-	it('当 store 不处于加载状态时应渲染 ExamTable', async () => {
-		createGradeStore.mockImplementationOnce(() => ({
-			state: {
-				loading: false,
-				exams: [{ id: 1, name: 'Test Exam', sessions: [] }],
-				totalRecords: 1
-			},
-			fetchExams: vi.fn()
-		}));
+        // 验证页面标题
+        expect(screen.getByText('考试成绩管理')).toBeInTheDocument();
 
-		const { container } = render(Page);
-		// 检查加载消息不存在
-		expect(screen.queryByText('加载中...')).not.toBeInTheDocument();
+        // 验证筛选面板
+        expect(screen.getByText('考试类别')).toBeInTheDocument();
+        expect(screen.getByText('搜索考试')).toBeInTheDocument();
+        expect(screen.getByText('提交状态')).toBeInTheDocument();
+        expect(screen.getByText('当前已选中')).toBeInTheDocument();
+    });
 
-		//ExamTable 已被模拟，仅检查是否被调用
-		const ExamTable = (await import('../../_components/exam/ExamTable.svelte')).default;
-		expect(ExamTable).toHaveBeenCalled();
-	});
+    it('应该在初始化时获取考试数据', async () => {
+        const mockExams = [
+            {
+                id: 1,
+                name: '期中考试',
+                type: '00',
+                sessions: [
+                    {
+                        exam_session_id: 1,
+                        paper_name: '数学试卷',
+                        start_time: '2023-12-25T10:00:00.000Z',
+                        end_time: '2023-12-25T12:00:00.000Z',
+                        total_score: 100,
+                        average_score: 85.5,
+                        scheduled_examinees: 50,
+                        actual_examinees: 48,
+                        pass_examinees: 40
+                    }
+                ],
+                submitted: false
+            }
+        ];
 
-	it('应渲染过滤面板和分页组件', async () => {
-		render(Page);
-		const ExamFilterPanel = (await import('../../_components/exam/ExamFilterPanel.svelte')).default;
-		const Pagination = (await import('$lib/components/Pagination/Pagination.svelte')).default;
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+                status: 0,
+                data: mockExams,
+                rowCount: 1
+            })
+        });
 
-		expect(ExamFilterPanel).toHaveBeenCalled();
-		expect(Pagination).toHaveBeenCalled();
-	});
+        render(Page);
 
-	it('应具有正确的 CSS 类以实现布局', () => {
-		const { container } = render(Page);
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledWith(
+                expect.stringContaining('/api/grade/list?category=exam'),
+                expect.objectContaining({
+                    method: 'GET',
+                    credentials: 'include'
+                })
+            );
+        });
+    });
 
-		// 检查主容器
-		expect(container.querySelector('.page-container')).toBeInTheDocument();
+    it('应该显示加载状态', async () => {
+        // 模拟延迟的API响应
+        mockFetch.mockImplementationOnce(() =>
+            new Promise(resolve =>
+                setTimeout(() => resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ status: 0, data: [], rowCount: 0 })
+                }), 100)
+            )
+        );
 
-		// 检查过滤容器
-		expect(container.querySelector('.filter-container')).toBeInTheDocument();
+        render(Page);
 
-		// 检查表格容器
-		expect(container.querySelector('.table-container')).toBeInTheDocument();
+        // 验证加载状态
+        expect(screen.getByText('加载中...')).toBeInTheDocument();
+    });
 
-		// 检查带有右对齐的分页包装器
-		expect(container.querySelector('.pagination-wrapper')).toBeInTheDocument();
-	});
+    it('应该正确渲染考试列表', async () => {
+        const mockExams = [
+            {
+                id: 1,
+                name: '期中考试',
+                type: '00',
+                sessions: [
+                    {
+                        exam_session_id: 1,
+                        paper_name: '数学试卷',
+                        start_time: '2023-12-25T10:00:00.000Z',
+                        end_time: '2023-12-25T12:00:00.000Z',
+                        total_score: 100,
+                        average_score: 85.5,
+                        scheduled_examinees: 50,
+                        actual_examinees: 48,
+                        pass_examinees: 40
+                    }
+                ],
+                submitted: false
+            }
+        ];
 
-	it('应具有正确的样式以实现右对齐', () => {
-		const { container } = render(Page);
-		const paginationWrapper = container.querySelector('.pagination-wrapper');
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+                status: 0,
+                data: mockExams,
+                rowCount: 1
+            })
+        });
 
-		expect(paginationWrapper).toBeInTheDocument();
-		//当前不进行测试样式，故仅检查元素是否存在
-	});
+        render(Page);
 
-	it('calls fetchExams on mount via $effect', async () => {
-		const mockStore = {
-			state: { loading: false, exams: [], totalRecords: 0 },
-			fetchExams: vi.fn()
-		};
-		createGradeStore.mockImplementationOnce(() => mockStore);
+        await waitFor(() => {
+            expect(screen.getByText('期中考试')).toBeInTheDocument();
+            expect(screen.getByText('平时考试')).toBeInTheDocument(); // type '00' 显示为平时考试
+            expect(screen.getByText('数学试卷')).toBeInTheDocument();
+            expect(screen.getByText('未提交')).toBeInTheDocument();
+        });
+    });
 
-		render(Page);
+    it('应该显示空数据状态', async () => {
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+                status: 0,
+                data: [],
+                rowCount: 0
+            })
+        });
 
-		// Svelte 5 effects run after the component has mounted.
-		// We need to wait for the next "tick" for the effect to run.
-		await new Promise((resolve) => setTimeout(resolve, 0));
+        render(Page);
 
-		expect(mockStore.fetchExams).toHaveBeenCalled();
-	});
+        await waitFor(() => {
+            expect(screen.getByText('暂无数据')).toBeInTheDocument();
+        });
+    });
+
+    it('应该处理批量提交功能', async () => {
+        const mockExams = [
+            { id: 1, name: '考试1', type: '00', sessions: [], submitted: false }
+        ];
+
+        mockFetch
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({
+                    status: 0,
+                    data: mockExams,
+                    rowCount: 1
+                })
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({ status: 0, msg: '提交成功' })
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({
+                    status: 0,
+                    data: mockExams,
+                    rowCount: 1
+                })
+            });
+
+        render(Page);
+
+        await waitFor(() => {
+            // 选择一个考试
+            const checkbox = screen.getAllByRole('button')[1]; // 跳过全选按钮
+            fireEvent.click(checkbox);
+        });
+
+        // 点击批量提交按钮
+        const submitButton = screen.getByText('批量提交');
+        fireEvent.click(submitButton);
+
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledWith(
+                '/api/grade/submission',
+                expect.objectContaining({
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        data: {
+                            exam_ids: [1]
+                        }
+                    })
+                })
+            );
+        });
+    });
+
+    it('应该处理API错误', async () => {
+        // 模拟 console.error 来验证错误处理
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        mockFetch.mockRejectedValueOnce(new Error('网络错误'));
+
+        render(Page);
+
+        await waitFor(() => {
+            expect(consoleSpy).toHaveBeenCalledWith(
+                '获取考试成绩列表失败:',
+                expect.any(Error)
+            );
+        });
+
+        consoleSpy.mockRestore();
+    });
 });
