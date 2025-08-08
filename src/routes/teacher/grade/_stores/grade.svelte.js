@@ -38,19 +38,49 @@ function formatExamData(examData) {
 		for (let session of exam.sessions) {
 			session.start_time = formatISOString(session.start_time);
 			session.end_time = formatISOString(session.end_time);
-			if (typeof session.total_score === 'number' && session.total_score !== -1) {
-				session.total_score = session.total_score.toFixed(1);
-			} else if (session.total_score === -1 || session.total_score == null) {
-				session.total_score = '-';
-			}
-			if (typeof session.average_score === 'number' && session.average_score !== -1) {
-				session.average_score = session.average_score.toFixed(1);
-			} else if (session.average_score === -1 || session.average_score == null) {
-				session.average_score = '-';
-			}
+
+			// 数据清洗：将非法数值转换为 null，保持数值类型用于计算
+			session.total_score = validateNumericField(session.total_score);
+			session.average_score = validateNumericField(session.average_score);
+			session.scheduled_examinees = validateNumericField(session.scheduled_examinees, true);
+			session.actual_examinees = validateNumericField(session.actual_examinees, true);
+			session.pass_examinees = validateNumericField(session.pass_examinees, true);
 		}
 	}
 	return examData;
+}
+
+/**
+ * 验证和清洗数值字段
+ * @param {any} value - 原始值
+ * @param {boolean} isInteger - 是否应该是整数
+ * @returns {number | null} - 清洗后的数值或 null
+ */
+function validateNumericField(value, isInteger = false) {
+	// 处理特殊值
+	if (value === -1 || value === null || value === undefined || value === '') {
+		return null;
+	}
+
+	// 转换为数字
+	const numValue = Number(value);
+
+	// 检查是否为有效数字
+	if (isNaN(numValue) || !isFinite(numValue)) {
+		return null;
+	}
+
+	// 检查是否为负数（分数可能为0，人数不能为负）
+	if (numValue < 0) {
+		return null;
+	}
+
+	// 整数字段检查
+	if (isInteger && !Number.isInteger(numValue)) {
+		return Math.round(numValue); // 四舍五入到整数
+	}
+
+	return numValue;
 }
 
 
@@ -93,7 +123,7 @@ export function createGradeStore() {
 			}
 
 			state.loading = true;
-			// When fetching, reset selection
+			//获取考试数据时，重置选中状态
 			state.selected = {};
 			state.selectAll = false;
 			// 构建 API 参数，普通用户不传递 teacherID
@@ -136,7 +166,7 @@ export function createGradeStore() {
 		/** @param {number} id */
 		toggleSelect(id) {
 			state.selected[id] = !state.selected[id];
-			// Check if all are selected
+			// 检查是否全部选中
 			const allSelected = state.exams.length > 0 && state.exams.every((exam) => state.selected[exam.id]);
 			state.selectAll = allSelected;
 		},
@@ -156,7 +186,7 @@ export function createGradeStore() {
 			submitExamGrades(examIds)
 				.then(() => {
 					handleSuccess('成绩提交');
-					actions.fetchExams(); // Refresh data after submission
+					actions.fetchExams(); // 提交后刷新数据
 				})
 				.catch((error) => {
 					handleApiError(error, '提交成绩');

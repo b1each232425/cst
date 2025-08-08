@@ -46,12 +46,12 @@
   		min-height: 600px;
   		overflow: hidden;
 		height:84vh;
+		position: relative;
 	}
 
 	.filter-container {
 		flex-shrink: 0;
  		background: #fff;
-  		border-bottom: 1px solid #e5e5e5;
   		z-index: 20;//下拉菜单优先级高于表头
 		padding: 0 1px;
 		padding-bottom: 10px;
@@ -62,9 +62,11 @@
   		display: flex;
   		flex-direction: column;
   		overflow: hidden;
+		position: relative;
   		min-height: 0;
 		padding: 0 23px;
-
+		flex: 1;
+		padding-bottom: 60px; /* 为固定分页器留出空间 */
 	}
 
 	.table-content {
@@ -75,10 +77,8 @@
 
 	.pagination-wrapper {
 		flex-shrink: 0;
-		display: flex;
-		justify-content: flex-end;
-		margin-top: 16px;
-		padding: 16px 0;
-
+		position: absolute;
+		bottom: 10px;
+		right: 20px;
 	}
 </style> 
