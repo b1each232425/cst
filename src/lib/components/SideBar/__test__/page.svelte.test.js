@@ -3,6 +3,7 @@ import Sidebar from '../Sidebar.svelte';
 import { expect, vi } from 'vitest';
 import { goto } from '$app/navigation';
 import { slide } from 'svelte/transition';
+import { page } from '$app/state';
 
 // 在测试文件中添加 Svelte 过渡模拟
 vi.mock('svelte/transition', () => ({
@@ -305,6 +306,14 @@ describe('Sidebar 侧边栏组件测试', () => {
           },
         }),
     });
+
+    vi.mock('$app/state', () => ({
+      page: {
+        url: {
+          pathname: '/teacher/question-bank/theory',
+        },
+      },
+    }));
   });
 
   it('应该正确初始化侧边栏状态', () => {
@@ -648,4 +657,26 @@ describe('Sidebar 侧边栏组件测试', () => {
       width: '95%;',
     });
   });
+
+  // it('侧边栏应正确自动折叠', async () => {
+  //   vi.mock('$app/state', () => ({
+  //     page: {
+  //       url: {
+  //         pathname: '/teacher/question-bank/theory/editBank',
+  //       },
+  //     },
+  //   }));
+
+  //   render(Sidebar, { props: { options } });
+
+  //   // 等待侧边栏项渲染完毕
+  //   await screen.findByText('题库管理');
+
+  //   // 获取DOM元素
+  //   const sidebar = screen.getByTestId('sidebar-content');
+
+  //   // 验证折叠状态
+  //   fireEvent.transitionEnd(sidebar);
+  //   expect(sidebar).toHaveClass('folded');
+  // });
 });

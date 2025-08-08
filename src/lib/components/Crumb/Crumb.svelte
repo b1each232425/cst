@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { baseNavItems } from '$lib/stores/modules/permission.js';
+  import { toast } from '$lib/components/Toast/Toast.js';
 
   let display_name = $state(''); // 用户名称
   let nav_map = $baseNavItems; // 导航数据
@@ -36,6 +37,7 @@
       .then((response) => response.json())
       .then((data) => {
         if (data.status !== 0) {
+          toast.error('用户数据不存在');
           throw new Error('用户数据不存在');
         } else {
           // 获取用户名称

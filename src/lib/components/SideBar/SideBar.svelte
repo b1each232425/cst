@@ -3,9 +3,16 @@
   import { slide } from 'svelte/transition';
   import { goto } from '$app/navigation';
   import { baseNavItems } from '$lib/stores/modules/permission.js';
+  import { page } from '$app/state';
+  import { command } from '$app/server';
+  import { navStore } from '$lib/stores/modules/layoutStore';
+  import { beforeNavigate } from '$app/navigation';
 
   let { options } = $props();
   let nav_map = $state();
+  let current_path = $derived(page.url.pathname);
+  let is_auto_fold = false;
+  const NEED_FOLD_NAV = ['/teacher/question-bank/theory/editBank']; // 需要自动折叠的路径
 
   /**
    * 侧边栏折叠状态
@@ -68,57 +75,26 @@
   let sidebar_mouse_leave_timeout = $state(null);
 
   /**
-   * 当前选中的导航项
-   * @type {HTMLButtonElement}
-   */
-  let current_navItem_element = $state(null);
-
-  onMount(() => {
-    // 设置侧边栏宽度和高度
-    sidebar_element.style.setProperty('--sidebar-width', options?.sidebarWidth || '235px');
-
-    sidebar_element.style.setProperty('--sidebar-max-width', options?.sidebarMaxWidth || '250px');
-
-    sidebar_element.style.setProperty('--sidebar-min-width', options?.sidebarMinWidth || '220px');
-
-    sidebar_element.style.setProperty('--sidebar-height', options?.sidebarHeight || '100%');
-
-    // 当窗口大小变化时，调用handleResize函数,当宽度太小自动收起侧边栏
-    window.addEventListener('resize', handleResize);
-  });
-
-  // 监听侧边栏状态
-  $effect(() => {
-    if (sidebar_fold_state) {
-      sidebar_fold_str = '展开侧边栏';
-
-      sidebar_toggle_btn.style.setProperty('--sidebar-toggle-btn-translate-x', `${sidebar_toggle_btn.offsetWidth}px`);
-    } else {
-      sidebar_fold_str = '收起侧边栏';
-
-      // 控制按钮水平位移
-      sidebar_toggle_btn.style.setProperty('--sidebar-toggle-btn-translate-x', `${0}px`);
-    }
-
-    // 更新当前高亮模块
-    current_active = window.location.pathname;
-    // console.log(sidebar_fold_state);
-    // console.log(sidebar_fold_str);
-  });
-
-  /**
    * 切换侧边栏折叠状态
    */
   function toggleSidebar(foldState) {
-    // if (!sidebar_element || !sidebar_toggle_btn) return;
-    // if (sidebar_fold_state == foldState) return;
-
     side_float = false;
     sidebar_fold_state = foldState != null ? foldState : !sidebar_fold_state;
     sidebar_is_folding = sidebar_fold_state;
     sidebar_is_folded = false;
 
     sidebar_element.style.setProperty('--sidebar-min-width', '0px');
+
+    // 更新折叠按钮提示
+    sidebar_fold_str = sidebar_fold_state ? '展开侧边栏' : '收起侧边栏';
+
+    // 控制折叠按钮的水平位移
+    sidebar_toggle_btn.style.setProperty(
+      '--sidebar-toggle-btn-translate-x',
+      `${sidebar_fold_state ? sidebar_toggle_btn.offsetWidth : 0}px`,
+    );
+
+    is_auto_fold = false;
   }
 
   /**
@@ -222,12 +198,6 @@
       if (item.children[i].path == childrenPath) {
         return true;
       }
-
-      // let childrenResult = checkItemHasChildren(item.children[i], childrenPath);
-
-      // if (childrenResult) {
-      //   return true;
-      // }
     }
 
     return false;
@@ -260,7 +230,48 @@
     return new RegExp(`${path_regex}`).test(path);
   }
 
+  // 处理路径变化
+  function handleRouteChange() {
+    NEED_FOLD_NAV.forEach((path) => {
+      if (path === current_path && !is_auto_fold && !sidebar_is_folded) {
+        // 折叠侧边栏
+        toggleSidebar(true);
+        // 自动折叠时才触发
+        is_auto_fold = true;
+      } else if (path !== current_path && is_auto_fold) {
+        // 如果路径变化并且是自动折叠，展开侧边栏
+        if (sidebar_is_folded) {
+          toggleSidebar(false); // 展开侧边栏
+        }
+        is_auto_fold = false; // 路径变化后取消自动折叠
+      }
+    });
+  }
+
+  // 处理路径变化
+  $effect(() => {
+    if (current_path) {
+      handleRouteChange();
+    }
+  });
+
   onMount(() => {
+    // 设置侧边栏宽度和高度
+    sidebar_element.style.setProperty('--sidebar-width', options?.sidebarWidth || '235px');
+
+    sidebar_element.style.setProperty('--sidebar-max-width', options?.sidebarMaxWidth || '250px');
+
+    sidebar_element.style.setProperty('--sidebar-min-width', options?.sidebarMinWidth || '220px');
+
+    sidebar_element.style.setProperty('--sidebar-height', options?.sidebarHeight || '100%');
+
+    // 当窗口大小变化时，调用handleResize函数,当宽度太小自动收起侧边栏
+    window.addEventListener('resize', handleResize);
+
+    // 更新当前选中模块并高亮
+    current_active = window.location.pathname;
+
+    // 获取用户信息
     getUserInfo();
   });
 </script>

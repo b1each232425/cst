@@ -163,7 +163,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.queryByText('张三')).not.toBeInTheDocument();
   });
 
-  it('应该处理当 status !== 0 时的错误', async () => {
+  it('应该处理当 status为负数时的错误', async () => {
     // 设置 console.error 的 spy
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -172,7 +172,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
       ok: true,
       json: () =>
         Promise.resolve({
-          status: 500,
+          status: -1,
           data: {},
         }),
     });
@@ -182,6 +182,40 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('获取用户权限失败:', expect.any(Error));
       expect(consoleErrorSpy.mock.calls[0][1].message).toMatch('用户数据不存在');
+    });
+  });
+
+  it('处理API请求失败（网络错误）', async () => {
+    // 设置 console.error 的 spy
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    // 模拟前端网络错误
+    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network Error'));
+
+    render(Breadcrumb);
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith('获取用户权限失败:', expect.any(Error));
+      expect(consoleErrorSpy.mock.calls[0][1].message).toBe('Network Error');
+    });
+  });
+
+  it('处理API请求失败', async () => {
+    // 设置 console.error 的 spy
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    // 模拟后端500错误
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: () => Promise.resolve({ status: 500, data: null }),
+    });
+
+    render(Breadcrumb);
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith('获取用户权限失败:', expect.any(Error));
+      expect(consoleErrorSpy.mock.calls[0][1].message).toBe('用户数据不存在');
     });
   });
 
