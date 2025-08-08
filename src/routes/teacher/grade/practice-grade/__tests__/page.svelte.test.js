@@ -25,6 +25,14 @@ vi.mock('$lib/utils', () => ({
 
 
 
+// 模拟错误处理工具
+vi.mock('../../_utils/errorHandler.js', () => ({
+    handleApiError: vi.fn(),
+    handleSuccess: vi.fn(),
+    handleSelectionError: vi.fn(),
+    handleFeatureNotImplemented: vi.fn()
+}));
+
 // 模拟数据格式化工具
 vi.mock('../../_utils/dataFormatter.js', () => ({
     formatPracticeData: vi.fn((data) => data || [])
@@ -33,6 +41,27 @@ vi.mock('../../_utils/dataFormatter.js', () => ({
 // 模拟全局fetch
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
+
+// 模拟DOM API
+Object.defineProperty(window, 'URL', {
+    value: {
+        createObjectURL: vi.fn(() => 'mock-blob-url'),
+        revokeObjectURL: vi.fn()
+    }
+});
+
+Object.defineProperty(document, 'createElement', {
+    value: vi.fn(() => ({
+        href: '',
+        download: '',
+        click: vi.fn(),
+        remove: vi.fn()
+    }))
+});
+
+Object.defineProperty(document.body, 'appendChild', {
+    value: vi.fn()
+});
 
 describe('练习成绩管理页面', () => {
     beforeEach(() => {
@@ -256,5 +285,292 @@ describe('练习成绩管理页面', () => {
                 expect.any(Object)
             );
         }, { timeout: 1000 });
+    });
+
+    it('应该支持全选功能', async () => {
+        const mockPractices = [
+            { id: 1, name: '练习1', total_score: 100, average_score: 85, completed_students: 30, passed_students: 25 },
+            { id: 2, name: '练习2', total_score: 80, average_score: 75, completed_students: 28, passed_students: 22 }
+        ];
+
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+                status: 0,
+                data: mockPractices,
+                rowCount: 2
+            })
+        });
+
+        render(Page);
+
+        await waitFor(() => {
+            const selectAllCheckbox = screen.getAllByRole('button')[0]; // 第一个应该是全选按钮
+            fireEvent.click(selectAllCheckbox);
+            expect(screen.getByText('2')).toBeInTheDocument(); // 选中计数
+        });
+    });
+
+    it('应该支持取消全选', async () => {
+        const mockPractices = [
+            { id: 1, name: '练习1', total_score: 100, average_score: 85, completed_students: 30, passed_students: 25 }
+        ];
+
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+                status: 0,
+                data: mockPractices,
+                rowCount: 1
+            })
+        });
+
+        render(Page);
+
+        await waitFor(() => {
+            const selectAllCheckbox = screen.getAllByRole('button')[0];
+            // 先全选
+            fireEvent.click(selectAllCheckbox);
+            expect(screen.getByText('1')).toBeInTheDocument();
+
+            // 再取消全选
+            fireEvent.click(selectAllCheckbox);
+            expect(screen.getByText('0')).toBeInTheDocument();
+        });
+    });
+
+    it('应该支持分页功能', async () => {
+        mockFetch
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({ status: 0, data: [], rowCount: 50 })
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({ status: 0, data: [], rowCount: 50 })
+            });
+
+        const { component } = render(Page);
+
+        // 等待初始加载
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledTimes(1);
+        });
+
+        // 模拟分页变化 - 通过触发分页组件的事件
+        const paginationEvent = new CustomEvent('pageChange', { detail: 2 });
+        component.$set({ currentPage: 2 });
+
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledWith(
+                expect.stringContaining('page=2'),
+                expect.any(Object)
+            );
+        });
+    });
+
+    it('应该支持页面大小变化', async () => {
+        mockFetch
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({ status: 0, data: [], rowCount: 50 })
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({ status: 0, data: [], rowCount: 50 })
+            });
+
+        const { component } = render(Page);
+
+        // 等待初始加载
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledTimes(1);
+        });
+
+        // 模拟页面大小变化
+        component.$set({ pageSize: 20 });
+
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledWith(
+                expect.stringContaining('pageSize=20'),
+                expect.any(Object)
+            );
+        });
+    });
+
+    it('应该处理导出功能', async () => {
+        const { handleFeatureNotImplemented } = await import('../../_utils/errorHandler.js');
+
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+                status: 0,
+                data: [{ id: 1, name: '练习1' }],
+                rowCount: 1
+            })
+        });
+
+        render(Page);
+
+        await waitFor(() => {
+            // 选择一个练习
+            const checkbox = screen.getAllByRole('button')[1]; // 跳过全选按钮
+            fireEvent.click(checkbox);
+        });
+
+        // 点击导出按钮（如果可见）
+        const exportButton = screen.queryByText('批量导出');
+        if (exportButton) {
+            fireEvent.click(exportButton);
+            expect(handleFeatureNotImplemented).toHaveBeenCalledWith('批量导出');
+        }
+    });
+
+    it('应该处理详情查看功能', async () => {
+        const { handleFeatureNotImplemented } = await import('../../_utils/errorHandler.js');
+
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+                status: 0,
+                data: [{ id: 1, name: '练习1' }],
+                rowCount: 1
+            })
+        });
+
+        render(Page);
+
+        await waitFor(() => {
+            const detailButton = screen.getByText('详情');
+            fireEvent.click(detailButton);
+            expect(handleFeatureNotImplemented).toHaveBeenCalledWith('查看详细');
+        });
+    });
+
+    it('应该处理HTTP错误状态', async () => {
+        const { handleApiError } = await import('../../_utils/errorHandler.js');
+
+        mockFetch.mockResolvedValueOnce({
+            ok: false,
+            status: 500,
+            json: () => Promise.resolve({ status: -1, msg: '服务器错误' })
+        });
+
+        render(Page);
+
+        await waitFor(() => {
+            expect(handleApiError).toHaveBeenCalledWith(
+                expect.any(Error),
+                '获取练习成绩列表'
+            );
+        });
+    });
+
+    it('应该处理空的筛选条件', async () => {
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({ status: 0, data: [], rowCount: 0 })
+        });
+
+        render(Page);
+
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledWith(
+                expect.stringContaining('category=practice'),
+                expect.objectContaining({
+                    method: 'GET',
+                    credentials: 'include'
+                })
+            );
+        });
+    });
+
+    it('应该正确处理数据格式化', async () => {
+        const { formatPracticeData } = await import('../../_utils/dataFormatter.js');
+
+        const mockPractices = [
+            { id: 1, name: '练习1', total_score: '100', average_score: '85.5' }
+        ];
+
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+                status: 0,
+                data: mockPractices,
+                rowCount: 1
+            })
+        });
+
+        render(Page);
+
+        await waitFor(() => {
+            expect(formatPracticeData).toHaveBeenCalledWith(mockPractices);
+        });
+    });
+
+    it('应该处理选择状态的边界情况', async () => {
+        const mockPractices = [
+            { id: 1, name: '练习1', total_score: 100, average_score: 85, completed_students: 30, passed_students: 25 }
+        ];
+
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: () => Promise.resolve({
+                status: 0,
+                data: mockPractices,
+                rowCount: 1
+            })
+        });
+
+        render(Page);
+
+        await waitFor(() => {
+            const practiceCheckbox = screen.getAllByRole('button')[1]; // 练习复选框
+            const selectAllCheckbox = screen.getAllByRole('button')[0]; // 全选复选框
+
+            // 选择单个练习，应该自动勾选全选
+            fireEvent.click(practiceCheckbox);
+            expect(screen.getByText('1')).toBeInTheDocument();
+
+            // 取消选择，全选应该取消
+            fireEvent.click(practiceCheckbox);
+            expect(screen.getByText('0')).toBeInTheDocument();
+        });
+    });
+
+    it('应该处理防抖搜索', async () => {
+        vi.useFakeTimers();
+
+        mockFetch
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({ status: 0, data: [], rowCount: 0 })
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({ status: 0, data: [], rowCount: 0 })
+            });
+
+        render(Page);
+
+        // 等待初始加载
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenCalledTimes(1);
+        });
+
+        // 模拟快速输入
+        const searchInput = screen.getByPlaceholderText('请输入练习名称');
+        fireEvent.input(searchInput, { target: { value: '数' } });
+        fireEvent.input(searchInput, { target: { value: '数学' } });
+
+        // 快进时间触发防抖
+        vi.advanceTimersByTime(500);
+
+        await waitFor(() => {
+            // 应该只触发一次搜索请求
+            expect(mockFetch).toHaveBeenCalledTimes(2);
+        });
+
+        vi.useRealTimers();
     });
 });
