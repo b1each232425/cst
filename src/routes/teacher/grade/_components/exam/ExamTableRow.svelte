@@ -46,7 +46,7 @@
 		{#if exam.sessions && exam.sessions.length > 0}
 			{#each exam.sessions as session (session.exam_session_id)}
 				<div class="session-item">
-					{session.start_time==='-' ? new Date(session.start_time).toLocaleString() : ''} - {session.end_time==='-' ? new Date(session.end_time).toLocaleString() : ''}
+					{session.start_time!='-' ? new Date(session.start_time).toLocaleString() : ''} - {session.end_time!='-' ? new Date(session.end_time).toLocaleString() : ''}
 				</div>
 			{/each}
 		{:else}
@@ -54,12 +54,12 @@
 		{/if}
 	</td>
 	<td class="exam-total-score">
-		{exam.sessions && exam.sessions.length > 0&&exam.sessions.every(s => s.total_score!='-')
+		{exam.sessions && exam.sessions.length > 0&&exam.sessions.every(s => s.total_score!=null)
 			? exam.sessions.reduce((acc, s) => acc + Number(s.total_score), 0)
 			: '-'}
 	</td>
 	<td class="exam-average-score">
-		{exam.sessions && exam.sessions.length > 0&&exam.sessions.every(s => s.average_score!='-')
+		{exam.sessions && exam.sessions.length > 0&&exam.sessions.every(s => s.average_score!=null)
 			? (
 					exam.sessions.reduce((acc, s) => acc + Number(s.average_score), 0) /
 					exam.sessions.length
@@ -85,7 +85,7 @@
 		{exam.submitted === null || exam.submitted === undefined ? '-' : exam.submitted ? '已提交' : '未提交'}
 	</td>
 	<td class="operation">
-		<button class="op-btn" onclick={handleDetailClick} style="display: none;">详情</button>
+		<button class="op-btn" onclick={handleDetailClick}>详情</button>
 		<button class="op-btn" onclick={handleExport} style="display: none;">导出</button>
 		{#if !exam.submitted}
 			<button class="op-btn op-btn-submit" onclick={() => store.submitGrades([exam.id])}>
@@ -103,7 +103,7 @@
 		td {
 			font-size: 14px;
 			color: #3d3d3d;
-			padding: 10px 4px;
+			padding: 16px 4px;
 			vertical-align: middle;
 			text-align: center;
 		}

@@ -4,7 +4,7 @@
  * @returns {string} - 格式化后的日期字符串 (YYYY-MM-DD HH:mm:ss)
  */
 export function formatISOString(isoString) {
-	if (!isoString) return '−';
+	if (!isoString) return '-';
 	try {
 		const date = new Date(isoString);
 		const year = date.getFullYear();
@@ -16,6 +16,6 @@ export function formatISOString(isoString) {
 		return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 	} catch (error) {
 		console.error('Invalid date format:', isoString, error);
-		return '−';
+		return '-';
 	}
 } 

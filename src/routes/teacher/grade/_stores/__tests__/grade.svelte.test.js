@@ -66,10 +66,10 @@ describe('考试成绩 Store', () => {
 
 			gradeStore.fetchExams();
 
-			// Check loading state immediately
+			// 立即检查加载状态
 			expect(gradeStore.state.loading).toBe(true);
 
-			// Wait for the async operation to complete
+			// 等待异步操作完成
 			await vi.waitFor(() => {
 				expect(gradeStore.state.loading).toBe(false);
 			});
@@ -95,7 +95,7 @@ describe('考试成绩 Store', () => {
 
 			gradeStore.fetchExams();
 
-			// Wait for the async operation to complete
+			// 等待异步操作完成
 			await vi.waitFor(() => {
 				expect(gradeStore.state.loading).toBe(false);
 			});
@@ -128,7 +128,7 @@ describe('考试成绩 Store', () => {
 		});
 
 		it('应该更新筛选器，重置分页，并使用防抖功能获取考试数据', () => {
-			// Mock the API call to prevent actual network requests
+			// 模拟 API 调用以防止实际网络请求
 			scoreApi.getExams.mockResolvedValue({ data: [], rowCount: 0 });
 
 			const newFilters = { name: 'Final', type: 'formal' };
@@ -139,24 +139,24 @@ describe('考试成绩 Store', () => {
 			expect(gradeStore.state.filters.type).toBe('formal');
 			expect(gradeStore.state.pagination.page).toBe(1);
 
-			// Fast-forward time to trigger the debounced call
+			// 快进时间以触发防抖调用
 			vi.runAllTimers();
 
-			// After debounce, the API should be called
+			// 防抖后，应调用 API
 			expect(scoreApi.getExams).toHaveBeenCalled();
 		});
 	});
 
 	describe('Pagination', () => {
 		beforeEach(() => {
-			// Ensure getExams returns a resolved promise for pagination tests
+			// 确保 getExams 返回一个已解析的 promise 以进行分页测试
 			scoreApi.getExams.mockResolvedValue({ data: [], rowCount: 0 });
 		});
 
 		it('setPage应该更新页面并获取考试数据', () => {
 			gradeStore.setPage(3);
 			expect(gradeStore.state.pagination.page).toBe(3);
-			// Verify API was called with updated pagination
+			// 验证 API 已使用更新的分页调用
 			expect(scoreApi.getExams).toHaveBeenCalledWith(
 				expect.objectContaining({
 					page: 3
@@ -168,7 +168,7 @@ describe('考试成绩 Store', () => {
 			gradeStore.setPageSize(20);
 			expect(gradeStore.state.pagination.pageSize).toBe(20);
 			expect(gradeStore.state.pagination.page).toBe(1);
-			// Verify API was called with updated pagination
+			// 验证 API 已使用更新的分页调用
 			expect(scoreApi.getExams).toHaveBeenCalledWith(
 				expect.objectContaining({
 					pageSize: 20,
@@ -180,7 +180,7 @@ describe('考试成绩 Store', () => {
 
 	describe('Selection', () => {
 		beforeEach(() => {
-			// Set up some initial exam data in the store for selection tests
+			// 为选择测试在 store 中设置一些初始考试数据
 			gradeStore.state.exams = [
 				{ id: 1, name: 'Exam A', sessions: [] },
 				{ id: 2, name: 'Exam B', sessions: [] },
@@ -211,11 +211,11 @@ describe('考试成绩 Store', () => {
 		});
 
 		it('当所有项目都被选中时，toggleSelectAll应该取消选择所有项目', () => {
-			// First, select all
+			// 首先选择所有项目
 			gradeStore.toggleSelectAll();
 			expect(gradeStore.state.selectAll).toBe(true);
 
-			// Then, toggle again to deselect all
+			// 再次切换以取消选择所有项目
 			gradeStore.toggleSelectAll();
 			expect(gradeStore.state.selectAll).toBe(false);
 			expect(gradeStore.state.selected).toEqual({});
@@ -225,20 +225,20 @@ describe('考试成绩 Store', () => {
 	describe('submitGrades', () => {
 		it('应该调用submitExamGrades并在成功时刷新数据', async () => {
 			const { handleSuccess } = await import('../../_utils/errorHandler');
-			// Mock the API call to prevent actual network requests
+			// 模拟 API 调用以防止实际网络请求
 			scoreApi.getExams.mockResolvedValue({ data: [], rowCount: 0 });
 			scoreApi.submitExamGrades.mockResolvedValue({});
 
 			const examIds = [1, 2];
 			gradeStore.submitGrades(examIds);
 
-			// Wait for the async operation to complete
+			// 等待异步操作完成
 			await vi.waitFor(() => {
 				expect(handleSuccess).toHaveBeenCalledWith('成绩提交');
 			});
 
 			expect(scoreApi.submitExamGrades).toHaveBeenCalledWith(examIds);
-			// After successful submission, fetchExams should be called to refresh data
+			// 成功提交后，应调用 fetchExams 以刷新数据
 			expect(scoreApi.getExams).toHaveBeenCalled();
 		});
 
@@ -249,7 +249,7 @@ describe('考试成绩 Store', () => {
 
 			gradeStore.submitGrades([1]);
 
-			// Wait for the async operation to complete
+			// 等待异步操作完成
 			await vi.waitFor(() => {
 				expect(handleApiError).toHaveBeenCalledWith(error, '提交成绩');
 			});

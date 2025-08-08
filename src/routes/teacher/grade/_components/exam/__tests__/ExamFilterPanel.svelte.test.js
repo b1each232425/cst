@@ -102,11 +102,11 @@ describe('考试筛选面板', () => {
         expect(logButton).toHaveStyle('display: none');
     });
 
-    it('calls handleFeatureNotImplemented for unimplemented features', async () => {
+    it('应调用 handleFeatureNotImplemented 以处理未实现的功能', async () => {
         const { handleFeatureNotImplemented } = await import('../../../_utils/errorHandler.js');
         const { container } = render(ExamFilterPanel, { props: { store: mockStore } });
         
-        // Find and click the batch export button
+        // 找到并点击批量导出按钮
         const exportButton = screen.getByText('批量导出');
         await fireEvent.click(exportButton);
         
@@ -129,10 +129,10 @@ describe('考试筛选面板', () => {
         const { handleSelectionError } = await import('../../../_utils/errorHandler');
         const { container } = render(ExamFilterPanel, { props: { store: mockStore } });
         
-        // Mock empty selection
+        // 模拟空选择
         mockStore.state.selected = {};
         
-        // Find and click the batch submit button
+        // 找到并点击批量提交按钮
         const submitButton = screen.getByText('批量提交');
         await fireEvent.click(submitButton);
         
@@ -141,15 +141,15 @@ describe('考试筛选面板', () => {
     });
 
     it('应该在有选中项目时调用提交方法', async () => {
-        // Mock selection first
+        // 首先选择
         mockStore.state.selected = { 1: true, 2: false, 3: true };
 
         const { container, rerender } = render(ExamFilterPanel, { props: { store: mockStore } });
 
-        // Re-render to reflect the selection state
+        // 重新渲染以反映选择状态
         await rerender({ store: mockStore });
 
-        // Find and click the batch submit button
+        // 找到并点击批量提交按钮
         const submitButton = screen.getByText('批量提交');
         expect(submitButton).not.toBeDisabled();
 
