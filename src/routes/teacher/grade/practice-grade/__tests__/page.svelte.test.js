@@ -48,13 +48,18 @@ describe('练习成绩管理页面', () => {
         vi.clearAllMocks();
     });
 
-    it('应该渲染正确标题的标题组件', () => {
+    it('应该渲染正确标题的标题组件', async () => {
         render(Page);
-       //仅检测是否被调用
-        expect(screen.getByText('练习成绩管理')).toBeInTheDocument();
+        // Check if Title component was called with correct props
+        const Title = (await import('$lib/components/Title/Title.svelte')).default;
+        expect(Title).toHaveBeenCalled();
+        const titleCall = Title.mock.calls[0];
+        expect(titleCall[1]).toEqual(expect.objectContaining({
+            title: '练习成绩管理'
+        }));
     });
 
-    it('shows loading message when store is in loading state', () => {
+    it('应该在store处于加载状态时显示加载消息', () => {
         // Customize the mock for this specific test
         const mockStore = {
             state: {
@@ -69,7 +74,7 @@ describe('练习成绩管理页面', () => {
         expect(screen.getByText('加载中...')).toBeInTheDocument();
     });
 
-    it('renders PracticeTable when not loading', async () => {
+    it('应该在store不处于加载状态时渲染PracticeTable', async () => {
         const mockStore = {
             state: {
                 loading: false,
@@ -86,7 +91,7 @@ describe('练习成绩管理页面', () => {
         expect(PracticeTable).toHaveBeenCalled();
     });
 
-    it('renders filter panel and pagination', async () => {
+    it('应该渲染筛选面板和分页组件', async () => {
         render(Page);
         const PracticeFilterPanel = (await import('../../_components/practice/PracticeFilterPanel.svelte')).default;
         const Pagination = (await import('$lib/components/Pagination/Pagination.svelte')).default;
@@ -95,7 +100,7 @@ describe('练习成绩管理页面', () => {
         expect(Pagination).toHaveBeenCalled();
     });
 
-    it('has correct CSS classes for layout', () => {
+    it('应该具有正确的CSS类用于布局', () => {
         const { container } = render(Page);
 
         // Check for main container
@@ -119,7 +124,7 @@ describe('练习成绩管理页面', () => {
         //仅检查元素是否存在
     });
 
-    it('calls fetchPractices on mount via $effect', async () => {
+    it('通过$effect调用fetchPractices', async () => {
         const mockStore = {
             state: { loading: false, practices: [] },
             fetchPractices: vi.fn(),

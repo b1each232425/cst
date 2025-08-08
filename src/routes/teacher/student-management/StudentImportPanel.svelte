@@ -7,7 +7,7 @@
   import { checkData } from './_utils/batch_check/check_examinee.js';
 
   let search_text = $state(''); // 搜索框文本内容
-  let failure_student_list = $state([]); // 失败学生列表
+  let failure_student_list = $state([]); // 学生列表
   let success_count = $derived(failure_student_list.filter((item) => item.isOk).length); // 成功导入学生数量
   let failure_count = $derived(failure_student_list.filter((item) => !item.isOk).length); // 失败导入学生数量
   let filtered_student_list = $derived(filterStudentList()); // 过滤后的学生列表
@@ -15,7 +15,12 @@
   // 分页相关状态
   let current_page = $state(1);
   let page_size = $state(10);
-  let total_items = $derived(filtered_student_list.length);
+  let total_items = $state(0);
+  
+  // 确保 total_items 正确更新
+  $effect(() => {
+    total_items = filtered_student_list?.length || 0;
+  });
 
   let current_page_data = $derived(getCurrentPage()); // 当前页数据
 
@@ -56,13 +61,15 @@
       toast.warning('请重新选择要导入的文件');
       return;
     }
-    const file = files[0];
+    const file = files[0];//仅单个文件
 
-    // 检查文件类型
+    // 检查文件类型仅允许excel文件
+    //MIME类型验证（防止强制修改文件拓展名）
     const validTypes = [
       'application/vnd.ms-excel', // Excel 97-2003
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Excel 2007+
     ];
+    // 拓展名验证
     const ext = file.name.split('.').pop().toLowerCase();
     if (!validTypes.includes(file.type) && ext !== 'xls' && ext !== 'xlsx') {
       toast.error('只支持Excel文件（.xls, .xlsx）');
@@ -84,7 +91,7 @@
         phone: item['手机号'],
         id_Card_No: item['身份证号'],
         serial_number: item['编号'],
-        error_type: item.error_type,
+        error_type: item.errorType,
         isOk: item.isOk,
       }));
       failure_student_list = convertedData;
@@ -95,16 +102,19 @@
     }
   }
 
-  // 过滤学生列表 TODO:待优化
+  // 搜索筛选学生列表 
   function filterStudentList() {
     let filtered = failure_student_list;
     // 如果搜索框有内容
-    if (search_text) {
+    if (search_text && search_text.trim()) {
       filtered = filtered.filter((student) => {
         const name = student.official_name || '';
         const phone = student.phone || '';
         const idCard = student.id_Card_No || '';
-        return name.includes(search_text) || phone.includes(search_text) || idCard.includes(search_text);
+        const searchTerm = search_text.trim().toLowerCase();
+        return name.toLowerCase().includes(searchTerm) || 
+               phone.toLowerCase().includes(searchTerm) || 
+               idCard.toLowerCase().includes(searchTerm);
       });
     }
     return filtered;
@@ -249,6 +259,12 @@
     failure_student_list = failure_student_list.filter((item) => item.serial_number !== student.serial_number);
   }
 
+  // 取消按钮
+  function handleCancel() {
+    show = false;
+    onImport(false);
+  }
+
   // 确认导入按钮
   function handleImport() {
     const validStudents = failure_student_list.filter((s) => s.isOk);
@@ -353,20 +369,19 @@
     <div class="panel-body">
       <div class="action-container">
         <div class="filter-item">
-          <span class="filter-label">搜索学生</span>
           <div class="search-container">
             <InputBox
               placeholder="请输入姓名/手机号/身份证号"
               type="text"
               bind:value={search_text}
-              showLabel={false}
-              oninput={onSearch}
+              show_label={false}
+              onInput={onSearch}
             ></InputBox>
           </div>
         </div>
         <div class="checkbox-container">
-          <span class="checkbox-item">导入成功{success_count}名</span>
-          <span class="checkbox-item">导入失败{failure_count}名</span>
+          <span class="checkbox-item">识别成功<span class="success-count">{success_count}</span>名</span>
+          <span class="checkbox-item">识别失败<span class="failure-count">{failure_count}</span>名</span>
         </div>
         <input
           type="file"
@@ -416,9 +431,7 @@
                     {student.error_type === null || student.error_type === '' ? '--' : ERRORTYPE[student.error_type]}</td
                   >
                   <td class="action-btn-container">
-                    {#if !student.isOk}
                       <button class="action-btn" onclick={() => handleEdit(student, index)}>编辑</button>
-                    {/if}
                     <button class="action-btn" onclick={() => handleDelete(student)}>删除</button>
                   </td>
                 </tr>
@@ -434,7 +447,7 @@
           </tbody>
         </table>
       </div>
-      <div class="pagination-container">
+      <div class="pagination-container {total_items > 0 ? '' : 'hide'}">
         <Pagination
           totalItems={total_items}
           currentPage={current_page}
@@ -446,7 +459,7 @@
       </div>
     </div>
     <div class="panel-footer">
-      <Button type="primary" plain>返回</Button>
+      <Button type="primary" plain onclick={handleCancel}>取消</Button>
       <Button type="primary" onclick={handleImport}>确认导入</Button>
     </div>
   </div>
@@ -570,8 +583,18 @@
 
     .checkbox-container {
       display: flex;
-      font-size: 16px;
+      font-size: 15px;
       gap: 8px;
+
+      .success-count{
+        color:var(--green);
+        padding:4px;
+      }
+
+      .failure-count{
+        color:var(--red);
+        padding:4px;
+      }
     }
   }
 

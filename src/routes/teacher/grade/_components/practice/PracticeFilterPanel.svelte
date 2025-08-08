@@ -1,5 +1,6 @@
 <script>
 	import InputBox from '$lib/components/Input/InputBox.svelte';
+	import { handleFeatureNotImplemented } from '../../_utils/errorHandler.js';
 
 	/**
 	 * @typedef {ReturnType<import('../../../_stores/practiceGrade.svelte.js').createPracticeGradeStore>} PracticeGradeStore
@@ -19,6 +20,10 @@
 	 */
 	function handleSearchInput(value) {
 		setFilters({ name: value });
+	}
+	function handleExportClick() {
+		//TODO: 批量导出
+		handleFeatureNotImplemented("批量导出");
 	}
 </script>
 
@@ -40,17 +45,20 @@
             <span class="count">{selectedCount}</span>
             <span>项</span>
         </div>
-        <button class="action-btn export" disabled={!hasSelection} onclick={exportGrades}>批量导出</button>
+        <button class="action-btn export" disabled={!hasSelection} onclick={handleExportClick} style="display: none;">批量导出</button>
     </div>
 </div>
 
 
 <style lang="scss">
+
 	.top-action-bar {
 		display: flex;
 		justify-content: flex-start;
 		align-items: center;
 		padding: 16px 0 0 0;
+		flex-wrap: wrap;
+
 	}
 
 	.filters {
@@ -58,11 +66,13 @@
 		align-items: center;
 		gap: 5px;
 		margin-right: 100px;
-		margin-left: -10px; /* 向左偏移以与标题文字对齐 */
+		margin-left: -10px;
+
 	}
 
 	.search-wrapper {
 		width: 300px;
+
 	}
 
     .actions {
@@ -76,7 +86,7 @@
 			display: flex;
 			align-items: center;
 			gap: 10px;
-
+			white-space: nowrap;
 			.count {
 				color: #0052d9;
 				font-weight: bold;
@@ -92,6 +102,8 @@
 			cursor: pointer;
 			font-size: 14px;
 			transition: background-color 0.2s;
+			white-space: nowrap;
+			flex-shrink: 0;
 
 			&.export {
 				background-color: #0052d9;
@@ -104,6 +116,7 @@
 				background-color: #bbd3fb !important;
 				cursor: not-allowed;
 			}
+
 		}
 	}
 </style> 

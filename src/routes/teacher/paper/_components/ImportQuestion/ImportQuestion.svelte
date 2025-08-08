@@ -1,198 +1,314 @@
+<!--
+ * @Author: WangKaidun 1597225095@qq.com
+ * @Date: 2025-08-01 21:09:59
+ * @LastEditors: WangKaidun 1597225095@qq.com
+ * @LastEditTime: 2025-08-07 11:34:36
+ * @FilePath: \exam\src\routes\teacher\paper\_components\ImportQuestion\ImportQuestion.svelte
+ * @Description: 从题库导入题目组件
+ * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
+-->
 <script>
     import Button from "$lib/components/Button/Button.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
+    import Empty from "$lib/components/Table/Empty.svelte";
+    import UneditableTag from "$lib/components/Tag/UneditableTag.svelte";
     import { debounce } from "$lib/utils/optimize";
     import { onMount } from "svelte";
-    import { fetchBankQuestionList, fetchPaper, fetchQuestionBankList, savePaper } from "../../_utils/api";
-    import { questionDifficultyTrans, questionTypeTrans, tagColorList } from "../../_utils/data";
-    import { formatTimestamp, getColorIndex, restoreOpenState } from "../../_utils/func";
+    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../../_utils/tool";
     import { toast } from "$lib/components/Toast/Toast";
-    import Empty from "$lib/components/Table/Empty.svelte";
+    import { get } from "svelte/store";
+    import { CURRENT_PAPER_ID } from "../../_stores/store";
+    import { formatTimestamp } from "$lib/utils/time_utils";
 
-    /**************** 开关控制区 ****************/
+    /******************* API 区 *******************/
 
-    let { onclose, update, toAddGroupID = 0, toAddgroupName = "" } = $props();                 // 关闭弹窗
-    let dropUpToggleIsOpen = $state(false);     // 上拉题组栏
-    let filterIsOpen = $state(false);           // 下拉筛选栏
-    let isFirstEntry = $state(true);            // 是否首次打开弹窗
+    // 获取题库列表
+    function fetchQuestionBankList(
+        bankKeyWord = "", 
+        bankPage = "",
+        bankPageSize = "",
+        bankBankID = ""
+    ){
+        const PARAMS = new URLSearchParams();
+
+        if (bankKeyWord) PARAMS.append("keyword", bankKeyWord);
+        if (bankPage) PARAMS.append("page", bankPage);
+        if (bankPageSize) PARAMS.append("pageSize", bankPageSize);
+        if (bankBankID) PARAMS.append("bankID", bankBankID);
+
+        return fetch(`/api/question-banks?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('获取题库列表出错：', error);
+                return null;
+            });
+    }
+
+    // 获取题库题目
+    function fetchBankQuestionList(
+        bankID = "", 
+        page = 1,
+        pageSize = 10,
+        name = "",
+        tags = "",
+        type = "",
+        diffculty = ""
+    ){
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("bankID", bankID);
+        PARAMS.append("page", page);
+        PARAMS.append("pageSize", pageSize);
+        if (name) PARAMS.append("name", name);
+        if (tags) PARAMS.append("tags", tags);
+        if (type) PARAMS.append("type", type);
+        if (diffculty) PARAMS.append("diffculty", diffculty);
+
+        return fetch(`/api/questions?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('获取题库题目列表出错：', error);
+                return null;
+            });
+    }
+
+    /******************* API 区 *******************/
+
+
     
-    /**************** 开关控制区 ****************/
+    /******************* 开关控制区 *******************/
+
+    let {
+        onclose, update,
+        to_import_groupID = 0, to_import_group_name = "",
+        to_import_group_length = 0,
+        fetchPaper, savePaper
+    } = $props();                 // 关闭弹窗
+    let drop_up_toggle_is_open = $state(false);     // 上拉题组栏
+    let filter_is_open = $state(false);           // 下拉筛选栏
+    
+    /******************* 开关控制区 *******************/
     
 
 
-    /**************** 信息区 ****************/
+    /********************* 信息区 *********************/
 
     let paperID = $state(0);
-    let paperInfo = $state(null);
-    let paperGroups = $state([]); 
-    let toAddgroupLength = $state(0);
+    let paper_info = $state(null);
+    let paper_groups = $state([]); 
 
     // 选中题组
     function selectGroup(group) {
-        toAddGroupID = group.id;
-        toAddgroupName = group.name; 
-        toAddgroupLength = group.questions.length;
-        // console.log(toAddgroupLength)
+        to_import_groupID = group.id;
+        to_import_group_name = group.name; 
+        to_import_group_length = group.questions.length;
     }
 
-    /**************** 信息区 ****************/
+    /********************* 信息区 *********************/
 
     
 
-    /**************** 题库列表 ****************/
+    /******************** 题库列表 ********************/
 
-    let bankKeyWord = $state("");
-    let toAddbankID = $state("");
-    let bankList = $state([]);
+    let bank_key_word = $state("");
+    let to_add_bankID = $state("");
+    let bank_list = $state([]);
 
     // 防抖搜索题库列表
     const debouncedFetchQuestionBankList = debounce(() => {
-        fetchQuestionBankList(bankKeyWord, "", "", "")
+        fetchQuestionBankList(bank_key_word, "", "", "")
             .then(result => {
-                bankList = result.data || [];
+                bank_list = result.data || [];
             });
     }, 500, false);
 
-    $effect(() => {
-        bankKeyWord;
-        if(!isFirstEntry) {
-            debouncedFetchQuestionBankList();
-        }
-    });
-
     // 单选题库功能
     function toggleBank(id) {
-        toAddbankID = toAddbankID === id ? "" : id;
+        to_add_bankID = to_add_bankID === id ? "" : id;
+
+        // 搜索题库内的题目
+        if(to_add_bankID !== "") {
+            fetchBankQuestionList(
+                to_add_bankID,
+                question_page,
+                question_page_size,
+                question_name,
+                question_tags,
+                question_type,
+                question_difficulty
+            ).then( result => {
+                question_list = result.data || [];
+                total_questions = result.rowCount;
+            });
+        } else { question_list = []; }
     }
 
-    /**************** 题库列表 ****************/
+    /******************** 题库列表 ********************/
 
 
 
-    /**************** 题目列表 ****************/
+    /******************** 题目列表 ********************/
 
-    let questionPage = $state(1);
-    let questionPageSize = $state(10);
-    let questionName = $state("");
-    let questionTags = $state("");
-    let questionType = $state("");
-    let questionDifficulty = $state("");
-    let totalQuestions = $state(0);
-    let questionList = $state([]);
+    let question_page = $state(1);
+    let question_page_size = $state(10);
+    let question_name = $state("");
+    let question_tags = $state("");
+    let question_type = $state("");
+    let question_difficulty = $state("");
+    let total_questions = $state(0);
+    let question_list = $state([]);
 
-    let selectedQuestionInfos = $state([]);      // 已选 ID 数组
-    let allQuestionSelected = $state(false);    // 是否为全选状态
+    let selected_question_infos = $state([]);      // 已选 ID 数组
+    let all_question_selected = $state(false);    // 是否为全选状态
 
     // 选中数据
     function toggleSelection(id, checked) {
         if (checked) {
             // 查找对应题目，获取 score
-            const question = questionList.find(q => q.ID === id);
+            const question = question_list.find(q => q.ID === id);
             if (question) {
-                selectedQuestionInfos.push({ id: question.ID, score: question.Score });
+                selected_question_infos.push({ id: question.ID, score: question.Score });
             }
         } else {
-            selectedQuestionInfos = selectedQuestionInfos.filter(item => item.id !== id);
+            selected_question_infos = selected_question_infos.filter(item => item.id !== id);
         }
+        checkAllSelected();
     }
 
     // 检查全选
-    $effect(() => {
-        const currentPageIDs = questionList.map(item => item.ID);
-        const selectedIDs = selectedQuestionInfos.map(q => q.id);
-        allQuestionSelected = (
-            questionList.length !== 0 &&
+    function checkAllSelected() {
+        const currentPageIDs = question_list.map(item => item.ID);
+        const selectedIDs = selected_question_infos.map(q => q.id);
+        all_question_selected = (
+            question_list.length !== 0 &&
             currentPageIDs.every(id => selectedIDs.includes(id))
         );
-    });
+    }
 
     // 全选
     function selectAllQuestions(checked) {
-        const currentPageQuestions = questionList.map(item => ({ id: item.ID, score: item.Score }));
+        const currentPageQuestions = question_list.map(item => ({ id: item.ID, score: item.Score }));
         if (checked) {
             // 只追加未存在的
-            const existingIds = selectedQuestionInfos.map(item => item.id);
+            const existingIds = selected_question_infos.map(item => item.id);
             const toAdd = currentPageQuestions.filter(q => !existingIds.includes(q.id));
-            selectedQuestionInfos = [...selectedQuestionInfos, ...toAdd];
+            selected_question_infos = [...selected_question_infos, ...toAdd];
         } else {
             // 移除当前页的
-            const currentPageIds = questionList.map(item => item.ID);
-            selectedQuestionInfos = selectedQuestionInfos.filter(q => !currentPageIds.includes(q.id));
+            const currentPageIds = question_list.map(item => item.ID);
+            selected_question_infos = selected_question_infos.filter(q => !currentPageIds.includes(q.id));
         }
+        checkAllSelected();
     }
 
     // 确认导入题目
-    function concfirmImport() {
+    function confirmImport() {
         const actions = [
             {
                 action: "add_question",
-                payload: selectedQuestionInfos.map((q, index) => ({
+                payload: selected_question_infos.map((q, index) => ({
                     temp_id: `temp_question_${index + 1}`,
-                    group_id: toAddGroupID,
-                    order: toAddgroupLength + index + 1,
+                    group_id: to_import_groupID,
+                    order: to_import_group_length + index + 1,
                     bank_question_id: q.id,
                     score: q.score
                 }))
             }
         ];
-        
+
         savePaper(paperID, actions)
             .then(() => {
                 fetchPaper(paperID)
                     .then(result => {
-                        paperInfo = result.data;
-                        paperGroups = result.data.GroupsData;
-                        update(paperGroups, paperInfo);
+                        paper_info = result.data;
+                        paper_groups = result.data.GroupsData;
+                        update(paper_groups, paper_info);
                         onclose();
-                        toast.success("试卷已同步更新", 1000);
+                        toast.success("导入成功", 1000);
                     });
             });
     }
 
     // 处理页面跳转
     function handlePageChange(event) {
-        questionPage = event.detail;
+        question_page = event.detail;
+        // 搜索题库内的题目
+        if(to_add_bankID !== "") {
+            fetchBankQuestionList(
+                to_add_bankID,
+                question_page,
+                question_page_size,
+                question_name,
+                question_tags,
+                question_type,
+                question_difficulty
+            ).then( result => {
+                question_list = result.data || [];
+                total_questions = result.rowCount;
+                checkAllSelected();
+            });
+        } else { question_list = []; }
     }
 
     // 处理页面尺寸更改
     function handlePageSizeChange(event) {
-        questionPageSize = event.detail;
-        questionPage = 1; // 改变每页数量时通常要跳回第一页
-    }
-    
-    $effect(() => {
-        if(toAddbankID !== "") {
+        question_page_size = event.detail;
+        question_page = 1; // 改变每页数量时通常要跳回第一页
+        // 搜索题库内的题目
+        if(to_add_bankID !== "") {
             fetchBankQuestionList(
-                toAddbankID,
-                questionPage,
-                questionPageSize,
-                questionName,
-                questionTags,
-                questionType,
-                questionDifficulty
+                to_add_bankID,
+                question_page,
+                question_page_size,
+                question_name,
+                question_tags,
+                question_type,
+                question_difficulty
             ).then( result => {
-                questionList = result.data || [];
-                totalQuestions = result.rowCount;
+                question_list = result.data || [];
+                total_questions = result.rowCount;
+                checkAllSelected();
             });
-        } else { questionList = []; }
-    });
+        } else { question_list = []; }
+    }
 
-    /**************** 题目列表 ****************/
+    /******************** 题目列表 ********************/
 
     // 挂载区
     onMount(() => {
-        fetchQuestionBankList(bankKeyWord, "", "", "")
+        fetchQuestionBankList(bank_key_word, "", "", "")
             .then(result => {
-                bankList = result.data || [];
-                isFirstEntry = false;
+                bank_list = result.data || [];
             });
 
-        paperID = JSON.parse(localStorage.getItem('currentPaperID'));
+        paperID = get(CURRENT_PAPER_ID);
         fetchPaper(paperID)
             .then(result => {
-                paperInfo = result.data;
-                paperGroups = result.data.GroupsData;
+                paper_info = result.data;
+                paper_groups = result.data.GroupsData;
         });
     })
 
@@ -219,17 +335,17 @@
 
                 <!-- 搜索 -->
                 <div class="search-box">
-                    <InputBox bind:value={bankKeyWord} placeholder="搜索题库" showLabel={false}/>
+                    <InputBox onInput={()=>debouncedFetchQuestionBankList()} bind:value={bank_key_word} placeholder="搜索题库" show_label={false}/>
                 </div>
 
                 <!-- 题库列表 -->
                 <div class="question-bank-list">
-                    {#if bankList.length !== 0}
-                        {#each bankList as bank}
+                    {#if bank_list.length !== 0}
+                        {#each bank_list as bank}
                             <!-- svelte-ignore a11y_click_events_have_key_events -->
                             <!-- svelte-ignore a11y_no_static_element_interactions -->
                             <div class="single-bank" onclick={()=>toggleBank(bank.ID)}>
-                                <input type="checkbox" checked={toAddbankID === bank.ID} onclick={(e) => {e.stopPropagation(); toggleBank(bank.ID);}}>
+                                <input type="checkbox" checked={to_add_bankID === bank.ID} onclick={(e) => {e.stopPropagation(); toggleBank(bank.ID);}}>
                                 <span class="bank-name">{bank.Name}</span>
                                 <span class="questions-number">{bank.QuestionCount}</span>
                             </div>
@@ -306,7 +422,7 @@
                                     <th>
                                         <input
                                             type="checkbox"
-                                            bind:checked={allQuestionSelected}
+                                            bind:checked={all_question_selected}
                                             onchange={(e) => selectAllQuestions(e.target.checked)}
                                         >
                                     </th>
@@ -320,31 +436,28 @@
                             </thead>
 
                             <tbody>
-                                {#if questionList && questionList.length !== 0}
-                                    {#each questionList as question}
-                                        <tr class:selected={selectedQuestionInfos.map(q => q.id).includes(question.ID)}
-                                            onclick={() => toggleSelection(question.ID, !selectedQuestionInfos.map(q => q.id).includes(question.ID))}>
+                                {#if question_list && question_list.length !== 0}
+                                    {#each question_list as question}
+                                        <tr class:selected={selected_question_infos.map(q => q.id).includes(question.ID)}
+                                            onclick={() => toggleSelection(question.ID, !selected_question_infos.map(q => q.id).includes(question.ID))}>
                                         <td class="checkbox">
                                             <input type="checkbox"
-                                                checked={selectedQuestionInfos.map(q => q.id).includes(question.ID)}
+                                                checked={selected_question_infos.map(q => q.id).includes(question.ID)}
                                                 onclick={(e) => {
                                                     e.stopPropagation();
                                                     toggleSelection(question.ID, e.target.checked);
                                                 }}>
                                         </td>
                                         <td class="question-content">{@html question.Content}</td>
-                                        <td class="question-type">{questionTypeTrans[question.Type]}</td>
-                                        <td class="question-level"><span class={questionDifficultyTrans[questionDifficultyTrans[question.Difficulty]]}>{questionDifficultyTrans[question.Difficulty]}</span></td>
+                                        <td class="question-type">{QUESTION_TYPE_TRANS[question.Type]}</td>
+                                        <td class="question-level"><span class={DIFFICULTY_TRANS[DIFFICULTY_TRANS[question.Difficulty]]}>{DIFFICULTY_TRANS[question.Difficulty]}</span></td>
                                         <td class="question-score">{question.Score}</td>
-                                        <td class="update-time">{formatTimestamp(question.UpdateTime)}</td>
+                                        <td class="update-time">{formatTimestamp(question.UpdateTime,{show_date:true,show_time:true})}</td>
                                         <td class="question-tags">
                                             <div class="tag-container">
                                                 {#if question.Tags.length !== 0}
                                                     {#each question.Tags as tag}
-                                                        <div class="per-tag">
-                                                            <div class="tag-block" style="background-color: {tagColorList[getColorIndex(tag)]};"></div>
-                                                            <span class="tag-name">{tag}</span>
-                                                        </div>
+                                                        <UneditableTag content={tag}/>
                                                     {/each}
                                                 {:else}
                                                     <span>-</span>
@@ -357,7 +470,7 @@
                             </tbody>
                         </table>
 
-                        {#if questionList.length === 0}
+                        {#if question_list.length === 0}
                             <Empty text="暂无题目数据"/>
                         {/if}
                     </div>
@@ -366,10 +479,10 @@
                     <div class="page-control-container">
                         <!-- <Pagination/> -->
                         <Pagination
-                            totalItems={totalQuestions}
-                            pageSize={questionPageSize}  
-                            currentPage={questionPage}
-                            pageSizeOptions={[5, 10 ,20]}
+                            total_items={total_questions}
+                            page_size={question_page_size}  
+                            current_page={question_page}
+                            page_size_options={[5, 10 ,20]}
                             on:pageChange={handlePageChange}
                             on:pageSizeChange={handlePageSizeChange}
                         />
@@ -383,12 +496,12 @@
             <!-- <span class="selected-span">已选择 <span>2</span> 道题目</span> -->
             <span class="import-span">导入到题组：</span>
             <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div class="dropup-toggle" onmouseenter={()=>{dropUpToggleIsOpen=true}} onmouseleave={()=>{dropUpToggleIsOpen=false}}>
-                {#if dropUpToggleIsOpen}
+            <div class="dropup-toggle" onmouseenter={()=>{drop_up_toggle_is_open=true}} onmouseleave={()=>{drop_up_toggle_is_open=false}}>
+                {#if drop_up_toggle_is_open}
                     <div class="dropup-menu">
-                        {#each paperGroups as group}
+                        {#each paper_groups as group}
                             <!-- svelte-ignore a11y_click_events_have_key_events -->
-                            <div class="menu-option {toAddGroupID===group.id?"selected":""}" onclick={()=>selectGroup(group)}>
+                            <div class="menu-option {to_import_groupID===group.id?"selected":""}" onclick={()=>selectGroup(group)}>
                                 <span>
                                     {group.name}
                                 </span>
@@ -396,13 +509,13 @@
                         {/each}
                     </div>  
                 {/if}
-                <span class="selected-group">{toAddGroupID===0?"请选择题组":toAddgroupName}</span>
+                <span class="selected-group">{to_import_groupID===0?"请选择题组":to_import_group_name}</span>
                 <button class="toggle-btn">∨</button>
             </div>
             <div class="btn-box">
                 <Button onclick={onclose} plain={true}>取消</Button>
-                {#if toAddbankID!=="" && toAddGroupID!==0 && selectedQuestionInfos.length!==0}
-                    <Button onclick={()=>concfirmImport()}>确认导入</Button>
+                {#if to_add_bankID!=="" && to_import_groupID!==0 && selected_question_infos.length!==0}
+                    <Button onclick={()=>confirmImport()}>确认导入</Button>
                 {:else}
                     <Button disabled={true}>确认导入</Button>
                 {/if}
@@ -881,6 +994,7 @@
                     justify-content: space-between;
                     width: 299px;
                     position: relative;
+                    z-index: 1000;
                     
                     &:hover {
                         transition: all 0.3s ease;
@@ -930,12 +1044,12 @@
                         border-radius: var(--input-border-radius);
                         padding: 6px 0;
                         box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
-                        max-height: 200px;
+                        max-height: 210px;
                         overflow-y: auto;
                         display: flex;
                         flex-direction: column;
                         gap: 3px;
-                        margin-bottom: 1.5px;
+                        margin-bottom: 1px;
                         margin-left: -1px;
 
                         /* 单项 */

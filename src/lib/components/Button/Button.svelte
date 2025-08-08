@@ -1,10 +1,7 @@
 <script>
   /**
    * @component Button
-   * @description 通用按钮组件，支持图标、不同样式、尺寸、圆角、插槽等
-   *
-   * @author 段春茂
-   * @email 2162105974@qq.com
+   * @description 通用按钮组件，支持图标、不同样式、尺寸、圆角、禁用、自定义宽高、插槽等
    *
    * @props
    * @property {boolean} [plain=false] - 是否为朴素按钮，hover 时填充背景
@@ -14,19 +11,15 @@
    * @property {boolean} [round=false] - 是否圆角按钮
    * @property {string} [icon=''] - 图标地址（URL 或本地路径）
    * @property {string} [alt=''] - 图标的替代文字
-   * @property {string} [width=''] - 按钮宽度
+   * @property {string} [width=''] - 按钮宽度,填写数字默认为px，推荐填写 px、em、rem、%、vw、vh
    * @property {string} [height=''] - 按钮高度
+   * @property {function} [onclick=()=>{}] - 点击事件
    * @property {any} children - 默认插槽内容
-   * @property {...any} restProps - 其他传入 button 的原生属性
-   *
-   * @slots
-   * @slot default - 默认插槽,显示在按钮主体位置
    *
    * @example
    * <Button type="primary" size="large" round> 提交 </Button>
    * <Button type="danger" size="small" icon="/alert.svg"> 警告 </Button>
    */
-  import { onMount } from 'svelte';
 
   let {
     plain = false,
@@ -35,67 +28,198 @@
     round = false,
     icon = '',
     size = 'medium',
-    alt = '',
+    alt = 'icon',
     width = '',
     height = '',
+    onclick = () => {},
     children,
-    ...restProps
   } = $props();
 
-  const validTypes = ['primary', 'success', 'danger', 'warning', 'info'];
-  const validSizes = ['small', 'medium', 'large'];
+  /**
+   * 立即执行：校验 Button 组件的参数合法性。
+   * 包括 type、size、plain、round、disabled、icon、alt、width、height、onclick 的类型与取值检查。
+   * 若参数非法，将输出警告并设置默认值。
+   */
+  (() => {
+    //参数常量
+    const BUTTON_TYPES = ['primary', 'success', 'danger', 'warning', 'info'];
+    const BUTTON_SIZES = ['small', 'medium', 'large'];
+    const VALID_UNITS = ['px', 'em', 'rem', '%', 'vw', 'vh'];
 
-  checkProps();
+    // 获取精确的数据类型
+    function getType(value) {
+      return Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
+    }
+
+    // type 校验
+    if (getType(type) !== 'string' || !BUTTON_TYPES.includes(type.trim())) {
+      console.warn(`[Button] 类型无效: '${type}'，应为 ${BUTTON_TYPES.join(', ')}`);
+      type = 'primary';
+    }
+
+    // size 校验
+    if (getType(size) !== 'string' || !BUTTON_SIZES.includes(size.trim())) {
+      console.warn(`[Button] 尺寸无效: '${size}'，应为 ${BUTTON_SIZES.join(', ')}`);
+      size = 'medium';
+    }
+
+    // plain 校验
+    if (getType(plain) !== 'boolean') {
+      console.warn(`[Button] plain 必须为布尔值，当前为 ${getType(plain)}`);
+      plain = false;
+    }
+
+    // round 校验
+    if (getType(round) !== 'boolean') {
+      console.warn(`[Button] round 必须为布尔值，当前为 ${getType(round)}`);
+      round = false;
+    }
+
+    // disabled 校验
+    if (getType(disabled) !== 'boolean') {
+      console.warn(`[Button] disabled 必须为布尔值，当前为 ${getType(disabled)}`);
+      disabled = false;
+    }
+
+    // icon 校验
+    if (icon !== '') {
+      if (getType(icon) !== 'string') {
+        console.warn(`[Button] icon 类型应为字符串类型（图片路径），当前为 ${getType(icon)}`);
+        icon = '';
+      } else if (!/^(https?:\/\/|\/|\.\/)/.test(icon)) {
+        console.warn(`[Button] icon 路径无效，应为网络路径（http/https）或本地路径（/、./）`);
+        icon = '';
+      }
+    }
+
+    // alt 校验
+    if (alt === '' || getType(alt) !== 'string') {
+      console.warn(`[Button] alt 应为有效字符串,当前为 ${alt}:${getType(alt)}`);
+      alt = 'icon';
+    }
+
+    // width 校验
+    if (width !== '') {
+      // 1. 检测是否为负数（数字或字符串）
+      let isNegative = false;
+      if (getType(width) === 'number') {
+        isNegative = width < 0;
+      } else if (getType(width) === 'string') {
+        isNegative = /^-/.test(width.trim());
+      }
+
+      if (isNegative) {
+        width = '0';
+      } else {
+        if (getType(width) === 'number') {
+          width = `${width}px`;
+        } else if (getType(width) !== 'string') {
+          console.warn(`[Button] width 应为字符串或数字（例如 '100px', '2em'），当前为 ${getType(width)}`);
+          width = '';
+        } else if (/^\d+(\.\d+)?$/.test(width)) {
+          width = `${width}px`;
+        } else if (!/^(\d+(\.\d+)?)([a-z%]+)$/i.test(width)) {
+          console.warn(`[Button] width 格式无效，应为正数加单位（例如 '100px', '2em'）`);
+          width = '';
+        } else {
+          const unit = width.match(/^(\d+(?:\.\d+)?)([a-z%]+)$/i)[2].toLowerCase();
+          if (!VALID_UNITS.includes(unit)) {
+            console.warn(`[Button] 不支持的单位: '${unit}'，应为 ${VALID_UNITS.join(', ')}`);
+            width = '';
+          }
+        }
+      }
+    }
+
+    // height 校验
+    if (height !== '') {
+      let isNegative = false;
+      if (getType(height) === 'number') {
+        isNegative = height < 0;
+      } else if (getType(height) === 'string') {
+        isNegative = /^-/.test(height.trim());
+      }
+      if (isNegative) {
+        height = '0';
+      } else {
+        if (getType(height) === 'number') {
+          height = `${height}px`;
+        } else if (getType(height) !== 'string') {
+          console.warn(`[Button] height 应为字符串或数字（例如 '40px', '3rem'），当前为 ${getType(height)}`);
+          height = '';
+        } else if (/^\d+(\.\d+)?$/.test(height)) {
+          height = `${height}px`;
+        } else if (!/^-?(\d+(\.\d+)?)([a-z%]+)$/i.test(height)) {
+          console.warn(`[Button] height 格式无效，应为数字加单位（例如 '40px', '3rem'）`);
+          height = '';
+        } else {
+          const unit = height.match(/^(\d+(?:\.\d+)?)([a-z%]+)$/i)[2].toLowerCase();
+          if (!VALID_UNITS.includes(unit)) {
+            console.warn(`[Button] 不支持的单位: '${unit}'，应为 ${VALID_UNITS.join(', ')}`);
+            height = '';
+          }
+        }
+      }
+    }
+
+    // onclick 校验
+    if (!['function', 'asyncfunction'].includes(getType(onclick))) {
+      console.warn(`[Button] onclick 必须为function/asyncfunction，当前为 ${getType(onclick)}`);
+      onclick = () => {};
+    }
+  })();
 
   /**
-   * 组合按钮的类名
+   * 组合按钮的类名-采用bem架构模式
    *  @type {string}
-   * */
+   */
   let classes = $state(
-    ['Button', `${type}`, plain && 'plain', `${size}`, disabled && 'disabled', round && 'round']
+    [
+      'button',
+      `button--${type}`,
+      plain && `is-plain`,
+      `button--${size}`,
+      disabled && `is-disabled`,
+      round && `is-round`,
+    ]
       .filter(Boolean)
       .join(' '),
   );
 
   /**
-   * 检查传入参数的合法性
-   * @type {function}
+   * 组合按钮的大小
+   *  @type {string}
    */
-  function checkProps() {
-    if (!validTypes.includes(type.trim())) {
-      console.warn(`Button 类型无效: '${type}'，应为 ${validTypes.join(', ')}`);
-      type = 'primary';
-    }
-    if (!validSizes.includes(size.trim())) {
-      console.warn(`Button 尺寸无效: '${size}'，应为 ${validSizes.join(', ')}`);
-      size = 'medium';
-    }
-    if (typeof round !== 'boolean') {
-      console.warn(`[Button] round 必须是布尔值`);
-      round = false;
-    }
-    if (typeof plain !== 'boolean') {
-      console.warn(`[Button] plain 必须是布尔值`);
-      plain = false;
-    }
-    if (typeof disabled !== 'boolean') {
-      console.warn(`[Button] disabled 必须是布尔值`);
-      disabled = false;
-    }
+  let styleButton = $state(
+    [width ? `width: ${width};` : '', height ? `height: ${height};` : ''].filter(Boolean).join(' '),
+  );
+
+  /**
+   * 点击事件处理函数
+   * @param {Event} Event - 点击事件对象
+   * @type {Function}
+   */
+  function handleClick(Event) {
+    Event.stopPropagation(); // 阻止事件冒泡
+    if (disabled) return; // 如果按钮被禁用，不执行点击事件
+    onclick();
   }
 </script>
 
-<button class={classes} {disabled} {...restProps} style={`width: ${width}; height: ${height};`}>
+<button type="button" class={classes} {disabled} onclick={handleClick} style={styleButton} data-testid="button">
+  <!-- 图标部分 -->
   {#if icon}
-    <img class="icon" src={icon} alt={alt ? alt : '按钮图标'} />
+    <img class="button__icon" src={icon} loading="lazy" {alt} data-testid="icon" />
   {/if}
-  <span class="text">{@render children?.()} </span>
+  <!-- 文本部分 -->
+  <span class="button__text">{@render children()}</span>
 </button>
 
 <style lang="scss" scoped>
   $small: 12px;
   $medium: 14px;
   $large: 16px;
+
   /** 默认按钮类型（填充型按钮）*/
   @mixin button-type($color) {
     color: var(--text-white);
@@ -106,6 +230,7 @@
       filter: opacity(1) contrast(1);
     }
   }
+
   /** 朴素按钮类型（透明背景，hover 填充） */
   @mixin plain-button-type($color) {
     color: $color;
@@ -116,6 +241,7 @@
       background-color: $color;
     }
   }
+
   /** size 按钮尺寸 */
   @mixin button-size($size) {
     font-size: $size;
@@ -128,13 +254,14 @@
     } @else {
       padding: 8px 15px;
     }
-    .icon {
+    .button__icon {
       width: 1em;
       height: 1em;
     }
   }
+
   /** 按钮主样式  */
-  .Button {
+  .button {
     cursor: pointer;
     appearance: none;
     display: inline-block;
@@ -146,15 +273,17 @@
     &:active {
       transform: scale(0.95);
     }
+
     /** 图标区域 @element .icon*/
-    .icon {
+    .button__icon {
       margin-right: 0.5em;
       object-fit: cover;
       display: inline-block;
       vertical-align: middle;
     }
+
     /** 文本区域 @element .text*/
-    .text {
+    .button__text {
       display: inline-block;
       vertical-align: middle;
       max-width: 100%;
@@ -162,62 +291,68 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
     /** 禁用状态 @modifier .disabled */
-    &.disabled {
+    &.is-disabled {
       opacity: 0.6;
       cursor: not-allowed;
       &:active {
         transform: scale(1);
       }
     }
+
     /** 圆角按钮 */
-    &.round {
+    &.is-round {
       border-radius: 9999px;
     }
+
     // === (size) 按钮尺寸 ===
-    &.small {
+    &.button--small {
       @include button-size($small);
     }
-    &.medium {
+    &.button--medium {
       @include button-size($medium);
     }
-    &.large {
+    &.button--large {
       @include button-size($large);
     }
+
     // === (type) 按钮类型 ===
-    &.primary {
+    &.button--primary {
       @include button-type(var(--blue));
     }
-    &.success {
+    &.button--success {
       @include button-type(var(--green));
     }
-    &.danger {
+    &.button--danger {
       @include button-type(var(--red));
     }
-    &.warning {
+    &.button--warning {
       @include button-type(var(--orange));
     }
-    &.info {
+    &.button--info {
       @include button-type(var(--gray));
     }
+
     // === 按钮（plain）样式组合 ===
-    &.plain.primary {
+    &.is-plain.button--primary {
       @include plain-button-type(var(--blue));
     }
-    &.plain.success {
+    &.is-plain.button--success {
       @include plain-button-type(var(--green));
     }
-    &.plain.danger {
+    &.is-plain.button--danger {
       @include plain-button-type(var(--red));
     }
-    &.plain.warning {
+    &.is-plain.button--warning {
       @include plain-button-type(var(--orange));
     }
-    &.plain.info {
+    &.is-plain.button--info {
       @include plain-button-type(var(--gray));
     }
   }
-  :global(.Button) + .Button {
+
+  :global(.button) + .button {
     margin-left: 0.5em;
     @media screen and (max-width: 480px) {
       margin-left: 0.3em;

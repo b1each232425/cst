@@ -5,193 +5,233 @@
    邮箱：1062051028@qq.com
 
    参数配置：
-   @param {Number} totalItems        总数据条数  number
-   @param {Number} pageSize          每页显示的数据条数  number
-   @param {Number} currentPage       当前页数  number
-   @param {Number} jumpPage          跳转目标页  number
-   @param {Array} pageSizeOptions    每页条数选项  array
+   @param {Number} total_items        总数据条数  number
+   @param {Number} page_size          每页显示的数据条数  number
+   @param {Number} current_page       当前页数  number
+   @param {Number} jump_page          跳转目标页  number
+   @param {Array} page_size_options   每页条数选项  array
 
    函数说明：
    @event pageChange                页码发生变化时触发，传递当前页码  { page: number }
-   @event pageSizeChange            每页条数变化时触发，传递新的每页条数  { pageSize: number }
+   @event pageSizeChange            每页条数变化时触发，传递新的每页条数  { size: number }
 
    使用示例：
    <Pagination
-     totalItems={100}               // 总数据条数
-     pageSize={10}                  // 每页条数
-     currentPage={1}                // 当前页
-     pageSizeOptions={[10, 20, 30]} // 每页条数选择项
+     total_items={100}               // 总数据条数
+     page_size={10}                  // 每页条数
+     current_page={1}                // 当前页
+     page_size_options={[10, 20, 30]} // 每页条数选择项
      on:pageChange={handlePageChange}  // 监听页码变化
      on:pageSizeChange={handlePageSizeChange}  // 监听每页条数变化
    />
 
    // 父组件控制分页器的行为
    function handlePageChange(event) {
-     currentPage = event.detail;
+     current_page = event.detail;
      // 做分页逻辑处理
    }
 
    function handlePageSizeChange(event) {
-     pageSize = event.detail;
+     page_size = event.detail;
      // 做每页条数变化逻辑处理
    }
 -->
 
 <script>
-  // @ts-nocheck
   import left_jt from '/static/pagination/left.svg';
   import right_jt from '/static/pagination/right.svg';
   import { createEventDispatcher } from 'svelte';
-  import DropdownGray from '../DiaryLogPanel/DropdownGray.svelte';
+  import Select from '../Select/Select.svelte';
+  import Option from '../Select/Option.svelte';
 
+  // 从父组件接收的属性参数
   let {
-    totalItems = 0, // 总数据条数
-    pageSize = 10, // 每页显示的数据条数
-    currentPage = 1, // 当前页数
-    jumpPage = 1, // 跳转的目标页
-    pageSizeOptions = [10, 20, 30, 40, 50], // 每页条数选项
-  } = $props(); // 从父组件获取的属性
+    total_items = 0, // 总数据条数，默认0
+    page_size = 10, // 每页显示条数，默认10
+    current_page = 1, // 当前页码，默认1
+    jump_page = 1, // 跳转目标页，默认1
+    page_size_options = [10, 20, 30, 40, 50], // 每页条数可选配置
+  } = $props();
 
-  // 创建一个事件分发器，用于在分页组件内触发事件并通知父组件
+  // 创建事件分发器
   const dispatch = createEventDispatcher();
 
-  let totalPages = $derived(Math.ceil(totalItems / pageSize)); // 总页数
-  let pagesToShow = $derived(calculatePagesArray(totalPages)); // 用于保存要显示的页码数组
-  let options = pageSizeOptions.map((size) => ({
+  // 计算属性：总页数（向上取整）
+  let total_pages = $derived(Math.ceil(total_items / page_size));
+
+  // 计算属性：需要显示的页码数组
+  let visible_pages = $derived(getVisiblePages(total_pages));
+
+  // 转换每页条数选项为下拉框需要的格式
+  let size_options = page_size_options.map((size) => ({
     value: size,
     label: `${size}条/页`,
   }));
 
-  // 处理跳转到指定页面
+  /**
+   * 跳转到指定页码
+   * @param {number} page - 目标页码
+   */
   function goToPage(page) {
-    if (page >= 1 && page <= totalPages) {
-      currentPage = page; // 更新当前页
+    // 验证页码范围有效性
+    if (page >= 1 && page <= total_pages) {
+      current_page = page;
+      // 触发页码变化事件
       dispatch('pageChange', page);
     }
   }
 
-  // 处理上一页
+  /**
+   * 跳转到上一页
+   */
   function prevPage() {
-    if (currentPage > 1) {
-      currentPage--;
-      dispatch('pageChange', currentPage);
+    if (current_page > 1) {
+      current_page--;
+      dispatch('pageChange', current_page);
     }
   }
 
-  // 处理下一页
+  /**
+   * 跳转到下一页
+   */
   function nextPage() {
-    if (currentPage < totalPages) {
-      currentPage++;
-      dispatch('pageChange', currentPage);
+    if (current_page < total_pages) {
+      current_page++;
+      dispatch('pageChange', current_page);
     }
   }
 
-  // 输入页数并跳转
+  /**
+   * 处理跳转页码输入
+   */
   function handleJump() {
-    const page = +jumpPage;
+    const page = +jump_page; // 转换为数字
     if (!isNaN(page)) {
+      // 验证是否为有效数字
       goToPage(page);
     }
   }
 
-  // 处理每页显示条数的变化
-  function handlePageSizeChange(event) {
-    const sizeOption = +event.target.value;
-    if (currentPage > Math.ceil(totalItems / sizeOption)) {
-      currentPage = Math.ceil(totalItems / sizeOption);
+  /**
+   * 处理每页显示条数变化
+   */
+  function handlePageSizeChange() {
+    // 如果当前页超出新的总页数，跳转到最后一页
+    if (current_page > Math.ceil(total_items / page_size)) {
+      current_page = Math.ceil(total_items / page_size);
     }
-    pageSize = sizeOption;
-    dispatch('pageSizeChange', pageSize);
-    dispatch('pageChange', currentPage);
+
+    // 触发两个事件：条数变化和页码变化
+    dispatch('pageSizeChange', page_size);
+    dispatch('pageChange', current_page);
   }
 
-  // 处理分页的页面列表逻辑
-  function calculatePagesArray(total) {
-    let pages = [];
+  /**
+   * 计算需要显示的页码数组
+   * @param {number} total - 总页数
+   * @returns {Array} 需要显示的页码数组（可能包含省略号）
+   */
+  function getVisiblePages(total) {
+    const pages = [];
+    const max_visible = 5; // 中间最多显示5个页码
 
-    // 如果总页数小于等于8，直接显示所有页码
-    if (total <= 8) {
-      pages = Array.from({ length: total }, (_, i) => i + 1);
-    } else {
-      pages.push(1); // 始终显示第一页
+    // 如果总页数较少，直接显示所有页码
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
 
-      // 如果当前页大于5，显示省略号
-      if (currentPage > 5) {
-        pages.push('...');
+    // 始终显示第一页
+    pages.push(1);
+
+    // 当前页靠后时，显示前省略号
+    if (current_page > 4) {
+      pages.push('...');
+    }
+
+    // 计算中间页码的起始和结束位置
+    const start = Math.max(2, current_page - 2);
+    const end = Math.min(total - 1, current_page + 2);
+
+    // 当前页靠前时的处理
+    if (current_page <= 4) {
+      for (let i = 2; i <= 5; i++) {
+        pages.push(i);
       }
-
-      let start = Math.max(2, currentPage - 2); // 计算中间起始页
-      let end = Math.min(total - 1, currentPage + 2); // 计算中间结束页
-
-      // 处理中间展示显示的页码数组
-      if (currentPage <= 4) {
-        start = 2;
-        end = 6;
+    }
+    // 当前页靠后时的处理
+    else if (current_page >= total - 3) {
+      for (let i = total - 4; i <= total - 1; i++) {
+        pages.push(i);
       }
-
-      if (currentPage >= total - 3) {
-        start = total - 5;
-        end = total - 1;
-      }
-
-      // 将中间起始页到中间结束页的页码添加到页面数组中
+    }
+    // 当前页在中间时的处理
+    else {
       for (let i = start; i <= end; i++) {
         pages.push(i);
       }
-
-      // 如果当前页小于总页数 - 4，显示省略号
-      if (currentPage < total - 4) {
-        pages.push('...');
-      }
-
-      pages.push(total); // 始终显示最后一页
     }
 
+    // 当前页不够靠后时，显示后省略号
+    if (current_page < total - 3) {
+      pages.push('...');
+    }
+
+    // 始终显示最后一页
+    pages.push(total);
     return pages;
   }
 </script>
 
+<!-- 分页器容器 -->
 <div class="pagination-wrapper">
-  <div class="total-items">共 {totalItems} 条</div>
+  <!-- 总条数显示 -->
+  <div class="total-items">共 {total_items} 条</div>
 
+  <!-- 页码导航区 -->
   <div class="pagination">
-    <button onclick={prevPage} disabled={currentPage === 1}>
-      <img src={left_jt} alt="" />
+    <!-- 上一页按钮 -->
+    <button onclick={prevPage} disabled={current_page === 1} data-testid="left_jt">
+      <img src={left_jt} alt="上一页" />
     </button>
 
-    {#each pagesToShow as page}
+    <!-- 动态生成页码按钮 -->
+    {#each visible_pages as page}
       {#if page === '...'}
+        <!-- 省略号显示 -->
         <span class="dots">...</span>
       {:else}
-        <button class:active={currentPage === page} onclick={() => goToPage(page)}>
+        <!-- 页码按钮，高亮当前页 -->
+        <button class:active={current_page === page} onclick={() => goToPage(page)}>
           {page}
         </button>
       {/if}
     {/each}
 
-    <button onclick={nextPage} disabled={currentPage === totalPages}>
-      <img src={right_jt} alt="" />
+    <!-- 下一页按钮 -->
+    <button onclick={nextPage} disabled={current_page === total_pages} data-testid="right_jt">
+      <img src={right_jt} alt="下一页" />
     </button>
   </div>
 
+  <!-- 每页条数设置 -->
   <div class="page-settings">
-    <select onchange={handlePageSizeChange}>
-      {#each pageSizeOptions as sizeOption}
-        <option value={sizeOption}>{sizeOption}条/页</option>
+    <Select bind:value={page_size} direction="top" changeValue={handlePageSizeChange}>
+      {#each size_options as option}
+        <Option value={option.value} label={option.label}></Option>
       {/each}
-    </select>
-    <!-- <DropdownGray {options} selectOptionFunc={handlePageSizeChange} expand_direction={'up'} --font_size="12px"
-    ></DropdownGray> -->
+    </Select>
   </div>
 
+  <!-- 页码跳转区 -->
   <div class="jump-to">
     <span>前往</span>
     <input
       type="number"
       min="1"
-      max={totalPages}
-      bind:value={jumpPage}
+      max={total_pages}
+      bind:value={jump_page}
       onkeydown={(e) => e.key === 'Enter' && handleJump()}
+      data-testid="jump-to-input"
     />
   </div>
 </div>
@@ -255,26 +295,9 @@
     .page-settings {
       display: flex;
       align-items: center;
+      width: 100px;
       gap: 0.8rem;
-      background-color: #f5f5f5;
       border-radius: 6px;
-
-      select {
-        padding: 0.3rem 0.5rem;
-        font-size: 0.9rem;
-        border: none;
-        border-radius: 4px;
-        background-color: #f5f5f5;
-
-        option {
-          background-color: #fff;
-          color: #000;
-        }
-      }
-
-      select:focus {
-        outline: none;
-      }
     }
 
     .jump-to {

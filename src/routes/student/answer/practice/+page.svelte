@@ -4,7 +4,7 @@
    * @Date: 2025-07-23 10:55:37
    * @LastEditors: PENG HAIFENG 1614818457@qq.com
    * @LastEditTime: 2025-07-23 10:28:54
-   * @FilePath: \src\routes\student\answer\+page.svelte
+   * @FilePath: \src\routes\student\answer\practice\+page.svelte
    * @Description: 考试练习作答布局
    */
   
@@ -95,8 +95,8 @@
   let practice_id = $state(""); //练习id
   let practice_submission_id = $state(""); //练习场次id
   let elapsed_seconds = $state(0); // 考试已用时，单位为秒
-  let examQuestionsMap = $state(new Map()); //考试题目map数组 key题目id value包含题目的题组
-  let questionGroupsMap = $state(new Map());  //考试题组map数组 key题目id value包含题组的信息
+  let exam_questions_map = $state(new Map()); //考试题目map数组 key题目id value包含题目的题组
+  let question_groups_map = $state(new Map());  //考试题组map数组 key题目id value包含题组的信息
   let elapsedSeconds = $state(0); // 考试已用时，单位为秒
   let totalscore = $state(0); // 考试总分
   let duration = $state(null); //练习建议时长
@@ -188,7 +188,7 @@
   function getQuestionGroups() { // 获取题目分组信息，用于生成答题卡
     const groups = [];
 
-    const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序出一个数组
+    const sortedGroups = Array.from(question_groups_map.values()).sort((a, b) => a.order - b.order); //升序排序出一个数组
 
     // 构建全局索引映射
     const globalIndexMap = new Map();
@@ -198,7 +198,7 @@
 
     sortedGroups.forEach(groupInfo => {
       const groupId = groupInfo.ID; // 题组 id
-      const groupQuestions = examQuestionsMap.get(String(groupId)) || []; // 该分组下的题目数组
+      const groupQuestions = exam_questions_map.get(String(groupId)) || []; // 该分组下的题目数组
 
       if (groupQuestions.length === 0) return; // 如果没有题目则跳过
       groups.push({ // 组装 QuestionGroup 对象
@@ -214,11 +214,11 @@
   }
   function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组 用来生成题目
     const result = [];
-    const sortedGroups = Array.from(questionGroupsMap.values()).sort((a, b) => a.order - b.order); //升序排序数组
+    const sortedGroups = Array.from(question_groups_map.values()).sort((a, b) => a.order - b.order); //升序排序数组
 
     sortedGroups.forEach(groupInfo => {
       const groupId = groupInfo.ID;
-      const groupQuestions = examQuestionsMap.get(String(groupId)) || [];
+      const groupQuestions = exam_questions_map.get(String(groupId)) || [];
 
       let totalScore = 0;
       for (const item of groupQuestions) {
@@ -303,6 +303,11 @@
     if_show_toast,
     attachment_paths
   ) {
+    // 作答时自动聚焦到当前题
+    const idx = examQuestions.findIndex(q => q.ID === question.ID);
+    if (idx !== -1) {
+      currentQuestionIndex = idx;
+    }
 
     if (ifPreview) {
       toast.warning('当前为预览模式！', 2000);
@@ -371,8 +376,8 @@
       if (stored) {
         try {
           let data = JSON.parse(stored);
-          examQuestionsMap =  data.Questions;
-          questionGroupsMap =  data.QuestionGroupInfo;
+          exam_questions_map =  data.Questions;
+          question_groups_map =  data.QuestionGroupInfo;
           //加载题目
           examQuestions.length = 0;
           examQuestions.push(...flattenExamQuestions());
@@ -433,8 +438,8 @@
 
         // 赋值到变量
         //题目
-        examQuestionsMap = new Map(Object.entries(sget(data, "data.Questions", {})));
-        questionGroupsMap = new Map(Object.entries(sget(data, "data.QuestionGroupInfo", {})));
+        exam_questions_map = new Map(Object.entries(sget(data, "data.Questions", {})));
+        question_groups_map = new Map(Object.entries(sget(data, "data.QuestionGroupInfo", {})));
         //时间类
         elapsed_seconds = sget(data, "data.ElapsedSeconds", 0);
         duration = sget(data, "data.Info.Duration", null);
@@ -1049,7 +1054,7 @@
     display: flex;
     flex-direction: column;
     height: calc(100vh - 60px);
-    min-height: 100vh;
+    min-height: 540px;
     overflow-y: scroll;
     padding: 20px;
     min-width: 500px;

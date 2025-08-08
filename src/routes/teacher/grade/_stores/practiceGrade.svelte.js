@@ -14,21 +14,49 @@ import { handleApiError, handleSuccess, handleSelectionError } from '../_utils/e
  */
 
 /**
+ * 验证和清洗数值字段
+ * @param {any} value - 原始值
+ * @param {boolean} isInteger - 是否应该是整数
+ * @returns {number | null} - 清洗后的数值或 null
+ */
+function validateNumericField(value, isInteger = false) {
+	// 处理特殊值
+	if (value === -1 || value === null || value === undefined || value === '') {
+		return null;
+	}
+
+	// 转换为数字
+	const numValue = Number(value);
+
+	// 检查是否为有效数字
+	if (isNaN(numValue) || !isFinite(numValue)) {
+		return null;
+	}
+
+	// 检查是否为负数
+	if (numValue < 0) {
+		return null;
+	}
+
+	// 整数字段检查
+	if (isInteger && !Number.isInteger(numValue)) {
+		return Math.round(numValue); // 四舍五入到整数
+	}
+
+	return numValue;
+}
+
+/**
  * @param {PracticeInfo[]} practiceData
  */
 function formatPracticeData(practiceData) {
 	if (!practiceData) return [];
 	for (let practice of practiceData) {
-		if (typeof practice.total_score === 'number' && practice.total_score !== -1) {
-			practice.total_score = practice.total_score.toFixed(1);
-		} else if (practice.total_score === -1 || practice.total_score == null) {
-			practice.total_score = '−';
-		}
-		if (typeof practice.average_score === 'number' && practice.average_score !== -1) {
-			practice.average_score = practice.average_score.toFixed(1);
-		} else if (practice.average_score === -1 || practice.average_score == null) {
-			practice.average_score = '−';
-		}
+		// 数据清洗：将非法数值转换为 null，保持数值类型用于计算
+		practice.total_score = validateNumericField(practice.total_score);
+		practice.average_score = validateNumericField(practice.average_score);
+		practice.completed_students = validateNumericField(practice.completed_students, true);
+		practice.passed_students = validateNumericField(practice.passed_students, true);
 	}
 	return practiceData;
 }

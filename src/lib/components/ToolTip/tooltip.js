@@ -1,58 +1,8 @@
-/**
- * 气泡提示指令说明（tooltip.js）
- *
- * 作者：段春茂
- * 邮箱：2162105974@qq.com
- *
- * 参数配置：
- * @param {Element} node             - 触发 tooltip 的 DOM 元素（由 use:tooltip 自动传入）
- * @param {Object} options           - tooltip 配置对象
- * @param {String} options.placement - 提示框位置，可选: 'top' | 'left' | 'right' | 'bottom'，默认: 'bottom'
- * @param {String} options.content   - 提示框显示的内容（支持 HTML）
- * @param {String} options.color     - 提示框背景色，默认: '#ffffff'
- * @param {String} options.hide_method - 隐藏方式，可选: 'click' | 'hover'，默认: 'hover'
- * @param {Boolean} options.showActions - 是否显示操作按钮（确认/取消），默认: false
- * @param {Boolean} options.showTitle   - 是否显示标题，默认: false
- * @param {Boolean} options.showCancel  - 是否显示取消按钮，默认: true
- * @param {String} options.title        - 标题内容
- * @param {Function} options.onConfirm  - 点击确认按钮的回调
- * @param {Function} options.onCancel   - 点击取消按钮的回调
- * @param {String} options.onConfirmText - 确认按钮文本，默认: '确认'
- * @param {String} options.onCancelText  - 取消按钮文本，默认: '取消'
- *
- * 功能说明：
- * - 用于通过 Svelte 的 `use:` 指令将 tooltip 气泡绑定到任意元素上
- * - 支持 hover 和 click 两种交互方式
- * - 气泡自动根据位置计算，支持多个同时存在
- * - 鼠标移入/点击控制显示，支持销毁卸载、定位刷新
- * - 支持实时更新配置项，并自动挂载到 body 上的固定容器中
- *
- * 使用示例：
- * <button use:tooltip={{ content: '提示内容', placement: 'top' }}>点击</button>
- *
- * <button
- *   use:tooltip={{
- *     content: '这是提示信息',
- *     placement: 'bottom',
- *     hide_method: 'hover',
- *     showActions: true,
- *     showTitle: true,
- *     title: '提示标题',
- *     onConfirm: () => { console.log('确认') },
- *     onCancel: () => { console.log('取消') },
- *   }}>
- *   悬停我看看
- * </button>
- *
- * 注意事项：
- * - 该指令用于函数式挂载 Tooltip.svelte 组件
- * - 必须传入 content，否则 tooltip 不会渲染
- * - 所有选项会通过 props 传入 Tooltip.svelte
- */
 import Tooltip from './Tooltip.svelte';
 import { mount } from 'svelte';
 
 let container;
+
 function ensureContainer() {
   if (!container) {
     container = document.createElement('div');
@@ -61,9 +11,42 @@ function ensureContainer() {
   }
 }
 
+/**
+ * tooltip 气泡提示指令组件
+ * @params
+ * @param {Element} node - 被绑定 tooltip 的 DOM 元素（由 use:tooltip 自动传入）
+ * @param {Object} options - tooltip 配置对象
+ * @param {'top' | 'left' | 'right' | 'bottom'} [options.placement='bottom'] - 提示框位置
+ * @param {string} [options.content=''] - 提示框显示内容（支持 HTML）
+ * @param {string} [options.color='#ffffff'] - 提示框背景颜色
+ * @param {'click' | 'hover'} [options.hide_method='hover'] - 隐藏方式
+ * @param {boolean} [options.show_actions=false] - 是否显示操作按钮区域
+ * @param {boolean} [options.show_title=false] - 是否显示标题栏
+ * @param {boolean} [options.show_cancel=true] - 是否显示取消按钮
+ * @param {string} [options.title=''] - 标题内容文本
+ * @param {Function} [options.onConfirm] - 点击“确认”按钮后的回调
+ * @param {Function} [options.onCancel] - 点击“取消”按钮后的回调
+ * @param {string} [options.confirm_text='确定'] - “确认”按钮文本
+ * @param {string} [options.cancel_text='取消'] - “取消”按钮文本
+ *
+ * @example use指令
+ * <button use:tooltip={{ content: '提示内容', placement: 'top' }}>点击</button>
+ * <button
+ *   use:tooltip={{
+ *     content: '这是提示信息',
+ *     placement: 'bottom',
+ *     hide_method: 'hover',
+ *     show_actions: true,
+ *     show_title: true,
+ *     title: '提示标题',
+ *     Confirm: () => console.log('确认'),
+ *     Cancel: () => console.log('取消'),
+ *   }}>
+ *   悬停我看看
+ * </button>
+ */
 export function tooltip(node, options) {
   if (!options?.content) return;
-  console.dir(node);
 
   let instance;
   const mountTooltip = () => {
@@ -77,6 +60,7 @@ export function tooltip(node, options) {
     });
   };
   mountTooltip();
+
   return {
     update(newOptions) {
       if (instance?.$set && newOptions) {

@@ -21,16 +21,18 @@
 	</div>
 
 	<div class="table-container">
-		{#if examGradeStore.state.loading}
-			<p>加载中...</p>
-		{:else}
-			<ExamTable store={examGradeStore} />
-		{/if}
+		<div class="table-content">
+			{#if examGradeStore.state.loading}
+				<p>加载中...</p>
+			{:else}
+				<ExamTable store={examGradeStore} />
+			{/if}
+		</div>
 		<div class="pagination-wrapper">
 			<Pagination
-				totalItems={state.totalRecords}
-				pageSize={state.pagination.pageSize}
-				currentPage={state.pagination.page}
+				total_items={state.totalRecords}
+				page_size={state.pagination.pageSize}
+				current_page={state.pagination.page}
 				on:pageChange={(e) => setPage(e.detail)}
 				on:pageSizeChange={(e) => setPageSize(e.detail)}
 			/>
@@ -39,26 +41,46 @@
 </div>
 
 <style lang="scss">
+
 	.page-container {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-	}
+  display: flex;
+  flex-direction: column;
+  min-height: 600px;
+  overflow: hidden;
+  height:84vh;
+  position: relative;
+}
 
 	.filter-container {
+		flex-shrink: 0;
+  		background: #fff;
+  		z-index: 20;//下拉菜单优先级高于表头
 		padding: 0 13px;
-		padding-bottom: 5px; /* 控制筛选区和表格的间距 */
+		padding-bottom: 5px;
+
 	}
 
 	.table-container {
-		display: flex;
-		flex-direction: column;
-		padding: 0 1px; /* 移除顶部的 padding */
+  		display: flex;
+  		flex-direction: column;
+  		overflow: hidden;
+		position: relative;
+  		min-height: 0;
+		padding: 0 1px;
+		flex: 1;
+		padding-bottom: 60px; /* 为固定分页器留出空间 */
 	}
+
+	.table-content {
+		flex: 1;
+		overflow: hidden;
+		min-height: 0;
+	}
+
 	.pagination-wrapper {
-		display: flex;
-		justify-content: flex-end; /* 右对齐 */
-		margin-top: 16px; /* 与表格保持适当间距 */
-		padding: 16px 0; /* 上下内边距 */
+		flex-shrink: 0;
+		position: absolute;
+		bottom: 10px;
+		right: 20px;
 	}
-</style> 
+</style>

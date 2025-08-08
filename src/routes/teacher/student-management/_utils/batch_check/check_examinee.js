@@ -29,9 +29,6 @@ export async function checkData(file) {
         return resultData;
     }
 
-    // 用于存储已出现的身份证号
-    const idCardSet = new Set();
-
     //校验文件类型和格式
     if (!(file instanceof File)) {
         resultData.error = '文件数据类型错误, 请传入File类型数据';
@@ -143,8 +140,9 @@ export async function checkData(file) {
                         isOk: true
                     };
 
-                    // 存储当前行的身份证号
+                    // 存储当前行的身份证号和手机号
                     let currentIdCard = null;
+                    let currentPhone = null;
 
                     for (let column = 1; column <= header.length - 1; column++) {
                         // 单元格
@@ -171,9 +169,12 @@ export async function checkData(file) {
                         }
 
                         // 格式校验
-                        if (column === 3 && cellValue != null && !isValidPhone(`${cellValue}`)) {
-                            rowData.errorType = "手机号格式错误";
-                            rowData.isOk = false;
+                        if (column === 3 && cellValue != null) {
+                            currentPhone = `${cellValue}`;
+                            if (!isValidPhone(currentPhone)) {
+                                rowData.errorType = "手机号格式错误";
+                                rowData.isOk = false;
+                            }
                         }
 
                         if (column === 4 && cellValue != null) {
@@ -181,16 +182,55 @@ export async function checkData(file) {
                             if (!isValidIDCard(currentIdCard)) {
                                 rowData.errorType = "身份证号格式错误";
                                 rowData.isOk = false;
-                            }else {
-                                idCardSet.add(currentIdCard);
                             }
                         }
                     }
 
                     // 添加序号
                     rowData.serial_number = resultData.data.length + 1;
+                    
+                    // 存储当前行的手机号和身份证号用于重复检查
+                    if (currentPhone) {
+                        rowData.currentPhone = currentPhone;
+                    }
+                    if (currentIdCard) {
+                        rowData.currentIdCard = currentIdCard;
+                    }
+                    
                     resultData.data.push(rowData);
                 }
+
+                // 处理完所有行后，进行重复检查
+                const phoneCount = {};
+                const idCardCount = {};
+
+                // 统计重复
+                resultData.data.forEach((item) => {
+                    if (item.currentPhone) {
+                        phoneCount[item.currentPhone] = (phoneCount[item.currentPhone] || 0) + 1;
+                    }
+                    if (item.currentIdCard) {
+                        idCardCount[item.currentIdCard] = (idCardCount[item.currentIdCard] || 0) + 1;
+                    }
+                });
+
+                // 标记重复项
+                resultData.data = resultData.data.map((item) => {
+                    if (item.currentPhone && phoneCount[item.currentPhone] > 1) {
+                        item.errorType = "duplicate_phone";
+                        item.isOk = false;
+                    }
+                    if (item.currentIdCard && idCardCount[item.currentIdCard] > 1) {
+                        item.errorType = "duplicate_id_card";
+                        item.isOk = false;
+                    }
+                    
+                    // 清理临时字段
+                    delete item.currentPhone;
+                    delete item.currentIdCard;
+                    
+                    return item;
+                });
             })
             resolve(true);
         }

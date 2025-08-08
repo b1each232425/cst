@@ -1,91 +1,193 @@
+<!--
+ * @Author: WangKaidun 1597225095@qq.com
+ * @Date: 2025-08-01 15:21:42
+ * @LastEditors: WangKaidun 1597225095@qq.com
+ * @LastEditTime: 2025-08-07 11:35:31
+ * @FilePath: \exam\src\routes\teacher\paper\manual\+page@.svelte
+ * @Description: 自定义组卷页面
+ * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
+-->
 <script>
-    import { goto } from "$app/navigation";
     import Button from "$lib/components/Button/Button.svelte";
-    import { questionDifficultyTrans, questionTypeTrans, tagColorList } from "../_utils/data";
-    import { getColorIndex, restoreOpenState } from "../_utils/func";
     import ImportQuestion from "../_components/ImportQuestion/ImportQuestion.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Select from "$lib/components/Select/Select.svelte";
     import Option from "$lib/components/Select/Option.svelte";
-    import { onMount, tick } from "svelte";
-    import { createEmptyPaper, fetchPaper, savePaper } from "../_utils/api";
     import Toast from "$lib/components/Toast/Toast.svelte";
-    import { toast } from "$lib/components/Toast/Toast";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
-    import { debounce } from "$lib/utils/optimize";
-    import QuestionPreviewPanel from "../../question-bank/_components/QuestionPreviewPanel.svelte";
     import QuestionPreview from "../_components/PreviewQuestion/PreviewQuestion.svelte"
-    
-    /*************** 控制开关区 ****************/
-    let importModalIsOpen = $state(false);  // 从题库中导入题目弹窗
-    let isAddingGroup = $state(false);      // 添加题组
+    import { goto } from "$app/navigation";
+    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../_utils/tool";
+    import { onMount, tick } from "svelte";
+    import { toast } from "$lib/components/Toast/Toast";
+    import { debounce } from "$lib/utils/optimize";
+    import { get } from "svelte/store";
+    import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE } from "../_stores/store";
+    import MyPreviewQuestion from "../_components/MyPreviewQuestion/MyPreviewQuestion.svelte";
 
-    function closeImportModal() {
-        importModalIsOpen = false;
+    /******************* API 区 ********************/
+
+    // 获取试卷详情
+    function fetchPaper(
+        paperID = 0
+    ){
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("paper_id", paperID);
+
+        return fetch(`/api/paper/manual?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('获取试卷详情出错：', error);
+                return null;
+            });
     }
 
-    /*************** 控制开关区 ****************/
+    // 保存试卷
+    function savePaper(
+        paperID = 0,
+        actionsArr = []
+    ){
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("paper_id", paperID);
+
+        const DATA = {
+            data: {
+                actions: actionsArr
+            }
+        };
+
+        const HEADERS = {
+            "Content-Type": "application/json"
+        };
+
+        return fetch(`/api/paper/manual?${PARAMS.toString()}`, {
+            headers: HEADERS,
+            method: "PUT",
+            credentials: "include",
+            body: JSON.stringify(DATA)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('保存试卷出错：', error);
+                return null;
+            });
+    }
+
+    /******************* API 区 ********************/
+
+
+    
+    /******************* 控制开关区 *****************/
+    let import_modal_is_open = $state(false);  // 从题库中导入题目弹窗
+    let is_adding_group = $state(false);      // 添加题组
+    let page_is_ready = $state(false);
+
+    function closeImportModal() {
+        import_modal_is_open = false;
+    }
+
+    /***************** 控制开关区 ******************/
     
 
-    /*************** 试卷信息区 ****************/
+    /***************** 试卷信息区 ******************/
 
     let paperID = $state(0);
-    let paperInfo = $state(null);
-    let paperName = $state("新建试卷");
+    let paper_info = $state(null);
+    let paper_name = $state("新建试卷");
     let category = $state("00");            // 试卷用途 00：考试 02：练习
     let level = $state("00");               // 试卷难度 00：简单 02：中等 04：困难
-    let suggestedDuration = $state(120);    // 建议时长，单位为分钟
-    let totalScore = $state(0);
-    let questionCount = $state(0);
+    let suggested_duration = $state(120);    // 建议时长，单位为分钟
+    let total_score = $state(0);
+    let question_count = $state(0);
     let description = $state("");
     let tags = $state([]);
 
-    // 防抖更新试卷信息
-    const debounceUpDatePaperInfo = debounce(() => {
-        const actions = [
+    // 保存试卷信息
+    function UpDatePaperInfo() {
+        const ACTIONS = [
             {
                 action: "update_info",
                 payload: {
-                    name: paperName,
+                    name: paper_name,
                     category: category,
                     level: level,
-                    duration: suggestedDuration,
+                    duration: suggested_duration,
                     description: description,
                     tags: tags
                 }
             }
         ];
+        savePaper(paperID, ACTIONS);
+    }
 
-        savePaper(paperID, actions)
-            .then(() => {
-                toast.success("试卷已同步更新", 1000);
-            });
+    // 防抖更新试卷信息
+    const debounceUpDatePaperInfo = debounce(() => {
+        UpDatePaperInfo();
     }, 500, false);
 
-    $effect(() => {
-        paperName; category; level; suggestedDuration; description; tags;
-        debounceUpDatePaperInfo();
-    });
-
-    /*************** 试卷信息区 ****************/
+    /**************** 试卷信息区 *****************/
 
 
 
-    /**************** 标签处理区 ****************/
+    /***************** 标签处理区 *****************/
 
-    let toAddTag = $state("");
+    // 标签颜色
+    const TAG_COLOR_LIST = [
+        "#40d5ff", "#59dcff", "#33c1e8", "#6adbff", "#26caef",
+        "#4dd6eb", "#6dcaf2", "#52c2ff", "#7fd3f3", "#47d0db",
+        "#5bc8f2", "#40c4e0", "#72deff", "#4fd4d9", "#83def5",
+        "#ffa040", "#ffb359", "#ffc26d", "#ffcf85", "#ff9eac",
+        "#ffb3c0", "#ffc6d1", "#ffd9e0", "#c6ff8c", "#d9ff99",
+        "#e0ffb3", "#e6ffcc"
+    ];
+
+    // 根据标签名称计算颜色数组的索引
+    function getColorIndex(tagName) {
+        // 获取标签名称的第一个字符
+        const FIRSTCHAR = tagName.charAt(0);
+
+        // 获取第一个字符的 Unicode 编码
+        const CHARCODE = FIRSTCHAR.charCodeAt(0);
+
+        // 计算并返回颜色数组的索引
+        return CHARCODE % TAG_COLOR_LIST.length;
+    }
+
+    let to_add_tag = $state("");
 
     // 新增标签
     function addTag() {
-        if (event.key === "Enter" && toAddTag.trim() !== "") {
-            tags = [toAddTag, ...tags];
-            toAddTag = "";
+        if (event.key === "Enter" && to_add_tag.trim() !== "") {
+            tags = [to_add_tag, ...tags];
+            to_add_tag = "";
+            UpDatePaperInfo();
         }
     }
 
     // 清除新建标签内容
     function clearToAddTagContent() {
-        toAddTag = "";
+        to_add_tag = "";
     }
 
     // 处理旧标签 Enter 键
@@ -98,27 +200,29 @@
     // 删除旧标签
     function deleteTag(index) {
         tags = tags.toSpliced(index, 1);
+        UpDatePaperInfo();
     }
 
-    /**************** 标签处理区 ****************/    
+    /***************** 标签处理区 *****************/    
 
 
 
-    /**************** 题组列表区 ****************/
+    /***************** 题组列表区 *****************/
 
-    let paperGroups = $state([]);
-    let toAddGroupName = $state("");
-    let toAddGroup = $state(null);
-    let toEditGroupID = $state(null);
-    let toEditGroupName = $state("");
-    let toEditGroup = $state(null);
-    let groupID = $state(0);
-    let groupName = $state("");
+    let paper_groups = $state([]);
+    let to_add_group_name = $state("");
+    let to_add_group = $state(null);
+    let to_edit_groupID = $state(null);
+    let to_edit_group_name = $state("");
+    let to_edit_group = $state(null);
+    let to_import_groupID = $state(0);
+    let to_import_group_name = $state("");
+    let to_import_group_length = $state(0);
 
     // 删除题组
     function deleteGroup(groupID) {
         // 判断是否为最后一个题组
-        if (paperGroups.length === 1) {
+        if (paper_groups.length === 1) {
             toast.error("至少保留一个题组", 1000);
             return;
         }
@@ -130,10 +234,10 @@
 
             onConfirm: () => {
                 // 删除后重新排序
-                let groupIDs = paperGroups.map(group => group.id);
+                let groupIDs = paper_groups.map(group => group.id);
                 groupIDs = groupIDs.filter(id => id !== groupID)
 
-                const actions = [
+                const ACTIONS = [
                     {
                         action: "delete_group",
                         payload: groupID
@@ -144,16 +248,15 @@
                     }
                 ];
 
-                savePaper(paperID, actions)
+                savePaper(paperID, ACTIONS)
                     .then(() => {
                         fetchPaper(paperID)
                         .then(result => {
-                            restoreOpenState(result.data.GroupsData, paperGroups);
-                            paperGroups = result.data.GroupsData;
-                            paperInfo = result.data;
-                            totalScore = paperInfo.TotalScore;
-                            questionCount = paperInfo.QuestionCount;
-                            toast.success("试卷已同步更新", 1000);
+                            paper_groups = result.data.GroupsData;
+                            paper_info = result.data;
+                            total_score = paper_info.TotalScore;
+                            question_count = paper_info.QuestionCount;
+                            toast.success("删除成功", 1000);
                         });
                     });
             }
@@ -162,42 +265,41 @@
 
     // 添加题组
     async function addGroup() {
-        isAddingGroup = true;
+        is_adding_group = true;
         await tick();
-        toAddGroup.focus();
+        to_add_group.focus();
     }
 
     // 取消添加题组
     function cancelAddGroup() {
-        isAddingGroup = false;
+        is_adding_group = false;
     }
 
     // 确认添加题组
     function confirmAddgroup() {
-        if(event.key === "Enter" && toAddGroupName.trim() !== "") {
+        if(event.key === "Enter" && to_add_group_name.trim() !== "") {
 
-            toAddGroup.blur();
+            to_add_group.blur();
 
-            const actions = [
+            const ACTIONS = [
                 {
                     action: "add_group",
                     payload: {
-                        name: toAddGroupName,
-                        order: paperGroups.length + 1
+                        name: to_add_group_name,
+                        order: paper_groups.length + 1
                     }
                 }
             ];
             
-            savePaper(paperID, actions)
+            savePaper(paperID, ACTIONS)
                 .then(result => {
                     fetchPaper(paperID)
                         .then(result => {
-                            restoreOpenState(result.data.GroupsData, paperGroups);
-                            paperGroups = result.data.GroupsData;
-                            paperInfo = result.data;
-                            isAddingGroup = false;
-                            toAddGroupName = "";
-                            toast.success("试卷已同步更新", 1000);
+                            paper_groups = result.data.GroupsData;
+                            paper_info = result.data;
+                            is_adding_group = false;
+                            to_add_group_name = "";
+                            toast.success("添加成功", 1000);
                     });
                 })
                 .finally(() => {
@@ -207,37 +309,36 @@
 
     // 编辑题组名称
     async function editGroupName(id, name) {
-        toEditGroupID = id;
-        toEditGroupName = name;
+        to_edit_groupID = id;
+        to_edit_group_name = name;
         await tick();
-        toEditGroup.focus();
+        to_edit_group.focus();
     }
 
     // 确认编辑题组名称
     function confirmEditGroupName() {
-        if(event.key === "Enter" && toEditGroupName.trim() !== "") {
+        if(event.key === "Enter" && to_edit_group_name.trim() !== "") {
 
-            toEditGroup.blur();
+            to_edit_group.blur();
 
-            const actions = [
+            const ACTIONS = [
                 {
                     action: "update_group",
                     payload: {
-                        id: toEditGroupID,
-                        name: toEditGroupName
+                        id: to_edit_groupID,
+                        name: to_edit_group_name
                     }
                 }
             ];
             
-            savePaper(paperID, actions)
+            savePaper(paperID, ACTIONS)
                 .then(() => {
                     fetchPaper(paperID)
                         .then(result => {
-                            restoreOpenState(result.data.GroupsData, paperGroups);
-                            paperGroups = result.data.GroupsData;
-                            paperInfo = result.data;
-                            toEditGroupID = null;
-                            toast.success("试卷已同步更新", 1000);
+                            paper_groups = result.data.GroupsData;
+                            paper_info = result.data;
+                            to_edit_groupID = null;
+                            toast.success("编辑成功", 1000);
                         });
                 });
         }
@@ -258,11 +359,11 @@
 
             onConfirm: () => {
                 // 删除后重新排序
-                const groupQuestions = group.questions;
-                let questionIDs = groupQuestions.map(question => question.id);
+                const GROUP_QUESTIONS = group.questions;
+                let questionIDs = GROUP_QUESTIONS.map(question => question.id);
                 questionIDs = questionIDs.filter(id => id !== questionID)
 
-                const actions = [
+                const ACTIONS = [
                     {
                         action: "delete_question",
                         payload: [questionID]
@@ -273,417 +374,435 @@
                     }
                 ];
 
-                savePaper(paperID, actions)
+                savePaper(paperID, ACTIONS)
                     .then(() => {
                         fetchPaper(paperID)
                             .then(result => {
-                                restoreOpenState(result.data.GroupsData, paperGroups);
-                                paperGroups = result.data.GroupsData;
-                                paperInfo = result.data;
-                                totalScore = paperInfo.TotalScore;
-                                questionCount = paperInfo.QuestionCount;
-                                toast.success("试卷已同步更新", 1000);
+                                paper_groups = result.data.GroupsData;
+                                paper_info = result.data;
+                                total_score = paper_info.TotalScore;
+                                question_count = paper_info.QuestionCount;
+                                toast.success("删除成功", 1000);
                             });
                     });
             }
         });
     }
 
+    // 导入题目
+    function importQuestions(group) {
+        to_import_groupID = group.id;
+        to_import_group_name = group.name;
+        to_import_group_length = group.questions.length;
+        import_modal_is_open = true;
+    }
+
     // 导入题目后信息更新
     function updateAfterImport(updatedGroups, updatedInfo) {
-        restoreOpenState(updatedGroups, paperGroups);
-        paperGroups = updatedGroups;
-        paperInfo = updatedInfo;
-        questionCount = updatedInfo.QuestionCount;
-        totalScore = updatedInfo.TotalScore;
+        // 更新试卷信息
+        paper_groups = updatedGroups;
+        paper_info = updatedInfo;
+        question_count = updatedInfo.QuestionCount;
+        total_score = updatedInfo.TotalScore;
+        
+        // 重置导入参数
+        to_import_groupID = 0;
+        to_import_group_name = "";
+        to_import_group_length = 0;
     }
 
     // 一键展开所有题组和题目
     function expandAll() {
-    paperGroups.forEach(group => {
-        group.isOpen = true;
-        group.questions?.forEach(question => {
-        question.isOpen = true;
+         // 创建新的展开状态对象
+        const newGroupState = {};
+        const newQuestionState = {};
+
+        paper_groups.forEach(group => {
+            newGroupState[group.id] = true;
+            group.questions?.forEach(question => {
+                newQuestionState[question.id] = true;
+            });
         });
-    });
+
+        GROUP_OPEN_STATE.set(newGroupState);
+        QUESTION_OPEN_STATE.set(newQuestionState);
     }
 
     // 一键收起所有题组和题目
     function collapseAll() {
-    paperGroups.forEach(group => {
-        group.isOpen = false;
-        group.questions?.forEach(question => {
-        question.isOpen = false;
+        const newGroupState = {};
+        const newQuestionState = {};
+
+        paper_groups.forEach(group => {
+            newGroupState[group.id] = false;
+            group.questions?.forEach(question => {
+                newQuestionState[question.id] = false;
+            });
         });
-    });
+
+        GROUP_OPEN_STATE.set(newGroupState);
+        QUESTION_OPEN_STATE.set(newQuestionState);
     }
 
-    /**************** 题组列表区 ****************/
+    // 切换展开状态
+    function changeOpenState(type, id) {
+        if(type === "group") {
+            GROUP_OPEN_STATE.update(state => ({ ...state, [id]: !state[id] }));
+        }
+        if(type === "question") {
+            QUESTION_OPEN_STATE.update(state => ({ ...state, [id]: !state[id] }));
+        }
+    }
+
+    /***************** 题组列表区 *****************/
 
     // 挂载区
-    onMount(() => {
-        paperID = JSON.parse(localStorage.getItem('currentPaperID'));
+    onMount (async () => {
+        paperID = get(CURRENT_PAPER_ID);
+        if(paperID === 0) {
+            await goto("/teacher/paper");
+            toast.success("试卷内容已保存",1000);
+            return;
+        }
         fetchPaper(paperID)
             .then(result => {
-                paperInfo = result.data;
-                paperGroups = result.data.GroupsData;
+                paper_info = result.data;
+                paper_groups = result.data.GroupsData;
 
-                paperGroups.forEach(group => {
-                    // 所有题组展开
-                    group.isOpen = true;
-                    
-                    group.questions.forEach(question => {
-                        // 所有题目展开
-                        question.isOpen = true;
-                    });
-                });
-
-                paperName = paperInfo.Name;
-                category = paperInfo.Category;
-                level = paperInfo.Level;
-                suggestedDuration = paperInfo.SuggestedDuration;
-                totalScore = paperInfo.TotalScore;
-                questionCount = paperInfo.QuestionCount;
-                description = paperInfo.Description;
-                tags = paperInfo.Tags;
+                paper_name = paper_info.Name;
+                category = paper_info.Category;
+                level = paper_info.Level;
+                suggested_duration = paper_info.SuggestedDuration;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+                description = paper_info.Description;
+                tags = paper_info.Tags;
+            })
+            .finally(() => {
+                page_is_ready = true;
+                // console.log(paper_groups);
             });
     })
 
     function test() {
-        console.log(toCreatePaper);
-        console.log(paperGroups);
     }
 
 </script>
 
-<!-- <button onclick={test}>点我</button> -->
-
-{#if importModalIsOpen}
+{#if import_modal_is_open}
     <ImportQuestion
         onclose={closeImportModal}
         update={updateAfterImport}
-        toAddGroupID={groupID}
-        toAddgroupName={groupName}
+        to_import_groupID={to_import_groupID}
+        to_import_group_name={to_import_group_name}
+        to_import_group_length={to_import_group_length}
+        fetchPaper={fetchPaper}
+        savePaper={savePaper}
     />
 {/if}
 
-<div class="add-paper">
-    <!-- 顶部栏 -->
-    <div class="header">
-        <!-- 标题 -->
-        <div class="title-container">
-            <div class="title-icon"></div>
-            <span class="title-name">自定义组卷</span>
+{#if page_is_ready}
+    <div class="add-paper">
+        <!-- 顶部栏 -->
+        <div class="header">
+            <!-- 标题 -->
+            <div class="title-container">
+                <div class="title-icon"></div>
+                <span class="title-name">自定义组卷</span>
+            </div>
+
+            <!-- 试卷名称 -->
+            <input onchange={()=>debounceUpDatePaperInfo()} class="paper-name-input {paper_name===""?"name-warn":""}" type="text" bind:value={paper_name} placeholder="试卷名称不能为空">
+            
+            <!-- 操作区 -->
+            <div class="operation">
+                <Button onclick={()=>expandAll()} plain={true}>一键展开</Button>
+                <Button onclick={()=>collapseAll()} plain={true}>一键收起</Button>
+                <Button onclick={()=>{import_modal_is_open=true}}>从题库中导入</Button>
+                <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper')}>保存并退出</Button>
+            </div>
         </div>
 
-        <!-- 试卷名称 -->
-        <input class="paper-name-input {paperName===""?"name-warn":""}" type="text" bind:value={paperName} placeholder="试卷名称不能为空">
-        
-        <!-- 操作区 -->
-        <div class="operation">
-            <Button onclick={()=>expandAll()} plain={true}>一键展开</Button>
-            <Button onclick={()=>collapseAll()} plain={true}>一键收起</Button>
-            <Button onclick={()=>{groupID=0;importModalIsOpen=true}}>从题库中导入</Button>
-            <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper')}>退出</Button>
-        </div>
-    </div>
-
-    <!-- 下半区 -->
-    <div class="bottom-area">
-        <!-- 侧边栏 -->
-        <div class="side-bar">
-            <!-- 试卷信息 -->
-            <div class="paper-info-container">
-                <span class="title">试卷信息</span>
-                <!-- 试卷用途 -->
-                <div class="single-line">
-                    <span class="info-label">试卷用途</span>
-                    <Select bind:value={category}>
-                        <Option value="00" label="考试"></Option>
-                        <Option value="02" label="练习"></Option>
-                    </Select>
-                </div>
-
-                <!-- 试卷难度 -->
-                <div class="single-line">
-                    <span class="info-label">试卷难度</span>
-                    <div class="level-container">
-                        <div class="single-level">
-                            <input type="radio" name="paper-level" value="00" bind:group={level}>简单
-                        </div>
-                        <div class="single-level">
-                            <input type="radio" name="paper-level" value="02" bind:group={level}>中等
-                        </div>
-                        <div class="single-level">
-                            <input type="radio" name="paper-level" value="04" bind:group={level}>困难
-                        </div>
+        <!-- 下半区 -->
+        <div class="bottom-area">
+            <!-- 侧边栏 -->
+            <div class="side-bar">
+                <!-- 试卷信息 -->
+                <div class="paper-info-container">
+                    <span class="title">试卷信息</span>
+                    <!-- 试卷用途 -->
+                    <div class="single-line">
+                        <span class="info-label">试卷用途</span>
+                        <Select bind:value={category} changeValue={()=>UpDatePaperInfo()}>
+                            <Option value="00" label="考试"></Option>
+                            <Option value="02" label="练习"></Option>
+                        </Select>
                     </div>
-                </div>
-                
-                <!-- 建议时长 -->
-                <div class="single-line">
-                    <span class="info-label">建议时长</span>
-                    <InputBox bind:value={suggestedDuration} type="number" showLabel={false} clearable={false}/>
-                    <span class="duration-span">分钟</span>
-                </div>
 
-                <!-- 试卷总分 -->
-                <div class="single-line">
-                    <span class="info-label">试卷总分</span>
-                    <span class="total-score-number">{totalScore}</span>
-                    <span class="total-score-span">分</span>
-                </div>
-
-                <!-- 试题数量 -->
-                <div class="single-line">
-                    <span class="info-label">试题数量</span>
-                    <span class="question-count-number">{questionCount}</span>
-                    <span class="question-count-span">道</span>
-                </div>
-
-                <!-- 试卷说明 -->
-                <div class="paper-description">
-                    <span class="info-label">试卷说明</span>
-                    <textarea class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
-                </div>
-
-                <!-- 试卷标签 -->
-                <div class="paper-tags">
-                    <span class="info-label">试卷标签</span>
-                    <div class="tags-container">
-                        <!-- 固定用于创建新标签的标签 -->
-                        <div class="paper-tag" style="border: 1.5px dashed var(--border-medium);">
-                            <div class="color-block" style="background-color: {toAddTag===""? "#40d5ff":tagColorList[getColorIndex(toAddTag)]};"></div>
-                            <div class="btn-box">
-                                <input type="text" bind:value={toAddTag} onkeydown={addTag} placeholder="+标签"/>
-                                <button onclick={clearToAddTagContent}>✕</button>
+                    <!-- 试卷难度 -->
+                    <div class="single-line">
+                        <span class="info-label">试卷难度</span>
+                        <div class="level-container" onchange={()=>UpDatePaperInfo()}>
+                            <div class="single-level">
+                                <input type="radio" name="paper-level" value="00" bind:group={level}>简单
+                            </div>
+                            <div class="single-level">
+                                <input type="radio" name="paper-level" value="02" bind:group={level}>中等
+                            </div>
+                            <div class="single-level">
+                                <input type="radio" name="paper-level" value="04" bind:group={level}>困难
                             </div>
                         </div>
+                    </div>
+                    
+                    <!-- 建议时长 -->
+                    <div class="single-line">
+                        <span class="info-label">建议时长</span>
+                        <InputBox onInput={()=>debounceUpDatePaperInfo()} bind:value={suggested_duration} type="number" show_label={false} clearable={false}/>
+                        <span class="duration-span">分钟</span>
+                    </div>
 
-                        <!-- 已创建的标签 -->
-                        {#each tags as tag, index}
-                            <div class="paper-tag">
-                                <div class="color-block" style="background-color: {tag===""? "#40d5ff":tagColorList[getColorIndex(tag)]};"></div>
+                    <!-- 试卷总分 -->
+                    <div class="single-line">
+                        <span class="info-label">试卷总分</span>
+                        <span class="total-score-number">{total_score}</span>
+                        <span class="total-score-span">分</span>
+                    </div>
+
+                    <!-- 试题数量 -->
+                    <div class="single-line">
+                        <span class="info-label">试题数量</span>
+                        <span class="question-count-number">{question_count}</span>
+                        <span class="question-count-span">道</span>
+                    </div>
+
+                    <!-- 试卷说明 -->
+                    <div class="paper-description">
+                        <span class="info-label">试卷说明</span>
+                        <textarea onchange={()=>debounceUpDatePaperInfo()} class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
+                    </div>
+
+                    <!-- 试卷标签 -->
+                    <div class="paper-tags">
+                        <span class="info-label">试卷标签</span>
+                        <div class="tags-container">
+                            <!-- 固定用于创建新标签的标签 -->
+                            <div class="paper-tag" style="border: 1.5px dashed var(--border-medium);">
+                                <div class="color-block" style="background-color: {to_add_tag===""? "#40d5ff":TAG_COLOR_LIST[getColorIndex(to_add_tag)]};"></div>
                                 <div class="btn-box">
-                                    <input type="text" bind:value={tags[index]} onkeydown={oldTagEnter} placeholder="+标签"/>
-                                    <button onclick={()=>deleteTag(index)}>✕</button>
+                                    <input type="text" bind:value={to_add_tag} onkeydown={addTag} placeholder="+标签" maxlength="30"/>
+                                    <button onclick={clearToAddTagContent}>✕</button>
                                 </div>
                             </div>
-                        {/each}
-                    </div>
-                </div>
-            </div>
 
-            <!-- 题组列表 -->
-            <div class="question-groups-container">
-                <!-- 标题 -->
-                <div class="question-groups-header">
-                    <div class="title-box">
-                        <div class="title">题组列表</div>
-                        <span>共有 {paperGroups.length} 个题组</span>
-                    </div>
-                    <div class="add-box">
-                        <Button onclick={()=>addGroup()} plain={true}>添加题组</Button>
-                    </div>
-                </div>
-
-                <!-- 列表 -->
-                <div class="question-groups-box">
-                    <!-- 已有题组 -->
-                    {#if paperGroups.length !== 0}
-                        {#each paperGroups as group}
-                            {#if toEditGroupID === group.id}
-                               <div class="single-group">
-                                    <input bind:value={toEditGroupName} onkeydown={()=>confirmEditGroupName()} bind:this={toEditGroup} class="add-group-input" type="text">
+                            <!-- 已创建的标签 -->
+                            {#each tags as tag, index}
+                                <div class="paper-tag">
+                                    <div class="color-block" style="background-color: {tag===""? "#40d5ff":TAG_COLOR_LIST[getColorIndex(tag)]};"></div>
                                     <div class="btn-box">
-                                        <!-- 删除按钮 -->
-                                        <button onclick={()=>{toEditGroupID=null}} class="delete-group-btn" title="删除">✖</button>
+                                        <input type="text" bind:value={tags[index]} onkeydown={oldTagEnter} placeholder="+标签" maxlength="30"/>
+                                        <button onclick={()=>deleteTag(index)}>✕</button>
                                     </div>
                                 </div>
-                            {:else}
+                            {/each}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 题组列表 -->
+                <div class="question-groups-container">
+                    <!-- 标题 -->
+                    <div class="question-groups-header">
+                        <div class="title-box">
+                            <div class="title">题组列表</div>
+                            <span>共有 {paper_groups.length} 个题组</span>
+                        </div>
+                        <div class="add-box">
+                            <Button onclick={()=>addGroup()} plain={true}>添加题组</Button>
+                        </div>
+                    </div>
+
+                    <!-- 列表 -->
+                    <div class="question-groups-box">
+                        <!-- 已有题组 -->
+                        {#if paper_groups.length !== 0}
+                            {#each paper_groups as group}
+                                {#if to_edit_groupID === group.id}
                                 <div class="single-group">
-                                    <span>{group.name}</span>
-                                    <div class="btn-box">
-                                        <!-- 编辑按钮 -->
-                                        <button onclick={()=>editGroupName(group.id,group.name)} class="edit-group-btn" title="编辑" aria-label="编辑题目">
-                                            <svg
-                                                viewBox="0 0 1024 1024"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                width="10"
-                                                height="10"
-                                            >
-                                                <path
-                                                    d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                                    fill="currentColor"
-                                                />
-                                            </svg>
-                                        </button>
-                                        <!-- 删除按钮 -->
-                                        <button onclick={()=>deleteGroup(group.id)} class="delete-group-btn" title="删除">✖</button>
-                                    </div>
-                                </div>
-                            {/if}
-                        {/each}
-                    {/if}
-
-                    <!-- 添加题组 -->
-                    {#if isAddingGroup}
-                        <div class="single-group">
-                            <input bind:value={toAddGroupName} onkeydown={confirmAddgroup} bind:this={toAddGroup} class="add-group-input" type="text">
-                            <div class="btn-box">
-                                <!-- 取消按钮 -->
-                                <button onclick={()=>cancelAddGroup()} class="delete-group-btn" title="删除">✖</button>
-                            </div>
-                        </div>
-                    {/if}
-
-                </div>
-            </div>
-        </div>
-
-        <!-- 内容区 -->
-        <div class="content-container">
-            {#if paperGroups}
-                {#each paperGroups as group}
-                    <div class="single-group-content">
-                        <!-- 头部下拉栏 -->
-                        <div class="group-header">
-                            <!-- 左侧区域 -->
-                            <!-- svelte-ignore a11y_click_events_have_key_events -->
-                            <!-- svelte-ignore a11y_no_static_element_interactions -->
-                            <div class="header-left" onclick={()=>{group.isOpen=!group.isOpen}}>
-                                <button class="toggle-btn">{group.isOpen?"∨":"∧"}</button>
-                                <span>{group.name}</span>
-                            </div>
-
-                            <!-- 编辑按钮 -->
-                            <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
-                                <svg
-                                    viewBox="0 0 1024 1024"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    width="14"
-                                    height="14"
-                                >
-                                    <path
-                                        d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                        fill="currentColor"
-                                    />
-                                </svg>
-                            </button>
-
-                            <!-- 右侧区域 -->
-                            <div class="header-right">
-                                <!-- <span>每题分值：</span>
-                                <input value={10} id="temp-average-question-score-input" type="number">
-                                <Button>导入题目</Button> -->
-                            </div>
-                        </div>
-
-                        <!-- 题目列表 -->
-                        {#if group.isOpen}
-                            <div class="group-question-list">
-                                
-                                {#if group.questions.length !== 0}
-                                    {#each group.questions as question}
-                                        <div class="single-question">
-                                            <!-- 头部下拉栏 -->
-                                            <div class="question-header">
-                                                <!-- 左侧区域 -->
-                                                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                                                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                                <div class="header-left"  onclick={()=>{question.isOpen=!question.isOpen}}>
-                                                    <button class="toggle-btn-down">{question.isOpen?"∨":"∧"}</button>
-                                                    <span class="sequence">{question.order}</span>
-                                                    <span class="question-type">{questionTypeTrans[question.type]}</span>
-                                                    <span class={questionDifficultyTrans[questionDifficultyTrans[question.difficulty]]}>{questionDifficultyTrans[question.difficulty]}</span>
-                                                </div>
-
-                                                <!-- 右侧区域 -->
-                                                <div class="header-right">
-                                                    <span>分值：{question.score} 分</span>
-                                                    <!-- <input value={question.score} id="temp-per-question-score-input" type="number"> -->
-<!-- 
-                                                    <button class="move-btn" title="上移">↑</button>
-                                                    <button class="move-btn" title="下移">↓</button>
-                                                    <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
-                                                        <svg
-                                                            viewBox="0 0 1024 1024"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            stroke-width="2"
-                                                            stroke-linecap="round"
-                                                            stroke-linejoin="round"
-                                                            width="12"
-                                                            height="12"
-                                                        >
-                                                            <path
-                                                                d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                                                fill="currentColor"
-                                                            />
-                                                        </svg>
-                                                    </button>
-                                                     -->
-                                                    <button onclick={()=>deleteQuestion(question.id,group)} class="delete-question-btn" title="删除">✕</button>
-                                                </div>
-                                            </div>
-
-                                            <!-- 题目内容 -->
-                                            {#if question.isOpen}
-                                                <div class="question-container">
-                                                    <QuestionPreview {question}/>                                            
-                                                </div>
-                                            {/if}
+                                        <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} bind:this={to_edit_group} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
+                                        <div class="btn-box">
+                                            <!-- 删除按钮 -->
+                                            <button onclick={()=>{to_edit_groupID=null}} class="delete-group-btn" title="删除">✖</button>
                                         </div>
-                                    {/each}
-                                
-                                    <!-- 暂无题目 -->
-                                    {:else}
-                                    <div class="no-questions-container">
-                                        <div class="no-questions-box">
-                                            <span class="title">题组暂无题目</span>
-                                            <span class="prompt">可以通过以下方式快速添加题目：</span>
-                                            <div class="import-box">
-                                                <Button onclick={()=>{groupID=group.id;groupName=group.name;importModalIsOpen=true}}>导入题目</Button>
-                                            </div>
+                                    </div>
+                                {:else}
+                                    <div class="single-group">
+                                        <span>{group.name}</span>
+                                        <div class="btn-box">
+                                            <!-- 编辑按钮 -->
+                                            <button onclick={()=>editGroupName(group.id,group.name)} class="edit-group-btn" title="编辑" aria-label="编辑题目">
+                                                <svg
+                                                    viewBox="0 0 1024 1024"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    width="10"
+                                                    height="10"
+                                                >
+                                                    <path
+                                                        d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                                        fill="currentColor"
+                                                    />
+                                                </svg>
+                                            </button>
+                                            <!-- 删除按钮 -->
+                                            <button onclick={()=>deleteGroup(group.id)} class="delete-group-btn" title="删除">✖</button>
                                         </div>
                                     </div>
                                 {/if}
+                            {/each}
+                        {/if}
+
+                        <!-- 添加题组 -->
+                        {#if is_adding_group}
+                            <div class="single-group">
+                                <input bind:value={to_add_group_name} onkeydown={confirmAddgroup} bind:this={to_add_group} class="add-group-input" type="text" placeholder="按 Enter 键确认添加">
+                                <div class="btn-box">
+                                    <!-- 取消按钮 -->
+                                    <button onclick={()=>cancelAddGroup()} class="delete-group-btn" title="删除">✖</button>
+                                </div>
                             </div>
                         {/if}
+
                     </div>
-                {/each}
-            {/if}
+                </div>
+            </div>
+
+            <!-- 内容区 -->
+            <div class="content-container">
+                {#if paper_groups}
+                    {#each paper_groups as group}
+                        <div class="single-group-content">
+                            <!-- 头部下拉栏 -->
+                            <div class="group-header">
+                                <!-- 左侧区域 -->
+                                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                <div class="header-left" onclick={()=>changeOpenState("group",group.id)}>
+                                    <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
+                                    <span>{group.name}</span>
+                                </div>
+
+                                <!-- 编辑按钮 -->
+                                <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
+                                    <svg
+                                        viewBox="0 0 1024 1024"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        width="14"
+                                        height="14"
+                                    >
+                                        <path
+                                            d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                            fill="currentColor"
+                                        />
+                                    </svg>
+                                </button>
+
+                                <!-- 右侧区域 -->
+                                <div class="header-right">
+                                    <!-- <span>每题分值：</span>
+                                    <input value={10} id="temp-average-question-score-input" type="number"> -->
+                                    <Button onclick={()=>importQuestions(group)}>导入题目</Button>
+                                </div>
+                            </div>
+
+                            <!-- 题目列表 -->
+                            {#if $GROUP_OPEN_STATE[group.id]}
+                                <div class="group-question-list">
+                                    
+                                    {#if group.questions.length !== 0}
+                                        {#each group.questions as question}
+                                            <div class="single-question">
+                                                <!-- 头部下拉栏 -->
+                                                <div class="question-header">
+                                                    <!-- 左侧区域 -->
+                                                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                                    <div class="header-left"  onclick={()=>changeOpenState("question",question.id)}>
+                                                        <button class="toggle-btn-down">{$QUESTION_OPEN_STATE[question.id]?"∨":"∧"}</button>
+                                                        <span class="sequence">{question.order}</span>
+                                                        <span class="question-type">{QUESTION_TYPE_TRANS[question.type]}</span>
+                                                        <span class={DIFFICULTY_TRANS[DIFFICULTY_TRANS[question.difficulty]]}>{DIFFICULTY_TRANS[question.difficulty]}</span>
+                                                    </div>
+
+                                                    <!-- 右侧区域 -->
+                                                    <div class="header-right">
+                                                        <span>分值：{question.score} 分</span>
+                                                        <!-- <input value={question.score} id="temp-per-question-score-input" type="number"> -->
+    <!-- 
+                                                        <button class="move-btn" title="上移">↑</button>
+                                                        <button class="move-btn" title="下移">↓</button>
+                                                        <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
+                                                            <svg
+                                                                viewBox="0 0 1024 1024"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                stroke-width="2"
+                                                                stroke-linecap="round"
+                                                                stroke-linejoin="round"
+                                                                width="12"
+                                                                height="12"
+                                                            >
+                                                                <path
+                                                                    d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                                                    fill="currentColor"
+                                                                />
+                                                            </svg>
+                                                        </button>
+                                                        -->
+                                                        <button onclick={()=>deleteQuestion(question.id,group)} class="delete-question-btn" title="删除">✕</button>
+                                                    </div>
+                                                </div>
+
+                                                <!-- 题目内容 -->
+                                                {#if $QUESTION_OPEN_STATE[question.id]}
+                                                    <div class="question-container">
+                                                        <QuestionPreview {question}/>  
+                                                        <!-- <MyPreviewQuestion question={question}/>                                           -->
+                                                    </div>
+                                                {/if}
+                                            </div>
+                                        {/each}
+                                    
+                                        <!-- 暂无题目 -->
+                                    {:else}
+                                        <div class="no-questions-container">
+                                            <div class="no-questions-box">
+                                                <span class="title">题组暂无题目</span>
+                                                <span class="prompt">可以通过以下方式快速添加题目：</span>
+                                                <div class="import-box">
+                                                    <Button onclick={()=>importQuestions(group)}>导入题目</Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {/if}
+                                </div>
+                            {/if}
+                        </div>
+                    {/each}
+                {/if}
+            </div>
         </div>
     </div>
-</div>
+{/if}
 
 <style>
-    /**************** 临时组件区 ****************/
-
-    #temp-average-question-score-input {
-        padding: 4px 8px 4px 24px;
-        width: 40px;
-        margin-right: 30px;
-        font-size: 16px;
-    }
-
-    #temp-per-question-score-input {
-        padding: 4px 8px 4px 16px;
-        width: 36px;
-        margin-right: 12px;
-        font-size: 16px;
-    }
-
-    /**************** 临时组件区 ****************/
-
 
     .add-paper {
         font-family: 'Noto Sans SC', sans-serif;
@@ -696,7 +815,7 @@
             padding: 16px 32px 16px 24px;
             align-items: center;
             border-bottom: 1.5px solid var(--border-light);
-            height: 40px;
+            min-height: 40px;
             white-space: nowrap;
 
             /* 标题 */
@@ -895,13 +1014,14 @@
                                         font-size: 12px;
                                         outline: none;
                                         margin-left: 2px;
-                                        margin-right: 8px;
+                                        margin-right: 4px;
                                         color: var(--text-primary);
                                     }
 
                                     button {
                                         font-size: 10px;
                                         padding: 0;
+                                        padding-right: 4px;
                                         background: none;
                                         border: none;
                                         cursor: pointer;
@@ -993,7 +1113,7 @@
                                 gap: 3px;
 
                                 svg {
-                                    padding-top: 5px;
+                                    margin-top: 5px;
                                 }
 
                                 .edit-group-btn, .delete-group-btn {
@@ -1266,7 +1386,7 @@
                                         }
 
                                         svg {
-                                            padding-top: 4px;
+                                            margin-top: 4px;
                                         }
                                     }
 
@@ -1285,7 +1405,7 @@
 
                             /* 题目内容 */
                             .question-container {
-                                /* padding: 0 20px; */
+                                /* padding: 20px; */
 
                                 .prompt {
                                     font-size: 14px;

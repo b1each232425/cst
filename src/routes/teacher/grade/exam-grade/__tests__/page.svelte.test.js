@@ -62,13 +62,20 @@ describe('考试成绩管理页面', () => {
 		vi.clearAllMocks();
 	});
 
-	it('应该渲染标题组件', () => {
+	it('应该渲染标题组件', async () => {
 		render(Page);
-		// Assuming Title component renders a specific role or text
-		expect(screen.getByText('考试成绩管理')).toBeInTheDocument();
+		// 检查Title是否使用了正确的属性props进行调用
+		const Title = (await import('$lib/components/Title/Title.svelte')).default;
+		expect(Title).toHaveBeenCalled();
+		//第一次调用参数数据
+		const titleCall = Title.mock.calls[0];
+		//props对象
+		expect(titleCall[1]).toEqual(expect.objectContaining({
+			title: '考试成绩管理'
+		}));
 	});
 
-	it('shows loading message when store is in loading state', () => {
+	it('当 store 处于加载状态时应显示加载提示', () => {
 		// Customize the mock for this specific test
 		createGradeStore.mockImplementationOnce(() => ({
 			state: {
@@ -83,7 +90,7 @@ describe('考试成绩管理页面', () => {
 		expect(screen.getByText('加载中...')).toBeInTheDocument();
 	});
 
-	it('renders ExamTable when not loading', async () => {
+	it('当 store 不处于加载状态时应渲染 ExamTable', async () => {
 		createGradeStore.mockImplementationOnce(() => ({
 			state: {
 				loading: false,
@@ -102,7 +109,7 @@ describe('考试成绩管理页面', () => {
 		expect(ExamTable).toHaveBeenCalled();
 	});
 
-	it('renders filter panel and pagination', async () => {
+	it('应渲染过滤面板和分页组件', async () => {
 		render(Page);
 		const ExamFilterPanel = (await import('../../_components/exam/ExamFilterPanel.svelte')).default;
 		const Pagination = (await import('$lib/components/Pagination/Pagination.svelte')).default;
@@ -111,23 +118,23 @@ describe('考试成绩管理页面', () => {
 		expect(Pagination).toHaveBeenCalled();
 	});
 
-	it('has correct CSS classes for layout', () => {
+	it('应具有正确的 CSS 类以实现布局', () => {
 		const { container } = render(Page);
 
-		// Check for main container
+		// 检查主容器
 		expect(container.querySelector('.page-container')).toBeInTheDocument();
 
-		// Check for filter container
+		// 检查过滤容器
 		expect(container.querySelector('.filter-container')).toBeInTheDocument();
 
-		// Check for table container
+		// 检查表格容器
 		expect(container.querySelector('.table-container')).toBeInTheDocument();
 
-		// Check for pagination wrapper with right alignment
+		// 检查带有右对齐的分页包装器
 		expect(container.querySelector('.pagination-wrapper')).toBeInTheDocument();
 	});
 
-	it('pagination wrapper has correct styling for right alignment', () => {
+	it('应具有正确的样式以实现右对齐', () => {
 		const { container } = render(Page);
 		const paginationWrapper = container.querySelector('.pagination-wrapper');
 
