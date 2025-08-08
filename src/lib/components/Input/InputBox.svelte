@@ -192,7 +192,6 @@
       @include flex-center;
       flex: 1;
       gap: 8px;
-      min-width: 150px;
 
       .input__inner {
         border-radius: 3px;
