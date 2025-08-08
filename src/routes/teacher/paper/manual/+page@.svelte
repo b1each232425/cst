@@ -1,22 +1,104 @@
+<!--
+ * @Author: WangKaidun 1597225095@qq.com
+ * @Date: 2025-08-01 15:21:42
+ * @LastEditors: WangKaidun 1597225095@qq.com
+ * @LastEditTime: 2025-08-07 11:35:31
+ * @FilePath: \exam\src\routes\teacher\paper\manual\+page@.svelte
+ * @Description: 自定义组卷页面
+ * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
+-->
 <script>
-    import { goto } from "$app/navigation";
     import Button from "$lib/components/Button/Button.svelte";
-    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS, TAG_COLOR_LIST } from "../_utils/data";
-    import { getColorIndex, restoreOpenState } from "../_utils/func";
     import ImportQuestion from "../_components/ImportQuestion/ImportQuestion.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Select from "$lib/components/Select/Select.svelte";
     import Option from "$lib/components/Select/Option.svelte";
-    import { onMount, tick } from "svelte";
-    import { createEmptyPaper, fetchPaper, savePaper } from "../_utils/api";
     import Toast from "$lib/components/Toast/Toast.svelte";
-    import { toast } from "$lib/components/Toast/Toast";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
-    import { debounce } from "$lib/utils/optimize";
-    import QuestionPreviewPanel from "../../question-bank/_components/QuestionPreviewPanel.svelte";
     import QuestionPreview from "../_components/PreviewQuestion/PreviewQuestion.svelte"
+    import { goto } from "$app/navigation";
+    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../_utils/tool";
+    import { onMount, tick } from "svelte";
+    import { toast } from "$lib/components/Toast/Toast";
+    import { debounce } from "$lib/utils/optimize";
+    import { get } from "svelte/store";
+    import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE } from "../_stores/store";
+    import MyPreviewQuestion from "../_components/MyPreviewQuestion/MyPreviewQuestion.svelte";
+
+    /******************* API 区 ********************/
+
+    // 获取试卷详情
+    function fetchPaper(
+        paperID = 0
+    ){
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("paper_id", paperID);
+
+        return fetch(`/api/paper/manual?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('获取试卷详情出错：', error);
+                return null;
+            });
+    }
+
+    // 保存试卷
+    function savePaper(
+        paperID = 0,
+        actionsArr = []
+    ){
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("paper_id", paperID);
+
+        const DATA = {
+            data: {
+                actions: actionsArr
+            }
+        };
+
+        const HEADERS = {
+            "Content-Type": "application/json"
+        };
+
+        return fetch(`/api/paper/manual?${PARAMS.toString()}`, {
+            headers: HEADERS,
+            method: "PUT",
+            credentials: "include",
+            body: JSON.stringify(DATA)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('保存试卷出错：', error);
+                return null;
+            });
+    }
+
+    /******************* API 区 ********************/
+
+
     
-    /*************** 控制开关区 ****************/
+    /******************* 控制开关区 *****************/
     let import_modal_is_open = $state(false);  // 从题库中导入题目弹窗
     let is_adding_group = $state(false);      // 添加题组
     let page_is_ready = $state(false);
@@ -25,10 +107,10 @@
         import_modal_is_open = false;
     }
 
-    /*************** 控制开关区 ****************/
+    /***************** 控制开关区 ******************/
     
 
-    /*************** 试卷信息区 ****************/
+    /***************** 试卷信息区 ******************/
 
     let paperID = $state(0);
     let paper_info = $state(null);
@@ -41,9 +123,9 @@
     let description = $state("");
     let tags = $state([]);
 
-    // 防抖更新试卷信息
-    const debounceUpDatePaperInfo = debounce(() => {
-        const actions = [
+    // 保存试卷信息
+    function UpDatePaperInfo() {
+        const ACTIONS = [
             {
                 action: "update_info",
                 payload: {
@@ -56,20 +138,41 @@
                 }
             }
         ];
+        savePaper(paperID, ACTIONS);
+    }
 
-        savePaper(paperID, actions);
+    // 防抖更新试卷信息
+    const debounceUpDatePaperInfo = debounce(() => {
+        UpDatePaperInfo();
     }, 500, false);
 
-    $effect(() => {
-        paper_name; category; level; suggested_duration; description; tags;
-        debounceUpDatePaperInfo();
-    });
-
-    /*************** 试卷信息区 ****************/
+    /**************** 试卷信息区 *****************/
 
 
 
-    /**************** 标签处理区 ****************/
+    /***************** 标签处理区 *****************/
+
+    // 标签颜色
+    const TAG_COLOR_LIST = [
+        "#40d5ff", "#59dcff", "#33c1e8", "#6adbff", "#26caef",
+        "#4dd6eb", "#6dcaf2", "#52c2ff", "#7fd3f3", "#47d0db",
+        "#5bc8f2", "#40c4e0", "#72deff", "#4fd4d9", "#83def5",
+        "#ffa040", "#ffb359", "#ffc26d", "#ffcf85", "#ff9eac",
+        "#ffb3c0", "#ffc6d1", "#ffd9e0", "#c6ff8c", "#d9ff99",
+        "#e0ffb3", "#e6ffcc"
+    ];
+
+    // 根据标签名称计算颜色数组的索引
+    function getColorIndex(tagName) {
+        // 获取标签名称的第一个字符
+        const FIRSTCHAR = tagName.charAt(0);
+
+        // 获取第一个字符的 Unicode 编码
+        const CHARCODE = FIRSTCHAR.charCodeAt(0);
+
+        // 计算并返回颜色数组的索引
+        return CHARCODE % TAG_COLOR_LIST.length;
+    }
 
     let to_add_tag = $state("");
 
@@ -78,6 +181,7 @@
         if (event.key === "Enter" && to_add_tag.trim() !== "") {
             tags = [to_add_tag, ...tags];
             to_add_tag = "";
+            UpDatePaperInfo();
         }
     }
 
@@ -96,13 +200,14 @@
     // 删除旧标签
     function deleteTag(index) {
         tags = tags.toSpliced(index, 1);
+        UpDatePaperInfo();
     }
 
-    /**************** 标签处理区 ****************/    
+    /***************** 标签处理区 *****************/    
 
 
 
-    /**************** 题组列表区 ****************/
+    /***************** 题组列表区 *****************/
 
     let paper_groups = $state([]);
     let to_add_group_name = $state("");
@@ -110,8 +215,9 @@
     let to_edit_groupID = $state(null);
     let to_edit_group_name = $state("");
     let to_edit_group = $state(null);
-    let groupID = $state(0);
-    let group_name = $state("");
+    let to_import_groupID = $state(0);
+    let to_import_group_name = $state("");
+    let to_import_group_length = $state(0);
 
     // 删除题组
     function deleteGroup(groupID) {
@@ -131,7 +237,7 @@
                 let groupIDs = paper_groups.map(group => group.id);
                 groupIDs = groupIDs.filter(id => id !== groupID)
 
-                const actions = [
+                const ACTIONS = [
                     {
                         action: "delete_group",
                         payload: groupID
@@ -142,11 +248,10 @@
                     }
                 ];
 
-                savePaper(paperID, actions)
+                savePaper(paperID, ACTIONS)
                     .then(() => {
                         fetchPaper(paperID)
                         .then(result => {
-                            restoreOpenState(result.data.GroupsData, paper_groups);
                             paper_groups = result.data.GroupsData;
                             paper_info = result.data;
                             total_score = paper_info.TotalScore;
@@ -176,7 +281,7 @@
 
             to_add_group.blur();
 
-            const actions = [
+            const ACTIONS = [
                 {
                     action: "add_group",
                     payload: {
@@ -186,11 +291,10 @@
                 }
             ];
             
-            savePaper(paperID, actions)
+            savePaper(paperID, ACTIONS)
                 .then(result => {
                     fetchPaper(paperID)
                         .then(result => {
-                            restoreOpenState(result.data.GroupsData, paper_groups);
                             paper_groups = result.data.GroupsData;
                             paper_info = result.data;
                             is_adding_group = false;
@@ -217,7 +321,7 @@
 
             to_edit_group.blur();
 
-            const actions = [
+            const ACTIONS = [
                 {
                     action: "update_group",
                     payload: {
@@ -227,11 +331,10 @@
                 }
             ];
             
-            savePaper(paperID, actions)
+            savePaper(paperID, ACTIONS)
                 .then(() => {
                     fetchPaper(paperID)
                         .then(result => {
-                            restoreOpenState(result.data.GroupsData, paper_groups);
                             paper_groups = result.data.GroupsData;
                             paper_info = result.data;
                             to_edit_groupID = null;
@@ -256,11 +359,11 @@
 
             onConfirm: () => {
                 // 删除后重新排序
-                const groupQuestions = group.questions;
-                let questionIDs = groupQuestions.map(question => question.id);
+                const GROUP_QUESTIONS = group.questions;
+                let questionIDs = GROUP_QUESTIONS.map(question => question.id);
                 questionIDs = questionIDs.filter(id => id !== questionID)
 
-                const actions = [
+                const ACTIONS = [
                     {
                         action: "delete_question",
                         payload: [questionID]
@@ -271,11 +374,10 @@
                     }
                 ];
 
-                savePaper(paperID, actions)
+                savePaper(paperID, ACTIONS)
                     .then(() => {
                         fetchPaper(paperID)
                             .then(result => {
-                                restoreOpenState(result.data.GroupsData, paper_groups);
                                 paper_groups = result.data.GroupsData;
                                 paper_info = result.data;
                                 total_score = paper_info.TotalScore;
@@ -287,54 +389,85 @@
         });
     }
 
+    // 导入题目
+    function importQuestions(group) {
+        to_import_groupID = group.id;
+        to_import_group_name = group.name;
+        to_import_group_length = group.questions.length;
+        import_modal_is_open = true;
+    }
+
     // 导入题目后信息更新
     function updateAfterImport(updatedGroups, updatedInfo) {
-        restoreOpenState(updatedGroups, paper_groups);
+        // 更新试卷信息
         paper_groups = updatedGroups;
         paper_info = updatedInfo;
         question_count = updatedInfo.QuestionCount;
         total_score = updatedInfo.TotalScore;
+        
+        // 重置导入参数
+        to_import_groupID = 0;
+        to_import_group_name = "";
+        to_import_group_length = 0;
     }
 
     // 一键展开所有题组和题目
     function expandAll() {
+         // 创建新的展开状态对象
+        const newGroupState = {};
+        const newQuestionState = {};
+
         paper_groups.forEach(group => {
-            group.isOpen = true;
+            newGroupState[group.id] = true;
             group.questions?.forEach(question => {
-            question.isOpen = true;
+                newQuestionState[question.id] = true;
             });
         });
+
+        GROUP_OPEN_STATE.set(newGroupState);
+        QUESTION_OPEN_STATE.set(newQuestionState);
     }
 
     // 一键收起所有题组和题目
     function collapseAll() {
+        const newGroupState = {};
+        const newQuestionState = {};
+
         paper_groups.forEach(group => {
-            group.isOpen = false;
+            newGroupState[group.id] = false;
             group.questions?.forEach(question => {
-            question.isOpen = false;
+                newQuestionState[question.id] = false;
             });
         });
+
+        GROUP_OPEN_STATE.set(newGroupState);
+        QUESTION_OPEN_STATE.set(newQuestionState);
     }
 
-    /**************** 题组列表区 ****************/
+    // 切换展开状态
+    function changeOpenState(type, id) {
+        if(type === "group") {
+            GROUP_OPEN_STATE.update(state => ({ ...state, [id]: !state[id] }));
+        }
+        if(type === "question") {
+            QUESTION_OPEN_STATE.update(state => ({ ...state, [id]: !state[id] }));
+        }
+    }
+
+    /***************** 题组列表区 *****************/
 
     // 挂载区
-    onMount(() => {
-        paperID = JSON.parse(localStorage.getItem('currentPaperID'));
+    onMount (async () => {
+        paperID = get(CURRENT_PAPER_ID);
+        if(paperID === 0) {
+            await goto("/teacher/paper");
+            toast.success("试卷内容已保存",1000);
+            return;
+        }
         fetchPaper(paperID)
             .then(result => {
                 paper_info = result.data;
                 paper_groups = result.data.GroupsData;
-
-                paper_groups.forEach(group => {
-                    // 所有题组展开
-                    group.isOpen = true;
-                    
-                    group.questions.forEach(question => {
-                        // 所有题目展开
-                        question.isOpen = true;
-                    });
-                });
 
                 paper_name = paper_info.Name;
                 category = paper_info.Category;
@@ -344,14 +477,14 @@
                 question_count = paper_info.QuestionCount;
                 description = paper_info.Description;
                 tags = paper_info.Tags;
-
+            })
+            .finally(() => {
                 page_is_ready = true;
+                // console.log(paper_groups);
             });
     })
 
     function test() {
-        console.log(toCreatePaper);
-        console.log(paper_groups);
     }
 
 </script>
@@ -360,8 +493,11 @@
     <ImportQuestion
         onclose={closeImportModal}
         update={updateAfterImport}
-        to_add_groupID={groupID}
-        to_add_group_name={group_name}
+        to_import_groupID={to_import_groupID}
+        to_import_group_name={to_import_group_name}
+        to_import_group_length={to_import_group_length}
+        fetchPaper={fetchPaper}
+        savePaper={savePaper}
     />
 {/if}
 
@@ -376,13 +512,13 @@
             </div>
 
             <!-- 试卷名称 -->
-            <input class="paper-name-input {paper_name===""?"name-warn":""}" type="text" bind:value={paper_name} placeholder="试卷名称不能为空">
+            <input onchange={()=>debounceUpDatePaperInfo()} class="paper-name-input {paper_name===""?"name-warn":""}" type="text" bind:value={paper_name} placeholder="试卷名称不能为空">
             
             <!-- 操作区 -->
             <div class="operation">
                 <Button onclick={()=>expandAll()} plain={true}>一键展开</Button>
                 <Button onclick={()=>collapseAll()} plain={true}>一键收起</Button>
-                <Button onclick={()=>{groupID=0;import_modal_is_open=true}}>从题库中导入</Button>
+                <Button onclick={()=>{import_modal_is_open=true}}>从题库中导入</Button>
                 <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper')}>保存并退出</Button>
             </div>
         </div>
@@ -397,7 +533,7 @@
                     <!-- 试卷用途 -->
                     <div class="single-line">
                         <span class="info-label">试卷用途</span>
-                        <Select bind:value={category}>
+                        <Select bind:value={category} changeValue={()=>UpDatePaperInfo()}>
                             <Option value="00" label="考试"></Option>
                             <Option value="02" label="练习"></Option>
                         </Select>
@@ -406,7 +542,7 @@
                     <!-- 试卷难度 -->
                     <div class="single-line">
                         <span class="info-label">试卷难度</span>
-                        <div class="level-container">
+                        <div class="level-container" onchange={()=>UpDatePaperInfo()}>
                             <div class="single-level">
                                 <input type="radio" name="paper-level" value="00" bind:group={level}>简单
                             </div>
@@ -422,7 +558,7 @@
                     <!-- 建议时长 -->
                     <div class="single-line">
                         <span class="info-label">建议时长</span>
-                        <InputBox bind:value={suggested_duration} type="number" showLabel={false} clearable={false}/>
+                        <InputBox onInput={()=>debounceUpDatePaperInfo()} bind:value={suggested_duration} type="number" show_label={false} clearable={false}/>
                         <span class="duration-span">分钟</span>
                     </div>
 
@@ -443,7 +579,7 @@
                     <!-- 试卷说明 -->
                     <div class="paper-description">
                         <span class="info-label">试卷说明</span>
-                        <textarea class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
+                        <textarea onchange={()=>debounceUpDatePaperInfo()} class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
                     </div>
 
                     <!-- 试卷标签 -->
@@ -454,7 +590,7 @@
                             <div class="paper-tag" style="border: 1.5px dashed var(--border-medium);">
                                 <div class="color-block" style="background-color: {to_add_tag===""? "#40d5ff":TAG_COLOR_LIST[getColorIndex(to_add_tag)]};"></div>
                                 <div class="btn-box">
-                                    <input type="text" bind:value={to_add_tag} onkeydown={addTag} placeholder="+标签"/>
+                                    <input type="text" bind:value={to_add_tag} onkeydown={addTag} placeholder="+标签" maxlength="30"/>
                                     <button onclick={clearToAddTagContent}>✕</button>
                                 </div>
                             </div>
@@ -464,7 +600,7 @@
                                 <div class="paper-tag">
                                     <div class="color-block" style="background-color: {tag===""? "#40d5ff":TAG_COLOR_LIST[getColorIndex(tag)]};"></div>
                                     <div class="btn-box">
-                                        <input type="text" bind:value={tags[index]} onkeydown={oldTagEnter} placeholder="+标签"/>
+                                        <input type="text" bind:value={tags[index]} onkeydown={oldTagEnter} placeholder="+标签" maxlength="30"/>
                                         <button onclick={()=>deleteTag(index)}>✕</button>
                                     </div>
                                 </div>
@@ -493,7 +629,7 @@
                             {#each paper_groups as group}
                                 {#if to_edit_groupID === group.id}
                                 <div class="single-group">
-                                        <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} bind:this={to_edit_group} class="add-group-input" type="text">
+                                        <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} bind:this={to_edit_group} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
                                         <div class="btn-box">
                                             <!-- 删除按钮 -->
                                             <button onclick={()=>{to_edit_groupID=null}} class="delete-group-btn" title="删除">✖</button>
@@ -532,7 +668,7 @@
                         <!-- 添加题组 -->
                         {#if is_adding_group}
                             <div class="single-group">
-                                <input bind:value={to_add_group_name} onkeydown={confirmAddgroup} bind:this={to_add_group} class="add-group-input" type="text">
+                                <input bind:value={to_add_group_name} onkeydown={confirmAddgroup} bind:this={to_add_group} class="add-group-input" type="text" placeholder="按 Enter 键确认添加">
                                 <div class="btn-box">
                                     <!-- 取消按钮 -->
                                     <button onclick={()=>cancelAddGroup()} class="delete-group-btn" title="删除">✖</button>
@@ -554,8 +690,8 @@
                                 <!-- 左侧区域 -->
                                 <!-- svelte-ignore a11y_click_events_have_key_events -->
                                 <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                <div class="header-left" onclick={()=>{group.isOpen=!group.isOpen}}>
-                                    <button class="toggle-btn">{group.isOpen?"∨":"∧"}</button>
+                                <div class="header-left" onclick={()=>changeOpenState("group",group.id)}>
+                                    <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
                                     <span>{group.name}</span>
                                 </div>
 
@@ -581,13 +717,13 @@
                                 <!-- 右侧区域 -->
                                 <div class="header-right">
                                     <!-- <span>每题分值：</span>
-                                    <input value={10} id="temp-average-question-score-input" type="number">
-                                    <Button>导入题目</Button> -->
+                                    <input value={10} id="temp-average-question-score-input" type="number"> -->
+                                    <Button onclick={()=>importQuestions(group)}>导入题目</Button>
                                 </div>
                             </div>
 
                             <!-- 题目列表 -->
-                            {#if group.isOpen}
+                            {#if $GROUP_OPEN_STATE[group.id]}
                                 <div class="group-question-list">
                                     
                                     {#if group.questions.length !== 0}
@@ -598,8 +734,8 @@
                                                     <!-- 左侧区域 -->
                                                     <!-- svelte-ignore a11y_click_events_have_key_events -->
                                                     <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                                    <div class="header-left"  onclick={()=>{question.isOpen=!question.isOpen}}>
-                                                        <button class="toggle-btn-down">{question.isOpen?"∨":"∧"}</button>
+                                                    <div class="header-left"  onclick={()=>changeOpenState("question",question.id)}>
+                                                        <button class="toggle-btn-down">{$QUESTION_OPEN_STATE[question.id]?"∨":"∧"}</button>
                                                         <span class="sequence">{question.order}</span>
                                                         <span class="question-type">{QUESTION_TYPE_TRANS[question.type]}</span>
                                                         <span class={DIFFICULTY_TRANS[DIFFICULTY_TRANS[question.difficulty]]}>{DIFFICULTY_TRANS[question.difficulty]}</span>
@@ -635,22 +771,23 @@
                                                 </div>
 
                                                 <!-- 题目内容 -->
-                                                {#if question.isOpen}
+                                                {#if $QUESTION_OPEN_STATE[question.id]}
                                                     <div class="question-container">
-                                                        <QuestionPreview {question}/>                                            
+                                                        <QuestionPreview {question}/>  
+                                                        <!-- <MyPreviewQuestion question={question}/>                                           -->
                                                     </div>
                                                 {/if}
                                             </div>
                                         {/each}
                                     
                                         <!-- 暂无题目 -->
-                                        {:else}
+                                    {:else}
                                         <div class="no-questions-container">
                                             <div class="no-questions-box">
                                                 <span class="title">题组暂无题目</span>
                                                 <span class="prompt">可以通过以下方式快速添加题目：</span>
                                                 <div class="import-box">
-                                                    <Button onclick={()=>{groupID=group.id;group_name=group.name;import_modal_is_open=true}}>导入题目</Button>
+                                                    <Button onclick={()=>importQuestions(group)}>导入题目</Button>
                                                 </div>
                                             </div>
                                         </div>
@@ -678,7 +815,7 @@
             padding: 16px 32px 16px 24px;
             align-items: center;
             border-bottom: 1.5px solid var(--border-light);
-            height: 75px;
+            min-height: 40px;
             white-space: nowrap;
 
             /* 标题 */
@@ -877,13 +1014,14 @@
                                         font-size: 12px;
                                         outline: none;
                                         margin-left: 2px;
-                                        margin-right: 8px;
+                                        margin-right: 4px;
                                         color: var(--text-primary);
                                     }
 
                                     button {
                                         font-size: 10px;
                                         padding: 0;
+                                        padding-right: 4px;
                                         background: none;
                                         border: none;
                                         cursor: pointer;
@@ -1267,7 +1405,7 @@
 
                             /* 题目内容 */
                             .question-container {
-                                /* padding: 0 20px; */
+                                /* padding: 20px; */
 
                                 .prompt {
                                     font-size: 14px;
