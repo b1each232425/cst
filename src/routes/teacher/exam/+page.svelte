@@ -427,11 +427,11 @@
 
 {#snippet actionRender(status, index)}
   <div class="button-container">
-    <button class="continue-edit-button action-button {status !== '00' && status !== '02' ? 'hideButton' : ''}"
+    <!-- <button class="continue-edit-button action-button {status !== '00' && status !== '02' ? 'hideButton' : ''}"
         onclick={()=>{
             goto(`/teacher/exam/editExam/${exam_list[index].id}`)
         }}>
-        继续编辑</button>
+        继续编辑</button> -->
     <button
       class="publish-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
       onclick={() => {
@@ -441,10 +441,10 @@
       发布考试</button
     >
     <span class="{status == '00' ? 'hideButton' : 'EmptyData'} "> -- </span>
-    <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
+    <!-- <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
     onclick={()=>{
         ((delete_exam_dialog=true),examID_to_delete =exam_list[index].id)
-    }}>删除考试</button>
+    }}>删除考试</button> -->
     <!-- <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}">取消考试</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">监考管理</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">操作日志</button> -->
@@ -543,7 +543,7 @@
             >
             下载考生模板
         </Button> -->
-      <Button plain={true} type="danger" size="medium" onclick={() => { is_delete_mode = true; }}>批量删除</Button>
+      <!-- <Button plain={true} type="danger" size="medium" onclick={() => { is_delete_mode = true; }}>批量删除</Button> -->
       <Button plain={true} type="primary" size="medium" onclick={() => goto('/teacher/exam/addExam')}>新增考试</Button>
     </div>
   </div>
