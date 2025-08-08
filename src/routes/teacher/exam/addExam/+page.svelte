@@ -486,6 +486,19 @@
       </div>
     </div>
 
+    <div class = "file-container">
+      <RequiredLabel text="考试说明" colon={false} Asterisk={false} />
+      <div class = "file-button-container">
+        <Button
+        plain={true}
+        type="primary"
+        size="small"
+      >
+        上传文件
+      </Button>
+      </div>
+
+    </div>
     <div class="bottom-action-panel-fixed">
       <button
         class="cancel-action-button"
@@ -865,7 +878,8 @@
       .exam-type-choose-container,
       .paper-configs-container,
       .total-duration-container,
-      .examinee-container {
+      .examinee-container,
+      .file-container {
         display: grid;
         grid-template-columns: auto 1fr;
         // margin-left:15%;
@@ -874,7 +888,7 @@
       }
     }
   }
-
+  
   .exam-name-input {
     //max-width:60%;
     min-height: 32px;
@@ -1101,5 +1115,10 @@
       background-color: #f5f5f5;
       color: #c0c4cc;
     }
+  }
+
+  .examinee-number-container {
+    font-size: 14px;
+    padding-top:4px;
   }
 </style>
