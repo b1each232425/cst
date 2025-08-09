@@ -509,7 +509,7 @@
   		overflow: hidden;
 		position: relative;
   		min-height: 0;
-		padding: 0 1px;
+		padding: 0 23px;
 		flex: 1;
 		padding-bottom: 60px; /* 为固定分页器留出空间 */
 	}
@@ -682,19 +682,12 @@
 			font-size: 14px;
 			font-weight: normal;
 			color: rgb(0, 0, 0, 0.3);
-			padding: 30px 4px 10px 23px;
+			padding: 30px 4px 5px 4px;
 			vertical-align: middle;
 			text-align: center;
 			position: relative;
 		}
 
-		.exam-name {
-			text-align: left;
-		}
-
-		.operation {
-			text-align: right;
-		}
 	}
 
 	/* 表头列样式 */
@@ -703,7 +696,6 @@
 	}
 	.exam-name {
 		width: 12%;
-		text-align: left;
 	}
 	.exam-type {
 		width: 8%;
@@ -734,7 +726,6 @@
 	}
 	.operation {
 		width: 12%;
-		text-align: right;
 	}
 
 	/* 表格行样式 */
@@ -746,20 +737,12 @@
 		td {
 			font-size: 14px;
 			color: #3d3d3d;
-			padding: 16px 23px;
+			padding: 16px 4px;
 			vertical-align: middle;
 			text-align: center;
 		}
 	}
 
-	.exam-name {
-		text-align: left;
-	}
-
-	.operation {
-		text-align: right;
-		padding-right: 15px;
-	}
 
 	.op-btn {
 		color: #0052d9;

@@ -504,18 +504,10 @@
 			font-size: 14px;
 			font-weight: normal;
 			color: rgb(0, 0, 0, 0.3);
-			padding: 30px 4px 0 4px;
+			padding: 30px 4px 5px 4px;
 			vertical-align: middle;
 			text-align: center;
 			position: relative;
-		}
-
-		.practice-name {
-			text-align: left;
-		}
-
-		.practice-operation {
-			text-align: right;
 		}
 
 		.header-text {
@@ -579,7 +571,6 @@
 	}
 	.practice-name {
 		width: 35%;
-		text-align: left;
 	}
 	.practice-total-score {
 		width: 15%;
@@ -595,7 +586,6 @@
 	}
 	.practice-operation {
 		width: 15%;
-		text-align: right;
 	}
 
 	/* 表格行样式 */
@@ -612,35 +602,6 @@
 			text-align: center;
 		}
 	}
-
-	/* 表格行列宽 */
-	.practice-list-row {
-		.practice-select {
-			width: 5%;
-		}
-		.practice-name {
-			width: 35%;
-			text-align: left;
-		}
-		.practice-total-score {
-			width: 10%;
-		}
-		.practice-avg-score {
-			width: 10%;
-		}
-		.practice-completed {
-			width: 15%;
-		}
-		.practice-passed {
-			width: 10%;
-		}
-		.practice-operation {
-			width: 15%;
-			text-align: right;
-			padding-right: 15px;
-		}
-	}
-
 	.detail-btn {
 		color: #0052d9;
 		background: none;
