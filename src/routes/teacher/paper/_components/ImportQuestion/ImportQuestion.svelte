@@ -224,10 +224,10 @@
         const ACTIONS = [
             {
                 action: "add_question",
-                payload: selected_question_infos.map((question) => ({
+                payload: selected_question_infos.map((question,index) => ({
                     temp_id: `temp_question_${index + 1}`,
                     group_id: to_import_group.id,
-                    order: question.order,
+                    order: to_import_group.questions.length + index + 1,
                     bank_question_id: question.id,
                     score: question.score
                 }))
