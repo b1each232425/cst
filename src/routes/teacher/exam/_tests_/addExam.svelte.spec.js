@@ -660,8 +660,8 @@ describe('考试创建页面测试', () => {
     // 测试时间比较逻辑
     const now = new Date();
     const pastTime = new Date('2025-08-03T10:00:00.000Z');
-    const futureStartTime = new Date('2025-08-05T12:00:00.000Z');
-    const futureEndTime = new Date('2025-08-05T14:00:00.000Z');
+    const futureStartTime = new Date('2045-08-05T12:00:00.000Z');
+    const futureEndTime = new Date('2045-08-05T14:00:00.000Z');
     const invalidEndTime = new Date('2025-08-05T10:00:00.000Z'); // 早于开始时间
   
     
