@@ -4,6 +4,27 @@ import { expect, vi } from 'vitest';
 import { goto } from '$app/navigation';
 import { slide } from 'svelte/transition';
 import { page } from '$app/state';
+import { beforeNavigate } from '$app/navigation';
+
+// Mock $app/navigation 模块
+vi.mock('$app/navigation', async () => {
+  const actual = await vi.importActual('$app/navigation');
+
+  return {
+    ...actual, // 保留其他的原始功能
+    // beforeNavigate: vi.fn((event) => {
+    //   // 监听跳转前的路径变化
+    //   const { from, to } = event;
+    //   if (to && to.url.pathname) {
+    //     page.url.pathname = to.url.pathname;
+    //   }
+    // }),
+    goto: vi.fn((path) => {
+      // 模拟 goto 跳转时更新 page 路径
+      page.url.pathname = path;
+    }),
+  };
+});
 
 // 在测试文件中添加 Svelte 过渡模拟
 vi.mock('svelte/transition', () => ({
@@ -12,11 +33,6 @@ vi.mock('svelte/transition', () => ({
     duration: 0, // 让动画立即完成
     css: () => '', // 返回空样式
   })),
-}));
-
-// 模拟 $app/navigation 的 goto 函数
-vi.mock('$app/navigation', () => ({
-  goto: vi.fn(),
 }));
 
 describe('Sidebar 侧边栏组件测试', () => {

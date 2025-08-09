@@ -5,11 +5,14 @@
   import { page } from '$app/state';
   import { baseNavItems } from '$lib/stores/modules/permission.js';
   import { toast } from '$lib/components/Toast/Toast.js';
+  import { beforeNavigate } from '$app/navigation';
 
   let display_name = $state(''); // 用户名称
   let nav_map = $baseNavItems; // 导航数据
-  let current_nav_path_data = $state([]);
-  let app_name = '3min';
+
+  // 初始面包屑数据
+  let current_nav_path_data = $state();
+  let app_name = '3min'; // app名称
 
   /**
    * 用户菜单是否打开
@@ -37,15 +40,16 @@
       .then((response) => response.json())
       .then((data) => {
         if (data.status !== 0) {
-          toast.error('用户数据不存在');
           throw new Error('用户数据不存在');
         } else {
           // 获取用户名称
           display_name = data.data.OfficialName;
+          toast.success(`你好：${display_name}，欢迎登录本系统`);
         }
       })
       .catch((error) => {
-        console.error('获取用户权限失败:', error);
+        console.error('获取用户权限失败：', error);
+        toast.error('获取用户权限失败：', error);
       });
   }
 
@@ -104,39 +108,36 @@
     goto('/login');
   }
 
-  $effect(() => {
-    /**
-     * 用户菜单lightbox处理函数, 处理用户菜单的点击事件, 如果点击在用户菜单外部, 则关闭用户菜单
-     * @param {MouseEvent} e
-     */
-    let userMenuLightboxHandleFunc = (e) => {
-      if (!user_menu_element?.contains(e.target) && !avatar_btn_element?.contains(e.target)) {
-        user_menu_open = false;
-      }
-    };
+  // 监听导航事件，跳转前执行逻辑
+  beforeNavigate(({ from, to, cancel }) => {
+    if (to) {
+      const current_url_path = to.url.pathname;
 
-    if (user_menu_open) {
-      document.addEventListener('click', userMenuLightboxHandleFunc);
-    } else {
-      document.removeEventListener('click', userMenuLightboxHandleFunc);
+      current_nav_path_data = getNavData(current_url_path, nav_map);
+
+      // 设置标题：只使用最后一个导航项的title
+      const currentNavItem = nav_path_data[nav_path_data.length - 1];
+      document.title = `${currentNavItem.title} • ${app_name}`;
     }
   });
 
-  // 响应式效果：根据当前路由更新导航数据和页面标题
-  $effect(() => {
-    const current_url_path = page.url.pathname;
-
-    let nav_path_data = getNavData(current_url_path, nav_map);
-    current_nav_path_data = nav_path_data;
-    // $inspect(current_nav_path_data);
-
-    // 设置标题：只使用最后一个导航项的title
-    const currentNavItem = nav_path_data[nav_path_data.length - 1];
-    document.title = `${currentNavItem.title} • ${app_name}`;
-  });
-
   onMount(async () => {
+    // 获取用户信息
     await getUserInfo();
+
+    // 初始化面包屑
+    const current_url_path = page.url.pathname;
+    current_nav_path_data = getNavData(current_url_path, nav_map);
+
+    // 点击空白处折叠菜单栏
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.avatar-btn')) {
+        user_menu_open = false;
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+
+    return () => document.removeEventListener('click', handleClickOutside);
   });
 </script>
 

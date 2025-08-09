@@ -4,8 +4,7 @@
   import { goto } from '$app/navigation';
   import { baseNavItems } from '$lib/stores/modules/permission.js';
   import { page } from '$app/state';
-  import { command } from '$app/server';
-  import { navStore } from '$lib/stores/modules/layoutStore';
+  import { toast } from '$lib/components/Toast/Toast.js';
   import { beforeNavigate } from '$app/navigation';
 
   let { options } = $props();
@@ -218,8 +217,9 @@
         });
       })
       .catch((error) => {
-        console.error('获取用户权限失败:', error);
         nav_map = []; // 失败时设为空数组
+        console.error('获取用户权限失败:', error);
+        toast.error('获取用户权限失败：', error);
       });
   }
 
@@ -230,28 +230,23 @@
     return new RegExp(`${path_regex}`).test(path);
   }
 
-  // 处理路径变化
-  function handleRouteChange() {
-    NEED_FOLD_NAV.forEach((path) => {
-      if (path === current_path && !is_auto_fold && !sidebar_is_folded) {
-        // 折叠侧边栏
+  // 监听导航事件，跳转前执行逻辑
+  beforeNavigate(({ from, to, cancel }) => {
+    if (to) {
+      const targetPath = to.url.pathname;
+
+      if (targetPath.includes(NEED_FOLD_NAV) && !is_auto_fold && !sidebar_is_folded) {
+        // 折叠侧边栏;
         toggleSidebar(true);
         // 自动折叠时才触发
         is_auto_fold = true;
-      } else if (path !== current_path && is_auto_fold) {
+      } else if (!targetPath.includes(NEED_FOLD_NAV) && is_auto_fold) {
         // 如果路径变化并且是自动折叠，展开侧边栏
         if (sidebar_is_folded) {
           toggleSidebar(false); // 展开侧边栏
         }
         is_auto_fold = false; // 路径变化后取消自动折叠
       }
-    });
-  }
-
-  // 处理路径变化
-  $effect(() => {
-    if (current_path) {
-      handleRouteChange();
     }
   });
 
