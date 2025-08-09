@@ -569,12 +569,13 @@
 	}
 
 	.search-wrapper {
-		width: 200px;
+		width: 215px;
+		margin-left: -20px;
 	}
 
 	.search-wrapper :global(.input-box) {
 		width: 100%;
-		min-width: 200px;
+		min-width: 215px;
 	}
 
 	.actions {
