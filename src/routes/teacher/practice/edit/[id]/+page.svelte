@@ -19,8 +19,7 @@
   // 获取路由参数中的 id (即 practice_id)
   const practiceId = $page.params.id;
   // 使用runes接收页面数据
-  const { data } = $props();
-  const { practice  } = data;
+  let  practice   = $state();
 
   // Dialog状态
   let isDialogOpen = $state(false);
@@ -154,22 +153,84 @@
   function confirmCancel() {
     goto('/teacher/practice');
   }
+//发生错误时设置默认值
+  function getDefaultValue(id) {
+    
+        practice= {
+            data: { id: parseInt(id) },
+            form: {
+                practice_name: "",
+                grading_method: "00",
+                test: null,
+                students: [],
+                status: "未发布",
+                type: "经典巩固"
+            }
+        }
+    
+}
+  //获取当前练习的信息
+ async function getPracticeInfo(){
+ 
+   await fetch(`/api/practice?id=${practiceId}`, {
+        credentials: "include"
+    }).then((response) => {
+        if (!response.ok) {
+            console.error("Failed to fetch practice detail.");
+            return getDefaultValue(practiceId);
+        }
+        return response.json();
+    }).then((data) => {
+        console.log("练习详情数据:", data);
+
+        if (data.status !== 0 || !data.data) {
+            console.error('获取练习详情响应格式错误:', data);
+            return getDefaultValue(practiceId);
+        }
+
+        // 转换练习状态显示
+        let statusText = "未发布";
+        if (data.data.practice.Status === "02") statusText = "已发布";
+        // 构建表单所需的数据结构
+        {
+            practice= {
+                data: data.data,
+                form: {
+                    practice_name: data.data.practice.Name,
+                    grading_method: data.data.practice.CorrectMode,
+                    test: {
+                        id: data.data.practice.PaperID||0,
+                        name: data.data.paper_name || "",
+                    },
+                    status: statusText,
+                    type: data.data.practice.Type,
+                    students: data.data.student_count,
+                }
+            }
+        };
+    }).catch((error) => {
+        console.error(`获取练习ID=${practiceId}的详情失败:`, error);
+        return getDefaultValue(practiceId);
+    });
+  }
+
 
   onMount(() => {
-    console.log('Received data:', data);
-    console.log('Practice data:', practice);
+    getPracticeInfo();
+
   });
 </script>
 
 <main>
   <div class="page-header">编辑练习</div>
-
+  {#if practice}
   <PracticeForm
     PracticeId={practiceId}
       onSubmitFunc={(practice.data.practice.Status === '02') ? updateStudents : handleSubmit}
     practiceData={practice}
     onCancelFunc={handleCancel}
   />
+  {/if}
   <MessageBox
     bind:visible={isDialogOpen}
     title="请问是否要取消编辑？"
@@ -195,21 +256,5 @@
     display: block;
     height: 100%;
     overflow: auto;
-    .page-header {
-      display: flex;
-      align-items: center;
-      font-size: 20px;
-      font-weight: bold;
-      color: #000;
-    }
-    .page-header::before {
-      content: '';
-      display: inline-block;
-      width: 13px;
-      height: 29px;
-      background-color: #0336ff;
-      margin-right: 8px;
-      border-radius: 4px;
-    }
   }
 </style>

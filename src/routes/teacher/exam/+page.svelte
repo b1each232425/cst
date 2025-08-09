@@ -20,6 +20,8 @@
   let examID_to_delete = $state(false);
   let total_items = $state(); //总数据条数
   let delete_exam_dialog = $state(false); //删除考试的确认框
+  let is_delete_mode = $state(false); //是否是删除模式
+  let selected_exam_ids = $state([]); // 用于存储选中的考试ID
   // 映射关系
   const TypeMap = {
     '00': '平时考试',
@@ -224,6 +226,39 @@
         loading = false;
       });
   }
+
+  async function deleteExam(examID){
+    const delete_params={
+      q: JSON.stringify({
+            data: { ID: parseInt(examID), Status: '02' },
+          }),
+    }
+
+    fetch(`/api/exam/status?${new URLSearchParams(delete_params).toString()}`,
+      {
+        method:"PUT",
+        credentials: "include",
+        headers: {
+                "Content-Type": "application/json",
+            },
+      })
+      .then((response)=>response.json())
+      .then((result)=>{
+        if(result.status===0){
+          loading=false;
+          return;
+        }
+        else{
+          throw new Error(result.msg);
+        }
+      }).catch((error)=>{
+          console.log("错误提示:",error);
+          toast.error(error);
+      })
+      .finally(()=>{
+        loading=false;
+      })
+  }
   // 模拟获取考试列表数据
   exam_list = [
     {
@@ -366,6 +401,19 @@
 
 {#snippet tableHead()}
   <tr>
+      <th style="width: 40px;">
+        <input
+          type="checkbox"
+          checked={selected_exam_ids.length === exam_list.length && exam_list.length > 0}
+          onchange={(e) => {
+            if (e.target.checked) {
+              selected_exam_ids = exam_list.map(e => e.id);
+            } else {
+              selected_exam_ids = [];
+            }
+          }}
+        />
+      </th>
     <th>考试名称</th>
     <th>考试类型</th>
     <th>考试方式</th>
@@ -393,10 +441,10 @@
       发布考试</button
     >
     <span class="{status == '00' ? 'hideButton' : 'EmptyData'} "> -- </span>
-    <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
+    <!-- <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
     onclick={()=>{
         ((delete_exam_dialog=true),examID_to_delete =exam_list[index].id)
-    }}>删除考试</button>
+    }}>删除考试</button> -->
     <!-- <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}">取消考试</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">监考管理</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">操作日志</button> -->
@@ -408,6 +456,20 @@
 
 {#snippet tableData(data, index)}
   <tr>
+    <td style="width: 40px;">
+        <input
+          type="checkbox"
+          value={data.id}
+          checked={selected_exam_ids.includes(data.id)}
+          onchange={(e) => {
+            if (e.target.checked) {
+              selected_exam_ids = [...selected_exam_ids, data.id];
+            } else {
+              selected_exam_ids = selected_exam_ids.filter(id => id !== data.id);
+            }
+          }}
+        />
+      </td>
     <td>{data.name} </td>
     <td>{TypeMap[data.type]} </td>
     <td>{MethodMap[data.method]} </td>
@@ -454,7 +516,7 @@
       </div>
 
       <div class="filterPart">
-        <Select placeholder="全部状态" onChangeValue={onSelectExamStatus}>
+        <Select placeholder="全部状态" changeValue={onSelectExamStatus}>
           <Option value="" label="全部状态" />
           <Option value="00" label="未发布" />
           <Option value="02" label="待开始" />
@@ -481,8 +543,8 @@
             >
             下载考生模板
         </Button> -->
-
-      <Button type="primary" size="medium" onclick={() => goto('/teacher/exam/addExam')}>新增考试</Button>
+      <!-- <Button plain={true} type="danger" size="medium" onclick={() => { is_delete_mode = true; }}>批量删除</Button> -->
+      <Button plain={true} type="primary" size="medium" onclick={() => goto('/teacher/exam/addExam')}>新增考试</Button>
     </div>
   </div>
 
@@ -519,6 +581,7 @@
     onCancel={() => {
       delete_exam_dialog = false;
     }}
+    onConfirm={() => deleteExam(examID_to_delete)}
     />
 
   <div class="paginationContainer">

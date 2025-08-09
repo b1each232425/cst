@@ -4,7 +4,7 @@
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Button from '$lib/components/Button/Button.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
-  import {toast} from '$lib/components/Toast/toast.js'
+  import {toast} from '$lib/components/Toast/Toast.js'
 
   let {
     show_panel = false,
@@ -255,38 +255,6 @@
     }
   }
 
-  async function downloadTemplate() {
-    try {
-      const response = await fetch('/api/files/exam/d0a9rv6slh1c714h2fkg.xlsx', {
-        method: 'GET',
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      let filename = '考生导入模板.xlsx';
-
-      // 获取文件内容
-      const blob = await response.blob();
-
-      // 创建下载链接
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-
-      // 清理
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('下载模板失败:', error);
-      alert('下载模板失败，请稍后重试');
-    }
-  }
-
 
   // 单个复选框选择事件处理
 function handleCheckboxChange(examinee, event) {
@@ -427,7 +395,7 @@ function handleCheckboxChange(examinee, event) {
           <div class="button-group">
             <button class="back-btn" onclick={backToViewMode}>返回考生列表</button>
 
-            <Button type="primary" onclick={downloadTemplate}>下载模板</Button>
+            <!-- <Button type="primary" >下载模板</Button> -->
 
             <!-- <Button
                             type="primary"
@@ -469,7 +437,7 @@ function handleCheckboxChange(examinee, event) {
                       type="checkbox"
                       class="custom-checkbox"
                       checked={examinee.selected}
-                      onchange={(event) => handleCheckboxChange(examinee, event)}
+                      
                     />
                   </td>
                   <td

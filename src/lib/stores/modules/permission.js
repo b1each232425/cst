@@ -17,7 +17,6 @@ export const baseNavItems = writable([
     path: '/teacher/question-bank',
     icon: '/sidebar/nav_icon/question_bank.svg',
     children_is_parallel: true,
-    fold: false,
     isFilter: true,
     children: [
       // {
@@ -121,7 +120,6 @@ export const baseNavItems = writable([
     path: '/teacher/grade',
     icon: '/sidebar/nav_icon/grade.svg',
     children_is_parallel: true,
-    fold: false,
     isFilter: true,
     children: [
       {
