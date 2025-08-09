@@ -57,6 +57,15 @@
    * 获取当前路由路径数据（保持完整层级结构）
    */
   function getNavData(path, nav_map) {
+    // 添加对登录页的特殊处理
+    if (path === '/login') {
+      return [{ title: '登录', path: '/login' }];
+    }
+
+    if (path === '/teacher/paper/manual') {
+      return [{ title: '自定义组卷', path: '/teacher/paper/manual' }];
+    }
+
     let result = [];
 
     for (let navData of nav_map) {
@@ -116,7 +125,7 @@
       current_nav_path_data = getNavData(current_url_path, nav_map);
 
       // 设置标题：只使用最后一个导航项的title
-      const currentNavItem = nav_path_data[nav_path_data.length - 1];
+      const currentNavItem = current_nav_path_data[current_nav_path_data.length - 1];
       document.title = `${currentNavItem.title} • ${app_name}`;
     }
   });

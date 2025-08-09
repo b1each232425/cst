@@ -105,12 +105,12 @@ export const baseNavItems = writable([
       {
         name: 'markManagement',
         title: '考试批改',
-        path: '/teacher/correct/markManagement',
+        path: '/teacher/correct/exam-correct',
       },
       {
         name: 'markingResult',
         title: '练习批改',
-        path: '/teacher/correct/practiceMarkManagement',
+        path: '/teacher/correct/practice-correct',
       },
     ],
   },
