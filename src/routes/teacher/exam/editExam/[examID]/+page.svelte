@@ -120,7 +120,7 @@
   let show_paper_selection_panel = $state(false);
   let show_examinee_panel = $state(false);
   let loading = $state(true);
-  // $inspect(paper_configs).with(console.log);
+  $inspect(paper_configs).with(console.log);
   function addNewPaper() {
     let default_paper_config = {
       paperID: 0, //试卷ID
@@ -308,7 +308,7 @@
       MarkMethod: cfg.markMethod,
       NameVisibilityIn: !!cfg.nameVisibility,
       ReviewerIds:
-      cfg.markConfig && cfg.markConfig.teacher_mark_configs ? cfg.markConfig.teacher_mark_configs.map((t) => t.id) : [],
+        cfg.markConfig && cfg.markConfig.teacher_mark_configs ? cfg.markConfig.teacher_mark_configs.map((t) => t.id) : [],
       MarkMode: cfg.markMode,
       SessionNum: cfg.sessionNum,
     }));
@@ -319,7 +319,6 @@
     const exam_data = {
       data: {
         examInfo: {
-          id:examID,
           Name: exam_name,
           Rules: exam_rules,
           Type: exam_type,
@@ -459,6 +458,12 @@
          //console.log("examinee",exam_examinee);
     })
 
+    function openLoading() {
+    loading = true;
+    setTimeout(() => {
+      closeLoading();
+    }, 10000); // 10秒后自动关闭加载状态
+  }
 
   function closeLoading() {
     loading = false; // 关闭加载状态
@@ -466,7 +471,7 @@
 </script>
 {#if loading}
 <div>
-  
+  <button onclick={openLoading}>加载动画</button>
     <Loading bind:value={loading} loadingText="正在加载"></Loading>
 </div>
 {:else}
