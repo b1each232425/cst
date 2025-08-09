@@ -11,10 +11,15 @@
   <div class="question-content">
     {#if index !== null && index !== undefined}
       <h2>{index + 1}.</h2>
+      {#if question.Score !== undefined}
+         <span class="question-score-inline">（{question.Score}分）</span>
+       {/if}
     {/if}
     <div class="piptap-content" style="width: 80%;">
-      {@html question.content}
+      {@html question.Content}
     </div>
+
+
   </div>
   <!---题目内容 也就是学生作答地方 -->
   <Answer {question} />
