@@ -4,8 +4,8 @@
   const defaultAnswer = $state("未填")
 
   function getCompleteAnswer(index) {
-    const prefix = question.answer_num > 1 ? `(${index + 1})` : '';
-    const studentAnswer = question.student_answers?.answer?.[index];
+    const prefix = question.Answer_num > 1 ? `(${index + 1})` : '';
+    const studentAnswer = question.StudentAnswer?.answer?.[index];
     const answer = studentAnswer && studentAnswer !== "" ? studentAnswer : defaultAnswer;
     return prefix + answer;
   }
@@ -13,29 +13,29 @@
 
 <div class="layout">
     <!-- 单/多选  这里的多选主要是为了区分这个圆角的大小 判断题 -->
-  {#if question.type === "00" || question.type === "02" || question.type === "04"}
+  {#if question.Type === "00" || question.Type === "02" || question.Type === "04"}
     <div class="options">
-      {#each question.options as option}
+      {#each question.Options as option}
         <label class="option">
           <input
             type="checkbox"
-            name="question-{question.id}"
+            name="question-{question.ID}"
             value={option.label}
-            checked={question.student_answers.answer?.includes(option.label)}
+            checked={question.StudentAnswer?.answer?.includes(option.label)}
             class="hidden-radio"
             disabled
           />
           <!-- 圆形选项 根据类型区分方形还是圆形-->
-          <span class="option-id" class:single-yesOrNo={question.type === "00" || question.type === "04"} class:multple={question.type === "02"}>{option.label}</span>
+          <span class="option-id" class:single-yesOrNo={question.Type === "00" || question.Type === "04"} class:multple={question.Type === "02"}>{option.label}</span>
           <!-- 选项内容 -->
           <Option {option} />
         </label>
       {/each}
     </div>
-  {:else if question.type === "06" ||question.type === "08"  }
+  {:else if question.Type === "06" || question.Type === "08"}
   <div class="analysis-container">
   <div class="system-tips">您的回答</div>
-    {#each Array(question.answer_num) as _, index}
+    {#each Array(question.Answer_Num) as _, index}
   <div class="fill-blank">
     {@html getCompleteAnswer(index)}
   </div>
