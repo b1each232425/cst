@@ -533,6 +533,8 @@
 
     // 修改每题分值
     function updateAverageQuestionScore(group) {
+        if(group.questions.length === 0) return;
+
         // 获取每题分数
         const AVERAGE_SCORE = get(GROUP_AVERAGE_SCORE)[group.id];
 
