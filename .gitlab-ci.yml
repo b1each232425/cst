@@ -30,5 +30,5 @@ deploy-devmentor-fe:
     - nodejs-build
   environment: production
   script:
-    - chmod +x deploy.sh 
+    - chmod +x deploy.sh
     - ./deploy.sh
