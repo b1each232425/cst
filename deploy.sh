@@ -3,8 +3,8 @@
  # @Author: Zpekii 3156752796@qq.com
  # @Date: 2025-04-05 22:41:06
  # @LastEditors: Zpekii 3156752796@qq.com
- # @LastEditTime: 2025-05-01 20:05:42
- # @FilePath: \exam-fe\deploy.sh
+ # @LastEditTime: 2025-07-27 03:45:19
+ # @FilePath: /exam/deploy.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zpekii, All Rights Reserved. 
