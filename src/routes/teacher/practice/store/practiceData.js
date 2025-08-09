@@ -143,7 +143,7 @@ export const practice_data_list = writable([
     Name: "Nodejs入门实战课后练习",
     Type: "智能提升",
     Status: "已发布",
-    studenstudent_countt_cnt: 10,
+    student_count_cnt: 10,
     AllowedAttempts: 1,
   },
 ]);
