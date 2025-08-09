@@ -22,7 +22,7 @@
     import { toast } from "$lib/components/Toast/Toast";
     import { debounce } from "$lib/utils/optimize";
     import { get } from "svelte/store";
-    import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE } from "../_stores/store";
+    import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, GROUP_AVERAGE_SCORE } from "../_stores/store";
     import MyPreviewQuestion from "../_components/MyPreviewQuestion/MyPreviewQuestion.svelte";
 
     /******************* API 区 ********************/
@@ -217,9 +217,7 @@
     let to_edit_group_name = $state("");
     let to_edit_group_side_bar = $state(null);
     let to_edit_group_content = $state(null);
-    let to_import_groupID = $state(0);
-    let to_import_group_name = $state("");
-    let to_import_group_length = $state(0);
+    let to_import_group = $state(null);
 
     // 删除题组
     function deleteGroup(groupID) {
@@ -398,9 +396,7 @@
 
     // 导入题目
     function importQuestions(group) {
-        to_import_groupID = group.id;
-        to_import_group_name = group.name;
-        to_import_group_length = group.questions.length;
+        to_import_group = group;
         import_modal_is_open = true;
     }
 
@@ -413,45 +409,43 @@
         total_score = updatedInfo.TotalScore;
         
         // 重置导入参数
-        to_import_groupID = 0;
-        to_import_group_name = "";
-        to_import_group_length = 0;
+        to_add_group = { id: 0, name: ""};
     }
 
     // 一键展开所有题组和题目
     function expandAll() {
          // 创建新的展开状态对象
-        const newGroupState = {};
-        const newQuestionState = {};
+        const NEW_GROUP_STATE = {};
+        const NEW_QUESTION_STATE = {};
 
         paper_groups.forEach(group => {
-            newGroupState[group.id] = true;
+            NEW_GROUP_STATE[group.id] = true;
             group.questions?.forEach(question => {
-                newQuestionState[question.id] = true;
+                NEW_QUESTION_STATE[question.id] = true;
             });
         });
 
-        GROUP_OPEN_STATE.set(newGroupState);
-        QUESTION_OPEN_STATE.set(newQuestionState);
+        GROUP_OPEN_STATE.set(NEW_GROUP_STATE);
+        QUESTION_OPEN_STATE.set(NEW_QUESTION_STATE);
     }
 
     // 一键收起所有题组和题目
     function collapseAll() {
-        const newGroupState = {};
-        const newQuestionState = {};
+        const NEW_GROUP_STATE = {};
+        const NEW_QUESTION_STATE = {};
 
         paper_groups.forEach(group => {
-            newGroupState[group.id] = false;
+            NEW_GROUP_STATE[group.id] = false;
             group.questions?.forEach(question => {
-                newQuestionState[question.id] = false;
+                NEW_QUESTION_STATE[question.id] = false;
             });
         });
 
-        GROUP_OPEN_STATE.set(newGroupState);
-        QUESTION_OPEN_STATE.set(newQuestionState);
+        GROUP_OPEN_STATE.set(NEW_GROUP_STATE);
+        QUESTION_OPEN_STATE.set(NEW_QUESTION_STATE);
     }
 
-    // 切换展开状态
+    // 展开与收起
     function changeOpenState(type, id) {
         if(type === "group") {
             GROUP_OPEN_STATE.update(state => ({ ...state, [id]: !state[id] }));
@@ -538,8 +532,32 @@
     }
 
     // 修改每题分值
-    function updateAverageQuestionScore() {
+    function updateAverageQuestionScore(group) {
+        // 获取每题分数
+        const AVERAGE_SCORE = get(GROUP_AVERAGE_SCORE)[group.id];
 
+        const ACTIONS = [
+            {
+                action: "update_question",
+                payload: group.questions.map((question, index) => ({
+                    id: question.id,
+                    group_id: group.id,
+                    order: group.questions.length + index + 1,
+                    score: AVERAGE_SCORE
+                }))
+            }
+        ];
+
+        savePaper(paperID, ACTIONS)
+            .then(() => {
+                return fetchPaper(paperID);
+            })
+            .then(result => {
+                paper_groups = result.data.GroupsData;
+                paper_info = result.data;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+            });
     }
 
     /***************** 题组列表区 *****************/
@@ -581,9 +599,7 @@
     <ImportQuestion
         onclose={closeImportModal}
         update={updateAfterImport}
-        to_import_groupID={to_import_groupID}
-        to_import_group_name={to_import_group_name}
-        to_import_group_length={to_import_group_length}
+        to_import_group={to_import_group}
         fetchPaper={fetchPaper}
         savePaper={savePaper}
     />
@@ -606,7 +622,7 @@
             <div class="operation">
                 <Button onclick={()=>expandAll()} plain={true}>一键展开</Button>
                 <Button onclick={()=>collapseAll()} plain={true}>一键收起</Button>
-                <Button onclick={()=>{import_modal_is_open=true}}>从题库中导入</Button>
+                <Button onclick={()=>importQuestions({id:0,name:""})}>从题库中导入</Button>
                 <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper')}>保存并退出</Button>
             </div>
         </div>
@@ -817,10 +833,10 @@
 
                                 <!-- 右侧区域 -->
                                 <div class="header-right">
-                                    <!-- <span>每题分值：</span>
+                                    <span>每题分值：</span>
                                     <div class="score-input">
-                                        <InputBox placeholder="" bind:value={group.average_score} show_label={false} type="number" clearable={false}/>
-                                    </div> -->
+                                        <InputBox onInput={debounce(()=>updateAverageQuestionScore(group),500,false)} placeholder="请输入" bind:value={$GROUP_AVERAGE_SCORE[group.id]} show_label={false} type="number" clearable={false}/>
+                                    </div>
                                     <Button onclick={()=>importQuestions(group)}>导入题目</Button>
                                 </div>
                             </div>
@@ -1364,7 +1380,7 @@
                             align-items: center;
 
                             .score-input {
-                                width: 70px;
+                                width: 75px;
                                 margin-right: 36px;
                             }
 
