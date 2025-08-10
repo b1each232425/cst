@@ -22,8 +22,9 @@
     import { toast } from "$lib/components/Toast/Toast";
     import { debounce } from "$lib/utils/optimize";
     import { get } from "svelte/store";
-    import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE } from "../_stores/store";
+    import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, GROUP_AVERAGE_SCORE } from "../_stores/store";
     import MyPreviewQuestion from "../_components/MyPreviewQuestion/MyPreviewQuestion.svelte";
+  import { stopPropagation } from "svelte/legacy";
 
     /******************* API 区 ********************/
 
@@ -215,11 +216,8 @@
     let to_add_group = $state(null);
     let to_edit_groupID = $state(null);
     let to_edit_group_name = $state("");
-    let to_edit_group_side_bar = $state(null);
-    let to_edit_group_content = $state(null);
-    let to_import_groupID = $state(0);
-    let to_import_group_name = $state("");
-    let to_import_group_length = $state(0);
+    let to_edit_group = $state(null);
+    let to_import_group = $state(null);
 
     // 删除题组
     function deleteGroup(groupID) {
@@ -314,19 +312,14 @@
         to_edit_groupID = id;
         to_edit_group_name = name;
         await tick();
-        if(position === "side-bar") {
-            to_edit_group_side_bar.focus();
-        }
-        if(position === "content") {
-            to_edit_group_content.focus();
-        }
+        to_edit_group.focus();
     }
 
     // 确认编辑题组名称
     function confirmEditGroupName() {
         if(event.key === "Enter" && to_edit_group_name.trim() !== "") {
 
-            to_edit_group_side_bar.blur();
+            to_edit_group.blur();
 
             const ACTIONS = [
                 {
@@ -366,9 +359,9 @@
 
             onConfirm: () => {
                 // 删除后重新排序
-                const GROUP_QUESTIONS = group.questions;
-                let questionIDs = GROUP_QUESTIONS.map(question => question.id);
-                questionIDs = questionIDs.filter(id => id !== questionID)
+                let questionIDs = paper_groups
+                    .flatMap(group => group.questions.map(question => question.id))
+                    .filter(id => id !== questionID);
 
                 const ACTIONS = [
                     {
@@ -398,9 +391,7 @@
 
     // 导入题目
     function importQuestions(group) {
-        to_import_groupID = group.id;
-        to_import_group_name = group.name;
-        to_import_group_length = group.questions.length;
+        to_import_group = group;
         import_modal_is_open = true;
     }
 
@@ -413,45 +404,43 @@
         total_score = updatedInfo.TotalScore;
         
         // 重置导入参数
-        to_import_groupID = 0;
-        to_import_group_name = "";
-        to_import_group_length = 0;
+        to_add_group = { id: 0, name: ""};
     }
 
     // 一键展开所有题组和题目
     function expandAll() {
          // 创建新的展开状态对象
-        const newGroupState = {};
-        const newQuestionState = {};
+        const NEW_GROUP_STATE = {};
+        const NEW_QUESTION_STATE = {};
 
         paper_groups.forEach(group => {
-            newGroupState[group.id] = true;
+            NEW_GROUP_STATE[group.id] = true;
             group.questions?.forEach(question => {
-                newQuestionState[question.id] = true;
+                NEW_QUESTION_STATE[question.id] = true;
             });
         });
 
-        GROUP_OPEN_STATE.set(newGroupState);
-        QUESTION_OPEN_STATE.set(newQuestionState);
+        GROUP_OPEN_STATE.set(NEW_GROUP_STATE);
+        QUESTION_OPEN_STATE.set(NEW_QUESTION_STATE);
     }
 
     // 一键收起所有题组和题目
     function collapseAll() {
-        const newGroupState = {};
-        const newQuestionState = {};
+        const NEW_GROUP_STATE = {};
+        const NEW_QUESTION_STATE = {};
 
         paper_groups.forEach(group => {
-            newGroupState[group.id] = false;
+            NEW_GROUP_STATE[group.id] = false;
             group.questions?.forEach(question => {
-                newQuestionState[question.id] = false;
+                NEW_QUESTION_STATE[question.id] = false;
             });
         });
 
-        GROUP_OPEN_STATE.set(newGroupState);
-        QUESTION_OPEN_STATE.set(newQuestionState);
+        GROUP_OPEN_STATE.set(NEW_GROUP_STATE);
+        QUESTION_OPEN_STATE.set(NEW_QUESTION_STATE);
     }
 
-    // 切换展开状态
+    // 展开与收起
     function changeOpenState(type, id) {
         if(type === "group") {
             GROUP_OPEN_STATE.update(state => ({ ...state, [id]: !state[id] }));
@@ -538,11 +527,239 @@
     }
 
     // 修改每题分值
-    function updateAverageQuestionScore() {
+    function updateAverageQuestionScore(group) {
+        if(group.questions.length === 0) return;
 
+        // 获取每题分数
+        const AVERAGE_SCORE = get(GROUP_AVERAGE_SCORE)[group.id];
+
+        const ACTIONS = [
+            {
+                action: "update_question",
+                payload: group.questions.map((question, index) => ({
+                    id: question.id,
+                    group_id: group.id,
+                    order: group.order,
+                    score: AVERAGE_SCORE
+                }))
+            }
+        ];
+
+        savePaper(paperID, ACTIONS)
+            .then(() => {
+                return fetchPaper(paperID);
+            })
+            .then(result => {
+                paper_groups = result.data.GroupsData;
+                paper_info = result.data;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+            });
     }
 
     /***************** 题组列表区 *****************/
+
+
+
+    /***************** 拖拽功能区 *****************/
+
+    let dragged_group = $state(null);           // 当前被拖拽的元素数据
+    let drag_over_group = $state(null);         // 目标元素数据
+    let drag_over_position = $state(null);      // 相对位置："top" 或 "bottom"
+
+    // 题组开始拖拽
+    function handleGroupDragStart(event, group) {
+        dragged_group = group;
+
+        // 确定是现代浏览器
+        if (event.dataTransfer) {
+            // 表示拖拽允许的效果
+            event.dataTransfer.effectAllowed = "move";
+        }
+    }
+
+    // 题组正在拖拽
+    function handleGroupDragOver(event, group) {
+        event.preventDefault(); // 必须阻止默认行为才能触发 drop
+
+        // 判断是否为自己，并记录目标元素
+        if (!dragged_group || dragged_group.id === group.id) return;
+
+        // 记录目标项
+        drag_over_group = group;
+
+        // 计算鼠标相对目标元素的纵坐标
+        const BOUNDING = event.currentTarget.getBoundingClientRect();
+        const OFFSET_Y = event.clientY - BOUNDING.top;
+
+        // 根据纵向一半高度判断上或下
+        drag_over_position = OFFSET_Y < BOUNDING.height / 2 ? "top" : "bottom";
+    }
+
+    // 题组拖拽放下
+    function handleGroupDrop(event) {
+        event.preventDefault();
+        if (!dragged_group || !drag_over_group || dragged_group.id === drag_over_group.id) {
+            drag_over_group = null;
+            dragged_group = null;
+            drag_over_position = null;
+            return;
+        };
+
+        // 处理题组 ID，插入位置根据 drag_over_position 决定
+        const GROUP_IDS = paper_groups.map(g => g.id).filter(id => id !== dragged_group.id);
+        let dropIndex = GROUP_IDS.findIndex(id => id === drag_over_group.id);
+
+        if (drag_over_position === "bottom") {
+            dropIndex += 1; // 往目标后面插入
+        }
+
+        GROUP_IDS.splice(dropIndex, 0, dragged_group.id);
+
+        const ACTIONS = [
+            {
+                action: "move_group",
+                payload: GROUP_IDS,
+            },
+        ];
+
+        savePaper(paperID, ACTIONS)
+            .then(() => fetchPaper(paperID))
+            .then((result) => {
+                paper_groups = result.data.GroupsData;
+                paper_info = result.data;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+            })
+            .finally(() => {
+                dragged_group = null;
+                drag_over_group = null;
+                drag_over_position = null;
+            });
+    }
+
+    // 题组拖拽结束
+    function handleGroupDragEnd() {
+        dragged_group = null;
+        drag_over_group = null;
+        drag_over_position = null;
+    }
+
+    let dragged_question_item = $state({});        // 当前被拖拽的元素数据
+    let drag_over_question_item = $state({});      // 目标元素数据
+    let dragged_over_questionID_CSS = $state(0);   // 当前鼠标所在题组 ID
+    let is_dragging_question = $state(false);
+
+    // 题目开始拖拽
+    function handleQuestionDragStart(event, question, group) {
+        dragged_question_item = { question, group };
+        dragged_over_questionID_CSS = group.id;
+        is_dragging_question = true;
+
+        // 确定是现代浏览器
+        if (event.dataTransfer) {
+            // 表示拖拽允许的效果
+            event.dataTransfer.effectAllowed = "move";
+        }
+    }
+
+    // 题目正在拖拽
+    function handleQuestionDragOver(event, question, group) {
+        event.preventDefault(); // 必须阻止默认行为才能触发 drop
+
+        // 记录目标项
+        drag_over_question_item = { question, group };
+
+        if (question) {
+            // 计算鼠标相对目标元素的纵坐标
+            const BOUNDING = event.currentTarget.getBoundingClientRect();
+            const OFFSET_Y = event.clientY - BOUNDING.top;
+
+            // 根据纵向一半高度判断上或下
+            drag_over_position = OFFSET_Y < BOUNDING.height / 2 ? "top" : "bottom";
+        } else {
+            // 空题组不需要位置判断，固定插到组开头
+            drag_over_position = "top";
+        }
+    }
+
+    // 题目拖拽放下
+    function handleQuestionDrop(event) {
+        event.preventDefault();
+        if (
+            (dragged_question_item.question.id === drag_over_question_item.question.id &&
+            dragged_question_item.group.id === drag_over_question_item.group.id)
+        ) {
+            handleQuestionDragEnd();
+            return;
+        };
+
+        // 扁平化并过滤题目 ID 数组
+        const QUESTION_IDS = paper_groups
+            .flatMap(group => group.questions
+            .map(question => question.id))
+            .filter(id => id !== dragged_question_item.question.id);
+
+        let dropIndex = 0;
+
+        if (drag_over_question_item.question.id) {
+            // 非空题组的情况
+            dropIndex = QUESTION_IDS.findIndex(id => id === drag_over_question_item.question.id);
+            
+            if (drag_over_position === "bottom") dropIndex += 1;
+        } else {
+            // 空题组的情况
+            const groupIndex = paper_groups.findIndex(group => group.id === drag_over_question_item.group.id);
+            // 统计该组前面所有题目的数量
+            dropIndex = paper_groups
+                .slice(0, groupIndex)
+                .reduce((count, group) => count + group.questions.length, 0);
+        }
+
+        QUESTION_IDS.splice(dropIndex, 0, dragged_question_item.question.id);
+
+        // 处理请求
+        const ACTIONS = [
+            {
+                action: "move_question",
+                payload: QUESTION_IDS,
+            },
+            {
+                action: "update_question",
+                payload: [
+                    {
+                        id: dragged_question_item.question.id,
+                        group_id: drag_over_question_item.group.id,
+                        order: dropIndex + 1,
+                        score: dragged_question_item.score
+                    }
+                ]
+            }
+        ];
+
+        savePaper(paperID, ACTIONS)
+            .then(() => fetchPaper(paperID))
+            .then((result) => {
+                paper_groups = result.data.GroupsData;
+                paper_info = result.data;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+            })
+            .finally(() => {
+                handleQuestionDragEnd();
+            });
+    }
+
+    // 题目拖拽结束
+    function handleQuestionDragEnd() {
+        drag_over_question_item = {};
+        dragged_question_item = {};
+        drag_over_position = null;
+        dragged_over_questionID_CSS = 0;
+        is_dragging_question = false;
+    }
+
+    /***************** 拖拽功能区 *****************/
 
     // 挂载区
     onMount (async () => {
@@ -581,9 +798,7 @@
     <ImportQuestion
         onclose={closeImportModal}
         update={updateAfterImport}
-        to_import_groupID={to_import_groupID}
-        to_import_group_name={to_import_group_name}
-        to_import_group_length={to_import_group_length}
+        to_import_group={to_import_group}
         fetchPaper={fetchPaper}
         savePaper={savePaper}
     />
@@ -606,7 +821,7 @@
             <div class="operation">
                 <Button onclick={()=>expandAll()} plain={true}>一键展开</Button>
                 <Button onclick={()=>collapseAll()} plain={true}>一键收起</Button>
-                <Button onclick={()=>{import_modal_is_open=true}}>从题库中导入</Button>
+                <Button onclick={()=>importQuestions({id:0,name:""})}>从题库中导入</Button>
                 <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper')}>保存并退出</Button>
             </div>
         </div>
@@ -711,62 +926,83 @@
                     </div>
 
                     <!-- 列表 -->
-                    <div class="question-groups-box">
-                        <!-- 已有题组 -->
-                        {#if paper_groups.length !== 0}
-                            {#each paper_groups as group}
-                                <!-- 编辑题组状态 -->
-                                {#if to_edit_groupID === group.id}
+                    <div class="question-groups-outer-box">
+                        <div class="question-groups-box
+                            {dragged_group!==null?"drag-over":""}">
+                            <!-- 已有题组 -->
+                            {#if paper_groups.length !== 0}
+                                {#each paper_groups as group}
+                                    <!-- 编辑题组状态 -->
+                                    {#if to_edit_groupID === group.id}
+                                        <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                        <div class="single-group
+                                                {drag_over_group === group && drag_over_position === 'top' ? 'drag-over-top' : ''}
+                                                {drag_over_group === group && drag_over_position === 'bottom' ? 'drag-over-bottom' : ''}
+                                                {dragged_group === group ? "dragging":""}"
+                                            draggable="true"
+                                            ondragstart={(event)=>handleGroupDragStart(event,group)}
+                                            ondragover={(event)=>handleGroupDragOver(event,group)}
+                                            ondrop={handleGroupDrop}
+                                            >
+                                            <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} bind:this={to_edit_group} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
+                                            <div class="btn-box">
+                                                <!-- 删除按钮 -->
+                                                <button onclick={()=>{to_edit_groupID=null}} class="delete-group-btn" title="取消">✖</button>
+                                            </div>
+                                        </div>
+                                    {:else}
+                                        <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                        <div class="single-group
+                                            {drag_over_group === group && drag_over_position === 'top' ? 'drag-over-top' : ''}
+                                            {drag_over_group === group && drag_over_position === 'bottom' ? 'drag-over-bottom' : ''}
+                                            {dragged_group === group ? "dragging":""}"
+                                            draggable="true"
+                                            ondragstart={(event)=>handleGroupDragStart(event,group)}
+                                            ondragover={(event)=>handleGroupDragOver(event,group)}
+                                            ondrop={handleGroupDrop}
+                                            >
+                                            <span>{group.name}（共{group.questions.length}题，共{
+                                                group.questions.reduce((sum,q)=>sum+(q.score||0),0)
+                                            }分）</span>
+                                            <div class="btn-box">
+                                                <!-- 编辑按钮 -->
+                                                <button onclick={()=>editGroupName(group.id,group.name,"side-bar")} class="edit-group-btn" title="编辑" aria-label="编辑题目">
+                                                    <svg
+                                                        viewBox="0 0 1024 1024"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="2"
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        width="10"
+                                                        height="10"
+                                                    >
+                                                        <path
+                                                            d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                                            fill="currentColor"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                                <!-- 删除按钮 -->
+                                                <button onclick={()=>deleteGroup(group.id)} class="delete-group-btn" title="删除">✖</button>
+                                            </div>
+                                        </div>
+                                    {/if}
+                                {/each}
+                            {/if}
+    
+                            <!-- 添加题组 -->
+                            {#if is_adding_group}
                                 <div class="single-group">
-                                        <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} bind:this={to_edit_group_side_bar} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
-                                        <div class="btn-box">
-                                            <!-- 删除按钮 -->
-                                            <button onclick={()=>{to_edit_groupID=null}} class="delete-group-btn" title="取消">✖</button>
-                                        </div>
+                                    <input bind:value={to_add_group_name} onkeydown={confirmAddgroup} bind:this={to_add_group} class="add-group-input" type="text" placeholder="按 Enter 键确认添加">
+                                    <div class="btn-box">
+                                        <!-- 取消按钮 -->
+                                        <button onclick={()=>cancelAddGroup()} class="delete-group-btn" title="删除">✖</button>
                                     </div>
-                                {:else}
-                                    <div class="single-group">
-                                        <span>{group.name}（共{group.questions.length}题，共{
-                                            group.questions.reduce((sum,q)=>sum+(q.score||0),0)
-                                        }分）</span>
-                                        <div class="btn-box">
-                                            <!-- 编辑按钮 -->
-                                            <button onclick={()=>editGroupName(group.id,group.name,"side-bar")} class="edit-group-btn" title="编辑" aria-label="编辑题目">
-                                                <svg
-                                                    viewBox="0 0 1024 1024"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    stroke-width="2"
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    width="10"
-                                                    height="10"
-                                                >
-                                                    <path
-                                                        d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                                        fill="currentColor"
-                                                    />
-                                                </svg>
-                                            </button>
-                                            <!-- 删除按钮 -->
-                                            <button onclick={()=>deleteGroup(group.id)} class="delete-group-btn" title="删除">✖</button>
-                                        </div>
-                                    </div>
-                                {/if}
-                            {/each}
-                        {/if}
-
-                        <!-- 添加题组 -->
-                        {#if is_adding_group}
-                            <div class="single-group">
-                                <input bind:value={to_add_group_name} onkeydown={confirmAddgroup} bind:this={to_add_group} class="add-group-input" type="text" placeholder="按 Enter 键确认添加">
-                                <div class="btn-box">
-                                    <!-- 取消按钮 -->
-                                    <button onclick={()=>cancelAddGroup()} class="delete-group-btn" title="删除">✖</button>
                                 </div>
-                            </div>
-                        {/if}
-
+                            {/if}
+    
+                        </div>
                     </div>
                 </div>
             </div>
@@ -775,127 +1011,115 @@
             <div class="content-container">
                 {#if paper_groups}
                     {#each paper_groups as group, groupIndex}
-                        <div class="single-group-content">
+                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                        <div class="single-group-content" onclick={()=>changeOpenState("group",group.id)} title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"}>
                             <!-- 头部下拉栏 -->
                             <div class="group-header">
-                                {#if to_edit_groupID === group.id}
-                                    <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} class="edit-group-input" bind:this={to_edit_group_content} type="text" placeholder="按 Enter 键确认编辑">
-                                    <div class="btn-box">
-                                        <!-- 删除按钮 -->
-                                        <button onclick={()=>{to_edit_groupID=null}} class="cancel-btn" title="取消">✖</button>
-                                    </div>
-                                {:else}
-                                    <!-- 左侧区域 -->
-                                    <!-- svelte-ignore a11y_click_events_have_key_events -->
-                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                    <div title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"} class="header-left" onclick={()=>changeOpenState("group",group.id)}>
-                                        <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
-                                        <span>{group.name}（共{group.questions.length}题，共{
-                                            group.questions.reduce((sum,q)=>sum+(q.score||0),0)
-                                        }分）</span>
-                                    </div>
-
-                                    <!-- 编辑按钮 -->
-                                    <button onclick={()=>editGroupName(group.id,group.name,"content")} class="edit-group-btn" title="编辑" aria-label="编辑题目">
-                                        <svg
-                                            viewBox="0 0 1024 1024"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            width="14"
-                                            height="14"
-                                        >
-                                            <path
-                                                d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                                fill="currentColor"
-                                            />
-                                        </svg>
-                                    </button>
-                                {/if}
+                                <!-- 左侧区域 -->
+                                <div class="header-left">
+                                    <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
+                                    <span>{group.name}（共{group.questions.length}题，共{
+                                        group.questions.reduce((sum,q)=>sum+(q.score||0),0)
+                                    }分）</span>
+                                </div>
 
                                 <!-- 右侧区域 -->
                                 <div class="header-right">
-                                    <!-- <span>每题分值：</span>
+                                    <span>每题分值：</span>
                                     <div class="score-input">
-                                        <InputBox placeholder="" bind:value={group.average_score} show_label={false} type="number" clearable={false}/>
-                                    </div> -->
+                                        <InputBox onInput={debounce(()=>updateAverageQuestionScore(group),500,false)} placeholder="请输入" bind:value={$GROUP_AVERAGE_SCORE[group.id]} show_label={false} type="number" clearable={false}/>
+                                    </div>
                                     <Button onclick={()=>importQuestions(group)}>导入题目</Button>
                                 </div>
                             </div>
 
                             <!-- 题目列表 -->
                             {#if $GROUP_OPEN_STATE[group.id]}
-                                <div class="group-question-list">
-                                    {#if group.questions.length !== 0}
-                                        {#each group.questions as question}
-                                            <div class="single-question">
-                                                <!-- 头部下拉栏 -->
-                                                <div class="question-header">
-                                                    <!-- 左侧区域 -->
-                                                    <!-- svelte-ignore a11y_click_events_have_key_events -->
-                                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                                    <div title={$QUESTION_OPEN_STATE[question.id]?"收起":"展开"} class="header-left"  onclick={()=>changeOpenState("question",question.id)}>
-                                                        <button class="toggle-btn-down">{$QUESTION_OPEN_STATE[question.id]?"∨":"∧"}</button>
-                                                        <span class="sequence">{question.order}</span>
-                                                        <span class="question-type">{QUESTION_TYPE_TRANS[question.type]}</span>
-                                                        <span class={DIFFICULTY_TRANS[DIFFICULTY_TRANS[question.difficulty]]}>{DIFFICULTY_TRANS[question.difficulty]}</span>
-                                                    </div>
-
-                                                    <!-- 右侧区域 -->
-                                                    <div class="header-right">
-                                                        <span>分值：</span>
-                                                        <div class="score-input">
-                                                            <InputBox placeholder="" onInput={debounce(()=>updateQuestionScore(question.id,group.id,question.order,question.score),500,false)} bind:value={question.score} type="number" show_label={false} clearable={false}/>
+                                <div class="group-question-list-outer-box">
+                                    <div class="group-question-list {is_dragging_question ? "drag-over" : ""}">
+                                        {#if group.questions.length !== 0}
+                                            {#each group.questions as question}
+                                                <div class="single-question
+                                                    {drag_over_question_item.question?.id === question.id && drag_over_position === 'top' ? 'drag-over-top' : ''}
+                                                    {drag_over_question_item.question?.id === question.id && drag_over_position === 'bottom' ? 'drag-over-bottom' : ''}
+                                                    {dragged_question_item.question?.id === question.id ? "dragging":""}"
+                                                    draggable="true"
+                                                    ondragstart={(event)=>handleQuestionDragStart(event,question,group)}
+                                                    ondragover={(event)=>handleQuestionDragOver(event,question,group)}
+                                                    ondrop={handleQuestionDrop}
+                                                    onclick={(event)=>{event.stopPropagation();}}
+                                                >
+                                                    <!-- 头部下拉栏 -->
+                                                    <div class="question-header">
+                                                        <!-- 左侧区域 -->
+                                                        <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                                        <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                                        <div title={$QUESTION_OPEN_STATE[question.id]?"收起":"展开"} class="header-left"  onclick={(event)=>{event.stopPropagation();changeOpenState("question",question.id);}}>
+                                                            <button class="toggle-btn-down">{$QUESTION_OPEN_STATE[question.id]?"∨":"∧"}</button>
+                                                            <span class="sequence">{question.order}</span>
+                                                            <span class="question-type">{QUESTION_TYPE_TRANS[question.type]}</span>
+                                                            <span class={DIFFICULTY_TRANS[DIFFICULTY_TRANS[question.difficulty]]}>{DIFFICULTY_TRANS[question.difficulty]}</span>
                                                         </div>
-                                          
-                                                        <button onclick={()=>moveQuestion(groupIndex,question.id,"up")} class="move-btn" title="上移">↑</button>
-                                                        <button onclick={()=>moveQuestion(groupIndex,question.id,"down")} class="move-btn" title="下移">↓</button>
-                                                        <!-- <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
-                                                            <svg
-                                                                viewBox="0 0 1024 1024"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                stroke-width="2"
-                                                                stroke-linecap="round"
-                                                                stroke-linejoin="round"
-                                                                width="12"
-                                                                height="12"
-                                                            >
-                                                                <path
-                                                                    d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                                                    fill="currentColor"
-                                                                />
-                                                            </svg>
-                                                        </button> -->
-                                                        
-                                                        <button onclick={()=>deleteQuestion(question.id,group)} class="delete-question-btn" title="删除">✕</button>
+    
+                                                        <!-- 右侧区域 -->
+                                                        <div class="header-right">
+                                                            <span>分值：</span>
+                                                            <div class="score-input">
+                                                                <InputBox placeholder="" onInput={debounce(()=>updateQuestionScore(question.id,group.id,question.order,question.score),500,false)} bind:value={question.score} type="number" show_label={false} clearable={false}/>
+                                                            </div>
+                                              
+                                                            <button onclick={()=>moveQuestion(groupIndex,question.id,"up")} class="move-btn" title="上移">↑</button>
+                                                            <button onclick={()=>moveQuestion(groupIndex,question.id,"down")} class="move-btn" title="下移">↓</button>
+                                                            <!-- <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
+                                                                <svg
+                                                                    viewBox="0 0 1024 1024"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    stroke-width="2"
+                                                                    stroke-linecap="round"
+                                                                    stroke-linejoin="round"
+                                                                    width="12"
+                                                                    height="12"
+                                                                >
+                                                                    <path
+                                                                        d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                                                        fill="currentColor"
+                                                                    />
+                                                                </svg>
+                                                            </button> -->
+                                                            
+                                                            <button onclick={()=>deleteQuestion(question.id,group)} class="delete-question-btn" title="删除">✕</button>
+                                                        </div>
+                                                    </div>
+    
+                                                    <!-- 题目内容 -->
+                                                    {#if $QUESTION_OPEN_STATE[question.id]}
+                                                        <div class="question-container">
+                                                            <QuestionPreview {question}/>  
+                                                            <!-- <MyPreviewQuestion question={question}/>                                           -->
+                                                        </div>
+                                                    {/if}
+                                                </div>
+                                            {/each}
+                                        
+                                            <!-- 暂无题目 -->
+                                        {:else}
+                                            <div class="no-questions-container"
+                                                ondragover={(event)=>handleQuestionDragOver(event,{ id: null },group)}
+                                                ondrop={handleQuestionDrop}
+                                                ondragend={handleQuestionDragEnd}
+                                            >
+                                                <div class="no-questions-box">
+                                                    <span class="title">题组暂无题目</span>
+                                                    <span class="prompt">可以通过以下方式快速添加题目：</span>
+                                                    <div class="import-box">
+                                                        <Button onclick={()=>importQuestions(group)}>导入题目</Button>
                                                     </div>
                                                 </div>
-
-                                                <!-- 题目内容 -->
-                                                {#if $QUESTION_OPEN_STATE[question.id]}
-                                                    <div class="question-container">
-                                                        <QuestionPreview {question}/>  
-                                                        <!-- <MyPreviewQuestion question={question}/>                                           -->
-                                                    </div>
-                                                {/if}
                                             </div>
-                                        {/each}
-                                    
-                                        <!-- 暂无题目 -->
-                                    {:else}
-                                        <div class="no-questions-container">
-                                            <div class="no-questions-box">
-                                                <span class="title">题组暂无题目</span>
-                                                <span class="prompt">可以通过以下方式快速添加题目：</span>
-                                                <div class="import-box">
-                                                    <Button onclick={()=>importQuestions(group)}>导入题目</Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {/if}
+                                        {/if}
+                                    </div>
                                 </div>
                             {/if}
                         </div>
@@ -1172,82 +1396,124 @@
                     }
 
                     /* 列表 */
-                    .question-groups-box {
-                        /* background-color: #40a9ff; */
-                        padding: 5px;   
-                        display: flex;   
+                    .question-groups-outer-box {
                         border: 1px solid var(--border-light);
-                        border-radius: var(--border-radius-sm);
-                        flex-direction: column;          
+                        padding: 5px;
 
-                        .single-group {
-                            display: flex;
-                            padding: 17px 21px;
-                            justify-content: space-between;
-                            /* cursor: grab; */
-                            border-bottom: 1px solid var(--border-light);
-
-                            span {
-                                font-weight: 500;
+                        .question-groups-box {
+                            /* background-color: #40a9ff; */
+                            display: flex;   
+                            flex-direction: column;  
+                            border: 2px dashed transparent;
+                            transition: all 0.3s;
+                            border-radius: var(--border-radius-sm);
+                            
+                            &.drag-over {
+                                border-color: var(--primary-color);
+                                background-color: #eef4fa;
+                                border-radius: var(--border-radius-md);
+                                border: 2px dashed var(--primary-color);
+                                
                             }
-                        
-                            &:hover {
-                                background-color: var(--bg-secondary);
-                            }
-
-                            /* 添加题组 */
-                            .add-group-input {
-                                padding: 6px;
-                                transition: all 0.3s;
-                                outline: none;
-                                border-radius: var(--input-border-radius);
-                                border: 1px solid var(--border-light);
-                                width: 220px;
-
-                                &:focus {
-                                    border: 1px solid #40a9ff;
-                                    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
-                                }
-                            }
-
-                            /* 按钮 */
-                            .btn-box {
+    
+                            .single-group {
                                 display: flex;
-                                align-items: center;
-                                gap: 3px;
-
-                                svg {
-                                    margin-top: 5px;
+                                padding: 17px 21px;
+                                justify-content: space-between;
+                                cursor: grab;
+                                border-bottom: 1px solid var(--border-light);
+                                border-radius: var(--border-radius-md);
+                                position: relative;
+                                background-color: var(--bg-primary);
+    
+                                &.dragging {
+                                    opacity: 0.5; /* 半透明 */
                                 }
-
-                                .edit-group-btn, .delete-group-btn {
-                                    width: 24px;
-                                    height: 24px;
+    
+                                &.drag-over-top::before,
+                                &.drag-over-bottom::before {
+                                    content: "";
+                                    position: absolute;
+                                    left: 0;
+                                    right: 0;
+                                    height: 2px;
+                                    background-color: var(--primary-color);
+                                    z-index: 10;
+                                }
+    
+                                /* 上边线 */
+                                &.drag-over-top::before {
+                                    top: 0;
+                                }
+    
+                                /* 下边线 */
+                                &.drag-over-bottom::before {
+                                    bottom: 0;
+                                }
+    
+                                span {
+                                    font-weight: 500;
+                                }
+                            
+                                &:hover {
+                                    background-color: var(--bg-secondary);
+                                    cursor: grab;
+                                }
+    
+                                /* 添加题组 */
+                                .add-group-input {
+                                    padding: 6px;
+                                    transition: all 0.3s;
+                                    outline: none;
+                                    border-radius: var(--input-border-radius);
                                     border: 1px solid var(--border-light);
-                                    background: none;
-                                    border-radius: var(--btn-border-radius);
-                                    cursor: pointer;
-                                    background-color: var(--bg-primary);
-                                }
+                                    width: 220px;
     
-                                /* 编辑按钮 */
-                                .edit-group-btn {
-                                    padding: 0;
-    
-                                    &:hover {
-                                        border-color: var(--green);
-                                        color: var(--green);
+                                    &:focus {
+                                        border: 1px solid #40a9ff;
+                                        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
                                     }
                                 }
-                            }
-
-                            /* 删除按钮 */
-                            .delete-group-btn {
-                                font-size: 14px;
-
-                                &:hover {
-                                    border-color: var(--red);
-                                    color: var(--red);
+    
+                                /* 按钮 */
+                                .btn-box {
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 3px;
+    
+                                    svg {
+                                        margin-top: 5px;
+                                    }
+    
+                                    .edit-group-btn, .delete-group-btn {
+                                        width: 24px;
+                                        height: 24px;
+                                        border: 1px solid var(--border-light);
+                                        background: none;
+                                        border-radius: var(--btn-border-radius);
+                                        cursor: pointer;
+                                        background-color: var(--bg-primary);
+                                    }
+        
+                                    /* 编辑按钮 */
+                                    .edit-group-btn {
+                                        padding: 0;
+        
+                                        &:hover {
+                                            border-color: var(--green);
+                                            color: var(--green);
+                                        }
+                                    }
+                                }
+    
+                                /* 删除按钮 */
+                                .delete-group-btn {
+                                    font-size: 14px;
+    
+                                    &:hover {
+                                        border-color: var(--red);
+                                        color: var(--red);
+                                    }
                                 }
                             }
                         }
@@ -1278,17 +1544,18 @@
 
                         &:hover {
                             background-color: #edf2f7;
+                            cursor: pointer;
+                            color: #1890ff;
+
+                            .toggle-btn {
+                                color: #1890ff;
+                            }
                         }
 
                         /* 左侧区域 */
                         .header-left {
                             display: flex;
                             align-items: center;
-                            cursor: pointer;
-
-                            &:hover, &:hover .toggle-btn {
-                                color: #1890ff;
-                            }
 
                             /* 下拉按钮 */
                             .toggle-btn {
@@ -1310,53 +1577,6 @@
                             
                         }
 
-                        /* 编辑按钮 */
-                        .edit-group-btn {
-                            border: none;
-                            background: none;
-                            cursor: pointer;
-                            padding: 5px 0 0 0; 
-                            width: 22px;
-                            height: 22px;
-                            /* background-color: red; */
-
-                            &:hover {
-                                color: #1890ff;
-                            }
-                        }
-
-                        /* 编辑题组 */
-                        .edit-group-input {
-                            padding: 6px;
-                            transition: all 0.3s;
-                            outline: none;
-                            border-radius: var(--input-border-radius);
-                            border: 1px solid var(--border-light);
-                            width: 50%;
-
-                            &:focus {
-                                border: 1px solid #40a9ff;
-                                box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
-                            }
-                        }
-
-                        .cancel-btn {
-                            font-size: 14px;
-                            width: 28.67px;
-                            height: 28.67px;
-                            border: 1px solid var(--border-light);
-                            background: none;
-                            border-radius: var(--btn-border-radius);
-                            cursor: pointer;
-                            background-color: var(--bg-primary);
-                            margin-left: 10px;
-
-                            &:hover {
-                                border-color: var(--red);
-                                color: var(--red);
-                            }
-                        }
-
                         /* 右侧区域 */
                         .header-right {
                             margin-left: auto;
@@ -1364,7 +1584,7 @@
                             align-items: center;
 
                             .score-input {
-                                width: 70px;
+                                width: 75px;
                                 margin-right: 36px;
                             }
 
@@ -1377,216 +1597,258 @@
                     }
                     
                     /* 题目列表 */
-                    .group-question-list {
+                    .group-question-list-outer-box {
                         padding: 16px 8px;
-                        display: flex;
-                        flex-direction: column;
-                        gap: 12px;
 
-                        /* 暂无题目 */
-                        .no-questions-container {
-                            /* background-color: #1890ff; */
-                            padding: 118px 0;
-
-                            .no-questions-box {
-                                /* background-color: #7792ff; */
-                                display: flex;
-                                flex-direction: column;
-                                align-items: center;
-
-                                .title {
-                                    margin-bottom: 8px;
-                                    font-size: 24px;
-                                    font-weight: bold;
-                                }
-
-                                .prompt {
-                                    margin-bottom: 16px;
-                                    font-size: 14px;
-                                    color: var(--text-secondary);
-                                }
-                            }
-                        }
-
-                        .single-question {
-                            border: 1px solid var(--border-light);
+                        .group-question-list {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 12px;
+                            border: 2px dashed transparent;
+                            transition: all 0.3s;
                             border-radius: var(--border-radius-sm);
-
-                            /* 头部下拉栏 */
-                            .question-header {
-                                padding: 10px 16px;
-                                background-color: #fafafa;
-                                display: flex;
-                                border-bottom: 1px solid var(--border-light);
-
-                                &:hover {
-                                    background-color: #edf2f7;
-
-                                    .sequence { color: #1890ff; }
-
-                                    .toggle-btn-down, .toggle-btn-left { color: #1890ff; }
-                                }
-
-                                /* 左侧区域 */
-                                .header-left {
+    
+                            /* 暂无题目 */
+                            .no-questions-container {
+                                /* background-color: #1890ff; */
+                                padding: 118px 0;
+    
+                                .no-questions-box {
+                                    /* background-color: #7792ff; */
                                     display: flex;
+                                    flex-direction: column;
                                     align-items: center;
-                                    cursor: pointer;
-
-                                    /* 下拉按钮-向右状态 */
-                                    .toggle-btn-left {
-                                        background: none;
-                                        /* background-color: red; */
-                                        border: none;
-                                        padding: 0;
-                                        height: 30px;
-                                        margin-left: 6px;
-                                        margin-right: 14px;
-                                        cursor: pointer;
-                                        transform: scaleY(1.8) rotate(-90deg);
-                                        font-size: 10px;
-                                        font-weight: 1000;
+    
+                                    .title {
+                                        margin-bottom: 8px;
+                                        font-size: 24px;
+                                        font-weight: bold;
                                     }
-
-                                    /* 下拉按钮-向下状态 */
-                                    .toggle-btn-down {
-                                        background: none;
-                                        /* background-color: red; */
-                                        border: none;
-                                        padding: 2px 12px 0 0;
-                                        height: 30px;
-                                        margin-left: 8px;
-                                        cursor: pointer;
-                                        transform: scaleX(1.8);
-                                        font-size: 10px;
-                                        font-weight: 1000;
-                                    }
-
-                                    /* 题序 */
-                                    .sequence {
-                                        font-weight: 500;
-                                    }
-                                    
-                                    /* 题型 */
-                                    .question-type {
-                                        padding: 2px 8px;
-                                        background-color: #e8f8f2;
-                                        color: var(--primary-color);
-                                        margin-left: 24px;
-                                        border-radius: var(--border-radius-sm);
-                                    }
-
-                                    /* 难度 */
-                                    .easy-level, .normal-level, .hard-level {
-                                        margin-left: 12px;
-                                        padding: 2px 8px;
-                                        border-radius: var(--border-radius-sm);
-                                    }
-                                    .easy-level { color: var(--green); background-color:#e8f8f2;}
-                                    .normal-level { color: var(--orange); background-color:#fef3e6; }
-                                    .hard-level { color: var(--red); background-color:#fdecee; }
-                                }
-
-                                /* 右侧区域 */
-                                .header-right {
-                                    margin-left: auto;
-                                    display: flex;
-                                    align-items: center;
-
-                                    span {
+    
+                                    .prompt {
+                                        margin-bottom: 16px;
                                         font-size: 14px;
                                         color: var(--text-secondary);
-
-                                    }
-
-                                    .score-input {
-                                        width: 70px;
-                                        margin-right: 30px;
-                                    }
-
-                                    .move-btn, .edit-question-btn, .delete-question-btn {
-                                        width: 30px;
-                                        height: 30px;
-                                        margin-left: 6px;
-                                        border-radius: var(--btn-border-radius);
-                                        border: 1px solid var(--border-light);
-                                        background-color: var(--bg-primary);
-                                        cursor: pointer;
-                                    }
-
-                                    /* 移动按钮 */
-                                    .move-btn {
-                                        font-size: 16px;
-
-                                        &:hover {
-                                            color: var(--primary-color);
-                                            border-color: var(--primary-color);
-                                            transition: all 0.3s;
-                                        }
-                                    }
-
-                                    /* 编辑按钮 */
-                                    .edit-question-btn {
-
-                                        &:hover {
-                                            color: var(--green);
-                                            border-color: var(--green);
-                                            transition: all 0.3s;
-                                        }
-
-                                        svg {
-                                            margin-top: 4px;
-                                        }
-                                    }
-
-                                    /* 删除按钮 */
-                                    .delete-question-btn {
-                                        font-weight: bold;
-
-                                        &:hover {
-                                            color: var(--red);
-                                            border-color: var(--red);
-                                            transition: all 0.3s;
-                                        }
                                     }
                                 }
                             }
 
-                            /* 题目内容 */
-                            .question-container {
-                                /* padding: 20px; */
+                            &.drag-over {
+                                border-color: var(--primary-color);
+                                background-color: #eef4fa;
+                                border-radius: var(--border-radius-md);
+                                border: 2px dashed var(--primary-color);
+                                
+                            }
+    
+                            .single-question {
+                                border: 1px solid var(--border-light);
+                                border-radius: var(--border-radius-sm);
+                                background-color: var(--bg-primary);
+                                position: relative;
+                                cursor: grab;
 
-                                .prompt {
-                                    font-size: 14px;
-                                    color: #619cf5;
-                                    margin-right: 10px;
+                                &.dragging {
+                                    opacity: 0.5; /* 半透明 */
                                 }
-
-                                /* 问题 */
-                                .question-box {
-                                    padding: 12px 8px;
-                                    margin-bottom: 10px;
+    
+                                &.drag-over-top::before,
+                                &.drag-over-bottom::before {
+                                    content: "";
+                                    position: absolute;
+                                    left: 0;
+                                    right: 0;
+                                    height: 2px;
+                                    background-color: var(--primary-color);
+                                    z-index: 10;
                                 }
-
-                                /* 答案 */
-                                .answer-box {
+    
+                                /* 上边线 */
+                                &.drag-over-top::before {
+                                    top: 0;
+                                }
+    
+                                /* 下边线 */
+                                &.drag-over-bottom::before {
+                                    bottom: 0;
+                                }
+    
+                                /* 头部下拉栏 */
+                                .question-header {
+                                    padding: 10px 16px;
+                                    background-color: #fafafa;
                                     display: flex;
-                                    padding: 12px 0;
-                                    background:linear-gradient(to right, #ddd 0%, #ddd 8px, transparent 8px, transparent 15px) repeat-x bottom;
-                                    background-size: 15px 2px;
-                                    align-items: center;
-
-                                    .sequence {
-                                        color: #619cf5;
-                                        font-size: 14px;
-                                        margin-right: 10px;
+                                    border-bottom: 1px solid var(--border-light);
+    
+                                    &:hover {
+                                        background-color: #edf2f7;
+    
+                                        .sequence { color: #1890ff; }
+    
+                                        .toggle-btn-down, .toggle-btn-left { color: #1890ff; }
+                                    }
+    
+                                    /* 左侧区域 */
+                                    .header-left {
+                                        display: flex;
+                                        align-items: center;
+                                        cursor: pointer;
+    
+                                        /* 下拉按钮-向右状态 */
+                                        .toggle-btn-left {
+                                            background: none;
+                                            /* background-color: red; */
+                                            border: none;
+                                            padding: 0;
+                                            height: 30px;
+                                            margin-left: 6px;
+                                            margin-right: 14px;
+                                            cursor: pointer;
+                                            transform: scaleY(1.8) rotate(-90deg);
+                                            font-size: 10px;
+                                            font-weight: 1000;
+                                        }
+    
+                                        /* 下拉按钮-向下状态 */
+                                        .toggle-btn-down {
+                                            background: none;
+                                            /* background-color: red; */
+                                            border: none;
+                                            padding: 2px 12px 0 0;
+                                            height: 30px;
+                                            margin-left: 8px;
+                                            cursor: pointer;
+                                            transform: scaleX(1.8);
+                                            font-size: 10px;
+                                            font-weight: 1000;
+                                        }
+    
+                                        /* 题序 */
+                                        .sequence {
+                                            font-weight: 500;
+                                        }
+                                        
+                                        /* 题型 */
+                                        .question-type {
+                                            padding: 2px 8px;
+                                            background-color: #e8f8f2;
+                                            color: var(--primary-color);
+                                            margin-left: 24px;
+                                            border-radius: var(--border-radius-sm);
+                                        }
+    
+                                        /* 难度 */
+                                        .easy-level, .normal-level, .hard-level {
+                                            margin-left: 12px;
+                                            padding: 2px 8px;
+                                            border-radius: var(--border-radius-sm);
+                                        }
+                                        .easy-level { color: var(--green); background-color:#e8f8f2;}
+                                        .normal-level { color: var(--orange); background-color:#fef3e6; }
+                                        .hard-level { color: var(--red); background-color:#fdecee; }
+                                    }
+    
+                                    /* 右侧区域 */
+                                    .header-right {
+                                        margin-left: auto;
+                                        display: flex;
+                                        align-items: center;
+    
+                                        span {
+                                            font-size: 14px;
+                                            color: var(--text-secondary);
+    
+                                        }
+    
+                                        .score-input {
+                                            width: 70px;
+                                            margin-right: 30px;
+                                        }
+    
+                                        .move-btn, .edit-question-btn, .delete-question-btn {
+                                            width: 30px;
+                                            height: 30px;
+                                            margin-left: 6px;
+                                            border-radius: var(--btn-border-radius);
+                                            border: 1px solid var(--border-light);
+                                            background-color: var(--bg-primary);
+                                            cursor: pointer;
+                                        }
+    
+                                        /* 移动按钮 */
+                                        .move-btn {
+                                            font-size: 16px;
+    
+                                            &:hover {
+                                                color: var(--primary-color);
+                                                border-color: var(--primary-color);
+                                                transition: all 0.3s;
+                                            }
+                                        }
+    
+                                        /* 编辑按钮 */
+                                        .edit-question-btn {
+    
+                                            &:hover {
+                                                color: var(--green);
+                                                border-color: var(--green);
+                                                transition: all 0.3s;
+                                            }
+    
+                                            svg {
+                                                margin-top: 4px;
+                                            }
+                                        }
+    
+                                        /* 删除按钮 */
+                                        .delete-question-btn {
+                                            font-weight: bold;
+    
+                                            &:hover {
+                                                color: var(--red);
+                                                border-color: var(--red);
+                                                transition: all 0.3s;
+                                            }
+                                        }
                                     }
                                 }
-
-                                /* 解析 */
-                                .analysis-box {
-                                    display: flex;
-                                    padding: 12px 0;
+    
+                                /* 题目内容 */
+                                .question-container {
+                                    /* padding: 20px; */
+    
+                                    .prompt {
+                                        font-size: 14px;
+                                        color: #619cf5;
+                                        margin-right: 10px;
+                                    }
+    
+                                    /* 问题 */
+                                    .question-box {
+                                        padding: 12px 8px;
+                                        margin-bottom: 10px;
+                                    }
+    
+                                    /* 答案 */
+                                    .answer-box {
+                                        display: flex;
+                                        padding: 12px 0;
+                                        background:linear-gradient(to right, #ddd 0%, #ddd 8px, transparent 8px, transparent 15px) repeat-x bottom;
+                                        background-size: 15px 2px;
+                                        align-items: center;
+    
+                                        .sequence {
+                                            color: #619cf5;
+                                            font-size: 14px;
+                                            margin-right: 10px;
+                                        }
+                                    }
+    
+                                    /* 解析 */
+                                    .analysis-box {
+                                        display: flex;
+                                        padding: 12px 0;
+                                    }
                                 }
                             }
                         }
