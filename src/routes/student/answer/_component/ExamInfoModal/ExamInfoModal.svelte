@@ -17,7 +17,8 @@
    * @property {string} upload_time - 文件的上传时间，格式为ISO字符串
    */
   import { onMount } from 'svelte';
-  // import ActionToast from "../ActionToast.svelte";
+  import Toast from '$lib/components/Toast/Toast.svelte';
+  import { toast } from '$lib/components/Toast/Toast';
   // 使用$props()代替export
   let {
     title = '考试信息',
@@ -81,7 +82,9 @@
     document.body.appendChild(a);
     a.click();
 
-    actionToast.show('success', `正在下载：${file.file_name}`);
+
+  //  actionToast.show('success', `正在下载：${file.file_name}`);
+    toast.success(`正在下载：${file.file_name}`, 2000);
 
     document.body.removeChild(a);
   }
@@ -92,7 +95,8 @@
    */
   async function downloadAllAttachments() {
     if (!files || files.length === 0) {
-      actionToast.show('error', '没有可下载的附件');
+   //   actionToast.show('error', '没有可下载的附件');
+      toast.error('没有可下载的附件', 2000);
       return;
     }
 
@@ -132,10 +136,11 @@
       }, 100);
 
       // 显示下载成功提示
-      actionToast.show('success', `正在下载: ${file.file_name}`);
+ //     actionToast.show('success', `正在下载: ${file.file_name}`);
+      toast.success(`正在下载：${file.file_name}`, 2000);
     } catch (error) {
       console.error('下载文件失败:', error);
-      actionToast.show('error', '下载文件失败');
+      toast.error('下载文件失败', 2000);
     }
   }
   onMount(() => {
@@ -162,13 +167,6 @@
   });
 </script>
 
-<ActionToast
-  bind:isShow={actionToastIsShow}
-  type="success"
-  message="删除试卷成功"
-  duration={2000}
-  bind:this={actionToast}
-/>
 {#if show}
   <div class="modal-overlay">
     <div class="modal-container">
