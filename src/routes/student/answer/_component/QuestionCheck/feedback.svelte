@@ -2,9 +2,9 @@
     let { question } = $props();
     
     // 响应式派生状态[1,8](@ref)
-    let studentScore = $derived(question.student_score);
-    let score = $derived(question.score);
-    
+    let studentScore = $derived(question.StudentScore);
+    let score = $derived(question.Score);
+
     // 响应式样式计算[1,4](@ref)
     let styles = $derived.by(() => {
         if (studentScore === score) {
@@ -41,7 +41,7 @@
     let pointsText = $derived(studentScore === score ? `+${score}分` : `+${0}分`);
 </script>
 
-{#if ['00', '02', '04'].includes(question.type)}
+{#if ['00', '02', '04'].includes(question.Type)}
 <div 
     class="feedback-container"
     style="background-color: {styles.bgColor}"
@@ -71,7 +71,7 @@
         </span>
     </div>
 </div>
-{:else if ['06', '08'].includes(question.type)}
+{:else if ['06', '08'].includes(question.Type)}
 <div 
     class="feedback-container"
     style="background-color: {styles.bgColor}"
