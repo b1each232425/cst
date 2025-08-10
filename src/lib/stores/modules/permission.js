@@ -101,6 +101,7 @@ export const baseNavItems = writable([
     path: '/teacher/correct',
     icon: '/sidebar/nav_icon/correct.svg',
     children_is_parallel: true,
+    isFilter: true,
     children: [
       {
         name: 'markManagement',
