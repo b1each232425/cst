@@ -54,6 +54,16 @@
   let ball_element; // 绑定小球span
   let r_text_element; // 绑定右文本span
 
+  function checkProps() {
+    if (is_checked == null) is_checked = false;
+    if (iball_color == null) ball_color = 'white';
+    if (checked_background_color == null) checked_background_color = '#4a90e2';
+    if (unchecked_background_color == null) unchecked_background_color = '#ccc';
+    if (left_text == null) left_text = 'Off';
+    if (right_text == null) right_text = 'On';
+    if (width == null) width = '80px';
+  }
+
   onMount(() => {
     // 计算高度，保持 8:3 的比例
     let height = (parseInt(width) * 3) / 8 + 'px';

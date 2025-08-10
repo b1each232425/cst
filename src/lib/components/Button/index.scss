@@ -1,0 +1,244 @@
+/**
+ * 使用方法：
+ *  import '$lib/components/Button/index.scss';
+ * <button class="btn btn--[主题] btn--[尺寸] [is-plain/is-text/is-link/is-disabled/is-round]">
+ *   按钮文本
+ * </button>
+ * 
+ * 主题：primary/success/danger/warning/info
+ * 尺寸：small/medium/large（默认medium）
+ * 
+ * 注意：
+ * - 状态类可组合（如is-text+is-plain）
+ * - is-disabled禁用交互并降透明度
+ * - 按钮组自动添加左侧间距（首个按钮无）
+ * - 依赖全局定义的CSS变量（--blue等）
+ */
+
+@use 'sass:map';
+
+// ---------------
+// 基础变量
+// ---------------
+$btn-border-radius: var(--btn-border-radius) !default;
+
+$color-list: (
+  'primary': (
+    'base': var(--blue),
+    'text-color': var(--text-white),
+    'border-color': var(--blue),
+    'hover-base': var(--primary-hover),
+    'hover-text-color': var(--text-white),
+    'hover-border-color': var(--primary-hover),
+  ),
+  'success': (
+    'base': var(--green),
+    'text-color': var(--text-white),
+    'border-color': var(--green),
+    'hover-base': color-mix(in srgb, var(--green) 90%, white),
+    'hover-text-color': var(--text-white),
+    'hover-border-color': var(--green),
+  ),
+  'danger': (
+    'base': var(--red),
+    'text-color': var(--text-white),
+    'border-color': var(--red),
+    'hover-base': color-mix(in srgb, var(--red) 90%, white),
+    'hover-text-color': var(--text-white),
+    'hover-border-color': var(--red),
+  ),
+  'warning': (
+    'base': var(--orange),
+    'text-color': var(--text-white),
+    'border-color': var(--orange),
+    'hover-base': color-mix(in srgb, var(--orange) 90%, white),
+    'hover-text-color': var(--text-white),
+    'hover-border-color': var(--orange),
+  ),
+  'info': (
+    'base': var(--gray),
+    'text-color': var(--text-white),
+    'border-color': var(--gray),
+    'hover-base': color-mix(in srgb, var(--gray) 90%, white),
+    'hover-text-color': var(--text-white),
+    'hover-border-color': var(--gray),
+  ),
+) !default;
+
+$font-size-list: (
+  'small': (
+    font-size: 12px,
+    padding: 6px 10px,
+  ),
+  'medium': (
+    font-size: 14px,
+    padding: 8px 15px,
+  ),
+  'large': (
+    font-size: 16px,
+    padding: 10px 20px,
+  ),
+) !default;
+
+// ---------------
+// Mixin
+// ---------------
+@mixin when($name) {
+  @at-root {
+    &.#{'is-' + $name} {
+      @content;
+    }
+  }
+}
+
+@mixin button-theme($name, $color-map) {
+  $base: map.get($color-map, 'base');
+  $text: map.get($color-map, 'text-color');
+  $border: map.get($color-map, 'border-color');
+  $hover-base: map.get($color-map, 'hover-base');
+  $hover-text: map.get($color-map, 'hover-text-color');
+  $hover-border: map.get($color-map, 'hover-border-color');
+
+  background-color: $base;
+  color: $text;
+  border: 1px solid $border;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: $hover-base;
+    color: $hover-text;
+    border-color: $hover-border;
+  }
+  &:active {
+    background-color: color-mix(in srgb, $hover-base 90%, rgb(0, 0, 0));
+    color: $hover-text;
+    border-color: $hover-border;
+    transform: scale(0.99);
+  }
+
+  @include when(plain) {
+    background-color: transparent;
+    color: $border;
+    border-color: $border;
+
+    &:hover {
+      background-color: $base;
+      color: $text;
+      border-color: $base;
+    }
+    &:active {
+      transform: scale(1);
+      background-color: color-mix(in srgb, $hover-base 90%, rgb(0, 0, 0));
+      color: $text;
+      border-color: $base;
+    }
+  }
+
+  @include when(text) {
+    background-color: #f5f7fa;
+    border: none;
+    padding: 5px 10px;
+    color: $base;
+
+    &:hover {
+      color: $base;
+      background-color: #f0f2f5;
+    }
+    &:active {
+      transform: scale(1);
+      background-color: #e2e5e9;
+    }
+
+    @include when(plain) {
+      background-color: transparent;
+      border: none;
+      padding: 5px 10px;
+      color: $base;
+
+      &:hover {
+        color: $base;
+        background-color: #f0f2f5;
+      }
+      &:active {
+        transform: scale(1);
+        background-color: #e2e5e9;
+      }
+    }
+  }
+
+  @include when(link) {
+    background-color: transparent;
+    border: none;
+    color: $base;
+
+    &:hover {
+      text-decoration: underline;
+    }
+    &:active {
+      transform: scale(0.98);
+      color: $hover-base;
+    }
+  }
+}
+
+@mixin button-size($size) {
+  $size-config: map.get($font-size-list, $size);
+  font-size: map.get($size-config, font-size);
+  padding: map.get($size-config, padding);
+}
+
+// ---------------
+// 样式输出
+// ---------------
+.btn {
+  cursor: pointer;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  border-radius: $btn-border-radius;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1;
+  font-size: 14px;
+  padding: 8px 15px;
+
+  &:active {
+    transform: scale(0.99);
+  }
+
+  @include when(disabled) {
+    opacity: 0.6;
+    cursor: not-allowed;
+    &:active {
+      pointer-events: none;
+      transform: scale(1);
+    }
+  }
+
+  @include when(round) {
+    border-radius: 9999px;
+  }
+}
+
+// === 按钮主题 ===
+@each $name, $color-map in $color-list {
+  .btn--#{$name} {
+    @include button-theme($name, $color-map);
+  }
+}
+
+// === 按钮尺寸 ===
+@each $name, $size-map in $font-size-list {
+  .btn--#{$name} {
+    @include button-size($name);
+  }
+}
+
+// === 空格间距 ===
+.btn:not(:first-child) {
+  margin-left: 0.3em;
+}

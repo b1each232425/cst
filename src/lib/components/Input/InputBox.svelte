@@ -41,6 +41,7 @@
   /**
    * 处理单个输入框的输入事件
    * @param event
+   * @type {function}
    */
   function handleInputSingle(event) {
     onInput(event.target.value);
@@ -63,175 +64,197 @@
     showPassword = !showPassword;
     inputType = showPassword ? 'text' : 'password';
   }
+
+  /**
+   * class类集合
+   * @type {string}
+   */
+  let classes = $state([round && 'is-round', disabled && 'is-disabled'].filter(Boolean).join(' '));
 </script>
 
-<div class="InputBox-container">
+<div class="input">
   <!-- 标签显示 -->
   {#if show_label}
-    <div class="InputBox-label">
-      <!-- request符号显示 -->
+    <label for="input" class="input__label">
       {#if request}
-        <span class="required">*</span>
+        <span class="input__label--required">*</span>
       {/if}
       {label}
-    </div>
+    </label>
   {/if}
-  <!-- 通过readonly属性控制是否可编辑,切换为只读状态用来展示的样式 -->
+  <!-- 普通只读信息展示框 -->
   {#if readonly}
-    {#if type.toLowerCase() == 'password'}
-      <div class="InforInput-password {round ? 'round' : ''} {disabled ? 'disabled' : ''}">
+    {#if type.toLowerCase() === 'password'}
+      <div class="input__info-password {classes}">
         {#if showPassword}
           {value || '• • • • • • • •'}
         {:else}
           • • • • • • • •
         {/if}
       </div>
-      <button onclick={togglePassword} title={showPassword ? '隐藏密码' : '显示密码'}>
-        <img src="/teacher_mgt/{showPassword ? 'hide.svg' : 'show.svg'}" alt="{showPassword ? '隐藏' : '显示'}密码" />
-      </button>
     {:else}
-      <div
-        class="InforInput-value {round ? 'round' : ''} {disabled ? 'disabled' : ''}"
-        style={color ? `color: ${color};` : ''}
-      >
+      <div class="input__info-value {classes}" style={color ? `color: ${color};` : ''}>
         {value ? value : placeholder}
       </div>
     {/if}
     <!-- 普通通用输入框 -->
   {:else}
-    <div class="InputBox-box">
+    <div class="input__wrapper">
       <input
-        class="InputBox-input {round ? 'round' : ''} {disabled ? 'disabled' : ''}"
-        type={inputType}
         bind:value
-        {placeholder}
+        id="input"
         {disabled}
+        {placeholder}
+        type={inputType}
+        class="input__inner {classes}"
         oninput={handleInputSingle}
       />
       <!-- 清除输入按钮 -->
       {#if clearable && value && !disabled}
-        <button class="clear-icon" onclick={clearInput} aria-label="清除输入"></button>
+        <button onclick={clearInput} class="button--clear" title="清除输入" aria-label="清除输入"></button>
       {/if}
-      <button
-        onclick={togglePassword}
-        title={showPassword ? '隐藏密码' : '显示密码'}
-        class="password-icon {type == 'password' ? '' : 'hide'}"
-      >
-        <img src="/teacher_mgt/{showPassword ? 'hide.svg' : 'show.svg'}" alt="{showPassword ? '隐藏' : '显示'}密码" />
-      </button>
     </div>
   {/if}
+  <!-- 切换显示密码按钮 -->
+  <button
+    type="button"
+    onclick={togglePassword}
+    data-state={showPassword ? 'show' : 'hide'}
+    title={showPassword ? '隐藏密码' : '显示密码'}
+    aria-label={showPassword ? '隐藏密码' : '显示密码'}
+    class="button__password--toggle {type == 'password' ? '' : 'is-hide'}"
+  >
+  </button>
 </div>
 
 <style lang="scss" scoped>
-  .InputBox-container {
+  $state-prefix: 'is-' !default;
+  @mixin flex-center {
     display: flex;
+    justify-content: center;
     align-items: center;
+  }
+  @mixin icon-image($url) {
+    background-image: url($url);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+  @mixin when($state) {
+    @at-root {
+      &.#{$state-prefix + $state} {
+        @content;
+      }
+    }
+  }
+  .input {
+    @include flex-center;
     gap: 8px;
     width: 100%;
-    .InputBox-label {
-      color: rgba(0, 0, 0, 0.6);
-      font-size: 14px;
+    position: relative;
+    box-sizing: border-box;
+
+    &__label {
       width: 90px;
-      white-space: nowrap;
+      font-size: 14px;
       text-align: right;
-      .required {
+      white-space: nowrap;
+      color: rgba(0, 0, 0, 0.6);
+
+      &--required {
         color: red;
         font-size: 14px;
       }
     }
-    .InforInput-value,
-    .InforInput-password {
+
+    .input__info-password,
+    .input__info-value {
       flex: 1;
       color: #333;
-      background-color: #f9f9f9;
-      border-radius: 4px;
       padding: 6px 8px;
-      box-sizing: border-box;
       min-width: 200px;
-    }
-    .InforInput-value {
-      min-width: 230px;
-    }
-    button {
-      margin-left: 8px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      img {
-        width: 16px;
-        height: 16px;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      @include when(disabled) {
+        cursor: not-allowed;
+      }
+      @include when(round) {
+        border-radius: 20px;
       }
     }
-    .InputBox-box {
+
+    .input__info-password {
+      min-width: 230px;
+    }
+
+    &__wrapper {
       position: relative;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-width: 150px;
+      @include flex-center;
       flex: 1;
-      .InputBox-input {
+      gap: 8px;
+
+      .input__inner {
         border-radius: 3px;
         height: 32px;
         padding: 0 8px;
         background-color: #fff;
         border: 1px solid #ccc;
         font-size: 14px;
-        box-sizing: border-box;
         outline: none;
         width: 100%;
         transition: border 0.2s;
+        @include when(disabled) {
+          cursor: not-allowed;
+        }
+        @include when(round) {
+          border-radius: 20px;
+        }
         &:hover,
         &:focus {
           border-color: #409eff;
         }
       }
     }
-    .clear-icon {
-      position: absolute;
-      right: 4px;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
-      z-index: 2;
-      transition: all 0.2s;
-      width: 16px;
-      height: 16px;
-      background-image: url('/clear/delete.svg');
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
-      &:hover {
-        background-image: url('/clear/delete-active.svg');
+
+    .button {
+      &--clear {
+        all: unset;
+        position: absolute;
+        top: 50%;
+        right: 4px;
+        z-index: 2;
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        transform: translateY(-50%);
+        @include icon-image('/clear/delete.svg');
+        &:hover {
+          background-image: url('/clear/delete-active.svg');
+        }
       }
-    }
-    .password-icon {
-      position: absolute;
-      right: -32px;
-      top: 50%;
-      transform: translateY(-50%);
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      img {
-        width: 24px;
+
+      &__password--toggle {
+        all: unset;
+        position: absolute;
+        top: 50%;
+        right: -32px;
         height: 24px;
+        width: 24px;
+        cursor: pointer;
+        @include flex-center;
         vertical-align: middle;
-      }
-      &.hide {
-        display: none;
+        transform: translateY(-50%);
+        &[data-state='show'] {
+          @include icon-image('/teacher_mgt/show.svg');
+        }
+        &[data-state='hide'] {
+          @include icon-image('/teacher_mgt/hide.svg');
+        }
+        @include when(hide) {
+          display: none;
+        }
       }
     }
-  }
-  .round {
-    border-radius: 20px;
-  }
-  .disabled {
-    cursor: not-allowed;
-  }
-  button {
-    all: unset;
   }
 </style>

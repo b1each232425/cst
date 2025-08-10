@@ -2,10 +2,6 @@
   import SideBar from '$lib/components/SideBar/SideBar.svelte';
   import Crumb from '$lib/components/Crumb/Crumb.svelte';
   import Brand from '$lib/components/Brand/Brand.svelte';
-  import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
-  import { baseNavItems } from '$lib/stores/modules/permission.js';
-
   let { children, data } = $props();
 </script>
 

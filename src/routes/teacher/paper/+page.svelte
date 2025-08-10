@@ -155,11 +155,11 @@
 
     // 检查全选
     function checkAllSelected() {
-        const selected_paperIDs = get(SELECTED_PAPER_IDS);
-        const allSelected = paper_list.length !== 0 && paper_list.every(p =>
-            selected_paperIDs.includes(p.ID)
+        const SELECTED_PAPER_IDS = get(SELECTED_PAPER_IDS);
+        const ALL_SELECTED = paper_list.length !== 0 && paper_list.every(p =>
+            SELECTED_PAPER_IDS.includes(p.ID)
         );
-        ALL_PAPER_SELECTED.set(allSelected);
+        ALL_PAPER_SELECTED.set(ALL_SELECTED);
     }
 
     // 全选
@@ -168,8 +168,8 @@
 
         SELECTED_PAPER_IDS.update(current => {
             if (checked) {
-                const notYetSelected = CURRENT_PAGE_IDS.filter(ID => !current.includes(ID));
-                return [...current, ...notYetSelected];
+                const NOT_YET_SELECTED = CURRENT_PAGE_IDS.filter(ID => !current.includes(ID));
+                return [...current, ...NOT_YET_SELECTED];
             } else {
                 return current.filter(ID => !CURRENT_PAGE_IDS.includes(ID));
             }

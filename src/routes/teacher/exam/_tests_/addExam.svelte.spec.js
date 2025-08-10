@@ -4,7 +4,7 @@ import ExamCreation from '../addExam/+page.svelte';
 import { toast } from '$lib/components/Toast/Toast.js';
 import { goto } from '$app/navigation';
 import SmartEditor from '@3min/smart-edit';
-
+import { resetTime } from '../addExam/+page.svelte';
 // Mock dependencies
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/components/Toast/Toast.js', () => ({ 
@@ -559,30 +559,16 @@ describe('考试创建页面测试', () => {
     }
   };
 
-  it('未设置开始时间时显示警告', async () => {
-    const { saveButton } = await setupValidFormWithPaper();
-    
-    console.log('=== 测试未设置开始时间的验证 ===');
-    console.log('当前状态:');
-    console.log('- 考试名称: 测试考试');
-    console.log('- 试卷选择: 已尝试选择');
-    console.log('- 开始时间: 未设置');
-    console.log('- 结束时间: 未设置');
-    
-    await fireEvent.click(saveButton());
-    
-    // 由于试卷未真正选择，可能会先提示试卷选择
-    await waitFor(() => {
-      // 检查是否提示了时间段或试卷选择的错误
-      const calls = toast.warning.mock.calls;
-      const hasTimeError = calls.some(call => 
-        call[0].includes('时间段') || call[0].includes('试卷')
-      );
-      expect(hasTimeError).toBe(true);
-    });
-    
-    console.log('验证结果: 正确提示了必填项缺失');
+  it('表单验证优先级：先检查试卷选择，再检查时间设置', async () => {
+  const { examNameInput, saveButton } = setup();
+  
+  await fireEvent.input(examNameInput(), { target: { value: '测试考试' } });
+  await fireEvent.click(saveButton());
+  
+  await waitFor(() => {
+    expect(toast.warning).toHaveBeenCalledWith('第1个场次未选择试卷');
   });
+});
 
   it('开始时间早于当前时间时显示警告', async () => {
     // 使用mock来模拟组件内部状态
@@ -660,8 +646,8 @@ describe('考试创建页面测试', () => {
     // 测试时间比较逻辑
     const now = new Date();
     const pastTime = new Date('2025-08-03T10:00:00.000Z');
-    const futureStartTime = new Date('2025-08-05T12:00:00.000Z');
-    const futureEndTime = new Date('2025-08-05T14:00:00.000Z');
+    const futureStartTime = new Date('2045-08-05T12:00:00.000Z');
+    const futureEndTime = new Date('2045-08-05T14:00:00.000Z');
     const invalidEndTime = new Date('2025-08-05T10:00:00.000Z'); // 早于开始时间
   
     
@@ -688,5 +674,7 @@ describe('考试创建页面测试', () => {
 });
   
   
-;
+
+
+
 

@@ -16,11 +16,12 @@
    * @property {string} storage_name - 文件在存储系统中的名称
    * @property {string} upload_time - 文件的上传时间，格式为ISO字符串
    */
-  import { onMount } from "svelte";
-  import ActionToast from "../ActionToast.svelte";
+  import { onMount } from 'svelte';
+  import Toast from '$lib/components/Toast/Toast.svelte';
+  import { toast } from '$lib/components/Toast/Toast';
   // 使用$props()代替export
   let {
-    title = "考试信息",
+    title = '考试信息',
     start_time,
     end_time,
     exam_notes = `<p><span style="font-size: 12pt">在即将开始的考试之前，请各位考生务必仔细阅读并遵守以下详细规则：<br>1. 请确保您的网络连接稳定，建议使用有线网络连接，并使用支持最新版本浏览器的电脑参加考试。<br>2. 提前30分钟登录考试平台，完成身份验证和设备检查，以保证准时开考。准备好有效的身份证件以备核查。<br>3. 考试环境应安静、无干扰，桌面除必要的文具外不得放置任何与考试无关的物品或参考资料。关闭所有与考试无关的应用程序和通知提醒。<br>4. 确保摄像头开启且面向考生，以便监考人员实时监控，考试全程需保持可见。背景应整洁，避免出现可能引起作弊嫌疑的物品。<br>5. 不得使用任何通讯工具或电子设备辅助答题，包括手机、平板电脑等。禁止查阅外部资料、与他人交流或寻求帮助。<br>6. 一旦进入考试界面，中途不允许离开，如遇特殊情况（如突发健康问题）须提前报告监考老师，并遵循监考老师的指示。<br>7. 遵守考试时间限制，系统将在规定时间自动提交试卷。请合理分配答题时间，不要集中在最后一刻提交答案。<br>8. 考试期间严禁录屏、录音或以任何形式记录考试内容。违反此规定将被视为作弊行为处理。<br>9. 如有任何技术问题或遇到不可抗力因素影响考试进行，请立即联系在线技术支持或监考老师寻求帮助。<br>请严格遵守上述规则，祝您考试顺利，取得满意的成绩！</span></p>`,
@@ -50,18 +51,18 @@
 
   // 将时间戳转换为格式化日期字符串
   function formatTimestamp(timestamp) {
-    if (!timestamp) return "--";
+    if (!timestamp) return '--';
 
     const date = new Date(Number(timestamp));
 
     // 格式化年月日
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
 
     // 格式化时分
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
 
     return `${year}-${month}-${day} ${hours}:${minutes}`;
   }
@@ -75,13 +76,15 @@
     const url = `/api/files/${file.save_path}`;
 
     // 创建 a 标签触发下载
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
-    a.download = file.file_name || "downloaded_file";
+    a.download = file.file_name || 'downloaded_file';
     document.body.appendChild(a);
     a.click();
 
-    actionToast.show("success",`正在下载：${file.file_name}`);
+
+  //  actionToast.show('success', `正在下载：${file.file_name}`);
+    toast.success(`正在下载：${file.file_name}`, 2000);
 
     document.body.removeChild(a);
   }
@@ -92,7 +95,8 @@
    */
   async function downloadAllAttachments() {
     if (!files || files.length === 0) {
-      actionToast.show("error", "没有可下载的附件");
+   //   actionToast.show('error', '没有可下载的附件');
+      toast.error('没有可下载的附件', 2000);
       return;
     }
 
@@ -112,15 +116,15 @@
       // 使用文件的save_path构建下载URL
       const downloadUrl = `/api/files/${file.save_path}`;
 
-      console.log("downloadUrl:", downloadUrl);
+      console.log('downloadUrl:', downloadUrl);
 
       // 创建一个a标签来触发下载
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = downloadUrl;
       // 使用原始文件名
       a.download = file.file_name;
       //防止跳转到新窗口
-      a.target = "_blank";
+      a.target = '_blank';
 
       // 添加到DOM并触发点击
       document.body.appendChild(a);
@@ -132,10 +136,11 @@
       }, 100);
 
       // 显示下载成功提示
-      actionToast.show("success", `正在下载: ${file.file_name}`);
+ //     actionToast.show('success', `正在下载: ${file.file_name}`);
+      toast.success(`正在下载：${file.file_name}`, 2000);
     } catch (error) {
-      console.error("下载文件失败:", error);
-      actionToast.show("error", "下载文件失败");
+      console.error('下载文件失败:', error);
+      toast.error('下载文件失败', 2000);
     }
   }
   onMount(() => {
@@ -150,25 +155,18 @@
         // 如果内容高度超过容器最大高度，显示展开按钮
         showExpandButton = contentHeight > containerMaxHeight;
         console.log(
-          "附件内容高度:",
+          '附件内容高度:',
           contentHeight,
-          "最大高度:",
+          '最大高度:',
           containerMaxHeight,
-          "是否显示展开按钮:",
-          showExpandButton
+          '是否显示展开按钮:',
+          showExpandButton,
         );
       }, 100);
     }
   });
 </script>
 
-<ActionToast
-  bind:isShow={actionToastIsShow}
-  type="success"
-  message="删除试卷成功"
-  duration={2000}
-  bind:this={actionToast}
-/>
 {#if show}
   <div class="modal-overlay">
     <div class="modal-container">
@@ -189,19 +187,10 @@
         </div>
 
         {#if files.length > 0}
-          <div
-            class="attachment-section {isAttachmentExpanded
-              ? 'expanded-attachments'
-              : ''}"
-          >
+          <div class="attachment-section {isAttachmentExpanded ? 'expanded-attachments' : ''}">
             <div class="attachment-header">
-              <span style="font-weight: 1000; padding-top: 5px;"
-                >考试附件：</span
-              >
-              <div
-                class="attachment-files-container"
-                bind:this={attachmentContainer}
-              >
+              <span style="font-weight: 1000; padding-top: 5px;">考试附件：</span>
+              <div class="attachment-files-container" bind:this={attachmentContainer}>
                 <!-- 显示已上传的文件列表 -->
                 {#each files as file, index}
                   <div class="file-list">
@@ -217,15 +206,10 @@
                 {/each}
               </div>
               <div class="attachment-actions">
-                <button class="download-btn" onclick={downloadAllAttachments}
-                  >一键下载</button
-                >
+                <button class="download-btn" onclick={downloadAllAttachments}>一键下载</button>
                 {#if showExpandButton}
-                  <button
-                    class="expand-button"
-                    onclick={() =>
-                      (isAttachmentExpanded = !isAttachmentExpanded)}
-                    >{isAttachmentExpanded ? "收起" : "展开"}</button
+                  <button class="expand-button" onclick={() => (isAttachmentExpanded = !isAttachmentExpanded)}
+                    >{isAttachmentExpanded ? '收起' : '展开'}</button
                   >
                 {/if}
               </div>
@@ -237,9 +221,7 @@
           <div class="info-item">
             <span class="info-label">考试时长：</span>
             <span class="info-value"
-              >{exam_duration === 0 || exam_duration === undefined
-                ? "--"
-                : exam_duration + "分钟"}
+              >{exam_duration === 0 || exam_duration === undefined ? '--' : exam_duration + '分钟'}
             </span>
           </div>
 
