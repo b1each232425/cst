@@ -562,7 +562,7 @@
                                     <div class="operation-line">
                                         <button onclick={()=>editPaper(paper.ID)} class="blue-btn">修改</button>
                                         <!-- <button class="blue-btn">共享</button> -->
-                                        <button class="blue-btn" onclick={()=>previewPaper(paper.ID)}>预览</button>
+                                        <!-- <button class="blue-btn" onclick={()=>previewPaper(paper.ID)}>预览</button> -->
                                         <button onclick={()=>deleteSinglePaper(paper.ID)} class="red-btn">删除</button>
                                     </div>
         
