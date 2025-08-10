@@ -149,10 +149,6 @@
     sidebar_mouse_leave_timeout = setTimeout(() => {
       clearTimeout(sidebar_mouse_leave_timeout);
 
-      if (sidebar_is_folding || !sidebar_is_folded) {
-        return;
-      }
-
       side_float = false;
     }, 500);
   }

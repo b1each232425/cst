@@ -57,6 +57,11 @@
    * 获取当前路由路径数据（保持完整层级结构）
    */
   function getNavData(path, nav_map) {
+    // 添加对批改详情页的特殊处理
+    if (path === '/teacher/correct/correct') {
+      return [{ title: '批改详情', path: '/teacher/correct/correct' }];
+    }
+
     let result = [];
 
     for (let navData of nav_map) {
@@ -116,7 +121,7 @@
       current_nav_path_data = getNavData(current_url_path, nav_map);
 
       // 设置标题：只使用最后一个导航项的title
-      const currentNavItem = nav_path_data[nav_path_data.length - 1];
+      const currentNavItem = current_nav_path_data[current_nav_path_data.length - 1];
       document.title = `${currentNavItem.title} • ${app_name}`;
     }
   });
