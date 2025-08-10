@@ -1,0 +1,302 @@
+/**
+ * 如何使用：
+ *  import '$lib/components/Input/index.scss';
+ * 1. 容器型输入框（带按钮交互）：
+ *    <div class="input [is-disabled|is-readonly|is-round]">
+ *      <input type="text" ... />
+ *      <!-- 可选按钮 -->
+ *      <button data-name="clear">清除</button>
+ *      <button data-name="togglepw" data-state="[show|hide]">切换密码</button>
+ *    </div>
+ * 
+ * 2. 独立型输入框（仅基础样式）：
+ *    <input type="text" class="input [is-disabled|is-readonly|is-round]" ... />
+ * 
+ * 注意事项：
+ * - 按钮交互仅支持 data-name="clear"（清除）和 data-name="togglepw"（密码切换）
+ * - 自定义按钮会隐藏所有内置按钮，需自行处理样式
+ * - 只读状态下仅保留密码切换按钮，其他按钮自动隐藏
+ * - 禁用状态会使所有按钮失效并降低透明度
+ * - 圆角样式通过 is-round 类实现，优先级高于默认边框半径
+ */
+
+@use 'sass:map';
+
+// ---------------
+// 变量定义
+// ---------------
+$input-theme: (
+  height: 32px,
+  padding-right: 25px,
+  padding-left: 5px,
+  border-radius: var(--input-border-radius),
+  border-color: #ccc,
+  border-color-focus: var(--primary-active),
+  bg-color: #fff,
+  disabled-bg: #f9f9f9,
+  readonly-bg: #f9f9f9,
+  text-color: #333,
+  placeholder-color: rgba(0, 0, 0, 0.4),
+) !default;
+
+$input-icon-path: (
+  clear: '/clear/delete.svg',
+  clear-hover: '/clear/delete-active.svg',
+  show: '/teacher_mgt/show.svg',
+  hide: '/teacher_mgt/hide.svg',
+) !default;
+
+// ---------------
+// 混合定义
+// ---------------
+@mixin when($name) {
+  @at-root {
+    &.#{'is-' + $name} {
+      @content;
+    }
+  }
+}
+
+// ---------------
+// 样式定义
+// ---------------
+/**--- 有清除按钮，有密码切换模式，但需要遵循一定的布局 ---*/
+.input {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+
+  input {
+    width: 100%;
+    height: map.get($input-theme, height);
+    padding-left: map.get($input-theme, padding-left);
+    font-size: 14px;
+    border: 1px solid map.get($input-theme, border-color);
+    border-radius: map.get($input-theme, border-radius);
+    background-color: map.get($input-theme, bg-color);
+    color: map.get($input-theme, text-color);
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+
+    &::placeholder {
+      color: map.get($input-theme, placeholder-color);
+    }
+
+    &:focus {
+      border-color: map.get($input-theme, border-color-focus);
+    }
+  }
+
+  button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+  }
+
+  @include when(disabled) {
+    input {
+      background-color: map.get($input-theme, disabled-bg);
+    }
+    button {
+      pointer-events: none;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    cursor: not-allowed !important;
+    &:active {
+      pointer-events: none;
+    }
+  }
+
+  @include when(readonly) {
+    &:active {
+      border: none;
+      cursor: not-allowed;
+    }
+    input {
+      background-color: map.get($input-theme, readonly-bg);
+      border: none;
+    }
+    // 如果没有密码切换按钮，就全部不显示
+    &:has(> button:not([data-name='togglepw'])) {
+      button {
+        display: none !important;
+      }
+      input {
+        padding-right: map.get($input-theme, padding-left);
+        border: none;
+      }
+    }
+    // 如果有密码切换按钮，就显示密码切换按钮
+    &:has(> button[data-name='togglepw']) {
+      input {
+        padding-right: map.get($input-theme, padding-right);
+        border: none;
+      }
+    }
+  }
+
+  @include when(round) {
+    input {
+      border-radius: 999px;
+    }
+  }
+
+  /**
+  * 情况一：出现内部其他按钮，隐藏外部按钮
+  */
+  &:has(> button:not([data-name='clear']):not([data-name='togglepw'])) {
+    button {
+      display: none !important;
+    }
+    input {
+      padding-right: map.get($input-theme, padding-left);
+    }
+  }
+
+  /**
+  * 情况二：没有按钮(没有data为clear与togglepw的情况)
+  */
+  &:not(:has(> button)) {
+    input {
+      padding-right: map.get($input-theme, padding-left);
+    }
+  }
+
+  /**
+  * 情况三：只有一个按钮(只有data为clear或togglepw的情况)
+  */
+  // 只有一个按钮，且是 clear
+  &:has(> button[data-name='clear']):not(:has(> button:nth-of-type(2))) {
+    input {
+      padding-right: calc(map.get($input-theme, padding-right));
+    }
+
+    button[data-name='clear'] {
+      position: absolute;
+      top: 50%;
+      right: 5px;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      background-image: url(#{map.get($input-icon-path, clear)});
+
+      &:hover {
+        background-image: url(#{map.get($input-icon-path, clear-hover)});
+      }
+    }
+  }
+
+  // 只有一个按钮，且是 togglepw
+  &:has(> button[data-name='togglepw']):not(:has(> button:nth-of-type(2))) {
+    input {
+      padding-right: calc(map.get($input-theme, padding-right));
+    }
+
+    button[data-name='togglepw'] {
+      position: absolute;
+      top: 50%;
+      right: 5px;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+
+      &[data-state='show'] {
+        background-image: url(#{map.get($input-icon-path, show)});
+      }
+
+      &[data-state='hide'] {
+        background-image: url(#{map.get($input-icon-path, hide)});
+      }
+    }
+  }
+
+  /**
+  * 情况四：有两个按钮(两个都为data为clear与togglepw的情况)
+  */
+  &:has(> button:nth-of-type(2)) {
+    input {
+      padding-right: calc(map.get($input-theme, padding-right));
+    }
+
+    //首先固定清除按钮在内部
+    button[data-name='clear'] {
+      position: absolute;
+      top: 50%;
+      right: 5px;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      background-image: url(#{map.get($input-icon-path, clear)});
+
+      &:hover {
+        background-image: url(#{map.get($input-icon-path, clear-hover)});
+      }
+    }
+
+    // 其次固定切换密码按钮在外部
+    button[data-name='togglepw'] {
+      position: absolute;
+      top: 50%;
+      right: -25px;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+
+      &[data-state='show'] {
+        background-image: url(#{map.get($input-icon-path, show)});
+      }
+      &[data-state='hide'] {
+        background-image: url(#{map.get($input-icon-path, hide)});
+      }
+    }
+  }
+}
+
+/**--- 只需要基本样式 ---*/
+input.input {
+  width: 100%;
+  height: map.get($input-theme, height);
+  padding-left: map.get($input-theme, padding-left);
+  font-size: 14px;
+  border: 1px solid map.get($input-theme, border-color);
+  border-radius: map.get($input-theme, border-radius);
+  background-color: map.get($input-theme, bg-color);
+  color: map.get($input-theme, text-color);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+
+  &::placeholder {
+    color: map.get($input-theme, placeholder-color);
+  }
+
+  &:focus {
+    border-color: map.get($input-theme, border-color-focus);
+  }
+
+  @include when(disabled) {
+    background-color: map.get($input-theme, disabled-bg);
+    cursor: not-allowed !important;
+    &:active {
+      pointer-events: none;
+    }
+  }
+
+  @include when(readonly) {
+    &:active {
+      border: none;
+      cursor: not-allowed;
+    }
+    background-color: map.get($input-theme, readonly-bg);
+    border: none;
+  }
+
+  @include when(round) {
+    border-radius: 999px;
+  }
+}
