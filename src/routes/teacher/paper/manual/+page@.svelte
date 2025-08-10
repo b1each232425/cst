@@ -87,7 +87,7 @@
                 return response.json();
             })
             .then(data => {
-                console.log(data);
+                // console.log(data);
                 return data;
             })
             .catch(error => {
@@ -610,12 +610,14 @@
     let drag_over_group = $state(null);             // 目标元素数据
     let drag_over_group_position = $state(null);    // 相对位置："top" 或 "bottom"
     let is_dragging_group = $state(false);
+    let dragged_type = null;
 
     // 题组开始拖拽
     function handleGroupDragStart(event, group) {
         is_dragging_group = true;
         dragged_group = group;
         is_dragging_question = false;
+        dragged_type = "group";
 
         // 确定是现代浏览器
         if (event.dataTransfer) {
@@ -701,6 +703,7 @@
         dragged_question_item = { question, group };
         dragged_over_questionID_CSS = group.id;
         is_dragging_question = true;
+        dragged_type = "question";
 
         // 确定是现代浏览器
         if (event.dataTransfer) {
@@ -838,7 +841,7 @@
             })
             .finally(() => {
                 page_is_ready = true;
-                console.log(paper_groups);
+                // console.log(paper_groups);
             });
     })
 
@@ -989,8 +992,8 @@
                                     {#if to_edit_groupID === group.id}
                                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                                         <div class="single-group
-                                            {drag_over_group === group && drag_over_group_position === 'top' ? 'drag-over-top' : ''}
-                                            {drag_over_group === group && drag_over_group_position === 'bottom' ? 'drag-over-bottom' : ''}
+                                            {(drag_over_group === group && drag_over_group_position === 'top' && dragged_type === 'group') ? 'drag-over-top' : ''}
+                                            {(drag_over_group === group && drag_over_group_position === 'bottom' && dragged_type === 'group') ? 'drag-over-bottom' : ''}
                                             {dragged_group === group ? "dragging":""}"
                                             draggable="true"
                                             ondragstart={(event)=>handleGroupDragStart(event,group)}
@@ -1007,8 +1010,8 @@
                                     {:else}
                                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                                         <div class="single-group
-                                            {drag_over_group === group && drag_over_group_position === 'top' ? 'drag-over-top' : ''}
-                                            {drag_over_group === group && drag_over_group_position === 'bottom' ? 'drag-over-bottom' : ''}
+                                            {(drag_over_group === group && drag_over_group_position === 'top' && dragged_type === 'group') ? 'drag-over-top' : ''}
+                                            {(drag_over_group === group && drag_over_group_position === 'bottom' && dragged_type === 'group') ? 'drag-over-bottom' : ''}
                                             {dragged_group === group ? "dragging":""}"
                                             draggable="true"
                                             ondragstart={(event)=>handleGroupDragStart(event,group)}
@@ -1095,8 +1098,8 @@
                                         {#if group.questions.length !== 0}
                                             {#each group.questions as question}
                                                 <div class="single-question
-                                                    {drag_over_question_item.question?.id === question.id && drag_over_question_position === 'top' ? 'drag-over-top' : ''}
-                                                    {drag_over_question_item.question?.id === question.id && drag_over_question_position === 'bottom' ? 'drag-over-bottom' : ''}
+                                                    {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'top' && dragged_type === 'question') ? 'drag-over-top' : ''}
+                                                    {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'bottom' && dragged_type === 'question') ? 'drag-over-bottom' : ''}
                                                     {dragged_question_item.question?.id === question.id ? "dragging":""}"
                                                     draggable="true"
                                                     ondragstart={(event)=>handleQuestionDragStart(event,question,group)}
