@@ -24,6 +24,7 @@
     import { get } from "svelte/store";
     import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, GROUP_AVERAGE_SCORE } from "../_stores/store";
     import MyPreviewQuestion from "../_components/MyPreviewQuestion/MyPreviewQuestion.svelte";
+  import { stopPropagation } from "svelte/legacy";
 
     /******************* API 区 ********************/
 
@@ -644,12 +645,16 @@
         drag_over_position = null;
     }
 
-    let dragged_question = $state(null);        // 当前被拖拽的元素数据
-    let drag_over_question = $state(null);      // 目标元素数据
+    let dragged_question_item = $state({});        // 当前被拖拽的元素数据
+    let drag_over_question_item = $state({});      // 目标元素数据
+    let dragged_over_questionID_CSS = $state(0);   // 当前鼠标所在题组 ID
+    let is_dragging_question = $state(false);
 
     // 题目开始拖拽
-    function handleQuestionDragStart(event, question) {
-        dragged_question = question;
+    function handleQuestionDragStart(event, question, group) {
+        dragged_question_item = { question, group };
+        dragged_over_questionID_CSS = group.id;
+        is_dragging_question = true;
 
         // 确定是现代浏览器
         if (event.dataTransfer) {
@@ -659,45 +664,59 @@
     }
 
     // 题目正在拖拽
-    function handleQuestionDragOver(event, question) {
+    function handleQuestionDragOver(event, question, group) {
         event.preventDefault(); // 必须阻止默认行为才能触发 drop
 
-        // 判断是否为自己，并记录目标元素
-        if (!dragged_question || dragged_question.id === question.id) return;
-
         // 记录目标项
-        drag_over_question = question;
+        drag_over_question_item = { question, group };
 
-        // 计算鼠标相对目标元素的纵坐标
-        const BOUNDING = event.currentTarget.getBoundingClientRect();
-        const OFFSET_Y = event.clientY - BOUNDING.top;
+        if (question) {
+            // 计算鼠标相对目标元素的纵坐标
+            const BOUNDING = event.currentTarget.getBoundingClientRect();
+            const OFFSET_Y = event.clientY - BOUNDING.top;
 
-        // 根据纵向一半高度判断上或下
-        drag_over_position = OFFSET_Y < BOUNDING.height / 2 ? "top" : "bottom";
+            // 根据纵向一半高度判断上或下
+            drag_over_position = OFFSET_Y < BOUNDING.height / 2 ? "top" : "bottom";
+        } else {
+            // 空题组不需要位置判断，固定插到组开头
+            drag_over_position = "top";
+        }
     }
 
     // 题目拖拽放下
-    function handleQuestionDrop() {
+    function handleQuestionDrop(event) {
         event.preventDefault();
-        if (!dragged_question || !drag_over_question || dragged_question.id === drag_over_question.id) {
-            drag_over_question = null;
-            dragged_question = null;
-            drag_over_position = null;
+        if (
+            (dragged_question_item.question.id === drag_over_question_item.question.id &&
+            dragged_question_item.group.id === drag_over_question_item.group.id)
+        ) {
+            handleQuestionDragEnd();
             return;
         };
 
-        // 处理逻辑
+        // 扁平化并过滤题目 ID 数组
         const QUESTION_IDS = paper_groups
             .flatMap(group => group.questions
             .map(question => question.id))
-            .filter(id => id !== dragged_question.id);
-        let dropIndex = QUESTION_IDS.findIndex(id => id === drag_over_question.id);
-        
-        if (drag_over_position === "bottom") {
-            dropIndex += 1; // 往目标后面插入
+            .filter(id => id !== dragged_question_item.question.id);
+
+        let dropIndex = 0;
+
+        if (drag_over_question_item.question.id) {
+            // 非空题组的情况
+            dropIndex = QUESTION_IDS.findIndex(id => id === drag_over_question_item.question.id);
+            
+            if (drag_over_position === "bottom") dropIndex += 1;
+        } else {
+            // 空题组的情况
+            const groupIndex = paper_groups.findIndex(group => group.id === drag_over_question_item.group.id);
+            // 统计该组前面所有题目的数量
+            dropIndex = paper_groups
+                .slice(0, groupIndex)
+                .reduce((count, group) => count + group.questions.length, 0);
         }
 
-        GROUP_IDS.splice(dropIndex, 0, dragged_question.id);
+        QUESTION_IDS.splice(dropIndex, 0, dragged_question_item.question.id);
 
         // 处理请求
         const ACTIONS = [
@@ -705,6 +724,17 @@
                 action: "move_question",
                 payload: QUESTION_IDS,
             },
+            {
+                action: "update_question",
+                payload: [
+                    {
+                        id: dragged_question_item.question.id,
+                        group_id: drag_over_question_item.group.id,
+                        order: dropIndex + 1,
+                        score: dragged_question_item.score
+                    }
+                ]
+            }
         ];
 
         savePaper(paperID, ACTIONS)
@@ -716,17 +746,17 @@
                 question_count = paper_info.QuestionCount;
             })
             .finally(() => {
-                dragged_group = null;
-                drag_over_group = null;
-                drag_over_position = null;
+                handleQuestionDragEnd();
             });
     }
 
     // 题目拖拽结束
     function handleQuestionDragEnd() {
-        drag_over_question = null;
-        dragged_question = null;
+        drag_over_question_item = {};
+        dragged_question_item = {};
         drag_over_position = null;
+        dragged_over_questionID_CSS = 0;
+        is_dragging_question = false;
     }
 
     /***************** 拖拽功能区 *****************/
@@ -923,9 +953,9 @@
                                     {:else}
                                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                                         <div class="single-group
-                                                {drag_over_group === group && drag_over_position === 'top' ? 'drag-over-top' : ''}
-                                                {drag_over_group === group && drag_over_position === 'bottom' ? 'drag-over-bottom' : ''}
-                                                {dragged_group === group ? "dragging":""}"
+                                            {drag_over_group === group && drag_over_position === 'top' ? 'drag-over-top' : ''}
+                                            {drag_over_group === group && drag_over_position === 'bottom' ? 'drag-over-bottom' : ''}
+                                            {dragged_group === group ? "dragging":""}"
                                             draggable="true"
                                             ondragstart={(event)=>handleGroupDragStart(event,group)}
                                             ondragover={(event)=>handleGroupDragOver(event,group)}
@@ -1007,16 +1037,25 @@
                             <!-- 题目列表 -->
                             {#if $GROUP_OPEN_STATE[group.id]}
                                 <div class="group-question-list-outer-box">
-                                    <div class="group-question-list">
+                                    <div class="group-question-list {is_dragging_question ? "drag-over" : ""}">
                                         {#if group.questions.length !== 0}
                                             {#each group.questions as question}
-                                                <div class="single-question">
+                                                <div class="single-question
+                                                    {drag_over_question_item.question?.id === question.id && drag_over_position === 'top' ? 'drag-over-top' : ''}
+                                                    {drag_over_question_item.question?.id === question.id && drag_over_position === 'bottom' ? 'drag-over-bottom' : ''}
+                                                    {dragged_question_item.question?.id === question.id ? "dragging":""}"
+                                                    draggable="true"
+                                                    ondragstart={(event)=>handleQuestionDragStart(event,question,group)}
+                                                    ondragover={(event)=>handleQuestionDragOver(event,question,group)}
+                                                    ondrop={handleQuestionDrop}
+                                                    onclick={(event)=>{event.stopPropagation();}}
+                                                >
                                                     <!-- 头部下拉栏 -->
                                                     <div class="question-header">
                                                         <!-- 左侧区域 -->
                                                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                                                         <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                                        <div title={$QUESTION_OPEN_STATE[question.id]?"收起":"展开"} class="header-left"  onclick={()=>changeOpenState("question",question.id)}>
+                                                        <div title={$QUESTION_OPEN_STATE[question.id]?"收起":"展开"} class="header-left"  onclick={(event)=>{event.stopPropagation();changeOpenState("question",question.id);}}>
                                                             <button class="toggle-btn-down">{$QUESTION_OPEN_STATE[question.id]?"∨":"∧"}</button>
                                                             <span class="sequence">{question.order}</span>
                                                             <span class="question-type">{QUESTION_TYPE_TRANS[question.type]}</span>
@@ -1066,7 +1105,11 @@
                                         
                                             <!-- 暂无题目 -->
                                         {:else}
-                                            <div class="no-questions-container">
+                                            <div class="no-questions-container"
+                                                ondragover={(event)=>handleQuestionDragOver(event,{ id: null },group)}
+                                                ondrop={handleQuestionDrop}
+                                                ondragend={handleQuestionDragEnd}
+                                            >
                                                 <div class="no-questions-box">
                                                     <span class="title">题组暂无题目</span>
                                                     <span class="prompt">可以通过以下方式快速添加题目：</span>
@@ -1561,6 +1604,9 @@
                             display: flex;
                             flex-direction: column;
                             gap: 12px;
+                            border: 2px dashed transparent;
+                            transition: all 0.3s;
+                            border-radius: var(--border-radius-sm);
     
                             /* 暂无题目 */
                             .no-questions-container {
@@ -1586,11 +1632,46 @@
                                     }
                                 }
                             }
+
+                            &.drag-over {
+                                border-color: var(--primary-color);
+                                background-color: #eef4fa;
+                                border-radius: var(--border-radius-md);
+                                border: 2px dashed var(--primary-color);
+                                
+                            }
     
                             .single-question {
                                 border: 1px solid var(--border-light);
                                 border-radius: var(--border-radius-sm);
                                 background-color: var(--bg-primary);
+                                position: relative;
+                                cursor: grab;
+
+                                &.dragging {
+                                    opacity: 0.5; /* 半透明 */
+                                }
+    
+                                &.drag-over-top::before,
+                                &.drag-over-bottom::before {
+                                    content: "";
+                                    position: absolute;
+                                    left: 0;
+                                    right: 0;
+                                    height: 2px;
+                                    background-color: var(--primary-color);
+                                    z-index: 10;
+                                }
+    
+                                /* 上边线 */
+                                &.drag-over-top::before {
+                                    top: 0;
+                                }
+    
+                                /* 下边线 */
+                                &.drag-over-bottom::before {
+                                    bottom: 0;
+                                }
     
                                 /* 头部下拉栏 */
                                 .question-header {
