@@ -3,6 +3,21 @@ import Sidebar from '../Sidebar.svelte';
 import { expect, vi } from 'vitest';
 import { goto } from '$app/navigation';
 import { slide } from 'svelte/transition';
+import { page } from '$app/state';
+import { beforeNavigate } from '$app/navigation';
+
+// Mock $app/navigation 模块
+vi.mock('$app/navigation', async () => {
+  const actual = await vi.importActual('$app/navigation');
+
+  return {
+    ...actual, // 保留其他的原始功能
+    goto: vi.fn((path) => {
+      // 模拟 goto 跳转时更新 page 路径
+      page.url.pathname = path;
+    }),
+  };
+});
 
 // 在测试文件中添加 Svelte 过渡模拟
 vi.mock('svelte/transition', () => ({
@@ -13,10 +28,36 @@ vi.mock('svelte/transition', () => ({
   })),
 }));
 
-// 模拟 $app/navigation 的 goto 函数
+// 模拟 page
+vi.mock('$app/state', () => ({
+  page: {
+    url: new URL('http://localhost/teacher/question-bank/theory'),
+  },
+}));
+
+function setPathname(path) {
+  page.url = new URL(`http://localhost${path}`);
+}
+
+// 模拟 $app/navigation
+let mockBeforeNavigateCallback;
 vi.mock('$app/navigation', () => ({
+  beforeNavigate: (callback) => {
+    mockBeforeNavigateCallback = callback; // 存储回调
+  },
   goto: vi.fn(),
 }));
+
+// 手动触发 beforeNavigate 的函数
+function triggerBeforeNavigate(fromPath, toPath) {
+  if (mockBeforeNavigateCallback) {
+    mockBeforeNavigateCallback({
+      from: { url: new URL(`http://localhost${fromPath}`) },
+      to: { url: new URL(`http://localhost${toPath}`) },
+      cancel: vi.fn(),
+    });
+  }
+}
 
 describe('Sidebar 侧边栏组件测试', () => {
   let options = {};
@@ -285,9 +326,8 @@ describe('Sidebar 侧边栏组件测试', () => {
     // 在每个测试前，清空所有的模拟
     vi.restoreAllMocks();
 
-    global.fetch = vi.fn();
-
     // 模拟API数据
+    global.fetch = vi.fn();
     fetch.mockResolvedValueOnce({
       json: () =>
         Promise.resolve({
@@ -305,6 +345,9 @@ describe('Sidebar 侧边栏组件测试', () => {
           },
         }),
     });
+
+    // 初始化page返回路径
+    setPathname('/teacher/question-bank/theory');
   });
 
   it('应该正确初始化侧边栏状态', () => {
@@ -387,9 +430,28 @@ describe('Sidebar 侧边栏组件测试', () => {
     // 模拟点击导航项
     const navItem = screen.getByRole('button', { name: '试卷管理' });
     await fireEvent.click(navItem);
-
+    triggerBeforeNavigate('/teacher/question-bank/theory', '/teacher/paper');
     // 验证路由跳转
     expect(goto).toHaveBeenCalledWith('/teacher/paper');
+
+    await fireEvent.click(screen.getByRole('button', { name: '练习管理' }));
+
+    expect(goto).toHaveBeenCalledWith('/teacher/practice');
+
+    await fireEvent.click(screen.getByRole('button', { name: '考试管理' }));
+    expect(goto).toHaveBeenCalledWith('/teacher/exam');
+
+    await fireEvent.click(screen.getByRole('button', { name: '考试成绩管理' }));
+    expect(goto).toHaveBeenCalledWith('/teacher/grade/exam-grade');
+
+    await fireEvent.click(screen.getByRole('button', { name: '练习成绩管理' }));
+    expect(goto).toHaveBeenCalledWith('/teacher/grade/practice-grade');
+
+    await fireEvent.click(screen.getByRole('button', { name: '学生管理' }));
+    expect(goto).toHaveBeenCalledWith('/teacher/student-management');
+
+    await fireEvent.click(screen.getByRole('button', { name: '用户管理' }));
+    expect(goto).toHaveBeenCalledWith('/teacher/user-management');
   });
 
   it('正确获取用户数据', async () => {
@@ -569,19 +631,17 @@ describe('Sidebar 侧边栏组件测试', () => {
     const sidebar = screen.getByTestId('sidebar-content');
     const container = screen.getByTestId('sidebar-container');
 
-    // 1. 初始状态：已折叠（sidebar_is_folded = true）
+    // 初始状态
     const toggleBtn = screen.getByTitle('收起侧边栏');
     await fireEvent.click(toggleBtn); // 折叠侧边栏
     fireEvent.transitionEnd(sidebar); // 触发动画结束，确保完全折叠
     expect(sidebar).toHaveClass('folded'); // 确认已折叠
 
-    // 2. 模拟鼠标进入（此时已折叠，第一个 if 不会触发）
+    // 模拟鼠标进入（此时已折叠，第一个 if 不会触发）
     fireEvent.mouseEnter(container);
 
-    // 3. 在 500ms 期间，手动触发折叠（模拟突然开始折叠）
-    // 这里需要直接修改 Svelte 的 $state，或者再次点击折叠按钮（如果它会触发折叠）
-    // 假设我们手动修改状态：
-    await fireEvent.click(toggleBtn); // 展开侧边栏
+    // 在 500ms 期间，手动触发折叠（模拟突然开始折叠）
+    await fireEvent.click(toggleBtn);
     fireEvent.mouseEnter(container);
     await fireEvent.click(toggleBtn);
     fireEvent.mouseLeave(container);
@@ -590,7 +650,7 @@ describe('Sidebar 侧边栏组件测试', () => {
     await fireEvent.click(toggleBtn);
     fireEvent.mouseLeave(container);
 
-    // 5. 验证：由于 `sidebar_is_folding = true`，第二个 if 触发，不应悬浮
+    // 验证：由于 `sidebar_is_folding = true`，第二个 if 触发，不应悬浮
     expect(sidebar).not.toHaveClass('float');
 
     vi.useRealTimers();
@@ -623,29 +683,61 @@ describe('Sidebar 侧边栏组件测试', () => {
     await fireEvent.click(screen.getByRole('button', { name: '题库管理' }));
   });
 
-  it('顶级菜单应有 25px 缩进和 100% 宽度', async () => {
+  it('应处理跳转到特定页面侧边栏自动收起', async () => {
     render(Sidebar, { props: { options } });
-
     await screen.findByText('题库管理');
 
-    const topLevelItem = screen.getByText('题库管理').closest('.sidebar-item-content');
+    // 模拟从理论题库管理页面跳转到编辑题库页面
+    triggerBeforeNavigate('/teacher/question-bank/theory', '/teacher/question-bank/theory/editBank');
 
-    expect(topLevelItem).toHaveStyle({
-      left: '25px;',
-      width: '100%;',
-    });
+    // 获取DOM元素
+    const sidebar = screen.getByTestId('sidebar-content');
+
+    // 初始折叠侧边栏
+    fireEvent.transitionEnd(sidebar); // 立即触发过渡结束事件
+
+    // 验证折叠状态
+    expect(sidebar).toHaveClass('folded');
+    expect(sidebar).not.toHaveClass('float');
+
+    // 模拟从编辑题库页面跳转到理论题库管理页面
+    triggerBeforeNavigate('/teacher/question-bank/theory/editBank', '/teacher/question-bank/theory');
+
+    // 初始折叠侧边栏
+    fireEvent.transitionEnd(sidebar); // 立即触发过渡结束事件
+    // 验证折叠状态
+    expect(sidebar).not.toHaveClass('folded');
+    expect(sidebar).not.toHaveClass('float');
   });
 
-  it('子菜单应有 35px 缩进和 95% 宽度', async () => {
+  it('处理频繁点击侧边栏展开折叠按钮时状态应保持一致', async () => {
     render(Sidebar, { props: { options } });
+    vi.useFakeTimers(); // 使用假定时器
 
-    await screen.findByText('题库管理');
+    const sidebar = screen.getByTestId('sidebar-content');
+    const toggleBtn = screen.getByTitle('收起侧边栏');
 
-    const subItem = screen.getByText('理论题库管理').closest('.sidebar-item-content');
+    // 初始点击折叠
+    await fireEvent.click(toggleBtn);
+    expect(sidebar).toHaveClass('folding'); // 确认开始折叠动画
+    expect(screen.getByTitle('展开侧边栏')).toBeInTheDocument(); // 按钮状态已切换
 
-    expect(subItem).toHaveStyle({
-      left: '35px;',
-      width: '95%;',
-    });
+    // 在动画完成前快速点击展开
+    await fireEvent.click(screen.getByTitle('展开侧边栏'));
+    expect(sidebar).not.toHaveClass('folding'); // 应立即停止折叠动画
+    expect(screen.getByTitle('收起侧边栏')).toBeInTheDocument(); // 按钮状态应切换回来
+
+    // 模拟第一个折叠动画的transitionend事件延迟到达
+    fireEvent.transitionEnd(sidebar);
+
+    // 验证关键状态
+    expect(sidebar).not.toHaveClass('folded'); // 不应保持折叠状态
+    expect(sidebar).not.toHaveClass('float'); // 不应意外进入悬浮状态
+
+    // 验证DOM状态
+    const toggleBtnAfter = screen.getByTitle('收起侧边栏');
+    expect(toggleBtnAfter).toBeVisible(); // 折叠按钮应保持可见
+
+    vi.useRealTimers();
   });
 });

@@ -1,27 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import Pagination from '../Pagination.svelte';
-
-// Mock Select and Option components
-vi.mock('$lib/components/Select/Select.svelte', () => ({
-  default: vi.fn((props) => {
-    const { value, changeValue } = props;
-    // 模拟选择变化时调用changeValue回调
-    return {
-      $set: vi.fn(),
-      $on: vi.fn(),
-      $destroy: vi.fn(),
-      triggerChange: (newValue) => {
-        changeValue(newValue);
-      },
-    };
-  }),
-}));
-
-// Mock Option component
-vi.mock('$lib/components/Select/Option.svelte', () => ({
-  default: vi.fn(),
-}));
+import Select from '$lib/components/Select/Select.svelte';
+import Option from '$lib/components/Select/Option.svelte';
 
 describe('Pagination 组件测试', () => {
   let total_items = 100; // 总数据条数
@@ -47,10 +28,9 @@ describe('Pagination 组件测试', () => {
       },
     });
 
+    await screen.findByText(`共 ${total_items} 条`);
     // 等待并确保总条数显示
-    await waitFor(() => {
-      expect(screen.getByText('共 100 条')).toBeInTheDocument(); // 验证总条数
-    });
+    expect(screen.getByText(`共 ${total_items} 条`)).toBeInTheDocument(); // 验证总条数
   });
 
   it('应该渲染正确的页码按钮', async () => {
@@ -69,6 +49,21 @@ describe('Pagination 组件测试', () => {
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByText('4')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
+  });
+
+  it('Select组件元素应正确渲染', async () => {
+    const { component } = render(Pagination, {
+      props: {
+        total_items: 100,
+        page_size: 10,
+      },
+    });
+
+    expect(screen.getByText('10条/页')).toBeInTheDocument();
+    expect(screen.getByText('20条/页')).toBeInTheDocument();
+    expect(screen.getByText('30条/页')).toBeInTheDocument();
+    expect(screen.getByText('40条/页')).toBeInTheDocument();
+    expect(screen.getByText('50条/页')).toBeInTheDocument();
   });
 
   it('应该高亮当前页码', async () => {
@@ -90,14 +85,53 @@ describe('Pagination 组件测试', () => {
       props: {
         total_items,
         page_size,
-        current_page: 2,
+        current_page: 10,
         page_size_options,
       },
     });
 
     // 点击上一页按钮
     const prevButton = screen.getByTestId('left_jt');
+
+    // 第九页
     await fireEvent.click(prevButton);
+    expect(screen.getByText('9')).toHaveClass('active');
+
+    // 第八页
+    await fireEvent.click(prevButton);
+    expect(screen.getByText('8')).toHaveClass('active');
+
+    // 第七页
+    await fireEvent.click(prevButton);
+    expect(screen.getByText('7')).toHaveClass('active');
+
+    // 第六页
+    await fireEvent.click(prevButton);
+    expect(screen.getByText('6')).toHaveClass('active');
+
+    // 第五页
+    await fireEvent.click(prevButton);
+    expect(screen.getByText('5')).toHaveClass('active');
+
+    // 第四页
+    await fireEvent.click(prevButton);
+    expect(screen.getByText('4')).toHaveClass('active');
+
+    // 第三页
+    await fireEvent.click(prevButton);
+    expect(screen.getByText('3')).toHaveClass('active');
+
+    // 第二页
+    await fireEvent.click(prevButton);
+    expect(screen.getByText('2')).toHaveClass('active');
+
+    // 第一页
+    await fireEvent.click(prevButton);
+    expect(screen.getByText('1')).toHaveClass('active');
+
+    // 第一页
+    await fireEvent.click(prevButton);
+    expect(prevButton).toBeDisabled();
   });
 
   it('应该正确触发下一页按钮点击', async () => {
@@ -112,7 +146,48 @@ describe('Pagination 组件测试', () => {
 
     // 模拟点击下一页按钮
     const nextButton = screen.getByTestId('right_jt');
+
+    // 第二页
     await fireEvent.click(nextButton);
+    expect(screen.getByText('2')).toHaveClass('active');
+
+    // 第三页
+    await fireEvent.click(nextButton);
+    expect(screen.getByText('3')).toHaveClass('active');
+
+    // 第四页
+    await fireEvent.click(nextButton);
+    expect(screen.getByText('4')).toHaveClass('active');
+
+    // 第五页
+    await fireEvent.click(nextButton);
+    expect(screen.getByText('5')).toHaveClass('active');
+
+    // 第六页
+    await fireEvent.click(nextButton);
+    expect(screen.getByText('6')).toHaveClass('active');
+
+    // 第七页
+    await fireEvent.click(nextButton);
+    expect(screen.getByText('7')).toHaveClass('active');
+
+    // 第八页
+    await fireEvent.click(nextButton);
+    expect(screen.getByText('8')).toHaveClass('active');
+
+    // 第九页
+    await fireEvent.click(nextButton);
+    expect(screen.getByText('9')).toHaveClass('active');
+
+    // 第10页
+    await fireEvent.click(nextButton);
+    expect(screen.getByText('10')).toHaveClass('active');
+
+    // 第10页
+    await fireEvent.click(nextButton);
+    expect(screen.getByText('10')).toHaveClass('active');
+
+    expect(nextButton).toBeDisabled(); // 验证下一页按钮是否禁用
   });
 
   it('应该正确触发跳转页码功能', async () => {
@@ -135,6 +210,53 @@ describe('Pagination 组件测试', () => {
     expect(jumpInput.value).toBe('5');
   });
 
+  it('应处理无效页码跳转', async () => {
+    const { component } = render(Pagination, {
+      props: {
+        total_items: 100,
+        current_page: 3,
+      },
+    });
+
+    // 尝试跳转到无效页码
+    const jumpInput = screen.getByTestId('jump-to-input');
+    await fireEvent.input(jumpInput, { target: { value: '0' } });
+    await fireEvent.keyDown(jumpInput, { key: 'Enter' });
+
+    // 确认没有跳转
+    const pageButton = screen.getByText('3');
+    expect(pageButton).toHaveClass('active');
+
+    // 尝试跳转到无效页码
+    await fireEvent.input(jumpInput, { target: { value: '11' } });
+    await fireEvent.keyDown(jumpInput, { key: 'Enter' });
+
+    // 确认没有跳转
+    expect(pageButton).toHaveClass('active');
+
+    // 尝试跳转到有效页码
+    await fireEvent.input(jumpInput, { target: { value: '4' } });
+    await fireEvent.keyDown(jumpInput, { key: 'Enter' });
+
+    expect(screen.getByText('4')).toHaveClass('active');
+  });
+
+  it('应处理跳转输入的非数字值', async () => {
+    render(Pagination, {
+      props: {
+        total_items: 100,
+        current_page: 1,
+      },
+    });
+
+    const input = screen.getByTestId('jump-to-input');
+    await fireEvent.input(input, { target: { value: 'abc' } });
+    await fireEvent.keyDown(input, { key: 'Enter' });
+
+    // 当前页应保持为1
+    expect(screen.getByText('1')).toHaveClass('active');
+  });
+
   it('应该显示省略号', async () => {
     render(Pagination, {
       props: {
@@ -151,6 +273,29 @@ describe('Pagination 组件测试', () => {
 
     // 验证第二个省略号的位置或其他条件
     expect(dots[1]).toBeInTheDocument(); // 验证第二个省略号是否在页面中
+  });
+
+  it('应正确显示中间页码(当前页既不靠前也不靠后)', async () => {
+    render(Pagination, {
+      props: {
+        total_items: 100, // 共10页
+        current_page: 6, // 中间页码
+        page_size: 10,
+      },
+    });
+
+    // 应显示: 1 ...  4 5 6 7 8 ... 10
+    // 获取所有省略号
+    const dots = screen.getAllByText('...');
+    expect(dots.length).toBe(2); // 确认有两个省略号
+
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText('6')).toBeInTheDocument();
+    expect(screen.getByText('7')).toBeInTheDocument();
+    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByText('10')).toBeInTheDocument();
   });
 
   it('应该禁用上一页按钮在第一页', async () => {
@@ -181,56 +326,94 @@ describe('Pagination 组件测试', () => {
     expect(nextButton).toBeDisabled(); // 验证下一页按钮是否禁用
   });
 
-  it('应该正确触发每页条数变化', async () => {
-    const pageSizeChange = vi.fn();
-    const pageChange = vi.fn();
-
-    render(Pagination, {
+  it('应正确处理pageSize变化', async () => {
+    const { component } = render(Pagination, {
       props: {
         total_items: 100,
         page_size: 10,
-        current_page: 1,
-        page_size_options: [10, 20, 30, 40, 50],
-        // 绑定分页器事件
-        pageSizeChange,
-        pageChange,
       },
     });
 
-    // 获取 Select 组件
-    const pageSizeSelect = screen.getByTestId('select'); // 确保你的 Select 组件有 testId
+    expect(screen.getByText('10条/页')).toBeInTheDocument();
+    expect(screen.getByText('20条/页')).toBeInTheDocument();
+    expect(screen.getByText('30条/页')).toBeInTheDocument();
+    expect(screen.getByText('40条/页')).toBeInTheDocument();
+    expect(screen.getByText('50条/页')).toBeInTheDocument();
 
-    // 模拟选择每页条数为20
-    await fireEvent.change(pageSizeSelect, { target: { value: '20' } });
+    // 验证一开始有按钮10
+    expect(screen.getByText('10')).toBeInTheDocument();
 
-    // 验证 pageSizeChange 和 pageChange 是否被触发
-    expect(pageSizeChange).toHaveBeenCalledWith(20);
-    expect(pageChange).toHaveBeenCalledWith(1); // 假设当前页码保持为1
+    fireEvent.click(screen.getByText('20条/页'));
+
+    expect(screen.getByText('5')).toBeInTheDocument();
+
+    // pageSize变大后，按钮10消失
+    expect(screen.queryByText('10')).not.toBeInTheDocument();
   });
 
-  // it('如果当前页超出新的总页数，跳转到最后一页', async () => {
-  //   const pageSizeChange = vi.fn();
-  //   const pageChange = vi.fn();
+  it('应正确处理当前页大于总页数的情况', async () => {
+    const { component } = render(Pagination, {
+      props: {
+        total_items: 100,
+        page_size: 10,
+        current_page: 10,
+      },
+    });
 
-  //   render(Pagination, {
-  //     props: {
-  //       total_items: 100,
-  //       page_size: 10,
-  //       current_page: 15, // 当前页是15
-  //       page_size_options: [10, 20, 30, 40, 50],
-  //       pageSizeChange,
-  //       pageChange,
-  //     },
-  //   });
+    expect(screen.getByText('10条/页')).toBeInTheDocument();
+    expect(screen.getByText('20条/页')).toBeInTheDocument();
+    expect(screen.getByText('30条/页')).toBeInTheDocument();
+    expect(screen.getByText('40条/页')).toBeInTheDocument();
+    expect(screen.getByText('50条/页')).toBeInTheDocument();
 
-  //   // 获取 Select 组件
-  //   const pageSizeSelect = screen.getByTestId('select');
+    fireEvent.click(screen.getByText('20条/页'));
 
-  //   // 模拟选择每页条数为20
-  //   await fireEvent.change(pageSizeSelect, { target: { value: '20' } });
+    const pageButton = screen.getByText('5');
+    expect(pageButton).toHaveClass('active');
+  });
 
-  //   // 由于当前页大于新的总页数（100 / 20 = 5），所以需要跳转到最后一页（第5页）
-  //   expect(pageSizeChange).toHaveBeenCalledWith(20);
-  //   expect(pageChange).toHaveBeenCalledWith(5); // 现在页码应跳转到5
-  // });
+  it('应正确处理多次改变pageSize', async () => {
+    const { component } = render(Pagination, {
+      props: {
+        total_items: 100,
+        page_size: 10,
+        current_page: 10,
+      },
+    });
+
+    await screen.findByText(`共 ${total_items} 条`);
+
+    expect(screen.getByText('10条/页')).toBeInTheDocument();
+    expect(screen.getByText('20条/页')).toBeInTheDocument();
+    expect(screen.getByText('30条/页')).toBeInTheDocument();
+    expect(screen.getByText('40条/页')).toBeInTheDocument();
+    expect(screen.getByText('50条/页')).toBeInTheDocument();
+
+    // 初始第十页为高亮状态
+    expect(screen.getByText('10')).toHaveClass('active');
+
+    fireEvent.click(screen.getByText('20条/页'));
+    expect(screen.getByText('5')).toHaveClass('active');
+
+    fireEvent.click(screen.getByText('30条/页'));
+    expect(screen.getByText('4')).toHaveClass('active');
+
+    fireEvent.click(screen.getByText('40条/页'));
+    expect(screen.getByText('3')).toHaveClass('active');
+
+    fireEvent.click(screen.getByText('50条/页'));
+    expect(screen.getByText('2')).toHaveClass('active');
+
+    fireEvent.click(screen.getByText('40条/页'));
+    expect(screen.getByText('2')).toHaveClass('active');
+
+    fireEvent.click(screen.getByText('30条/页'));
+    expect(screen.getByText('2')).toHaveClass('active');
+
+    fireEvent.click(screen.getByText('20条/页'));
+    expect(screen.getByText('2')).toHaveClass('active');
+
+    fireEvent.click(screen.getByText('10条/页'));
+    expect(screen.getByText('2')).toHaveClass('active');
+  });
 });

@@ -538,7 +538,7 @@
     justify-content: center;
     width: 60%;
     min-width: 900px;
-    max-height: 90vh;
+    height: 85vh;
     overflow-y: auto;
     background-color: white;
     display: flex;

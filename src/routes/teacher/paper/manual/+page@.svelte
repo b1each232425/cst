@@ -57,7 +57,7 @@
     // 保存试卷
     function savePaper(
         paperID = 0,
-        actionsArr = []
+        actionsArr = {}
     ){
         const PARAMS = new URLSearchParams();
 
@@ -86,6 +86,7 @@
                 return response.json();
             })
             .then(data => {
+                console.log(data);
                 return data;
             })
             .catch(error => {
@@ -214,7 +215,8 @@
     let to_add_group = $state(null);
     let to_edit_groupID = $state(null);
     let to_edit_group_name = $state("");
-    let to_edit_group = $state(null);
+    let to_edit_group_side_bar = $state(null);
+    let to_edit_group_content = $state(null);
     let to_import_groupID = $state(0);
     let to_import_group_name = $state("");
     let to_import_group_length = $state(0);
@@ -308,18 +310,23 @@
     }
 
     // 编辑题组名称
-    async function editGroupName(id, name) {
+    async function editGroupName(id, name, position) {
         to_edit_groupID = id;
         to_edit_group_name = name;
         await tick();
-        to_edit_group.focus();
+        if(position === "side-bar") {
+            to_edit_group_side_bar.focus();
+        }
+        if(position === "content") {
+            to_edit_group_content.focus();
+        }
     }
 
     // 确认编辑题组名称
     function confirmEditGroupName() {
         if(event.key === "Enter" && to_edit_group_name.trim() !== "") {
 
-            to_edit_group.blur();
+            to_edit_group_side_bar.blur();
 
             const ACTIONS = [
                 {
@@ -454,6 +461,87 @@
         }
     }
 
+    // 移动题目
+    function moveQuestion(groupIndex, questionID, direction) {
+        // 获取题组 ID 数组而不直接操作题组
+        const GROUP = paper_groups[groupIndex];
+        const QUESTION_IDS = GROUP.questions.map(question => question.id);
+        const INDEX = QUESTION_IDS.indexOf(questionID);
+
+        // 边界判断：不能移出题组
+        if ((INDEX === 0 && direction === 'up') || (INDEX === QUESTION_IDS.length - 1 && direction === 'down')) {
+            return;
+        }
+
+        // 构造移动后的 questionIDs
+        if (direction === 'up') {
+            [QUESTION_IDS[INDEX - 1], QUESTION_IDS[INDEX]] = [QUESTION_IDS[INDEX], QUESTION_IDS[INDEX - 1]];
+        } else if (direction === 'down') {
+            [QUESTION_IDS[INDEX + 1], QUESTION_IDS[INDEX]] = [QUESTION_IDS[INDEX], QUESTION_IDS[INDEX + 1]];
+        }
+
+        // 将整张试卷的所有题目 ID 拼接出来（按题组顺序）
+        const FULL_QUESTION_IDS = paper_groups.flatMap((group, index) => {
+            if (index === groupIndex) {
+                return QUESTION_IDS;
+            } else {
+                return group.questions.map(question => question.id);
+            }
+        });
+
+        // 提交后端保存
+        const ACTIONS = [
+            {
+                action: "move_question",
+                payload: FULL_QUESTION_IDS
+            }
+        ];
+
+        savePaper(paperID, ACTIONS)
+            .then(() => {
+                return fetchPaper(paperID);
+            })
+            .then(result => {
+                paper_groups = result.data.GroupsData;
+                paper_info = result.data;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+            });
+    }
+
+    // 修改题目分数
+    function updateQuestionScore(questionID, groupID, question_order, question_score) {
+        const ACTIONS = [
+            {
+                action: "update_question",
+                payload: [
+                    {
+                        id: questionID,
+                        group_id: groupID,
+                        order: question_order,
+                        score: question_score
+                    }
+                ]
+            }
+        ];
+
+        savePaper(paperID, ACTIONS)
+            .then(() => {
+                return fetchPaper(paperID);
+            })
+            .then(result => {
+                paper_groups = result.data.GroupsData;
+                paper_info = result.data;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+            });
+    }
+
+    // 修改每题分值
+    function updateAverageQuestionScore() {
+
+    }
+
     /***************** 题组列表区 *****************/
 
     // 挂载区
@@ -480,7 +568,7 @@
             })
             .finally(() => {
                 page_is_ready = true;
-                // console.log(paper_groups);
+                console.log(paper_groups);
             });
     })
 
@@ -627,20 +715,23 @@
                         <!-- 已有题组 -->
                         {#if paper_groups.length !== 0}
                             {#each paper_groups as group}
+                                <!-- 编辑题组状态 -->
                                 {#if to_edit_groupID === group.id}
                                 <div class="single-group">
-                                        <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} bind:this={to_edit_group} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
+                                        <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} bind:this={to_edit_group_side_bar} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
                                         <div class="btn-box">
                                             <!-- 删除按钮 -->
-                                            <button onclick={()=>{to_edit_groupID=null}} class="delete-group-btn" title="删除">✖</button>
+                                            <button onclick={()=>{to_edit_groupID=null}} class="delete-group-btn" title="取消">✖</button>
                                         </div>
                                     </div>
                                 {:else}
                                     <div class="single-group">
-                                        <span>{group.name}</span>
+                                        <span>{group.name}（共{group.questions.length}题，共{
+                                            group.questions.reduce((sum,q)=>sum+(q.score||0),0)
+                                        }分）</span>
                                         <div class="btn-box">
                                             <!-- 编辑按钮 -->
-                                            <button onclick={()=>editGroupName(group.id,group.name)} class="edit-group-btn" title="编辑" aria-label="编辑题目">
+                                            <button onclick={()=>editGroupName(group.id,group.name,"side-bar")} class="edit-group-btn" title="编辑" aria-label="编辑题目">
                                                 <svg
                                                     viewBox="0 0 1024 1024"
                                                     fill="none"
@@ -683,41 +774,53 @@
             <!-- 内容区 -->
             <div class="content-container">
                 {#if paper_groups}
-                    {#each paper_groups as group}
+                    {#each paper_groups as group, groupIndex}
                         <div class="single-group-content">
                             <!-- 头部下拉栏 -->
                             <div class="group-header">
-                                <!-- 左侧区域 -->
-                                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                <div class="header-left" onclick={()=>changeOpenState("group",group.id)}>
-                                    <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
-                                    <span>{group.name}</span>
-                                </div>
+                                {#if to_edit_groupID === group.id}
+                                    <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} class="edit-group-input" bind:this={to_edit_group_content} type="text" placeholder="按 Enter 键确认编辑">
+                                    <div class="btn-box">
+                                        <!-- 删除按钮 -->
+                                        <button onclick={()=>{to_edit_groupID=null}} class="cancel-btn" title="取消">✖</button>
+                                    </div>
+                                {:else}
+                                    <!-- 左侧区域 -->
+                                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                    <div title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"} class="header-left" onclick={()=>changeOpenState("group",group.id)}>
+                                        <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
+                                        <span>{group.name}（共{group.questions.length}题，共{
+                                            group.questions.reduce((sum,q)=>sum+(q.score||0),0)
+                                        }分）</span>
+                                    </div>
 
-                                <!-- 编辑按钮 -->
-                                <button class="edit-group-btn" title="编辑" aria-label="编辑题目">
-                                    <svg
-                                        viewBox="0 0 1024 1024"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        width="14"
-                                        height="14"
-                                    >
-                                        <path
-                                            d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                            fill="currentColor"
-                                        />
-                                    </svg>
-                                </button>
+                                    <!-- 编辑按钮 -->
+                                    <button onclick={()=>editGroupName(group.id,group.name,"content")} class="edit-group-btn" title="编辑" aria-label="编辑题目">
+                                        <svg
+                                            viewBox="0 0 1024 1024"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            width="14"
+                                            height="14"
+                                        >
+                                            <path
+                                                d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                                fill="currentColor"
+                                            />
+                                        </svg>
+                                    </button>
+                                {/if}
 
                                 <!-- 右侧区域 -->
                                 <div class="header-right">
                                     <!-- <span>每题分值：</span>
-                                    <input value={10} id="temp-average-question-score-input" type="number"> -->
+                                    <div class="score-input">
+                                        <InputBox placeholder="" bind:value={group.average_score} show_label={false} type="number" clearable={false}/>
+                                    </div> -->
                                     <Button onclick={()=>importQuestions(group)}>导入题目</Button>
                                 </div>
                             </div>
@@ -725,7 +828,6 @@
                             <!-- 题目列表 -->
                             {#if $GROUP_OPEN_STATE[group.id]}
                                 <div class="group-question-list">
-                                    
                                     {#if group.questions.length !== 0}
                                         {#each group.questions as question}
                                             <div class="single-question">
@@ -734,7 +836,7 @@
                                                     <!-- 左侧区域 -->
                                                     <!-- svelte-ignore a11y_click_events_have_key_events -->
                                                     <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                                    <div class="header-left"  onclick={()=>changeOpenState("question",question.id)}>
+                                                    <div title={$QUESTION_OPEN_STATE[question.id]?"收起":"展开"} class="header-left"  onclick={()=>changeOpenState("question",question.id)}>
                                                         <button class="toggle-btn-down">{$QUESTION_OPEN_STATE[question.id]?"∨":"∧"}</button>
                                                         <span class="sequence">{question.order}</span>
                                                         <span class="question-type">{QUESTION_TYPE_TRANS[question.type]}</span>
@@ -743,12 +845,14 @@
 
                                                     <!-- 右侧区域 -->
                                                     <div class="header-right">
-                                                        <span>分值：{question.score} 分</span>
-                                                        <!-- <input value={question.score} id="temp-per-question-score-input" type="number"> -->
-    <!-- 
-                                                        <button class="move-btn" title="上移">↑</button>
-                                                        <button class="move-btn" title="下移">↓</button>
-                                                        <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
+                                                        <span>分值：</span>
+                                                        <div class="score-input">
+                                                            <InputBox placeholder="" onInput={debounce(()=>updateQuestionScore(question.id,group.id,question.order,question.score),500,false)} bind:value={question.score} type="number" show_label={false} clearable={false}/>
+                                                        </div>
+                                          
+                                                        <button onclick={()=>moveQuestion(groupIndex,question.id,"up")} class="move-btn" title="上移">↑</button>
+                                                        <button onclick={()=>moveQuestion(groupIndex,question.id,"down")} class="move-btn" title="下移">↓</button>
+                                                        <!-- <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
                                                             <svg
                                                                 viewBox="0 0 1024 1024"
                                                                 fill="none"
@@ -764,8 +868,8 @@
                                                                     fill="currentColor"
                                                                 />
                                                             </svg>
-                                                        </button>
-                                                        -->
+                                                        </button> -->
+                                                        
                                                         <button onclick={()=>deleteQuestion(question.id,group)} class="delete-question-btn" title="删除">✕</button>
                                                     </div>
                                                 </div>
@@ -1186,6 +1290,7 @@
                                 color: #1890ff;
                             }
 
+                            /* 下拉按钮 */
                             .toggle-btn {
                                 background: none;
                                 /* background-color: red; */
@@ -1202,7 +1307,7 @@
                             span {
                                 font-weight: 600;
                             }
-
+                            
                         }
 
                         /* 编辑按钮 */
@@ -1214,17 +1319,55 @@
                             width: 22px;
                             height: 22px;
                             /* background-color: red; */
-                            visibility: hidden;  /* 暂时没有编辑功能 */
 
                             &:hover {
                                 color: #1890ff;
                             }
                         }
 
+                        /* 编辑题组 */
+                        .edit-group-input {
+                            padding: 6px;
+                            transition: all 0.3s;
+                            outline: none;
+                            border-radius: var(--input-border-radius);
+                            border: 1px solid var(--border-light);
+                            width: 50%;
+
+                            &:focus {
+                                border: 1px solid #40a9ff;
+                                box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+                            }
+                        }
+
+                        .cancel-btn {
+                            font-size: 14px;
+                            width: 28.67px;
+                            height: 28.67px;
+                            border: 1px solid var(--border-light);
+                            background: none;
+                            border-radius: var(--btn-border-radius);
+                            cursor: pointer;
+                            background-color: var(--bg-primary);
+                            margin-left: 10px;
+
+                            &:hover {
+                                border-color: var(--red);
+                                color: var(--red);
+                            }
+                        }
+
                         /* 右侧区域 */
                         .header-right {
                             margin-left: auto;
-                            
+                            display: flex;
+                            align-items: center;
+
+                            .score-input {
+                                width: 70px;
+                                margin-right: 36px;
+                            }
+
                             span {
                                 font-size: 14px;
                                 color: var(--text-secondary);
@@ -1353,6 +1496,12 @@
                                     span {
                                         font-size: 14px;
                                         color: var(--text-secondary);
+
+                                    }
+
+                                    .score-input {
+                                        width: 70px;
+                                        margin-right: 30px;
                                     }
 
                                     .move-btn, .edit-question-btn, .delete-question-btn {

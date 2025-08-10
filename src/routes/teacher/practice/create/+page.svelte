@@ -134,21 +134,6 @@
         display: block;
         height: 100%;
         overflow: auto;
-        .page-header {
-            display: flex;
-            align-items: center;
-            font-size: 20px;
-            font-weight: bold;
-            color: #000;
-        }
-        .page-header::before {
-            content: "";
-            display: inline-block;
-            width: 13px;
-            height: 29px;
-            background-color: #0336ff;
-            margin-right: 8px;
-            border-radius: 4px;
-        }
+       
     }
 </style>

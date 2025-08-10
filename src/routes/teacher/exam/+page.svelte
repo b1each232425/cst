@@ -20,6 +20,9 @@
   let examID_to_delete = $state(false);
   let total_items = $state(); //总数据条数
   let delete_exam_dialog = $state(false); //删除考试的确认框
+  let is_delete_mode = $state(false); //是否是删除模式
+  let selected_exam_ids = $state([]); // 用于存储选中的考试ID
+  let is_all_selected = $state(false); 
   // 映射关系
   const TypeMap = {
     '00': '平时考试',
@@ -84,7 +87,7 @@
     const queryParams = new URLSearchParams();
     queryParams.append('q', JSON.stringify(queryObject));
 
-    fetch(`/api/exam/list?${queryParams.toString()}&role=2`, {
+    return fetch(`/api/exam/list?${queryParams.toString()}&role=2`, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -125,7 +128,6 @@
   // }
 
   function onSearchFunc(value) {
-    console.log("调用");
     search_params.name = value;
 
     //防抖逻辑
@@ -150,16 +152,37 @@
   }
 
   // 处理页码变化
-  function handlePageChange(event) {
+  async function handlePageChange(event) {
     search_params.page = event.detail;
-    searchExam();
+    let deletableIDs = [];
+    await searchExam();
+    
+    deletableIDs = exam_list.filter(exam => (exam.status === '00' || exam.status === '02') && selected_exam_ids.includes(exam.id))
+      .map(exam => exam.id);
+
+    if(deletableIDs.length!=0 && deletableIDs.every(id => selected_exam_ids.includes(id)))
+      { 
+        is_all_selected = true;
+        return;
+      }
+    is_all_selected=false;
   }
 
   // 处理每页条数变化
-  function handlePageSizeChange(event) {
+  async function handlePageSizeChange(event) {
     search_params.page_size = event.detail;
     search_params.page = 1; // 重置到第一页
-    searchExam();
+    let deletableIDs = [];
+    await searchExam();
+    deletableIDs = exam_list.filter(exam => (exam.status === '00' || exam.status === '02') && selected_exam_ids.includes(exam.id))
+      .map(exam => exam.id);
+
+    if(deletableIDs.length!=0 && deletableIDs.every(id => selected_exam_ids.includes(id)))
+      { 
+        is_all_selected = true;
+        return;
+      }
+    is_all_selected=false;
   }
 
   async function publishExam(examID) {
@@ -224,6 +247,70 @@
         loading = false;
       });
   }
+
+  async function deleteExam(examID){
+    const delete_params={
+      q: JSON.stringify({
+            data: { ID: parseInt(examID), Status: '02' },
+          }),
+    }
+
+    fetch(`/api/exam/status?${new URLSearchParams(delete_params).toString()}`,
+      {
+        method:"PUT",
+        credentials: "include",
+        headers: {
+                "Content-Type": "application/json",
+            },
+      })
+      .then((response)=>response.json())
+      .then((result)=>{
+        if(result.status===0){
+          loading=false;
+          return;
+        }
+        else{
+          throw new Error(result.msg);
+        }
+      }).catch((error)=>{
+          console.log("错误提示:",error);
+          toast.error(error);
+      })
+      .finally(()=>{
+        loading=false;
+      })
+  }
+
+  function batchDelete(){
+    toast.warning("功能还未实现");
+  }
+
+  function handleCheckBoxChange(data,event){
+     const examID = data.id;
+     const is_selected = selected_exam_ids.includes(examID);
+  
+    if (is_selected) {
+      selected_exam_ids = selected_exam_ids.filter(id => id !== examID);
+    } else {
+      selected_exam_ids = [...selected_exam_ids, examID];
+    }
+  }
+
+  // 处理全选/取消全选
+function handleSelectAll(event) {
+   is_all_selected = event.target.checked;
+  // 当前页可删除的考试 ID
+  const currentPageDeletableIds = exam_list
+    .filter(exam => exam.status === '00' || exam.status === '02')
+    .map(exam => exam.id);
+
+  if (is_all_selected) {
+    selected_exam_ids = [...new Set([...selected_exam_ids, ...currentPageDeletableIds])];
+  } else {
+    selected_exam_ids = selected_exam_ids.filter(id => !currentPageDeletableIds.includes(id));
+  }
+}
+
   // 模拟获取考试列表数据
   exam_list = [
     {
@@ -360,12 +447,18 @@
 
   onMount(() => {
     searchExam();
-    console.log(exam_list);
   });
 </script>
 
 {#snippet tableHead()}
-  <tr>
+  <tr onclick={(event)=>handleSelectAll(event)}>
+      <th class = "{is_delete_mode?'':"hideButton"}" style="width: 40px;">
+        <input
+          type="checkbox"
+          class="deleteCheck"
+          checked={is_all_selected}
+        />
+      </th>
     <th>考试名称</th>
     <th>考试类型</th>
     <th>考试方式</th>
@@ -379,11 +472,11 @@
 
 {#snippet actionRender(status, index)}
   <div class="button-container">
-    <!-- <button class="continue-edit-button action-button {status !== '00' && status !== '02' ? 'hideButton' : ''}"
+    <button class="continue-edit-button action-button {status !== '00' && status !== '02' ? 'hideButton' : ''}"
         onclick={()=>{
             goto(`/teacher/exam/editExam/${exam_list[index].id}`)
         }}>
-        继续编辑</button> -->
+        继续编辑</button>
     <button
       class="publish-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
       onclick={() => {
@@ -393,10 +486,10 @@
       发布考试</button
     >
     <span class="{status == '00' ? 'hideButton' : 'EmptyData'} "> -- </span>
-    <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
+    <!-- <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
     onclick={()=>{
         ((delete_exam_dialog=true),examID_to_delete =exam_list[index].id)
-    }}>删除考试</button>
+    }}>删除考试</button> -->
     <!-- <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}">取消考试</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">监考管理</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">操作日志</button> -->
@@ -407,7 +500,15 @@
 {/snippet}
 
 {#snippet tableData(data, index)}
-  <tr>
+  <tr onclick={(event)=>handleCheckBoxChange(data,event)}>
+    <td class = "{is_delete_mode?'':"hideButton"}" style="width: 40px;">
+        <input
+          type="checkbox"
+          class="deleteCheck"
+          checked={selected_exam_ids.includes(data.id)}
+          disabled={data.status!='00'&& data.status!='02'}
+        />
+      </td>
     <td>{data.name} </td>
     <td>{TypeMap[data.type]} </td>
     <td>{MethodMap[data.method]} </td>
@@ -454,7 +555,7 @@
       </div>
 
       <div class="filterPart">
-        <Select placeholder="全部状态" onChangeValue={onSelectExamStatus}>
+        <Select placeholder="全部状态" changeValue={onSelectExamStatus}>
           <Option value="" label="全部状态" />
           <Option value="00" label="未发布" />
           <Option value="02" label="待开始" />
@@ -475,14 +576,16 @@
       </div>
     </div>
     <div class="buttonPart">
-      <!-- <Button
-            type="primary"
-            size="medium"
-            >
-            下载考生模板
-        </Button> -->
-
-      <Button type="primary" size="medium" onclick={() => goto('/teacher/exam/addExam')}>新增考试</Button>
+      <!-- {#if !is_delete_mode}
+      <Button plain={true}  type="danger" size="medium" onclick={() => { is_delete_mode = true; }}>批量删除</Button>
+      <Button plain={true}  type="primary" size="medium" onclick={() => goto('/teacher/exam/addExam')}>新增考试</Button>
+      {:else}
+      <Button plain={true} type="default" size="medium" onclick={() => {is_delete_mode=false;}}>取消</Button>
+        <Button plain={true} type="danger" size="medium" onclick={()=>{batchDelete()}}>
+          删除选中 ({selected_exam_ids.length})
+        </Button>
+      {/if} -->
+      <Button plain={true}  type="primary" size="medium" onclick={() => goto('/teacher/exam/addExam')}>新增考试</Button>
     </div>
   </div>
 
@@ -519,6 +622,7 @@
     onCancel={() => {
       delete_exam_dialog = false;
     }}
+    onConfirm={() => deleteExam(examID_to_delete)}
     />
 
   <div class="paginationContainer">
@@ -757,5 +861,10 @@
     &.error {
       background-color: #ff4d4f;
     }
+  }
+
+  .deleteCheck{
+   transform: scale(1.4);
+   outline:none;
   }
 </style>
