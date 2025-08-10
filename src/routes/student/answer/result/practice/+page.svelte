@@ -1,36 +1,29 @@
-/*
- * @Author: zdl 1311866870@qq.com
- * @Date: 2025-06-14 10:56:09
- * @LastEditors: zdl 1311866870@qq.com
- * @LastEditTime: 2025-07-07 09:41:12
- * @FilePath: \tutorial-platform-fe\src\routes\student\checkExamDetails\+page@.svelte
- * @Description: 
- */
 <script>
+  /*
+  * @Author: 彭海峰 1614818457@qq.com
+  * @Date: 2025-08-8 10:56:09
+  * @LastEditors: 彭海峰 1614818457@qq.com
+  * @LastEditTime: 2025-08-08 09:41:12
+  * @FilePath: \src\routes\student\answer\result\exam\+page@.svelte
+  * @Description: 
+  */
   import { page } from "$app/state";
   import { onMount } from "svelte";
   import { sget } from '$lib/utils/index.js';
+  import Toast from '$lib/components/Toast/Toast.svelte';
+  import { toast } from '$lib/components/Toast/Toast';
   import BulmaSwitch from '../../_component/SwitchBtn/BulmaSwitchBlue.svelte';
   import Watermark from '../../_component/WaterMark.svelte';
-
   import Quesion from "../../_component/QuestionCheck/quesion.svelte";
   import Score from "../../_component/QuestionCheck/score.svelte";
   import ScoreBadge from "../../_component/QuestionCheck/ScoreBadge.svelte";
-
-  import Dialog from "../../_component/Dialog.svelte";
-  import ActionToast from "../../_component/ActionToast.svelte";
-  import { changeExamPaper } from "./api";
+  import MessageBox from '$lib/components/MessageBox/MessageBox.js';
 
   /**
-   * @typedef ActionToastProps
-   * @property {boolean} is_show -操作提示是否显示
-   * @property {string} type -操作提示类型
-   * @property {string} message -操作提示文本
-   * @property {number} duration -操作提示持续时间
    * @property {string} icon_src -操作提示图标地址
-   */
+   *
   // 这里不能将answers用一个类型去包含，只能动态获取
-  /**
+   *
    * @typedef {Object} Question
    * @property {number} id - 题目 ID
    * @property {string} type - 题目类型编号，如 "02"、"04"、"06"
@@ -46,310 +39,221 @@
    * @property {number} answer_num - 可选的答案数量，通常用于简答题或填空题
    * @property {string} status - 表明此时作答情况  00 全对 02 含错 04 全错 用于答题卡渲染
    * @property {number} [index] - 用于设置在本题组的索引
-   */
+   *
 
-  /**
+   *
    * @typedef {Object} GroupQuestion
    * @property {number} index - 题目在卷子中的总索引
    * @property {Question} question - 本组的题目
-   */
+   *
 
-  /**
+   *
    * @typedef {Object} QuestionGroup
    * @property {number} id - 分组唯一ID
    * @property {string} name - 分组名称
    * @property {string} type - 题目类型
    * @property {GroupQuestion[]} questions - 本组的题目列表
-   */
+   *
 
-  /**
+   *
    * @typedef {Object} Answer - 原试卷题目详情
    * @property {number} index - 类型
    * @property {number} [index]
    * @property {Object[]} answer - 原题答案
-   */
+   *
 
-  /**
+   *
    * @typedef {Object} StudentAnswer - 学生作答题目记录
    * @property {string} type - 类型
    * @property {number} [index]
    * @property {String[]} answer - 学生回答
-   */
+   *
 
-  /**
+   *
    * @typedef {Object} ExamInfo
    * @property {number} answerNum - 学生作答数量
    * @property {string} paperName - 试卷名称
    * @property {number} questionNum - 题目总数
    * @property {number} studentScore - 学生总分
    * @property {number} answerTime - 学生作答时间（以分钟为单位）
-   */
+   *
 
-  /**
+   *
    * @typedef {Object} ExamSessionInfo
    * @property {number} ExamTime - 场次正常持续时长
    * @property {number} ExamineeID - 考生ID
    * @property {number} ID - 考试ID
    * @property {number} PaperID - 场次试卷ID
    * @property {number} SessionNum - 考试场次顺序索引
-   */
+   *
 
-  /**
+   *
    * @typedef {Object} Rank
    * @property {string} official_name - 考生昵称
    * @property {number} total_score  - 考生成绩
    * @property {number} rank - 排名
    * @property {number} student_id - 学生用户ID
-   */
-
-  const ICONS = {
-    action_success: "/paper/action_success.svg",
-    action_error: "/paper/action_fail.svg",
-  };
-  /**
-   * 操作提示属性
-   * @type {ActionToastProps}
-   */
-  let action_toast_props = $state({
-    is_show: false,
-    type: "success",
-    message: "操作成功",
-    duration: 2000,
-    icon_src: ICONS["action_success"],
-  });
-
-  /**
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
    * 显示操作提示
    * @param {string} type - 提示类型
    * @param {string} message - 提示文本
-   */
-  function showActionToast(type, message) {
-    action_toast_props.is_show = true;
-
-    action_toast_props.type = type;
-
-    action_toast_props.message = message;
-
-    switch (type) {
-      case "success":
-        action_toast_props.icon_src = ICONS["action_success"];
-        break;
-      case "error":
-        action_toast_props.icon_src = ICONS["action_error"];
-        break;
-      default:
-        action_toast_props.icon_src = ICONS["action_success"];
-    }
-  }
-
-  // 是否为全卷模式
-  let is_full_examMode = $state(true);
-
-  //学生名字
-  let student_name = "邹德伦";
-  // 学生的学号
-  let student_id = "15920422045";
-  // 头像url
-  let avatar_url = "/user_icons/defaultAvatar.svg";
-
-  // 考生当前的用户ID
-  let userID = $state(page.data.studentID);
-  /**
+   * 
+   * 
+   * 
    * @type {Question[]}
-   */
-  // 考试试卷 + 学生作答 题目数组 包括很多信息；需要从里面拿
-  let exam_paper = $state(page.data.exam_paper);
-
-  // 当前显示的问题
-  let currentQuestion = $state(exam_paper[0]);
-
-  // 当前显示的问题索引
-  let currentQuestionIndex = $state(0);
-
-  /**
+   * 
+   * 
+   * 
    * @type {QuestionGroup[]}
-   */
-  // 题组 里面需要包含题目，题组需要根据这个groupID
-  let questionGroups = $state([]);
-
-  // 试卷原总分
-  let total_score = $state(0);
-
-  /**
+   * 
+   * 
+   * 
    * @type {Rank[]}
-   */
-  // 考试场次排行榜
-  let rank = $state(page.data.rank);
-
-  /**
+   * 
+   * 
+   * 
+   * 
    * @type {Rank}
-   */
-  // 当前学生的得分与信息
-  // @ts-ignore
-  let userRank = $state({});
-
-  /**
+   * 
+   * 
+   * 
    * @type {ExamInfo}
-   */
-  // 考试基本信息
-  let examInfo = $state(page.data.examInfo);
-  /**
+   * 
+   * 
+   * 
    * @type {ExamSessionInfo[]}
-   */
-  // 考试场次信息，用于切换上次试卷
-  let examSessionInfo = $state(page.data.examSessionInfo);
-
-  // 这里要保存额外的一次originSessionIngo
-    /**
+   * 
+   * 
+   *   
    * @type {ExamSessionInfo[]}
-   */
-  let originExamSessionInfo = $state([])
-  let nowSessionIndex = $state(0);
-  let examSessionInfoLenght = examSessionInfo.length;
-  //是否显示左边信息栏
-  let showLeftInfo = $state(true);
-
-  // 数据是否异常
-  let invalid = $state(false);
-
-  onMount(async () => {
-    invalid = page.data.invalid;
-    if (invalid) {
-      console.error("数据异常！请联系管理员");
-      return;
-    }
-    computePaperTotalScoce();
-    createQuestionGroup();
-    getStudentRankInfo();
-    sortSessionInfo();
-    showScore();
-    originExamSessionInfo = JSON.parse(JSON.stringify(examSessionInfo));
-    examSessionInfoLenght = originExamSessionInfo.length
-  });
-
-  function goBack() {
-    window.location.href = "/student/exam";
-  }
-
-  // 这里定义一次排序
-  function sortSessionInfo() {
-    examSessionInfo.sort((a, b) => a.SessionNum - b.SessionNum);
-  }
-
-  // 这里直接操作保存到的examSessionInfo即可
-  /**
+   * 
+   * 
+   * 
    * @param {number} index - 操作的索引 可选 -1 、 1
+   * 
+   * 
+   * 
+   * 跳转到指定题目
+   * @param {number}index
    */
-  async function ShowOtherSessionDetails(index) {
-    if (
-      nowSessionIndex + index < 0 ||
-      nowSessionIndex + index > examSessionInfoLenght
-    ) {
-      console.error("操作失败，数组索引失效");
-      showActionToast("error", "数据错误，无法进行切换");
-      return
-    }
-    let queryIndex = nowSessionIndex + index;
-    let sessionInfo = originExamSessionInfo[queryIndex];
-    const result = await changeExamPaper(
-      sessionInfo.ExamineeID,
-      sessionInfo.PaperID,
-      sessionInfo.ID
-    );
-    if (result == null || !result) {
-      showActionToast("error", "数据错误，无法进行切换");
-      return;
-    }
-    exam_paper = sget(result, "exam_paper", []);
-    rank = sget(result, "rank", []);
-    examInfo = sget(result, "examInfo", {});
-    userID = sget(result, "studentID", "");
-    total_score = 0;
-    // 这里的问题也要重新获取
-    resetQuestionGroup()
-    computePaperTotalScoce()
-    getStudentRankInfo()
-    showActionToast("success", "切换成功");
-    nowSessionIndex = queryIndex
-    showScore()
+
+  
+  let is_full_examMode = $state(true); // 是否为全卷模式
+  let student_name = "邹德伦"; //学生名字
+  let student_id = "15920422045"; // 学生的学号
+  let avatar_url = "/user_icons/defaultAvatar.svg"; // 头像url
+  let userID = $state(""); // 考生当前的用户ID
+  let exam_paper = $state([]); // 考试试卷 + 学生作答 题目数组 包括很多信息；需要从里面拿
+  let currentQuestion = $state(exam_paper[0]); // 当前显示的问题
+  let currentQuestionIndex = $state(0); // 当前显示的问题索引
+  let questionGroups = $state([]); // 题组 里面需要包含题目，题组需要根据这个groupID
+  let total_score = $state(0); // 试卷原总分
+  let rank = $state([]); // 考试场次排行榜
+  let userRank = $state({}); // 当前学生的得分与信息  // @ts-ignore
+  let examInfo = $state({});  // 考试基本信息
+  let examSessionInfo = $state({}); // 考试场次信息，用于切换上次试卷
+  let nowSessionIndex = $state(0); // 当前考试场次索引
+  let examSessionInfoLenght = $state(0);
+  let showLeftInfo = $state(true); //是否显示左边信息栏
+  let exam_session_id_arr = $state([]); // 考试场次ID
+  let load_success = $state(false); // 数据加载是否成功
+  let exam_questions_map = $state(new Map()); //考试题目map数组 key题目id value包含题目的题组
+  let question_groups_map = $state(new Map());  //考试题组map数组 key题目id value包含题组的信息
+  let showBadge = $state(false);
+  let badgeX = $state(74); // 固定像素位置
+  let badgeY = $state(12); // 固定像素位置
+  let practice_id = $state(""); // 测试ID
+
+  //题目信息类
+  function getQuestionGroups() { // 获取题目分组信息，用于生成答题卡
+    const groups = [];
+
+    const sortedGroups = Array.from(question_groups_map.values()).sort((a, b) => a.order - b.order); //升序排序出一个数组
+
+    // 构建全局索引映射
+    const globalIndexMap = new Map();
+    exam_paper.forEach((q, idx) => {
+      globalIndexMap.set(q.ID, idx);
+    });
+
+    sortedGroups.forEach(groupInfo => {
+      const groupId = groupInfo.ID; // 题组 id
+      const groupQuestions = exam_questions_map.get(String(groupId)) || []; // 该分组下的题目数组
+
+      if (groupQuestions.length === 0) return; // 如果没有题目则跳过
+      groups.push({ // 组装 QuestionGroup 对象
+        name: groupInfo.Name,
+        type: groupQuestions[0].type,
+        questions: groupQuestions.map((question, index) => ({
+          question,
+          index: globalIndexMap.get(question.ID) // 这里用全局索引
+        }))
+      });
+    });
+    return groups;
   }
+  function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组 用来生成题目
+    const result = [];
+    const sortedGroups = Array.from(question_groups_map.values()).sort((a, b) => a.order - b.order); //升序排序数组
 
-  // 重置题目题组
-  function resetQuestionGroup(){
-    questionGroups = [];
-    createQuestionGroup()
+    sortedGroups.forEach(groupInfo => {
+      const groupId = groupInfo.ID;
+      const groupQuestions = exam_questions_map.get(String(groupId)) || [];
 
-  }
-
-  // 对所有题目进行分组
-  function createQuestionGroup() {
-    /**
-     * @type {QuestionGroup | null}
-     */
-    // 本次题目所在题组
-    let currentGroup = null;
-
-    // 遍历每一题
-    exam_paper.forEach((question, index) => {
-      // 第一个就需要创建分组 ， 并检测是否 这里定制一个时间复c杂度为O(n)的
-      // @ts-ignore
-      if (!currentGroup || currentGroup.id !== question.group_id) {
-        // 如果此时出现新的分组，此时的分组里面，应该存放这个分组里面有的题
-        // 遇到下一个题组的时候，先保存上一个题组
-        if (currentGroup) {
-          questionGroups.push(currentGroup);
-        }
-        // 之后创建新分组
-        currentGroup = {
-          id: question.group_id,
-          name: question.group_name,
-          type: question.type,
-          questions: [{ question: question, index: index }],
-        };
-        // 如果此时这个题目还是跟上一个题组一样的话，那就直接推到currentGroup就好
-      } else {
-        currentGroup.questions.push({ question: question, index: index });
+      let totalScore = 0;
+      for (const item of groupQuestions) {
+        // 如果每道题的分数字段是 question.Score
+        totalScore += Number(item.Score || 0);
       }
+      groupQuestions.forEach(q => {
+        result.push({
+          ...q,
+          group_name: groupInfo.Name,
+          group_score : totalScore, // 该组的总分
+        });
+      });
     });
-    if (currentGroup) {
-      // 将最后一个题组插入到group中
-      questionGroups.push(currentGroup);
-    }
+    return result;
   }
-  // 计算本张卷子的总分
-  function computePaperTotalScoce() {
+  function resetQuestionGroup(){ // 重置题目题组
+    exam_paper.length = 0;
+    exam_paper.push(...flattenExamQuestions());
+    questionGroups.length = 0;
+    questionGroups.push(...getQuestionGroups());
+
+  }
+  function computePaperTotalScoce() { // 计算本张卷子的总分
     exam_paper.forEach((question) => {
-      total_score += question.score;
+      total_score += question.Score;
     });
   }
-  function getStudentRankInfo() {
+  function getStudentRankInfo() { // 获取当前学生的排名信息
     rank.forEach((rank) => {
       if (rank.student_id === userID) {
         userRank = rank;
       }
     });
   }
-  // 切换到下一题
-  function nextQuestion() {
+
+  //按钮控制类
+  function nextQuestion() {  // 切换到下一题
     if (currentQuestionIndex < exam_paper.length - 1) {
       currentQuestionIndex++;
       currentQuestion = exam_paper[currentQuestionIndex];
     }
   }
-
-  // 切换到上一题
-  function prevQuestion() {
+  function prevQuestion() {  // 切换到上一题
     if (currentQuestionIndex > 0) {
       currentQuestionIndex--;
       currentQuestion = exam_paper[currentQuestionIndex];
     }
   }
-
-  /**
-   * 跳转到指定题目
-   * @param {number}index
-   */
-  function goToQuestion(index) {
+  function goToQuestion(index) { // 跳转到指定题目
     currentQuestionIndex = index;
 
     // 如果是全卷模式，滚动到对应题目位置
@@ -375,22 +279,362 @@
       }, 0);
     }
   }
-  function locationBack() {
+  function locationBack() { // 提交考试后返回到考试列表
+    window.location.href = "/student/exam";
+  }
+  function showScore() { // 显示分数徽章
+    showBadge = true;
+  }
+  function onBadgeHide() { // 隐藏分数徽章
+    showBadge = false;
+  }
+  function goBack() { // 返回到考试列表
     window.location.href = "/student/exam";
   }
 
+  onMount(async () => {
+    practice_id = page.url.searchParams.get("practice-id");
+    if (!practice_id) {
+      console.error("未提供测试ID");
+      toast.error(`未提供测试ID`, 2000);
+      return;
+    }
 
-  let showBadge = $state(false);
-  function showScore() {
-    showBadge = true;
-  }
-  
-  function onBadgeHide() {
-    showBadge = false;
-  }
+/*    fetch(`/api/grade?category=exam&examSessionID=${exam_session_id_arr[0]}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.text().then(text => {
+            console.error('接口响应失败:', text);
+            toast.error(`接口响应失败: ${text}`, 2000);
+            throw new Error(text);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.status !== 0) {
+          console.error(`接口错误: ${data.msg}`);
+          toast.error(`接口错误: ${data.msg}`, 2000);
+          throw new Error(data.msg);
+        }
 
-  let badgeX = $state(74); // 固定像素位置
-  let badgeY = $state(12); // 固定像素位置
+        // 赋值到变量 使用sget安全获取
+        
+        userID = sget(data, "data.student_id", ""); //学生ID
+        rank = sget(data, "data.rank", []); //排名信息
+        examInfo = sget(data, "data.exam_info", {});  //考试信息
+        examSessionInfo = sget(data, "data.exam_session_info", {}); //该场次的具体信息
+        //题目
+        exam_questions_map = new Map(Object.entries(sget(data, "data.exam_question", {})));
+        question_groups_map = new Map(Object.entries(sget(data, "data.exam_paper_group", {})));
+
+        //加载题目
+        examSessionInfoLenght = exam_session_id_arr.length;
+        total_score = 0; // 重置总分
+        resetQuestionGroup(); // 重置题目组
+        computePaperTotalScoce(); // 计算试卷总分
+        getStudentRankInfo(); // 获取学生排名信息
+        showScore();  // 显示分数徽章
+        currentQuestion = exam_paper[currentQuestionIndex]; // 初始化当前题目
+        load_success = true;
+
+      })
+      .catch(error => {
+        console.error('请求失败:', error);
+        toast.error(`获取题目时出错！${error.message || ''}`, 2000);
+        load_success = false;
+
+
+        if (!load_success) {
+          MessageBox({
+              title: '出错了，请回到考试列表刷新重新进入',
+              show_cancel_button: false,
+              onConfirm: () => {
+                window.location.href = "/student/exam";
+              },
+          });
+        }
+
+        return;
+      });*/
+
+      userID = 1675;
+
+    rank = [
+      {
+        student_id: 1675,
+        official_name: "林子馨",
+        total_score: 13,
+        rank: 1
+      },
+      {
+        student_id: 1676,
+        official_name: "吴圳",
+        total_score: 0,
+        rank: 2
+      },
+      {
+        student_id: 1677,
+        official_name: "科比",
+        total_score: 0,
+        rank: 2
+      }
+    ];
+
+    examInfo = {
+      AnswerNum: 6,
+      Name: "2025年期末考试",
+      QuestionNum: 6,
+      StudentScore: 13,
+      AnswerTime: 45,
+      SuggestTime: 60
+    };
+
+    question_groups_map = new Map([
+      [322, {
+        ID: 322,
+        ExamPaperID: null,
+        Name: "一、单选题",
+        Order: 1,
+        Creator: 1674,
+        CreateTime: null,
+        UpdatedBy: null,
+        UpdateTime: null,
+        Addi: null,
+        Status: "00"
+      }],
+      [323, {
+        ID: 323,
+        ExamPaperID: null,
+        Name: "二、多选题",
+        Order: 2,
+        Creator: 1674,
+        CreateTime: null,
+        UpdatedBy: null,
+        UpdateTime: null,
+        Addi: null,
+        Status: "00"
+      }],
+      [324, {
+        ID: 324,
+        ExamPaperID: null,
+        Name: "三、判断题",
+        Order: 3,
+        Creator: 1674,
+        CreateTime: null,
+        UpdatedBy: null,
+        UpdateTime: null,
+        Addi: null,
+        Status: "00"
+      }]
+    ]);
+
+    // 预置题目数据
+    exam_questions_map = new Map([
+      ["322", [
+        {
+          ID: 4160,
+          Score: 2,
+          Type: "00",
+          Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">为了提高模块的独立性，模块内部最好是()</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span></p>",
+          Options: [
+            { label: "A", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">逻辑内聚</span></p>" },
+            { label: "B", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">功能内聚</span></p>" },
+            { label: "C", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">时间内聚</span></p>" },
+            { label: "D", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">通信内聚</span></p>" }
+          ],
+          Answers: ["B"],
+          Analysis: null,
+          Title: null,
+          Input: null,
+          Output: null,
+          Example: null,
+          Repo: null,
+          Creator: null,
+          CreateTime: null,
+          UpdatedBy: null,
+          UpdateTime: null,
+          Status: "04",
+          Order: 1,
+          GroupID: 322,
+          AnswerNum: 0,
+          StudentAnswer: { answer: ["A"] },
+          StudentScore: 0
+        },
+        {
+          ID: 4161,
+          Score: 2,
+          Type: "00",
+          Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">具有风险分析的软件生命周期模型是()</span></p>",
+          Options: [
+            { label: "A", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">瀑布模型</span></p>" },
+            { label: "B", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">喷泉模型</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span></p>" },
+            { label: "C", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">增量模型</span></p>" },
+            { label: "D", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">螺旋模型</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span></p>" }
+          ],
+          Answers: ["D"],
+          Analysis: null,
+          Title: null,
+          Input: null,
+          Output: null,
+          Example: null,
+          Repo: null,
+          Creator: null,
+          CreateTime: null,
+          UpdatedBy: null,
+          UpdateTime: null,
+          Status: "00",
+          Order: 2,
+          GroupID: 322,
+          AnswerNum: 0,
+          StudentAnswer: { answer: ["D"] },
+          StudentScore: 2
+        }
+      ]],
+      ["323", [
+        {
+          ID: 4162,
+          Score: 3,
+          Type: "02",
+          Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">软件开发的结构化生命周期方法将软件生命周期划分成（）</span></p>",
+          Options: [
+            { label: "A", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">计划阶段</span></p>" },
+            { label: "B", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">详细设计</span></p>" },
+            { label: "C", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">开发阶段</span></p>" },
+            { label: "D", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">运行阶段</span></p>" }
+          ],
+          Answers: ["A", "C", "D"],
+          Analysis: null,
+          Title: null,
+          Input: null,
+          Output: null,
+          Example: null,
+          Repo: null,
+          Creator: null,
+          CreateTime: null,
+          UpdatedBy: null,
+          UpdateTime: null,
+          Status: "00",
+          Order: 1,
+          GroupID: 323,
+          AnswerNum: 0,
+          StudentAnswer: { answer: ["A", "D", "C"] },
+          StudentScore: 3
+        },
+        {
+          ID: 4163,
+          Score: 3,
+          Type: "02",
+          Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">下面哪些测试方法属于白盒测试（</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span><span style=\"font-family: 宋体; font-size: 10.5pt\">）</span></p>",
+          Options: [
+            { label: "A", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">基本路径测试</span></p>" },
+            { label: "B", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">等价类划分</span></p>" },
+            { label: "C", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">边界值分析</span></p>" },
+            { label: "D", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">错误推测</span></p>" },
+            { label: "E", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">逻辑覆盖测试</span></p>" }
+          ],
+          Answers: ["A", "E"],
+          Analysis: null,
+          Title: null,
+          Input: null,
+          Output: null,
+          Example: null,
+          Repo: null,
+          Creator: null,
+          CreateTime: null,
+          UpdatedBy: null,
+          UpdateTime: null,
+          Status: "00",
+          Order: 2,
+          GroupID: 323,
+          AnswerNum: 0,
+          StudentAnswer: { answer: ["A", "E"] },
+          StudentScore: 3
+        }
+      ]],
+      ["324", [
+        {
+          ID: 4164,
+          Score: 5,
+          Type: "04",
+          Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">软件测试可以发现软件中的所有错误，并且证明软件没有错误()</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span></p>",
+          Options: [
+            { label: "A", value: "对" },
+            { label: "B", value: "错" }
+          ],
+          Answers: ["A"],
+          Analysis: null,
+          Title: null,
+          Input: null,
+          Output: null,
+          Example: null,
+          Repo: null,
+          Creator: null,
+          CreateTime: null,
+          UpdatedBy: null,
+          UpdateTime: null,
+          Status: "04",
+          Order: 1,
+          GroupID: 324,
+          AnswerNum: 0,
+          StudentAnswer: { answer: ["B"] },
+          StudentScore: 0
+        },
+        {
+          ID: 4165,
+          Score: 5,
+          Type: "04",
+          Content: "<p><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span><span style=\"font-family: 宋体; font-size: 10.5pt\">技术评审是以提高软件质量为目的的技术活动</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;()</span></p>",
+          Options: [
+            { label: "A", value: "对" },
+            { label: "B", value: "错" }
+          ],
+          Answers: ["A"],
+          Analysis: null,
+          Title: null,
+          Input: null,
+          Output: null,
+          Example: null,
+          Repo: null,
+          Creator: null,
+          CreateTime: null,
+          UpdatedBy: null,
+          UpdateTime: null,
+          Status: "00",
+          Order: 2,
+          GroupID: 324,
+          AnswerNum: 0,
+          StudentAnswer: { answer: ["A"] },
+          StudentScore: 5
+        }
+      ]]
+    ]);
+
+    examSessionInfo = {
+      ExamTime: 120,
+      ExamineeID: 33,
+      ID: 73,
+      PaperID: 83,
+      SessionNum: 79
+    };
+
+    examSessionInfoLenght = exam_session_id_arr.length;
+    total_score = 0; // 重置总分
+    resetQuestionGroup();
+    computePaperTotalScoce();
+    showScore();
+    currentQuestion = exam_paper[currentQuestionIndex]; // 初始化当前题目
+
+    console.log("加载成功，当前试卷信息：", total_score);
+    load_success = true;
+  });
+
 </script>
 
 <svelte:head>
@@ -400,61 +644,28 @@
   />
 </svelte:head>
 <ScoreBadge
-  score={examInfo.studentScore}
+  score={examInfo.StudentScore}
   x={badgeX}
   y={badgeY}
   rotation={10}
-  visible={showBadge}
   duration={0}
+  visible={showBadge}
   onHide={onBadgeHide}
 />
-<!-- 错误处理 -->
-<Dialog
-  bind:isOpen={invalid}
-  title="请问是否要提交考试？"
-  content="提交后将无法重新进入考试"
-  onConfirm={locationBack}
-  confirmTextBackgroundColor="#266fe8"
-/>
 
-<ActionToast
-  bind:isShow={action_toast_props.is_show}
-  type={action_toast_props.type}
-  message={action_toast_props.message}
-  duration={action_toast_props.duration}
-  iconSrc={action_toast_props.icon_src}
-/>
-
-<!-- 整体框架 -->
+{#if load_success}
+  <!-- 整体框架 -->
 <div class="exam-container">
   <!-- 考试信息栏 -->
   <div class="exam-header">
     <!-- 考试顶栏的左操作键 -->
     <div class="exam-header-left">
       <button class="back-btn" onclick={goBack}>
-      &lt; 返回
+        <span class="icon"> ← </span>
+        <span> 返回 </span>
       </button>
     </div>
-    <div class="exam-title">{examInfo.paperName}</div>
-    {#if examSessionInfoLenght >= 2}
-    <div class="exam-header-right">
-      <button
-        class="submit-btn"
-        class:disabled={nowSessionIndex == 0}
-        onclick={async () => {
-          ShowOtherSessionDetails(-1);
-        }}> &lt;&lt;上一张</button
-      >
-      <button
-        class="submit-btn"
-        class:disabled={nowSessionIndex == examSessionInfoLenght - 1}
-        onclick={async () => {
-          ShowOtherSessionDetails(1);
-        }}> 下一张&gt;&gt;
-        </button
-      >
-    </div>
-    {/if}
+    <div class="exam-title">{examInfo.Name}</div>
   </div>
   <!-- 考试主体布局 -->
   <div class="exam-content">
@@ -470,25 +681,15 @@
       <div class="box exam-info">
         <div class="exma-info-tip">作答详情</div>
         <div class="exam-into-deatil">
-          <img
-            class="icon"
-            src="/student_exam_practice/paper.png"
-            alt="试卷张数"
-          />
-          <label for="试卷">试卷：</label>
-          <label for="具体数值" class="blodFont">{nowSessionIndex + 1}</label>
-          <label for="具体数值">/{examSessionInfoLenght}</label>
-        </div>
-        <div class="exam-into-deatil">
           <img class="icon" src="/student_exam_practice/score.png" alt="得分" />
           <label for="得分">得分：</label>
           <label for="具体数值"
             ><span
-              style:color={examInfo.studentScore >= total_score * 0.6
+              style:color={examInfo.StudentScore >= examInfo.TotalScore * 0.6
                 ? "#4CAF50" // 高分显示绿色
                 : "#F44336"}
               style:font-weight={"bolder"}
-              style:margin-right={"5px"}>{examInfo.studentScore}分</span
+              style:margin-right={"5px"}>{examInfo.StudentScore}分</span
             ></label
           >
           <label for="具体数值"> /{total_score}分</label>
@@ -501,9 +702,19 @@
           />
           <label for="答题用时">答题用时：</label>
           <label for="具体数值" class="blodFont"
-            >{examInfo.answerTime}分钟</label
+            >{examInfo.AnswerTime}分钟</label
           >
-          <label for="具体数值"> /{examSessionInfo[nowSessionIndex].ExamTime}分钟</label>
+        </div>
+        <div class="exam-into-deatil">
+          <img
+            class="icon"
+            src="/student_exam_practice/time.png"
+            alt="建议答题用时"
+          />
+          <label for="答题用时">建议答题用时：</label>
+          <label for="具体数值" class="blodFont"
+            >{examInfo.SuggestTime}分钟</label
+          >
         </div>
         <div class="exam-into-deatil">
           <img
@@ -512,8 +723,8 @@
             alt="答题数量"
           />
           <label for="答题数量">答题数量：</label>
-          <label for="具体数值" class="blodFont">{examInfo.answerNum}题</label>
-          <label for="具体数值"> /{examInfo.questionNum}题</label>
+          <label for="具体数值" class="blodFont">{examInfo.AnswerNum}题</label>
+          <label for="具体数值"> /{examInfo.QuestionNum}题</label>
         </div>
       </div>
       <!-- 考试作答形式选择区域 -->
@@ -522,40 +733,6 @@
         <div class="answer-mode">逐题模式</div>
         <BulmaSwitch bind:is_full_examMode></BulmaSwitch>
         <div class="answer-mode">全卷模式</div>
-      </div>
-      <div class="box rank">
-        <div class="rank-header">
-          <label for="考试排行榜">考试排行榜</label>
-        </div>
-        <div class="rank-table">
-          <div class="rank-table-header">
-            <div class="rank-col rank-number">排名</div>
-            <div class="rank-col rank-name">姓名</div>
-            <div class="rank-col rank-score">成绩</div>
-          </div>
-          <div class="rank-list">
-            {#each rank as student, i}
-              <div
-                class="rank-item"
-                class:rank-1={student.rank === 1}
-                class:rank-2={student.rank === 2}
-                class:rank-3={student.rank === 3}
-              >
-                <div class="rank-col rank-number">{student.rank}</div>
-                <div class="rank-col rank-name">{student.official_name}</div>
-                <div class="rank-col rank-score">{student.total_score}</div>
-              </div>
-            {/each}
-          </div>
-        </div>
-        <!-- TODO 这里还需要一个包含的容器 -->
-        <div class="rank-footer">
-          <div class="rank-user">
-            <div class="rank-col rank-number-user">{userRank.rank}</div>
-            <div class="rank-col rank-name-user">{userRank.official_name}</div>
-            <div class="rank-col rank-score-user">{userRank.total_score}</div>
-          </div>
-        </div>
       </div>
     </div>
     <div class="collapse-toggle">
@@ -648,11 +825,11 @@
                     <button
                       class="question-btn"
                       onclick={() => goToQuestion(question.index)}
-                      class:question-btn-right={question.question.status ===
+                      class:question-btn-right={question.question.Status ===
                         "00"}
                       class:question-btn-half-right={question.question
-                        .status === "02"}
-                      class:question-btn-wrong={question.question.status ===
+                        .Status === "02"}
+                      class:question-btn-wrong={question.question.Status ===
                         "04"}
                     >
                       {question.index + 1}
@@ -667,6 +844,10 @@
     </div>
   </div>
 </div>
+
+
+{/if}
+
 
 <style lang="scss" scoped>
   :global(*) {
@@ -718,10 +899,8 @@
     background: none;
     border: none;
     color: #666;
-    font-size: 18px;
+    font-size: 14px;
     cursor: pointer;
-    margin-left: 20px;
-   width: 120px;
 
     &:hover {
       color: #266fe8;
@@ -730,21 +909,6 @@
     .icon {
       font-size: 12px;
     }
-  }
-    .submit-btn {
-    color: #0066ff;
-    background: none;
-    border: none;
-    width: 120px;
-    padding: 8px 16px;
-    border-radius: 4px;
-    margin-left: 15px;
-    font-size: 18px;
-    cursor: pointer;
-    font-weight: bold;
-  }
-  .submit-btn.disabled{
-    display: none;
   }
   .exam-title {
     // 居中对齐
@@ -768,12 +932,11 @@
     align-items: center;
     width: fit-content;
     right: 7px;
-
     z-index: 1001; /* 确保在其他元素之上 */
     min-width: 200px; /* 设置最小宽度 */
   }
   .left-info {
-    overflow-y: hidden;
+    overflow-y: auto;
     width: 21.5%;
     max-height: 100%;
     min-width: 300px;
@@ -963,10 +1126,10 @@
     color: #333;
   }
   .rank-score-user {
-    width: 42px;
+    width: 60px;
     justify-content: center;
     font-weight: 600;
-    margin-right: 30px;
+    margin-right: 18px;
     color: rgba(0, 82, 217, 1);
   }
   .rank-list {
@@ -1108,8 +1271,8 @@
     margin-bottom: 10px;
 
     h2 {
-      font-size: 22px;
-      font-weight: 600;
+      font-size: 28px;
+      font-weight: 800;
     }
   }
   .question-footer {
@@ -1245,7 +1408,7 @@
     border-color: #0066ff;
   }
 
-  @media (max-width: 1602px) {
+  @media (max-width: 1600px) {
     .exma-info-tip,
     .preference-info label,
     .preference-info .answer-mode,
@@ -1257,21 +1420,6 @@
     .rank-score,
     .rank-score-user {
       font-size: 12px;
-    }
-    .rank-list{
-      flex: 1;
-      max-height: 300px;
-    }
-  }
-  @media (max-width: 1450px){
-        .rank-list{
-      flex: 1;
-      max-height: 220px;
-    }
-  }
-  @media (max-width:1320px){
-    .left-info{
-      overflow-y: auto;
     }
   }
 </style>

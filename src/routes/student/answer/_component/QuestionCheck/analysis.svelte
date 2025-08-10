@@ -10,18 +10,18 @@
 <div class="analysis-container">
   <div class="analysis-title">答案:</div>
   <div class="answer-content">
-  {#if question.type == "02" || question.type == "04" || question.type == "00"}
+  {#if question.Type == "02" || question.Type == "04" || question.Type == "00"}
   <span>选</span>
-    {#each question.answers as answer, i}
+    {#each question.Answers as answer, i}
       <span>{answer}</span>
     {/each}
   {:else}
-    {#each Array(question.answer_num) as _, index}
+    {#each Array(question.Answer_Num) as _, index}
       <div class="single-answer">
-         {#if question.answer_num > 1}
-            ({index + 1}){@html question.answers[index].answer}
+         {#if question.Answer_Num > 1}
+            ({index + 1}){@html question.Answers[index].answer}
           {:else}
-          {@html question.answers[index].answer}
+          {@html question.Answers[index].answer}
          {/if}
       </div>
     {/each}
@@ -29,8 +29,8 @@
   </div>
   <div class="analysis-title">解析:</div>
   <div class="analysis-content">
-    {#if question.analysis}
-    {@html question.analysis}
+    {#if question.Analysis}
+    {@html question.Analysis}
     {:else}
     {@html defaultAnalysis}
     {/if}

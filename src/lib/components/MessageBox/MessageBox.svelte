@@ -1,3 +1,12 @@
+<!--
+ * @Author: 段春茂 2162105974@qq.com
+ * @Date: 2025-07-24 9:30:00
+ * @LastEditors: 段春茂 2162105974@qq.com
+ * @LastEditTime: 2025-08-10 09:56:07
+ * @FilePath: src\lib\components\MessageBox\MessageBox.svelte
+ * @Description: MessageBox-消息弹窗
+ * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
+-->
 <script>
   /**
    * @component MessageBox
@@ -5,6 +14,7 @@
    *
    * @props
    * @property {Object} options 配置项
+   * @property {boolean} [options.visible=false] 是否显示弹窗
    * @property {string} [options.title="温馨提示"] 弹窗标题
    * @property {string} [options.content=""] 弹窗内容
    * @property {boolean} [options.center=false] 是否居中显示内容
@@ -13,6 +23,8 @@
    * @property {boolean} [options.show_cancel_icon=true] 是否显示右上角取消图标
    * @property {boolean} [options.show_cancel_button=true] 是否显示取消按钮
    * @property {boolean} [options.show_confirm_button=true] 是否显示确认按钮
+   * @property {boolean} [options.on_close_by_click_outside=true] 点击空白区域是否关闭弹窗
+   * @property {'primary' | 'success' | 'danger' | 'warning' | 'info'} [options.type="primary"] 弹窗类型
    * @property {'primary' | 'success' | 'danger' | 'warning' | 'info'} [options.cancel_button_type="info"] 取消按钮类型
    * @property {'primary' | 'success' | 'danger' | 'warning' | 'info'} [options.confirm_button_type="primary"] 确认按钮类型
    * @property {Function} [options.onCancel] 点击取消的回调函数
@@ -28,27 +40,50 @@
     cancel_text = 'cancel',
     confirm_text = 'confirm',
     center = false,
+    type = 'primary',
     show_cancel_button = true,
     show_confirm_button = true,
+    on_close_by_click_outside = true,
     confirm_button_type = 'primary',
     cancel_button_type = 'info',
     onCancel = () => {},
     onConfirm = () => {},
   } = $props();
 
-  /** 取消按钮回调函数 @type {Function} */
+  /**
+   * 图标集合
+   * @type {Object}
+   */
+  const ICON_URL = {
+    primary: '/dialog/tip.svg',
+    success: '/paper/action_success.svg',
+    danger: '/paper/action_fail.svg',
+    warning: '/student_answer_exam/preview-tip.svg',
+    info: '/student_practice_list/tip.svg',
+  };
+
+  /**
+   * 取消按钮回调函数
+   *  @type {Function}
+   */
   async function handlecancel() {
     await onCancel();
     close();
   }
 
-  /** 确认按钮回调函数 @type {Function} */
+  /**
+   * 确认按钮回调函数
+   *  @type {Function}
+   */
   async function handleconfirm() {
     await onConfirm();
     close();
   }
 
-  /*** 关闭弹窗 @type {Function} */
+  /***
+   * 关闭弹窗
+   * @type {Function}
+   */
   function close() {
     visible = false;
   }
@@ -68,7 +103,7 @@
    * @type {Function}
    */
   function handleKeyDownClose(event) {
-    if (event.key === 'Escape') close();
+    if (event.key === 'Escape' && on_close_by_click_outside) close();
   }
 
   /**
@@ -82,9 +117,16 @@
 </script>
 
 {#if visible}
-  <div class="overlay" onclick={close} role="dialog" tabindex="-1" aria-label="关闭弹窗" onkeydown={handleKeyDownClose}>
+  <div
+    class="is-show"
+    onclick={on_close_by_click_outside ? close : null}
+    role="dialog"
+    tabindex="-1"
+    aria-label="关闭弹窗"
+    onkeydown={handleKeyDownClose}
+  >
     <div
-      class="MessageBox {center ? 'center' : ''}"
+      class="MessageBox {center ? 'is-center' : ''}"
       onclick={stopPropagation}
       tabindex="0"
       role="button"
@@ -97,8 +139,8 @@
         </button>
       {/if}
       <div class="content">
-        <div class="title {center ? 'center' : ''}">
-          <img class="title-icon" src="/dialog/tip.svg" alt="" />
+        <div class="title {center ? 'is-center' : ''}">
+          <img class="title-icon" src={ICON_URL[type]} alt="icon" />
           {title}
         </div>
         <div class="text">
@@ -118,7 +160,7 @@
 {/if}
 
 <style lang="scss" scoped>
-  .overlay {
+  .is-show {
     position: fixed;
     top: 0;
     left: 0;
@@ -137,7 +179,7 @@
       max-width: 600px;
       position: relative;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      &.center {
+      &.is-center {
         display: flex;
         justify-content: center;
         text-align: center;
@@ -161,7 +203,7 @@
           margin-bottom: 13px;
           display: flex;
           align-items: center;
-          &.center {
+          &.is-center {
             justify-content: center;
           }
           .title-icon {
