@@ -251,7 +251,7 @@
     }
 
     let queryIndex = nowSessionIndex + index;
-  /*  fetch(`/api/grade?category=exam&examSessionID=${exam_session_id_arr[queryIndex]}`, {
+    fetch(`/api/grade?category=exam&examSessionID=${exam_session_id_arr[queryIndex]}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -275,20 +275,21 @@
           throw new Error(data.msg);
         }
 
-        // 赋值到变量 使用sget安全获取
-        
-        userID = sget(data, "data.student_id", ""); //学生ID
-        rank = sget(data, "data.rank", []); //排名信息
-        examInfo = sget(data, "data.exam_info", {});  //考试信息
-        examSessionInfo = sget(data, "data.exam_session_info", {}); //该场次的具体信息
-        //题目
-        exam_questions_map = new Map(Object.entries(sget(data, "data.exam_question", {})));
-        question_groups_map = new Map(Object.entries(sget(data, "data.exam_paper_group", {})));
-      
+        //学生信息类
+        if (!data?.data?.student_id) throw new Error('student_id 不能为空'); // 学生ID
+          userID = data.data.student_id;
+        if (!data.data.rank || !Array.isArray(data.data.rank) || data.data.rank.length === 0) throw new Error('rank 不能为空');
+          rank = data.data.rank; // 排名信息
+        if (!data.data.exam_info) throw new Error('exam_info 不能为空'); // 考试信息
+          examInfo = data.data.exam_info;
+        if (!data.data.exam_session_info) throw new Error('exam_session_info 不能为空'); // 该场次的具体信息
+          examSessionInfo = data.data.exam_session_info;
+        //题目信息类
+        if (!data.data.exam_question || Object.keys(data.data.exam_question).length === 0) throw new Error('exam_question 不能为空');
+          exam_questions_map = new Map(Object.entries(data.data.exam_question));
+        if (!data.data.exam_paper_group || Object.keys(data.data.exam_paper_group).length === 0) throw new Error('exam_paper_group 不能为空');
+          question_groups_map = new Map(Object.entries(data.data.exam_paper_group));
 
-        load_success = true;
-
-   //     is_full_examMode = false;
 
         //加载题目
         total_score = 0; // 重置总分
@@ -297,7 +298,8 @@
         getStudentRankInfo();
         nowSessionIndex = queryIndex;
         showScore();
-        toast.success("切换成功", 2000);
+        load_success = true;
+     //   toast.success("切换成功", 2000);
 
       })
       .catch(error => {
@@ -317,9 +319,9 @@
         }
 
         return;
-      });*/
+      });
 
-    userID = 1675;
+  /* userID = 1675;
 
 rank = [
   {
@@ -574,7 +576,7 @@ examSessionInfo = {
     getStudentRankInfo();
     nowSessionIndex = queryIndex;
     showScore();
-    toast.success("切换成功", 2000);
+    toast.success("切换成功", 2000);*/
   }
   function nextQuestion() {  // 切换到下一题
     if (currentQuestionIndex < exam_paper.length - 1) {
@@ -636,8 +638,8 @@ examSessionInfo = {
       toast.error(`未提供考试场次ID`, 2000);
       return;
     }
-
-/*    fetch(`/api/grade?category=exam&examSessionID=${exam_session_id_arr[0]}`, {
+ //   console.log("考试场次ID数组:", exam_session_id_arr);
+    fetch(`/api/grade?category=exam&examSessionID=${exam_session_id_arr[0]}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -660,16 +662,21 @@ examSessionInfo = {
           toast.error(`接口错误: ${data.msg}`, 2000);
           throw new Error(data.msg);
         }
-
-        // 赋值到变量 使用sget安全获取
         
-        userID = sget(data, "data.student_id", ""); //学生ID
-        rank = sget(data, "data.rank", []); //排名信息
-        examInfo = sget(data, "data.exam_info", {});  //考试信息
-        examSessionInfo = sget(data, "data.exam_session_info", {}); //该场次的具体信息
-        //题目
-        exam_questions_map = new Map(Object.entries(sget(data, "data.exam_question", {})));
-        question_groups_map = new Map(Object.entries(sget(data, "data.exam_paper_group", {})));
+         //学生信息类
+        if (!data?.data?.student_id) throw new Error('student_id 不能为空'); // 学生ID
+          userID = data.data.student_id;
+        if (!data.data.rank || !Array.isArray(data.data.rank) || data.data.rank.length === 0) throw new Error('rank 不能为空');
+          rank = data.data.rank; // 排名信息
+        if (!data.data.exam_info) throw new Error('exam_info 不能为空'); // 考试信息
+          examInfo = data.data.exam_info;
+        if (!data.data.exam_session_info) throw new Error('exam_session_info 不能为空'); // 该场次的具体信息
+          examSessionInfo = data.data.exam_session_info;
+        //题目信息类
+        if (!data.data.exam_question || Object.keys(data.data.exam_question).length === 0) throw new Error('exam_question 不能为空');
+          exam_questions_map = new Map(Object.entries(data.data.exam_question));
+        if (!data.data.exam_paper_group || Object.keys(data.data.exam_paper_group).length === 0) throw new Error('exam_paper_group 不能为空');
+          question_groups_map = new Map(Object.entries(data.data.exam_paper_group));
 
         //加载题目
         examSessionInfoLenght = exam_session_id_arr.length;
@@ -699,9 +706,9 @@ examSessionInfo = {
         }
 
         return;
-      });*/
+      });
 
-      userID = 1675;
+  /*    userID = 1675;
 
     rank = [
       {
@@ -967,7 +974,7 @@ examSessionInfo = {
     getStudentRankInfo();
     showScore();
     currentQuestion = exam_paper[currentQuestionIndex]; // 初始化当前题目
-     load_success = true;
+    load_success = true;*/
   });
 
 </script>
