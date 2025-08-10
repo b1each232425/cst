@@ -205,7 +205,7 @@
       .then(() => {
         const params = {
           q: JSON.stringify({
-            data: { ID: parseInt(examID), Status: '02' },
+            data: { ID: [parseInt(examID)], Status: '02' },
           }),
         };
 
