@@ -5,6 +5,11 @@ export const authMetadata = writable([]);
 export const permittedModulesKeyInCache = 'permittedModules';
 
 export const baseNavItems = writable([
+  {
+    name: 'login',
+    title: '登录',
+    path: '/login',
+  },
   // {
   //   name: 'courseManagement',
   //   title: '课程管理',
@@ -48,6 +53,13 @@ export const baseNavItems = writable([
     title: '试卷管理',
     path: '/teacher/paper',
     icon: '/sidebar/nav_icon/paper.svg',
+    children: [
+      {
+        name: 'manual',
+        title: '自定义组卷',
+        path: '/teacher/paper/manual',
+      },
+    ],
   },
   {
     name: 'practiceManagement',
@@ -104,12 +116,12 @@ export const baseNavItems = writable([
     isFilter: true,
     children: [
       {
-        name: 'markManagement',
+        name: 'exam-correct',
         title: '考试批改',
         path: '/teacher/correct/exam-correct',
       },
       {
-        name: 'markingResult',
+        name: 'practice-correct',
         title: '练习批改',
         path: '/teacher/correct/practice-correct',
       },

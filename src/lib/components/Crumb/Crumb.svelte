@@ -57,13 +57,9 @@
    * 获取当前路由路径数据（保持完整层级结构）
    */
   function getNavData(path, nav_map) {
-    // 添加对登录页的特殊处理
-    if (path === '/login') {
-      return [{ title: '登录', path: '/login' }];
-    }
-
-    if (path === '/teacher/paper/manual') {
-      return [{ title: '自定义组卷', path: '/teacher/paper/manual' }];
+    // 添加对批改详情页的特殊处理
+    if (path === '/teacher/correct/correct') {
+      return [{ title: '批改详情', path: '/teacher/correct/correct' }];
     }
 
     let result = [];
