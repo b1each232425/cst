@@ -15,7 +15,7 @@
     import Option from "$lib/components/Select/Option.svelte";
     import Toast from "$lib/components/Toast/Toast.svelte";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
-    import QuestionPreview from "../_components/PreviewQuestion/PreviewQuestion.svelte"
+    import QuestionPreviewPanel from "../../question-bank/_components/QuestionPreviewPanel.svelte";
     import { goto } from "$app/navigation";
     import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../_utils/tool";
     import { onMount, tick } from "svelte";
@@ -23,7 +23,6 @@
     import { debounce } from "$lib/utils/optimize";
     import { get } from "svelte/store";
     import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, GROUP_AVERAGE_SCORE } from "../_stores/store";
-    import MyPreviewQuestion from "../_components/MyPreviewQuestion/MyPreviewQuestion.svelte";
     import { stopPropagation } from "svelte/legacy";
 
     /******************* API 区 ********************/
@@ -1153,9 +1152,8 @@
     
                                                     <!-- 题目内容 -->
                                                     {#if $QUESTION_OPEN_STATE[question.id]}
-                                                        <div class="question-container">
-                                                            <QuestionPreview {question}/>  
-                                                            <!-- <MyPreviewQuestion question={question}/>                                           -->
+                                                        <div class="question-container">                                          
+                                                            <QuestionPreviewPanel question={question} showHeader={false}/>
                                                         </div>
                                                     {/if}
                                                 </div>
@@ -1874,40 +1872,7 @@
     
                                 /* 题目内容 */
                                 .question-container {
-                                    /* padding: 20px; */
-    
-                                    .prompt {
-                                        font-size: 14px;
-                                        color: #619cf5;
-                                        margin-right: 10px;
-                                    }
-    
-                                    /* 问题 */
-                                    .question-box {
-                                        padding: 12px 8px;
-                                        margin-bottom: 10px;
-                                    }
-    
-                                    /* 答案 */
-                                    .answer-box {
-                                        display: flex;
-                                        padding: 12px 0;
-                                        background:linear-gradient(to right, #ddd 0%, #ddd 8px, transparent 8px, transparent 15px) repeat-x bottom;
-                                        background-size: 15px 2px;
-                                        align-items: center;
-    
-                                        .sequence {
-                                            color: #619cf5;
-                                            font-size: 14px;
-                                            margin-right: 10px;
-                                        }
-                                    }
-    
-                                    /* 解析 */
-                                    .analysis-box {
-                                        display: flex;
-                                        padding: 12px 0;
-                                    }
+                                    padding-bottom: 10px;
                                 }
                             }
                         }
