@@ -8,7 +8,7 @@
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
 -->
 <script>
-    import Button from "$lib/components/Button/Button.svelte";
+    import "$lib/components/Button/index.scss"
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import Empty from "$lib/components/Table/Empty.svelte";
@@ -64,7 +64,7 @@
         name = "",
         tags = "",
         type = "",
-        diffculty = ""
+        difficulty = ""
     ){
         const PARAMS = new URLSearchParams();
 
@@ -74,7 +74,7 @@
         if (name) PARAMS.append("name", name);
         if (tags) PARAMS.append("tags", tags);
         if (type) PARAMS.append("type", type);
-        if (diffculty) PARAMS.append("diffculty", diffculty);
+        if (difficulty) PARAMS.append("difficulty", difficulty);
 
         return fetch(`/api/questions?${PARAMS.toString()}`, {
             method: "GET",
@@ -114,7 +114,7 @@
     
     /******************* 开关控制区 *******************/
 
-    console.log(to_import_group)
+
 
     /********************* 信息区 *********************/
 
@@ -144,6 +144,9 @@
     function toggleBank(id) {
         to_add_bankID = to_add_bankID === id ? "" : id;
 
+        // 每次切换或取消选中题库的时候先重置搜索参数
+        clearFilterSearch();
+
         // 搜索题库内的题目
         if(to_add_bankID !== "") {
             fetchBankQuestionList(
@@ -158,7 +161,17 @@
                 question_list = result.data || [];
                 total_questions = result.rowCount;
             });
-        } else { question_list = []; }
+
+            fetchBankQuestionList(to_add_bankID,1,100,"","","","")
+                .then(result => {
+                    const TEMP_QUESTION_LIST = result.data || [];
+                    tag_list = [...new Set(TEMP_QUESTION_LIST.flatMap(question=>question.Tags ? question.Tags : []).filter(Boolean))];
+                });
+
+        } else {
+            question_list = [];
+            tag_list = [];
+        }
     }
 
     /******************** 题库列表 ********************/
@@ -167,17 +180,52 @@
 
     /******************** 题目列表 ********************/
 
-    let question_page = $state(1);
-    let question_page_size = $state(10);
-    let question_name = $state("");
-    let question_tags = $state("");
-    let question_type = $state("");
-    let question_difficulty = $state("");
-    let total_questions = $state(0);
-    let question_list = $state([]);
+    let question_page = $state(1);              // 页码
+    let question_page_size = $state(10);        // 页面大小
+    let question_name = $state("");             // 搜索题目
+    let question_tags = $state("");             // 筛选标签
+    let question_type = $state("");             // 筛选题型
+    let question_difficulty = $state("");       // 筛选难度
+    let total_questions = $state(0);            // 题目数量
+    let question_list = $state([]);             // 题目列表
+    let tag_list = $state([]);                  // 标签列表
+    let selected_tags = $state([]);             // 选中的标签
 
-    let selected_question_infos = $state([]);      // 已选 ID 数组
-    let all_question_selected = $state(false);    // 是否为全选状态
+    let selected_question_infos = $state([]);   // 已选 ID 数组
+    let all_question_selected = $state(false);  // 是否为全选状态
+
+    // 防抖搜索题目列表
+    const debouncedFetchBankQuestionList = debounce(() => {
+        // 搜索题库内的题目
+        if(to_add_bankID !== "") {
+            fetchBankQuestionList(
+                to_add_bankID,
+                question_page,
+                question_page_size,
+                question_name,
+                question_tags,
+                question_type,
+                question_difficulty
+            ).then( result => {
+                question_list = result.data || [];
+                total_questions = result.rowCount;
+            });
+        } else {
+            question_list = [];
+            tag_list = [];
+        }
+    }, 500, false);
+
+    // 清除筛选
+    function clearFilterSearch() {
+        question_page = 1;
+        question_page_size = 10;
+        question_name = "";
+        question_tags = "";
+        question_type = "";
+        question_difficulty = "";
+        selected_tags = [];
+    }
 
     // 选中数据
     function toggleSelection(id, checked) {
@@ -290,6 +338,83 @@
         } else { question_list = []; }
     }
 
+    // 筛选题目类型
+    function selectQuestionType(type) {
+        if (type !== question_type) {
+            question_type = type;
+        } else {
+            question_type = "";
+        }
+
+        // 搜索题库内的题目
+        if(to_add_bankID !== "") {
+            fetchBankQuestionList(
+                to_add_bankID,
+                question_page,
+                question_page_size,
+                question_name,
+                question_tags,
+                question_type,
+                question_difficulty
+            ).then( result => {
+                question_list = result.data || [];
+                total_questions = result.rowCount;
+            });
+        } else { question_list = []; }
+    }
+
+    // 筛选题目难度
+    function selectQuestionDifficulty(diffculty) {
+        if (diffculty !== question_difficulty) {
+            question_difficulty = diffculty;
+        } else {
+            question_difficulty = "";
+        }
+
+        // 搜索题库内的题目
+        if(to_add_bankID !== "") {
+            fetchBankQuestionList(
+                to_add_bankID,
+                question_page,
+                question_page_size,
+                question_name,
+                question_tags,
+                question_type,
+                question_difficulty
+            ).then( result => {
+                question_list = result.data || [];
+                total_questions = result.rowCount;
+            });
+        } else { question_list = []; }
+    }
+
+    // 筛选题目标签
+    function selectQuestionTags(target_tag) {
+        if (selected_tags.includes(target_tag)) {
+            selected_tags = selected_tags.filter(tag => tag!== target_tag);
+        } else {
+            selected_tags.push(target_tag);
+        }
+
+        question_tags = String(selected_tags);
+
+        // 搜索题库内的题目
+        if(to_add_bankID !== "") {
+            fetchBankQuestionList(
+                to_add_bankID,
+                question_page,
+                question_page_size,
+                question_name,
+                question_tags,
+                question_type,
+                question_difficulty
+            ).then( result => {
+                question_list = result.data || [];
+                total_questions = result.rowCount;
+            });
+        } else { question_list = []; }
+    }
+
     /******************** 题目列表 ********************/
 
     // 挂载区
@@ -330,7 +455,19 @@
 
                 <!-- 搜索 -->
                 <div class="search-box">
-                    <InputBox onInput={()=>debouncedFetchQuestionBankList()} bind:value={bank_key_word} placeholder="搜索题库" show_label={false}/>
+                    <div class="input">
+                        <input type="text"
+                            oninput={()=>debouncedFetchQuestionBankList()}
+                            onchange={()=>debouncedFetchQuestionBankList()}
+                            bind:value={bank_key_word}
+                            placeholder="搜索题库"
+                        >
+                        <!-- svelte-ignore a11y_consider_explicit_label -->
+                        <button data-name="clear"
+                            class={bank_key_word===""?"hide-clear":""}
+                            onclick={()=>{bank_key_word=""}}
+                        ></button>
+                    </div>
                 </div>
 
                 <!-- 题库列表 -->
@@ -354,58 +491,72 @@
             <!-- 右侧区域 -->
             <div class="body-right">
                 <!-- 上半区 -->
-                <!-- <div class="top-area">
-                    <div class="input-box">
-                        <InputBox placeholder="搜索题目内容" showLabel={false}/>
-                    </div> -->
+                <div class="top-area">
+                    <div class="input">
+                        <input type="text"
+                            placeholder="搜索题目内容（暂不可用）" 
+                            bind:value={question_name}
+                            oninput={()=>debouncedFetchBankQuestionList()}
+                            onchange={()=>debouncedFetchBankQuestionList()}
+                            disabled
+                        >
+                        <!-- svelte-ignore a11y_consider_explicit_label -->
+                        <button data-name="clear"
+                            class={question_name===""?"hide-clear":""}
+                            onclick={()=>{question_name=""}}
+                        ></button>
+                    </div>
 
                     <!-- 下拉筛选栏 -->
                     <!-- svelte-ignore a11y_click_events_have_key_events -->
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
-                    <!-- <div class="filter-header" onmouseenter={()=>{filterIsOpen=true}} onmouseleave={()=>{filterIsOpen=false}}> -->
+                    <div class="filter-header" onmouseenter={()=>{filter_is_open=true}} onmouseleave={()=>{filter_is_open=false}}>
                         <!-- 筛选菜单 -->
-                        <!-- {#if filterIsOpen}
-                            <div class="filter-container"  onmouseenter={()=>{filterIsOpen=true}} onmouseleave={()=>{filterIsOpen=false}}> -->
+                        {#if filter_is_open}
+                            <div class="filter-container"  onmouseenter={()=>{filter_is_open=true}} onmouseleave={()=>{filter_is_open=false}}>
                                 <!-- 题型 -->
-                                <!-- <div class="type">
+                                <div class="type">
                                     <span class="prompt">题型：</span>
-                                    <button>单选题</button>
-                                    <button>多选题</button>
-                                    <button>判断题</button>
-                                    <button>填空题</button>
-                                    <button>简答题</button>
-                                    <button>编程题</button>
-                                </div> -->
+                                    <button onclick={()=>selectQuestionType("00")} class={question_type==="00"?"selected":""}>单选题</button>
+                                    <button onclick={()=>selectQuestionType("02")} class={question_type==="02"?"selected":""}>多选题</button>
+                                    <button onclick={()=>selectQuestionType("04")} class={question_type==="04"?"selected":""}>判断题</button>
+                                    <button onclick={()=>selectQuestionType("06")} class={question_type==="06"?"selected":""}>填空题</button>
+                                    <button onclick={()=>selectQuestionType("08")} class={question_type==="08"?"selected":""}>简答题</button>
+                                </div>
 
                                 <!-- 难度 -->
-                                <!-- <div class="level">
+                                <div class="level">
                                     <span class="prompt">难度：</span>
-                                    <button>简单</button>
-                                    <button>中等</button>
-                                    <button>困难</button>
-                                </div> -->
+                                    <button onclick={()=>{selectQuestionDifficulty("00")}} class={question_difficulty==="00"?"selected":""}>简单</button>
+                                    <button onclick={()=>{selectQuestionDifficulty("02")}} class={question_difficulty==="02"?"selected":""}>中等</button>
+                                    <button onclick={()=>{selectQuestionDifficulty("04")}} class={question_difficulty==="04"?"selected":""}>困难</button>
+                                </div>
 
                                 <!-- 标签 -->
-                                <!-- <div class="question-tags">
+                                <div class="question-tags">
                                     <span class="level-prompt">标签：</span>
                                     <div class="tags-box">
-                                        <button>测试</button>
-                                        <button>常识</button>
+                                        {#if tag_list.length !== 0}
+                                            {#each tag_list as tag}
+                                                <button class={selected_tags.includes(tag)?"selected":""}
+                                                    onclick={()=>selectQuestionTags(tag)}>{tag}</button>
+                                            {/each}
+                                        {/if}
                                     </div>
-                                </div> -->
+                                </div>
 
                                 <!-- 清空条件 -->
-                                <!-- <div class="clear-condition">
+                                <div class="clear-condition">
                                     <button>清空条件</button>
                                 </div>
                             </div>
                         {/if}
                         <span class="filter-prompt">筛选</span>
-                        <button class="dropdown-btn">{filterIsOpen?"∨":"∧"}</button>
+                        <button class="dropdown-btn">{filter_is_open?"∨":"∧"}</button>
                     </div>
 
                     
-                </div> -->
+                </div>
 
                 <!-- 下半区 -->
                 <div class="bottom-area">
@@ -488,7 +639,7 @@
 
         <!-- 底部 -->
         <div class="container-footer">
-            <!-- <span class="selected-span">已选择 <span>2</span> 道题目</span> -->
+            <span class="selected-span">已选择 <span>{selected_question_infos.length}</span> 道题目</span>
             <span class="import-span">导入到题组：</span>
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div class="dropup-toggle" onmouseenter={()=>{drop_up_toggle_is_open=true}} onmouseleave={()=>{drop_up_toggle_is_open=false}}>
@@ -512,11 +663,11 @@
                 <button class="toggle-btn">∨</button>
             </div>
             <div class="btn-box">
-                <Button onclick={onclose} plain={true}>取消</Button>
+                <button onclick={onclose} class="btn btn--primary is-plain">取消</button>
                 {#if to_add_bankID!=="" && to_import_group.id!==0 && selected_question_infos.length!==0}
-                    <Button onclick={()=>confirmImport()}>确认导入</Button>
+                    <button onclick={()=>confirmImport()} class="btn btn--primary">确认导入</button>
                 {:else}
-                    <Button disabled={true}>确认导入</Button>
+                    <button class="btn btn--primary is-disabled">确认导入</button>
                 {/if}
             </div>
         </div>
@@ -618,17 +769,10 @@
                         gap: 8px;
                         border-bottom: 1px solid var(--border-light);
 
-                        .selected-banks-box {
-                            display: flex;
-                            justify-content: right;
+                        .input {
 
-                            .selected-banks {
-                                font-size: 14px;
-                                
-                                span {
-                                    color: #1890ff;
-                                    font-weight: bold;
-                                }
+                            .hide-clear {
+                                visibility: hidden;
                             }
                         }
                     }
@@ -694,8 +838,22 @@
                     .top-area {
                         padding: 12px 16px;
                         border-bottom: 1px solid var(--border-light);
+                        
+                        .input {
+                            width: 100%;
 
-                        .input-box{ background-color: rgb(249, 249, 249); }
+                            input {
+                                padding: 8px 12px;
+                                
+                                &:hover{
+                                    cursor: not-allowed;
+                                }
+                            }
+
+                            .hide-clear {
+                                visibility: hidden;
+                            }
+                        }
 
                         /* 下拉筛选栏 */
                         .filter-header {
@@ -746,7 +904,7 @@
                                 z-index: 1000;
                                 width: 100%;
                                 top: 100%;
-                                margin-top: 2px;
+                                margin-top: 1.5px;
                                 padding: 16px 0;
                                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                                 cursor: default;
@@ -764,6 +922,12 @@
                                     &:hover {
                                         border-color: #40a9ff;
                                         transition: all 0.3;
+                                    }
+
+                                    &.selected {
+                                        color: #1890ff;
+                                        background-color: #e6f7ff;
+                                        border-color: #91d5ff;
                                     }
                                 }
 
@@ -819,7 +983,7 @@
                         .questions-table-container {
                             padding: 0 16px;
                             flex-grow: 1;
-                            max-height: calc(90vh - 220px);
+                            max-height: calc(90vh - 320px);
                             overflow: auto;
                             display: flex;
                             flex-direction: column;
