@@ -22,7 +22,7 @@
   let selectedPermissions = $state([]);
   let showPermColumn = $derived(selectedRoles.includes(1));
 
-  let hasError = false;
+  let hasError = $state(false);
   let formErrors = $state({
     name: '',
     gender: '',
