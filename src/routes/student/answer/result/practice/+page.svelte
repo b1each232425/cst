@@ -197,6 +197,7 @@
     });
     return groups;
   }
+
   function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组 用来生成题目
     const result = [];
     const sortedGroups = Array.from(question_groups_map.values()).sort((a, b) => a.order - b.order); //升序排序数组
@@ -232,13 +233,13 @@
       total_score += question.Score;
     });
   }
-  function getStudentRankInfo() { // 获取当前学生的排名信息
+/*  function getStudentRankInfo() { // 获取当前学生的排名信息
     rank.forEach((rank) => {
       if (rank.student_id === userID) {
         userRank = rank;
       }
     });
-  }
+  }*/
 
   //按钮控制类
   function nextQuestion() {  // 切换到下一题
@@ -300,7 +301,7 @@
       return;
     }
 
-/*    fetch(`/api/grade?category=exam&examSessionID=${exam_session_id_arr[0]}`, {
+   fetch(`/api/grade?category=practice&practiceID=${practice_id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -324,22 +325,27 @@
           throw new Error(data.msg);
         }
 
-        // 赋值到变量 使用sget安全获取
-        
-        userID = sget(data, "data.student_id", ""); //学生ID
-        rank = sget(data, "data.rank", []); //排名信息
-        examInfo = sget(data, "data.exam_info", {});  //考试信息
-        examSessionInfo = sget(data, "data.exam_session_info", {}); //该场次的具体信息
-        //题目
-        exam_questions_map = new Map(Object.entries(sget(data, "data.exam_question", {})));
-        question_groups_map = new Map(Object.entries(sget(data, "data.exam_paper_group", {})));
+        //学生信息类
+      //  if (!data?.data?.student_id) throw new Error('student_id 不能为空'); // 学生ID
+      //    userID = data.data.student_id;
+      //  if (!data.data.rank || !Array.isArray(data.data.rank) || data.data.rank.length === 0) throw new Error('rank 不能为空');
+      //    rank = data.data.rank; // 排名信息
+        if (!data.data.exam_info) throw new Error('exam_info 不能为空'); // 考试信息
+          examInfo = data.data.exam_info;
+    //    if (!data.data.exam_session_info) throw new Error('exam_session_info 不能为空'); // 该场次的具体信息
+     //     examSessionInfo = data.data.exam_session_info;
+        //题目信息类
+        if (!data.data.exam_question || Object.keys(data.data.exam_question).length === 0) throw new Error('exam_question 不能为空');
+          exam_questions_map = new Map(Object.entries(data.data.exam_question));
+        if (!data.data.exam_paper_group || Object.keys(data.data.exam_paper_group).length === 0) throw new Error('exam_paper_group 不能为空');
+          question_groups_map = new Map(Object.entries(data.data.exam_paper_group));
 
         //加载题目
-        examSessionInfoLenght = exam_session_id_arr.length;
+      //  examSessionInfoLenght = exam_session_id_arr.length;
         total_score = 0; // 重置总分
         resetQuestionGroup(); // 重置题目组
         computePaperTotalScoce(); // 计算试卷总分
-        getStudentRankInfo(); // 获取学生排名信息
+     //   getStudentRankInfo(); // 获取学生排名信息
         showScore();  // 显示分数徽章
         currentQuestion = exam_paper[currentQuestionIndex]; // 初始化当前题目
         load_success = true;
@@ -362,9 +368,9 @@
         }
 
         return;
-      });*/
+      });
 
-      userID = 1675;
+    /*  userID = 1675;
 
     rank = [
       {
@@ -632,7 +638,7 @@
     currentQuestion = exam_paper[currentQuestionIndex]; // 初始化当前题目
 
     console.log("加载成功，当前试卷信息：", total_score);
-    load_success = true;
+    load_success = true;*/
   });
 
 </script>
