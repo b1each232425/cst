@@ -2,6 +2,7 @@
 	import Select from '$lib/components/Select/Select.svelte';
 	import Option from '$lib/components/Select/Option.svelte';
 	import { sget } from '$lib/utils';
+	import { safeDisplayNumber, safeDisplayText } from '../../_utils/dataFormatter.js';
 
 	/**
 	 * @typedef {Object} QuestionGroup
@@ -103,13 +104,13 @@
 	/**
 	 * 获取题目的平均分
 	 * @param {Question} question - 题目对象
-	 * @returns {number|string} 平均分或占位符
+	 * @returns {string} 平均分或占位符
 	 */
 	function getQuestionAverageScore(question) {
 		if (question.type === 'subjective') {
-			return subjectiveScores[question.id] || '--';
+			return safeDisplayNumber(subjectiveScores[question.id], 1);
 		}
-		return question.averageScore || '--';
+		return safeDisplayNumber(question.averageScore, 1);
 	}
 
 	/**
@@ -154,7 +155,10 @@
 		if (resourceId) {
 			// 考试类型默认选择第一个试卷
 			if (type === 'exam' && papers.length > 0 && !selectedPaper) {
-				selectedPaper = papers[0].id;
+				const firstPaper = papers[0];
+				if (firstPaper && firstPaper.id !== undefined) {
+					selectedPaper = firstPaper.id;
+				}
 			}
 			fetchAnalysisData();
 		}
@@ -181,7 +185,9 @@
 						on:change={handlePaperChange}
 					>
 						{#each papers as paper}
-							<Option value={paper.id}>{paper.name}</Option>
+							{#if paper && paper.id !== undefined && paper.name}
+								<Option value={paper.id} label={paper.name}>{paper.name}</Option>
+							{/if}
 						{/each}
 					</Select>
 				</div>
@@ -219,7 +225,7 @@
 								<div class="question-header">
 									<span class="question-number">第{index + 1}题</span>
 									<span class="question-type">{question.type === 'objective' ? '客观题' : '主观题'}</span>
-									<span class="question-score">{question.score}分</span>
+									<span class="question-score">{safeDisplayNumber(question.score)}分</span>
 									<span class="average-score">
 										平均分: {getQuestionAverageScore(question)}
 									</span>

@@ -3,6 +3,7 @@
 	import Pagination from '$lib/components/Pagination/Pagination.svelte';
 	import InputBox from '$lib/components/Input/InputBox.svelte';
 	import { sget } from '$lib/utils';
+	import { goto } from '$app/navigation';
 	import { handleApiError, handleSuccess, handleSelectionError, handleFeatureNotImplemented } from '../_utils/errorHandler.js';
 	import { formatPracticeData } from '../_utils/dataFormatter.js';
 
@@ -214,8 +215,12 @@
 		handleFeatureNotImplemented("批量导出");
 	}
 
-	function handleDetailClick() {
-		handleFeatureNotImplemented("查看详细");
+	/**
+	 * 查看练习详情
+	 * @param {number} practiceId - 练习ID
+	 */
+	function handleDetailClick(practiceId) {
+		goto(`/teacher/grade/practice-grade/detail?id=${practiceId}`);
 	}
 
 	$effect(() => {
@@ -312,7 +317,7 @@
 										<td class="practice-completed">{practice.completed_students ?? '-'}</td>
 										<td class="practice-passed">{practice.passed_students ?? '-'}</td>
 										<td class="practice-operation">
-											<button class="detail-btn" onclick={handleDetailClick}>详情</button>
+											<button class="detail-btn" onclick={() => handleDetailClick(practice.id)}>详情</button>
 										</td>
 									</tr>
 								{/each}

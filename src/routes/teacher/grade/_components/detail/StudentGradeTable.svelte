@@ -2,6 +2,7 @@
 	import Pagination from '$lib/components/Pagination/Pagination.svelte';
 	import InputBox from '$lib/components/Input/InputBox.svelte';
 	import { sget } from '$lib/utils';
+	import { safeDisplayNumber, safeDisplayText } from '../../_utils/dataFormatter.js';
 
 	/**
 	 * @typedef {Object} ScoreItem
@@ -169,15 +170,15 @@
 	 * 获取学生在指定试卷的成绩
 	 * @param {StudentGrade} student - 学生数据
 	 * @param {number} paperId - 试卷ID
-	 * @returns {number|string} 成绩或占位符
+	 * @returns {string} 成绩或占位符
 	 */
 	function getStudentPaperScore(student, paperId) {
 		if (type === 'practice') {
-			return student.score || '--';
+			return safeDisplayNumber(student.score, 1);
 		}
 
 		const scoreItem = student.scores?.find(s => s.exam_session_id === paperId);
-		return scoreItem ? scoreItem.score : '--';
+		return scoreItem ? safeDisplayNumber(scoreItem.score, 1) : '-';
 	}
 
 	/**
@@ -245,7 +246,8 @@
 		{#if !isCollapsed}
 			<div class="search-section">
 				<InputBox
-					placeholder="请输入学生姓名或手机号"
+					label="搜索学生"
+					placeholder="请输入学生电话/昵称/姓名"
 					bind:value={searchKeyword}
 				/>
 			</div>
@@ -274,8 +276,12 @@
 									<td>
 										{#if column.isPaper}
 											{getStudentPaperScore(student, column.paperId)}
+										{:else if column.key === 'total_score' || column.key === 'score'}
+											{safeDisplayNumber(student[column.key], 1)}
+										{:else if column.key === 'phone' || column.key === 'nickname' || column.key === 'name' || column.key === 'remark'}
+											{safeDisplayText(student[column.key])}
 										{:else}
-											{student[column.key] || '--'}
+											{safeDisplayText(student[column.key])}
 										{/if}
 									</td>
 								{/each}

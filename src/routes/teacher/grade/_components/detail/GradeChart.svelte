@@ -161,7 +161,10 @@
 		if (resourceId) {
 			// 考试类型默认选择第一个试卷
 			if (type === 'exam' && papers.length > 0 && !selectedPaper) {
-				selectedPaper = papers[0].id;
+				const firstPaper = papers[0];
+				if (firstPaper && firstPaper.id !== undefined) {
+					selectedPaper = firstPaper.id;
+				}
 			}
 			fetchChartData();
 		}
@@ -196,7 +199,9 @@
 							on:change={handlePaperChange}
 						>
 							{#each papers as paper}
-								<Option value={paper.id}>{paper.name}</Option>
+								{#if paper && paper.id !== undefined && paper.name}
+									<Option value={paper.id} label={paper.name}>{paper.name}</Option>
+								{/if}
 							{/each}
 						</Select>
 					</div>
@@ -210,7 +215,7 @@
 						on:change={handleColumnChange}
 					>
 						{#each columnOptions as option}
-							<Option value={option.value}>{option.label}</Option>
+							<Option value={option.value} label={option.label}>{option.label}</Option>
 						{/each}
 					</Select>
 				</div>
