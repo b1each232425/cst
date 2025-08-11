@@ -183,7 +183,7 @@
 
   // 处理单日期选择事件
   function handleStartDateSelected(event) {
-    console.log('日期选择触发', event.detail.date);
+    // console.log('日期选择触发', event.detail.date);
     const d = event.detail.date;
     filter_create_time = new Date(
       d.getFullYear(),
@@ -193,6 +193,17 @@
       d.getMinutes(),
       d.getSeconds(),
     );
+    current_page = 1;
+    // 筛选条件改变时清除选中状态
+    selected_user_ids.clear();
+    select_all = false;
+    fetchUsers();
+  }
+
+  // 处理日期清空事件
+  function handleDateReset() {
+    // console.log('日期清空触发');
+    filter_create_time = null;
     current_page = 1;
     // 筛选条件改变时清除选中状态
     selected_user_ids.clear();
@@ -372,6 +383,7 @@
                 single_date_selection={true}
                 input_width={'100%'}
                 is_time_selection={true}
+                onDateReset={handleDateReset}
                 on:start_date_selected={handleStartDateSelected}
               />
             </div>
@@ -488,7 +500,7 @@
             <th class="col-role table-head">角色</th>
             <th class="col-creation table-head">创建时间</th>
             <th class="col-current-status table-head">当前状态</th>
-            <th class="col-actions table-head">操作</th> 
+            <th class="col-actions table-head">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -798,20 +810,18 @@
       vertical-align: middle;
     }
 
-    
-
     .tip-wrapper {
       position: absolute;
       left: 70%;
       top: 50%;
       transform: translateY(-40%);
-      
+
       .tip {
         width: 13px;
         height: 13px;
         cursor: pointer;
       }
-      
+
       .tooltip-text {
         visibility: hidden;
         opacity: 0;
