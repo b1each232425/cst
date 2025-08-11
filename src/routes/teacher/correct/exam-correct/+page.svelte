@@ -12,275 +12,275 @@
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import DatePicker from '$lib/components/DatePicker/DatePicker.svelte';
-  import InputBox from '$lib/components/Input/InputBox.svelte';
   import { onMount } from 'svelte';
   import { toast } from '$lib/components/Toast/Toast';
   import { formatTimestamp } from '$lib/utils/time_utils';
   import { debounce } from '$lib/utils/optimize';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
   import { goto } from '$app/navigation';
-  import { sharedData } from '../_stores/index';
+  import '$lib/components/Input/index.scss';
+  import Title from '$lib/components/Title/Title.svelte';
 
-  const mockExam = [
-    {
-      id: 5,
-      name: 'H34',
-      type: '00',
-      exam_sessions: [
-        {
-          id: 11,
-          name: 'session_name',
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          mark_mode: '00',
-          respondent_count: 12,
-          unmarked_student_count: 10,
-          status: '04',
-          mark_status: '00',
-        },
-        {
-          id: 11,
-          name: 'session_name',
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          mark_mode: '00',
-          respondent_count: 12,
-          unmarked_student_count: 10,
-          status: '04',
-          mark_status: '00',
-        },
-        {
-          id: 11,
-          name: 'session_name',
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          mark_mode: '00',
-          respondent_count: 12,
-          unmarked_student_count: 10,
-          status: '06',
-          mark_status: '00',
-        },
-      ],
-    },
-    {
-      id: 6,
-      name: 'H34',
-      type: '00',
-      exam_sessions: [
-        {
-          id: 11,
-          name: '《Svelte入门实战课》2025年第1期阶段考试',
-          start_time: '2025-08-01 09:00',
-          end_time: '2025-08-01 11:00',
-          mark_mode: '02',
-          respondent_count: 12,
-          unmarked_student_count: 10,
-          status: '06',
-          mark_status: '00',
-        },
-      ],
-    },
-    // {
-    //   id: 3,
-    //   name: 'H34',
-    //   type: '00',
-    //   exam_sessions: [
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '04',
-    //       mark_status: '00',
-    //     },
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '04',
-    //       mark_status: '00',
-    //     },
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '06',
-    //       mark_status: '00',
-    //     },
-    //   ],
-    // },
-    // {
-    //   id: 2,
-    //   name: 'H34',
-    //   type: '00',
-    //   exam_sessions: [
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '04',
-    //       mark_status: '00',
-    //     },
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '04',
-    //       mark_status: '00',
-    //     },
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '06',
-    //       mark_status: '00',
-    //     },
-    //   ],
-    // },
-    // {
-    //   id: 59,
-    //   name: 'H34',
-    //   type: '00',
-    //   exam_sessions: [
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '04',
-    //       mark_status: '00',
-    //     },
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '04',
-    //       mark_status: '00',
-    //     },
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '06',
-    //       mark_status: '00',
-    //     },
-    //   ],
-    // },
-    // {
-    //   id: 8,
-    //   name: 'H34',
-    //   type: '00',
-    //   exam_sessions: [
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '04',
-    //       mark_status: '00',
-    //     },
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '04',
-    //       mark_status: '00',
-    //     },
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '06',
-    //       mark_status: '00',
-    //     },
-    //   ],
-    // },
-    // {
-    //   id: 51,
-    //   name: 'H34',
-    //   type: '00',
-    //   exam_sessions: [
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '04',
-    //       mark_status: '00',
-    //     },
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '04',
-    //       mark_status: '00',
-    //     },
-    //     {
-    //       id: 11,
-    //       name: 'session_name',
-    //       start_time: '2025-08-01 09:00',
-    //       end_time: '2025-08-01 11:00',
-    //       mark_mode: '00',
-    //       respondent_count: 12,
-    //       unmarked_student_count: 10,
-    //       status: '06',
-    //       mark_status: '00',
-    //     },
-    //   ],
-    // },
-  ];
+  // const mockExam = [
+  //   {
+  //     id: 5,
+  //     name: 'H34',
+  //     type: '00',
+  //     exam_sessions: [
+  //       {
+  //         id: 11,
+  //         name: 'session_name',
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         mark_mode: '00',
+  //         respondent_count: 12,
+  //         unmarked_student_count: 10,
+  //         status: '04',
+  //         mark_status: '00',
+  //       },
+  //       {
+  //         id: 11,
+  //         name: 'session_name',
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         mark_mode: '00',
+  //         respondent_count: 12,
+  //         unmarked_student_count: 10,
+  //         status: '04',
+  //         mark_status: '00',
+  //       },
+  //       {
+  //         id: 11,
+  //         name: 'session_name',
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         mark_mode: '00',
+  //         respondent_count: 12,
+  //         unmarked_student_count: 10,
+  //         status: '06',
+  //         mark_status: '00',
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 6,
+  //     name: 'H34',
+  //     type: '00',
+  //     exam_sessions: [
+  //       {
+  //         id: 11,
+  //         name: '《Svelte入门实战课》2025年第1期阶段考试',
+  //         start_time: '2025-08-01 09:00',
+  //         end_time: '2025-08-01 11:00',
+  //         mark_mode: '02',
+  //         respondent_count: 12,
+  //         unmarked_student_count: 10,
+  //         status: '06',
+  //         mark_status: '00',
+  //       },
+  //     ],
+  //   },
+  //   // {
+  //   //   id: 3,
+  //   //   name: 'H34',
+  //   //   type: '00',
+  //   //   exam_sessions: [
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '04',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '04',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '06',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //   ],
+  //   // },
+  //   // {
+  //   //   id: 2,
+  //   //   name: 'H34',
+  //   //   type: '00',
+  //   //   exam_sessions: [
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '04',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '04',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '06',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //   ],
+  //   // },
+  //   // {
+  //   //   id: 59,
+  //   //   name: 'H34',
+  //   //   type: '00',
+  //   //   exam_sessions: [
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '04',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '04',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '06',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //   ],
+  //   // },
+  //   // {
+  //   //   id: 8,
+  //   //   name: 'H34',
+  //   //   type: '00',
+  //   //   exam_sessions: [
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '04',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '04',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '06',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //   ],
+  //   // },
+  //   // {
+  //   //   id: 51,
+  //   //   name: 'H34',
+  //   //   type: '00',
+  //   //   exam_sessions: [
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '04',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '04',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //     {
+  //   //       id: 11,
+  //   //       name: 'session_name',
+  //   //       start_time: '2025-08-01 09:00',
+  //   //       end_time: '2025-08-01 11:00',
+  //   //       mark_mode: '00',
+  //   //       respondent_count: 12,
+  //   //       unmarked_student_count: 10,
+  //   //       status: '06',
+  //   //       mark_status: '00',
+  //   //     },
+  //   //   ],
+  //   // },
+  // ];
 
   // 考试类型映射
   const TYPE_MAP = {
@@ -291,7 +291,7 @@
 
   // 批改模式映射
   const MARK_MODE_MAP = {
-    '00': '无需批改',
+    '00': '自动批改',
     '02': '全卷多评',
     '04': '试卷分配',
     '06': '题组专评',
@@ -328,7 +328,26 @@
   let page = $state(1);
   let page_size = $state(10);
 
-  let exam_list = $state([...mockExam]);
+  let exam_list = $state([
+    {
+      id: 6,
+      name: '数学期末',
+      type: '00',
+      exam_sessions: [
+        {
+          id: 11,
+          name: '数学考试',
+          start_time: new Date('2025-08-01T09:00').getTime(),
+          end_time: new Date('2025-08-01T11:00').getTime(),
+          mark_mode: '02',
+          respondent_count: 12,
+          unmarked_student_count: 10,
+          status: '06',
+          mark_status: '00',
+        },
+      ],
+    },
+  ]);
   let total_count = $state(0);
 
   const debounceSearch = debounce(handleSearch, 500);
@@ -357,17 +376,34 @@
   // function canCheckLogs() {}
 
   function gotoCorrect(exam_session_name, exam_session_id) {
-    sharedData.set({ exam_session_name });
+    localStorage.setItem('current_paper_name', exam_session_name);
     goto(`/teacher/correct/correct?exam_session_id=${exam_session_id}`);
   }
 
   function gotoDetail() {}
 
-  function submitExamSession() {
+  function submitExamSession(exam_session_id) {
     MessageBox({
       title: '确认操作',
       content: '你确定要提交吗？',
-      onConfirm: () => {},
+      onConfirm: () => {
+        fetch(`/api/mark/results-submission?exam_session_id=${exam_session_id}`)
+          .then((res) => {
+            if (!res.ok)
+              return res.text().then((error_text) => {
+                throw new Error(`请求失败：${res.status} ${res.statusText}` + (error_text ? '-' + error_text : ''));
+              });
+            return res.json();
+          })
+          .then((res) => {
+            if (!res.status) {
+              toast.success('提交成功');
+            } else throw new Error(res.msg ?? '提交失败');
+          })
+          .catch((err) => {
+            toast.error(err.message);
+          });
+      },
     });
   }
 
@@ -375,7 +411,8 @@
 
   function handleSearch() {
     fetch(
-      `/api/mark/exam?page=${page}&page_size=${page_size}&start_time=${start_time}&end_time=${end_time}&exam_name=${exam_name}`,
+      `/api/mark/exam?page=${page}&page_size=${page_size}&exam_name=${exam_name}` +
+        (start_time ? `&start_time=${start_time}` : '' + (end_time ? `&end_time=${end_time}` : '')),
     )
       .then((res) => {
         if (!res.ok)
@@ -392,6 +429,7 @@
       })
       .catch((err) => {
         toast.error(err.message);
+        console.log(err);
       });
   }
 
@@ -422,16 +460,12 @@
 </script>
 
 <div class="exam-correct-body">
+  <Title title="考试批改" />
+
   <div class="options">
-    <div class="input">
+    <div class="exam-input">
       <div class="label">考试名称：</div>
-      <InputBox
-        placeholder="请输入信息"
-        bind:value={exam_name}
-        type="text"
-        show_label={false}
-        onInput={debounceSearch}
-      />
+      <input type="text" placeholder="请输入信息" bind:value={exam_name} oninput={debounceSearch} class="input" />
     </div>
     <div class="datePicker" data-testid="date-picker">
       <div class="label">考试时间：</div>
@@ -516,16 +550,16 @@
             </td>
             <td
               ><div class="stack">
-                {#each exam.exam_sessions as { mark_status }}
+                {#each exam.exam_sessions as { mark_mode }}
                   <span
                     class="mark-mode"
-                    class:none={mark_status === '00'}
-                    class:multi={mark_status === '02'}
-                    class:paper={mark_status === '04'}
-                    class:group={mark_status === '06'}
-                    class:question={mark_status === '08'}
-                    class:single={mark_status === '10'}
-                    class:unknown={!MARK_MODE_MAP[mark_status]}>{MARK_MODE_MAP[mark_status] ?? '未知状态'}</span
+                    class:none={mark_mode === '00'}
+                    class:multi={mark_mode === '02'}
+                    class:paper={mark_mode === '04'}
+                    class:group={mark_mode === '06'}
+                    class:question={mark_mode === '08'}
+                    class:single={mark_mode === '10'}
+                    class:unknown={!MARK_MODE_MAP[mark_mode]}>{MARK_MODE_MAP[mark_mode] ?? '未知状态'}</span
                   >
                 {/each}
               </div></td
@@ -550,7 +584,7 @@
                     <button
                       class:disabled={!canCorrected(mark_mode, status, mark_status) || respondent_count <= 0}
                       disabled={!canCorrected(mark_mode, status, mark_status) || respondent_count <= 0}
-                      onclick={gotoCorrect(name, id)}>进入批改</button
+                      onclick={() => gotoCorrect(name, id)}>进入批改</button
                     >
                     <button
                       class:disabled={!canCheckDetail(status, mark_status) || respondent_count <= 0}
@@ -560,7 +594,7 @@
                     <button
                       class:disabled={!canSubmit(mark_mode, status, mark_status) || respondent_count <= 0}
                       disabled={!canSubmit(mark_mode, status, mark_status) || respondent_count <= 0}
-                      onclick={submitExamSession()}>提交</button
+                      onclick={submitExamSession(id)}>提交</button
                     >
                     <!-- <button
                       class:disabled={!canCheckLogs(mark_mode, status, mark_status)}
@@ -606,7 +640,7 @@
       align-items: center;
       gap: 1rem;
 
-      .input,
+      .exam-input,
       .datePicker {
         display: flex;
         align-items: center;
