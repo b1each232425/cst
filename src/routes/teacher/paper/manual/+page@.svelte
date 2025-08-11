@@ -15,7 +15,7 @@
     import Option from "$lib/components/Select/Option.svelte";
     import Toast from "$lib/components/Toast/Toast.svelte";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
-    import QuestionPreview from "../_components/PreviewQuestion/PreviewQuestion.svelte"
+    import QuestionPreviewPanel from "../../question-bank/_components/QuestionPreviewPanel.svelte";
     import { goto } from "$app/navigation";
     import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../_utils/tool";
     import { onMount, tick } from "svelte";
@@ -23,8 +23,7 @@
     import { debounce } from "$lib/utils/optimize";
     import { get } from "svelte/store";
     import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, GROUP_AVERAGE_SCORE } from "../_stores/store";
-    import MyPreviewQuestion from "../_components/MyPreviewQuestion/MyPreviewQuestion.svelte";
-  import { stopPropagation } from "svelte/legacy";
+    import { stopPropagation } from "svelte/legacy";
 
     /******************* API 区 ********************/
 
@@ -87,7 +86,7 @@
                 return response.json();
             })
             .then(data => {
-                console.log(data);
+                // console.log(data);
                 return data;
             })
             .catch(error => {
@@ -451,38 +450,81 @@
     }
 
     // 移动题目
-    function moveQuestion(groupIndex, questionID, direction) {
-        // 获取题组 ID 数组而不直接操作题组
-        const GROUP = paper_groups[groupIndex];
-        const QUESTION_IDS = GROUP.questions.map(question => question.id);
-        const INDEX = QUESTION_IDS.indexOf(questionID);
+    function moveQuestion(group, question, direction) {
+        // 获取题目 ID 数组
+        const FULL_QUESTION_IDS = paper_groups.flatMap(group =>
+            group.questions.map(question => question.id)
+        );
 
-        // 边界判断：不能移出题组
-        if ((INDEX === 0 && direction === 'up') || (INDEX === QUESTION_IDS.length - 1 && direction === 'down')) {
+        // 获取待移动的题目索引
+        const INDEX = FULL_QUESTION_IDS.indexOf(question.id);
+
+        // 边界：最上面的题再往上 or 最下面的题再往下，直接 return
+        if (INDEX === 0 && direction === 'up') {
+            toast.error("已经是第一题", 1000);
             return;
         }
 
-        // 构造移动后的 questionIDs
-        if (direction === 'up') {
-            [QUESTION_IDS[INDEX - 1], QUESTION_IDS[INDEX]] = [QUESTION_IDS[INDEX], QUESTION_IDS[INDEX - 1]];
-        } else if (direction === 'down') {
-            [QUESTION_IDS[INDEX + 1], QUESTION_IDS[INDEX]] = [QUESTION_IDS[INDEX], QUESTION_IDS[INDEX + 1]];
+        if (INDEX === FULL_QUESTION_IDS.length - 1 && direction === 'down') {
+            toast.error("已经是最后一题", 1000);
+            return;
         }
 
-        // 将整张试卷的所有题目 ID 拼接出来（按题组顺序）
-        const FULL_QUESTION_IDS = paper_groups.flatMap((group, index) => {
-            if (index === groupIndex) {
-                return QUESTION_IDS;
+        // 默认原题组
+        let target_groupID = group.id;
+
+        // 找当前题组在 paper_groups 中的索引
+        const CURRENT_GROUP_INDEX = paper_groups.findIndex(g => g.id === group.id);
+
+        // 找当前题目在本组里的索引
+        const QUESTION_INDEX_IN_GROUP = group.questions.findIndex(q => q.id === question.id);
+
+        // 如果题目是组内第一个且往上移动，或者是组内最后一个且往下移动，可能跨组
+        if (
+            (QUESTION_INDEX_IN_GROUP === 0 && direction === 'up') || 
+            (QUESTION_INDEX_IN_GROUP === group.questions.length - 1 && direction === 'down')
+        ) {
+            if (direction === 'up') {
+                target_groupID = paper_groups[CURRENT_GROUP_INDEX - 1].id;
             } else {
-                return group.questions.map(question => question.id);
+                target_groupID = paper_groups[CURRENT_GROUP_INDEX + 1].id;
             }
-        });
+        }
+
+        // 交换位置
+        if(target_groupID === group.id) {
+            if (direction === 'up') {
+                [FULL_QUESTION_IDS[INDEX - 1], FULL_QUESTION_IDS[INDEX]] =
+                    [FULL_QUESTION_IDS[INDEX], FULL_QUESTION_IDS[INDEX - 1]];
+            } else if (direction === 'down') {
+                [FULL_QUESTION_IDS[INDEX + 1], FULL_QUESTION_IDS[INDEX]] =
+                    [FULL_QUESTION_IDS[INDEX], FULL_QUESTION_IDS[INDEX + 1]];
+            }
+        }
+
+        // 获取移动后的题目索引
+        const NEW_INDEX = FULL_QUESTION_IDS.indexOf(question.id);
+
+        // 检查移动后是否跨组
+        const NEIGHBOR_INDEX = direction === 'up' ? NEW_INDEX - 1 : NEW_INDEX + 1;
+        const NEIGHBOR_ID = FULL_QUESTION_IDS[NEIGHBOR_INDEX];
 
         // 提交后端保存
         const ACTIONS = [
             {
                 action: "move_question",
                 payload: FULL_QUESTION_IDS
+            },
+            {
+                action: "update_question",
+                payload: [
+                    {
+                        id: question.id,
+                        group_id: target_groupID,
+                        order: NEW_INDEX + 1,
+                        score: question.score
+                    }
+                ]
             }
         ];
 
@@ -563,27 +605,32 @@
 
     /***************** 拖拽功能区 *****************/
 
-    let dragged_group = $state(null);           // 当前被拖拽的元素数据
-    let drag_over_group = $state(null);         // 目标元素数据
-    let drag_over_position = $state(null);      // 相对位置："top" 或 "bottom"
+    let dragged_group = $state(null);               // 当前被拖拽的元素数据
+    let drag_over_group = $state(null);             // 目标元素数据
+    let drag_over_group_position = $state(null);    // 相对位置："top" 或 "bottom"
+    let is_dragging_group = $state(false);
+    let dragged_type = null;
 
     // 题组开始拖拽
     function handleGroupDragStart(event, group) {
+        is_dragging_group = true;
         dragged_group = group;
+        is_dragging_question = false;
+        dragged_type = "group";
 
         // 确定是现代浏览器
         if (event.dataTransfer) {
             // 表示拖拽允许的效果
             event.dataTransfer.effectAllowed = "move";
         }
+
+        // 兜底监听 dragend
+        event.target.addEventListener("dragend", handleDragEnd, { once: true });
     }
 
     // 题组正在拖拽
     function handleGroupDragOver(event, group) {
         event.preventDefault(); // 必须阻止默认行为才能触发 drop
-
-        // 判断是否为自己，并记录目标元素
-        if (!dragged_group || dragged_group.id === group.id) return;
 
         // 记录目标项
         drag_over_group = group;
@@ -593,16 +640,14 @@
         const OFFSET_Y = event.clientY - BOUNDING.top;
 
         // 根据纵向一半高度判断上或下
-        drag_over_position = OFFSET_Y < BOUNDING.height / 2 ? "top" : "bottom";
+        drag_over_group_position = OFFSET_Y < BOUNDING.height / 2 ? "top" : "bottom";
     }
 
     // 题组拖拽放下
     function handleGroupDrop(event) {
         event.preventDefault();
         if (!dragged_group || !drag_over_group || dragged_group.id === drag_over_group.id) {
-            drag_over_group = null;
-            dragged_group = null;
-            drag_over_position = null;
+            handleDragEnd();
             return;
         };
 
@@ -610,17 +655,26 @@
         const GROUP_IDS = paper_groups.map(g => g.id).filter(id => id !== dragged_group.id);
         let dropIndex = GROUP_IDS.findIndex(id => id === drag_over_group.id);
 
-        if (drag_over_position === "bottom") {
+        if (drag_over_group_position === "bottom") {
             dropIndex += 1; // 往目标后面插入
         }
 
         GROUP_IDS.splice(dropIndex, 0, dragged_group.id);
+
+        const QUESTION_IDS = GROUP_IDS.flatMap(groupId => {
+            const group = paper_groups.find(g => g.id === groupId);
+            return group ? group.questions.map(q => q.id) : [];
+        });
 
         const ACTIONS = [
             {
                 action: "move_group",
                 payload: GROUP_IDS,
             },
+            {
+                action: "move_question",
+                payload: QUESTION_IDS
+            }
         ];
 
         savePaper(paperID, ACTIONS)
@@ -632,29 +686,23 @@
                 question_count = paper_info.QuestionCount;
             })
             .finally(() => {
-                dragged_group = null;
-                drag_over_group = null;
-                drag_over_position = null;
+                handleDragEnd();
             });
-    }
-
-    // 题组拖拽结束
-    function handleGroupDragEnd() {
-        dragged_group = null;
-        drag_over_group = null;
-        drag_over_position = null;
     }
 
     let dragged_question_item = $state({});        // 当前被拖拽的元素数据
     let drag_over_question_item = $state({});      // 目标元素数据
+    let drag_over_question_position = $state(null);
     let dragged_over_questionID_CSS = $state(0);   // 当前鼠标所在题组 ID
     let is_dragging_question = $state(false);
 
     // 题目开始拖拽
     function handleQuestionDragStart(event, question, group) {
+        is_dragging_group = false;
         dragged_question_item = { question, group };
         dragged_over_questionID_CSS = group.id;
         is_dragging_question = true;
+        dragged_type = "question";
 
         // 确定是现代浏览器
         if (event.dataTransfer) {
@@ -676,10 +724,10 @@
             const OFFSET_Y = event.clientY - BOUNDING.top;
 
             // 根据纵向一半高度判断上或下
-            drag_over_position = OFFSET_Y < BOUNDING.height / 2 ? "top" : "bottom";
+            drag_over_question_position = OFFSET_Y < BOUNDING.height / 2 ? "top" : "bottom";
         } else {
             // 空题组不需要位置判断，固定插到组开头
-            drag_over_position = "top";
+            drag_over_question_position = "top";
         }
     }
 
@@ -687,10 +735,11 @@
     function handleQuestionDrop(event) {
         event.preventDefault();
         if (
+            is_dragging_group ||
             (dragged_question_item.question.id === drag_over_question_item.question.id &&
             dragged_question_item.group.id === drag_over_question_item.group.id)
         ) {
-            handleQuestionDragEnd();
+            handleDragEnd();
             return;
         };
 
@@ -706,7 +755,7 @@
             // 非空题组的情况
             dropIndex = QUESTION_IDS.findIndex(id => id === drag_over_question_item.question.id);
             
-            if (drag_over_position === "bottom") dropIndex += 1;
+            if (drag_over_question_position === "bottom") dropIndex += 1;
         } else {
             // 空题组的情况
             const groupIndex = paper_groups.findIndex(group => group.id === drag_over_question_item.group.id);
@@ -746,17 +795,23 @@
                 question_count = paper_info.QuestionCount;
             })
             .finally(() => {
-                handleQuestionDragEnd();
+                handleDragEnd();
             });
     }
 
-    // 题目拖拽结束
-    function handleQuestionDragEnd() {
+    // 拖拽结束（全部）
+    function handleDragEnd() {
+        is_dragging_group = false;
+        dragged_group = null;
+        drag_over_group = null;
+        drag_over_group_position = null;
+
         drag_over_question_item = {};
         dragged_question_item = {};
-        drag_over_position = null;
+        drag_over_question_position = null;
         dragged_over_questionID_CSS = 0;
         is_dragging_question = false;
+
     }
 
     /***************** 拖拽功能区 *****************/
@@ -785,7 +840,7 @@
             })
             .finally(() => {
                 page_is_ready = true;
-                console.log(paper_groups);
+                // console.log(paper_groups);
             });
     })
 
@@ -936,13 +991,14 @@
                                     {#if to_edit_groupID === group.id}
                                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                                         <div class="single-group
-                                                {drag_over_group === group && drag_over_position === 'top' ? 'drag-over-top' : ''}
-                                                {drag_over_group === group && drag_over_position === 'bottom' ? 'drag-over-bottom' : ''}
-                                                {dragged_group === group ? "dragging":""}"
+                                            {(drag_over_group === group && drag_over_group_position === 'top' && dragged_type === 'group') ? 'drag-over-top' : ''}
+                                            {(drag_over_group === group && drag_over_group_position === 'bottom' && dragged_type === 'group') ? 'drag-over-bottom' : ''}
+                                            {dragged_group === group ? "dragging":""}"
                                             draggable="true"
                                             ondragstart={(event)=>handleGroupDragStart(event,group)}
                                             ondragover={(event)=>handleGroupDragOver(event,group)}
                                             ondrop={handleGroupDrop}
+                                            ondragend={handleDragEnd}
                                             >
                                             <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} bind:this={to_edit_group} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
                                             <div class="btn-box">
@@ -953,8 +1009,8 @@
                                     {:else}
                                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                                         <div class="single-group
-                                            {drag_over_group === group && drag_over_position === 'top' ? 'drag-over-top' : ''}
-                                            {drag_over_group === group && drag_over_position === 'bottom' ? 'drag-over-bottom' : ''}
+                                            {(drag_over_group === group && drag_over_group_position === 'top' && dragged_type === 'group') ? 'drag-over-top' : ''}
+                                            {(drag_over_group === group && drag_over_group_position === 'bottom' && dragged_type === 'group') ? 'drag-over-bottom' : ''}
                                             {dragged_group === group ? "dragging":""}"
                                             draggable="true"
                                             ondragstart={(event)=>handleGroupDragStart(event,group)}
@@ -1041,13 +1097,14 @@
                                         {#if group.questions.length !== 0}
                                             {#each group.questions as question}
                                                 <div class="single-question
-                                                    {drag_over_question_item.question?.id === question.id && drag_over_position === 'top' ? 'drag-over-top' : ''}
-                                                    {drag_over_question_item.question?.id === question.id && drag_over_position === 'bottom' ? 'drag-over-bottom' : ''}
+                                                    {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'top' && dragged_type === 'question') ? 'drag-over-top' : ''}
+                                                    {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'bottom' && dragged_type === 'question') ? 'drag-over-bottom' : ''}
                                                     {dragged_question_item.question?.id === question.id ? "dragging":""}"
                                                     draggable="true"
                                                     ondragstart={(event)=>handleQuestionDragStart(event,question,group)}
                                                     ondragover={(event)=>handleQuestionDragOver(event,question,group)}
                                                     ondrop={handleQuestionDrop}
+                                                    ondragend={handleDragEnd}
                                                     onclick={(event)=>{event.stopPropagation();}}
                                                 >
                                                     <!-- 头部下拉栏 -->
@@ -1069,8 +1126,8 @@
                                                                 <InputBox placeholder="" onInput={debounce(()=>updateQuestionScore(question.id,group.id,question.order,question.score),500,false)} bind:value={question.score} type="number" show_label={false} clearable={false}/>
                                                             </div>
                                               
-                                                            <button onclick={()=>moveQuestion(groupIndex,question.id,"up")} class="move-btn" title="上移">↑</button>
-                                                            <button onclick={()=>moveQuestion(groupIndex,question.id,"down")} class="move-btn" title="下移">↓</button>
+                                                            <button onclick={()=>moveQuestion(group,question,"up")} class="move-btn" title="上移">↑</button>
+                                                            <button onclick={()=>moveQuestion(group,question,"down")} class="move-btn" title="下移">↓</button>
                                                             <!-- <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
                                                                 <svg
                                                                     viewBox="0 0 1024 1024"
@@ -1095,9 +1152,8 @@
     
                                                     <!-- 题目内容 -->
                                                     {#if $QUESTION_OPEN_STATE[question.id]}
-                                                        <div class="question-container">
-                                                            <QuestionPreview {question}/>  
-                                                            <!-- <MyPreviewQuestion question={question}/>                                           -->
+                                                        <div class="question-container">                                          
+                                                            <QuestionPreviewPanel question={question} showHeader={false}/>
                                                         </div>
                                                     {/if}
                                                 </div>
@@ -1108,7 +1164,7 @@
                                             <div class="no-questions-container"
                                                 ondragover={(event)=>handleQuestionDragOver(event,{ id: null },group)}
                                                 ondrop={handleQuestionDrop}
-                                                ondragend={handleQuestionDragEnd}
+                                                ondragend={handleDragEnd}
                                             >
                                                 <div class="no-questions-box">
                                                     <span class="title">题组暂无题目</span>
@@ -1135,6 +1191,7 @@
     .add-paper {
         font-family: 'Noto Sans SC', sans-serif;
         color: var(--text-primary);
+        overflow-y: auto;
         
         /* 顶部栏 */
         .header {
@@ -1815,40 +1872,7 @@
     
                                 /* 题目内容 */
                                 .question-container {
-                                    /* padding: 20px; */
-    
-                                    .prompt {
-                                        font-size: 14px;
-                                        color: #619cf5;
-                                        margin-right: 10px;
-                                    }
-    
-                                    /* 问题 */
-                                    .question-box {
-                                        padding: 12px 8px;
-                                        margin-bottom: 10px;
-                                    }
-    
-                                    /* 答案 */
-                                    .answer-box {
-                                        display: flex;
-                                        padding: 12px 0;
-                                        background:linear-gradient(to right, #ddd 0%, #ddd 8px, transparent 8px, transparent 15px) repeat-x bottom;
-                                        background-size: 15px 2px;
-                                        align-items: center;
-    
-                                        .sequence {
-                                            color: #619cf5;
-                                            font-size: 14px;
-                                            margin-right: 10px;
-                                        }
-                                    }
-    
-                                    /* 解析 */
-                                    .analysis-box {
-                                        display: flex;
-                                        padding: 12px 0;
-                                    }
+                                    padding-bottom: 10px;
                                 }
                             }
                         }
