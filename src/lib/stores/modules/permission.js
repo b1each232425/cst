@@ -105,6 +105,12 @@ export const baseNavItems = writable([
       //   path: '/teacher/exam/invigilation/\\d+$',
       //   force_hide: true,
       // },
+      {
+        name:'previewExam',
+        title:'预览试卷',
+        path:'/teacher/exam/previewExam',
+        force_hide: true,
+      },
     ],
   },
   {

@@ -435,10 +435,10 @@
     fetch(`/api/examinee?exam_id=${examID}`,
       {
         method:"GET",
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json",
-            },
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+          },
         })
         .then((response) => response.json())
         .then((data)=>{

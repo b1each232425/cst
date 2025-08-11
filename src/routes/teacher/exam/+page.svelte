@@ -1,4 +1,14 @@
-<script>
+  <!--
+ * @Author: yeweixuan t051521@163.com
+ * @Date: 2025-07-21 
+ * @LastEditors: yeweixuan t051521@163.com
+ * @LastEditTime: 2025-08-11 13:55:31
+ * @FilePath: \exam\src\routes\teacher\exam\+page@.svelte
+ * @Description: 考试列表页面 
+ * @Copyright (c) 2025 by yeweixuan t051521@163.com, All Rights Reserved. 
+-->
+  
+  <script>
   //@ts-nocheck
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
@@ -10,6 +20,7 @@
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Title from '$lib/components/Title/Title.svelte';
   import { toast } from '$lib/components/Toast/Toast';
+  import { CURRENT_PAPER_ID } from '../paper/_stores/store';
   let exam_list = $state([]);
   let name_search_time = null;
   let loading = $state(false);
@@ -23,6 +34,7 @@
   let is_delete_mode = $state(false); //是否是删除模式
   let selected_exam_ids = $state([]); // 用于存储选中的考试ID
   let is_all_selected = $state(false); 
+  let preview_id = $state();
   // 映射关系
   const TypeMap = {
     '00': '平时考试',
@@ -154,13 +166,11 @@
   // 处理页码变化
   async function handlePageChange(event) {
     search_params.page = event.detail;
-    let deletableIDs = [];
+    let currentPageIDs = [];
     await searchExam();
+    currentPageIDs = exam_list.map(exam => exam.id);
     
-    deletableIDs = exam_list.filter(selected_exam_ids.includes(exam.id))
-      .map(exam => exam.id);
-
-    if(deletableIDs.length!=0 && deletableIDs.every(id => selected_exam_ids.includes(id)))
+    if(currentPageIDs.length!=0 && currentPageIDs.every(id => selected_exam_ids.includes(id)))
       { 
         is_all_selected = true;
         return;
@@ -172,12 +182,12 @@
   async function handlePageSizeChange(event) {
     search_params.page_size = event.detail;
     search_params.page = 1; // 重置到第一页
-    let deletableIDs = [];
+    let currentPageIDs = [];
     await searchExam();
-    deletableIDs = exam_list.filter(selected_exam_ids.includes(exam.id))
+    currentPageIDs = exam_list.filter(selected_exam_ids.includes(exam.id))
       .map(exam => exam.id);
 
-    if(deletableIDs.length!=0 && deletableIDs.every(id => selected_exam_ids.includes(id)))
+    if(currentPageIDs.length!=0 && currentPageIDs.every(id => selected_exam_ids.includes(id)))
       { 
         is_all_selected = true;
         return;
@@ -453,7 +463,7 @@ function handleSelectAll(event) {
 
 {#snippet tableHead()}
   <tr onclick={(event)=>handleSelectAll(event)}>
-      <th class = "{is_delete_mode?'':"hideButton"}" style="width: 40px;">
+      <th >
         <input
           type="checkbox"
           class="deleteCheck"
@@ -498,10 +508,13 @@ function handleSelectAll(event) {
     }}>
     删除考试</button>
 
-    <!-- <button class="preview-exam-button action-button {status!='00'&&status!='02'&&status!='04' ?'hideButton' : ''}"
+    <button class="preview-exam-button action-button {status!='00'&&status!='02'&&status!='04' ?'hideButton' : ''}"
     onclick={()=>{
+            preview_id = exam_list[index].exam_sessions.id;
+            CURRENT_PAPER_ID.set(91);
             goto(`/teacher/exam/previewExam`)
-        }}>预览试卷</button> -->
+            
+        }}>预览试卷</button>
     <!-- <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}">取消考试</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">监考管理</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">操作日志</button> -->
