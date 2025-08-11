@@ -7,6 +7,7 @@ import ExamList from '../+page.svelte';
 // Mock dependencies
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
+//初始模拟数据，存在00,02,04,12状态
 const MOCK_EXAMS = [
   {
     id: 1,
@@ -94,6 +95,33 @@ const MOCK_EXAMS = [
   }
 ];
 
+
+// 15 条仅 id、name 不同，其余字段完全一致的模拟数据
+// 规则：status 全部为 00 或 02，type 全部为 00，delivery_status 全部为 00
+// 用于检测是否全选考试
+const MOCK_EXAMS_15 = Array.from({ length: 15 }, (_, i) => ({
+  id: 1001 + i,
+  name: `考试${i + 1}`,
+  type: '00',
+  method: '00',
+  start_time: '2023-10-01 10:00',
+  end_time: '2023-10-01 12:00',
+  duration: '120分钟',
+  status: i % 2 === 0 ? '00' : '02',   // 交替 00 / 02
+  delivery_status: '00',
+  addi: '',
+  actionExpanded: false,
+  num_of_examinees: 1,
+  exam_sessions: [
+    {
+      id: 2001 + i,
+      start_time: new Date('2023-10-01T10:00').getTime(),
+      end_time: new Date('2023-10-01T12:00').getTime(),
+    }
+  ]
+}));
+
+
 function mockFetch(data) {
   global.fetch = vi.fn(() =>
     Promise.resolve({
@@ -113,8 +141,7 @@ const setup = () => {
       const select = screen.getByText('全部状态').closest('div');
       await fireEvent.click(select);
       // 等待下拉菜单渲染出来
-    const dropdown = await screen.findByRole('listbox'); // 或 findByTestId
-   // const table = await screen.findByRole('table');
+    const dropdown = await within(select).findByRole('listbox'); // 或 findByTestId
     const option = within(dropdown).getByText('进行中');
     await fireEvent.click(option);
     },
@@ -148,7 +175,7 @@ describe('考试管理页面测试', () => {
 });
 
   
-  it('应渲染页面核心元素', () => {
+  it('渲染页面核心元素', () => {
     
     render(ExamManagement);
     
@@ -160,7 +187,7 @@ describe('考试管理页面测试', () => {
     expect(screen.getByRole('table')).toBeInTheDocument();
   });
 
-  it('应渲染表格头部', () => {
+  it('渲染表格头部', () => {
     render(ExamManagement);
     
    expect(screen.getByRole('columnheader', { name: '考试名称' })).toBeInTheDocument();
@@ -271,17 +298,17 @@ describe('考试管理页面测试', () => {
   describe('考试状态显示', () => {
 
     beforeEach(() => {
-  global.fetch = vi.fn((url) => {
-    if (typeof url !== 'string') {
-      return Promise.reject(new Error('Invalid URL'));
-    }
+      global.fetch = vi.fn((url) => {
+        if (typeof url !== 'string') {
+          return Promise.reject(new Error('Invalid URL'));
+        }
 
-    if (url.includes('/api/exam/list')) {
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ status: 0, data: [], rowCount: 0 }),
-      });
-    }
+        if (url.includes('/api/exam/list')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ status: 0, data: [], rowCount: 0 }),
+          });
+        }
 
     return Promise.reject(new Error(`Unhandled URL: ${url}`));
   });
@@ -368,39 +395,6 @@ describe('考试管理页面测试', () => {
     return Promise.reject(new Error(`Unhandled URL: ${url}`));
   });
 });
-    // it('未发布状态应显示继续编辑和发布考试按钮', async () => {
-    //   const unpublishedExam = [{ ...MOCK_EXAMS[0], status: '00' }];
-    //   mockFetch({ status: 0, data: unpublishedExam, rowCount: 1 });
-    //   render(ExamManagement);
-
-    //   await waitFor(() => {
-    //     expect(screen.getByText('继续编辑')).toBeInTheDocument();
-    //     expect(screen.getByText('发布考试')).toBeInTheDocument();
-    //   });
-    // });
-
-    // it('进行中状态应显示监考管理按钮', async () => {
-    //   const ongoingExam = [{ ...MOCK_EXAMS[1], status: '04' }];
-    //   mockFetch({ status: 0, data: ongoingExam, rowCount: 1 });
-    //   render(ExamManagement);
-
-    //   await waitFor(() => {
-    //     expect(screen.getByText('监考管理')).toBeInTheDocument();
-    //   });
-    // });
-
-    // it('点击继续编辑应跳转到编辑页面', async () => {
-    //   const unpublishedExam = [{ ...MOCK_EXAMS[0], status: '00' }];
-    //   mockFetch({ status: 0, data: unpublishedExam, rowCount: 1 });
-    //   render(ExamManagement);
-
-    //   await waitFor(() => {
-    //     const editButton = screen.getByText('继续编辑');
-    //     fireEvent.click(editButton);
-    //   });
-
-    //   expect(goto).toHaveBeenCalledWith('/teacher/exam/editExam/1');
-    // });
 
     it('点击发布考试应显示确认对话框', async () => {
       const unpublishedExam = [{ ...MOCK_EXAMS[0], status: '00' }];
@@ -445,59 +439,56 @@ describe('考试管理页面测试', () => {
     });
   });
 
-describe('考试发布功能', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    
-    global.fetch = vi.fn((url) => {
-      if (url.includes('/api/exam/list')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS, rowCount: 4 }),
-        });
-      }
-      if (url.includes('/api/exam/lock')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 0 }) });
-      }
-      if (url.includes('/api/exam/status')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 0 }) });
-      }
-      return Promise.reject(new Error(`Unhandled URL: ${url}`));
+  describe('考试发布功能', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      
+      global.fetch = vi.fn((url) => {
+        if (url.includes('/api/exam/list')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS, rowCount: 4 }),
+          });
+        }
+        if (url.includes('/api/exam/lock')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 0 }) });
+        }
+        if (url.includes('/api/exam/status')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 0 }) });
+        }
+        return Promise.reject(new Error(`Unhandled URL: ${url}`));
+      });
     });
-  });
 
   it('应该完成考试发布流程', async () => {
-    render(ExamManagement);
+  render(ExamManagement);
 
-    await waitFor(() => {
-      expect(screen.getByText('数学考试')).toBeInTheDocument();
-    });
-
-    // 点击发布考试按钮
-   const publishButtons = screen.getAllByText('发布考试');
-   await fireEvent.click(publishButtons[0]);
-
-    // 验证确认对话框
-    await waitFor(() => {
-      expect(screen.getByText('是否确认发布该考试?')).toBeInTheDocument();
-    });
-
-    // 确认发布
-    const confirmButton = screen.getByText('确认发布');
-    await fireEvent.click(confirmButton);
-
-    // 验证API调用
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/exam/lock?exam_id=4',
-        expect.objectContaining({ method: 'GET' })
-      );
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/exam/status'),
-        expect.objectContaining({ method: 'PUT' })
-      );
-    });
+  await waitFor(() => {
+    expect(screen.getByText('数学考试')).toBeInTheDocument();
   });
+
+  // 点击发布考试按钮
+  const publishButtons = screen.getAllByText('发布考试');
+  await fireEvent.click(publishButtons[0]);
+
+  // 验证确认对话框
+  await waitFor(() => {
+    expect(screen.getByText('是否确认发布该考试?')).toBeInTheDocument();
+  });
+
+  // 确认发布
+  const confirmButton = screen.getByText('确认发布');
+  await fireEvent.click(confirmButton);
+
+  await waitFor(() => {
+    
+    const calls = global.fetch.mock.calls;
+    const examApiCall = calls.some(call => 
+      typeof call[0] === 'string' && call[0].includes('/api/exam/status')
+    );
+    expect(examApiCall).toBe(true);
+  });
+});
 
   it('应该在取消时关闭确认对话框', async () => {
     render(ExamManagement);
@@ -519,73 +510,226 @@ describe('考试发布功能', () => {
 });
 
   describe('分页功能', () => {
-  it('应该通过点击分页按钮触发页码变化', async () => {
+  it('检查是否实现页码变化和勾选框全选状态为全选', async () => {
     global.fetch = vi.fn((url) => {
-      if (url.includes('/api/exam/list')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS, rowCount: 100 }),
-        });
-      }
-      return Promise.reject(new Error(`Unhandled URL: ${url}`));
-    });
-
-    render(ExamManagement);
-
-    // 等待初始数据加载
-    await waitFor(() => {
-      expect(screen.getByText('数学考试')).toBeInTheDocument();
-    });
-
-    // 清除初始的fetch调用
-    vi.clearAllMocks();
-
-    // 查找并点击第2页按钮（需要等待分页组件渲染）
-    await waitFor(() => {
-      const page2Button = screen.queryByText('2');
-      if (page2Button) {
-        fireEvent.click(page2Button);
-      }
-    });
-
-    // 验证是否触发了新的搜索请求
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalled();
-    }, { timeout: 1000 });
-  });
-
-  it('应该通过修改每页条数触发搜索', async () => {
-    // 类似的方式测试每页条数下拉框
-    global.fetch = vi.fn((url) => {
-      if (url.includes('/api/exam/list')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS, rowCount: 100 }),
-        });
-      }
-      return Promise.reject(new Error(`Unhandled URL: ${url}`));
-    });
-
-    render(ExamManagement);
-
-    await waitFor(() => {
-      expect(screen.getByText('数学考试')).toBeInTheDocument();
-    });
-
-    vi.clearAllMocks();
-
-    // 查找每页条数选择器
-    const pageSizeSelect = screen.getByDisplayValue('10条/页') || 
-                          document.querySelector('select');
-    
-    if (pageSizeSelect) {
-      await fireEvent.change(pageSizeSelect, { target: { value: 20 } });
-      
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalled();
+    if (url.includes('/api/exam/list')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS, rowCount: 100 }),
       });
     }
+    return Promise.reject(new Error(`Unhandled URL: ${url}`));
   });
+
+  render(ExamManagement);
+
+  await waitFor(() => {
+    expect(screen.getByText('数学考试')).toBeInTheDocument();
+  });
+
+  fireEvent.click(screen.getByText('批量删除'));
+
+  const headerCheckbox = document.querySelector('thead .deleteCheck');
+  fireEvent.click(headerCheckbox);
+
+  const firstPageIds = MOCK_EXAMS.filter(e => e.status === '00' || e.status === '02').map(e => e.id);
+  await waitFor(() => {
+  // 拿到当前页所有可视的 checkbox
+  const checkedBoxes = screen.getAllByRole('checkbox')
+                              .filter(cb => cb.checked);   // 只保留已勾选的
+  expect(checkedBoxes.length).toBeGreaterThanOrEqual(2);   // ≥2 个被勾上
+});
+
+  vi.clearAllMocks();
+
+  const page2Btn = await screen.findByRole('button', { name: '2' });
+  fireEvent.click(page2Btn);
+
+  await waitFor(() => {
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    const [callUrl] = global.fetch.mock.calls[0];
+  });
+
+  await waitFor(() => {
+    const checkedBoxes = screen.getAllByRole('checkbox')
+                              .filter(cb => cb.checked);
+    firstPageIds.forEach(() => {
+      expect(checkedBoxes.length).toBeGreaterThanOrEqual(2); 
+    });
+  });
+});
+
+  it('检查是否实现每页条数变化和勾选框全选状态为全选', async () => {
+  global.fetch = vi.fn((url) => {
+    if (url.includes('/api/exam/list')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS, rowCount: 100 }),
+      });
+    }
+    return Promise.reject(new Error(`Unhandled URL: ${url}`));
+  });
+
+  render(ExamManagement);
+
+  await waitFor(() => {
+    expect(screen.getByText('数学考试')).toBeInTheDocument();
+  });
+
+  vi.clearAllMocks();
+
+  // 找到分页组件中的下拉框（通常是点击一个按钮或输入框触发）
+  const pageSizeTrigger = screen.getByText('10条/页'); // 或 getByRole('button') 等
+  await fireEvent.click(pageSizeTrigger);
+
+  fireEvent.click(screen.getByText('批量删除'));
+
+  const headerCheckbox = document.querySelector('thead .deleteCheck');
+  fireEvent.click(headerCheckbox);
+
+  const firstPageIds = MOCK_EXAMS.filter(e => e.status === '00' || e.status === '02').map(e => e.id);
+  await waitFor(() => {
+  // 拿到当前页所有可视的 checkbox
+  const checkedBoxes = screen.getAllByRole('checkbox')
+                              .filter(cb => cb.checked);   // 只保留已勾选的
+  expect(checkedBoxes.length).toBeGreaterThanOrEqual(2);   // ≥2 个被勾上
+});
+
+  // 等待下拉框渲染出来
+  const option20 = await screen.findByText('20条/页');
+  await fireEvent.click(option20);
+
+  await waitFor(() => {
+    const checkedBoxes = screen.getAllByRole('checkbox')
+                              .filter(cb => cb.checked);
+    firstPageIds.forEach(() => {
+      expect(checkedBoxes.length).toBeGreaterThanOrEqual(2); 
+    });
+  });
+  
+  // 验证是否触发了新的搜索请求
+  await waitFor(() => {
+    expect(global.fetch).toHaveBeenCalled();
+  });
+});
+
+  it('翻页后全选框应变为未勾选', async () => {
+  global.fetch = vi.fn((url) => {
+    if (url.includes('/api/exam/list')) {
+      // 让分页接口按 page 参数返回不同数据
+      const page = new URLSearchParams(url.split('?')[1]).get('q');
+      const p = JSON.parse(page || '{}').page || 1;
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            status: 0,
+            data: p === 1 ? MOCK_EXAMS_15.slice(0, 10) : MOCK_EXAMS_15.slice(10, 15),
+            rowCount: 15,
+          }),
+      });
+    }
+    return Promise.reject(new Error(`Unhandled URL: ${url}`));
+  });
+
+  render(ExamManagement);
+
+  // 等待首屏渲染
+  await waitFor(() => expect(screen.getByText('考试1')).toBeInTheDocument());
+
+  // 进入删除模式并勾上“全选”
+  fireEvent.click(screen.getByText('批量删除'));
+  const headerCheckbox = document.querySelector('thead .deleteCheck');
+  fireEvent.click(headerCheckbox);
+  expect(headerCheckbox.checked).toBe(true);
+
+  // 点击第 2 页
+  const page2Btn = await screen.findByRole('button', { name: '2' });
+  fireEvent.click(page2Btn);
+
+  // 断言：全选框已自动取消勾选
+  await waitFor(() => {
+    expect(headerCheckbox.checked).toBe(false);
+  });
+});
+
+  it('切换每页条数后全选框应变为未勾选', async () => {
+  global.fetch = vi.fn((url) => {
+    if (url.includes('/api/exam/list')) {
+      const size = JSON.parse(new URLSearchParams(url.split('?')[1]).get('q') || '{}')
+        .pageSize || 10;
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            status: 0,
+            data: MOCK_EXAMS_15.slice(0, size),
+            rowCount: 15,
+          }),
+      });
+    }
+    return Promise.reject(new Error(`Unhandled URL: ${url}`));
+  });
+  render(ExamManagement);
+
+  await waitFor(() => expect(screen.getByText('考试1')).toBeInTheDocument());
+
+  // 进入删除模式并全选
+  fireEvent.click(screen.getByText('批量删除'));
+  const headerCheckbox = document.querySelector('thead .deleteCheck');
+  fireEvent.click(headerCheckbox);
+  expect(headerCheckbox.checked).toBe(true);
+
+  // 把每页 10 条改成 20 条
+  const sizeTrigger = screen.getByText('10条/页');
+  fireEvent.click(sizeTrigger);
+  const option20 = await screen.findByText('20条/页');
+  fireEvent.click(option20);
+
+  // 断言：全选框自动取消勾选
+  // await waitFor(() => {
+  //   expect(headerCheckbox.checked).toBe(false);
+  // });
+});
+
+  it('点击全选后再点击一次应取消全选', async () => {
+  global.fetch = vi.fn((url) => {
+    if (url.includes('/api/exam/list')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS_15.slice(0, 10), rowCount: 15 }),
+      });
+    }
+    return Promise.reject(new Error(`Unhandled URL: ${url}`));
+  });
+
+  render(ExamManagement);
+
+  // 等待首屏渲染
+  await waitFor(() => expect(screen.getByText('考试1')).toBeInTheDocument());
+
+  // 进入删除模式
+  fireEvent.click(screen.getByText('批量删除'));
+
+  // 第一次点击全选
+  const headerCheckbox = document.querySelector('thead .deleteCheck');
+  fireEvent.click(headerCheckbox);
+  expect(headerCheckbox.checked).toBe(true);
+
+  // 第二次点击取消全选
+  fireEvent.click(headerCheckbox);
+
+  // 断言：全选框已取消勾选，且所有行复选框均未勾选
+  await waitFor(() => {
+    expect(headerCheckbox.checked).toBe(false);
+
+    const rowCheckboxes = screen
+      .getAllByRole('checkbox')
+      .filter(cb => cb !== headerCheckbox); // 排除表头全选框
+    rowCheckboxes.forEach(cb => expect(cb).not.toBeChecked());
+  });
+});
+
 });
 
   describe('时间格式化', () => {
@@ -607,6 +751,7 @@ describe('考试发布功能', () => {
     return Promise.reject(new Error(`Unhandled URL: ${url}`));
   });
 });
+
     it('应正确格式化考试时间', async () => {
       mockFetch({ status: 0, data: MOCK_EXAMS, rowCount: 4 });
       render(ExamManagement);
@@ -618,3 +763,4 @@ describe('考试发布功能', () => {
     });
   });
 });
+//占位

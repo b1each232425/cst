@@ -123,4 +123,30 @@ describe('Switch 组件测试', () => {
     expect(leftText.style.getPropertyValue('--left-size')).toBe('20px');
     expect(rightText.style.getPropertyValue('--right-size')).toBe('20px');
   });
+
+  it('应该处理未传入 clickSwitchButton 的情况', async () => {
+    // 不传入 clickSwitchButton
+    render(Switch, {
+      props: {
+        is_checked: false,
+      },
+    });
+
+    const switchButton = screen.getByRole('button');
+
+    // 点击按钮不应该报错
+    await expect(() => fireEvent.click(switchButton)).not.toThrow();
+  });
+
+  it('应该处理 is_checked 为非布尔值的情况', async () => {
+    render(Switch, {
+      props: {
+        is_checked: 'true', // 字符串而非布尔值
+      },
+    });
+
+    const switchButton = screen.getByRole('button');
+    // 应该能正确处理非布尔值（可能转换为布尔值）
+    expect(switchButton.getAttribute('aria-pressed')).toBe('true');
+  });
 });

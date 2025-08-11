@@ -4,7 +4,7 @@ import ExamCreation from '../addExam/+page.svelte';
 import { toast } from '$lib/components/Toast/Toast.js';
 import { goto } from '$app/navigation';
 import SmartEditor from '@3min/smart-edit';
-
+import { resetTime } from '../addExam/+page.svelte';
 // Mock dependencies
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/components/Toast/Toast.js', () => ({ 
@@ -20,7 +20,6 @@ vi.mock('@3min/smart-edit', () => ({
   }))
 }));
 
-// Mock fetch globally with comprehensive URL handling
 function mockFetch(data, ok = true) {
   global.fetch = vi.fn((url) => {
     // 确保URL是字符串类型
@@ -61,10 +60,8 @@ function mockFetch(data, ok = true) {
 const setup = () => {
   render(ExamCreation);
   return {
-    // Basic inputs
     examNameInput: () => screen.getByPlaceholderText('请输入考试名称（例：xxx平时考试）'),
     
-    // Exam type radios - 使用更精确的选择器
     selectExamType: (type) => {
       const examTypeContainer = screen.getByText('考试类型').closest('.examTypeChooseContainer');
       const typeMap = {
@@ -76,7 +73,7 @@ const setup = () => {
       fireEvent.click(radio);
     },
     
-    // Exam method radios
+
     selectExamMethod: (method) => {
       const examMethodContainer = screen.getByText('考试方式').closest('.exam-type-choose-container');
       const methodMap = {
@@ -86,7 +83,7 @@ const setup = () => {
       fireEvent.click(radio);
     },
     
-    // Paper config actions
+
     addPaperButton: () => screen.getByRole('button', { name: '添加试卷' }),
     deletePaperButton: (index = 1) => {
       const deleteButtons = screen.queryAllByAltText('删除');
@@ -97,13 +94,13 @@ const setup = () => {
       return toggleButtons[index];
     },
     
-    // Paper selection
+
     paperSelectionButton: (index = 0) => {
       const buttons = screen.queryAllByText('试卷选择');
       return buttons[index];
     },
     
-    // Time period mode - 使用容器定位
+
     selectTimePeriodMode: (paperIndex, mode) => {
       const paperConfigs = screen.getAllByText(/试卷\d+/);
       const paperConfig = paperConfigs[paperIndex].closest('.paper-config-container');
@@ -112,7 +109,7 @@ const setup = () => {
       fireEvent.click(radio);
     },
     
-    // Duration inputs
+
     getDurationInput: (paperIndex = 0) => {
       const paperConfigs = screen.getAllByText(/试卷\d+/);
       const paperConfig = paperConfigs[paperIndex].closest('.paper-config-container');
@@ -164,7 +161,7 @@ const setup = () => {
       fireEvent.click(radio);
     },
     
-    // Name visibility
+
     selectNameVisibility: (paperIndex, visible) => {
       const paperConfigs = screen.getAllByText(/试卷\d+/);
       const paperConfig = paperConfigs[paperIndex].closest('.paper-config-container');
@@ -176,10 +173,10 @@ const setup = () => {
       }
     },
     
-    // Examinee selection
+
     examineeSelectionButton: () => screen.getByText('考生选择'),
     
-    // Action buttons
+
     cancelButton: () => document.querySelector('.cancel-action-button'),
     saveButton: () => document.querySelector('.save-action-button')
   };
@@ -532,45 +529,7 @@ describe('考试创建页面测试', () => {
       });
     });
 
-    // it('多个场次中第二个未选择试卷时显示警告', async () => {
-    //   const { examNameInput, addPaperButton, saveButton } = setup();
-      
-    //   await fireEvent.input(examNameInput(), { target: { value: '测试考试' } });
-      
-    //   // 添加第二个试卷配置
-    //   await fireEvent.click(addPaperButton());
-      
-    //   // 模拟第一个试卷已选择，第二个未选择
-    //   // 这需要通过更复杂的状态操作来实现
-      
-    //   await fireEvent.click(saveButton());
-      
-    //   await waitFor(() => {
-    //     expect(toast.warning).toHaveBeenCalledWith('第2个场次未选择试卷');
-    //   });
-    // });
   });
-
-  // 测试时间段验证
-  describe('时间段验证', () => {
-  const setupValidFormWithPaper = async () => {
-    const utils = setup();
-    
-    // 设置考试名称
-    await fireEvent.input(utils.examNameInput(), { target: { value: '测试考试' } });
-    
-    // 模拟试卷已选择的状态 - 通过直接触发组件事件或使用测试工具
-    // 由于我们需要绕过试卷选择验证，我们可以通过以下方式模拟：
-    
-    // 点击试卷选择按钮
-    const paperSelectionButton = screen.getByText('试卷选择');
-    await fireEvent.click(paperSelectionButton);
-    
-    // 模拟PaperSelectionPanel的onConfirm回调
-    // 这里我们需要找到一种方式来触发试卷选择完成的状态
-    
-    return utils;
-  };
 
   // 创建一个辅助函数来模拟设置时间
   const setExamTime = async (startTime, endTime) => {
@@ -600,30 +559,16 @@ describe('考试创建页面测试', () => {
     }
   };
 
-  it('未设置开始时间时显示警告', async () => {
-    const { saveButton } = await setupValidFormWithPaper();
-    
-    console.log('=== 测试未设置开始时间的验证 ===');
-    console.log('当前状态:');
-    console.log('- 考试名称: 测试考试');
-    console.log('- 试卷选择: 已尝试选择');
-    console.log('- 开始时间: 未设置');
-    console.log('- 结束时间: 未设置');
-    
-    await fireEvent.click(saveButton());
-    
-    // 由于试卷未真正选择，可能会先提示试卷选择
-    await waitFor(() => {
-      // 检查是否提示了时间段或试卷选择的错误
-      const calls = toast.warning.mock.calls;
-      const hasTimeError = calls.some(call => 
-        call[0].includes('时间段') || call[0].includes('试卷')
-      );
-      expect(hasTimeError).toBe(true);
-    });
-    
-    console.log('验证结果: 正确提示了必填项缺失');
+  it('表单验证优先级：先检查试卷选择，再检查时间设置', async () => {
+  const { examNameInput, saveButton } = setup();
+  
+  await fireEvent.input(examNameInput(), { target: { value: '测试考试' } });
+  await fireEvent.click(saveButton());
+  
+  await waitFor(() => {
+    expect(toast.warning).toHaveBeenCalledWith('第1个场次未选择试卷');
   });
+});
 
   it('开始时间早于当前时间时显示警告', async () => {
     // 使用mock来模拟组件内部状态
@@ -668,17 +613,16 @@ describe('考试创建页面测试', () => {
     console.log('基本验证逻辑测试完成');
   });
 
-  // 添加一个更实用的集成测试
   it('完整的时间验证流程测试', async () => {
     const mockComponent = setup();
     
-    // 步骤1: 设置考试名称
+    //设置考试名称
     await fireEvent.input(mockComponent.examNameInput(), { target: { value: '时间验证测试' } });
     
     console.log('=== 完整时间验证流程 ===');
     console.log('步骤1: 考试名称已设置');
     
-    // 步骤2: 点击保存，验证缺少试卷选择的提示
+    // 点击保存，验证缺少试卷选择的提示
     await fireEvent.click(mockComponent.saveButton());
     
     await waitFor(() => {
@@ -690,7 +634,7 @@ describe('考试创建页面测试', () => {
     // 清除之前的调用
     vi.clearAllMocks();
     
-    // 步骤3: 如果能模拟试卷选择，继续测试时间验证
+    //如果能模拟试卷选择，继续测试时间验证
     console.log('步骤3: 需要模拟试卷选择后再测试时间验证');
     console.log('当前验证: 表单验证的优先级正确 (试卷选择 -> 时间设置)');
   });
@@ -702,15 +646,10 @@ describe('考试创建页面测试', () => {
     // 测试时间比较逻辑
     const now = new Date();
     const pastTime = new Date('2025-08-03T10:00:00.000Z');
-    const futureStartTime = new Date('2025-08-05T12:00:00.000Z');
-    const futureEndTime = new Date('2025-08-05T14:00:00.000Z');
+    const futureStartTime = new Date('2045-08-05T12:00:00.000Z');
+    const futureEndTime = new Date('2045-08-05T14:00:00.000Z');
     const invalidEndTime = new Date('2025-08-05T10:00:00.000Z'); // 早于开始时间
-    
-    console.log('当前时间:', now.toISOString());
-    console.log('过去时间:', pastTime.toISOString());
-    console.log('有效开始时间:', futureStartTime.toISOString());
-    console.log('有效结束时间:', futureEndTime.toISOString());
-    console.log('无效结束时间:', invalidEndTime.toISOString());
+  
     
     // 验证时间比较逻辑
     expect(pastTime < now).toBe(true);
@@ -735,5 +674,7 @@ describe('考试创建页面测试', () => {
 });
   
   
-});
+
+
+
 

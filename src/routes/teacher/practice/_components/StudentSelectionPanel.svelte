@@ -10,6 +10,7 @@
   import Button from '$lib/components/Button/Button.svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
   import Empty from '$lib/components/Table/Empty.svelte';
+  import StudentImportPanel from './StudentImportPanel.svelte';
 
   let {
     show_panel = false,
@@ -138,29 +139,7 @@
     return Math.max(...selected_ids.map((item) => item.serial_number || 0));
   }
 
-  /**
-   * @param {string} value
-   * 搜索页数
-   */
-  function onSearchPageFunc(value) {
-    const numericValue = parseFloat(value);
-    if (numericValue < 1) {
-      search_params.page = 1;
-    } else {
-      search_params.page = numericValue;
-    }
 
-    //防抖逻辑
-    if (page_search_timer) {
-      clearTimeout(page_search_timer);
-    }
-    page_search_timer = setTimeout(() => {
-      searchExaminee();
-      page_search_timer = null;
-    }, 300);
-  }
-
- 
 
   /**
    *
@@ -211,7 +190,6 @@
     const page = typeof event === 'number' ? event : event.detail;
     selected_search_params.page = page;
   }
-
 
   async function searchExaminee() {
     loading = true;
@@ -348,8 +326,7 @@
           totals = 0;
           search_params.page = current_page;
           toast.error(error);
-        }else if (selected_ids.length > 0 && selected_ids.length != result.data.length){
-
+        } else if (selected_ids.length > 0 && selected_ids.length != result.data.length) {
         } else {
           selected_ids = result.data === null ? [] : result.data;
         }
@@ -408,19 +385,15 @@
   $effect(() => {
     if (show_panel && initial_load) {
       initial_load = false;
-
+      //每次打开时将外部选中的id赋值给当前面板记录的已选中的id 在搜索前执行是为了能正常显示每个列表项的选中效果
+      selected_ids = ids;
+      filtered_selected_ids = ids;
       if (practice_id) {
-        //每次打开时将外部选中的id赋值给当前面板记录的已选中的id 在搜索前执行是为了能正常显示每个列表项的选中效果
-        filtered_selected_ids = selected_ids;
         // 获取已选学生的信息
         getStudentInfo(practice_id);
-
         // 初始化为查看模式，不自动搜索
         is_selection_mode = false;
       } else {
-        //每次打开时将外部选中的id赋值给当前面板记录的已选中的id 在搜索前执行是为了能正常显示每个列表项的选中效果
-        filtered_selected_ids = selected_ids;
-
         // 初始化为查看模式，不自动搜索
         is_selection_mode = false;
       }
@@ -436,36 +409,40 @@
     }
   }
 
-  async function downloadTemplate() {
-    const response = await fetch('/api/files/exam/d0a9rv6slh1c714h2fkg.xlsx', {
-      method: 'GET',
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.blob();
-      })
-      .then((blob) => {
-        let filename = '考生导入模板.xlsx';
+  //下载模板函数
+    async function downloadTemplate() {
+        
+         await fetch(
+                "/api/files/exam/d0a9rv6slh1c714h2fkg.xlsx",
+                {
+                    method: "GET",
+                },
+            ).then((response)=>{
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.blob();
+            }).then(async(blob)=>{
+               let filename = "考生导入模板.xlsx";
+                 // 获取文件内容
+            // 创建下载链接
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
 
-        // 创建下载链接
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
+            // 清理
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            }).catch (error=>{
+            console.error("下载模板失败:", error);
+            toast.error("下载模板失败");
+        }) 
+    }
 
-        // 清理
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      })
-      .catch((error) => {
-        console.error('下载模板失败:', error);
-        alert('下载模板失败，请稍后重试');
-      });
-  }
+
 </script>
 
 <div class={show_panel ? 'examinee-panel-container' : 'hide'}>
@@ -473,7 +450,6 @@
     <div class="panel-header">
       <span class="panel-header-text">{is_selection_mode ? '选择学生' : '学生列表'}</span>
       <Button
-        
         onclick={() => {
           show_panel = false;
           search_params.page = 1;
@@ -517,11 +493,11 @@
               </tbody>
             </table>
             {#if filtered_selected_ids.length === 0}
-            <div  style="height: 200px; padding: 0;">
-              <div class="empty-wrapper">
-                <Empty text="暂无学生数据" />
+              <div style="height: 200px; padding: 0;">
+                <div class="empty-wrapper">
+                  <Empty text="暂无学生数据" />
+                </div>
               </div>
-            </div>
             {/if}
           </div>
           <div class="pagination-container">
@@ -534,7 +510,6 @@
               current_page={selected_search_params.page}
               on:pageChange={onSelectedPageChooseFunc}
               on:pageSizeChange={handle_page_size_change}
-              
             ></Pagination>
           </div>
         </div>
@@ -551,14 +526,14 @@
           </div>
           <div class="button-group">
             <Button type="info" onclick={backToViewMode} plain>返回</Button>
-            <Button onclick={downloadTemplate}>下载模板</Button>
-            <Button
-              onclick={() => {
-                if (student_import_panel) {
-                  student_import_panel.triggerFileInput();
-                }
-              }}>导入学生</Button
-            >
+             <Button onclick={downloadTemplate}>
+                            下载模板
+                        </Button>
+                        <Button  onclick={() => {
+                            if (student_import_panel) {
+                                student_import_panel.triggerFileInput();
+                            }
+                        }}>导入学生</Button>
           </div>
         </div>
         <div class="examinee-selection-table-container">
@@ -626,7 +601,7 @@
             </tbody>
           </table>
           {#if student_list.length === 0}
-            <div  style="height: 200px; padding: 0;">
+            <div style="height: 200px; padding: 0;">
               <div class="empty-wrapper">
                 <Empty text="暂无学生数据" />
               </div>
@@ -659,17 +634,50 @@
         plain>取消</Button
       >
       <Button
-        
         onclick={() => {
           show_panel = false;
           search_params.page = 1;
           onConfirm(selected_ids);
-         
-        }} >确定</Button
+        }}>确定</Button
       >
     </div>
   </div>
 </div>
+<StudentImportPanel
+    onImport={(/** @type {any[]} */ success_student, /** @type {boolean} */ has_error) => {
+        if (success_student && success_student.length > 0) {
+            // 过滤掉已存在的id
+            const newStudents = success_student
+                .filter(
+                    (/** @type {any} */ student) =>
+                        !selected_ids.some((item) => item.id === student),
+                )
+                .map((/** @type {any} */ student, /** @type {number} */ index) => ({
+                    id: student,
+                    serial_number: selected_ids.length + index + 1,
+                }));
+
+            // 更新selected_ids
+            selected_ids = [...selected_ids, ...newStudents];
+
+            searchExaminee();
+
+            // 检查是否需要重新计算序号
+            recalculateSerialNumbers();
+        }
+
+        if (!has_error) {
+            show_student_import_panel = false;
+        }
+    }}
+    onCancel={() => {
+        show_student_import_panel = false;
+    }}
+    bind:show={show_student_import_panel}
+    bind:this={student_import_panel}
+/>
+
+
 <style lang="scss" scoped>
   .hide {
     display: none;
@@ -741,8 +749,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index:1001;
-    
+    z-index: 1001;
   }
 
   .examinee-panel {
@@ -756,7 +763,6 @@
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     z-index: 1001;
-     
   }
 
   .panel-header {
@@ -833,6 +839,27 @@
     flex-direction: column;
     overflow-y: auto;
   }
+  .download-template-button {
+        border: none;
+        border-radius: 3px;
+        background-color: #e3e3e3;
+        width: 100px;
+        height: 32px;
+        color: #165dff;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .upload-file-button {
+        border: none;
+        border-radius: 3px;
+        background-color: #165dff;
+        width: 100px;
+        height: 32px;
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+    }
 
   .panel-footer {
     display: flex;

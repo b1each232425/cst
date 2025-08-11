@@ -103,29 +103,24 @@
 
     let {
         onclose, update,
-        to_import_groupID = 0, to_import_group_name = "",
-        to_import_group_length = 0,
+        to_import_group = {
+            id: 0,
+            name: "",
+        },
         fetchPaper, savePaper
     } = $props();                 // 关闭弹窗
     let drop_up_toggle_is_open = $state(false);     // 上拉题组栏
     let filter_is_open = $state(false);           // 下拉筛选栏
     
     /******************* 开关控制区 *******************/
-    
 
+    console.log(to_import_group)
 
     /********************* 信息区 *********************/
 
     let paperID = $state(0);
     let paper_info = $state(null);
     let paper_groups = $state([]); 
-
-    // 选中题组
-    function selectGroup(group) {
-        to_import_groupID = group.id;
-        to_import_group_name = group.name; 
-        to_import_group_length = group.questions.length;
-    }
 
     /********************* 信息区 *********************/
 
@@ -188,9 +183,9 @@
     function toggleSelection(id, checked) {
         if (checked) {
             // 查找对应题目，获取 score
-            const question = question_list.find(q => q.ID === id);
-            if (question) {
-                selected_question_infos.push({ id: question.ID, score: question.Score });
+            const QUESTION = question_list.find(question => question.ID === id);
+            if (QUESTION) {
+                selected_question_infos.push({ id: QUESTION.ID, score: QUESTION.Score });
             }
         } else {
             selected_question_infos = selected_question_infos.filter(item => item.id !== id);
@@ -200,46 +195,46 @@
 
     // 检查全选
     function checkAllSelected() {
-        const currentPageIDs = question_list.map(item => item.ID);
-        const selectedIDs = selected_question_infos.map(q => q.id);
+        const CURRENT_PAGE_IDS = question_list.map(item => item.ID);
+        const SELECTED_IDS = selected_question_infos.map(question => question.id);
         all_question_selected = (
             question_list.length !== 0 &&
-            currentPageIDs.every(id => selectedIDs.includes(id))
+            CURRENT_PAGE_IDS.every(id => SELECTED_IDS.includes(id))
         );
     }
 
     // 全选
     function selectAllQuestions(checked) {
-        const currentPageQuestions = question_list.map(item => ({ id: item.ID, score: item.Score }));
+        const CURRENT_PAGE_QUESTIONS = question_list.map(item => ({ id: item.ID, score: item.Score }));
         if (checked) {
             // 只追加未存在的
-            const existingIds = selected_question_infos.map(item => item.id);
-            const toAdd = currentPageQuestions.filter(q => !existingIds.includes(q.id));
-            selected_question_infos = [...selected_question_infos, ...toAdd];
+            const EXISTING_IDS = selected_question_infos.map(item => item.id);
+            const TO_ADD_IDS = CURRENT_PAGE_QUESTIONS.filter(question => !EXISTING_IDS.includes(question.id));
+            selected_question_infos = [...selected_question_infos, ...TO_ADD_IDS];
         } else {
             // 移除当前页的
-            const currentPageIds = question_list.map(item => item.ID);
-            selected_question_infos = selected_question_infos.filter(q => !currentPageIds.includes(q.id));
+            const CURRENT_PAGE_IDS = question_list.map(item => item.ID);
+            selected_question_infos = selected_question_infos.filter(question => !CURRENT_PAGE_IDS.includes(question.id));
         }
         checkAllSelected();
     }
 
     // 确认导入题目
     function confirmImport() {
-        const actions = [
+        const ACTIONS = [
             {
                 action: "add_question",
-                payload: selected_question_infos.map((q, index) => ({
+                payload: selected_question_infos.map((question,index) => ({
                     temp_id: `temp_question_${index + 1}`,
-                    group_id: to_import_groupID,
-                    order: to_import_group_length + index + 1,
-                    bank_question_id: q.id,
-                    score: q.score
+                    group_id: to_import_group.id,
+                    order: to_import_group.questions.length + index + 1,
+                    bank_question_id: question.id,
+                    score: question.score
                 }))
             }
         ];
 
-        savePaper(paperID, actions)
+        savePaper(paperID, ACTIONS)
             .then(() => {
                 fetchPaper(paperID)
                     .then(result => {
@@ -438,11 +433,11 @@
                             <tbody>
                                 {#if question_list && question_list.length !== 0}
                                     {#each question_list as question}
-                                        <tr class:selected={selected_question_infos.map(q => q.id).includes(question.ID)}
-                                            onclick={() => toggleSelection(question.ID, !selected_question_infos.map(q => q.id).includes(question.ID))}>
+                                        <tr class:selected={selected_question_infos.map(question => question.id).includes(question.ID)}
+                                            onclick={() => toggleSelection(question.ID, !selected_question_infos.map(question => question.id).includes(question.ID))}>
                                         <td class="checkbox">
                                             <input type="checkbox"
-                                                checked={selected_question_infos.map(q => q.id).includes(question.ID)}
+                                                checked={selected_question_infos.map(question => question.id).includes(question.ID)}
                                                 onclick={(e) => {
                                                     e.stopPropagation();
                                                     toggleSelection(question.ID, e.target.checked);
@@ -501,20 +496,24 @@
                     <div class="dropup-menu">
                         {#each paper_groups as group}
                             <!-- svelte-ignore a11y_click_events_have_key_events -->
-                            <div class="menu-option {to_import_groupID===group.id?"selected":""}" onclick={()=>selectGroup(group)}>
+                            <div class="menu-option {group.id===to_import_group.id?"selected":""}" onclick={()=>{to_import_group=group}}>
                                 <span>
-                                    {group.name}
+                                    {group.name}（共{group.questions.length}题，共{
+                                        group.questions.reduce((sum,question)=>sum+(question.score||0),0)
+                                    }分）
                                 </span>
                             </div>
                         {/each}
                     </div>  
                 {/if}
-                <span class="selected-group">{to_import_groupID===0?"请选择题组":to_import_group_name}</span>
+                <span class="selected-group">{to_import_group.id===0?"请选择题组":to_import_group.name+`（共${to_import_group.questions.length}题，共${
+                    to_import_group.questions.reduce((sum,question)=>sum+(question.score||0),0) 
+                }分）`}</span>
                 <button class="toggle-btn">∨</button>
             </div>
             <div class="btn-box">
                 <Button onclick={onclose} plain={true}>取消</Button>
-                {#if to_add_bankID!=="" && to_import_groupID!==0 && selected_question_infos.length!==0}
+                {#if to_add_bankID!=="" && to_import_group.id!==0 && selected_question_infos.length!==0}
                     <Button onclick={()=>confirmImport()}>确认导入</Button>
                 {:else}
                     <Button disabled={true}>确认导入</Button>

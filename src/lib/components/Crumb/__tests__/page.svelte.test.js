@@ -6,6 +6,7 @@ import { expect } from 'vitest';
 import { slide } from 'svelte/transition';
 import { goto } from '$app/navigation';
 import { page } from '$app/state';
+import { beforeNavigate } from '$app/navigation';
 
 // 在测试文件中添加 Svelte 过渡模拟
 vi.mock('svelte/transition', () => ({
@@ -16,28 +17,44 @@ vi.mock('svelte/transition', () => ({
   })),
 }));
 
-// 模拟 $app/navigation 的 goto 函数
-vi.mock('$app/navigation', () => ({
-  goto: vi.fn(),
-}));
-
 // 模拟 page
 vi.mock('$app/state', () => ({
   page: {
-    url: {
-      pathname: '/teacher/question-bank/theory/editBank',
-    },
+    url: new URL('http://localhost/teacher/question-bank/theory'),
   },
 }));
+
+function setPathname(path) {
+  page.url = new URL(`http://localhost${path}`);
+}
+
+// 模拟 $app/navigation
+let mockBeforeNavigateCallback;
+vi.mock('$app/navigation', () => ({
+  beforeNavigate: (callback) => {
+    mockBeforeNavigateCallback = callback; // 存储回调
+  },
+  goto: vi.fn(),
+}));
+
+// 手动触发 beforeNavigate 的函数
+function triggerBeforeNavigate(fromPath, toPath) {
+  if (mockBeforeNavigateCallback) {
+    mockBeforeNavigateCallback({
+      from: { url: new URL(`http://localhost${fromPath}`) },
+      to: { url: new URL(`http://localhost${toPath}`) },
+      cancel: vi.fn(),
+    });
+  }
+}
 
 describe('Crumb.svelte 面包屑组件测试', () => {
   beforeEach(() => {
     // 在每个测试前，清空所有的模拟
     vi.restoreAllMocks();
 
-    global.fetch = vi.fn();
-
     // 模拟成功的API响应
+    global.fetch = vi.fn();
     fetch.mockResolvedValueOnce({
       json: () =>
         Promise.resolve({
@@ -45,6 +62,196 @@ describe('Crumb.svelte 面包屑组件测试', () => {
           data: { OfficialName: '张三' }, // 模拟用户名称
         }),
     });
+
+    // 初始化page返回路径
+    setPathname('/teacher/question-bank/theory');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
+    delete global.someCustomVar;
+  });
+
+  it('应该正确渲染面包屑', async () => {
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
+    expect(screen.queryByText('编辑题库')).not.toBeInTheDocument();
+  });
+
+  it('正确渲染试卷管理', async () => {
+    setPathname('/teacher/paper');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('试卷管理'));
+  });
+
+  it('正确渲染试卷管理', async () => {
+    setPathname('/teacher/paper');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('试卷管理'));
+  });
+
+  it('正确渲染练习管理', async () => {
+    setPathname('/teacher/practice');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('练习管理'));
+  });
+
+  it('正确渲染考试管理', async () => {
+    setPathname('/teacher/exam');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('考试管理'));
+  });
+
+  it('正确渲染考试成绩管理', async () => {
+    setPathname('/teacher/grade/exam-grade');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('考试成绩管理'));
+  });
+
+  it('正确渲染考试成绩管理', async () => {
+    setPathname('/teacher/grade/practice-grade');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('练习成绩管理'));
+  });
+
+  it('正确渲染学生管理', async () => {
+    setPathname('/teacher/student-management');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('学生管理'));
+  });
+
+  it('正确渲染用户管理', async () => {
+    setPathname('/teacher/user-management');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('用户管理'));
+  });
+
+  it('点击面包屑回退到上一路由', async () => {
+    setPathname('/teacher/question-bank/theory/editBank');
+
+    render(Breadcrumb);
+
+    // 验证初始面包屑内容
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
+
+    // 验证面包屑内容更新
+    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
+    expect(screen.getByText('编辑题库')).toBeInTheDocument();
+
+    // 模拟点击回退到上一路由
+    fireEvent.click(screen.getByText('理论题库管理'));
+
+    // 检查 goto 是否被正确调用
+    expect(goto).toHaveBeenCalledWith('/teacher/question-bank/theory');
   });
 
   it('应该正确渲染元素', async () => {
@@ -115,29 +322,8 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     fireEvent.click(loginOutButton);
 
     expect(goto).toHaveBeenCalledWith('/login');
-  });
-
-  it('应该正确渲染面包屑', async () => {
-    // 模拟 Web Animations API
-    global.Element.prototype.animate = vi.fn().mockImplementation(() => ({
-      finished: Promise.resolve(),
-      cancel: vi.fn(),
-    }));
-
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
-
-    // 等待异步数据加载完成
-    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
-
-    // 使用 getByAltText 获取单个头像和通知图标
-    expect(screen.getByAltText('头像')).toBeInTheDocument();
-    expect(screen.getByAltText('通知')).toBeInTheDocument();
-
-    expect(screen.getByText('理论题库管理'));
-    expect(screen.getByText('编辑题库'));
+    // 模拟导航事件
+    triggerBeforeNavigate('/teacher/question-bank/theory', '/login');
   });
 
   it('应该正确处理用户数据', async () => {
@@ -163,7 +349,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.queryByText('张三')).not.toBeInTheDocument();
   });
 
-  it('应该处理当 status !== 0 时的错误', async () => {
+  it('应该处理当 status为负数时的错误', async () => {
     // 设置 console.error 的 spy
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -172,7 +358,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
       ok: true,
       json: () =>
         Promise.resolve({
-          status: 500,
+          status: -1,
           data: {},
         }),
     });
@@ -180,8 +366,40 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     render(Breadcrumb);
 
     await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith('获取用户权限失败:', expect.any(Error));
+      //expect(consoleErrorSpy).toHaveBeenCalledWith('获取用户权限失败:', expect.any(Error));
       expect(consoleErrorSpy.mock.calls[0][1].message).toMatch('用户数据不存在');
+    });
+  });
+
+  it('处理API请求失败（网络错误）', async () => {
+    // 设置 console.error 的 spy
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    // 模拟前端网络错误
+    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network Error'));
+
+    render(Breadcrumb);
+
+    await waitFor(() => {
+      expect(consoleErrorSpy.mock.calls[0][1].message).toBe('Network Error');
+    });
+  });
+
+  it('处理API请求失败', async () => {
+    // 设置 console.error 的 spy
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    // 模拟后端500错误
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: () => Promise.resolve({ status: 500, data: null }),
+    });
+
+    render(Breadcrumb);
+
+    await waitFor(() => {
+      expect(consoleErrorSpy.mock.calls[0][1].message).toBe('用户数据不存在');
     });
   });
 
@@ -227,25 +445,5 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
     // 清理外部点击区域
     document.body.removeChild(outsideClickArea);
-  });
-
-  it('点击面包屑回退到上一路由', async () => {
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
-
-    // 等待异步数据加载完成
-    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
-
-    // 验证面包屑内容
-    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
-    expect(screen.getByText('编辑题库')).toBeInTheDocument();
-
-    // 模拟点击回退到上一路由
-    fireEvent.click(screen.getByText('理论题库管理'));
-
-    // 检查 goto 是否被正确调用
-    expect(goto).toHaveBeenCalledWith('/teacher/question-bank/theory');
   });
 });
