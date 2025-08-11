@@ -432,17 +432,18 @@
     }
 
   async function fetchSelectedStudents() {
-    fetch(`/api/exam/examinee?exam_id=${examID}`,
+    fetch(`/api/examinee?exam_id=${examID}`,
       {
         method:"GET",
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json",
-            },
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+          },
         })
         .then((response) => response.json())
         .then((data)=>{
-          console.log(data);
+           exam_examinee=data.data;
+           console.log(data);
         })
       }
 
@@ -752,11 +753,10 @@
         <RequiredLabel text="考试时长" />
         <div class="config-row-content">
           <input
-            class="duration-input"
+            class="{paper_configs[paperConfigIndex].periodMode==='00'?"duration-input":'simple-input'}"
             bind:value={paper_configs[paperConfigIndex].duration}
             type="number"
             min="1"
-            disabled
           />
           <span style="font-size: 14px;">分钟</span>
         </div>
@@ -1146,7 +1146,10 @@
     padding-bottom: 10px;
     gap: 10px;
     .duration-input {
-      width: 50px;
+      height: 20px;
+      width: 60px;
+      pointer-events: none;
+      opacity: 0.5; /* 灰色显示 */
     }
   }
 
