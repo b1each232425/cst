@@ -53,6 +53,51 @@
     page_size_options = [10, 20, 30, 40, 50], // 每页条数可选配置
   } = $props();
 
+  // 参数校验
+  (() => {
+    // 校验 total_items 参数
+    if (typeof total_items !== 'number') {
+      console.warn(`[Pagination] total_items 应该是一个数字，当前为 ${typeof total_items}`);
+      total_items = 0; // 设置默认值
+    }
+
+    // 校验 page_size 参数
+    if (typeof page_size !== 'number') {
+      console.warn(`[Pagination] page_size 应该是一个数字，当前为 ${typeof page_size}`);
+      page_size = 10; // 设置默认值
+    }
+
+    // 校验 current_page 参数
+    if (typeof current_page !== 'number') {
+      console.warn(`[Pagination] current_page 应该是一个数字，当前为 ${typeof current_page}`);
+      current_page = 1; // 设置默认值
+    }
+
+    // 校验 jump_page 参数
+    if (typeof jump_page !== 'number') {
+      console.warn(`[Pagination] jump_page 应该是一个数字，当前为 ${typeof jump_page}`);
+      jump_page = 1; // 设置默认值
+    }
+
+    // 校验 page_size_options 参数
+    if (!Array.isArray(page_size_options)) {
+      console.warn(`[Pagination] page_size_options 应该是一个数组，当前为 ${typeof page_size_options}`);
+      page_size_options = [10, 20, 30, 40, 50]; // 设置默认值
+    } else {
+      // 校验数组内每一项是否为数字
+      let flag = false;
+      page_size_options.forEach((option, index) => {
+        if (typeof option !== 'number') {
+          console.warn(`[Pagination] page_size_options[${index}] 应该是一个数字，当前为 ${typeof option}`);
+          flag = true;
+        }
+      });
+      if (flag) {
+        page_size_options = [10, 20, 30, 40, 50]; // 设置默认值
+      }
+    }
+  })();
+
   // 创建事件分发器
   const dispatch = createEventDispatcher();
 

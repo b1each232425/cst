@@ -7,7 +7,6 @@
   import { toast } from '$lib/components/Toast/Toast.js';
   import { beforeNavigate } from '$app/navigation';
 
-  let { options } = $props();
   let nav_map = $state();
   let current_path = $derived(page.url.pathname);
   let is_auto_fold = false;
@@ -247,15 +246,6 @@
   });
 
   onMount(() => {
-    // 设置侧边栏宽度和高度
-    sidebar_element.style.setProperty('--sidebar-width', options?.sidebarWidth || '235px');
-
-    sidebar_element.style.setProperty('--sidebar-max-width', options?.sidebarMaxWidth || '250px');
-
-    sidebar_element.style.setProperty('--sidebar-min-width', options?.sidebarMinWidth || '220px');
-
-    sidebar_element.style.setProperty('--sidebar-height', options?.sidebarHeight || '100%');
-
     // 当窗口大小变化时，调用handleResize函数,当宽度太小自动收起侧边栏
     window.addEventListener('resize', handleResize);
 

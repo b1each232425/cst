@@ -7,9 +7,152 @@ describe('Switch 组件测试', () => {
   let handleClickSwitchButton;
 
   beforeEach(() => {
+    // 在每个测试前，清空所有的模拟
+    vi.restoreAllMocks();
+
     handleClickSwitchButton = vi.fn(() => {
       is_checked = !is_checked;
     });
+  });
+
+  /**
+   * 测试 is_checked 参数
+   */
+  it('is_checked 参数为布尔值时，组件正常渲染', () => {
+    render(Switch, { props: { is_checked: true } });
+    const switchElement = screen.getByTestId('switch-ball');
+    expect(switchElement).toHaveClass('checked');
+  });
+
+  it('is_checked 参数不是布尔值时，应输出警告并使用默认值 false', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Switch, { props: { is_checked: 'true' } }); // 传入字符串
+    expect(spy).toHaveBeenCalledWith('[Switch] is_checked 必须是布尔值，当前为 string');
+    const switchElement = screen.getByTestId('switch-ball');
+    expect(switchElement).toHaveClass('unchecked');
+  });
+
+  /**
+   * 测试 ball_color 参数
+   */
+  it('ball_color 参数为字符串时，组件正常渲染', () => {
+    render(Switch, { props: { ball_color: 'blue' } });
+    const ballElement = screen.getByTestId('switch-ball');
+    expect(ballElement.style.getPropertyValue('--ball-color')).toBe('blue');
+  });
+
+  it('ball_color 参数不是字符串时，应输出警告并使用默认值 white', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Switch, { props: { ball_color: 123 } }); // 传入数字
+    expect(spy).toHaveBeenCalledWith('[Switch] ball_color 必须是字符串，当前为 number');
+    const ballElement = screen.getByTestId('switch-ball');
+    expect(ballElement.style.getPropertyValue('--ball-color')).toBe('white');
+  });
+
+  /**
+   * 测试 checked_background_color 参数
+   */
+  it('checked_background_color 参数为字符串时，组件正常渲染', () => {
+    render(Switch, { props: { checked_background_color: '#ff0000', is_checked: true } });
+    const switchElement = screen.getByRole('button');
+    expect(switchElement.style.getPropertyValue('--background-color')).toBe('#ff0000');
+  });
+
+  it('checked_background_color 参数不是字符串时，应输出警告并使用默认值 #4a90e2', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Switch, { props: { checked_background_color: 456, is_checked: true } }); // 传入数字
+    expect(spy).toHaveBeenCalledWith('[Switch] checked_background_color 必须是字符串，当前为 number');
+    const switchElement = screen.getByRole('button');
+    expect(switchElement.style.getPropertyValue('--background-color')).toBe('#4a90e2');
+  });
+
+  /**
+   * 测试 unchecked_background_color 参数
+   */
+  it('unchecked_background_color 参数为字符串时，组件正常渲染', () => {
+    render(Switch, { props: { unchecked_background_color: '#ccc' } });
+    const switchElement = screen.getByRole('button');
+    expect(switchElement.style.getPropertyValue('--background-color')).toBe('#ccc');
+  });
+
+  it('unchecked_background_color 参数不是字符串时，应输出警告并使用默认值 #ccc', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Switch, { props: { unchecked_background_color: true } }); // 传入布尔值
+    expect(spy).toHaveBeenCalledWith('[Switch] unchecked_background_color 必须是字符串，当前为 boolean');
+    const switchElement = screen.getByRole('button');
+    expect(switchElement.style.getPropertyValue('--background-color')).toBe('#ccc');
+  });
+
+  /**
+   * 测试 left_text 参数
+   */
+  it('left_text 参数为字符串时，组件正常渲染', () => {
+    render(Switch, { props: { left_text: '关闭' } });
+    const leftTextElement = screen.getByText('关闭');
+    expect(leftTextElement).toBeInTheDocument();
+  });
+
+  it('left_text 参数不是字符串时，应输出警告并使用默认值 Off', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Switch, { props: { left_text: 123 } }); // 传入数字
+    expect(spy).toHaveBeenCalledWith('[Switch] left_text 必须是字符串，当前为 number');
+    const leftTextElement = screen.getByText('Off');
+    expect(leftTextElement).toBeInTheDocument();
+  });
+
+  /**
+   * 测试 right_text 参数
+   */
+  it('right_text 参数为字符串时，组件正常渲染', () => {
+    render(Switch, { props: { right_text: '开启' } });
+    const rightTextElement = screen.getByText('开启');
+    expect(rightTextElement).toBeInTheDocument();
+  });
+
+  it('right_text 参数不是字符串时，应输出警告并使用默认值 On', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Switch, { props: { right_text: true } }); // 传入布尔值
+    expect(spy).toHaveBeenCalledWith('[Switch] right_text 必须是字符串，当前为 boolean');
+    const rightTextElement = screen.getByText('On');
+    expect(rightTextElement).toBeInTheDocument();
+  });
+
+  /**
+   * 测试 width 参数
+   */
+  it('width 参数为有效的 CSS 长度单位时，组件正常渲染', () => {
+    render(Switch, { props: { width: '100px' } });
+    const switchElement = screen.getByRole('button');
+    expect(switchElement.style.getPropertyValue('--button-width')).toBe('100px');
+  });
+
+  it('width 参数不是有效的 CSS 长度单位时，应输出警告并使用默认值 80px', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Switch, { props: { width: 100 } }); // 传入数字
+    expect(spy).toHaveBeenCalledWith('[Switch] width 必须是有效的 CSS 长度单位，当前为 number');
+    const switchElement = screen.getByRole('button');
+    expect(switchElement.style.getPropertyValue('--button-width')).toBe('80px');
+  });
+
+  /**
+   * 测试 clickSwitchButton 参数
+   */
+  it('clickSwitchButton 参数为函数时，组件正常渲染', () => {
+    const handleClick = vi.fn();
+    render(Switch, { props: { clickSwitchButton: handleClick } });
+    const buttonElement = screen.getByRole('button');
+    fireEvent.click(buttonElement);
+    expect(handleClick).toHaveBeenCalled();
+  });
+
+  it('clickSwitchButton 参数不是函数时，应输出警告并使用默认空函数', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Switch, { props: { clickSwitchButton: 'click' } }); // 传入字符串
+    expect(spy).toHaveBeenCalledWith('[Switch] clickSwitchButton 必须是函数，当前为 string');
+    const handleClick = vi.fn();
+    const buttonElement = screen.getByRole('button');
+    fireEvent.click(buttonElement);
+    expect(handleClick).not.toHaveBeenCalled();
   });
 
   it('应该渲染正确的左侧文本和右侧文本', async () => {
@@ -122,31 +265,5 @@ describe('Switch 组件测试', () => {
     // 验证文本的大小（根据给定的宽度，预计字体大小为 20px）
     expect(leftText.style.getPropertyValue('--left-size')).toBe('20px');
     expect(rightText.style.getPropertyValue('--right-size')).toBe('20px');
-  });
-
-  it('应该处理未传入 clickSwitchButton 的情况', async () => {
-    // 不传入 clickSwitchButton
-    render(Switch, {
-      props: {
-        is_checked: false,
-      },
-    });
-
-    const switchButton = screen.getByRole('button');
-
-    // 点击按钮不应该报错
-    await expect(() => fireEvent.click(switchButton)).not.toThrow();
-  });
-
-  it('应该处理 is_checked 为非布尔值的情况', async () => {
-    render(Switch, {
-      props: {
-        is_checked: 'true', // 字符串而非布尔值
-      },
-    });
-
-    const switchButton = screen.getByRole('button');
-    // 应该能正确处理非布尔值（可能转换为布尔值）
-    expect(switchButton.getAttribute('aria-pressed')).toBe('true');
   });
 });
