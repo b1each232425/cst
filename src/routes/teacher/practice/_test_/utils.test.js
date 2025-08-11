@@ -32,6 +32,7 @@ describe('transformPracticeData 函数测试', () => {
           id: 1,
           name: '数学练习1',
           Type: '00',
+          selected:false,
           Status: '02'
         }
       },
@@ -41,6 +42,7 @@ describe('transformPracticeData 函数测试', () => {
           id: 2,
           name: '英语练习1',
           Type: '02',
+          selected:false,
           Status: '00'
         }
       },
@@ -50,6 +52,7 @@ describe('transformPracticeData 函数测试', () => {
           id: 3,
           name: '物理练习1',
           Type: '04',
+          selected:false,
           Status: '02'
         }
       }
@@ -63,6 +66,7 @@ describe('transformPracticeData 函数测试', () => {
       name: '数学练习1',
       Type: '经典巩固',
       Status: '已发布',
+      selected:false,
       student_count: 25
     });
     
@@ -71,6 +75,7 @@ describe('transformPracticeData 函数测试', () => {
       name: '英语练习1',
       Type: '随机组卷',
       Status: '未发布',
+      selected:false,
       student_count: 18
     });
     
@@ -79,6 +84,7 @@ describe('transformPracticeData 函数测试', () => {
       name: '物理练习1',
       Type: '智能提升',
       Status: '已发布',
+      selected:false,
       student_count: 30
     });
   });
@@ -103,6 +109,7 @@ describe('transformPracticeData 函数测试', () => {
           id: 1,
           name: '练习1',
           Type: '00',
+          selected:false,
           Status: '02'
         }
       }
@@ -122,6 +129,7 @@ describe('transformPracticeData 函数测试', () => {
           description: '这是一个测试练习',
           Type: '00',
           Status: '02',
+          selected:false,
           created_at: '2023-01-01'
         }
       }
@@ -134,6 +142,7 @@ describe('transformPracticeData 函数测试', () => {
         description: '这是一个测试练习',
         Type: '经典巩固',
         Status: '已发布',
+        selected:false,
         created_at: '2023-01-01',
         student_count: 10
       });
