@@ -8,7 +8,6 @@
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
 -->
 <script>
-    import Button from "$lib/components/Button/Button.svelte";
     import ImportQuestion from "../_components/ImportQuestion/ImportQuestion.svelte";
     import InputBox from "$lib/components/Input/InputBox.svelte";
     import Select from "$lib/components/Select/Select.svelte";
@@ -16,6 +15,8 @@
     import Toast from "$lib/components/Toast/Toast.svelte";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
     import QuestionPreviewPanel from "../../question-bank/_components/QuestionPreviewPanel.svelte";
+    import "$lib/components/Button/index.scss"
+    import "$lib/components/Input/index.scss"
     import { goto } from "$app/navigation";
     import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../_utils/tool";
     import { onMount, tick } from "svelte";
@@ -874,10 +875,10 @@
             
             <!-- 操作区 -->
             <div class="operation">
-                <Button onclick={()=>expandAll()} plain={true}>一键展开</Button>
-                <Button onclick={()=>collapseAll()} plain={true}>一键收起</Button>
-                <Button onclick={()=>importQuestions({id:0,name:""})}>从题库中导入</Button>
-                <Button type="danger" plain={true} onclick={()=>goto('/teacher/paper')}>保存并退出</Button>
+                <button onclick={()=>expandAll()} class="btn btn--primary is-plain">一键展开</button>
+                <button onclick={()=>collapseAll()} class="btn btn--primary is-plain">一键收起</button>
+                <button onclick={()=>importQuestions({id:0,name:""})} class="btn btn--primary">从题库中导入</button>
+                <button onclick={()=>goto('/teacher/paper')} class="btn btn--primary is-plain">保存并退出</button>
             </div>
         </div>
 
@@ -937,7 +938,7 @@
                     <!-- 试卷说明 -->
                     <div class="paper-description">
                         <span class="info-label">试卷说明</span>
-                        <textarea onchange={()=>debounceUpDatePaperInfo()} class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
+                        <textarea oninput={()=>debounceUpDatePaperInfo()} class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
                     </div>
 
                     <!-- 试卷标签 -->
@@ -975,9 +976,7 @@
                             <div class="title">题组列表</div>
                             <span>共有 {paper_groups.length} 个题组</span>
                         </div>
-                        <div class="add-box">
-                            <Button onclick={()=>addGroup()} plain={true}>添加题组</Button>
-                        </div>
+                        <button onclick={()=>addGroup()} class="btn btn--primary is-plain">添加题组</button>
                     </div>
 
                     <!-- 列表 -->
@@ -1069,9 +1068,9 @@
                     {#each paper_groups as group, groupIndex}
                     <!-- svelte-ignore a11y_click_events_have_key_events -->
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <div class="single-group-content" onclick={()=>changeOpenState("group",group.id)} title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"}>
+                        <div class="single-group-content">
                             <!-- 头部下拉栏 -->
-                            <div class="group-header">
+                            <div class="group-header" onclick={()=>changeOpenState("group",group.id)} title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"}>
                                 <!-- 左侧区域 -->
                                 <div class="header-left">
                                     <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
@@ -1083,10 +1082,16 @@
                                 <!-- 右侧区域 -->
                                 <div class="header-right">
                                     <span>每题分值：</span>
-                                    <div class="score-input">
-                                        <InputBox onInput={debounce(()=>updateAverageQuestionScore(group),500,false)} placeholder="请输入" bind:value={$GROUP_AVERAGE_SCORE[group.id]} show_label={false} type="number" clearable={false}/>
-                                    </div>
-                                    <Button onclick={()=>importQuestions(group)}>导入题目</Button>
+                                        <input class="input"
+                                            type="number"
+                                            placeholder="请输入"
+                                            bind:value={$GROUP_AVERAGE_SCORE[group.id]}
+                                            oninput={debounce(()=>updateAverageQuestionScore(group),500,false)}
+                                            min={1}
+                                            onclick={(e)=>{e.stopPropagation()}}
+                                            title=""
+                                        >
+                                    <button onclick={(e)=>{e.stopPropagation();importQuestions(group)}} class="btn btn--primary" title="">导入题目</button>
                                 </div>
                             </div>
 
@@ -1105,14 +1110,13 @@
                                                     ondragover={(event)=>handleQuestionDragOver(event,question,group)}
                                                     ondrop={handleQuestionDrop}
                                                     ondragend={handleDragEnd}
-                                                    onclick={(event)=>{event.stopPropagation();}}
                                                 >
                                                     <!-- 头部下拉栏 -->
                                                     <div class="question-header">
                                                         <!-- 左侧区域 -->
                                                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                                                         <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                                        <div title={$QUESTION_OPEN_STATE[question.id]?"收起":"展开"} class="header-left"  onclick={(event)=>{event.stopPropagation();changeOpenState("question",question.id);}}>
+                                                        <div class="header-left"  title={$QUESTION_OPEN_STATE[question.id]?"收起":"展开"}  onclick={()=>{changeOpenState("question",question.id);}}>
                                                             <button class="toggle-btn-down">{$QUESTION_OPEN_STATE[question.id]?"∨":"∧"}</button>
                                                             <span class="sequence">{question.order}</span>
                                                             <span class="question-type">{QUESTION_TYPE_TRANS[question.type]}</span>
@@ -1122,10 +1126,13 @@
                                                         <!-- 右侧区域 -->
                                                         <div class="header-right">
                                                             <span>分值：</span>
-                                                            <div class="score-input">
-                                                                <InputBox placeholder="" onInput={debounce(()=>updateQuestionScore(question.id,group.id,question.order,question.score),500,false)} bind:value={question.score} type="number" show_label={false} clearable={false}/>
-                                                            </div>
-                                              
+                                                            <input class="input"
+                                                                type="number"
+                                                                placeholder="请输入"
+                                                                bind:value={question.score}
+                                                                oninput={debounce(()=>updateQuestionScore(question.id,group.id,question.order,question.score),500,false)}
+                                                                min={1}
+                                                            >
                                                             <button onclick={()=>moveQuestion(group,question,"up")} class="move-btn" title="上移">↑</button>
                                                             <button onclick={()=>moveQuestion(group,question,"down")} class="move-btn" title="下移">↓</button>
                                                             <!-- <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
@@ -1170,7 +1177,7 @@
                                                     <span class="title">题组暂无题目</span>
                                                     <span class="prompt">可以通过以下方式快速添加题目：</span>
                                                     <div class="import-box">
-                                                        <Button onclick={()=>importQuestions(group)}>导入题目</Button>
+                                                        <button onclick={()=>importQuestions(group)} class="btn btn--primary">导入题目</button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1264,6 +1271,10 @@
                 margin-left: auto;
                 gap: 0.8vw;
                 align-items: center;
+
+                button {
+                    padding: 10px 15px;
+                }
             }
         }
 
@@ -1439,6 +1450,7 @@
                         justify-content: space-between;
                         margin-bottom: 10px;
 
+                        /* 标题区 */
                         .title-box {
 
                             .title {
@@ -1449,6 +1461,10 @@
                             span {
                                 font-size: 14px;
                             }
+                        }
+
+                        button {
+                            padding: 10px 15px;
                         }
                     }
 
@@ -1598,10 +1614,10 @@
                         padding: 10px 20px;
                         align-items: center;
                         min-width: 588px;
+                        cursor: pointer;
 
                         &:hover {
                             background-color: #edf2f7;
-                            cursor: pointer;
                             color: #1890ff;
 
                             .toggle-btn {
@@ -1640,7 +1656,7 @@
                             display: flex;
                             align-items: center;
 
-                            .score-input {
+                            input {
                                 width: 75px;
                                 margin-right: 36px;
                             }
@@ -1736,20 +1752,20 @@
                                     background-color: #fafafa;
                                     display: flex;
                                     border-bottom: 1px solid var(--border-light);
-    
+                                    
                                     &:hover {
                                         background-color: #edf2f7;
-    
+                                        
                                         .sequence { color: #1890ff; }
-    
+                                        
                                         .toggle-btn-down, .toggle-btn-left { color: #1890ff; }
                                     }
-    
+                                    
                                     /* 左侧区域 */
                                     .header-left {
+                                        cursor: pointer;
                                         display: flex;
                                         align-items: center;
-                                        cursor: pointer;
     
                                         /* 下拉按钮-向右状态 */
                                         .toggle-btn-left {
@@ -1816,10 +1832,10 @@
                                             color: var(--text-secondary);
     
                                         }
-    
-                                        .score-input {
-                                            width: 70px;
-                                            margin-right: 30px;
+
+                                        input {
+                                            width: 75px;
+                                            margin-right: 36px;
                                         }
     
                                         .move-btn, .edit-question-btn, .delete-question-btn {

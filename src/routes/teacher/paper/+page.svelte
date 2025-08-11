@@ -11,13 +11,13 @@
     // @ts-nocheck
 
     import Title from "$lib/components/Title/Title.svelte";
-    import InputBox from "$lib/components/Input/InputBox.svelte";
-    import Button from "$lib/components/Button/Button.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import Tag from "$lib/components/Tag/Tag.svelte";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
     import Empty from "$lib/components/Table/Empty.svelte";
     import UneditableTag from "$lib/components/Tag/UneditableTag.svelte";
+    import "$lib/components/Button/index.scss"
+    import "$lib/components/Input/index.scss"
     import { LEVEL_TRANS, CATEGORY_TRANS, ACCESS_MODE_TRANS, ASSEMBLY_TYPE_TRANS } from "./_utils/tool";
     import { goto } from "$app/navigation";
     import { debounce } from "$lib/utils/optimize";
@@ -121,33 +121,6 @@
             })
             .catch(error => {
                 console.error('获取试卷列表出错：', error);
-                return null;
-            });
-    }
-
-    // 获取试卷详情
-    function fetchPaper(
-        paperID = 0
-    ){
-        const PARAMS = new URLSearchParams();
-
-        PARAMS.append("paper_id", paperID);
-
-        return fetch(`/api/paper/manual?${PARAMS.toString()}`, {
-            method: "GET",
-            credentials: "include"
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`请求失败，状态码：${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                return data;
-            })
-            .catch(error => {
-                console.error('获取试卷详情出错：', error);
                 return null;
             });
     }
@@ -321,119 +294,42 @@
     }
 
     // 预览试卷
-    function previewPaper(ID) {
-        fetchPaper(ID)
-        .then(result => {
-            const PAPER_GROUPS = result.data.GroupsData;
-            console.log(PAPER_GROUPS);
+    function previewPaper(ID, category) {
+        const PARAMS = new URLSearchParams();
 
-            // const EXAM_QUESTIONS = {
-            //     QuestionGroupInfo: {
+        PARAMS.append("paper_id", ID);
+        PARAMS.append("mode", "preview");
 
-            //     },
-            //     Questions: ,
-            // };
-
-            // 缓存到 localStorage
-            // localStorage.setItem(
-            //     "examQuestions",
-            //     JSON.stringify(),
-            // );
-            examQuestions = {
-                "QuestionGroupInfo": {
-                    "42": {
-                        "ID": 42,
-                        "Name": "一、单选题",
-                        "Order": 1,
-                        "Creator": 1574,
-                        "Status": "00",
-                        },
-                    },
-                "Questions": {
-                    "42": [
-                        {
-                            "ID": 3684,
-                            "Score": 2,
-                            "Type": "00",
-                            "Content": "<p><span style=\"font-size: 12pt\">H3C公司的总部位于哪个城市？</span></p>",
-                            "Options": [
-                                {
-                                "Label": "A",
-                                "Value": "<p><span style=\"font-size: 12pt\">北京</span></p>"
-                                },
-                                {
-                                "Label": "B",
-                                "Value": "<p><span style=\"font-size: 12pt\">杭州</span></p>"
-                                },
-                                {
-                                "Label": "C",
-                                "Value": "<p><span style=\"font-size: 12pt\">深圳</span></p>"
-                                },
-                                {
-                                "Label": "D",
-                                "Value": "<p><span style=\"font-size: 12pt\">上海</span></p>"
-                                }
-                            ],
-                            "Analysis": null,
-                            "Title": null,
-                            "Input": null,
-                            "Output": null,
-                            "Example": null,
-                            "Repo": null,
-                            "Status": "00",
-                            "Order": 1,
-                            "GroupID": 42,
-                        },
-                    ]
+        fetch(`/api/paper/manual?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
                 }
-            };
+                return response.json();
+            })
+            .then(result => {
+                const PREVIEW_QUESTIONS = result.data;
 
-            
-            GroupsData = [
-                {
-                    "id": 97,
-                    "addi": {},
-                    "name": "一、单选题",
-                    "order": 1,
-                    "status": "00",
-                    "creator": 1,
-                    "questions": [
-                        {
-                            "content": "<p><span style=\"font-size: 12pt\">H3C公司的总部位于哪个城市？</span></p>",
-                            "options": [
-                                {
-                                    "label": "A",
-                                    "value": "<p><span style=\"font-size: 12pt\">北京</span></p>"
-                                },
-                                {
-                                    "label": "B",
-                                    "value": "<p><span style=\"font-size: 12pt\">杭州</span></p>"
-                                },
-                                {
-                                    "label": "C",
-                                    "value": "<p><span style=\"font-size: 12pt\">深圳</span></p>"
-                                },
-                                {
-                                    "label": "D",
-                                    "value": "<p><span style=\"font-size: 12pt\">上海</span></p>"
-                                }
-                            ],
-                            "order": 1,
-                        }
-                    ],
-                    "updated_by": 1,
-                    "create_time": 1752938386,
-                    "update_time": 1752938386
-                },
-            ];
+                localStorage.setItem(
+                    "examQuestions",
+                    JSON.stringify(PREVIEW_QUESTIONS),
+                );
 
-            // 根据试卷类别跳转不同页面
-            // if (result.data.Category === "00") {
-            //     window.location.href = "/student/answer/exam";
-            // } else if (result.data.Category === "02") {
-            //     window.location.href = "/student/answer/practice";
-            // }
-        });
+                console.log(PREVIEW_QUESTIONS)
+
+                if (category === "00") {
+                    window.location.href = "/student/answer/exam";
+                } else if (category === "02") {
+                    window.location.href = "/student/answer/practice";
+                }
+            })
+            .catch(error => {
+                console.error('获取试卷详情出错：', error);
+                return null;
+            });
     }
 
     /******************* 操作区 ********************/
@@ -460,33 +356,39 @@
             <!-- 试卷名称 -->
             <div class="search-paper-name">
                 <span class="prompt">试卷名称</span>
-                <InputBox
-                    placeholder="搜索试卷名称"
-                    show_label={false}
-                    type="text"
-                    bind:value={$SEARCH_PAPER_NAME}
-                    onInput={()=>debouncedFetchPaperList()}
-                />
+                <div class="input">
+                    <input type="text"
+                        placeholder="搜索试卷名称"
+                        bind:value={$SEARCH_PAPER_NAME}
+                        oninput={()=>debouncedFetchPaperList()}
+                        onchange={()=>debouncedFetchPaperList()}
+                    > 
+                    <!-- svelte-ignore a11y_consider_explicit_label -->
+                    <button data-name="clear" class="{$SEARCH_PAPER_NAME===""?"hide-clear":""}" onclick={()=>{SEARCH_PAPER_NAME.set("")}}></button>
+                </div>
             </div>
 
             <!-- 试卷标签 -->
             <div class="search-paper-tag">
                 <span class="prompt">试卷标签</span>
-                <InputBox
-                    placeholder="搜索试卷标签"
-                    show_label={false}
-                    type="text"
-                    bind:value={$SEARCH_PAPER_TAGS}
-                    onInput={()=>debouncedFetchPaperList()}
-                />
+                <div class="input">
+                    <input type="text"
+                        placeholder="搜索试卷名称"
+                        bind:value={$SEARCH_PAPER_TAGS}
+                        oninput={()=>debouncedFetchPaperList()}
+                        onchange={()=>debouncedFetchPaperList()}
+                    >
+                    <!-- svelte-ignore a11y_consider_explicit_label -->
+                    <button data-name="clear" class="{$SEARCH_PAPER_TAGS===""?"hide-clear":""}" onclick={()=>{SEARCH_PAPER_TAGS.set("")}}></button>
+                </div>
             </div>
         </div>
 
         <!-- 右侧 -->
         <div class="right-side">
-            <Button onclick={()=>resetSearch()} plain={true}>重置</Button>
-            <Button onclick={()=>deleteMultiplePapers()} plain={true} type="danger">删除</Button>
-            <Button onclick={()=>manual()} plain={true}>自定义组卷</Button>
+            <button onclick={()=>resetSearch()} class="btn btn--primary is-plain">重置</button>
+            <button onclick={()=>deleteMultiplePapers()} class="btn btn--danger is-plain">删除</button>
+            <button onclick={()=>manual()} class="btn btn--primary is-plain">自定义组卷</button>
         </div>
     </div>
 
@@ -562,7 +464,7 @@
                                     <div class="operation-line">
                                         <button onclick={()=>editPaper(paper.ID)} class="blue-btn">修改</button>
                                         <!-- <button class="blue-btn">共享</button> -->
-                                        <!-- <button class="blue-btn" onclick={()=>previewPaper(paper.ID)}>预览</button> -->
+                                        <!-- <button class="blue-btn" onclick={()=>previewPaper(paper.ID,paper.Category)}>预览</button> -->
                                         <button onclick={()=>deleteSinglePaper(paper.ID)} class="red-btn">删除</button>
                                     </div>
         
@@ -615,28 +517,24 @@
             .left-side {
                 /* background-color: rebeccapurple; */
                 display: flex;
-                gap: 32px;
+                gap: 30px;
                 align-items: center;
 
-                /* 搜索试卷名称 */
-                .search-paper-name {
+                /* 搜索试卷名称 & 试卷标签 */
+                .search-paper-name, .search-paper-tag {
                     display: flex;
                     align-items: center;
                     width: 300px;
 
                     .prompt {
-                        width: 120px;
+                        margin-right: 30px;
                     }
-                }
 
-                /* 搜索试卷标题 */
-                .search-paper-tag {
-                    display: flex;
-                    align-items: center;
-                    width: 300px;
+                    .input {
 
-                    .prompt {
-                        width: 120px;
+                        .hide-clear {
+                            visibility: hidden;
+                        }
                     }
                 }
             }
