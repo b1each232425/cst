@@ -125,6 +125,33 @@
             });
     }
 
+    // 获取试卷详情
+    function fetchPaper(
+        paperID = 0
+    ){
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("paper_id", paperID);
+
+        return fetch(`/api/paper/manual?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                return data;
+            })
+            .catch(error => {
+                console.error('获取试卷详情出错：', error);
+                return null;
+            });
+    }
+
     /******************* API 区 ********************/
 
 
@@ -155,11 +182,11 @@
 
     // 检查全选
     function checkAllSelected() {
-        const selected_paperIDs = get(SELECTED_PAPER_IDS);
-        const allSelected = paper_list.length !== 0 && paper_list.every(p =>
-            selected_paperIDs.includes(p.ID)
+        const SELECTED_PAPER_IDS = get(SELECTED_PAPER_IDS);
+        const ALL_SELECTED = paper_list.length !== 0 && paper_list.every(p =>
+            SELECTED_PAPER_IDS.includes(p.ID)
         );
-        ALL_PAPER_SELECTED.set(allSelected);
+        ALL_PAPER_SELECTED.set(ALL_SELECTED);
     }
 
     // 全选
@@ -168,8 +195,8 @@
 
         SELECTED_PAPER_IDS.update(current => {
             if (checked) {
-                const notYetSelected = CURRENT_PAGE_IDS.filter(ID => !current.includes(ID));
-                return [...current, ...notYetSelected];
+                const NOT_YET_SELECTED = CURRENT_PAGE_IDS.filter(ID => !current.includes(ID));
+                return [...current, ...NOT_YET_SELECTED];
             } else {
                 return current.filter(ID => !CURRENT_PAGE_IDS.includes(ID));
             }
@@ -290,6 +317,122 @@
                             })
                     });
             }
+        });
+    }
+
+    // 预览试卷
+    function previewPaper(ID) {
+        fetchPaper(ID)
+        .then(result => {
+            const PAPER_GROUPS = result.data.GroupsData;
+            console.log(PAPER_GROUPS);
+
+            // const EXAM_QUESTIONS = {
+            //     QuestionGroupInfo: {
+
+            //     },
+            //     Questions: ,
+            // };
+
+            // 缓存到 localStorage
+            // localStorage.setItem(
+            //     "examQuestions",
+            //     JSON.stringify(),
+            // );
+            examQuestions = {
+                "QuestionGroupInfo": {
+                    "42": {
+                        "ID": 42,
+                        "Name": "一、单选题",
+                        "Order": 1,
+                        "Creator": 1574,
+                        "Status": "00",
+                        },
+                    },
+                "Questions": {
+                    "42": [
+                        {
+                            "ID": 3684,
+                            "Score": 2,
+                            "Type": "00",
+                            "Content": "<p><span style=\"font-size: 12pt\">H3C公司的总部位于哪个城市？</span></p>",
+                            "Options": [
+                                {
+                                "Label": "A",
+                                "Value": "<p><span style=\"font-size: 12pt\">北京</span></p>"
+                                },
+                                {
+                                "Label": "B",
+                                "Value": "<p><span style=\"font-size: 12pt\">杭州</span></p>"
+                                },
+                                {
+                                "Label": "C",
+                                "Value": "<p><span style=\"font-size: 12pt\">深圳</span></p>"
+                                },
+                                {
+                                "Label": "D",
+                                "Value": "<p><span style=\"font-size: 12pt\">上海</span></p>"
+                                }
+                            ],
+                            "Analysis": null,
+                            "Title": null,
+                            "Input": null,
+                            "Output": null,
+                            "Example": null,
+                            "Repo": null,
+                            "Status": "00",
+                            "Order": 1,
+                            "GroupID": 42,
+                        },
+                    ]
+                }
+            };
+
+            
+            GroupsData = [
+                {
+                    "id": 97,
+                    "addi": {},
+                    "name": "一、单选题",
+                    "order": 1,
+                    "status": "00",
+                    "creator": 1,
+                    "questions": [
+                        {
+                            "content": "<p><span style=\"font-size: 12pt\">H3C公司的总部位于哪个城市？</span></p>",
+                            "options": [
+                                {
+                                    "label": "A",
+                                    "value": "<p><span style=\"font-size: 12pt\">北京</span></p>"
+                                },
+                                {
+                                    "label": "B",
+                                    "value": "<p><span style=\"font-size: 12pt\">杭州</span></p>"
+                                },
+                                {
+                                    "label": "C",
+                                    "value": "<p><span style=\"font-size: 12pt\">深圳</span></p>"
+                                },
+                                {
+                                    "label": "D",
+                                    "value": "<p><span style=\"font-size: 12pt\">上海</span></p>"
+                                }
+                            ],
+                            "order": 1,
+                        }
+                    ],
+                    "updated_by": 1,
+                    "create_time": 1752938386,
+                    "update_time": 1752938386
+                },
+            ];
+
+            // 根据试卷类别跳转不同页面
+            // if (result.data.Category === "00") {
+            //     window.location.href = "/student/answer/exam";
+            // } else if (result.data.Category === "02") {
+            //     window.location.href = "/student/answer/practice";
+            // }
         });
     }
 
@@ -419,7 +562,7 @@
                                     <div class="operation-line">
                                         <button onclick={()=>editPaper(paper.ID)} class="blue-btn">修改</button>
                                         <!-- <button class="blue-btn">共享</button> -->
-                                        <!-- <button class="blue-btn">预览</button> -->
+                                        <!-- <button class="blue-btn" onclick={()=>previewPaper(paper.ID)}>预览</button> -->
                                         <button onclick={()=>deleteSinglePaper(paper.ID)} class="red-btn">删除</button>
                                     </div>
         

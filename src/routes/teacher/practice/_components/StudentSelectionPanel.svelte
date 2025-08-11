@@ -10,6 +10,7 @@
   import Button from '$lib/components/Button/Button.svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
   import Empty from '$lib/components/Table/Empty.svelte';
+  import StudentImportPanel from './StudentImportPanel.svelte';
 
   let {
     show_panel = false,
@@ -407,6 +408,41 @@
       return false;
     }
   }
+
+  //下载模板函数
+    async function downloadTemplate() {
+        
+         await fetch(
+                "/api/files/exam/d0a9rv6slh1c714h2fkg.xlsx",
+                {
+                    method: "GET",
+                },
+            ).then((response)=>{
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.blob();
+            }).then(async(blob)=>{
+               let filename = "考生导入模板.xlsx";
+                 // 获取文件内容
+            // 创建下载链接
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+
+            // 清理
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            }).catch (error=>{
+            console.error("下载模板失败:", error);
+            toast.error("下载模板失败");
+        }) 
+    }
+
+
 </script>
 
 <div class={show_panel ? 'examinee-panel-container' : 'hide'}>
@@ -490,6 +526,14 @@
           </div>
           <div class="button-group">
             <Button type="info" onclick={backToViewMode} plain>返回</Button>
+             <Button onclick={downloadTemplate}>
+                            下载模板
+                        </Button>
+                        <Button  onclick={() => {
+                            if (student_import_panel) {
+                                student_import_panel.triggerFileInput();
+                            }
+                        }}>导入学生</Button>
           </div>
         </div>
         <div class="examinee-selection-table-container">
@@ -599,6 +643,40 @@
     </div>
   </div>
 </div>
+<StudentImportPanel
+    onImport={(/** @type {any[]} */ success_student, /** @type {boolean} */ has_error) => {
+        if (success_student && success_student.length > 0) {
+            // 过滤掉已存在的id
+            const newStudents = success_student
+                .filter(
+                    (/** @type {any} */ student) =>
+                        !selected_ids.some((item) => item.id === student),
+                )
+                .map((/** @type {any} */ student, /** @type {number} */ index) => ({
+                    id: student,
+                    serial_number: selected_ids.length + index + 1,
+                }));
+
+            // 更新selected_ids
+            selected_ids = [...selected_ids, ...newStudents];
+
+            searchExaminee();
+
+            // 检查是否需要重新计算序号
+            recalculateSerialNumbers();
+        }
+
+        if (!has_error) {
+            show_student_import_panel = false;
+        }
+    }}
+    onCancel={() => {
+        show_student_import_panel = false;
+    }}
+    bind:show={show_student_import_panel}
+    bind:this={student_import_panel}
+/>
+
 
 <style lang="scss" scoped>
   .hide {
@@ -761,6 +839,27 @@
     flex-direction: column;
     overflow-y: auto;
   }
+  .download-template-button {
+        border: none;
+        border-radius: 3px;
+        background-color: #e3e3e3;
+        width: 100px;
+        height: 32px;
+        color: #165dff;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .upload-file-button {
+        border: none;
+        border-radius: 3px;
+        background-color: #165dff;
+        width: 100px;
+        height: 32px;
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+    }
 
   .panel-footer {
     display: flex;

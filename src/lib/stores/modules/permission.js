@@ -128,6 +128,11 @@ export const baseNavItems = writable([
     ],
   },
   {
+    name: 'correctDetail',
+    title: '批改详情',
+    path: '/teacher/correct/correct',
+  },
+  {
     name: 'gradeManagement',
     title: '成绩管理',
     path: '/teacher/grade',

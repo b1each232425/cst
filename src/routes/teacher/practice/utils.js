@@ -73,6 +73,7 @@ export function transformPracticeData(practices) {
       student_count: item.student_count||0, // 从外层对象获取student_count
       Type: transformedType,
       Status: transformedStatus,
+      selected:false
     };
   });
   }
