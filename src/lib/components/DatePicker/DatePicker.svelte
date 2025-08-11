@@ -77,13 +77,13 @@
     is_single_date_selection = true, // 是否启用单日期选择模式，默认为true
     is_time_selection = false, // 是否启用时间选择模式，默认为false
     input_width = '140px', // 输入框宽度，默认为 '140px'
-    onDateReset = () => {},
-    onDateConfirm = () => {},
+    onDateReset,
+    onDateConfirm,
   } = $props();
 
   // 组件内部的状态
-  let internal_start_date = $state(null); // 当前选择的开始日期
-  let internal_end_date = $state(null); // 当前选择的结束日期
+  let internal_start_date = $state(new Date()); // 当前选择的开始日期
+  let internal_end_date = $state(new Date()); // 当前选择的结束日期
   let is_calendars_visible = $state(false); // 控制日历的显示或隐藏
   let start_year = $state(new Date().getFullYear()); // 存储开始日期的年份
   let start_month = $state(new Date().getMonth()); // 存储开始日期的月份
@@ -110,7 +110,20 @@
   let input_value = $derived(is_single_date_selection ? SINGLE_DATE_PROMPT : DEFAULT_PROMPT);
 
   // 月份名称，用于显示月份
-  const month_names = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  const month_names = [
+    '一月',
+    '二月',
+    '三月',
+    '四月',
+    '五月',
+    '六月',
+    '七月',
+    '八月',
+    '九月',
+    '十月',
+    '十一月',
+    '十二月',
+  ];
 
   // 获取某个月份的天数
   const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
@@ -166,7 +179,7 @@
       selected_end_minute = selected_start_minute;
     } else if (internal_end_date && new_date > internal_end_date) {
       internal_end_date = new Date(new_date);
-      internal_end_date.setDate(internal_end_date.getDate());
+      internal_end_date.setDate(internal_end_date.getDate() + 1);
       end_year = internal_end_date.getFullYear();
       end_month = internal_end_date.getMonth();
     }
@@ -188,10 +201,15 @@
     const new_date = new Date(date_obj.year, date_obj.month, date_obj.day, prev_hours, prev_minutes);
     internal_end_date = new_date;
 
-    // 如果当终止日期早于起始日期，起始日期应被正确更新为终止日期
-    if (internal_start_date && new_date < internal_start_date) {
+    // 如果是单日期选择模式，开始日期与结束日期相同
+    if (is_single_date_selection) {
       internal_start_date = new Date(new_date);
-      internal_start_date.setDate(internal_start_date.getDate());
+      selected_start_hour = selected_end_hour;
+      selected_start_minute = selected_end_minute;
+      is_calendars_visible = false;
+    } else if (internal_start_date && new_date < internal_start_date) {
+      internal_start_date = new Date(new_date);
+      internal_start_date.setDate(internal_start_date.getDate() - 1);
       start_year = internal_start_date.getFullYear();
       start_month = internal_start_date.getMonth();
     }
@@ -269,6 +287,7 @@
 
   // 格式化日期为 'yyyy/mm/dd' 或者带时间的 'yyyy/mm/dd hh:mm'
   const formatDate = (date) => {
+    if (!date) return '';
     if (is_time_selection) {
       return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     } else {
@@ -278,9 +297,7 @@
 
   // 更新开始时间（小时或分钟）
   const updateStartTime = (type, value) => {
-    if (!internal_start_date) {
-      internal_start_date = new Date();
-    }
+    if (!internal_start_date) return;
 
     if (type === 'hour') {
       internal_start_date.setHours(value);
@@ -290,23 +307,13 @@
       selected_start_minute = value;
     }
 
-    // 检查并调整结束时间
-    if (internal_end_date && internal_start_date > internal_end_date) {
-      internal_end_date = new Date(internal_start_date);
-      selected_end_hour = selected_start_hour;
-      selected_end_minute = selected_start_minute;
-      dispatch('end_date_selected', { date: internal_end_date });
-    }
-
     dispatch('start_date_selected', { date: internal_start_date });
     updateInputValue();
   };
 
   // 更新结束时间（小时或分钟）
   const updateEndTime = (type, value) => {
-    if (!internal_end_date) {
-      internal_end_date = new Date();
-    }
+    if (!internal_end_date) return;
 
     if (type === 'hour') {
       internal_end_date.setHours(value);
@@ -314,14 +321,6 @@
     } else if (type === 'minute') {
       internal_end_date.setMinutes(value);
       selected_end_minute = value;
-    }
-
-    // 检查并调整开始时间
-    if (internal_start_date && internal_end_date < internal_start_date) {
-      internal_start_date = new Date(internal_end_date);
-      selected_start_hour = selected_end_hour;
-      selected_start_minute = selected_end_minute;
-      dispatch('start_date_selected', { date: internal_start_date });
     }
 
     dispatch('end_date_selected', { date: internal_end_date });
@@ -332,8 +331,6 @@
   export function reset() {
     internal_start_date = null;
     internal_end_date = null;
-    initial_start_date = null;
-    initial_end_date = null;
     input_value = is_single_date_selection ? SINGLE_DATE_PROMPT : DEFAULT_PROMPT;
 
     // 设置当前年份和月份
@@ -358,6 +355,18 @@
     is_calendars_visible = false;
     onDateConfirm();
   }
+
+  // 监听和更新日期选择器状态
+  $effect(() => {
+    if (internal_start_date) {
+      start_year = internal_start_date.getFullYear();
+      start_month = internal_start_date.getMonth();
+    }
+    if (internal_end_date && !is_single_date_selection) {
+      end_year = internal_end_date.getFullYear();
+      end_month = internal_end_date.getMonth();
+    }
+  });
 
   // 滚动到选中的时间位置
   const scrollToSelectedTime = () => {
@@ -388,12 +397,6 @@
   // 设置初始时间
   const setInitialTime = () => {
     is_calendars_visible = !is_calendars_visible;
-
-    // 自动滚动到对应的时间
-    if (is_calendars_visible) {
-      scrollToSelectedTime();
-    }
-
     if (internal_start_date) {
       return;
     }
@@ -432,6 +435,13 @@
 
     updateInputValue();
   };
+
+  // 如果日历可见，滚动到选中的时间
+  $effect(() => {
+    if (is_calendars_visible) {
+      scrollToSelectedTime();
+    }
+  });
 
   // 初始化日期选择器
   onMount(() => {
@@ -482,7 +492,7 @@
                 class:highlighted={isDateInRange(date_obj)}
                 class:non-current-month={date_obj.month !== start_month}
                 onclick={() => selectStartDate(date_obj)}
-                data-testid={`start-date-button-${date_obj.day}`}
+                data-testid="start-date-button-{date_obj.day}"
               >
                 <div class="init-circle">{date_obj.day}</div>
               </button>
@@ -541,7 +551,7 @@
                   class:highlighted={isDateInRange(date_obj)}
                   class:non-current-month={date_obj.month !== end_month}
                   onclick={() => selectEndDate(date_obj)}
-                  data-testid={`end-date-button-${date_obj.day}`}
+                  data-testid="end-date-button-{date_obj.day}"
                 >
                   <div class="init-circle">{date_obj.day}</div>
                 </button>
@@ -679,7 +689,7 @@
             transition: all 0.2s;
 
             &:hover:not(.non-current-month) {
-              background: #e3f2fd;
+              background: #f0f6ff;
             }
 
             &.non-current-month {

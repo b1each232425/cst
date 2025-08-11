@@ -104,7 +104,10 @@
     if (filter_gender && filter_gender !== 'all') params.gender = filter_gender; //all则不传值，显示全部
     if (filter_status && filter_status !== 'all') params.status = filter_status;
     if (filter_create_time) {
-      params.create_time = filter_create_time.getTime(); // 直接获取时间戳
+      params.createTime = filter_create_time.getTime(); // 直接获取时间戳
+      // console.log('filter_create_time:', filter_create_time);
+      // console.log('filter_create_time.getTime():', filter_create_time.getTime());
+      // console.log('params.create_time:', params.create_time);
     }
     if (filter_role) {
       params.domain = filter_role;
@@ -180,6 +183,7 @@
 
   // 处理单日期选择事件
   function handleStartDateSelected(event) {
+    console.log('日期选择触发', event.detail.date);
     const d = event.detail.date;
     filter_create_time = new Date(
       d.getFullYear(),
@@ -367,6 +371,7 @@
                 bind:this={date_picker}
                 single_date_selection={true}
                 input_width={'100%'}
+                is_time_selection={true}
                 on:start_date_selected={handleStartDateSelected}
               />
             </div>
@@ -380,7 +385,7 @@
             <Select
               value={filter_role}
               placeholder="请选择角色"
-              onChangeValue={(value) => {
+              changeValue={(value) => {
                 // console.log('角色筛选 onChangeValue 触发，新值:', value, '旧值:', filter_role);
                 if (value !== filter_role) {
                   filter_role = value;
@@ -406,7 +411,7 @@
             <Select
               bind:value={filter_gender}
               placeholder="全部"
-              onchangeValue={(value) => {
+              changeValue={(value) => {
                 filter_gender = value;
                 current_page = 1;
                 // 筛选条件改变时清除选中状态
@@ -429,7 +434,7 @@
             <Select
               bind:value={filter_status}
               placeholder="全部"
-              onChangeValue={(value) => {
+              changeValue={(value) => {
                 filter_status = value;
                 current_page = 1;
                 // 筛选条件改变时清除选中状态
