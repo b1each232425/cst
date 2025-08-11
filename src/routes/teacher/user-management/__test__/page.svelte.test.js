@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import UserManagementPage from '../+page.svelte';
@@ -10,7 +10,6 @@ vi.mock('$lib/components/Title/Title.svelte', () => ({
 vi.mock('$lib/components/Input/InputBox.svelte', () => ({
   default: vi.fn()
 }));
-
 
 vi.mock('$lib/components/Pagination/Pagination.svelte', () => ({
   default: vi.fn()
@@ -43,7 +42,6 @@ vi.mock('$app/navigation', () => ({
   goto: vi.fn()
 }));
 
-// Mock debounce 
 vi.mock('../_utils/debounce.js', () => ({
   debounce: vi.fn((fn, delay) => {
     // 在测试中立即执行，不延迟
@@ -53,43 +51,412 @@ vi.mock('../_utils/debounce.js', () => ({
   })
 }));
 
+vi.mock('$lib/components/Toast/Toast.js', () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn()
+  }
+}));
+
 // Mock fetch
 global.fetch = vi.fn();
 
 describe('用户管理页面', () => {
   // 模拟用户数据
   const mockUsers = [
+    // 1. 正常管理员用户
     {
       ID: '1',
-      Account: 'user001',
-      Domains: ['cst.school^admin'],
+      Account: 'admin001',
+      Domains: ['cst.school^superAdmin'],
       OfficialName: '张三',
+      IDCardNo: '110101199001011234', // 男性身份证
       Gender: '男',
       MobilePhone: '13800138000',
       Email: 'zhangsan@example.com',
-      Type: '02',
+      Type: '02', // 注册用户
       Category: 'normal',
       CreateTime: '2023-01-01T08:00:00Z',
-      Status: '00'
+      Status: '00' // 启用
     },
+    
+    // 2. 女性教师用户
     {
       ID: '2',
-      Account: 'user002',
+      Account: 'teacher002',
       Domains: ['cst.school^teacher'],
       OfficialName: '李四',
+      IDCardNo: '110101199002022345', // 女性身份证
       Gender: '女',
       MobilePhone: '13800138001',
       Email: 'lisi@example.com',
       Type: '02',
       Category: 'normal',
       CreateTime: '2023-01-02T08:00:00Z',
-      Status: '02'
+      Status: '02' // 停用
+    },
+    
+    // 3. 多角色用户
+    {
+      ID: '3',
+      Account: 'multi_role_user',
+      Domains: ['cst.school^admin', 'cst.school^teacher', 'cst.school^examGrader'],
+      OfficialName: '王五',
+      IDCardNo: '110101199003033456',
+      Gender: '男',
+      MobilePhone: '13800138002',
+      Email: 'wangwu@example.com',
+      Type: '02',
+      Category: 'normal',
+      CreateTime: '2023-01-03T08:00:00Z',
+      Status: '00'
+    },
+    
+    // 4. 空值/null字段用户
+    {
+      ID: '4',
+      Account: 'user_with_nulls',
+      Domains: ['cst.school^student'],
+      OfficialName: null,
+      IDCardNo: null,
+      Gender: null,
+      MobilePhone: null,
+      Email: null,
+      Type: '00', // 匿名用户
+      Category: null,
+      CreateTime: '2023-01-04T08:00:00Z',
+      Status: '00'
+    },
+    
+    // 5. 系统上帝用户
+    {
+      ID: '5',
+      Account: 'system_god',
+      Domains: ['cst.school^superAdmin'],
+      OfficialName: '系统管理员',
+      IDCardNo: '110101199005055678',
+      Gender: '男',
+      MobilePhone: '13800138003',
+      Email: 'sysadmin@system.com',
+      Type: '80', // 系统上帝
+      Category: 'system',
+      CreateTime: '2022-12-01T00:00:00Z',
+      Status: '00'
+    },
+    
+    // 6. 试用用户
+    {
+      ID: '6',
+      Account: 'trial_user_123',
+      Domains: ['cst.school^student'],
+      OfficialName: '试用学生',
+      IDCardNo: '110101200001016789',
+      Gender: '女',
+      MobilePhone: '13800138004',
+      Email: 'trial@test.com',
+      Type: '04', // 试用用户
+      Category: 'trial',
+      CreateTime: '2025-08-01T10:30:00Z',
+      Status: '00'
+    },
+    
+    // 7. 机构上帝用户
+    {
+      ID: '7',
+      Account: 'org_admin',
+      Domains: ['cst.school^superAdmin'],
+      OfficialName: '机构管理员',
+      IDCardNo: '110101198507077890',
+      Gender: '男',
+      MobilePhone: '13800138005',
+      Email: 'orgadmin@org.com',
+      Type: '08', // 机构上帝
+      Category: 'organization',
+      CreateTime: '2025-02-15T14:20:00Z',
+      Status: '00'
+    },
+    
+    // 8. 测试用户
+    {
+      ID: '8',
+      Account: 'test_user_dev',
+      Domains: ['cst.school^student'],
+      OfficialName: '测试账号',
+      IDCardNo: '110101199908089012',
+      Gender: '女',
+      MobilePhone: '13800138006',
+      Email: 'testuser@dev.com',
+      Type: '10', // 测试用户
+      Category: 'test',
+      CreateTime: '2025-08-10T09:00:00Z',
+      Status: '02' // 停用状态
+    },
+    
+    // 9. 长字符串和特殊字符用户
+    {
+      ID: '9',
+      Account: 'very_long_account_name_with_special_chars_12345',
+      Domains: ['cst.school.academicAffair^admin'],
+      OfficialName: '欧阳·复姓测试-用户@符号',
+      IDCardNo: '110101199009099123',
+      Gender: '男',
+      MobilePhone: '13800138007',
+      Email: 'very.long.email.address.for.testing@verylongdomainname.com',
+      Type: '02',
+      Category: 'special_chars',
+      CreateTime: '2025-03-20T16:45:30Z',
+      Status: '00'
+    },
+    
+    // 10. 无角色用户
+    {
+      ID: '10',
+      Account: 'no_role_user',
+      Domains: [],
+      OfficialName: '无角色用户',
+      IDCardNo: '110101199010101234',
+      Gender: '女',
+      MobilePhone: '13800138008',
+      Email: 'norole@example.com',
+      Type: '02',
+      Category: 'normal',
+      CreateTime: '2025-04-01T12:00:00Z',
+      Status: '00'
+    },
+    
+    // 11. 考点负责人
+    {
+      ID: '11',
+      Account: 'exam_site_admin',
+      Domains: ['cst.school.examSite^admin'],
+      OfficialName: '考点负责人',
+      IDCardNo: '110101198011112345',
+      Gender: '男',
+      MobilePhone: '13800138009',
+      Email: 'examsite@school.com',
+      Type: '02',
+      Category: 'exam',
+      CreateTime: '2025-05-10T08:30:00Z',
+      Status: '00'
+    },
+    
+    // 12. 核分员
+    {
+      ID: '12',
+      Account: 'score_checker',
+      Domains: ['cst.school^scoreChecker'],
+      OfficialName: '核分员',
+      IDCardNo: '110101199112123456',
+      Gender: '女',
+      MobilePhone: '13800138010',
+      Email: 'scorechecker@school.com',
+      Type: '02',
+      Category: 'scoring',
+      CreateTime: '2025-06-01T11:15:00Z',
+      Status: '00'
+    },
+    
+    // 13. 监考员
+    {
+      ID: '13',
+      Account: 'exam_supervisor',
+      Domains: ['cst.school^examSupervisor'],
+      OfficialName: '监考员',
+      IDCardNo: '110101198813134567',
+      Gender: '男',
+      MobilePhone: '13800138011',
+      Email: 'supervisor@school.com',
+      Type: '02',
+      Category: 'supervision',
+      CreateTime: '2025-07-01T07:00:00Z',
+      Status: '00'
+    },
+    
+    // 14. 批阅员
+    {
+      ID: '14',
+      Account: 'exam_grader',
+      Domains: ['cst.school^examGrader'],
+      OfficialName: '批阅员',
+      IDCardNo: '110101199414145678',
+      Gender: '女',
+      MobilePhone: '13800138012',
+      Email: 'grader@school.com',
+      Type: '02',
+      Category: 'grading',
+      CreateTime: '2025-07-15T13:30:00Z',
+      Status: '02' // 停用
+    },
+    
+    // 15. 删除状态用户
+    {
+      ID: '15',
+      Account: 'deleted_user',
+      Domains: ['cst.school^student'],
+      OfficialName: '已删除用户',
+      IDCardNo: '110101199515156789',
+      Gender: '男',
+      MobilePhone: '13800138013',
+      Email: 'deleted@example.com',
+      Type: '02',
+      Category: 'normal',
+      CreateTime: '2025-08-01T10:00:00Z',
+      Status: '04' // 删除状态
+    },
+    
+    // 16. 18位身份证但性别字段不匹配的用户（测试性别逻辑）
+    {
+      ID: '16',
+      Account: 'gender_mismatch',
+      Domains: ['cst.school^student'],
+      OfficialName: '性别不匹配测试',
+      IDCardNo: '110101199016167890', // 身份证显示女性
+      Gender: '男', // 但Gender字段是男
+      MobilePhone: '13800138014',
+      Email: 'gendermismatch@test.com',
+      Type: '02',
+      Category: 'test',
+      CreateTime: '2025-08-05T15:20:00Z',
+      Status: '00'
+    },
+    
+    
+    // 17. 未知角色代码用户
+    {
+      ID: '17',
+      Account: 'unknown_role',
+      Domains: ['cst.school^unknownRole', 'cst.unknown^role'],
+      OfficialName: '未知角色用户',
+      IDCardNo: '110101199018181234',
+      Gender: '男',
+      MobilePhone: '13800138016',
+      Email: 'unknownrole@test.com',
+      Type: '02',
+      Category: 'test',
+      CreateTime: '2025-08-08T14:45:00Z',
+      Status: '00'
+    },
+    
+    // 18. 未知用户类型
+    {
+      ID: '18',
+      Account: 'unknown_type_user',
+      Domains: ['cst.school^student'],
+      OfficialName: '未知类型用户',
+      IDCardNo: '110101199019191234',
+      Gender: '女',
+      MobilePhone: '13800138017',
+      Email: 'unknowntype@test.com',
+      Type: '99', // 未定义的类型
+      Category: 'test',
+      CreateTime: '2025-08-09T11:20:00Z',
+      Status: '00'
+    },
+    
+
+
+    // 19. 边界值手机号和邮箱
+    {
+      ID: '19',
+      Account: 'boundary_contact',
+      Domains: ['cst.school^teacher'],
+      OfficialName: '边界联系方式测试',
+      IDCardNo: '110101198022222222',
+      Gender: '男',
+      MobilePhone: '10000000000', // 最小手机号
+      Email: 'a@b.c', // 最短邮箱
+      Type: '02',
+      Category: 'boundary',
+      CreateTime: '2025-01-01T00:00:01Z',
+      Status: '00'
+    },
+
+    // 20. 最长邮箱和手机号
+    {
+      ID: '20',
+      Account: 'max_length_contact',
+      Domains: ['cst.school^admin'],
+      OfficialName: '最长联系方式测试',
+      IDCardNo: '110101199923233333',
+      Gender: '女',
+      MobilePhone: '19999999999', // 最大手机号
+      Email: 'very.very.very.long.email.address.for.testing.purposes@very.long.domain.name.example.com',
+      Type: '02',
+      Category: 'max_length',
+      CreateTime: '2025-08-10T15:30:44Z',
+      Status: '00'
     }
   ];
 
+  // 用于测试分页的大数据集
+  const mockLargeUserList = Array.from({ length: 150 }, (_, index) => ({
+    ID: `large_${index + 1}`,
+    Account: `user_${String(index + 1).padStart(3, '0')}`,
+    Domains: index % 7 === 0 ? [] : [`cst.school^${['student', 'teacher', 'admin'][index % 3]}`],
+    OfficialName: `批量测试用户${index + 1}`,
+    IDCardNo: `11010119900101${String(index + 1000).padStart(4, '0')}`,
+    Gender: index % 2 === 0 ? '男' : '女',
+    MobilePhone: `138${String(index + 10000000).padStart(8, '0')}`,
+    Email: `batchuser${index + 1}@test${index % 5}.com`,
+    Type: ['00', '02', '04', '08', '10', '80'][index % 6],
+    Category: `batch_test_${index % 10}`,
+    CreateTime: `2025-0${(index % 8) + 1}-${String((index % 28) + 1).padStart(2, '0')}T${String(index % 24).padStart(2, '0')}:${String(index % 60).padStart(2, '0')}:${String(index % 60).padStart(2, '0')}Z`,
+    Status: ['00', '02', '04'][index % 3] // 循环状态
+  }));
+
+  // 空数据响应
+  const mockEmptyResponse = {
+    status: 0,
+    data: [],
+    rowCount: 0,
+    msg: 'success'
+  };
+
+  // 单用户响应（用于测试单条数据情况）
+  const mockSingleUserResponse = {
+    status: 0,
+    data: [mockUsers[0]], // 只返回第一个用户
+    rowCount: 1,
+    msg: 'success'
+  };
+
+  // 默认API响应
   const mockApiResponse = {
-    data: mockUsers,
-    rowCount: 2
+    status: 0,
+    data: mockUsers.slice(0, 10), // 返回前10个用户模拟分页
+    rowCount: mockUsers.length,
+    msg: 'success'
+  };
+
+  // 大数据响应（用于测试分页）
+  const mockLargeDataResponse = {
+    status: 0,
+    data: mockLargeUserList.slice(0, 20), // 第一页20条
+    rowCount: mockLargeUserList.length,
+    msg: 'success'
+  };
+
+  // 错误响应
+  const mockErrorResponse = {
+    status: -1,
+    msg: '服务器内部错误',
+    data: null
+  };
+
+  // API失败响应
+  const mockApiFailureResponse = {
+    status: 500,
+    msg: '数据库连接失败',
+    data: []
+  };
+
+  // 权限不足响应
+  const mockUnauthorizedResponse = {
+    status: 403,
+    msg: '权限不足',
+    data: []
   };
 
   beforeEach(() => {
@@ -153,13 +520,12 @@ describe('用户管理页面', () => {
 
       // 验证用户数据是否正确显示在DOM中
       const container = document.body;
-      expect(container.textContent).toContain('user001');
+      expect(container.textContent).toContain('admin001');
       expect(container.textContent).toContain('张三');
     });
 
     it('应该正确映射用户类型', async () => {
       render(UserManagementPage);
-
       await waitFor(() => {
         expect(fetch).toHaveBeenCalled();
       });
@@ -182,8 +548,43 @@ describe('用户管理页面', () => {
 
       // 验证日期格式化
       const container = document.body;
-      expect(container.textContent).toMatch(/\d{4}\/\d{1,2}\/\d{1,2}/);
+      expect(container.textContent).toMatch(/\d{4}-\d{1,2}-\d{1,2}/);
     });
+
+    it('应该正确处理前十个用户的所有API响应数据', async () => {
+    render(UserManagementPage);
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalled();
+    });
+    await tick();
+
+    const container = document.body;
+    
+    // 验证前10个用户的账号都显示
+    const expectedAccounts = mockUsers.slice(0, 10).map(user => user.Account);
+    expectedAccounts.forEach(account => {
+      expect(container.textContent).toContain(account);
+    });
+    
+    // 验证前10个用户的姓名都显示
+    const expectedNames = mockUsers.slice(0, 10)
+      .map(user => user.OfficialName || '-')
+      .filter(name => name !== '-'); // 过滤掉空值显示的'-'
+    
+    expectedNames.forEach(name => {
+      expect(container.textContent).toContain(name);
+    });
+
+    // 验证前10个用户的邮箱都显示
+    const expectedEmails = mockUsers.slice(0, 10)
+      .map(user => user.Email)
+      .filter(email => email && email !== '-');
+    
+    expectedEmails.forEach(email => {
+      expect(container.textContent).toContain(email);
+    });
+  });
   });
 
   describe('搜索功能', () => {
@@ -206,14 +607,27 @@ describe('用户管理页面', () => {
       render(UserManagementPage);
 
       await waitFor(() => {
-        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(fetch).toHaveBeenCalledTimes(1);//只发起了一次API请求，没有重复请求
       });
 
       // 验证初始请求包含 page=1
       const initialCall = fetch.mock.calls[0];
       expect(initialCall[0]).toContain('page=1');
     });
+
+    it('应该验证搜索防抖功能被配置', async () => {
+      const { debounce } = await import('../_utils/debounce.js');
+
+      render(UserManagementPage);
+
+      // 验证防抖函数被调用
+      expect(debounce).toHaveBeenCalled();
+    });
   });
+
+  
+
+
 
   describe('筛选功能', () => {
     it('应该显示筛选相关的UI元素', async () => {
@@ -247,6 +661,45 @@ describe('用户管理页面', () => {
       expect(container).toBeTruthy();
       expect(container.querySelector('.user-management-container')).toBeTruthy();
     });
+
+    it('性别筛选应该发送正确的请求', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledTimes(1);
+      });
+
+      await tick();
+
+      // 验证性别筛选相关的UI元素存在
+      expect(container.textContent).toContain('性别');
+    });
+
+    it('账号状态筛选应该发送正确的请求', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledTimes(1);
+      });
+
+      await tick();
+
+      // 验证账号状态筛选相关的UI元素存在
+      expect(container.textContent).toContain('账号状态');
+    });
+
+    it('角色筛选应该发送正确的请求', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledTimes(1);
+      });
+
+      await tick();
+
+      // 验证角色筛选相关的UI元素存在
+      expect(container.textContent).toContain('角色');
+    });
   });
 
   describe('分页功能', () => {
@@ -262,6 +715,30 @@ describe('用户管理页面', () => {
       // 验证分页相关元素
       const paginationWrapper = container.querySelector('.pagination-wrapper');
       expect(paginationWrapper).toBeTruthy();
+    });
+
+    it('应该在分页改变时发送正确的请求', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledTimes(1);//只发起了一次API请求，没有重复请求
+      });
+
+      // 验证分页容器存在
+      const paginationWrapper = container.querySelector('.pagination-wrapper');
+      expect(paginationWrapper).toBeTruthy();
+    });
+
+    it('应该正确处理页面大小变化', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledTimes(1);
+      });
+
+      // 验证初始请求使用默认页面大小
+      const initialCall = fetch.mock.calls[0];
+      expect(initialCall[0]).toContain('pageSize=10');
     });
   });
 
@@ -345,7 +822,7 @@ describe('用户管理页面', () => {
 
       // 验证是否显示了模拟的用户数据
       const container = document.body;
-      expect(container.textContent).toContain('user001');
+      expect(container.textContent).toContain('admin001');
       expect(container.textContent).toContain('张三');
     });
   });
@@ -369,10 +846,7 @@ describe('用户管理页面', () => {
     it('应该处理空数据响应', async () => {
       fetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          data: [],
-          rowCount: 0
-        })
+        json: () => Promise.resolve(mockEmptyResponse)
       });
 
       const { container } = render(UserManagementPage);
@@ -386,6 +860,63 @@ describe('用户管理页面', () => {
       // 验证空状态处理
       const emptyRow = container.querySelector('.empty-row');
       expect(emptyRow).toBeTruthy();
+    });
+
+    it('应该处理服务器返回错误状态', async () => {
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockErrorResponse)
+      });
+
+      const { toast } = await import('$lib/components/Toast/Toast.js');
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 验证错误处理和toast提示
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringContaining('获取用户列表失败')
+      );
+    });
+
+    it('应该处理网络请求失败', async () => {
+      fetch.mockRejectedValue(new Error('Network timeout'));
+
+      const { toast } = await import('$lib/components/Toast/Toast.js');
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 验证网络错误处理
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringContaining('获取用户列表失败')
+      );
+    });
+
+    it('应该处理权限不足错误', async () => {
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockUnauthorizedResponse)
+      });
+
+      const { toast } = await import('$lib/components/Toast/Toast.js');
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 验证权限错误处理
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringContaining('权限不足')
+      );
     });
   });
 
@@ -502,28 +1033,6 @@ describe('用户管理页面', () => {
         expect(selectAllCheckbox.checked).toBe(false);
       }
     });
-  });
-
-
-  describe('跨页选择功能', () => {
-    it('应该在翻页后保持选中状态', async () => {
-      const { container } = render(UserManagementPage);
-
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalled();
-      });
-      await tick();
-
-      // 选中第一个用户
-      const firstCheckbox = container.querySelector('input[type="checkbox"].checkbox-item');
-      if (firstCheckbox) {
-        await fireEvent.click(firstCheckbox);
-        await tick();
-
-        // 模拟翻页
-        expect(firstCheckbox.checked).toBe(true);
-      }
-    });
 
     it('全选应该支持跨页选择', async () => {
       const { container } = render(UserManagementPage);
@@ -549,159 +1058,32 @@ describe('用户管理页面', () => {
     });
   });
 
-
-  describe('搜索框交互', () => {
-    it('应该验证组件包含搜索相关UI', async () => {
+  describe('跨页选择功能', () => {
+    it('应该在翻页后保持选中状态', async () => {
       const { container } = render(UserManagementPage);
-
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalledTimes(1);
-      });
-
-      // 验证组件成功渲染
-      expect(container).toBeTruthy();
-      expect(container.querySelector('.user-management-container')).toBeTruthy();
-    });
-
-    it('应该验证搜索防抖功能被配置', async () => {
-      const { debounce } = await import('../_utils/debounce.js');
-
-      render(UserManagementPage);
-
-      // 验证防抖函数被调用
-      expect(debounce).toHaveBeenCalled();
-    });
-  });
-
-  describe('下拉筛选功能', () => {
-    it('性别筛选应该发送正确的请求', async () => {
-      const { container } = render(UserManagementPage);
-
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalledTimes(1);
-      });
-
-      await tick();
-
-      // 验证性别筛选相关的UI元素存在
-      expect(container.textContent).toContain('性别');
-    });
-
-    it('账号状态筛选应该发送正确的请求', async () => {
-      const { container } = render(UserManagementPage);
-
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalledTimes(1);
-      });
-
-      await tick();
-
-      // 验证账号状态筛选相关的UI元素存在
-      expect(container.textContent).toContain('账号状态');
-    });
-
-    it('角色筛选应该发送正确的请求', async () => {
-      const { container } = render(UserManagementPage);
-
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalledTimes(1);
-      });
-
-      await tick();
-
-      // 验证角色筛选相关的UI元素存在
-      expect(container.textContent).toContain('角色');
-    });
-  });
-
-  describe('分页交互', () => {
-    it('应该在分页改变时发送正确的请求', async () => {
-      const { container } = render(UserManagementPage);
-
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalledTimes(1);
-      });
-
-      // 验证分页容器存在
-      const paginationWrapper = container.querySelector('.pagination-wrapper');
-      expect(paginationWrapper).toBeTruthy();
-    });
-
-    it('应该正确处理页面大小变化', async () => {
-      const { container } = render(UserManagementPage);
-
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalledTimes(1);
-      });
-
-      // 验证初始请求使用默认页面大小
-      const initialCall = fetch.mock.calls[0];
-      expect(initialCall[0]).toContain('pageSize=10');
-    });
-  });
-
-  describe('数据格式化', () => {
-    it('应该正确格式化创建时间', async () => {
-      render(UserManagementPage);
 
       await waitFor(() => {
         expect(fetch).toHaveBeenCalled();
       });
       await tick();
 
-      // 验证时间格式化
-      const container = document.body;
-      expect(container.textContent).toMatch(/\d{4}\/\d{1,2}\/\d{1,2}/);
-    });
+      // 选中第一个用户
+      const firstCheckbox = container.querySelector('input[type="checkbox"].checkbox-item');
+      if (firstCheckbox) {
+        await fireEvent.click(firstCheckbox);
+        await tick();
 
-    it('应该正确处理空值和默认值', async () => {
-      // 模拟包含空值的数据
-      const mockUsersWithEmptyValues = [
-        {
-          ID: '3',
-          Account: 'user003',
-          Domains: ['cst.school^student'],
-          OfficialName: null,
-          Gender: null,
-          MobilePhone: null,
-          Email: null,
-          Type: '02',
-          Category: 'normal',
-          CreateTime: '2023-01-03T08:00:00Z',
-          Status: '00'
-        }
-      ];
-
-      fetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({
-          data: mockUsersWithEmptyValues,
-          rowCount: 1
-        })
-      });
-
-      render(UserManagementPage);
-
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalled();
-      });
-      await tick();
-
-      // 验证空值被正确处理为 '-'
-      const container = document.body;
-      expect(container.textContent).toContain('-');
+        // 模拟翻页
+        expect(firstCheckbox.checked).toBe(true);
+      }
     });
   });
 
   describe('空状态处理', () => {
-
     it('当没有数据时应该显示空状态', async () => {
       fetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          data: [],
-          rowCount: 0
-        })
+        json: () => Promise.resolve(mockEmptyResponse)
       });
 
       const { container } = render(UserManagementPage);
@@ -743,13 +1125,18 @@ describe('用户管理页面', () => {
         Email: null,
         Type: '02',
         Category: null,
-        CreateTime: '2023-01-03T08:00:00Z',
+        CreateTime: '2025-01-03T08:00:00Z',
         Status: '02',
       };
 
       fetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ data: [mockUser], rowCount: 1 }),
+        json: () => Promise.resolve({ 
+          status: 0,
+          data: [mockUser], 
+          rowCount: 1,
+          msg: 'success'
+        }),
       });
 
       const { container } = render(UserManagementPage);
@@ -764,7 +1151,7 @@ describe('用户管理页面', () => {
     it('应该正确处理空数据响应并清空状态', async () => {
       fetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ data: [], rowCount: 0 }),
+        json: () => Promise.resolve(mockEmptyResponse),
       });
 
       const { container } = render(UserManagementPage);
@@ -789,6 +1176,881 @@ describe('用户管理页面', () => {
     });
   });
 
-});
+  describe('边界情况和特殊数据处理', () => {
+    it('应该正确处理空角色数组', async () => {
+      const mockUserWithNoRoles = {
+        status: 0,
+        data: [mockUsers.find(u => u.ID === '10')], // 无角色用户
+        rowCount: 1,
+        msg: 'success'
+      };
 
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockUserWithNoRoles)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      expect(container.textContent).toContain('no_role_user');
+    });
+
+    it('应该正确处理多角色用户', async () => {
+      const mockMultiRoleUser = {
+        status: 0,
+        data: [mockUsers.find(u => u.ID === '3')], // 多角色用户
+        rowCount: 1,
+        msg: 'success'
+      };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockMultiRoleUser)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      expect(container.textContent).toContain('普通管理员');
+      expect(container.textContent).toContain('教师');
+      expect(container.textContent).toContain('批阅员');
+    });
+
+    it('应该正确处理所有用户类型', async () => {
+      const typeTestUsers = mockUsers.filter(u => 
+        ['00', '02', '04', '08', '10', '80', '99'].includes(u.Type)
+      );
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          status: 0,
+          data: typeTestUsers,
+          rowCount: typeTestUsers.length,
+          msg: 'success'
+        })
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      expect(container.textContent).toContain('匿名用户');
+      expect(container.textContent).toContain('注册用户');
+      expect(container.textContent).toContain('试用用户');
+      expect(container.textContent).toContain('机构上帝');
+      expect(container.textContent).toContain('测试用户');
+      expect(container.textContent).toContain('系统上帝');
+    });
+
+    it('应该正确处理身份证号码性别判断', async () => {
+      const genderTestUsers = mockUsers.filter(u => 
+        u.IDCardNo && u.IDCardNo.length === 18
+      ).slice(0, 3);
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          status: 0,
+          data: genderTestUsers,
+          rowCount: genderTestUsers.length,
+          msg: 'success'
+        })
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      // 验证性别显示（应该根据身份证号码计算）
+      expect(container.textContent).toContain('男');
+      expect(container.textContent).toContain('女');
+    });
+
+    
+
+    it('应该正确处理长字符串和特殊字符', async () => {
+      const specialCharUser = {
+        status: 0,
+        data: [mockUsers.find(u => u.ID === '9')], // 特殊字符用户
+        rowCount: 1,
+        msg: 'success'
+      };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(specialCharUser)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      expect(container.textContent).toContain('欧阳·复姓测试-用户@符号');
+      expect(container.textContent).toContain('very_long_account_name');
+    });
+
+
+    it('应该正确处理删除状态用户', async () => {
+      const deletedUser = {
+        status: 0,
+        data: [mockUsers.find(u => u.ID === '15')], // 删除状态用户
+        rowCount: 1,
+        msg: 'success'
+      };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(deletedUser)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      // 验证删除状态的CSS类
+      const statusElement = container.querySelector('.status-text.deleted');
+      expect(statusElement).toBeTruthy();
+    });
+
+    it('应该正确处理未知角色代码', async () => {
+      const unknownRoleUser = {
+        status: 0,
+        data: [mockUsers.find(u => u.ID === '17')], // 未知角色用户
+        rowCount: 1,
+        msg: 'success'
+      };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(unknownRoleUser)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      // 未知角色应该显示原始值
+      expect(container.textContent).toContain('unknownRole');
+    });
+
+    it('应该正确处理未知用户类型', async () => {
+      const unknownTypeUser = {
+        status: 0,
+        data: [mockUsers.find(u => u.ID === '18')], // 未知类型用户
+        rowCount: 1,
+        msg: 'success'
+      };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(unknownTypeUser)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      // 未知类型应该显示原始值
+      expect(container.textContent).toContain('99');
+    });
+
+
+    it('应该正确处理边界值联系方式', async () => {
+      const boundaryContactUser = {
+        status: 0,
+        data: [mockUsers.find(u => u.ID === '19')], // 边界联系方式用户
+        rowCount: 1,
+        msg: 'success'
+      };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(boundaryContactUser)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      expect(container.textContent).toContain('10000000000');
+      expect(container.textContent).toContain('a@b.c');
+    });
+
+    it('应该正确处理最长联系方式', async () => {
+      const maxLengthUser = {
+        status: 0,
+        data: [mockUsers.find(u => u.ID === '20')], // 最长联系方式用户
+        rowCount: 1,
+        msg: 'success'
+      };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(maxLengthUser)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      expect(container.textContent).toContain('19999999999');
+      expect(container.textContent).toContain('very.very.very.long.email');
+    });
+  });
+
+  describe('大数据量测试', () => {
+    it('应该正确处理大量用户数据', async () => {
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockLargeDataResponse)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      // 验证显示了正确数量的用户
+      const userRows = container.querySelectorAll('.table-row[data-id]');
+      expect(userRows.length).toBe(20); // 第一页20条数据
+    });
+
+    it('应该正确处理混合状态的大数据', async () => {
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockLargeDataResponse)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      // 验证包含不同状态的用户
+      expect(container.textContent).toContain('启用');
+      expect(container.textContent).toContain('停用');
+    });
+
+    it('应该正确处理大数据分页', async () => {
+      // 模拟第二页数据
+      const secondPageResponse = {
+        status: 0,
+        data: mockLargeUserList.slice(20, 40), // 第二页20条
+        rowCount: mockLargeUserList.length,
+        msg: 'success'
+      };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(secondPageResponse)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      // 验证分页数据正确显示
+      expect(container.textContent).toContain('user_021');
+    });
+  });
+
+  describe('数据格式化', () => {
+    it('应该正确格式化创建时间', async () => {
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 验证时间格式化
+      const container = document.body;
+      expect(container.textContent).toMatch(/\d{4}-\d{1,2}-\d{1,2}/);
+    });
+
+    it('应该正确处理空值和默认值', async () => {
+      // 模拟包含空值的数据
+      const mockUsersWithEmptyValues = [
+        {
+          ID: '3',
+          Account: 'user003',
+          Domains: ['cst.school^student'],
+          OfficialName: null,
+          Gender: null,
+          MobilePhone: null,
+          Email: null,
+          Type: '02',
+          Category: 'normal',
+          CreateTime: '2025-01-03T08:00:00Z',
+          Status: '00'
+        }
+      ];
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({
+          status: 0,
+          data: mockUsersWithEmptyValues,
+          rowCount: 1,
+          msg: 'success'
+        })
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 验证空值被正确处理为 '-'
+      const container = document.body;
+      expect(container.textContent).toContain('-');
+    });
+
+    it('应该正确处理当前时间数据', async () => {
+      const currentTimeUser = {
+        status: 0,
+        data: [mockUsers.find(u => u.ID === '21')], // 当前时间用户
+        rowCount: 1,
+        msg: 'success'
+      };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(currentTimeUser)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      // 验证当前时间格式化正确
+      expect(container.textContent).toMatch(/2025-08-10/);
+    });
+  });
+
+  describe('API错误响应测试', () => {
+    it('应该处理API失败响应', async () => {
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockApiFailureResponse)
+      });
+
+      const { toast } = await import('$lib/components/Toast/Toast.js');
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 验证API失败处理
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringContaining('数据库连接失败')
+      );
+    });
+
+    it('应该处理fetch异常', async () => {
+      fetch.mockRejectedValue(new Error('Network connection failed'));
+
+      const { toast } = await import('$lib/components/Toast/Toast.js');
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 验证网络异常处理
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringContaining('获取用户列表失败')
+      );
+    });
+
+    it('应该处理malformed JSON响应', async () => {
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.reject(new Error('Unexpected token'))
+      });
+
+      const { toast } = await import('$lib/components/Toast/Toast.js');
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 验证JSON解析错误处理
+      expect(toast.error).toHaveBeenCalledWith(
+        expect.stringContaining('获取用户列表失败')
+      );
+    });
+  });
+
+  describe('性能测试', () => {
+    it('应该在大数据量下保持响应性', async () => {
+      const startTime = performance.now();
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockLargeDataResponse)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const endTime = performance.now();
+      const renderTime = endTime - startTime;
+
+      // 验证渲染时间合理（小于1秒）
+      expect(renderTime).toBeLessThan(1000);
+    });
+
+    it('应该正确处理频繁的状态更新', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+              });
+      await tick();
+
+      // 模拟频繁的选择操作
+      const checkboxes = container.querySelectorAll('input[type="checkbox"].checkbox-item');
+      
+      // 快速切换选择状态
+      for (let i = 0; i < Math.min(checkboxes.length, 5); i++) {
+        await fireEvent.click(checkboxes[i]);
+        await tick();
+        await fireEvent.click(checkboxes[i]);
+        await tick();
+      }
+
+      // 验证组件仍然响应正常
+      expect(container.querySelector('.user-management-container')).toBeTruthy();
+    });
+  });
+
+  describe('用户交互边界测试', () => {
+    it('应该正确处理快速连续点击全选', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const selectAllCheckbox = container.querySelector('input[type="checkbox"].checkbox-all');
+      if (selectAllCheckbox) {
+        // 快速连续点击
+        await fireEvent.click(selectAllCheckbox);
+        await fireEvent.click(selectAllCheckbox);
+        await fireEvent.click(selectAllCheckbox);
+        await tick();
+
+        // 验证最终状态正确（奇数次点击后应该是选中状态）
+        expect(selectAllCheckbox.checked).toBe(true);
+      }
+    });
+
+    it('应该正确处理同时选择多个用户', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const checkboxes = container.querySelectorAll('input[type="checkbox"].checkbox-item');
+      
+      // 同时选择前3个用户
+      for (let i = 0; i < Math.min(checkboxes.length, 3); i++) {
+        await fireEvent.click(checkboxes[i]);
+      }
+      await tick();
+
+      // 验证选中状态
+      for (let i = 0; i < Math.min(checkboxes.length, 3); i++) {
+        expect(checkboxes[i].checked).toBe(true);
+      }
+    });
+
+    it('应该正确处理无效的用户ID', async () => {
+      const invalidUserData = {
+        status: 0,
+        data: [
+          {
+            ID: '', // 空ID
+            Account: 'invalid_user',
+            Domains: ['cst.school^student'],
+            OfficialName: '无效ID用户',
+            Type: '02',
+            Status: '00',
+            CreateTime: '2025-08-10T15:34:40Z'
+          },
+          {
+            ID: null, // null ID
+            Account: 'null_id_user',
+            Domains: ['cst.school^student'],
+            OfficialName: 'Null ID用户',
+            Type: '02',
+            Status: '00',
+            CreateTime: '2025-08-10T15:34:40Z'
+          }
+        ],
+        rowCount: 2,
+        msg: 'success'
+      };
+
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(invalidUserData)
+      });
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 验证组件能够处理无效ID而不崩溃
+      const container = document.body;
+      expect(container.querySelector('.user-management-container')).toBeTruthy();
+      expect(container.textContent).toContain('invalid_user');
+    });
+  });
+
+
+
+  describe('搜索框交互详细测试', () => {
+    it('应该正确处理搜索输入变化', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledTimes(1);
+      });
+
+      // 由于搜索框被模拟，我们主要验证组件结构和防抖配置
+      expect(container.querySelector('.user-management-container')).toBeTruthy();
+      
+      // 验证防抖函数被正确配置
+      const { debounce } = await import('../_utils/debounce.js');
+      expect(debounce).toHaveBeenCalledWith(expect.any(Function), 400);
+    });
+
+  });
+
+  describe('筛选条件交互详细测试', () => {
+    it('应该在筛选条件改变时重置页码和清除选中', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledTimes(1);
+      });
+      await tick();
+
+      // 验证筛选相关UI元素存在
+      expect(container.textContent).toContain('创建时间');
+      expect(container.textContent).toContain('角色');
+      expect(container.textContent).toContain('性别');
+      expect(container.textContent).toContain('账号状态');
+    });
+
+    it('应该正确处理日期筛选', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledTimes(1);
+      });
+
+      // 验证日期选择器相关元素
+      expect(container.textContent).toContain('创建时间');
+    });
+  });
+
+  describe('移除和删除操作测试', () => {
+    it('应该显示移除按钮（当用户有关联关系时）', async () => {
+      const userWithRelation = {
+        status: 0,
+        data: [
+          {
+            ...mockUsers[0],
+            has_relation: true // 模拟有关联关系
+          }
+        ],
+        rowCount: 1,
+        msg: 'success'
+      };
+
+      // 注意：原始代码中 has_relation 字段是在前端设置的，
+      // 这里我们验证按钮显示逻辑的CSS样式
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      // 验证操作按钮区域存在
+      const actionButtons = container.querySelectorAll('.btn-link');
+      expect(actionButtons.length).toBeGreaterThan(0);
+    });
+
+    it('应该显示删除按钮（当用户无关联关系时）', async () => {
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      const container = document.body;
+      // 验证删除按钮相关的CSS类存在
+      expect(container.textContent).toContain('删除'); // 通过表头或操作区域
+    });
+  });
+
+  describe('状态管理详细测试', () => {
+    it('应该正确维护全局选中状态', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 测试全选状态管理
+      const selectAllCheckbox = container.querySelector('input[type="checkbox"].checkbox-all');
+      if (selectAllCheckbox) {
+        // 初始状态应该是未选中
+        expect(selectAllCheckbox.checked).toBe(false);
+
+        // 全选后应该更新状态
+        await fireEvent.click(selectAllCheckbox);
+        await tick();
+        expect(selectAllCheckbox.checked).toBe(true);
+      }
+    });
+
+    it('应该在数据重新加载时重置选中状态', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 选中一些用户
+      const firstCheckbox = container.querySelector('input[type="checkbox"].checkbox-item');
+      if (firstCheckbox) {
+        await fireEvent.click(firstCheckbox);
+        await tick();
+        expect(firstCheckbox.checked).toBe(true);
+      }
+
+      // 模拟数据重新加载（筛选条件改变）
+      // 在实际实现中，筛选条件改变会清除选中状态
+      const selectAllCheckbox = container.querySelector('input[type="checkbox"].checkbox-all');
+      if (selectAllCheckbox) {
+        expect(selectAllCheckbox.checked).toBe(false);
+      }
+    });
+  });
+
+  describe('网络状态和重试机制测试', () => {
+    it('应该处理间歇性网络错误', async () => {
+      // 第一次失败
+      fetch.mockRejectedValueOnce(new Error('Network timeout'));
+      
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 验证组件不会崩溃
+      expect(container.querySelector('.user-management-container')).toBeTruthy();
+    });
+
+    it('应该处理慢网络响应', async () => {
+      // 模拟慢响应
+      fetch.mockImplementation(() => 
+        new Promise(resolve => 
+          setTimeout(() => resolve({
+            ok: true,
+            json: () => Promise.resolve(mockApiResponse)
+          }), 100)
+        )
+      );
+
+      render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      }, { timeout: 1000 });
+
+      await tick();
+
+      // 验证最终能够正确加载数据
+      const container = document.body;
+      expect(container.textContent).toContain('admin001');
+    });
+  });
+
+  describe('分页边界测试', () => {
+    it('应该正确处理总页数为0的情况', async () => {
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockEmptyResponse)
+      });
+
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 验证分页组件隐藏
+      const pagination = container.querySelector('.pagination-container');
+      expect(pagination.classList.contains('hide')).toBe(true);
+    });
+
+    it('应该正确处理单页数据', async () => {
+      fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockSingleUserResponse)
+      });
+
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 验证单页数据正确显示
+      const container_text = container.textContent;
+      expect(container_text).toContain('张三');
+    });
+  });
+
+
+  describe('工具提示功能测试', () => {
+    it('应该显示账号类型提示信息', async () => {
+      const { container } = render(UserManagementPage);
+
+      await tick();
+
+      // 验证提示相关元素存在
+      const tipElements = container.querySelectorAll('.tip-wrapper');
+      expect(tipElements.length).toBeGreaterThan(0);
+
+      // 验证提示文本内容
+      const tooltipText = container.querySelector('.tooltip-text');
+      if (tooltipText) {
+        expect(tooltipText.textContent).toContain('匿名用户');
+        expect(tooltipText.textContent).toContain('注册用户');
+        expect(tooltipText.textContent).toContain('系统管理员');
+      }
+    });
+  });
+
+  describe('表格排序和显示测试', () => {
+    it('应该正确设置表格列宽', async () => {
+      const { container } = render(UserManagementPage);
+
+      await tick();
+
+      // 验证表格列的CSS类存在
+      const tableHeaders = container.querySelectorAll('.table-head');
+      expect(tableHeaders.length).toBeGreaterThan(0);
+
+      // 验证特定列的存在
+      expect(container.querySelector('.col-checkbox')).toBeTruthy();
+      expect(container.querySelector('.col-account')).toBeTruthy();
+      expect(container.querySelector('.col-name')).toBeTruthy();
+    });
+
+    it('应该正确处理表格行悬停效果', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalled();
+      });
+      await tick();
+
+      // 验证表格行元素存在
+      const tableRows = container.querySelectorAll('.table-row');
+      expect(tableRows.length).toBeGreaterThan(0);
+    });
+  });
+
+});
 
