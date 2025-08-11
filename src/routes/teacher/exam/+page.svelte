@@ -62,8 +62,8 @@
     end_time: null,
   });
 
-  async function publishAndSearch(examID) {
-    await publishExam(examID);
+  async function publishAndSearch(selected_exam_ids) {
+    await publishExam(selected_exam_ids);
     searchExam();
   }
 
@@ -157,7 +157,7 @@
     let deletableIDs = [];
     await searchExam();
     
-    deletableIDs = exam_list.filter(exam => (exam.status === '00' || exam.status === '02') && selected_exam_ids.includes(exam.id))
+    deletableIDs = exam_list.filter(selected_exam_ids.includes(exam.id))
       .map(exam => exam.id);
 
     if(deletableIDs.length!=0 && deletableIDs.every(id => selected_exam_ids.includes(id)))
@@ -174,7 +174,7 @@
     search_params.page = 1; // 重置到第一页
     let deletableIDs = [];
     await searchExam();
-    deletableIDs = exam_list.filter(exam => (exam.status === '00' || exam.status === '02') && selected_exam_ids.includes(exam.id))
+    deletableIDs = exam_list.filter(selected_exam_ids.includes(exam.id))
       .map(exam => exam.id);
 
     if(deletableIDs.length!=0 && deletableIDs.every(id => selected_exam_ids.includes(id)))
@@ -185,38 +185,41 @@
     is_all_selected=false;
   }
 
-  async function publishExam(examID) {
+  async function publishExam(selected_exam_ids) {
+    if (!Array.isArray(selected_exam_ids) || selected_exam_ids.length === 0) {
+    toast.error('请选择要发布的考试');
+    return;
+  }
     loading = true;
     message = '';
 
-    return fetch(`/api/exam/lock?exam_id=${examID}`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-    })
-      .then((lockRes) =>
-        lockRes.ok
-          ? lockRes
-          : res
-              .json()
-              .then((err) => Promise.reject(new Error(`获取考试锁失败：${err.Msg || '考试可能正在被其他用户编辑'}`))),
-      )
+    // return fetch(`/api/exam/lock?exam_id=${examID}`, {
+    //   method: 'GET',
+    //   credentials: 'include',
+    //   headers: { 'Content-Type': 'application/json' },
+    // })
+    //   .then((lockRes) =>
+    //     lockRes.ok
+    //       ? lockRes
+    //       : res
+    //           .json()
+    //           .then((err) => Promise.reject(new Error(`获取考试锁失败：${err.Msg || '考试可能正在被其他用户编辑'}`))),
+    //   )
 
-      .then(() => {
+     
         const params = {
           q: JSON.stringify({
-            data: { ID: [parseInt(examID)], Status: '02' },
+            data: { IDs: selected_exam_ids, Status: '02' },
           }),
         };
-
+        console.log("params",params);
         //占位
         const url = `/api/exam/status?${new URLSearchParams(params).toString()}`;
-        return fetch(url, {
+        fetch(url, {
           method: 'PUT',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-        });
-      })
+        })
       .then((response) => {
         return response.json();
       })
@@ -236,32 +239,30 @@
         toast.error(message);
       })
 
-      .finally(() =>
-        fetch(`/api/exam/lock?exam_id=${examID}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        })
-        .catch((releaseErr) => console.error('释放考试锁失败:', releaseErr)),
-      )
+      // .finally(() =>
+      //   fetch(`/api/exam/lock?exam_id=${examID}`, {
+      //     method: 'DELETE',
+      //     credentials: 'include',
+      //   })
+      //   .catch((releaseErr) => console.error('释放考试锁失败:', releaseErr)),
+      // )
       .finally(() => {
         loading = false;
+        selected_exam_ids=[];
       });
-  }
-
-  async function deleteExam(examID){
-    const delete_params={
-      q: JSON.stringify({
-            data: { ID: parseInt(examID), Status: '02' },
-          }),
     }
 
-    fetch(`/api/exam/status?${new URLSearchParams(delete_params).toString()}`,
-      {
-        method:"PUT",
+  async function deleteExam(selected_exam_ids){
+
+
+    fetch(`/api/exam`,
+      { 
+        method:"DELETE",
         credentials: "include",
         headers: {
                 "Content-Type": "application/json",
             },
+        body:JSON.stringify({data:selected_exam_ids})
       })
       .then((response)=>response.json())
       .then((result)=>{
@@ -277,7 +278,9 @@
           toast.error(error);
       })
       .finally(()=>{
+        searchExam();
         loading=false;
+        selected_exam_ids=[];
       })
   }
 
@@ -299,15 +302,13 @@
   // 处理全选/取消全选
 function handleSelectAll(event) {
    is_all_selected = event.target.checked;
-  // 当前页可删除的考试 ID
-  const currentPageDeletableIds = exam_list
-    .filter(exam => exam.status === '00' || exam.status === '02')
+  const currentPageIDs = exam_list
     .map(exam => exam.id);
 
   if (is_all_selected) {
-    selected_exam_ids = [...new Set([...selected_exam_ids, ...currentPageDeletableIds])];
+    selected_exam_ids = [...new Set([...selected_exam_ids, ...currentPageIDs])];
   } else {
-    selected_exam_ids = selected_exam_ids.filter(id => !currentPageDeletableIds.includes(id));
+    selected_exam_ids = selected_exam_ids.filter(id => !currentPageIDs.includes(id));
   }
 }
 
@@ -479,17 +480,28 @@ function handleSelectAll(event) {
         继续编辑</button>
     <button
       class="publish-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
-      onclick={() => {
-        ((publish_exam_dialog = true), (examID_to_publish = exam_list[index].id));
-      }}
-    >
+      onclick={(event) => {
+        event.stopPropagation(); // 阻止冒泡
+        publish_exam_dialog = true;
+        examID_to_publish = exam_list[index].id;
+      }}>
       发布考试</button
     >
-    <span class="{status == '00' ? 'hideButton' : 'EmptyData'} "> -- </span>
-    <!-- <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
+
+    <span class="{status == '00'||status == '02' ? 'hideButton' : 'EmptyData'} "> -- </span>
+
+    <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
+    onclick={(event)=>{
+        event.stopPropagation(); // 阻止冒泡
+        delete_exam_dialog=true;
+        examID_to_delete =exam_list[index].id
+    }}>
+    删除考试</button>
+
+    <!-- <button class="preview-exam-button action-button {status!='00'&&status!='02'&&status!='04' ?'hideButton' : ''}"
     onclick={()=>{
-        ((delete_exam_dialog=true),examID_to_delete =exam_list[index].id)
-    }}>删除考试</button> -->
+            goto(`/teacher/exam/previewExam`)
+        }}>预览试卷</button> -->
     <!-- <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}">取消考试</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">监考管理</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">操作日志</button> -->
@@ -501,12 +513,11 @@ function handleSelectAll(event) {
 
 {#snippet tableData(data, index)}
   <tr onclick={(event)=>handleCheckBoxChange(data,event)}>
-    <td class = "{is_delete_mode?'':"hideButton"}" style="width: 40px;">
+    <td >
         <input
           type="checkbox"
           class="deleteCheck"
           checked={selected_exam_ids.includes(data.id)}
-          disabled={data.status!='00'&& data.status!='02'}
         />
       </td>
     <td>{data.name} </td>
@@ -608,7 +619,12 @@ function handleSelectAll(event) {
     content="是否确认发布该考试?"
     cancel_text="取消"
     confirm_text="确认发布"
-    onConfirm={() => publishAndSearch(examID_to_publish)}
+    onConfirm={() => {
+      if (!selected_exam_ids.includes(examID_to_publish)) {
+      selected_exam_ids = [...selected_exam_ids, examID_to_publish];
+    }
+      publishAndSearch(selected_exam_ids)
+      }}
     onCancel={() => {
       publish_exam_dialog = false;
     }}
@@ -622,7 +638,12 @@ function handleSelectAll(event) {
     onCancel={() => {
       delete_exam_dialog = false;
     }}
-    onConfirm={() => deleteExam(examID_to_delete)}
+    onConfirm={() => {
+      if (!selected_exam_ids.includes(examID_to_delete)) {
+      selected_exam_ids = [...selected_exam_ids, examID_to_delete];
+    }
+      deleteExam(selected_exam_ids)
+      }}
     />
 
   <div class="paginationContainer">
@@ -868,4 +889,3 @@ function handleSelectAll(event) {
    outline:none;
   }
 </style>
-//占位

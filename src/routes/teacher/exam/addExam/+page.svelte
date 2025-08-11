@@ -1,4 +1,4 @@
-DatePicker<script>
+<script>
   //@ts-nocheck
   import { goto } from '$app/navigation';
   import SmartEditor from '@3min/smart-edit';
@@ -168,7 +168,7 @@ DatePicker<script>
     }
   }
   
-  function onChooseStartTime(index) {
+  export function onChooseStartTime(index) {
     return function (event) {
       const startDate = event.detail.date;
       if (startDate) {
@@ -180,7 +180,7 @@ DatePicker<script>
     };
   }
 
-  function onChooseEndTime(index) {
+  export function onChooseEndTime(index) {
     return function (event) {
       const endDate = event.detail.date;
       if (endDate) {
@@ -288,7 +288,7 @@ DatePicker<script>
       paper_configs[i].earlySubmissionTime =
         paper_configs[i].earlySubmissionTime <= 0 ? 0 : paper_configs[i].earlySubmissionTime;
     }
-
+    
     const examSessionsdata = paper_configs.map((cfg) => ({
       PaperID: cfg.paperID,
       // PaperID:              61,
@@ -309,7 +309,7 @@ DatePicker<script>
 
     // 附加文件：若用户上传了文件，则遍历填充；否则留空数组
     // const fileArr = files.length ? files.map((f) => ({ Name: f.name, Url: f.url || '' })) : [];
-
+    console.log("paper",paper_configs);
     const exam_data = {
       data: {
         examInfo: {
