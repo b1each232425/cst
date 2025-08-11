@@ -22,7 +22,7 @@
   let selectedPermissions = $state([]);
   let showPermColumn = $derived(selectedRoles.includes(1));
 
-  let hasError = false;
+  let hasError = $state(false);
   let formErrors = $state({
     name: '',
     gender: '',
@@ -211,7 +211,7 @@
           <span class="label-text">账号</span>
         </div>
         <div class="form-input-container">
-          <InputBox type="text" bind:value={account} showLabel={false} clearable={false} readonly></InputBox>
+          <InputBox type="text" bind:value={account} show_label={false} clearable={false} readonly></InputBox>
         </div>
       </div>
 
@@ -226,7 +226,7 @@
             placeholder="请输入密码"
             type="password"
             bind:value={password}
-            showLabel={false}
+            show_label={false}
             clearable={false}
             readonly
           ></InputBox>
@@ -242,7 +242,7 @@
           <span class="label-text">姓名</span>
         </div>
         <div class="form-input-container">
-          <InputBox placeholder="请输入姓名" type="text" bind:value={name} showLabel={false}></InputBox>
+          <InputBox placeholder="请输入姓名" type="text" bind:value={name} show_label={false}></InputBox>
           <div class="error-message" class:show={formErrors.name}>
             {formErrors.name}
           </div>
@@ -268,7 +268,7 @@
           <span class="label-text">手机号</span>
         </div>
         <div class="form-input-container">
-          <InputBox placeholder="请输入手机号" type="text" bind:value={phone} showLabel={false}></InputBox>
+          <InputBox placeholder="请输入手机号" type="text" bind:value={phone} show_label={false}></InputBox>
           <div class="error-message" class:show={formErrors.phone}>
             {formErrors.phone}
           </div>
@@ -281,7 +281,7 @@
           <span class="label-text">邮箱</span>
         </div>
         <div class="form-input-container">
-          <InputBox placeholder="请输入邮箱" type="email" bind:value={email} showLabel={false}></InputBox>
+          <InputBox placeholder="请输入邮箱" type="email" bind:value={email} show_label={false}></InputBox>
           <div class="error-message" class:show={formErrors.email}>
             {formErrors.email}
           </div>
