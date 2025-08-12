@@ -314,12 +314,7 @@
 		// 获取考试数据
 		examData = await fetchExamData(examId);
 
-		if (examData) {
-			isShow = true;
-		} else {
-			console.error('获取考试数据失败');
-			goto('/teacher/grade/exam-grade');
-		}
+		isShow=true;
 	});
 </script>
 

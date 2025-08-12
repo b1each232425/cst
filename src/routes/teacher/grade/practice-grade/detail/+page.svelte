@@ -107,7 +107,6 @@
 
 		// 获取练习数据
 		practiceData = await fetchPracticeData(practiceId);
-		console.log("获取练习数据成功:", practiceData);
 		
 		// 显示页面
 		isShow = true;

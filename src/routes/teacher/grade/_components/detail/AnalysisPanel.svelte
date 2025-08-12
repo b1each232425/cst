@@ -206,37 +206,51 @@
 	{/if}
 	{#if !isfolded && isLoaded}
 		<div class="analysis-content">
-			<!-- 简化的题目列表显示-->
-			{#each questionGroup as group}
-				<div class="question-group">
-					<h3 class="group-title">{group.name}</h3>
-					{#each questions.filter(q => q.groupId === group.id) as question}
-						<div class="question-item">
-							<div class="question-header">
-								<span class="question-number">第{question.index}题</span>
-								<span class="question-score">({question.score}分)</span>
-								{#if question.averageScore !== undefined}
-									<span class="average-score">平均分: {question.averageScore}</span>
-								{/if}
-							</div>
-							<div class="question-content">
-								{@html question.content}
-							</div>
-							{#if question.options}
-								<div class="options-stats">
-									{#each question.options as option}
-										<div class="option-stat">
-											<span class="option-label">{option.label}:</span>
-											<span class="option-text">{option.text}</span>
-											<span class="option-percentage">({option.selectionRate}%)</span>
-										</div>
-									{/each}
-								</div>
-							{/if}
-						</div>
-					{/each}
+			{#if questions.length === 0 || questionGroup.length === 0}
+				<!-- 暂无数据显示 -->
+				<div class="no-data">
+					<div class="no-data-text">暂无试卷分析数据</div>
 				</div>
-			{/each}
+			{:else}
+				<!-- 简化的题目列表显示-->
+				{#each questionGroup as group}
+					<div class="question-group">
+						<h3 class="group-title">{group.name}</h3>
+						{#if questions.filter(q => q.groupId === group.id).length === 0}
+							<!-- 分组内暂无题目 -->
+							<div class="group-no-data">
+								<span>该分组暂无题目数据</span>
+							</div>
+						{:else}
+							{#each questions.filter(q => q.groupId === group.id) as question}
+								<div class="question-item">
+									<div class="question-header">
+										<span class="question-number">第{question.index}题</span>
+										<span class="question-score">({question.score}分)</span>
+										{#if question.averageScore !== undefined}
+											<span class="average-score">平均分: {question.averageScore}</span>
+										{/if}
+									</div>
+									<div class="question-content">
+										{@html question.content}
+									</div>
+									{#if question.options}
+										<div class="options-stats">
+											{#each question.options as option}
+												<div class="option-stat">
+													<span class="option-label">{option.label}:</span>
+													<span class="option-text">{option.text}</span>
+													<span class="option-percentage">({option.selectionRate}%)</span>
+												</div>
+											{/each}
+										</div>
+									{/if}
+								</div>
+							{/each}
+						{/if}
+					</div>
+				{/each}
+			{/if}
 		</div>
 	{/if}
 	{#if !isLoaded}
@@ -291,6 +305,33 @@
 			margin-top: 30px;
 			margin-left: 50px;
 
+			.no-data {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				padding: 60px 20px;
+				text-align: center;
+
+				.no-data-icon {
+					font-size: 48px;
+					margin-bottom: 16px;
+					opacity: 0.6;
+				}
+
+				.no-data-text {
+					font-size: 16px;
+					color: #666;
+					margin-bottom: 8px;
+					font-weight: 500;
+				}
+
+				.no-data-hint {
+					font-size: 14px;
+					color: #999;
+				}
+			}
+
 			.question-group {
 				margin-bottom: 30px;
 
@@ -299,6 +340,16 @@
 					font-weight: bold;
 					margin-bottom: 15px;
 					color: #333;
+				}
+
+				.group-no-data {
+					padding: 20px;
+					text-align: center;
+					color: #999;
+					font-size: 14px;
+					background: #f8f9fa;
+					border-radius: 4px;
+					border: 1px dashed #ddd;
 				}
 
 				.question-item {
