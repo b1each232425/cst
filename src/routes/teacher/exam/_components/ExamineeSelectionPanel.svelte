@@ -14,7 +14,7 @@
   import Button from '$lib/components/Button/Button.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import {toast} from '$lib/components/Toast/Toast.js'
-
+  import '$lib/components/Button/index.scss';
   let {
     show_panel = false,
     ids = [],
@@ -65,6 +65,22 @@
   let loading = $state(false);
   //报错
   let error = $state('');
+  
+
+  // 导入学生
+  function handleImport() {
+    if (student_import_panel) {
+      student_import_panel.triggerFileInput();
+    }
+  }
+
+
+   function handleImportSuccess(is_all_ok) {
+    if (is_all_ok) {
+      searchExaminee();
+    }
+    show_import_panel = false;
+  }
 
   function getFilteredSelectedExaminee() {
     let filtered = selected_examinee;
@@ -106,12 +122,12 @@
    */
   let is_total_selected = $state(false);
 
-  // let showStudentImportPanel = $state(false);
+  let show_import_panel = $state(false);
 
   /**
    * @type {any}
    */
-  let studentImportPanel = $state(null);
+  let student_import_panel = $state(null);
 
   // 获取当前最大的serialNumber
   // function getMaxSerialNumber() {
@@ -408,16 +424,8 @@ function handleCheckboxChange(examinee, event) {
             <button class="back-btn" onclick={backToViewMode}>返回考生列表</button>
 
             <!-- <Button type="primary" >下载模板</Button> -->
-
-            <!-- <Button
-                            type="primary"
-                            onclick={() => {
-                            if (studentImportPanel) {
-                                studentImportPanel.triggerFileInput();
-                            }
-                            导入学生
-                        }}>
-                        </Button> -->
+            <button class="btn btn--primary is-plain" onclick={handleImport}>导入考生</button>
+            
           </div>
         </div>
         <div class="examinee-selection-table-container">
@@ -514,46 +522,11 @@ function handleCheckboxChange(examinee, event) {
       >
     </div>
   </div>
+
+  <StudentImportPanel bind:show={show_import_panel} onImport={handleImportSuccess} bind:this={student_import_panel} />
 </div>
 
-<!-- <StudentImportPanel
-    onImport={(/** @type {any} */ success_student, /** @type {any} */ has_error) => {
-        if (success_student && success_student.length > 0) {
-            // 过滤掉已存在的id
-            const newStudents = success_student
-                .filter(
-                    (/** @type {any} */ student) =>
-                        !selected_examinee.some((item) => item.id === student),
-                )
-                .map((/** @type {any} */ student, /** @type {any} */ index) => ({
-                    id: student,
-                    OfficialName: `学生${student}`, // 临时名称
-                    Gender: "",
-                    account: "",
-                    MobilePhone: "",
-                    IDCardNo: "",
-                    serialNumber: 0, // 临时设置
-                }));
 
-            // 更新selected_examinee
-            selected_examinee = [...selected_examinee, ...newStudents];
-
-            // 重新计算序列号
-            recalculateSerialNumbers();
-
-            searchExaminee();
-        }
-
-        if (!has_error) {
-            showStudentImportPanel = false;
-        }
-    }}
-    onCancel={() => {
-        showStudentImportPanel = false;
-    }}
-    bind:show={showStudentImportPanel}
-    bind:this={studentImportPanel}
-/> -->
 
 <style lang="scss" scoped>
   .hide {

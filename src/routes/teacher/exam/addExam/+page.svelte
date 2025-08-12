@@ -10,6 +10,7 @@
   import Title from '$lib/components/Title/Title.svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
   import InputBox from '$lib/components/Input/InputBox.svelte';
+  import { onChooseStartTime, onChooseEndTime } from '../_utils/date';
   const TIP_TEXT = {
     final_exam: '当一门考试的考试性质为期末成绩考试时，它将决定学生在此课程的最终期末成绩',
     qualifying_exams: '当一门考试是资格证考试时，学生需要以真实身份进入考试',
@@ -168,29 +169,29 @@
     }
   }
   
-  export function onChooseStartTime(index) {
-    return function (event) {
-      const startDate = event.detail.date;
-      if (startDate) {
-        startDate.setSeconds(0, 0);
-        const startISO = startDate.toISOString();
-        paper_configs[index].startTime = startISO;
-        updateDuration(index);
-      }
-    };
-  }
+  // export function onChooseStartTime(index) {
+  //   return function (event) {
+  //     const startDate = event.detail.date;
+  //     if (startDate) {
+  //       startDate.setSeconds(0, 0);
+  //       const startISO = startDate.toISOString();
+  //       paper_configs[index].startTime = startISO;
+  //       updateDuration(index);
+  //     }
+  //   };
+  // }
 
-  export function onChooseEndTime(index) {
-    return function (event) {
-      const endDate = event.detail.date;
-      if (endDate) {
-        endDate.setSeconds(0, 0);
-        const endISO = endDate.toISOString();
-        paper_configs[index].endTime = endISO;
-        updateDuration(index);
-      }
-    };
-  }
+  // export function onChooseEndTime(index) {
+  //   return function (event) {
+  //     const endDate = event.detail.date;
+  //     if (endDate) {
+  //       endDate.setSeconds(0, 0);
+  //       const endISO = endDate.toISOString();
+  //       paper_configs[index].endTime = endISO;
+  //       updateDuration(index);
+  //     }
+  //   };
+  // }
   //计算考试时长
   function updateDuration(index) {
     const startTime = paper_configs[index].startTime;
@@ -629,8 +630,8 @@
             is_time_selection={true}
             input_width={'350px'}
             is_single_date_selection={false}
-            on:start_date_selected={onChooseStartTime(paperConfigIndex)}
-            on:end_date_selected={onChooseEndTime(paperConfigIndex)}
+            on:start_date_selected={onChooseStartTime(paperConfigIndex,paper_configs,updateDuration)}
+            on:end_date_selected={onChooseEndTime(paperConfigIndex,paper_configs,updateDuration)}
             onDateConfirm={()=>[
               updateDuration(paperConfigIndex)
             ]}
