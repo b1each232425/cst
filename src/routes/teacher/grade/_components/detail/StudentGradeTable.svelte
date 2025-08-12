@@ -1,249 +1,284 @@
 <script>
+	import { onMount, getContext } from 'svelte';
 	import Pagination from '$lib/components/Pagination/Pagination.svelte';
 	import InputBox from '$lib/components/Input/InputBox.svelte';
 	import { sget } from '$lib/utils';
-	import { safeDisplayNumber, safeDisplayText } from '../../_utils/dataFormatter.js';
-
-	/**
-	 * @typedef {Object} ScoreItem
-	 * @property {number} exam_session_id - 场次ID
-	 * @property {number} score - 该场成绩
-	 */
-
-	/**
-	 * @typedef {Object} StudentGrade
-	 * @property {number} stu_id - 学生ID
-	 * @property {string} phone - 电话号码
-	 * @property {string} nickname - 昵称
-	 * @property {string} name - 姓名
-	 * @property {number} [score] - 成绩（考试单场次）
-	 * @property {ScoreItem[]} [scores] - 成绩列表（考试多场次）
-	 * @property {number} [highestScore] - 最高得分（练习）
-	 * @property {number} [submitCount] - 提交次数（练习）
-	 * @property {number} total_score - 总分
-	 * @property {string} remark - 备注
-	 */
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {'practice' | 'exam'} type - 类型
 	 * @property {number} resourceId - 资源ID
-	 * @property {StudentGrade[]} [students] - 学生成绩数据
-	 * @property {Object[]} [papers] - 试卷信息（考试类型需要）
+	 * @property {Array} [papers] - 试卷信息（考试类型需要）
 	 */
 
 	/**
 	 * @type {Props}
 	 */
-	let { type, resourceId, students = $bindable([]), papers = [] } = $props();
+	let { type, resourceId, papers = [] } = $props();
 
-	// 内部状态
-	let searchKeyword = $state('');
-	let currentPage = $state(1);
-	let pageSize = $state(10);
-	let totalRecords = $state(0);
-	let loading = $state(false);
-	let isCollapsed = $state(false);
+	// 获取 Context 数据
+	let contextData = $state(null);
+	try {
+		if (type === 'practice') {
+			const context = getContext('practice-detail');
+			contextData = context?.practiceData?.();
+		} else {
+			const context = getContext('exam-detail');
+			contextData = context?.examData?.();
+		}
+	} catch {
+		// Context 不存在时忽略
+	}
 
-	// 分页配置
-	let paginationConfig = $derived({
-		total: totalRecords,
-		page: currentPage,
-		pageSize: pageSize,
-		pageSizeOptions: [
-			{ value: 10, label: '10条/页' },
-			{ value: 20, label: '20条/页' },
-			{ value: 50, label: '50条/页' }
-		]
+	// 状态变量（按照旧项目命名）
+	let currentData = $state([]);
+	let searchParams = $state({
+		examID: type === 'exam' ? resourceId : undefined,
+		practiceID: type === 'practice' ? resourceId : undefined,
+		keyword: '',
+		page: 1,
+		pageSize: 10
 	});
 
-	// 表格列配置
-	const columnConfigs = {
-		practice: [
-			{ key: 'phone', label: '手机号', width: '15%' },
-			{ key: 'nickname', label: '昵称', width: '15%' },
-			{ key: 'name', label: '姓名', width: '15%' },
-			{ key: 'highestScore', label: '最高得分', width: '15%' },
-			{ key: 'submitCount', label: '提交次数', width: '15%' },
-			{ key: 'total_score', label: '总分', width: '10%' },
-			{ key: 'remark', label: '备注', width: '15%' }
+	let paginationConfig = $state({
+		total_data_num: 100,
+		total_page_num: 10,
+		current_page_num: 1,
+		max_show_page_num: 5,
+		show_per_page: true,
+		data_num_per_page_options: [
+			{ value: 10, label: '10条/页' },
+			{ value: 20, label: '20条/页' }
 		],
-		exam: [
-			{ key: 'phone', label: '手机号', width: '12%' },
-			{ key: 'nickname', label: '昵称', width: '12%' },
-			{ key: 'name', label: '姓名', width: '12%' },
-			// 动态添加试卷列
-			...papers.map((paper, index) => ({
-				key: `paper_${paper.id}`,
-				label: paper.idText || `试卷${index + 1}`,
-				width: '10%',
-				isPaper: true,
-				paperId: paper.id
-			})),
-			{ key: 'total_score', label: '总分', width: '8%' },
-			{ key: 'remark', label: '备注', width: '15%' }
-		]
-	};
+		selected: 10,
+		dropdown_open: false,
+		expand_direction: 'up'
+	});
 
-	let columns = $derived(columnConfigs[type] || []);
+	let isfolded = $state(false);
+	let isLoading = $state(true);
+	let searchTimeout = null;
+	let searchKeyword = $state('');
+
+	// 切换折叠状态
+	function toggleFold() {
+		isfolded = !isfolded;
+	}
 
 	/**
-	 * 获取学生成绩数据
+	 * 更新分页配置
 	 */
-	async function fetchStudentGrades() {
-		loading = true;
+	function updatePagination(number) {
+		paginationConfig.total_data_num = number;
+		paginationConfig.total_page_num = Math.ceil(
+			paginationConfig.total_data_num / paginationConfig.selected
+		);
+	}
+
+	/**
+	 * 合并学生成绩（考试类型）
+	 */
+	function mergeStudentGrades(data) {
+		const map = new Map();
+
+		for (const item of data) {
+			if (!map.has(item.stu_id)) {
+				map.set(item.stu_id, {
+					stu_id: item.stu_id,
+					exam_id: item.exam_id,
+					phone: item.phone,
+					nickname: item.nickname,
+					name: item.name,
+					scores: [
+						{
+							exam_session_id: item.exam_session_id,
+							score: item.score
+						}
+					],
+					total_score: item.score ?? 0,
+					remark: item.remark
+				});
+			} else {
+				const existing = map.get(item.stu_id);
+				if (existing) {
+					existing.scores.push({
+						exam_session_id: item.exam_session_id,
+						score: item.score
+					});
+					existing.total_score += item.score ?? 0;
+				}
+			}
+		}
+
+		return Array.from(map.values());
+	}
+
+	/**
+	 * 获取数据
+	 */
+	async function fetchData() {
 		try {
-			const endpoint = type === 'practice' 
-				? `/api/teacher/practice-grade/student-grade-list`
-				: `/api/teacher/exam-grade/examinee-grade-list`;
+			isLoading = true;
+			currentData = [];
 
-			const params = new URLSearchParams({
-				[type === 'practice' ? 'practiceID' : 'examID']: resourceId.toString(),
-				keyword: searchKeyword,
-				page: currentPage.toString(),
-				pageSize: pageSize.toString()
-			});
+			let url;
+			if (type === 'practice') {
+				url = `/api/teacher/practice-grade/examinee-grade-list?practiceID=${searchParams.practiceID}&page=${searchParams.page}&pageSize=${searchParams.pageSize}&keyword=${encodeURIComponent(searchParams.keyword)}`;
+			} else {
+				url = `/api/teacher/exam-grade/examinee-grade-list?examID=${searchParams.examID}&page=${searchParams.page}&pageSize=${searchParams.pageSize}&keyword=${encodeURIComponent(searchParams.keyword)}`;
+			}
 
-			const response = await fetch(`${endpoint}?${params}`, {
+			const response = await fetch(url, {
 				method: 'GET',
 				credentials: 'include'
 			});
 
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
+			const response_data = await response.json();
+			if (response_data.status < 0) {
+				throw new Error(response_data.msg);
 			}
 
-			const result = await response.json();
-			
-			if (result.status === 0) {
-				students = formatStudentData(sget(result, 'data', []));
-				totalRecords = sget(result, 'rowCount', 0);
+			if (type === 'practice') {
+				const data = sget(response_data, 'data', []);
+				currentData = data.map((item) => ({
+					stuId: sget(item, 'stu_id', 0),
+					phone: sget(item, 'phone', '-'),
+					nickname: sget(item, 'nickname', '-'),
+					name: sget(item, 'name', '-'),
+					highestScore: sget(item, 'highest_score', 0),
+					submitCount: sget(item, 'submitted_cnt', 0),
+					remark: sget(item, 'remark', '-')
+				}));
+				const total = sget(response_data, 'row_count', 0);
+				updatePagination(total);
 			} else {
-				console.error('获取学生成绩失败:', result.msg);
+				const data = response_data.data;
+				currentData = mergeStudentGrades(data);
+				const total = Math.ceil(response_data.row_count / (contextData?.papers?.length || 1));
+				updatePagination(total);
 			}
+
+			isLoading = false;
 		} catch (error) {
-			console.error('获取学生成绩失败:', error);
-		} finally {
-			loading = false;
+			console.error('Error fetching data:', error);
+			isLoading = false;
 		}
 	}
 
 	/**
-	 * 格式化学生数据
-	 * @param {any[]} rawData - 原始数据
-	 * @returns {StudentGrade[]} 格式化后的数据
+	 * 搜索功能
 	 */
-	function formatStudentData(rawData) {
-		if (type === 'practice') {
-			return rawData;
+	function handleSearch(keyword) {
+		if (searchTimeout) {
+			clearTimeout(searchTimeout);
 		}
 
-		// 考试数据需要按学生分组并合并多场次成绩
-		const studentMap = new Map();
-		
-		rawData.forEach(item => {
-			const studentId = item.stu_id;
-			
-			if (!studentMap.has(studentId)) {
-				studentMap.set(studentId, {
-					stu_id: studentId,
-					phone: item.phone,
-					nickname: item.nickname,
-					name: item.name,
-					scores: [],
-					total_score: item.total_score,
-					remark: item.remark
-				});
-			}
-			
-			const student = studentMap.get(studentId);
-			student.scores.push({
-				exam_session_id: item.exam_session_id,
-				score: item.score
-			});
-		});
+		searchTimeout = setTimeout(async () => {
+			searchParams.page = 1;
+			searchParams.keyword = keyword;
+			await fetchData();
 
-		return Array.from(studentMap.values());
+			clearTimeout(searchTimeout);
+			searchTimeout = null;
+		}, 500);
 	}
 
 	/**
-	 * 获取学生在指定试卷的成绩
-	 * @param {StudentGrade} student - 学生数据
-	 * @param {number} paperId - 试卷ID
-	 * @returns {string} 成绩或占位符
+	 * 处理页码变化
 	 */
-	function getStudentPaperScore(student, paperId) {
-		if (type === 'practice') {
-			return safeDisplayNumber(student.score, 1);
+	async function handlePageChange(is_next) {
+		const new_page = is_next
+			? Math.min(paginationConfig.total_page_num, paginationConfig.current_page_num + 1)
+			: Math.max(1, paginationConfig.current_page_num - 1);
+
+		if (new_page !== paginationConfig.current_page_num) {
+			paginationConfig.current_page_num = new_page;
+			searchParams.page = new_page;
+			await fetchData();
 		}
-
-		const scoreItem = student.scores?.find(s => s.exam_session_id === paperId);
-		return scoreItem ? safeDisplayNumber(scoreItem.score, 1) : '-';
 	}
 
 	/**
-	 * 切换折叠状态
+	 * 处理页码选择
 	 */
-	function toggleCollapse() {
-		isCollapsed = !isCollapsed;
+	async function handlePageChoose(page_num) {
+		if (
+			page_num !== paginationConfig.current_page_num &&
+			page_num > 0 &&
+			page_num <= paginationConfig.total_page_num
+		) {
+			paginationConfig.current_page_num = page_num;
+			searchParams.page = page_num;
+			await fetchData();
+		}
 	}
 
 	/**
-	 * 处理搜索
+	 * 处理每页显示条数变化
 	 */
-	function handleSearch() {
-		currentPage = 1;
-		fetchStudentGrades();
+	async function handlePageSizeChange(value) {
+		const size_value = typeof value === 'string' ? parseInt(value) : value;
+		paginationConfig.show_per_page = true;
+		paginationConfig.current_page_num = 1;
+		paginationConfig.selected = size_value;
+		searchParams.pageSize = size_value;
+		searchParams.page = 1;
+		await fetchData();
 	}
 
 	/**
-	 * 处理分页变化
-	 * @param {CustomEvent} event
+	 * 处理页码搜索
 	 */
-	function handlePageChange(event) {
-		currentPage = event.detail;
-		fetchStudentGrades();
+	async function handlePageSearch(value) {
+		const page_num = parseInt(value);
+		if (
+			!isNaN(page_num) &&
+			page_num > 0 &&
+			page_num <= paginationConfig.total_page_num
+		) {
+			paginationConfig.current_page_num = page_num;
+			searchParams.page = page_num;
+			await fetchData();
+		}
 	}
 
 	/**
-	 * 处理页面大小变化
-	 * @param {CustomEvent} event
+	 * 分数颜色判断
 	 */
-	function handlePageSizeChange(event) {
-		pageSize = event.detail;
-		currentPage = 1;
-		fetchStudentGrades();
+	function getScoreClass(score, totalScore) {
+		if (score < totalScore * 0.6) {
+			return 'red';
+		} else {
+			return 'green';
+		}
 	}
 
-	// 搜索防抖
-	let searchTimeout;
+	// 搜索防抖处理
 	$effect(() => {
 		if (searchKeyword !== undefined) {
-			clearTimeout(searchTimeout);
-			searchTimeout = setTimeout(() => {
-				handleSearch();
-			}, 500);
+			handleSearch(searchKeyword);
 		}
 	});
 
-	// 初始化时获取数据
-	$effect(() => {
-		if (resourceId) {
-			fetchStudentGrades();
-		}
+	// 初始化
+	onMount(async () => {
+		await fetchData();
 	});
 </script>
 
-<div class="student-grade-container">
-	<div class="header">
-		<div class="title-section">
-			<h2 class="section-title">学生成绩</h2>
-			<button class="collapse-btn" onclick={toggleCollapse}>
-				{isCollapsed ? '展开' : '收起'}
-			</button>
-		</div>
-		
-		{#if !isCollapsed}
+<div class="student-scores-card">
+	<div class="card-header">
+		<button class="card-title-button" onclick={toggleFold}>
+			{#if isfolded}
+				<img src="/sidebar/nav_icon/unfold.svg" alt="收起" />
+			{:else}
+				<img src="/sidebar/nav_icon/fold.svg" alt="展开" />
+			{/if}
+			<div class="title">学生成绩</div>
+		</button>
+	</div>
+	{#if !isfolded}
+		<div class="card-body">
 			<div class="search-section">
 				<InputBox
 					label="搜索学生"
@@ -251,50 +286,89 @@
 					bind:value={searchKeyword}
 				/>
 			</div>
-		{/if}
-	</div>
-
-	{#if !isCollapsed}
-		<div class="table-container">
-			{#if loading}
-				<div class="loading">加载中...</div>
-			{:else if students.length === 0}
-				<div class="empty">暂无学生成绩数据</div>
+			{#if isLoading}
+				<div class="loading-indicator">
+					<div class="spinner"></div>
+					<span>正在加载，请稍候...</span>
+				</div>
 			{:else}
-				<table class="grade-table">
-					<thead>
-						<tr>
-							{#each columns as column}
-								<th style="width: {column.width}">{column.label}</th>
-							{/each}
-						</tr>
-					</thead>
-					<tbody>
-						{#each students as student}
+				<div class="table-wrapper">
+					<table class="scores-table">
+						<thead>
 							<tr>
-								{#each columns as column}
-									<td>
-										{#if column.isPaper}
-											{getStudentPaperScore(student, column.paperId)}
-										{:else if column.key === 'total_score' || column.key === 'score'}
-											{safeDisplayNumber(student[column.key], 1)}
-										{:else if column.key === 'phone' || column.key === 'nickname' || column.key === 'name' || column.key === 'remark'}
-											{safeDisplayText(student[column.key])}
-										{:else}
-											{safeDisplayText(student[column.key])}
-										{/if}
-									</td>
-								{/each}
+								<th>序号</th>
+								<th>电话</th>
+								<th>昵称</th>
+								<th>姓名</th>
+								{#if type === 'practice'}
+									<th>最高得分</th>
+									<th>作答次数</th>
+								{:else}
+									{#if contextData?.papers?.length === 1}
+										<th>得分</th>
+									{:else}
+										<th>总得分</th>
+										{#each contextData?.papers || [] as paper, index}
+											<th>试卷{index + 1}</th>
+										{/each}
+									{/if}
+								{/if}
+								<th>备注</th>
 							</tr>
-						{/each}
-					</tbody>
-				</table>
-
-				<div class="pagination-wrapper">
+						</thead>
+						<tbody>
+							{#each currentData || [] as student, index}
+								<tr>
+									<td>{(searchParams.page - 1) * searchParams.pageSize + index + 1}</td>
+									<td>{student.phone || '-'}</td>
+									<td>{student.nickname || '-'}</td>
+									<td>{student.name || '-'}</td>
+									{#if type === 'practice'}
+										<td class="score-cell">
+											<span class={getScoreClass(student.highestScore, contextData?.totalScore || 100)}>
+												{student.highestScore != null ? student.highestScore : '-'}
+											</span>
+										</td>
+										<td>{student.submitCount}</td>
+									{:else}
+										{#if contextData?.papers?.length === 1}
+											<td class="score-cell">
+												<span class={getScoreClass(student.total_score, contextData?.totalScore || 100)}>
+													{student.total_score != null ? student.total_score : '-'}
+												</span>
+											</td>
+										{:else}
+											<td class="score-cell">
+												<span class={getScoreClass(student.total_score, contextData?.totalScore || 100)}>
+													{student.total_score != null ? student.total_score : '-'}
+												</span>
+											</td>
+											{#each student.scores || [] as score, index}
+												<td class="score-cell">
+													<span class={getScoreClass(score.score, contextData?.papers?.[index]?.totalScore || 100)}>
+														{score.score != null ? score.score : '-'}
+													</span>
+												</td>
+											{/each}
+										{/if}
+									{/if}
+									<td class="note-cell">{student.remark || '-'}</td>
+								</tr>
+							{:else}
+								<tr>
+									<td colspan="100" class="empty-row">暂无数据</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				<div class="pagination">
 					<Pagination
 						{...paginationConfig}
-						on:pageChange={handlePageChange}
-						on:pageSizeChange={handlePageSizeChange}
+						onPageChangeFunc={handlePageChange}
+						onPageChooseFunc={handlePageChoose}
+						selectOptionFunc={handlePageSizeChange}
+						onPageSearchFunc={handlePageSearch}
 					/>
 				</div>
 			{/if}
@@ -302,119 +376,127 @@
 	{/if}
 </div>
 
-<style lang="scss" scoped>
-	.student-grade-container {
-		background: white;
-		border-radius: 8px;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-		margin-bottom: 24px;
-	}
+<style lang="scss">
+	.student-scores-card {
+		width: 100%;
+		height: 100%;
+		margin-bottom: 40px;
 
-	.header {
-		padding: 20px 24px;
-		border-bottom: 1px solid #e5e7eb;
-
-		.title-section {
+		.card-header {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
-			margin-bottom: 16px;
+			margin-bottom: 20px;
+			padding-bottom: 10px;
+			border-bottom: 2px solid #f0f0f0;
 
-			.section-title {
-				font-size: 18px;
-				font-weight: 600;
-				color: #1f2937;
-				margin: 0;
-			}
-
-			.collapse-btn {
-				padding: 6px 12px;
-				background: #f3f4f6;
-				border: 1px solid #d1d5db;
-				border-radius: 6px;
-				font-size: 14px;
-				color: #374151;
+			.card-title-button {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 10px;
 				cursor: pointer;
-				transition: all 0.2s;
+				background: none;
+				border: none;
 
-				&:hover {
-					background: #e5e7eb;
+				img {
+					width: 32px;
+					height: 32px;
+				}
+				.title {
+					font-size: 22px;
+					font-weight: bold;
+				}
+			}
+		}
+		.card-body {
+			.search-section {
+				margin-bottom: 30px;
+				margin-left: 3rem;
+				width: 400px;
+			}
+			.loading-indicator {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 20px;
+				flex-direction: column;
+				color: var(--gray);
+
+				.spinner {
+					width: 40px;
+					height: 40px;
+					border: 4px solid #ccc;
+					border-top-color: var(--blue);
+					border-radius: 50%;
+					animation: spin 0.8s linear infinite;
+					margin-bottom: 10px;
+				}
+
+				@keyframes spin {
+					to {
+						transform: rotate(360deg);
+					}
+				}
+			}
+			.table-wrapper {
+				overflow-x: auto;
+				margin-bottom: 20px;
+
+				.scores-table {
+					width: 100%;
+					border-collapse: collapse;
+					min-width: 800px;
+
+					th,
+					td {
+						padding: 12px 8px;
+						text-align: center;
+						font-size: 14px;
+						border-bottom: 1px solid #e0e0e0;
+					}
+					th {
+						font-weight: 400;
+						color: #0000004d;
+					}
+
+					/* 分数样式 */
+					.red {
+						color: var(--red);
+						font-weight: 500;
+					}
+
+					.green {
+						color: var(--green);
+						font-weight: 500;
+					}
+
+					.note-cell {
+						color: var(--gray);
+						font-size: 12px;
+					}
+
+					.empty-row {
+						text-align: center;
+						color: var(--gray);
+						font-style: italic;
+					}
 				}
 			}
 		}
 
-		.search-section {
-			max-width: 300px;
-		}
-	}
-
-	.table-container {
-		padding: 0 24px 24px;
-
-		.loading,
-		.empty {
-			text-align: center;
-			padding: 40px;
-			color: #6b7280;
-			font-size: 14px;
-		}
-
-		.grade-table {
-			width: 100%;
-			border-collapse: collapse;
-			font-size: 14px;
-			margin-bottom: 20px;
-
-			th,
-			td {
-				padding: 12px 8px;
-				text-align: center;
-				border-bottom: 1px solid #f3f4f6;
-			}
-
-			th {
-				background: #f9fafb;
-				font-weight: 500;
-				color: #374151;
-				border-bottom: 1px solid #e5e7eb;
-			}
-
-			td {
-				color: #1f2937;
-			}
-
-			tbody tr:hover {
-				background: #f8fafc;
-			}
-		}
-
-		.pagination-wrapper {
+		.pagination {
 			display: flex;
+			align-items: center;
 			justify-content: flex-end;
+			margin-top: 20px;
 		}
-	}
-
-	@media (max-width: 768px) {
-		.header {
-			padding: 16px;
-
-			.title-section {
+		/* 响应式设计 */
+		@media (max-width: 768px) {
+			.card-header {
 				flex-direction: column;
+				gap: 10px;
 				align-items: flex-start;
-				gap: 12px;
-			}
-
-			.search-section {
-				max-width: 100%;
-			}
-		}
-
-		.table-container {
-			padding: 0 16px 16px;
-			overflow-x: auto;
-
-			.grade-table {
-				min-width: 600px;
 			}
 		}
 	}

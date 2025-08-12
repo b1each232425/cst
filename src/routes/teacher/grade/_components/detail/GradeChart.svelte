@@ -1,26 +1,13 @@
 <script>
+	import { onMount, getContext } from 'svelte';
 	import Select from '$lib/components/Select/Select.svelte';
 	import Option from '$lib/components/Select/Option.svelte';
-	import { sget } from '$lib/utils';
-
-	/**
-	 * @typedef {Object} ChartData
-	 * @property {string[]} categories - X轴分类
-	 * @property {number[]} values - Y轴数值
-	 * @property {string} title - 图表标题
-	 */
-
-	/**
-	 * @typedef {Object} PaperOption
-	 * @property {number} id - 试卷ID
-	 * @property {string} name - 试卷名称
-	 */
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {'practice' | 'exam'} type - 类型
-	 * @property {number} resourceId - 资源ID
-	 * @property {PaperOption[]} [papers] - 试卷选项（考试类型需要）
+	 * @property {string|number} resourceId - 资源ID
+	 * @property {Array} [papers] - 试卷选项（考试类型需要）
 	 */
 
 	/**
@@ -28,97 +15,37 @@
 	 */
 	let { type, resourceId, papers = [] } = $props();
 
-	// 内部状态
-	let chartData = $state({
-		categories: ['0-19', '20-39', '40-59', '60-79', '80-100'],
-		values: [],
-		title: '成绩分布'
-	});
-
-	let selectedPaper = $state(null);
-	let columnCount = $state(5);
-	let loading = $state(false);
-	let isCollapsed = $state(false);
-
-	// 列数选项
-	const columnOptions = [
-		{ value: 3, label: '3列' },
-		{ value: 4, label: '4列' },
-		{ value: 5, label: '5列' },
-		{ value: 6, label: '6列' },
-		{ value: 8, label: '8列' },
-		{ value: 10, label: '10列' }
-	];
-
-	/**
-	 * 获取成绩分布数据
-	 */
-	async function fetchChartData() {
-		loading = true;
-		try {
-			const endpoint = type === 'practice' 
-				? `/api/teacher/practice-grade/grade-distribution`
-				: `/api/teacher/exam-grade/grade-distribution`;
-
-			const params = new URLSearchParams({
-				[type === 'practice' ? 'practiceId' : 'examId']: resourceId.toString(),
-				columnNum: columnCount.toString()
-			});
-
-			// 考试类型需要指定试卷
-			if (type === 'exam' && selectedPaper) {
-				params.append('examSessionId', selectedPaper.toString());
-			}
-
-			const response = await fetch(`${endpoint}?${params}`, {
-				method: 'GET',
-				credentials: 'include'
-			});
-
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			const result = await response.json();
-			
-			if (result.status === 0) {
-				const data = sget(result, 'data', {});
-				updateChartData(data);
-			} else {
-				console.error('获取成绩分布失败:', result.msg);
-			}
-		} catch (error) {
-			console.error('获取成绩分布失败:', error);
-		} finally {
-			loading = false;
+	// 获取 Context 数据
+	let contextData = $state(null);
+	try {
+		if (type === 'practice') {
+			const context = getContext('practice-detail');
+			contextData = context?.practiceData?.();
+		} else {
+			const context = getContext('exam-detail');
+			contextData = context?.examData?.();
 		}
+	} catch {
+		// Context 不存在时忽略
 	}
 
-	/**
-	 * 更新图表数据
-	 * @param {Object} data - 后端返回的数据
-	 */
-	function updateChartData(data) {
-		const totalScore = data.totalScore || 100;
-		const distribution = data.gradeDistribution || [];
-		
-		// 根据总分和列数生成分段
-		const segments = generateScoreSegments(totalScore, columnCount);
-		
-		chartData = {
-			categories: segments,
-			values: distribution,
-			title: `成绩分布 (总分: ${totalScore})`
-		};
-	}
+	// 状态变量
+	let xAxis_data = $state(['0-19', '20-39', '40-59', '60-79', '80-100']);
+	let series_data = $state([]);
+	let columnNum = $state(5);
+	let currentPaperId = $state('');
+	let options = $state([]);
+
+	// 分布数据
+	let distributionData = $state(null);
 
 	/**
-	 * 根据总分划分区间段
-	 * @param {number} totalScore - 总分
-	 * @param {number} columnCount - 列数
-	 * @returns {string[]} 区间段数组
+	 * 根据总分划分区间段（从低到高）
+	 * @param {number} totalScore - 当前试卷总分
+	 * @param {number} columnCount - 划分列数
+	 * @returns {string[]} 区间段数组（从低到高）
 	 */
-	function generateScoreSegments(totalScore, columnCount) {
+	function getScoreSegments(totalScore, columnCount) {
 		const step = Math.floor(totalScore / columnCount);
 		const segments = [];
 
@@ -132,116 +59,142 @@
 	}
 
 	/**
-	 * 切换折叠状态
+	 * 获取考试成绩分布数据
 	 */
-	function toggleCollapse() {
-		isCollapsed = !isCollapsed;
+	async function getExamDistributionData() {
+		if (type === 'practice') {
+			const url = `/api/teacher/practice-grade/distribution?practiceID=${resourceId}&columnNum=${columnNum}`;
+
+			const response = await fetch(url, {
+				method: 'GET',
+				credentials: 'include'
+			});
+
+			const response_data = await response.json();
+
+			if (response_data.status < 0) {
+				throw new Error(response_data.msg);
+			}
+
+			distributionData = {
+				practiceId: response_data.data.practice_id,
+				practiceName: response_data.data.practice_name,
+				totalScore: response_data.data.total_score,
+				totalStudents: response_data.data.total_students,
+				gradeDistribution: response_data.data.grade_distribution
+			};
+		} else {
+			const url = `/api/teacher/exam-grade/distribution?examID=${resourceId}&columnNum=${columnNum}`;
+
+			const response = await fetch(url, {
+				method: 'GET',
+				credentials: 'include'
+			});
+
+			const response_data = await response.json();
+
+			if (response_data.status < 0) {
+				throw new Error(response_data.msg);
+			}
+
+			distributionData = response_data.data;
+		}
+	}
+
+	/**
+	 * 将试卷数据转换为下拉选项
+	 */
+	function examDataToOptions() {
+		return papers.map((session) => ({
+			value: session.id,
+			label: session.name
+		}));
+	}
+
+	/**
+	 * 更新系列数据
+	 */
+	function updateSeriesData() {
+		if (type === 'practice') {
+			if (distributionData) {
+				series_data = distributionData.gradeDistribution.slice().reverse();
+				xAxis_data = getScoreSegments(contextData?.totalScore || 100, columnNum);
+			}
+		} else {
+			// 考试类型
+			if (currentPaperId && distributionData) {
+				const selectedPaper = papers.find((paper) => paper.id == currentPaperId);
+				const selectedSession = distributionData.grade_distribution?.find(
+					(session) => session.exam_session_id == selectedPaper?.id
+				);
+
+				if (selectedSession && selectedPaper) {
+					series_data = selectedSession.score_distribution.slice().reverse();
+					xAxis_data = getScoreSegments(selectedPaper.totalScore || 100, columnNum);
+				} else {
+					series_data = [];
+					xAxis_data = [];
+				}
+			} else {
+				series_data = [];
+				xAxis_data = [];
+			}
+		}
 	}
 
 	/**
 	 * 处理试卷选择变化
-	 * @param {CustomEvent} event
 	 */
 	function handlePaperChange(event) {
-		selectedPaper = event.detail;
-		fetchChartData();
-	}
-
-	/**
-	 * 处理列数变化
-	 * @param {CustomEvent} event
-	 */
-	function handleColumnChange(event) {
-		columnCount = event.detail;
-		fetchChartData();
+		currentPaperId = event.detail;
+		updateSeriesData();
 	}
 
 	// 初始化
-	$effect(() => {
-		if (resourceId) {
-			// 考试类型默认选择第一个试卷
-			if (type === 'exam' && papers.length > 0 && !selectedPaper) {
-				const firstPaper = papers[0];
-				if (firstPaper && firstPaper.id !== undefined) {
-					selectedPaper = firstPaper.id;
-				}
-			}
-			fetchChartData();
-		}
-	});
+	onMount(async () => {
+		await getExamDistributionData();
 
-	// 监听参数变化
-	$effect(() => {
-		if (selectedPaper !== null || type === 'practice') {
-			fetchChartData();
+		if (type === 'exam') {
+			options = examDataToOptions();
+			currentPaperId = options.length > 0 ? options[0].value : '';
 		}
+
+		updateSeriesData();
 	});
 </script>
 
-<div class="chart-container">
-	<div class="header">
-		<div class="title-section">
-			<h2 class="section-title">成绩分布</h2>
-			<button class="collapse-btn" onclick={toggleCollapse}>
-				{isCollapsed ? '展开' : '收起'}
-			</button>
-		</div>
-
-		{#if !isCollapsed}
-			<div class="controls">
-				{#if type === 'exam' && papers.length > 0}
-					<div class="control-item">
-						<label for="paper-select">选择试卷:</label>
-						<Select
-							id="paper-select"
-							value={selectedPaper}
-							placeholder="请选择试卷"
-							on:change={handlePaperChange}
-						>
-							{#each papers as paper}
-								{#if paper && paper.id !== undefined && paper.name}
-									<Option value={paper.id} label={paper.name}>{paper.name}</Option>
-								{/if}
-							{/each}
-						</Select>
-					</div>
-				{/if}
-
-				<div class="control-item">
-					<label for="column-select">分段数:</label>
-					<Select
-						id="column-select"
-						value={columnCount}
-						on:change={handleColumnChange}
-					>
-						{#each columnOptions as option}
-							<Option value={option.value} label={option.label}>{option.label}</Option>
-						{/each}
-					</Select>
-				</div>
+{#if (type === 'practice' && contextData) || (type === 'exam' && contextData)}
+	<div class="chart-container">
+		<div class="title">成绩分析</div>
+		{#if type === 'exam' && papers.length > 1}
+			<div class="dropdown">
+				<Select
+					value={currentPaperId}
+					placeholder="选择试卷"
+					on:change={handlePaperChange}
+				>
+					{#each options as option}
+						<Option value={option.value} label={option.label}>{option.label}</Option>
+					{/each}
+				</Select>
 			</div>
 		{/if}
-	</div>
-
-	{#if !isCollapsed}
-		<div class="chart-content">
-			{#if loading}
-				<div class="loading">加载中...</div>
-			{:else if chartData.values.length === 0}
-				<div class="empty">暂无成绩分布数据</div>
-			{:else}
-				<div class="chart-wrapper">
-					<h3 class="chart-title">{chartData.title}</h3>
+		<div class="chart {type === 'exam' && papers.length > 1 ? 'small' : ''}">
+			<div class="chart-content">
+				<div class="chart-title">成绩分布图</div>
+				{#if series_data.length === 0}
+					<div class="empty-state">暂无成绩分布数据</div>
+				{:else}
 					<div class="bar-chart">
-						{#each chartData.categories as category, index}
-							{@const value = chartData.values[index] || 0}
-							{@const maxValue = Math.max(...chartData.values)}
+						{#each xAxis_data as category, index}
+							{@const value = series_data[index] || 0}
+							{@const maxValue = Math.max(...series_data)}
 							{@const height = maxValue > 0 ? (value / maxValue) * 200 : 0}
-							
+
 							<div class="bar-item">
 								<div class="bar-wrapper">
-									<div 
-										class="bar" 
+									<div
+										class="bar"
 										style="height: {height}px"
 										title="{category}: {value}人"
 									></div>
@@ -251,181 +204,112 @@
 							</div>
 						{/each}
 					</div>
-				</div>
-			{/if}
+				{/if}
+			</div>
 		</div>
-	{/if}
-</div>
+	</div>
+{/if}
 
 <style lang="scss" scoped>
 	.chart-container {
-		background: white;
-		border-radius: 8px;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-		margin-bottom: 24px;
-	}
+		width: 100%;
+		height: 100%;
+		min-width: 600px;
+		margin-bottom: 40px;
 
-	.header {
-		padding: 20px 24px;
-		border-bottom: 1px solid #e5e7eb;
-
-		.title-section {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 16px;
-
-			.section-title {
-				font-size: 18px;
-				font-weight: 600;
-				color: #1f2937;
-				margin: 0;
-			}
-
-			.collapse-btn {
-				padding: 6px 12px;
-				background: #f3f4f6;
-				border: 1px solid #d1d5db;
-				border-radius: 6px;
-				font-size: 14px;
-				color: #374151;
-				cursor: pointer;
-				transition: all 0.2s;
-
-				&:hover {
-					background: #e5e7eb;
-				}
-			}
+		.title {
+			font-size: 22px;
+			font-weight: bold;
+			margin-top: 10px;
+			margin-bottom: 20px;
 		}
 
-		.controls {
-			display: flex;
-			gap: 20px;
-			flex-wrap: wrap;
+		.dropdown {
+			margin-bottom: 20px;
+		}
 
-			.control-item {
+		.chart {
+			width: 100%;
+			height: 80%;
+			border: 1px solid #e5e7eb;
+
+			&.small {
+				height: 60%;
+			}
+
+			.chart-content {
+				width: 100%;
+				height: 100%;
+				padding: 20px;
 				display: flex;
-				align-items: center;
-				gap: 8px;
+				flex-direction: column;
 
-				label {
-					font-size: 14px;
-					color: #374151;
-					white-space: nowrap;
+				.chart-title {
+					text-align: center;
+					font-size: 18px;
+					font-weight: normal;
+					color: #333;
+					margin-bottom: 20px;
 				}
-			}
-		}
-	}
 
-	.chart-content {
-		padding: 24px;
-
-		.loading,
-		.empty {
-			text-align: center;
-			padding: 40px;
-			color: #6b7280;
-			font-size: 14px;
-		}
-
-		.chart-wrapper {
-			.chart-title {
-				text-align: center;
-				font-size: 16px;
-				font-weight: 500;
-				color: #1f2937;
-				margin-bottom: 24px;
-			}
-
-			.bar-chart {
-				display: flex;
-				justify-content: center;
-				align-items: flex-end;
-				gap: 16px;
-				min-height: 250px;
-				padding: 20px 0;
-
-				.bar-item {
+				.empty-state {
 					display: flex;
-					flex-direction: column;
 					align-items: center;
-					min-width: 60px;
+					justify-content: center;
+					height: 100%;
+					color: #666;
+					font-size: 14px;
+				}
 
-					.bar-wrapper {
+				.bar-chart {
+					display: flex;
+					align-items: flex-end;
+					justify-content: center;
+					gap: 20px;
+					height: 100%;
+					padding: 20px 0;
+
+					.bar-item {
 						display: flex;
 						flex-direction: column;
 						align-items: center;
-						height: 220px;
-						justify-content: flex-end;
+						min-width: 60px;
 
-						.bar {
-							width: 40px;
-							background: linear-gradient(to top, #3b82f6, #60a5fa);
-							border-radius: 4px 4px 0 0;
-							transition: all 0.3s ease;
-							cursor: pointer;
-							min-height: 2px;
+						.bar-wrapper {
+							display: flex;
+							flex-direction: column;
+							align-items: center;
+							height: 220px;
+							justify-content: flex-end;
+							margin-bottom: 8px;
 
-							&:hover {
-								background: linear-gradient(to top, #2563eb, #3b82f6);
-								transform: translateY(-2px);
+							.bar {
+								width: 35px;
+								background-color: #5c7bd9;
+								border-radius: 0;
+								transition: all 0.3s ease;
+								cursor: pointer;
+								min-height: 2px;
+
+								&:hover {
+									opacity: 0.8;
+								}
+							}
+
+							.bar-value {
+								margin-top: 4px;
+								font-size: 12px;
+								color: #333;
+								font-weight: normal;
 							}
 						}
 
-						.bar-value {
-							margin-top: 8px;
-							font-size: 14px;
-							font-weight: 500;
-							color: #1f2937;
+						.bar-label {
+							font-size: 12px;
+							color: #333;
+							text-align: center;
+							white-space: nowrap;
 						}
-					}
-
-					.bar-label {
-						margin-top: 8px;
-						font-size: 12px;
-						color: #6b7280;
-						text-align: center;
-					}
-				}
-			}
-		}
-	}
-
-	@media (max-width: 768px) {
-		.header {
-			padding: 16px;
-
-			.title-section {
-				flex-direction: column;
-				align-items: flex-start;
-				gap: 12px;
-			}
-
-			.controls {
-				flex-direction: column;
-				gap: 12px;
-
-				.control-item {
-					flex-direction: column;
-					align-items: flex-start;
-				}
-			}
-		}
-
-		.chart-content {
-			padding: 16px;
-
-			.chart-wrapper .bar-chart {
-				gap: 8px;
-				overflow-x: auto;
-				justify-content: flex-start;
-				padding: 20px 10px;
-
-				.bar-item {
-					min-width: 50px;
-
-					.bar-wrapper .bar {
-						width: 30px;
 					}
 				}
 			}
