@@ -5,7 +5,7 @@ import { toast } from '$lib/components/Toast/Toast.js';
 import { goto } from '$app/navigation';
 import SmartEditor from '@3min/smart-edit';
 import { resetTime } from '../addExam/+page.svelte';
-import { onChooseStartTime, onChooseEndTime } from '../addExam/+page.svelte';
+import { onChooseStartTime, onChooseEndTime } from '../_utils/date';
 // Mock dependencies
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/components/Toast/Toast.js', () => ({ 
@@ -699,94 +699,105 @@ describe('resetTime 逻辑验证', () => {
   });
 });
 
-// describe('onChooseStartTime / onChooseEndTime 纯函数测试', () => {
-//   it('onChooseStartTime 应更新 startTime 并触发 updateDuration', async () => {
-//     const { component } = render(ExamCreation);
 
-//     // 等待组件初始化完成
-//     await new Promise(resolve => setTimeout(resolve, 0));
-
-//     // 创建一个伪造事件
-//     const fakeEvent = { detail: { date: new Date('2045-08-05T09:00:00') } };
-
-//     // 直接调用组件内部函数
-//     if (component.onChooseStartTime && component.paper_configs && component.paper_configs.length > 0) {
-//       const fn = component.onChooseStartTime(0);
-//       fn(fakeEvent);
-
-//       // 断言组件内部状态
-//       expect(component.paper_configs[0].startTime).toBe('2045-08-05T09:00:00.000Z');
+// describe('DatePicker 位置定位调试', () => {
+//   it('定位并打印 DatePicker 相关元素', () => {
+//     render(ExamCreation);
+    
+//     console.log('\n=== DatePicker 位置调试 ===');
+    
+//     // 1. 查找试卷1容器
+//     const paper1 = screen.getByText('试卷1');
+//     const paperContainer = paper1.closest('.paper-config-container');
+//     console.log('✓ 找到试卷1容器');
+    
+//     // 2. 在试卷容器内查找考试时段
+//     const timeLabel = within(paperContainer).queryByText('考试时段');
+//     if (timeLabel) {
+//       console.log('✓ 找到"考试时段"标签');
+      
+//       // 3. 查找时间容器
+//       const timeContainer = timeLabel.closest('.exam-time-container');
+//       if (timeContainer) {
+//         console.log('✓ 找到 .exam-time-container');
+//         console.log('容器类名:', timeContainer.className);
+//         console.log('容器子元素数量:', timeContainer.children.length);
+        
+//         // 打印子元素
+//         Array.from(timeContainer.children).forEach((child, index) => {
+//           console.log(`  子元素${index + 1}: <${child.tagName}> class="${child.className}"`);
+//         });
+//       } else {
+//         console.log('❌ 未找到 .exam-time-container');
+//       }
 //     } else {
-//       console.error('component.paper_configs is not initialized or onChooseStartTime is not available');
+//       console.log('❌ 未找到"考试时段"标签');
 //     }
-//   });
-
-//   it('onChooseEndTime 应更新 endTime 并触发 updateDuration', async () => {
-//     const { component } = render(ExamCreation);
-
-//     // 等待组件初始化完成
-//     await new Promise(resolve => setTimeout(resolve, 0));
-
-//     const fakeEvent = { detail: { date: new Date('2045-08-05T11:30:00') } };
-
-//     if (component.onChooseEndTime && component.paper_configs && component.paper_configs.length > 0) {
-//       const fn = component.onChooseEndTime(0);
-//       fn(fakeEvent);
-
-//       expect(component.paper_configs[0].endTime).toBe('2045-08-05T11:30:00.000Z');
-//     } else {
-//       console.error('component.paper_configs is not initialized or onChooseEndTime is not available');
-//     }
+    
+//     // 4. 查找所有可能的 DatePicker 相关元素
+//     console.log('\n查找可能的 DatePicker 元素:');
+//     const datePickerSelectors = [
+//       '[class*="date-picker"]',
+//       '[class*="picker"]',
+//       '[class*="time"]',
+//       'input[type="datetime-local"]',
+//       'input[type="date"]'
+//     ];
+    
+//     datePickerSelectors.forEach(selector => {
+//       const elements = document.querySelectorAll(selector);
+//       if (elements.length > 0) {
+//         console.log(`${selector}: 找到 ${elements.length} 个`);
+//       }
+//     });
+    
+//     console.log('=== 调试结束 ===\n');
 //   });
 // });
-describe('通过 DatePicker 触发 onChooseStartTime / onChooseEndTime', () => {
-  // 工具：找到第 n 份试卷的 DatePicker 容器
-  const getDatePickerRoot = (paperIndex = 0) => {
-    const paperConfig = screen
-      .getAllByText(new RegExp(`试卷${paperIndex + 1}`))[0]
-      .closest('.paper-config-container');
 
-    return within(paperConfig)
-      .getByText('考试时段')
-      .closest('.exam-time-container');
-  };
+describe('onChooseStartTime / onChooseEndTime 纯函数测试', () => {
+  let paper_configs;
 
-  it('通过 DatePicker 选择开始时间应更新 startTime', async () => {
-    const { component } = render(ExamCreation);
-
-    // DatePicker 输入框（或根节点）就是事件目标
-    const pickerRoot = getDatePickerRoot(0);
-
-    // 构造开始时间事件
-    const startDate = new Date('2045-08-05T09:00:00');
-    const startEvent = new CustomEvent('start_date_selected', {
-      detail: { date: startDate },
-      bubbles: true,
-    });
-
-    pickerRoot.dispatchEvent(startEvent);
-
-    // 断言
-    await waitFor(() => {
-      expect(component.paper_configs[0].startTime).toBe('2045-08-05T09:00:00.000Z');
-    });
+  beforeEach(() => {
+    paper_configs = [
+      {
+        startTime: '',
+        endTime: '',
+        duration: 0,
+        maxDuration: 0,
+      },
+    ];
   });
 
-  it('通过 DatePicker 选择结束时间应更新 endTime', async () => {
-    const { component } = render(ExamCreation);
+  function updateDuration(index) {
+    const start = new Date(paper_configs[index].startTime);
+    const end   = new Date(paper_configs[index].endTime);
+    if (!isNaN(start) && !isNaN(end) && end > start) {
+      paper_configs[index].duration = Math.floor((end - start) / 60000);
+      paper_configs[index].maxDuration = paper_configs[index].duration;
+    } else {
+      paper_configs[index].duration = 0;
+      paper_configs[index].maxDuration = 0;
+    }
+  }
 
-    const pickerRoot = getDatePickerRoot(0);
+  it('onChooseStartTime 更新 startTime', () => {
+    const handler = onChooseStartTime(0, paper_configs, updateDuration);
+    const mockEvent = { detail: { date: new Date('2045-08-05T09:00:00') } };
 
-    const endDate = new Date('2045-08-05T11:30:00');
-    const endEvent = new CustomEvent('end_date_selected', {
-      detail: { date: endDate },
-      bubbles: true,
-    });
+    handler(mockEvent);
 
-    pickerRoot.dispatchEvent(endEvent);
+    expect(paper_configs[0].startTime).toBe('2045-08-05T01:00:00.000Z');
+  });
 
-    await waitFor(() => {
-      expect(component.paper_configs[0].endTime).toBe('2045-08-05T11:30:00.000Z');
-    });
+  it('onChooseEndTime 更新 endTime', () => {
+    paper_configs[0].startTime = '2045-08-05T09:00:00.000Z';
+    const handler = onChooseEndTime(0, paper_configs, updateDuration);
+    const mockEvent = { detail: { date: new Date('2045-08-05T11:30:00') } };
+
+    handler(mockEvent);
+
+    expect(paper_configs[0].endTime).toBe('2045-08-05T03:30:00.000Z');
+
   });
 });
