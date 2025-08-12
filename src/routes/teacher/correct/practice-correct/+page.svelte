@@ -12,12 +12,13 @@
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
-  import InputBox from '$lib/components/Input/InputBox.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import { debounce } from '$lib/utils/optimize';
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { toast } from '$lib/components/Toast/Toast';
   import { goto } from '$app/navigation';
+  import '$lib/components/Input/index.scss';
+  import Title from '$lib/components/Title/Title.svelte';
 
   // const mockPractice = [
   //   {
@@ -130,7 +131,8 @@
     return unmarked_student_count > 0 && mark_mode === '10';
   }
 
-  function gotoCorrect(practice_id) {
+  function gotoCorrect(practice_name, practice_id) {
+    localStorage.setItem('current_paper_name', practice_name);
     goto(`/teacher/correct/correct?practice_id=${practice_id}`);
   }
 
@@ -171,17 +173,13 @@
 </script>
 
 <div class="practice-correct-body">
+  <Title title="练习批改" />
+
   <!-- 筛选 -->
   <div class="options">
-    <div class="input">
+    <div class="practice-input">
       <div class="label">练习名称</div>
-      <InputBox
-        placeholder="请输入信息"
-        bind:value={practice_name}
-        type="text"
-        show_label={false}
-        onInput={debounceSearch}
-      />
+      <input type="text" class="input" placeholder="请输入信息" bind:value={practice_name} oninput={debounceSearch} />
     </div>
     <!-- <div class="select">
       <div class="label">练习类型</div>
@@ -219,7 +217,7 @@
                 <button
                   class:disabled={!canCorrected(unmarked_student_count, mark_mode)}
                   disabled={!canCorrected(unmarked_student_count, mark_mode)}
-                  onclick={gotoCorrect}>进入批改</button
+                  onclick={() => gotoCorrect(name, id)}>进入批改</button
                 >
               </div></td
             >
@@ -260,7 +258,7 @@
       z-index: 10;
 
       // .select,
-      .input {
+      .practice-input {
         display: flex;
         align-items: center;
         gap: 1rem;

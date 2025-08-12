@@ -22,17 +22,18 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { goto } from '$app/navigation';
   import QuestionList from '../../_components/questionList.svelte';
   import FilterBar from '../../_components/FilterBarForQuestionBank.svelte';
-  import BankTag from '../../_components/editableTag.svelte';
+  import BankTag from '$lib/components/Tag/EditableTag.svelte';
   import Dropdown from '../../_components/DropDownForQuesitonBank.svelte';
   import SingleSelectEditPanel from '../../_components/singlePage.svelte';
   import MultipleSelectEditPanel from '../../_components/multiplePage.svelte';
   import JudgeSelectEditPanel from '../../_components/judgePage.svelte';
   import QuestionPreviewPanel from '../../_components/QuestionPreviewPanel.svelte';
+  import ShortAnswerEditPanel from '../../_components/shortAnswer.svelte';
+  import FillBlankEditPanel from "../../_components/fillBank.svelte";
   import { toast } from '$lib/components/Toast/Toast.js';
   import { compareBankMsg } from '../../utils/utils.js';
-  import { formatTimestamp } from '../../utils/time_utils.js';
+  import { formatTimestamp } from '$lib/utils/time_utils';
   import { TheoryQuestion } from '../type';
-  import SinglePage from '../../_components/singlePage.svelte';
   import { get } from 'svelte/store';
 
 
@@ -132,13 +133,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     tags: [],
   };
 
-  /**
-   * @description 返回题库列表页
-   */
-  const onGoBackToQuestionBankList = () => {
-    // window.location.href = "/teacher/questionBank/theory";
-    goto('/teacher/question-bank/theory');
-  };
+
   /**
    * @description 题目类型
    */
@@ -154,6 +149,14 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     {
       value: '04',
       label: '判断',
+    },
+    {
+      value: '06',
+      label: '填空',
+    },
+    {
+      value: '08',
+      label: '简答',
     },
    
   ]);
@@ -215,6 +218,30 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    */
   let judge_edit_panel_componet;
   let is_dirty = false;
+
+   /**
+     * @description 显示填空题编辑面板
+     * @type {boolean}
+     */
+    let show_fill_bank_edit_panel = $state(false);
+
+    /**
+     * @description 填空题编辑面板组件
+     * @type {FillBlankEditPanel}
+     */
+    let fill_bank_edit_panel_componet;
+ /**
+     * @description 显示简答题编辑面板
+     * @type {boolean}
+     */
+    let show_short_answer_edit_panel = $state(false);
+
+    /**
+     * @description 简答题编辑面板组件
+     * @type {ShortAnswerEditPanel}
+     */
+    let short_answer_edit_panel_componet;
+
   let modifying_question = $state(null);
   let new_question_type = $state('');
   /**
@@ -345,6 +372,15 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         judge_edit_panel_componet.initPanel();
         show_judge_select_edit_panel = true;
         break;
+          case '06':
+         fill_bank_edit_panel_componet.initPanel();
+        show_fill_bank_edit_panel = true;
+        break;
+  case '08':
+        short_answer_edit_panel_componet.initPanel();
+        show_short_answer_edit_panel = true;
+        break;
+
       default:
         return;
     }
@@ -374,6 +410,14 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       case '04':
         judge_edit_panel_componet.initPanel();
         show_judge_select_edit_panel = true;
+        break;
+          case '06':
+        fill_bank_edit_panel_componet.initPanel();
+        show_fill_bank_edit_panel = true;
+        break;
+   case '08':
+        short_answer_edit_panel_componet.initPanel();
+        show_short_answer_edit_panel = true;
         break;
 
       default:
@@ -430,7 +474,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
           throw new Error(`${result.msg}`);
         }
         question_count++;
-        toast.success('添加题目成功');
+        toast.success("添加题目成功")
         return getQuestionList().then(() => result); // 确保 getQuestionList() 执行后再返回 result
       })
       .catch((error) => {
@@ -451,6 +495,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         show_single_select_edit_panel = false;
         show_multiple_select_edit_panel = false;
         show_judge_select_edit_panel = false;
+        show_short_answer_edit_panel=false;
+        show_fill_bank_edit_panel=false;
         modifying_question = null;
         new_question_type = '';
         is_dirty = false;
@@ -508,9 +554,9 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       .then((result) => {
         if (result.status !== 0) {
           throw new Error(`${result.msg}`);
-          return;
+         
         }
-        toast.success('题库数据保存成功');
+       
 
         // 更新题库原始数据
         origin_bank_data.name = bank_name;
@@ -563,7 +609,6 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         if (data.status !== 0) {
          throw new Error (`${data.msg}`);
         }
-         toast.success(`获取试题列表成功`);
         return data;
       })
       .catch((error) => {
@@ -695,6 +740,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     show_single_select_edit_panel = false;
     show_multiple_select_edit_panel = false;
     show_judge_select_edit_panel = false;
+    show_short_answer_edit_panel=false;
+    show_fill_bank_edit_panel=false;
     modifying_question = null;
     new_question_type = '';
     is_dirty = false;
@@ -820,31 +867,7 @@ o888o o888o   "888" o888o o888o o888o o888o
 </div>
 
 <div class="pageContainer">
-  <!-- 回退栏 -->
-  <div class="rollbackBar">
-    <button class="rollbackContainer" onclick={onGoBackToQuestionBankList}>
-      <svg
-        class="rollbankImg"
-        version="1.1"
-        xmlns:xlink="http://www.w3.org/1999/xlink"
-        width="31px"
-        height="29px"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <g transform="matrix(1 0 0 1 -50 -10 )">
-          <path
-            d="M 5.26328055923079 7.25009103583336  L 9.18942268999992 3.27117873333336  L 7.50324543692308 1.56233725166668  L 1.54170668923081 7.60400370083331  C 1.07608146692313 8.07588713333335  1.07608144307696 8.84096148416668  1.54170654615377 9.31284503750001  L 7.50324543692308 15.3545115108333  L 9.18942268999992 13.645670585  L 5.26328055923079 10  L 19.0771026384617 10  C 23.0280638461538 9.66675770250003  26.2309487923078 12.9126923466667  26.2309487923078 16.9167577025  C 26.2309487923078 20.9208230583334  23.0280638461538 24.1667587416667  19.0771026384617 24  L 7.15402638307703 24  L 7.15402638307703 26.5834254083334  L 19.0771026384617 26.5834254083334  C 24.3450492461539 26.5834254083334  28.6155641769232 22.255509875  28.6155641769232 16.9167577025  C 28.6155641769232 11.5780054333334  24.3450492461539 7.25009103583336  19.0771026384617 7.25009103583336  L 5.26328055923079 7.25009103583336  Z "
-            fill-rule="nonzero"
-            fill="#000000"
-            stroke="none"
-            fill-opacity="0.996078431372549"
-            transform="matrix(1 0 0 1 50 10 )"
-          />
-        </g>
-      </svg>
-      <span class="rollbackText">返回题库列表</span>
-    </button>
-  </div>
+
 
   <!-- 题库信息栏 -->
   <div class="bankMsgBar">
@@ -868,12 +891,12 @@ o888o o888o   "888" o888o o888o o888o o888o
           </div>
 
           <button class="saveBankDataUpdateBtn" bind:this={bank_data_save_btn} onclick={onConfirmUpdateQuestionBankData}
-            >保存修改</button
+            >保存</button
           >
           <button
             class="giveUpBankDataUpdateBtn"
             bind:this={bank_data_not_save_btn}
-            onclick={onGiveUpQuestionBankDataUpdate}>放弃修改</button
+            onclick={onGiveUpQuestionBankDataUpdate}>放弃</button
           >
         </div>
 
@@ -959,7 +982,6 @@ o888o o888o   "888" o888o o888o o888o o888o
       ></FilterBar>
       <div class="hiddenValue">
       <FilterBar
-          
         filter_title="标签"
         all_filter_conditions={all_question_tags.map((tag) => {
           return {
@@ -975,7 +997,7 @@ o888o o888o   "888" o888o o888o o888o o888o
       <div class="questionListTitle">
         <div class="leftColorBlock"></div>
         <span class="questionListTitleText">试题列表</span>
-        <span>共筛选{question_filtered_count}道题</span>
+       
       </div>
       <div class="questionListControlBar">
         <div class="questionListSearch">
@@ -1014,8 +1036,6 @@ o888o o888o   "888" o888o o888o o888o o888o
       ></QuestionList>
     </div>
   </div>
-</div>
-
 <SingleSelectEditPanel
   bind:this={single_select_edit_panel_componet}
   show={show_single_select_edit_panel}
@@ -1054,6 +1074,41 @@ o888o o888o   "888" o888o o888o o888o o888o
     await onEditPanelConFirm(new_question_data);
   }}
 ></JudgeSelectEditPanel>
+
+
+<FillBlankEditPanel
+        bind:this={fill_bank_edit_panel_componet}
+        show={show_fill_bank_edit_panel}
+        question_data={modifying_question !== null
+            ? modifying_question
+            : undefined}
+        is_new_question={new_question_type === "06"}
+        onCancel={async () => {
+            await onEditPanelCancel();
+        }}
+        onConfirm={async (new_question_data) => {
+            show_fill_bank_edit_panel = false;
+            await onEditPanelConFirm(new_question_data);
+        }}
+    ></FillBlankEditPanel>
+  <ShortAnswerEditPanel
+        bind:this={short_answer_edit_panel_componet}
+        show={show_short_answer_edit_panel}
+        question_data={modifying_question !== null
+            ? modifying_question
+            : undefined}
+        is_new_question={new_question_type === "08"}
+        onCancel={async () => {
+            await onEditPanelCancel();
+        }}
+        onConfirm={async (new_question_data) => {
+            await onEditPanelConFirm(new_question_data);
+        }}
+    ></ShortAnswerEditPanel>
+
+</div>
+
+
 
 <style lang="scss" scoped>
 

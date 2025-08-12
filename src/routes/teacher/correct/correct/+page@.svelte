@@ -11,362 +11,361 @@
 <script>
   import Switch from '$lib/components/Switch/Switch.svelte';
   import Button from '$lib/components/Button/Button.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
   import { page } from '$app/state';
   import { get } from 'svelte/store';
-  import { sharedData } from '../_stores/index';
   import QuestionGradingSection from './_components/QuestionGradingSection.svelte';
   import { toast } from '$lib/components/Toast/Toast';
   import '$lib/components/Button/index.scss';
 
-  const mockData = {
-    question_sets: [
-      {
-        ID: 101,
-        Order: '1',
-        Score: 30,
-        Name: '基础题组',
-        Questions: [
-          {
-            ID: 1001,
-            Order: 1,
-            Score: 5,
-            Type: '00', // 单选题
-            Answers: [{ index: 1, score: 5, answer: 'B', grading_rule: 'exact', alternative_answer: 'b' }],
-            GroupID: 101,
-            Content: '下面哪个是 JavaScript 的关键字？',
-          },
-          {
-            ID: 1002,
-            Order: 2,
-            Score: 10,
-            Type: '02', // 多选题
-            Answers: [
-              { index: 1, score: 5, answer: 'A', grading_rule: 'exact', alternative_answer: 'a' },
-              { index: 2, score: 5, answer: 'C', grading_rule: 'exact', alternative_answer: 'c' },
-            ],
-            GroupID: 101,
-            Content: '以下哪些是 JavaScript 数据类型？',
-          },
-          {
-            ID: 1003,
-            Order: 3,
-            Score: 5,
-            Type: '04', // 判断题
-            Answers: [{ index: 1, score: 5, answer: 'true', grading_rule: 'exact', alternative_answer: null }],
-            GroupID: 101,
-            Content: 'JavaScript 是一门静态类型语言。对吗？',
-          },
-        ],
-      },
-      {
-        ID: 102,
-        Order: '2',
-        Score: 40,
-        Name: '进阶题组',
-        Questions: [
-          {
-            ID: 2001,
-            Order: 1,
-            Score: 10,
-            Type: '06', // 填空题
-            Answers: [
-              { index: 1, score: 5, answer: 'function', grading_rule: 'exact', alternative_answer: null },
-              { index: 2, score: 5, answer: 'const', grading_rule: 'exact', alternative_answer: null },
-            ],
-            GroupID: 102,
-            Content: '请填空：______ 用于定义函数，______ 用于定义常量。',
-          },
-          {
-            ID: 2002,
-            Order: 2,
-            Score: 10,
-            Type: '08', // 简答题
-            Answers: [
-              {
-                index: 1,
-                score: 10,
-                answer: '事件循环是JavaScript处理异步操作的机制。',
-                grading_rule: 'keywords',
-                alternative_answer: '事件循环机制',
-              },
-            ],
-            GroupID: 102,
-            Content: '简述 JavaScript 的事件循环机制。',
-          },
-          {
-            ID: 2003,
-            Order: 3,
-            Score: 20,
-            Type: '10', // 编程题
-            Answers: [
-              {
-                index: 1,
-                score: 20,
-                answer: 'function add(a, b) { return a + b; }',
-                grading_rule: 'exact',
-                alternative_answer: null,
-              },
-            ],
-            GroupID: 102,
-            Content: '编写一个函数，实现两个数相加。',
-          },
-        ],
-      },
-    ],
-    student_answers: [
-      // 学生 1
-      { QuestionID: 1001, ExamineeID: 5001, PracticeSubmissionID: 7001, Answer: ['B'] },
-      { QuestionID: 1002, ExamineeID: 5001, PracticeSubmissionID: 7001, Answer: ['A', 'C'] },
-      { QuestionID: 1003, ExamineeID: 5001, PracticeSubmissionID: 7001, Answer: ['false'] },
-      { QuestionID: 2001, ExamineeID: 5001, PracticeSubmissionID: 7001, Answer: ['function', 'const'] },
-      {
-        QuestionID: 2002,
-        ExamineeID: 5001,
-        PracticeSubmissionID: 7001,
-        Answer: ['事件循环是JavaScript处理异步操作的机制。'],
-      },
-      {
-        QuestionID: 2003,
-        ExamineeID: 5001,
-        PracticeSubmissionID: 7001,
-        Answer: ['function add(a, b) { return a + b; }'],
-      },
-      // 学生 2
-      { QuestionID: 1001, ExamineeID: 5002, PracticeSubmissionID: 7002, Answer: ['A'] },
-      { QuestionID: 1002, ExamineeID: 5002, PracticeSubmissionID: 7002, Answer: ['A'] },
-      { QuestionID: 1003, ExamineeID: 5002, PracticeSubmissionID: 7002, Answer: ['true'] },
-      { QuestionID: 2001, ExamineeID: 5002, PracticeSubmissionID: 7002, Answer: ['function', 'let'] },
-      { QuestionID: 2002, ExamineeID: 5002, PracticeSubmissionID: 7002, Answer: ['事件循环是JS的异步处理机制。'] },
-      {
-        QuestionID: 2003,
-        ExamineeID: 5002,
-        PracticeSubmissionID: 7002,
-        Answer: ['function sum(a, b) { return a + b; }'],
-      },
-      // 学生 3
-      { QuestionID: 1001, ExamineeID: 5003, PracticeSubmissionID: 7003, Answer: ['B'] },
-      { QuestionID: 1002, ExamineeID: 5003, PracticeSubmissionID: 7003, Answer: ['A', 'C'] },
-      { QuestionID: 1003, ExamineeID: 5003, PracticeSubmissionID: 7003, Answer: ['false'] },
-      { QuestionID: 2001, ExamineeID: 5003, PracticeSubmissionID: 7003, Answer: ['func', 'const'] },
-      { QuestionID: 2002, ExamineeID: 5003, PracticeSubmissionID: 7003, Answer: ['事件循环机制。'] },
-      {
-        QuestionID: 2003,
-        ExamineeID: 5003,
-        PracticeSubmissionID: 7003,
-        Answer: ['function add(x, y) { return x + y; }'],
-      },
-    ],
-    student_infos: [
-      { ExamineeID: 5001, OfficialName: '李四', SerialNumber: 1, PracticeSubmissionID: 7001 },
-      { ExamineeID: 5002, OfficialName: '王五', SerialNumber: 2, PracticeSubmissionID: 7002 },
-      { ExamineeID: 5003, OfficialName: '赵六', SerialNumber: 3, PracticeSubmissionID: 7003 },
-    ],
-    marking_results: [
-      // 学生 1 批改结果
-      // {
-      //   TeacherID: 9001,
-      //   ExamineeID: 5001,
-      //   ExamSessionID: 8001,
-      //   PracticeID: 9001,
-      //   PracticeSubmissionID: 7001,
-      //   QuestionID: 1001,
-      //   MarkDetails: [{ Index: 1, Score: 5, Analyze: '答对了单选题。' }],
-      //   Score: 5,
-      // },
-      // {
-      //   TeacherID: 9001,
-      //   ExamineeID: 5001,
-      //   ExamSessionID: 8001,
-      //   PracticeID: 9001,
-      //   PracticeSubmissionID: 7001,
-      //   QuestionID: 1002,
-      //   MarkDetails: [
-      //     { Index: 1, Score: 5, Analyze: '选择正确选项A。' },
-      //     { Index: 2, Score: 5, Analyze: '选择正确选项C。' },
-      //   ],
-      //   Score: 10,
-      // },
-      // {
-      //   TeacherID: 9001,
-      //   ExamineeID: 5001,
-      //   ExamSessionID: 8001,
-      //   PracticeID: 9001,
-      //   PracticeSubmissionID: 7001,
-      //   QuestionID: 1003,
-      //   MarkDetails: [{ Index: 1, Score: 0, Analyze: '判断错误，正确答案是 false。' }],
-      //   Score: 0,
-      // },
-      // {
-      //   TeacherID: 9001,
-      //   ExamineeID: 5001,
-      //   ExamSessionID: 8001,
-      //   PracticeID: 9001,
-      //   PracticeSubmissionID: 7001,
-      //   QuestionID: 2001,
-      //   MarkDetails: [
-      //     { Index: 1, Score: 5, Analyze: '第一个空填空正确。' },
-      //     { Index: 2, Score: 5, Analyze: '第二个空填空正确。' },
-      //   ],
-      //   Score: 10,
-      // },
-      // {
-      //   TeacherID: 9001,
-      //   ExamineeID: 5001,
-      //   ExamSessionID: 8001,
-      //   PracticeID: 9001,
-      //   PracticeSubmissionID: 7001,
-      //   QuestionID: 2002,
-      //   MarkDetails: [{ Index: 1, Score: 10, Analyze: '简答题回答全面。' }],
-      //   Score: 10,
-      // },
-      // {
-      //   TeacherID: 9001,
-      //   ExamineeID: 5001,
-      //   ExamSessionID: 8001,
-      //   PracticeID: 9001,
-      //   PracticeSubmissionID: 7001,
-      //   QuestionID: 2003,
-      //   MarkDetails: [{ Index: 1, Score: 20, Analyze: '编程题实现正确。' }],
-      //   Score: 20,
-      // },
-      // 学生 2 批改结果
-      {
-        TeacherID: 9002,
-        ExamineeID: 5002,
-        ExamSessionID: 8001,
-        PracticeID: 9001,
-        PracticeSubmissionID: 7002,
-        QuestionID: 1001,
-        MarkDetails: [{ Index: 1, Score: 0, Analyze: '单选题答错了。' }],
-        Score: 0,
-      },
-      {
-        TeacherID: 9002,
-        ExamineeID: 5002,
-        ExamSessionID: 8001,
-        PracticeID: 9001,
-        PracticeSubmissionID: 7002,
-        QuestionID: 1002,
-        MarkDetails: [
-          { Index: 1, Score: 5, Analyze: '选择正确选项A。' },
-          { Index: 2, Score: 5, Analyze: '选择正确选项C。' },
-        ],
-        Score: 10,
-      },
-      {
-        TeacherID: 9002,
-        ExamineeID: 5002,
-        ExamSessionID: 8001,
-        PracticeID: 9001,
-        PracticeSubmissionID: 7002,
-        QuestionID: 1003,
-        MarkDetails: [{ Index: 1, Score: 5, Analyze: '判断正确。' }],
-        Score: 5,
-      },
-      {
-        TeacherID: 9002,
-        ExamineeID: 5002,
-        ExamSessionID: 8001,
-        PracticeID: 9001,
-        PracticeSubmissionID: 7002,
-        QuestionID: 2001,
-        MarkDetails: [
-          { Index: 1, Score: 5, Analyze: '第一个空填空正确。' },
-          { Index: 2, Score: 0, Analyze: '第二个空填空错误。' },
-        ],
-        Score: 5,
-      },
-      {
-        TeacherID: 9002,
-        ExamineeID: 5002,
-        ExamSessionID: 8001,
-        PracticeID: 9001,
-        PracticeSubmissionID: 7002,
-        QuestionID: 2002,
-        MarkDetails: [{ Index: 1, Score: 8, Analyze: '简答题基本正确。' }],
-        Score: 8,
-      },
-      {
-        TeacherID: 9002,
-        ExamineeID: 5002,
-        ExamSessionID: 8001,
-        PracticeID: 9001,
-        PracticeSubmissionID: 7002,
-        QuestionID: 2003,
-        MarkDetails: [{ Index: 1, Score: 15, Analyze: '编程题部分实现。' }],
-        Score: 15,
-      },
-      // 学生 3 批改结果
-      {
-        TeacherID: 9003,
-        ExamineeID: 5003,
-        ExamSessionID: 8001,
-        PracticeID: 9001,
-        PracticeSubmissionID: 7003,
-        QuestionID: 1001,
-        MarkDetails: [{ Index: 1, Score: 5, Analyze: '答对了单选题。' }],
-        Score: 5,
-      },
-      {
-        TeacherID: 9003,
-        ExamineeID: 5003,
-        ExamSessionID: 8001,
-        PracticeID: 9001,
-        PracticeSubmissionID: 7003,
-        QuestionID: 1002,
-        MarkDetails: [
-          { Index: 1, Score: 5, Analyze: '选择正确选项A。' },
-          { Index: 2, Score: 5, Analyze: '选择正确选项C。' },
-        ],
-        Score: 10,
-      },
-      {
-        TeacherID: 9003,
-        ExamineeID: 5003,
-        ExamSessionID: 8001,
-        PracticeID: 9001,
-        PracticeSubmissionID: 7003,
-        QuestionID: 1003,
-        MarkDetails: [{ Index: 1, Score: 0, Analyze: '判断错误，正确答案是 false。' }],
-        Score: 0,
-      },
-      {
-        TeacherID: 9003,
-        ExamineeID: 5003,
-        ExamSessionID: 8001,
-        PracticeID: 9001,
-        PracticeSubmissionID: 7003,
-        QuestionID: 2001,
-        MarkDetails: [
-          { Index: 1, Score: 0, Analyze: '第一个空填空错误。' },
-          { Index: 2, Score: 5, Analyze: '第二个空填空正确。' },
-        ],
-        Score: 5,
-      },
-      {
-        TeacherID: 9003,
-        ExamineeID: 5003,
-        ExamSessionID: 8001,
-        PracticeID: 9001,
-        PracticeSubmissionID: 7003,
-        QuestionID: 2002,
-        MarkDetails: [{ Index: 1, Score: 7, Analyze: '简答题部分正确。' }],
-        Score: 7,
-      },
-      {
-        TeacherID: 9003,
-        ExamineeID: 5003,
-        ExamSessionID: 8001,
-        PracticeID: 9001,
-        PracticeSubmissionID: 7003,
-        QuestionID: 2003,
-        MarkDetails: [{ Index: 1, Score: 20, Analyze: '编程题实现正确。' }],
-        Score: 20,
-      },
-    ],
-  };
+  // const mockData = {
+  //   question_sets: [
+  //     {
+  //       ID: 101,
+  //       Order: '1',
+  //       Score: 30,
+  //       Name: '基础题组',
+  //       Questions: [
+  //         {
+  //           ID: 1001,
+  //           Order: 1,
+  //           Score: 5,
+  //           Type: '00', // 单选题
+  //           Answers: [{ index: 1, score: 5, answer: 'B', grading_rule: 'exact', alternative_answer: 'b' }],
+  //           GroupID: 101,
+  //           Content: '下面哪个是 JavaScript 的关键字？',
+  //         },
+  //         {
+  //           ID: 1002,
+  //           Order: 2,
+  //           Score: 10,
+  //           Type: '02', // 多选题
+  //           Answers: [
+  //             { index: 1, score: 5, answer: 'A', grading_rule: 'exact', alternative_answer: 'a' },
+  //             { index: 2, score: 5, answer: 'C', grading_rule: 'exact', alternative_answer: 'c' },
+  //           ],
+  //           GroupID: 101,
+  //           Content: '以下哪些是 JavaScript 数据类型？',
+  //         },
+  //         {
+  //           ID: 1003,
+  //           Order: 3,
+  //           Score: 5,
+  //           Type: '04', // 判断题
+  //           Answers: [{ index: 1, score: 5, answer: 'true', grading_rule: 'exact', alternative_answer: null }],
+  //           GroupID: 101,
+  //           Content: 'JavaScript 是一门静态类型语言。对吗？',
+  //         },
+  //       ],
+  //     },
+  //     {
+  //       ID: 102,
+  //       Order: '2',
+  //       Score: 40,
+  //       Name: '进阶题组',
+  //       Questions: [
+  //         {
+  //           ID: 2001,
+  //           Order: 1,
+  //           Score: 10,
+  //           Type: '06', // 填空题
+  //           Answers: [
+  //             { index: 1, score: 5, answer: 'function', grading_rule: 'exact', alternative_answer: null },
+  //             { index: 2, score: 5, answer: 'const', grading_rule: 'exact', alternative_answer: null },
+  //           ],
+  //           GroupID: 102,
+  //           Content: '请填空：______ 用于定义函数，______ 用于定义常量。',
+  //         },
+  //         {
+  //           ID: 2002,
+  //           Order: 2,
+  //           Score: 10,
+  //           Type: '08', // 简答题
+  //           Answers: [
+  //             {
+  //               index: 1,
+  //               score: 10,
+  //               answer: '事件循环是JavaScript处理异步操作的机制。',
+  //               grading_rule: 'keywords',
+  //               alternative_answer: '事件循环机制',
+  //             },
+  //           ],
+  //           GroupID: 102,
+  //           Content: '简述 JavaScript 的事件循环机制。',
+  //         },
+  //         {
+  //           ID: 2003,
+  //           Order: 3,
+  //           Score: 20,
+  //           Type: '10', // 编程题
+  //           Answers: [
+  //             {
+  //               index: 1,
+  //               score: 20,
+  //               answer: 'function add(a, b) { return a + b; }',
+  //               grading_rule: 'exact',
+  //               alternative_answer: null,
+  //             },
+  //           ],
+  //           GroupID: 102,
+  //           Content: '编写一个函数，实现两个数相加。',
+  //         },
+  //       ],
+  //     },
+  //   ],
+  //   student_answers: [
+  //     // 学生 1
+  //     { QuestionID: 1001, ExamineeID: 5001, PracticeSubmissionID: 7001, Answer: ['B'] },
+  //     { QuestionID: 1002, ExamineeID: 5001, PracticeSubmissionID: 7001, Answer: ['A', 'C'] },
+  //     { QuestionID: 1003, ExamineeID: 5001, PracticeSubmissionID: 7001, Answer: ['false'] },
+  //     { QuestionID: 2001, ExamineeID: 5001, PracticeSubmissionID: 7001, Answer: ['function', 'const'] },
+  //     {
+  //       QuestionID: 2002,
+  //       ExamineeID: 5001,
+  //       PracticeSubmissionID: 7001,
+  //       Answer: ['事件循环是JavaScript处理异步操作的机制。'],
+  //     },
+  //     {
+  //       QuestionID: 2003,
+  //       ExamineeID: 5001,
+  //       PracticeSubmissionID: 7001,
+  //       Answer: ['function add(a, b) { return a + b; }'],
+  //     },
+  //     // 学生 2
+  //     { QuestionID: 1001, ExamineeID: 5002, PracticeSubmissionID: 7002, Answer: ['A'] },
+  //     { QuestionID: 1002, ExamineeID: 5002, PracticeSubmissionID: 7002, Answer: ['A'] },
+  //     { QuestionID: 1003, ExamineeID: 5002, PracticeSubmissionID: 7002, Answer: ['true'] },
+  //     { QuestionID: 2001, ExamineeID: 5002, PracticeSubmissionID: 7002, Answer: ['function', 'let'] },
+  //     { QuestionID: 2002, ExamineeID: 5002, PracticeSubmissionID: 7002, Answer: ['事件循环是JS的异步处理机制。'] },
+  //     {
+  //       QuestionID: 2003,
+  //       ExamineeID: 5002,
+  //       PracticeSubmissionID: 7002,
+  //       Answer: ['function sum(a, b) { return a + b; }'],
+  //     },
+  //     // 学生 3
+  //     { QuestionID: 1001, ExamineeID: 5003, PracticeSubmissionID: 7003, Answer: ['B'] },
+  //     { QuestionID: 1002, ExamineeID: 5003, PracticeSubmissionID: 7003, Answer: ['A', 'C'] },
+  //     { QuestionID: 1003, ExamineeID: 5003, PracticeSubmissionID: 7003, Answer: ['false'] },
+  //     { QuestionID: 2001, ExamineeID: 5003, PracticeSubmissionID: 7003, Answer: ['func', 'const'] },
+  //     { QuestionID: 2002, ExamineeID: 5003, PracticeSubmissionID: 7003, Answer: ['事件循环机制。'] },
+  //     {
+  //       QuestionID: 2003,
+  //       ExamineeID: 5003,
+  //       PracticeSubmissionID: 7003,
+  //       Answer: ['function add(x, y) { return x + y; }'],
+  //     },
+  //   ],
+  //   student_infos: [
+  //     { ExamineeID: 5001, OfficialName: '李四', SerialNumber: 1, PracticeSubmissionID: 7001 },
+  //     { ExamineeID: 5002, OfficialName: '王五', SerialNumber: 2, PracticeSubmissionID: 7002 },
+  //     { ExamineeID: 5003, OfficialName: '赵六', SerialNumber: 3, PracticeSubmissionID: 7003 },
+  //   ],
+  //   marking_results: [
+  //     // 学生 1 批改结果
+  //     // {
+  //     //   TeacherID: 9001,
+  //     //   ExamineeID: 5001,
+  //     //   ExamSessionID: 8001,
+  //     //   PracticeID: 9001,
+  //     //   PracticeSubmissionID: 7001,
+  //     //   QuestionID: 1001,
+  //     //   MarkDetails: [{ Index: 1, Score: 5, Analyze: '答对了单选题。' }],
+  //     //   Score: 5,
+  //     // },
+  //     // {
+  //     //   TeacherID: 9001,
+  //     //   ExamineeID: 5001,
+  //     //   ExamSessionID: 8001,
+  //     //   PracticeID: 9001,
+  //     //   PracticeSubmissionID: 7001,
+  //     //   QuestionID: 1002,
+  //     //   MarkDetails: [
+  //     //     { Index: 1, Score: 5, Analyze: '选择正确选项A。' },
+  //     //     { Index: 2, Score: 5, Analyze: '选择正确选项C。' },
+  //     //   ],
+  //     //   Score: 10,
+  //     // },
+  //     // {
+  //     //   TeacherID: 9001,
+  //     //   ExamineeID: 5001,
+  //     //   ExamSessionID: 8001,
+  //     //   PracticeID: 9001,
+  //     //   PracticeSubmissionID: 7001,
+  //     //   QuestionID: 1003,
+  //     //   MarkDetails: [{ Index: 1, Score: 0, Analyze: '判断错误，正确答案是 false。' }],
+  //     //   Score: 0,
+  //     // },
+  //     // {
+  //     //   TeacherID: 9001,
+  //     //   ExamineeID: 5001,
+  //     //   ExamSessionID: 8001,
+  //     //   PracticeID: 9001,
+  //     //   PracticeSubmissionID: 7001,
+  //     //   QuestionID: 2001,
+  //     //   MarkDetails: [
+  //     //     { Index: 1, Score: 5, Analyze: '第一个空填空正确。' },
+  //     //     { Index: 2, Score: 5, Analyze: '第二个空填空正确。' },
+  //     //   ],
+  //     //   Score: 10,
+  //     // },
+  //     // {
+  //     //   TeacherID: 9001,
+  //     //   ExamineeID: 5001,
+  //     //   ExamSessionID: 8001,
+  //     //   PracticeID: 9001,
+  //     //   PracticeSubmissionID: 7001,
+  //     //   QuestionID: 2002,
+  //     //   MarkDetails: [{ Index: 1, Score: 10, Analyze: '简答题回答全面。' }],
+  //     //   Score: 10,
+  //     // },
+  //     // {
+  //     //   TeacherID: 9001,
+  //     //   ExamineeID: 5001,
+  //     //   ExamSessionID: 8001,
+  //     //   PracticeID: 9001,
+  //     //   PracticeSubmissionID: 7001,
+  //     //   QuestionID: 2003,
+  //     //   MarkDetails: [{ Index: 1, Score: 20, Analyze: '编程题实现正确。' }],
+  //     //   Score: 20,
+  //     // },
+  //     // 学生 2 批改结果
+  //     {
+  //       TeacherID: 9002,
+  //       ExamineeID: 5002,
+  //       ExamSessionID: 8001,
+  //       PracticeID: 9001,
+  //       PracticeSubmissionID: 7002,
+  //       QuestionID: 1001,
+  //       MarkDetails: [{ Index: 1, Score: 0, Analyze: '单选题答错了。' }],
+  //       Score: 0,
+  //     },
+  //     {
+  //       TeacherID: 9002,
+  //       ExamineeID: 5002,
+  //       ExamSessionID: 8001,
+  //       PracticeID: 9001,
+  //       PracticeSubmissionID: 7002,
+  //       QuestionID: 1002,
+  //       MarkDetails: [
+  //         { Index: 1, Score: 5, Analyze: '选择正确选项A。' },
+  //         { Index: 2, Score: 5, Analyze: '选择正确选项C。' },
+  //       ],
+  //       Score: 10,
+  //     },
+  //     {
+  //       TeacherID: 9002,
+  //       ExamineeID: 5002,
+  //       ExamSessionID: 8001,
+  //       PracticeID: 9001,
+  //       PracticeSubmissionID: 7002,
+  //       QuestionID: 1003,
+  //       MarkDetails: [{ Index: 1, Score: 5, Analyze: '判断正确。' }],
+  //       Score: 5,
+  //     },
+  //     {
+  //       TeacherID: 9002,
+  //       ExamineeID: 5002,
+  //       ExamSessionID: 8001,
+  //       PracticeID: 9001,
+  //       PracticeSubmissionID: 7002,
+  //       QuestionID: 2001,
+  //       MarkDetails: [
+  //         { Index: 1, Score: 5, Analyze: '第一个空填空正确。' },
+  //         { Index: 2, Score: 0, Analyze: '第二个空填空错误。' },
+  //       ],
+  //       Score: 5,
+  //     },
+  //     {
+  //       TeacherID: 9002,
+  //       ExamineeID: 5002,
+  //       ExamSessionID: 8001,
+  //       PracticeID: 9001,
+  //       PracticeSubmissionID: 7002,
+  //       QuestionID: 2002,
+  //       MarkDetails: [{ Index: 1, Score: 8, Analyze: '简答题基本正确。' }],
+  //       Score: 8,
+  //     },
+  //     {
+  //       TeacherID: 9002,
+  //       ExamineeID: 5002,
+  //       ExamSessionID: 8001,
+  //       PracticeID: 9001,
+  //       PracticeSubmissionID: 7002,
+  //       QuestionID: 2003,
+  //       MarkDetails: [{ Index: 1, Score: 15, Analyze: '编程题部分实现。' }],
+  //       Score: 15,
+  //     },
+  //     // 学生 3 批改结果
+  //     {
+  //       TeacherID: 9003,
+  //       ExamineeID: 5003,
+  //       ExamSessionID: 8001,
+  //       PracticeID: 9001,
+  //       PracticeSubmissionID: 7003,
+  //       QuestionID: 1001,
+  //       MarkDetails: [{ Index: 1, Score: 5, Analyze: '答对了单选题。' }],
+  //       Score: 5,
+  //     },
+  //     {
+  //       TeacherID: 9003,
+  //       ExamineeID: 5003,
+  //       ExamSessionID: 8001,
+  //       PracticeID: 9001,
+  //       PracticeSubmissionID: 7003,
+  //       QuestionID: 1002,
+  //       MarkDetails: [
+  //         { Index: 1, Score: 5, Analyze: '选择正确选项A。' },
+  //         { Index: 2, Score: 5, Analyze: '选择正确选项C。' },
+  //       ],
+  //       Score: 10,
+  //     },
+  //     {
+  //       TeacherID: 9003,
+  //       ExamineeID: 5003,
+  //       ExamSessionID: 8001,
+  //       PracticeID: 9001,
+  //       PracticeSubmissionID: 7003,
+  //       QuestionID: 1003,
+  //       MarkDetails: [{ Index: 1, Score: 0, Analyze: '判断错误，正确答案是 false。' }],
+  //       Score: 0,
+  //     },
+  //     {
+  //       TeacherID: 9003,
+  //       ExamineeID: 5003,
+  //       ExamSessionID: 8001,
+  //       PracticeID: 9001,
+  //       PracticeSubmissionID: 7003,
+  //       QuestionID: 2001,
+  //       MarkDetails: [
+  //         { Index: 1, Score: 0, Analyze: '第一个空填空错误。' },
+  //         { Index: 2, Score: 5, Analyze: '第二个空填空正确。' },
+  //       ],
+  //       Score: 5,
+  //     },
+  //     {
+  //       TeacherID: 9003,
+  //       ExamineeID: 5003,
+  //       ExamSessionID: 8001,
+  //       PracticeID: 9001,
+  //       PracticeSubmissionID: 7003,
+  //       QuestionID: 2002,
+  //       MarkDetails: [{ Index: 1, Score: 7, Analyze: '简答题部分正确。' }],
+  //       Score: 7,
+  //     },
+  //     {
+  //       TeacherID: 9003,
+  //       ExamineeID: 5003,
+  //       ExamSessionID: 8001,
+  //       PracticeID: 9001,
+  //       PracticeSubmissionID: 7003,
+  //       QuestionID: 2003,
+  //       MarkDetails: [{ Index: 1, Score: 20, Analyze: '编程题实现正确。' }],
+  //       Score: 20,
+  //     },
+  //   ],
+  // };
 
   let exam_session_id = $state(0);
   let practice_id = $state(0);
@@ -386,20 +385,25 @@
   let current_question_index = $state(0); // 逐题模式下，当前题目
   let current_student_info_index = $state(0); // 当前考生的下标
 
-  let question_sets = $state([...mockData.question_sets]); // 题组
-  let student_answers = $state([...mockData.student_answers]); // 学生信息
-  let student_infos = $state([...mockData.student_infos]); // 考生信息
-  let marking_results = $state([...mockData.marking_results]); // 历史批改结果
+  let question_sets = $state([]); // 题组
+  let student_answers = $state([]); // 学生信息
+  let student_infos = $state([]); // 考生信息
+  let marking_results = $state([]); // 历史批改结果
 
   // 总问题数
   let total_question = $derived(question_sets.reduce((acc, cur) => acc + cur.Questions.length, 0));
 
   let current_question_set = $derived(question_sets[current_question_set_index]);
-  let current_question = $derived(current_question_set.Questions[current_question_index]);
+  let current_question = $derived(current_question_set?.Questions[current_question_index] ?? []);
   let current_student_info = $derived(student_infos[current_student_info_index]);
 
   // 绑定批改区域，用于切换考生的时候滚动条滚动到最顶部（逐题模式切换题目不需要，因为切换题目会销毁整个题目组件）
   let correction_content = null;
+
+  let current_page_name = $state('');
+
+  // 记录练习是否被批改过，防止过多的发送提交请求
+  let is_marked = $state(false);
 
   function scrollToTop() {
     if (correction_content) correction_content.scrollTop = 0;
@@ -411,14 +415,44 @@
 
   // 上一位考生
   function lastExaminee() {
+    if (!is_exam_mode && is_marked) submitCorrection();
+
     scrollToTop();
     current_student_info_index--;
   }
 
   // 下一位考生
   function nextExaminee() {
+    if (!is_exam_mode && is_marked) submitCorrection();
+
     scrollToTop();
     current_student_info_index++;
+  }
+
+  // 提交批改
+  function submitCorrection() {
+    let query = '';
+    if (is_exam_mode) query = `?exam_session_id=${exam_session_id}`;
+    else query = `?practice_id=${practice_id}&practice_submission_id=${current_student_info.PracticeSubmissionID}`;
+
+    fetch('/api/mark/results-submission' + query)
+      .then((res) => {
+        if (!res.ok) {
+          res.text().then((error_text) => {
+            throw new Error(`请求失败：${res.status} ${res.statusText}` + (error_text ? '-' + error_text : ''));
+          });
+        }
+        return res.json();
+      })
+      .then((res) => {
+        if (!res.status) {
+          is_marked = false;
+          toast.success(res.msg ?? '批改操作成功');
+        } else throw new Error(res.msg ?? '批改操作失败');
+      })
+      .catch((err) => {
+        toast.error(err.message);
+      });
   }
 
   // 上一道问题
@@ -540,39 +574,51 @@
 
     // 都是空 || 都不是空
     if ((!exam_session_id && !practice_id) || (exam_session_id && practice_id)) {
-      showError(); // 报错，终止对改页面的操作
+      showDialog('danger'); // 报错，终止对改页面的操作
       return;
     }
 
     const id_query = exam_session_id ? 'exam_session_id' : 'practice_id';
     const id = exam_session_id ?? practice_id;
 
-    // fetch(`/api/mark/details?${id_query}=${id}`)
-    //   .then((res) => {
-    //     if (!res.ok)
-    //       return res.text().then((error_text) => {
-    //         throw new Error(`请求失败：${res.status} ${res.statusText}` + (error_text ? '-' + error_text : ''));
-    //       });
-    //     return res.json();
-    //   })
-    //   .then((res) => {
-    //     if (!res.status) {
-    //       question_sets = res.data?.question_sets ?? []; // 不会吞错误（错误类型的话，不会取默认值；空的话才会取）
-    //       student_answers = res.data?.student_answers ?? [];
-    //       examinee_infos = res.data?.examinee_infos ?? [];
-    //       marking_results = res.data?.marking_results ?? [];
-    //     } else throw new Error(res.msg ?? '获取批改信息失败');
-    //   })
-    //   .catch((err) => {
-    //     showError(err.message); // 获取数据失败也会终止对改页面的操作
-    //   });
+    fetch(`/api/mark/details?${id_query}=${id}`)
+      .then((res) => {
+        if (!res.ok)
+          return res.text().then((error_text) => {
+            throw new Error(`请求失败：${res.status} ${res.statusText}` + (error_text ? '-' + error_text : ''));
+          });
+        return res.json();
+      })
+      .then((res) => {
+        if (!res.status) {
+          question_sets = res.data?.question_sets ?? []; // 不会吞错误（错误类型的话，不会取默认值；空的话才会取）
+          student_answers = res.data?.student_answers ?? [];
+          student_infos = res.data?.student_infos ?? [];
+          marking_results = res.data?.marking_results ?? [];
+
+          if (!question_sets.length) {
+            showDialog('primary', '当前考试/练习没有主观题目');
+            return;
+          }
+
+          if (!student_answers.length || !student_infos.length) throw new Error(res.msg ?? '获取批改信息失败');
+
+          current_page_name = localStorage.getItem('current_paper_name');
+        } else throw new Error(res.msg ?? '获取批改信息失败');
+      })
+      .catch((err) => {
+        showDialog('danger', err.message); // 获取数据失败也会终止对改页面的操作
+      });
   }
 
   // 上传批改
   function saveMark(event) {
+    is_marked = true;
+
     const temp_param = is_exam_mode
       ? { ExamineeID: current_student_info.ExamineeID, ExamSessionID: exam_session_id }
       : { PracticeSubmissionID: current_student_info.PracticeSubmissionID, PracticeID: practice_id };
+
     const data = {
       ...temp_param,
       QuestionID: event.detail.question_id,
@@ -615,11 +661,14 @@
   }
 
   // 展示错误弹窗
-  function showError(content = '页面信息出错，点击返回') {
+  function showDialog(type, content = '页面信息出错，点击返回') {
     MessageBox({
-      title: '出错啦',
+      type,
+      title: type === 'danger' ? '出错啦' : '注意',
       content: content,
       show_cancel_button: false,
+      on_close_by_click_outside: false,
+      confirm_button_type: type,
       onConfirm: () => goBack(),
       onCancel: () => goBack(),
     });
@@ -633,8 +682,7 @@
   <div class="header">
     <div class="left-header">
       <button onclick={goBack}>← 返回</button>
-      <!-- TODO 持久化 -->
-      <div class="name">{$sharedData?.exam_session_name}</div>
+      <div class="name">{current_page_name}</div>
       <div class="info"><span>总人数：</span><span class="data"> {student_infos.length}</span></div>
       <div class="info"><span>未批改人数：</span><span class="data"> {getUnmarkedExamineeCount()}</span></div>
       <div class="info"><span>总未批改题数：</span><span class="data"> {getAllUnMarkedQuestionCount()}</span></div>
@@ -661,7 +709,7 @@
       <div class="correction-header">
         <div class="infos">
           <div class="info">
-            <span>当前考生：</span><span class="data"> {current_student_info.OfficialName}</span>
+            <span>当前考生：</span><span class="data"> {current_student_info?.OfficialName ?? ''}</span>
           </div>
           <div class="info">
             <span>未批改题数：</span><span class="data"> {getStudentUnMarkedQuestionCount(current_student_info)}</span>
@@ -670,15 +718,24 @@
             <span>当前得分：</span><span class="data"> {getStudentTotalScore(current_student_info)}</span>
           </div>
         </div>
+        <!-- 练习：上一位，下一位；考试：上一位，下一位/提交 -->
         <div class="options">
-          <button class="btn btn--info is-plain" onclick={lastExaminee} disabled={current_student_info_index === 0}
-            >上一位</button
-          >
           <button
-            class="btn btn--primary"
-            onclick={nextExaminee}
-            disabled={current_student_info_index === student_infos.length - 1}>下一位</button
+            class="btn btn--info is-plain"
+            class:is-disabled={current_student_info_index === 0}
+            onclick={lastExaminee}>上一位</button
           >
+          {#if is_exam_mode && current_student_info_index === student_infos.length - 1}
+            <button class="btn btn--primary" onclick={submitCorrection} disabled={getUnmarkedExamineeCount() === 0}
+              >提交</button
+            >
+          {:else}
+            <button
+              class="btn btn--primary"
+              class:is-disabled={current_student_info_index === student_infos.length - 1}
+              onclick={nextExaminee}>下一位</button
+            >
+          {/if}
         </div>
       </div>
 
@@ -726,14 +783,14 @@
             <div class="options">
               <button
                 class="btn btn--info is-plain"
-                onclick={lastQuestion}
-                disabled={current_question_set_index === 0 && current_question_index === 0}>上一题</button
+                class:is-disabled={current_question_set_index === 0 && current_question_index === 0}
+                onclick={lastQuestion}>上一题</button
               >
               <button
                 class="btn btn--primary"
-                onclick={nextQuestion}
-                disabled={current_question_set_index === question_sets.length - 1 &&
-                  current_question_index === current_question_set.Questions.length - 1}>下一题</button
+                class:is-disabled={current_question_set_index === question_sets.length - 1 &&
+                  current_question_index === current_question_set.Questions.length - 1}
+                onclick={nextQuestion}>下一题</button
               >
             </div>
           </div>
@@ -811,13 +868,20 @@
     .header {
       display: flex;
       justify-content: space-between;
-      padding: 1rem 3rem;
+      padding: 1rem 2rem;
       flex-wrap: wrap;
       background-color: white;
 
       .left-header {
         @include flex-center;
         gap: 1rem;
+
+        button {
+          border: none;
+          background-color: white;
+          cursor: pointer;
+          font-size: 1.05rem;
+        }
 
         .name {
           @include flex-center;
@@ -957,7 +1021,7 @@
               border-radius: 5px;
 
               &.active {
-                outline: 1px solid gray;
+                outline: 2px solid gray;
                 outline-offset: 2px;
               }
 

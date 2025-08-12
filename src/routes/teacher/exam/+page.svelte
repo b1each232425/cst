@@ -21,6 +21,7 @@
   import Title from '$lib/components/Title/Title.svelte';
   import { toast } from '$lib/components/Toast/Toast';
   import { CURRENT_PAPER_ID } from '../paper/_stores/store';
+  import Empty from '$lib/components/Table/Empty.svelte';
   let exam_list = $state([]);
   let name_search_time = null;
   let loading = $state(false);
@@ -52,8 +53,8 @@
     '02': '待开始',
     '04': '进行中',
     '06': '已结束',
-    '10': '已归档',
-    '12': '考试异常',
+    '08': '已归档',
+    '10': '考试异常',
   };
 
   const StateClassMap = {
@@ -61,8 +62,8 @@
     '02': 'to-start',
     '04': 'on-going',
     '06': 'ended',
-    '10': 'archived',
-    '12': 'error',
+    '08': 'archived',
+    '10': 'error',
   };
 
   let search_params = $state({
@@ -76,6 +77,11 @@
 
   async function publishAndSearch(selected_exam_ids) {
     await publishExam(selected_exam_ids);
+    exam_list = exam_list.map(exam =>
+    selected_exam_ids.includes(exam.id)
+      ? { ...exam, status: '02' } // 状态改为“待开始”
+      : exam
+  );
     searchExam();
   }
 
@@ -323,139 +329,139 @@ function handleSelectAll(event) {
 }
 
   // 模拟获取考试列表数据
-  exam_list = [
-    {
-      name: '数学考试',
-      type: '00',
-      method: '00',
-      start_time: '2023-10-01 10:00',
-      end_time: '2023-10-01 12:00',
-      duration: '120分钟',
-      status: '00',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '英语考试',
-      type: '02',
-      method: '02',
-      start_time: '2023-10-02 14:00',
-      end_time: '2023-10-02 15:30',
-      duration: '90分钟',
-      status: '04',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '物理期中',
-      type: '00',
-      method: '00',
-      start_time: '2023-10-03 09:00',
-      end_time: '2023-10-03 11:00',
-      duration: '120分钟',
-      status: '02',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '化学期末',
-      type: '02',
-      method: '02',
-      start_time: '2023-10-04 13:30',
-      end_time: '2023-10-04 15:00',
-      duration: '90分钟',
-      status: '04',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '语文模拟',
-      type: '04',
-      method: '00',
-      start_time: '2023-10-05 08:30',
-      end_time: '2023-10-05 10:00',
-      duration: '90分钟',
-      status: '00',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '生物测评',
-      type: '02',
-      method: '02',
-      start_time: '2023-10-06 10:00',
-      end_time: '2023-10-06 11:30',
-      duration: '90分钟',
-      status: '02',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '历史会考',
-      type: '00',
-      method: '02',
-      start_time: '2023-10-07 15:00',
-      end_time: '2023-10-07 16:30',
-      duration: '90分钟',
-      status: '04',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '历史会考',
-      type: '00',
-      method: '02',
-      start_time: '2023-10-07 15:00',
-      end_time: '2023-10-07 16:30',
-      duration: '90分钟',
-      status: '04',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '历史会考',
-      type: '00',
-      method: '02',
-      start_time: '2023-10-07 15:00',
-      end_time: '2023-10-07 16:30',
-      duration: '90分钟',
-      status: '04',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '历史会考',
-      type: '00',
-      method: '02',
-      start_time: '2023-10-07 15:00',
-      end_time: '2023-10-07 16:30',
-      duration: '90分钟',
-      status: '12',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-  ];
-
+  // exam_list = [
+  //   {
+  //     name: '数学考试',
+  //     type: '00',
+  //     method: '00',
+  //     start_time: '2023-10-01 10:00',
+  //     end_time: '2023-10-01 12:00',
+  //     duration: '120分钟',
+  //     status: '00',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '英语考试',
+  //     type: '02',
+  //     method: '02',
+  //     start_time: '2023-10-02 14:00',
+  //     end_time: '2023-10-02 15:30',
+  //     duration: '90分钟',
+  //     status: '04',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '物理期中',
+  //     type: '00',
+  //     method: '00',
+  //     start_time: '2023-10-03 09:00',
+  //     end_time: '2023-10-03 11:00',
+  //     duration: '120分钟',
+  //     status: '02',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '化学期末',
+  //     type: '02',
+  //     method: '02',
+  //     start_time: '2023-10-04 13:30',
+  //     end_time: '2023-10-04 15:00',
+  //     duration: '90分钟',
+  //     status: '04',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '语文模拟',
+  //     type: '04',
+  //     method: '00',
+  //     start_time: '2023-10-05 08:30',
+  //     end_time: '2023-10-05 10:00',
+  //     duration: '90分钟',
+  //     status: '00',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '生物测评',
+  //     type: '02',
+  //     method: '02',
+  //     start_time: '2023-10-06 10:00',
+  //     end_time: '2023-10-06 11:30',
+  //     duration: '90分钟',
+  //     status: '02',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '历史会考',
+  //     type: '00',
+  //     method: '02',
+  //     start_time: '2023-10-07 15:00',
+  //     end_time: '2023-10-07 16:30',
+  //     duration: '90分钟',
+  //     status: '04',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '历史会考',
+  //     type: '00',
+  //     method: '02',
+  //     start_time: '2023-10-07 15:00',
+  //     end_time: '2023-10-07 16:30',
+  //     duration: '90分钟',
+  //     status: '04',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '历史会考',
+  //     type: '00',
+  //     method: '02',
+  //     start_time: '2023-10-07 15:00',
+  //     end_time: '2023-10-07 16:30',
+  //     duration: '90分钟',
+  //     status: '04',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '历史会考',
+  //     type: '00',
+  //     method: '02',
+  //     start_time: '2023-10-07 15:00',
+  //     end_time: '2023-10-07 16:30',
+  //     duration: '90分钟',
+  //     status: '12',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  // ];
+  
   onMount(() => {
     searchExam();
   });
@@ -549,7 +555,7 @@ function handleSelectAll(event) {
 
 <!--考试状态标签-->
 {#snippet stateRender(/** @type {"00" | "02" | "04" | "08" | "10" | "12"} */ status, /** @type {string} */ addi)}
-  {#if status === '12'}
+  {#if status === '10'}
     <div class="statusError">
       <div class="statusTag {StateClassMap[status]}">
         {StateMap[status]}
@@ -585,8 +591,8 @@ function handleSelectAll(event) {
           <Option value="02" label="待开始" />
           <Option value="04" label="进行中" />
           <Option value="06" label="已结束" />
-          <Option value="10" label="已归档" />
-          <Option value="12" label="考试异常" />
+          <!-- <Option value="08" label="已归档" /> -->
+          <Option value="10" label="考试异常" />
         </Select>
       </div>
       <div class="datePart">
@@ -613,18 +619,24 @@ function handleSelectAll(event) {
     </div>
   </div>
 
+
   <div class="examListContainer">
     <table class="examListTable">
       <thead class="examListTableHead">
         {@render tableHead()}
       </thead>
       <tbody class="examListTableData">
+        {#if exam_list.length===0}
+          <Empty text = "暂无数据"/>
+          {:else}
         {#each exam_list as exam, index}
           {@render tableData(exam, index)}
         {/each}
+      {/if}
       </tbody>
     </table>
   </div>
+
   <div class="pagination-container"></div>
 
   <MessageBox
