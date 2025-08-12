@@ -2,7 +2,7 @@
 	import Title from '$lib/components/Title/Title.svelte';
 	import Pagination from '$lib/components/Pagination/Pagination.svelte';
 	import InputBox from '$lib/components/Input/InputBox.svelte';
-	import { sget } from '$lib/utils';
+
 	import { goto } from '$app/navigation';
 	import { handleApiError, handleSuccess, handleSelectionError, handleFeatureNotImplemented } from '../_utils/errorHandler.js';
 	import { formatPracticeData } from '../_utils/dataFormatter.js';
@@ -132,8 +132,8 @@
 		};
 		getPractices(params)
 			.then((data) => {
-				state.practices = formatPracticeData(sget(data, 'data', []));
-				state.totalRecords = sget(data, 'rowCount', 0);
+				state.practices = formatPracticeData(data?.data || []);
+				state.totalRecords = data?.rowCount || 0;
 			})
 			.catch((error) => {
 				handleApiError(error, '获取练习成绩列表');

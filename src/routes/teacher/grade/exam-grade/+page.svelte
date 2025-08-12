@@ -3,8 +3,7 @@
 	import Pagination from '$lib/components/Pagination/Pagination.svelte';
 	import InputBox from '$lib/components/Input/InputBox.svelte';
 	import Select from '$lib/components/Select/Select.svelte';
-	import Option from '$lib/components/Select/Option.svelte';
-	import { sget } from '$lib/utils';
+	import Option from '$lib/components/Select/Option.svelte';	
 	import { goto } from '$app/navigation';
 	import { handleApiError, handleSuccess, handleFeatureNotImplemented } from '../_utils/errorHandler.js';
 	import { formatExamData } from '../_utils/dataFormatter.js';
@@ -177,8 +176,8 @@
 		};
 		getExams(params)
 			.then((data) => {
-				state.exams = formatExamData(sget(data, 'data', []));
-				state.totalRecords = sget(data, 'rowCount', 0);
+				state.exams = formatExamData(data?.data || []);
+				state.totalRecords = data?.rowCount || 0;
 			})
 			.catch((error) => {
 				handleApiError(error, '获取考试成绩列表');
