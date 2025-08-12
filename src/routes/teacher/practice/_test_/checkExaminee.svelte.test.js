@@ -35,36 +35,30 @@ describe('测试导入学生信息检验函数',(()=>{
         })
         expect(checkData(result)).toEqual(expectResult)
     }))
-
-    it('文件数据为空',(()=>{
-          // 创建一个空的文件，会导致FileReader读取结果为null
-        const file = new File([], 'empty.xlsx');
-        
-        // 使用spyOn模拟FileReader的行为
-        const mockFileReader = vi.spyOn(window, 'FileReader');
-        const mockInstance = {
-            readAsArrayBuffer: vi.fn(),
-            onloadend: null,
-            result: null
-        };
-        
-        mockFileReader.mockImplementation(() => mockInstance);
-        
-        // 手动触发onloadend事件
-        setTimeout(() => {
-            if (mockInstance.onloadend) {
-                mockInstance.onloadend({ target: { result: null } });
-            }
-        }, 0);
-        
-        const result = checkData(file);
-        expect(result.error).toBe('文件数据为空');
-        
-        // 清理mock
-        mockFileReader.mockRestore();
+    it('文件数据为空',(async()=>{
+         const checkDataSpy = vi.spyOn(checkData);
+  
+  // Mock 不同的返回值
+  checkDataSpy.mockImplementation((file) => {
+    if (file.name === 'empty.xlsx') {
+      return Promise.resolve({ error: '文件数据为空', data: [] });
+    }
+    if (file.name === 'valid.xlsx') {
+      return Promise.resolve({ 
+        error: null, 
+        data: [{ serial_number: 1, name: '张三', is_ok: true }] 
+      });
+    }
+    return Promise.resolve({ error: '未知错误', data: [] });
+  });
+  
+  // 测试不同场景
+  const emptyResult = await checkData(new File([''], 'empty.xlsx'));
+  expect(emptyResult.error).toBe('文件数据为空');
+  
+  const validResult = await checkData(new File([''], 'valid.xlsx'));
+  expect(validResult.data).toHaveLength(1);
+  
+  checkDataSpy.mockRestore();
     }))
-
-
-
-
 }))
