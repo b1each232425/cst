@@ -22,9 +22,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 <script>
   import BankCard from '../_components/bankCard.svelte';
   import { onMount } from 'svelte';
-  import { deepCopy } from '../utils/json_utils';
-  import { formatTimestamp } from '../utils/time_utils';
-  import { goto, preloadCode } from '$app/navigation';
+  import { formatTimestamp } from '$lib/utils/time_utils';
+  import { goto} from '$app/navigation';
   import { toast } from '$lib/components/Toast/Toast.js';
 
   /**
@@ -97,54 +96,10 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    */
   let selected_bank_list = $state([]);
 
-  /**
-   * 是否已经添加了beforeunload事件监听器
-   * @type {boolean}
-   */
-  let had_add_beforeunload_event = $state(false);
-
-  $effect(() => {
-    if (bank_list == null) {
-      throw new Error('bank_list is null');
-    }
-
-    // 题库搜索,根据题库名称或标签进行搜索, 不区分大小写
-    // 如果搜索输入框为空,则显示所有题库
-    let lower_case_search_input = search_input.toLowerCase();
-
-    for (let item of bank_list) {
-      if (search_input == '') {
-        item.is_hidden = false;
-        continue;
-      }
-
-      if (item.name == null) {
-        throw new Error('item.name is null');
-      }
-
-      if (item.tags == null) {
-        item.tags = [];
-      }
-
-      if (
-        !item.name.includes(lower_case_search_input) &&
-        !item.tags?.some((tag) => tag.includes(lower_case_search_input))
-      ) {
-        item.is_hidden = true;
-        continue;
-      }
-
-      item.is_hidden = false;
-    }
-  });
-
-  /**
-   * 获取题库列表请求函数
-   */
 
   function getBankList({ keyword = '', page = '', pageSize = '', bankID = '' } = {}) {
- bank_list=[];
-origin_bank_list=[];
+  bank_list=[];
+  origin_bank_list=[];
     const queryParams = new URLSearchParams({
       keyword,
       page,
@@ -166,7 +121,7 @@ origin_bank_list=[];
         if (data.status !== 0) {
           throw new Error(`${data.msg}`);
         }
-        toast.success('获取题库列表成功')
+       
         return data.data; // 返回实际数据
       })
       .catch((error) => {
@@ -176,6 +131,7 @@ origin_bank_list=[];
   }
 
   onMount(async () => {
+
     const data = await getBankList();
     for (let bank of data) {
       bank_list.push({
@@ -200,7 +156,7 @@ origin_bank_list=[];
         selected: false,
       });
     }
-    preloadCode('/teacher/question-bank/theory/editBank');
+  
   });
 
   /**
@@ -210,7 +166,7 @@ origin_bank_list=[];
   function addNewBank() {
     const data = {
       name: '未命名题库',
-      type: '00',
+      type: '00', //理论题库
       tags: [],
     };
 
@@ -231,7 +187,7 @@ origin_bank_list=[];
         if (result.status !== 0) {
             throw new Error(`${result.msg}`);
         }
-        toast.success('新建题库成功');
+       
 
         // 存储到 localStorage
         localStorage.setItem(
@@ -258,9 +214,7 @@ origin_bank_list=[];
   /**
    * 添加题库处理函数
    */
-  function addHandleFunc() {
-    addNewBank();
-  }
+
 
   /**
    * 选中题库处理函数
@@ -471,7 +425,7 @@ origin_bank_list=[];
       return;
     }
 
-    let origin_item = deepCopy(origin_bank_list[bank_index]);
+    let origin_item =origin_bank_list[bank_index];
 
     if (origin_item == null) {
       throw new Error(`origin_item(${item.id}) is null`);
@@ -521,18 +475,7 @@ origin_bank_list=[];
     return bank_is_changed;
   }
 
-  /**
-   * 拦截页面关闭处理函数
-   * @param {BeforeUnloadEvent} event - 事件对象
-   * @param {string} message - 提示信息
-   */
-  function interceptPageClose(event, message) {
-    event.preventDefault();
 
-    event.returnValue = message ?? 'You have unsaved changes. Are you sure you want to leave?';
-
-    return message ?? 'You have unsaved changes. Are you sure you want to leave?';
-  }
 
   /**
    * 跳转到编辑题库页面
@@ -553,17 +496,7 @@ origin_bank_list=[];
     goto(`${window.location.pathname}/editBank`);
   }
 
-  /**
-   * 保存题库数据
-   * @param {BankCardItemData} item
-   * @param {number} index
-   */
 
-  /**
-   * @description 消息提示组件
-   * @type {totast}
-   */
-  let toast_message, toast_tyoe;
 </script>
 
 <!-- 
@@ -579,13 +512,8 @@ o888o o888o   "888" o888o o888o o888o o888o
 <div class="question-bank-container">
   <!-- 顶部栏 -->
   <div class="top-bar">
-    <div class="search-text">
-      <span>搜索题库</span>
-    </div>
-
     <div class="search-input-container">
       <input class="search-input" type="text" placeholder="请输入题库名/标签" bind:value={search_input} />
-
       {#if search_input.length > 0}
         <button
           class="search-input-clear-btn"
@@ -600,7 +528,7 @@ o888o o888o   "888" o888o o888o o888o o888o
 
     <div class="operation-btns">
       <button class="button-delete" >
-        <img src={icons.delete} alt="批量删除" />
+         <span class="icon"></span>
         <span>批量删除</span>
       </button>
 
@@ -620,7 +548,7 @@ o888o o888o   "888" o888o o888o o888o o888o
   <div class="bank-container">
     <div class="bank-list">
       <div class="bank-card-container">
-        <BankCard type="add" {icons} add_handle_func={addHandleFunc} />
+        <BankCard type="add" {icons} add_handle_func={addNewBank} />
       </div>
 
       {#each bank_list as item, index}
@@ -695,8 +623,18 @@ o.  )88b   888 .    `888'     888  888    .o
   }
 
   .button-delete {
-    background-color: var(--red);
+    background-color: red
   }
+ .button-delete .icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-image: url("/programming_question_bank/icons/delete.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    color: red;
+  }
+
   .button-cancelSelect {
     background-color: #7787a2;
   }

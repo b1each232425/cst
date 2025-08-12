@@ -1,6 +1,6 @@
 <script>
     import { TheoryQuestion } from "../theory/type";
-    import UneditableTag from "./UneditableTag.svelte";
+    import UneditableTag from "$lib/components/Tag/UneditableTags.svelte";
     import { onMount} from "svelte";
     /**
      * @type {{
