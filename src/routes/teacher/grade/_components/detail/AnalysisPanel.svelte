@@ -207,7 +207,7 @@
 	{/if}
 	{#if !isfolded && isLoaded}
 		<div class="analysis-content">
-			<!-- 简化的题目列表显示，不依赖 QuestionList 组件 -->
+			<!-- 简化的题目列表显示-->
 			{#each questionGroup as group}
 				<div class="question-group">
 					<h3 class="group-title">{group.name}</h3>

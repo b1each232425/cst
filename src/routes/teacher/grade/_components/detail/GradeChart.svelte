@@ -32,7 +32,7 @@
 	// 状态变量
 	let xAxis_data = $state(['0-19', '20-39', '40-59', '60-79', '80-100']);
 	let series_data = $state([]);
-	let columnNum = $state(5);
+	let columnNum = $state(5);//直方图列数
 	let currentPaperId = $state('');
 	let options = $state([]);
 
@@ -63,7 +63,7 @@
 	 */
 	async function getExamDistributionData() {
 		if (type === 'practice') {
-			const url = `/api/teacher/practice-grade/distribution?practiceID=${resourceId}&columnNum=${columnNum}`;
+			const url = `/api/grade/distribution?category=${type}&practiceID=${resourceId}&columnNum=${columnNum}`;
 
 			const response = await fetch(url, {
 				method: 'GET',

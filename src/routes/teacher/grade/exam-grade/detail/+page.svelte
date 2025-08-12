@@ -140,9 +140,7 @@
 	function getExamTypeText(type) {
 		const typeMap = {
 			'00': '平时考试',
-			'01': '期中考试',
-			'02': '资格证考试',
-			'03': '期末考试'
+			'04': '资格证考试',
 		};
 		return typeMap[type] || '其他考试';
 	}
@@ -213,7 +211,6 @@
 
 		// 获取考试数据
 		examData = await fetchExamData(examId);
-		console.log("获取考试数据成功:", examData);
 
 		// 显示页面
 		isShow = true;
