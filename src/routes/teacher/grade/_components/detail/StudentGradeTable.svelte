@@ -2,7 +2,6 @@
 	import { onMount, getContext } from 'svelte';
 	import Pagination from '$lib/components/Pagination/Pagination.svelte';
 	import InputBox from '$lib/components/Input/InputBox.svelte';
-	import { sget } from '$lib/utils';
 
 	/**
 	 * @typedef {Object} Props
@@ -20,11 +19,11 @@
 	let contextData = $state(null);
 	try {
 		if (type === 'practice') {
-			const context = getContext('practice-detail');
-			contextData = context?.practiceData?.();
+			const context = getContext('practice');
+			contextData = context?.practiceData;
 		} else {
-			const context = getContext('exam-detail');
-			contextData = context?.examData?.();
+			const context = getContext('exam');
+			contextData = context?.examData;
 		}
 	} catch {
 		// Context 不存在时忽略
@@ -139,17 +138,17 @@
 			}
 
 			if (type === 'practice') {
-				const data = sget(response_data, 'data', []);
+				const data = response_data.data || [];
 				currentData = data.map((item) => ({
-					stuId: sget(item, 'stu_id', 0),
-					phone: sget(item, 'phone', '-'),
-					nickname: sget(item, 'nickname', '-'),
-					name: sget(item, 'name', '-'),
-					highestScore: sget(item, 'highest_score', 0),
-					submitCount: sget(item, 'submitted_cnt', 0),
-					remark: sget(item, 'remark', '-')
+					stuId: item.stu_id || 0,
+					phone: item.phone || '-',
+					nickname: item.nickname || '-',
+					name: item.name || '-',
+					highestScore: item.highest_score || 0,
+					submitCount: item.submitted_cnt || 0,
+					remark: item.remark || '-'
 				}));
-				const total = sget(response_data, 'row_count', 0);
+				const total = response_data.row_count || 0;
 				updatePagination(total);
 			} else {
 				const data = response_data.data;

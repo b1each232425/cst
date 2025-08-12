@@ -17,11 +17,11 @@
 	let contextData = null;
 	try {
 		if (type === 'practice') {
-			const context = getContext('practice-detail');
-			contextData = context?.practiceData?.();
+			const context = getContext('practice');
+			contextData = context?.practiceData;
 		} else {
-			const context = getContext('exam-detail');
-			contextData = context?.examData?.();
+			const context = getContext('exam');
+			contextData = context?.examData;
 		}
 	} catch {
 		// Context 不存在时使用 props 数据

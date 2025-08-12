@@ -1,7 +1,6 @@
 <script>
 	import { onMount, setContext } from 'svelte';
 	import { page } from '$app/stores';
-	import { sget } from '$lib/utils';
 	import InfoCard from '../../_components/detail/InfoCard.svelte';
 	import StudentGradeTable from '../../_components/detail/StudentGradeTable.svelte';
 	import GradeChart from '../../_components/detail/GradeChart.svelte';
@@ -35,10 +34,14 @@
 	 */
 	let isShow = $state(false);
 
-	// 设置 Context，传递练习数据
-	setContext('practice-detail', {
-		practiceData: () => practiceData,
-		practiceId: () => practiceId
+	// 设置上下文
+	setContext("practice", {
+		get practiceId() {
+			return practiceId;
+		},
+		get practiceData() {
+			return practiceData;
+		},
 	});
 
 	/**
@@ -68,7 +71,7 @@
 				return null;
 			}
 
-			const practiceList = sget(result, 'data', []);
+			const practiceList = result.data || [];
 			const practice = practiceList.find(p => p.id == id) || practiceList[0];
 
 			if (!practice) {

@@ -19,11 +19,11 @@
 	let contextData = $state(null);
 	try {
 		if (type === 'practice') {
-			const context = getContext('practice-detail');
-			contextData = context?.practiceData?.();
+			const context = getContext('practice');
+			contextData = context?.practiceData;
 		} else {
-			const context = getContext('exam-detail');
-			contextData = context?.examData?.();
+			const context = getContext('exam');
+			contextData = context?.examData;
 		}
 	} catch {
 		// Context 不存在时忽略
@@ -84,7 +84,7 @@
 				gradeDistribution: response_data.data.grade_distribution
 			};
 		} else {
-			const url = `/api/teacher/exam-grade/distribution?examID=${resourceId}&columnNum=${columnNum}`;
+			const url = `/api/grade/distribution?category=${type}&examID=${resourceId}&columnNum=${columnNum}`;
 
 			const response = await fetch(url, {
 				method: 'GET',

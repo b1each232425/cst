@@ -1,26 +1,81 @@
 <script>
 	import { onMount, setContext } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { sget } from '$lib/utils';
 	import InfoCard from '../../_components/detail/InfoCard.svelte';
 	import StudentGradeTable from '../../_components/detail/StudentGradeTable.svelte';
 	import GradeChart from '../../_components/detail/GradeChart.svelte';
 	import AnalysisPanel from '../../_components/detail/AnalysisPanel.svelte';
 
+	// 后端返回数据类型
+	/**
+	 * @typedef {Object} Session
+	 * @property {number} exam_id - 考试ID
+	 * @property {number} exam_session_id - 考试场次ID
+	 * @property {string} paper_name - 考卷名称
+	 * @property {string} start_time - 考试开始时间（ISO格式）
+	 * @property {string} end_time - 考试结束时间（ISO格式）
+	 * @property {number} total_score - 试卷总分
+	 * @property {number} average_score - 平均分
+	 * @property {number} scheduled_examinees - 应考人数
+	 * @property {number} actual_examinees - 实考人数
+	 * @property {number} pass_examinees - 及格人数（总得分 >= 0.6 * 试卷总分）
+	 * @property {string} mark_mode - 批改模式
+	 */
+
+	/**
+	 * @typedef {Object} ResponseData
+	 * @property {number} id - 考试ID
+	 * @property {string} name - 考试名称
+	 * @property {string} type - 考试类型
+	 * @property {string} class - 考试班级
+	 * @property {Session[]} sessions - 考试场次（使用的试卷名称）
+	 * @property {boolean} submitted - 是否已提交成绩
+	 */
+
+	// 整合为更适合使用的数据类型
 	/**
 	 * @typedef {Object} ExamData
 	 * @property {number} id - 考试ID
-	 * @property {string} title - 考试标题
-	 * @property {string} name - 考试名称
-	 * @property {string} examTimeText - 考试时间文本
-	 * @property {number} totalScore - 总分
+	 * @property {string} title - 考试名称
 	 * @property {string} type - 考试类型
-	 * @property {number} averageScore - 平均分
-	 * @property {number} totalExaminees - 总考生数
-	 * @property {boolean} submitted - 是否已提交
-	 * @property {number} passExaminees - 通过人数
-	 * @property {Array} papers - 试卷列表
+	 * @property {string} examTimeText - 多场考试时间汇总字符串
+	 * @property {number} totalScore - 整场考试总分（可取首场试卷分值）
+	 * @property {number} averageScore - 加权平均分
+	 * @property {number} totalExaminees - 应考人数总和
+	 * @property {number} passExaminees - 及格人数总和
+	 * @property {boolean} submitted - 是否提交
+	 * @property {PaperInfo[]} papers - 各试卷详情
 	 */
+
+	/**
+	 * @typedef {Object} PaperInfo
+	 * @property {number} id - 试卷ID(目前是考试场次ID)
+	 * @property {string} idText - 试卷编号文本，如 "试卷1"
+	 * @property {string} name - 试卷名称
+	 * @property {number} actualExaminees - 实考人数
+	 * @property {number} totalScore - 单张试卷总分
+	 * @property {number} averageScore - 平均分
+	 * @property {string} markMode - 批改模式
+	 */
+
+	// 常量定义
+	const MARK_MODE_MAP = {
+		"00": "自动批改",
+		"02": "全卷多评",
+		"04": "试卷分配",
+		"06": "题组专评",
+		"08": "题目分配",
+		"10": "单人批改",
+	};
+
+	const EXAM_TYPE_MAP = {
+		"00": "平时考试",
+		"02": "期末考试",
+		"04": "资格证考试",
+	};
+
+
 
 	/**
 	 * @type {string|null}
@@ -35,26 +90,133 @@
 
 	/**
 	 * @type {boolean}
-	 * @description 页面是否显示
+	 * @description 在获取到examId前不显示页面内容
 	 * @default false
 	 */
 	let isShow = $state(false);
 
-	// 设置 Context，传递考试数据
-	setContext('exam-detail', {
-		examData: () => examData,
-		examId: () => examId
+	// 设置上下文
+	setContext("exam", {
+		get examId() {
+			return examId;
+		},
+		get examData() {
+			return examData;
+		},
 	});
 
 	/**
+	 * 格式化考试时间
+	 */
+	function formatExamTime(sessions) {
+		if (!Array.isArray(sessions) || sessions.length === 0) return '--';
+
+		try {
+			// 格式化考试时间文字，如：试卷1:2025-01-22 09:00-10:00
+			return sessions
+				.map((session, i) => {
+					if (!session.start_time) return `试卷${i + 1}:--`;
+
+					const start = new Date(session.start_time);
+					const end = session.end_time ? new Date(session.end_time) : null;
+
+					const startStr = start.toLocaleString('zh-CN', {
+						year: 'numeric',
+						month: '2-digit',
+						day: '2-digit',
+						hour: '2-digit',
+						minute: '2-digit'
+					});
+
+					if (end) {
+						const endStr = end.toLocaleString('zh-CN', {
+							hour: '2-digit',
+							minute: '2-digit'
+						});
+						const [startDay, startTime] = startStr.split(' ');
+						return `试卷${i + 1}:${startDay} ${startTime}-${endStr}`;
+					}
+
+					return `试卷${i + 1}:${startStr}`;
+				})
+				.join("  ");
+		} catch (error) {
+			return '--';
+		}
+	}
+
+	/**
+	 * 将原始考试数据转换为更适合展示的结构
+	 * @param {ResponseData} raw
+	 * @returns {ExamData}
+	 */
+	function transformResponseData(raw) {
+		const sessions = raw.sessions || [];
+
+		// 格式化考试时间文字
+		const examTimeText = formatExamTime(sessions);
+
+		// 总应考人数
+		const totalExaminees = sessions.reduce(
+			(sum, s) => sum + (s.scheduled_examinees || 0),
+			0,
+		);
+		const passExaminees = sessions.reduce(
+			(sum, s) => sum + (s.pass_examinees || 0),
+			0,
+		);
+
+		// 总分，取每个试卷的分数之和
+		const totalScore = sessions.reduce((sum, s) => sum + (s.total_score || 0), 0);
+
+		// 平均分：加权计算
+		const totalActual = sessions.reduce(
+			(sum, s) => sum + (s.actual_examinees || 0),
+			0,
+		);
+		const weightedTotalScore = sessions.reduce(
+			(sum, s) => sum + (s.average_score || 0) * (s.actual_examinees || 0),
+			0,
+		);
+		const averageScore =
+			totalActual === 0
+				? 0
+				: parseFloat((weightedTotalScore / totalActual).toFixed(1));
+
+		// 试卷详情
+		const papers = sessions.map((s, i) => ({
+			id: s.exam_session_id,
+			idText: `试卷${i + 1}`,
+			name: s.paper_name,
+			actualExaminees: s.actual_examinees || 0,
+			totalScore: s.total_score || 0,
+			averageScore: s.average_score || 0,
+			markMode: MARK_MODE_MAP[s.mark_mode] || s.mark_mode || '自动批改',
+		}));
+
+		return {
+			id: raw.id,
+			title: raw.name,
+			type: EXAM_TYPE_MAP[raw.type] || raw.type || '其他考试',
+			examTimeText,
+			totalScore: totalScore,
+			averageScore,
+			totalExaminees,
+			passExaminees,
+			submitted: raw.submitted || false,
+			papers,
+		};
+	}
+
+	/**
 	 * 获取考试数据
-	 * @param {string} id - 考试ID
+	 * @param {string} examId - 考试ID
 	 * @returns {Promise<ExamData|null>} 返回考试数据
 	 */
-	async function fetchExamData(id) {
+	async function fetchExamData(examId) {
 		try {
 			const response = await fetch(
-				`/api/teacher/exam-grade?examID=${id}&courseID=0&classID=0&page=1&pageSize=10`,
+				`/api/teacher/exam-grade?examID=${examId}&courseID=0&classID=0&page=1&pageSize=10`,
 				{
 					method: "GET",
 					credentials: "include",
@@ -73,8 +235,8 @@
 				return null;
 			}
 
-			const examList = sget(result, 'data', []);
-			const exam = examList.find(e => e.id == id) || examList[0];
+			const examList = result.data || [];
+			const exam = examList.find(e => e.id == examId) || examList[0];
 
 			if (!exam) {
 				console.error('未找到考试数据');
@@ -100,67 +262,6 @@
 			console.error('获取考试数据异常:', error);
 			return null;
 		}
-	}
-
-	/**
-	 * 格式化考试时间
-	 */
-	function formatExamTime(startTime, endTime) {
-		if (!startTime) return '--';
-
-		try {
-			const start = new Date(startTime);
-			const end = endTime ? new Date(endTime) : null;
-
-			const startStr = start.toLocaleString('zh-CN', {
-				year: 'numeric',
-				month: '2-digit',
-				day: '2-digit',
-				hour: '2-digit',
-				minute: '2-digit'
-			});
-
-			if (end) {
-				const endStr = end.toLocaleString('zh-CN', {
-					hour: '2-digit',
-					minute: '2-digit'
-				});
-				return `${startStr} - ${endStr}`;
-			}
-
-			return startStr;
-		} catch (error) {
-			return '--';
-		}
-	}
-
-	/**
-	 * 获取考试类型文本
-	 */
-	function getExamTypeText(type) {
-		const typeMap = {
-			'00': '平时考试',
-			'04': '资格证考试',
-		};
-		return typeMap[type] || '其他考试';
-	}
-
-	/**
-	 * 格式化试卷信息
-	 */
-	function formatPapers(sessions) {
-		if (!Array.isArray(sessions)) return [];
-
-		return sessions.map((session, index) => ({
-			id: session.exam_session_id || session.id || index,
-			exam_session_id: session.exam_session_id || session.id || index,
-			idText: session.paper_id || `P${String(index + 1).padStart(3, '0')}`,
-			name: session.paper_name || session.name || `试卷${index + 1}`,
-			markMode: session.mark_mode || '自动批改',
-			actualExaminees: session.actual_examinees || 0,
-			totalScore: session.total_score || 0,
-			averageScore: session.average_score || 0
-		}));
 	}
 
 	/**
@@ -206,14 +307,19 @@
 
 		if (!examId) {
 			console.error('缺少考试ID参数');
+			goto('/teacher/grade/exam-grade');
 			return;
 		}
 
 		// 获取考试数据
 		examData = await fetchExamData(examId);
 
-		// 显示页面
-		isShow = true;
+		if (examData) {
+			isShow = true;
+		} else {
+			console.error('获取考试数据失败');
+			goto('/teacher/grade/exam-grade');
+		}
 	});
 </script>
 
