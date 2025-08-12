@@ -508,4 +508,55 @@ describe('Pagination 组件测试', () => {
     fireEvent.click(screen.getByText('10条/页'));
     expect(screen.getByText('2')).toHaveClass('active');
   });
+
+  it('应该正确触发点击页数按钮跳转页码功能', async () => {
+    render(Pagination, {
+      props: {
+        total_items,
+        page_size,
+        current_page,
+        jump_page,
+        page_size_options,
+      },
+    });
+
+    // 验证按钮正确渲染
+    expect(screen.getByText('1')).toHaveClass('active');
+
+    // 点击按钮2跳转到第二页
+    fireEvent.click(screen.getByText('2'));
+    expect(screen.getByText('2')).toHaveClass('active');
+
+    // 点击按钮3跳转到第3页
+    fireEvent.click(screen.getByText('3'));
+    expect(screen.getByText('3')).toHaveClass('active');
+
+    // 点击按钮4跳转到第4页
+    fireEvent.click(screen.getByText('4'));
+    expect(screen.getByText('4')).toHaveClass('active');
+
+    // 点击按钮5跳转到第5页
+    fireEvent.click(screen.getByText('5'));
+    expect(screen.getByText('5')).toHaveClass('active');
+
+    // 点击按钮6跳转到第6页
+    fireEvent.click(screen.getByText('6'));
+    expect(screen.getByText('6')).toHaveClass('active');
+
+    // 点击按钮7跳转到第7页
+    fireEvent.click(screen.getByText('7'));
+    expect(screen.getByText('7')).toHaveClass('active');
+
+    // 点击按钮8跳转到第8页
+    fireEvent.click(screen.getByText('8'));
+    expect(screen.getByText('8')).toHaveClass('active');
+
+    // 点击按钮9跳转到第9页
+    fireEvent.click(screen.getByText('9'));
+    expect(screen.getByText('9')).toHaveClass('active');
+
+    // 点击按钮10跳转到第10页
+    fireEvent.click(screen.getByText('10'));
+    expect(screen.getByText('10')).toHaveClass('active');
+  });
 });
