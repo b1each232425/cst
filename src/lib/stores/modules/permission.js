@@ -266,7 +266,7 @@ export const baseNavItems = writable([
     children: [
       {
         name: 'addUser',
-        title: '添加用户',
+        title: '创建用户',
         path: '/teacher/user-management/addUser',
         force_hide: true,
       },

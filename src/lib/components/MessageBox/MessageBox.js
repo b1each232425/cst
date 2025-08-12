@@ -2,13 +2,35 @@
  * @Author: 段春茂 2162105974@qq.com
  * @Date: 2025-07-24 9:30:00
  * @LastEditors: 段春茂 2162105974@qq.com
- * @LastEditTime: 2025-08-10 09:56:07
+ * @LastEditTime: 2025-08-12 12:30:07
  * @FilePath: src\lib\components\MessageBox\MessageBox.js
  * @Description: MessageBox-消息弹窗函数式调用
  * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved.
  */
 import MessageBox from './MessageBox.svelte';
 import { mount, unmount } from 'svelte';
+
+/**
+ * 默认配置
+ * @type {Object}
+ */
+const DEFAULT_OPTIONS = {
+  content: '',
+  center: false,
+  visible: false,
+  type: 'primary',
+  title: '温馨提示',
+  cancel_text: '取消',
+  confirm_text: '确定',
+  show_cancel_icon: true,
+  show_cancel_button: true,
+  show_confirm_button: true,
+  cancel_button_type: 'info',
+  confirm_button_type: 'primary',
+  on_close_by_click_outside: true,
+  onCancel: () => {},
+  onConfirm: () => {},
+};
 
 /**
  * @component MessageBox
@@ -30,51 +52,39 @@ import { mount, unmount } from 'svelte';
  * @param {Function} [options.onCancel] 点击取消的回调函数
  * @param {Function} [options.onConfirm] 点击确认的回调函数
  */
-export default function ({
-  title = '温馨提示',
-  content = '',
-  type = 'primary',
-  center = false,
-  cancel_text = '取消',
-  confirm_text = '确定',
-  show_cancel_icon = true,
-  show_cancel_button = true,
-  show_confirm_button = true,
-  cancel_button_type = 'info',
-  confirm_button_type = 'primary',
-  on_close_by_click_outside = true,
-  onCancel = () => {},
-  onConfirm = () => {},
-}) {
+export default function (options = {}) {
+  const props = { ...DEFAULT_OPTIONS, ...options };
   const container = document.createElement('div');
   document.body.appendChild(container);
 
-  let app = mount(MessageBox, {
+  /**
+   * 关闭弹窗
+   * @param {*} callback
+   * @returns
+   */
+  const close = (callback, key) => async () => {
+    // 校验['function', 'asyncfunction']
+    function getType(value) {
+      return Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
+    }
+    if (!['function', 'asyncfunction'].includes(getType(callback))) {
+      console.warn(
+      `[MessageBox] 属性 '${key}' 无效:类型错误，传入类型为 '${getType(callback)}'，期望类型为 '${['function', 'asyncfunction'].join(', ')}',已使用默认值 '() => {}',传入值为:'${callback}'`,
+      );
+      callback = () => {};
+    }
+    await callback?.();
+    unmount(app, { outro: true });
+    container.remove();
+  };
+
+  const app = mount(MessageBox, {
     target: container,
     props: {
+      ...props,
       visible: true,
-      title,
-      type,
-      center,
-      content,
-      confirm_text,
-      cancel_text,
-      show_cancel_icon,
-      cancel_button_type,
-      show_cancel_button,
-      show_confirm_button,
-      confirm_button_type,
-      on_close_by_click_outside,
-      onCancel: async () => {
-        await onCancel();
-        unmount(app, { outro: true });
-        container.remove();
-      },
-      onConfirm: async () => {
-        await onConfirm();
-        unmount(app, { outro: true });
-        container.remove();
-      },
+      onCancel: close(props.onCancel,'onCancel'),
+      onConfirm: close(props.onConfirm,'onConfirm'),
     },
   });
 }
