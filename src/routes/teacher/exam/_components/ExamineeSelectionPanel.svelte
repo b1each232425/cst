@@ -67,6 +67,16 @@
   let error = $state('');
   
 
+  function downloadTemplate() {
+    const url = '/student_import_excel/导入学生模版.xlsx';
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '导入学生模版.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   // 导入学生
   function handleImport() {
     if (student_import_panel) {
@@ -424,6 +434,7 @@ function handleCheckboxChange(examinee, event) {
             <button class="back-btn" onclick={backToViewMode}>返回考生列表</button>
 
             <!-- <Button type="primary" >下载模板</Button> -->
+             <button class="btn btn--primary is-plain" onclick={downloadTemplate}>下载导入模板</button>
             <button class="btn btn--primary is-plain" onclick={handleImport}>导入考生</button>
             
           </div>
