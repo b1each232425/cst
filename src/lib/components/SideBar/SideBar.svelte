@@ -286,7 +286,7 @@
           {#snippet Item(it, level)}
             {#if !it.force_hide}
               {#snippet ItemContent(i, level)}
-                <div class="sidebar-item-content" style="--level: {level}">
+                <div class="sidebar-item-content" style={`--level: ${level}`}>
                   {#if i.icon}
                     <img class="sidebar-item-icon" src={i.icon} alt={i.title} />
                   {:else}

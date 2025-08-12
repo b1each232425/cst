@@ -511,7 +511,7 @@
         <div class="calendar">
           <div class="calendar-header">
             <button onclick={prevStartMonth} data-testid="start-pre-month">«</button>
-            <span data-testid="start-current-date">{start_year}年 {month_names[start_month]}</span>
+            <span data-testid="start-current-date">{`${start_year}年 ${month_names[start_month]}`}</span>
             <button onclick={nextStartMonth} data-testid="start-next-month">»</button>
           </div>
           <div class="calendar-days">
@@ -570,7 +570,7 @@
           <div class="calendar">
             <div class="calendar-header">
               <button onclick={prevEndMonth} data-testid="end-pre-month">«</button>
-              <span data-testid="end-current-date">{end_year}年 {month_names[end_month]}</span>
+              <span data-testid="end-current-date">{`${end_year}年 ${month_names[end_month]}`}</span>
               <button onclick={nextEndMonth} data-testid="end-next-month">»</button>
             </div>
             <div class="calendar-days">
