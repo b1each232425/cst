@@ -20,7 +20,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
                                                       -->
 <script>
 	import { onMount } from "svelte";
-	import EditableTag from "./editableTag.svelte";
+	import EditableTag from "$lib/components/Tag/EditableTag.svelte";
 	import { fade, slide } from "svelte/transition";
     import '$lib/styles/global.css';
 	/**

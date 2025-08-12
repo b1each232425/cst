@@ -3,14 +3,15 @@
  * @Date: 2025-07-24  19:31:15
  * @LastEditors: qjj qiaojunjie6@qq.com
  * @LastEditTime:  2025-07-24  19:31:15
- * @FilePath: \tutorial-platform-fe\src\lib\component\questionlist.svelte
+ * @FilePath: 
  * @Description: 列表表格组件
  * @
 -->
 <script>
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import { TheoryQuestion } from '../theory/type';
-  import UneditableTags from './UneditableTag.svelte';
+   import Empty from '$lib/components/Table/Empty.svelte';
+  import UneditableTags from "$lib/components/Tag/UneditableTags.svelte";
   import { createEventDispatcher } from 'svelte';
   /**
    * @type {{
@@ -291,37 +292,19 @@
         </tbody>
       </table>
     {:else}
-      <div style="display: flex;flex:1;flex-direction:column;">
-        <table style="width: {tableWidth};border-collapse: collapse;">
-          <thead>
-            {@render headRow()}
-          </thead>
-        </table>
-        <div
-          style="
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    flex:1;
-                    font-size: 36px;
-                    font-weight: 900;
-                    color: #999999;
-                    user-select: none;
-                "
-        >
-          暂无题目
-        </div>
-      </div>
+         <table style="width: {tableWidth};border-collapse: collapse;">
+      <Empty text="暂无题目数据" />
+      </table>
     {/if}
   </div>
   {#if question_data.length !== 0}
     <div style="display: flex;width:100%;justify-content:flex-end;">
       <div style="margin-right:15px;">
         <Pagination
-          totalItems={question_count}
-          pageSize={page_size}
-          currentPage={current_page}
-          pageSizeOptions={[10, 20, 30]}
+          total_items={question_count}
+          page_size={page_size}
+          current_page={current_page}
+          page_size_options={[10, 20, 30]}
           on:pageChange={handlePageChange}
           on:pageSizeChange={handlePageSizeChange}
         ></Pagination>
