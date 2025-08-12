@@ -1,36 +1,14 @@
 <script>
+	import { onMount, getContext } from 'svelte';
 	import Select from '$lib/components/Select/Select.svelte';
 	import Option from '$lib/components/Select/Option.svelte';
 	import { sget } from '$lib/utils';
-	import { safeDisplayNumber, safeDisplayText } from '../../_utils/dataFormatter.js';
-
-	/**
-	 * @typedef {Object} QuestionGroup
-	 * @property {number} id - 题目分组ID
-	 * @property {string} name - 分组名称
-	 */
-
-	/**
-	 * @typedef {Object} Question
-	 * @property {number} id - 题目ID
-	 * @property {string} type - 题目类型
-	 * @property {string} content - 题目内容
-	 * @property {number} score - 题目分值
-	 * @property {number} [averageScore] - 平均得分
-	 * @property {Object} [answerStats] - 答题统计
-	 */
-
-	/**
-	 * @typedef {Object} PaperOption
-	 * @property {number} id - 试卷ID
-	 * @property {string} name - 试卷名称
-	 */
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {'practice' | 'exam'} type - 类型
 	 * @property {number} resourceId - 资源ID
-	 * @property {PaperOption[]} [papers] - 试卷选项（考试类型需要）
+	 * @property {Array} [papers] - 试卷选项（考试类型需要）
 	 */
 
 	/**
@@ -38,456 +16,374 @@
 	 */
 	let { type, resourceId, papers = [] } = $props();
 
-	// 内部状态
-	let selectedPaper = $state(null);
-	let questionGroups = $state([]);
+	// 获取 Context 数据
+	let contextData = $state(null);
+	try {
+		if (type === 'practice') {
+			const context = getContext('practice-detail');
+			contextData = context?.practiceData?.();
+		} else {
+			const context = getContext('exam-detail');
+			contextData = context?.examData?.();
+		}
+	} catch {
+		// Context 不存在时忽略
+	}
+
+	// 状态变量
 	let questions = $state([]);
-	let subjectiveScores = $state({});
-	let answerStats = $state({});
-	let loading = $state(false);
-	let isCollapsed = $state(false);
+	let questionGroup = $state([]);
+	let isLoaded = $state(false);
+	let isfolded = $state(false);
+	let currentPaperId = $state('');
+	let options = $state([]);
+
+	// 切换折叠状态
+	function toggleFold() {
+		isfolded = !isfolded;
+	}
 
 	/**
-	 * 获取试卷分析数据
+	 * 将后端返回的原始题目数据转换为前端所需格式
 	 */
-	async function fetchAnalysisData() {
-		loading = true;
-		try {
-			const endpoint = type === 'practice' 
-				? `/api/teacher/practice-grade/paper-analysis`
-				: `/api/teacher/exam-grade/paper-analysis`;
+	function transformQuestions(rawQuestions, answerStats, subjectiveAvgScores) {
+		return rawQuestions.map((q) => {
+			const isObjective = q.Type === '00' || q.Type === '02' || q.Type === '04';
+			const stat = answerStats[String(q.ID)] || {};
+			const avgScore = subjectiveAvgScores[String(q.ID)];
 
-			const params = new URLSearchParams({
-				[type === 'practice' ? 'practiceId' : 'examId']: resourceId.toString()
-			});
+			let options = undefined;
 
-			// 考试类型需要指定试卷
-			if (type === 'exam' && selectedPaper) {
-				params.append('examSessionId', selectedPaper.toString());
+			if (isObjective && Array.isArray(q.Options)) {
+				const total = Object.values(stat).reduce((sum, val) => sum + val, 0);
+
+				options = q.Options.map((opt) => {
+					const label = opt.label;
+					const count = stat[label] || 0;
+					const rate = total > 0 ? parseFloat(((count / total) * 100).toFixed(1)) : 0;
+
+					return {
+						label,
+						text: opt.value,
+						selectionRate: rate
+					};
+				});
 			}
 
-			const response = await fetch(`${endpoint}?${params}`, {
+			return {
+				id: q.ID,
+				type: q.Type,
+				content: q.Content,
+				options: options,
+				answer: (() => {
+					if (isObjective) {
+						return Array.isArray(q.Answers) ? q.Answers : [];
+					} else {
+						const list = Array.isArray(q.Answers) ? q.Answers.map((a) => a.answer) : [];
+						return list;
+					}
+				})(),
+				index: q.Order,
+				score: q.Score,
+				averageScore: isObjective ? undefined : avgScore || 0,
+				groupId: q.GroupID
+			};
+		});
+	}
+
+	/**
+	 * 获取分析数据（考试类型）
+	 */
+	async function fetchAnalysisDataBySessionId(sessionId) {
+		isLoaded = false;
+		try {
+			const response = await fetch(`/api/teacher/exam-analysis?examSessionID=${sessionId}`, {
 				method: 'GET',
 				credentials: 'include'
 			});
 
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
+			const resp_data = await response.json();
+			if (resp_data.status < 0) {
+				throw new Error(resp_data.msg);
 			}
-
-			const result = await response.json();
-			
-			if (result.status === 0) {
-				const data = sget(result, 'data', {});
-				updateAnalysisData(data);
-			} else {
-				console.error('获取试卷分析失败:', result.msg);
-			}
+			questions = transformQuestions(
+				resp_data.data.questions,
+				resp_data.data.question_answers_stats,
+				resp_data.data.subjective_scores
+			);
+			questionGroup = resp_data.data.question_groups;
+			isLoaded = true;
 		} catch (error) {
-			console.error('获取试卷分析失败:', error);
-		} finally {
-			loading = false;
+			console.error('获取考试数据失败:', error);
 		}
 	}
 
 	/**
-	 * 更新分析数据
-	 * @param {Object} data - 后端返回的数据
+	 * 获取分析数据（练习类型）
 	 */
-	function updateAnalysisData(data) {
-		questionGroups = sget(data, 'question_groups', []);
-		questions = sget(data, 'questions', []);
-		subjectiveScores = sget(data, 'subjective_scores', {});
-		answerStats = sget(data, 'question_answers_stats', {});
-	}
+	async function fetchPracticeAnalysisData(practiceId) {
+		isLoaded = false;
+		try {
+			const response = await fetch(`/api/teacher/practice-analysis?practiceID=${practiceId}`, {
+				method: 'GET',
+				credentials: 'include'
+			});
 
-	/**
-	 * 获取题目的平均分
-	 * @param {Question} question - 题目对象
-	 * @returns {string} 平均分或占位符
-	 */
-	function getQuestionAverageScore(question) {
-		if (question.type === 'subjective') {
-			return safeDisplayNumber(subjectiveScores[question.id], 1);
+			const resp_data = await response.json();
+			if (resp_data.status < 0) {
+				throw new Error(resp_data.msg);
+			}
+			questions = transformQuestions(
+				resp_data.data.questions,
+				resp_data.data.question_answers_stats,
+				resp_data.data.subjective_scores
+			);
+			questionGroup = resp_data.data.question_groups;
+			isLoaded = true;
+		} catch (error) {
+			console.error('获取练习数据失败:', error);
 		}
-		return safeDisplayNumber(question.averageScore, 1);
 	}
 
 	/**
-	 * 获取选择题的答题统计
-	 * @param {Question} question - 题目对象
-	 * @returns {Object} 答题统计
+	 * 将试卷数据转换为下拉选项
 	 */
-	function getAnswerStatistics(question) {
-		return answerStats[question.id] || {};
+	function examDataToOptions() {
+		return papers.map((session) => ({
+			value: session.id,
+			label: session.name
+		}));
 	}
 
 	/**
-	 * 计算选项选择率
-	 * @param {Object} stats - 答题统计
-	 * @param {string} option - 选项
-	 * @returns {string} 选择率百分比
+	 * 更新数据
 	 */
-	function calculateOptionPercentage(stats, option) {
-		const total = Object.values(stats).reduce((sum, count) => sum + count, 0);
-		const count = stats[option] || 0;
-		return total > 0 ? `${((count / total) * 100).toFixed(1)}%` : '0%';
-	}
+	function updateData() {
+		if (currentPaperId) {
+			const selectedSession = papers.find((session) => session.id === currentPaperId);
 
-	/**
-	 * 切换折叠状态
-	 */
-	function toggleCollapse() {
-		isCollapsed = !isCollapsed;
+			if (selectedSession) {
+				fetchAnalysisDataBySessionId(selectedSession.id);
+			} else {
+				fetchAnalysisDataBySessionId(papers[0].id);
+			}
+		}
 	}
 
 	/**
 	 * 处理试卷选择变化
-	 * @param {CustomEvent} event
 	 */
 	function handlePaperChange(event) {
-		selectedPaper = event.detail;
-		fetchAnalysisData();
+		currentPaperId = event.detail;
+		updateData();
 	}
 
-	// 初始化
-	$effect(() => {
-		if (resourceId) {
-			// 考试类型默认选择第一个试卷
-			if (type === 'exam' && papers.length > 0 && !selectedPaper) {
-				const firstPaper = papers[0];
-				if (firstPaper && firstPaper.id !== undefined) {
-					selectedPaper = firstPaper.id;
-				}
-			}
-			fetchAnalysisData();
-		}
-	});
+
 </script>
 
-<div class="analysis-container">
-	<div class="header">
-		<div class="title-section">
-			<h2 class="section-title">试卷分析</h2>
-			<button class="collapse-btn" onclick={toggleCollapse}>
-				{isCollapsed ? '展开' : '收起'}
-			</button>
-		</div>
-
-		{#if !isCollapsed && type === 'exam' && papers.length > 0}
-			<div class="controls">
-				<div class="control-item">
-					<label for="analysis-paper-select">选择试卷:</label>
-					<Select
-						id="analysis-paper-select"
-						value={selectedPaper}
-						placeholder="请选择试卷"
-						on:change={handlePaperChange}
-					>
-						{#each papers as paper}
-							{#if paper && paper.id !== undefined && paper.name}
-								<Option value={paper.id} label={paper.name}>{paper.name}</Option>
-							{/if}
-						{/each}
-					</Select>
-				</div>
-			</div>
-		{/if}
-	</div>
-
-	{#if !isCollapsed}
-		<div class="analysis-content">
-			{#if loading}
-				<div class="loading">加载中...</div>
-			{:else if questions.length === 0}
-				<div class="empty">暂无试卷分析数据</div>
+<div class="analysis-card">
+	<div class="card-header">
+		<button class="card-title-button" onclick={toggleFold}>
+			{#if isfolded}
+				<img src="/sidebar/nav_icon/unfold.svg" alt="收起" />
 			{:else}
-				<!-- 题目分组 -->
-				{#if questionGroups.length > 0}
-					<div class="question-groups">
-						<h3>题目分组</h3>
-						<div class="groups-grid">
-							{#each questionGroups as group}
-								<div class="group-item">
-									<span class="group-name">{group.name}</span>
-								</div>
-							{/each}
-						</div>
-					</div>
-				{/if}
-
-				<!-- 题目列表 -->
-				<div class="questions-section">
-					<h3>题目分析</h3>
-					<div class="questions-list">
-						{#each questions as question, index}
-							<div class="question-item">
-								<div class="question-header">
-									<span class="question-number">第{index + 1}题</span>
-									<span class="question-type">{question.type === 'objective' ? '客观题' : '主观题'}</span>
-									<span class="question-score">{safeDisplayNumber(question.score)}分</span>
-									<span class="average-score">
-										平均分: {getQuestionAverageScore(question)}
-									</span>
-								</div>
-
-								<div class="question-content">
-									{question.content || '题目内容'}
-								</div>
-
-								<!-- 选择题答题统计 -->
-								{#if question.type === 'objective'}
-									{@const stats = getAnswerStatistics(question)}
-									{#if Object.keys(stats).length > 0}
-										<div class="answer-stats">
-											<h4>答题统计:</h4>
-											<div class="stats-grid">
-												{#each Object.entries(stats) as [option, count]}
-													<div class="stat-item">
-														<span class="option">选项{option}:</span>
-														<span class="count">{count}人</span>
-														<span class="percentage">
-															({calculateOptionPercentage(stats, option)})
-														</span>
-													</div>
-												{/each}
-											</div>
-										</div>
-									{/if}
+				<img src="/sidebar/nav_icon/fold.svg" alt="展开" />
+			{/if}
+			<div class="title">试卷分析</div>
+		</button>
+	</div>
+	{#if type === 'exam' && papers.length > 1}
+		<div class="dropdown">
+			<Select
+				value={currentPaperId}
+				placeholder="选择试卷"
+				on:change={handlePaperChange}
+			>
+				{#each options as option}
+					<Option value={option.value} label={option.label}>{option.label}</Option>
+				{/each}
+			</Select>
+		</div>
+	{/if}
+	{#if !isfolded && isLoaded}
+		<div class="analysis-content">
+			<!-- 简化的题目列表显示，不依赖 QuestionList 组件 -->
+			{#each questionGroup as group}
+				<div class="question-group">
+					<h3 class="group-title">{group.name}</h3>
+					{#each questions.filter(q => q.groupId === group.id) as question}
+						<div class="question-item">
+							<div class="question-header">
+								<span class="question-number">第{question.index}题</span>
+								<span class="question-score">({question.score}分)</span>
+								{#if question.averageScore !== undefined}
+									<span class="average-score">平均分: {question.averageScore}</span>
 								{/if}
 							</div>
-						{/each}
-					</div>
+							<div class="question-content">
+								{@html question.content}
+							</div>
+							{#if question.options}
+								<div class="options-stats">
+									{#each question.options as option}
+										<div class="option-stat">
+											<span class="option-label">{option.label}:</span>
+											<span class="option-text">{option.text}</span>
+											<span class="option-percentage">({option.selectionRate}%)</span>
+										</div>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					{/each}
 				</div>
-			{/if}
+			{/each}
+		</div>
+	{/if}
+	{#if !isLoaded}
+		<div class="loading-indicator">
+			<div class="spinner"></div>
+			<span>正在加载，请稍候...</span>
 		</div>
 	{/if}
 </div>
 
 <style lang="scss" scoped>
-	.analysis-container {
-		background: white;
-		border-radius: 8px;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-		margin-bottom: 24px;
-	}
+	.analysis-card {
+		width: 100%;
+		height: 100%;
+		margin-bottom: 40px;
 
-	.header {
-		padding: 20px 24px;
-		border-bottom: 1px solid #e5e7eb;
-
-		.title-section {
+		.card-header {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
-			margin-bottom: 16px;
+			margin-bottom: 40px;
+			padding-bottom: 10px;
+			border-bottom: 2px solid #f0f0f0;
 
-			.section-title {
-				font-size: 18px;
-				font-weight: 600;
-				color: #1f2937;
-				margin: 0;
-			}
-
-			.collapse-btn {
-				padding: 6px 12px;
-				background: #f3f4f6;
-				border: 1px solid #d1d5db;
-				border-radius: 6px;
-				font-size: 14px;
-				color: #374151;
-				cursor: pointer;
-				transition: all 0.2s;
-
-				&:hover {
-					background: #e5e7eb;
-				}
-			}
-		}
-
-		.controls {
-			.control-item {
+			.card-title-button {
 				display: flex;
 				align-items: center;
-				gap: 8px;
+				justify-content: center;
+				gap: 10px;
+				cursor: pointer;
+				background: none;
+				border: none;
 
-				label {
-					font-size: 14px;
-					color: #374151;
-					white-space: nowrap;
+				img {
+					width: 32px;
+					height: 32px;
 				}
-			}
-		}
-	}
-
-	.analysis-content {
-		padding: 24px;
-
-		.loading,
-		.empty {
-			text-align: center;
-			padding: 40px;
-			color: #6b7280;
-			font-size: 14px;
-		}
-
-		.question-groups {
-			margin-bottom: 32px;
-
-			h3 {
-				font-size: 16px;
-				font-weight: 500;
-				color: #1f2937;
-				margin-bottom: 16px;
-			}
-
-			.groups-grid {
-				display: grid;
-				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-				gap: 12px;
-
-				.group-item {
-					padding: 12px 16px;
-					background: #f9fafb;
-					border: 1px solid #e5e7eb;
-					border-radius: 6px;
-
-					.group-name {
-						font-size: 14px;
-						color: #374151;
-					}
+				.title {
+					font-size: 22px;
+					font-weight: bold;
 				}
 			}
 		}
 
-		.questions-section {
-			h3 {
-				font-size: 16px;
-				font-weight: 500;
-				color: #1f2937;
-				margin-bottom: 16px;
-			}
+		.dropdown {
+			margin-bottom: 40px;
+			margin-left: 40px;
+			width: 400px;
+		}
 
-			.questions-list {
+		.analysis-content {
+			margin-top: 30px;
+			margin-left: 50px;
+
+			.question-group {
+				margin-bottom: 30px;
+
+				.group-title {
+					font-size: 18px;
+					font-weight: bold;
+					margin-bottom: 15px;
+					color: #333;
+				}
+
 				.question-item {
-					border: 1px solid #e5e7eb;
-					border-radius: 8px;
-					margin-bottom: 16px;
-					overflow: hidden;
+					margin-bottom: 20px;
+					padding: 15px;
+					border: 1px solid #e0e0e0;
+					border-radius: 5px;
+					background: #fafafa;
 
 					.question-header {
 						display: flex;
 						align-items: center;
-						gap: 16px;
-						padding: 16px 20px;
-						background: #f9fafb;
-						border-bottom: 1px solid #e5e7eb;
+						gap: 10px;
+						margin-bottom: 10px;
 
 						.question-number {
-							font-weight: 500;
-							color: #1f2937;
-						}
-
-						.question-type {
-							padding: 4px 8px;
-							background: #dbeafe;
-							color: #1e40af;
-							border-radius: 4px;
-							font-size: 12px;
+							font-weight: bold;
+							color: #333;
 						}
 
 						.question-score {
-							color: #059669;
-							font-weight: 500;
+							color: #666;
 						}
 
 						.average-score {
-							margin-left: auto;
-							color: #6b7280;
-							font-size: 14px;
+							color: #007bff;
+							font-weight: 500;
 						}
 					}
 
 					.question-content {
-						padding: 16px 20px;
-						color: #374151;
+						margin-bottom: 10px;
 						line-height: 1.5;
+						color: #333;
 					}
 
-					.answer-stats {
-						padding: 16px 20px;
-						background: #f8fafc;
-						border-top: 1px solid #e5e7eb;
-
-						h4 {
+					.options-stats {
+						.option-stat {
+							display: flex;
+							align-items: center;
+							gap: 5px;
+							margin-bottom: 5px;
 							font-size: 14px;
-							font-weight: 500;
-							color: #1f2937;
-							margin-bottom: 12px;
-						}
 
-						.stats-grid {
-							display: grid;
-							grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-							gap: 8px;
+							.option-label {
+								font-weight: bold;
+								color: #333;
+							}
 
-							.stat-item {
-								display: flex;
-								align-items: center;
-								gap: 8px;
-								font-size: 14px;
+							.option-text {
+								color: #666;
+							}
 
-								.option {
-									color: #374151;
-								}
-
-								.count {
-									font-weight: 500;
-									color: #1f2937;
-								}
-
-								.percentage {
-									color: #6b7280;
-								}
+							.option-percentage {
+								color: #007bff;
+								font-weight: 500;
 							}
 						}
 					}
 				}
 			}
 		}
-	}
 
-	@media (max-width: 768px) {
-		.header {
-			padding: 16px;
+		.loading-indicator {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+			flex-direction: column;
+			color: var(--gray);
 
-			.title-section {
-				flex-direction: column;
-				align-items: flex-start;
-				gap: 12px;
+			.spinner {
+				width: 40px;
+				height: 40px;
+				border: 4px solid #ccc;
+				border-top-color: var(--blue);
+				border-radius: 50%;
+				animation: spin 0.8s linear infinite;
+				margin-bottom: 10px;
 			}
-		}
 
-		.analysis-content {
-			padding: 16px;
-
-			.question-groups .groups-grid {
-				grid-template-columns: 1fr;
-			}
-
-			.questions-section .questions-list .question-item {
-				.question-header {
-					flex-wrap: wrap;
-					gap: 8px;
-
-					.average-score {
-						margin-left: 0;
-						width: 100%;
-					}
-				}
-
-				.answer-stats .stats-grid {
-					grid-template-columns: 1fr;
+			@keyframes spin {
+				to {
+					transform: rotate(360deg);
 				}
 			}
 		}
