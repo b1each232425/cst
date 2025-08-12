@@ -3,7 +3,7 @@
  * @Date: 2025-07-24  19:31:15
  * @LastEditors: qjj qiaojunjie6@qq.com
  * @LastEditTime:  2025-07-24  19:31:15
- * @FilePath: \tutorial-platform-fe\src\lib\component\FilterBarForQuestionBank.svelte
+ * @FilePath:
  * @Description: 过滤器组件
  * @
 -->

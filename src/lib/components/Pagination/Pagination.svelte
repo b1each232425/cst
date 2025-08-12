@@ -53,6 +53,51 @@
     page_size_options = [10, 20, 30, 40, 50], // 每页条数可选配置
   } = $props();
 
+  // 参数校验
+  (() => {
+    // 校验 total_items 参数
+    if (typeof total_items !== 'number') {
+      console.warn(`[Pagination] total_items 应该是一个数字，当前为 ${typeof total_items}`);
+      total_items = 0; // 设置默认值
+    }
+
+    // 校验 page_size 参数
+    if (typeof page_size !== 'number') {
+      console.warn(`[Pagination] page_size 应该是一个数字，当前为 ${typeof page_size}`);
+      page_size = 10; // 设置默认值
+    }
+
+    // 校验 current_page 参数
+    if (typeof current_page !== 'number') {
+      console.warn(`[Pagination] current_page 应该是一个数字，当前为 ${typeof current_page}`);
+      current_page = 1; // 设置默认值
+    }
+
+    // 校验 jump_page 参数
+    if (typeof jump_page !== 'number') {
+      console.warn(`[Pagination] jump_page 应该是一个数字，当前为 ${typeof jump_page}`);
+      jump_page = 1; // 设置默认值
+    }
+
+    // 校验 page_size_options 参数
+    if (!Array.isArray(page_size_options)) {
+      console.warn(`[Pagination] page_size_options 应该是一个数组，当前为 ${typeof page_size_options}`);
+      page_size_options = [10, 20, 30, 40, 50]; // 设置默认值
+    } else {
+      // 校验数组内每一项是否为数字
+      let flag = false;
+      page_size_options.forEach((option, index) => {
+        if (typeof option !== 'number') {
+          console.warn(`[Pagination] page_size_options[${index}] 应该是一个数字，当前为 ${typeof option}`);
+          flag = true;
+        }
+      });
+      if (flag) {
+        page_size_options = [10, 20, 30, 40, 50]; // 设置默认值
+      }
+    }
+  })();
+
   // 创建事件分发器
   const dispatch = createEventDispatcher();
 
@@ -136,7 +181,7 @@
     const max_visible = 5; // 中间最多显示5个页码
 
     // 如果总页数较少，直接显示所有页码
-    if (total <= 7) {
+    if (total <= 5) {
       return Array.from({ length: total }, (_, i) => i + 1);
     }
 
@@ -144,35 +189,35 @@
     pages.push(1);
 
     // 当前页靠后时，显示前省略号
-    if (current_page > 4) {
+    if (current_page > 3) {
       pages.push('...');
     }
 
     // 计算中间页码的起始和结束位置
-    const start = Math.max(2, current_page - 2);
-    const end = Math.min(total - 1, current_page + 2);
+    const start = Math.max(2, current_page - 1);
+    const end = Math.min(total - 1, current_page + 1);
 
-    // 当前页靠前时的处理
-    if (current_page <= 4) {
-      for (let i = 2; i <= 5; i++) {
+    console.log(start, end);
+
+    if (current_page < 4) {
+      // 当前页靠前时的处理
+      for (let i = 2; i <= 4; i++) {
         pages.push(i);
       }
-    }
-    // 当前页靠后时的处理
-    else if (current_page >= total - 3) {
-      for (let i = total - 4; i <= total - 1; i++) {
+    } else if (current_page > total - 3) {
+      // 当前页靠后时的处理
+      for (let i = total - 3; i <= total - 1; i++) {
         pages.push(i);
       }
-    }
-    // 当前页在中间时的处理
-    else {
+    } else {
+      // 当前页在中间时的处理
       for (let i = start; i <= end; i++) {
         pages.push(i);
       }
     }
 
     // 当前页不够靠后时，显示后省略号
-    if (current_page < total - 3) {
+    if (current_page < total - 2) {
       pages.push('...');
     }
 
@@ -185,7 +230,7 @@
 <!-- 分页器容器 -->
 <div class="pagination-wrapper">
   <!-- 总条数显示 -->
-  <div class="total-items">共 {total_items} 条</div>
+  <div class="total-items">{`共 ${total_items} 条`}</div>
 
   <!-- 页码导航区 -->
   <div class="pagination">
@@ -242,12 +287,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.1rem;
 
     .total-items {
       color: #333;
       display: flex;
-      align-items: center;
+      margin-bottom: 4px;
+      font-size: 14px;
+      font-weight: 500;
     }
 
     .pagination {
@@ -259,8 +306,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        min-width: 2.2rem;
-        height: 2.2rem;
+        min-width: 2rem;
+        height: 2rem;
         font-size: 1rem;
         color: #999;
       }
@@ -275,8 +322,8 @@
         background: transparent;
         cursor: pointer;
         font-size: 0.9rem;
-        min-width: 2.2rem;
-        height: 2.2rem;
+        min-width: 2rem;
+        height: 2rem;
         border: none;
         border-radius: 4px;
       }
@@ -295,8 +342,8 @@
     .page-settings {
       display: flex;
       align-items: center;
-      width: 100px;
-      gap: 0.8rem;
+      width: 90px;
+      gap: 0.1rem;
       border-radius: 6px;
     }
 
@@ -304,7 +351,7 @@
       display: flex;
       align-items: center;
       gap: 0.3rem;
-      margin-left: 10px;
+      margin-left: 5px;
 
       span {
         font-size: 0.9rem;
@@ -313,7 +360,7 @@
 
       input {
         width: 50px;
-        padding: 0.3rem 0.5rem;
+        padding: 0.3rem 0.1rem;
         font-size: 0.9rem;
         border: none;
         border-radius: 4px;

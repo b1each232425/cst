@@ -24,17 +24,3 @@ export function verify(obj) {
 }
 
 
-/**
- * 深拷贝Json对象
- * @template T extends object
- * @param {T} obj 
- * @returns {T} 
- */
-export function deepCopy(obj) {
-
-    if(!verify(obj)) {
-        throw new Error('Invalid JSON object');
-    }
-
-    return JSON.parse(JSON.stringify(obj));
-}

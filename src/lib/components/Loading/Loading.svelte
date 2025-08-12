@@ -32,6 +32,23 @@
 
 <script>
   let { value: is_loading, loading_text } = $props();
+
+  /**
+   * 校验传入的参数是否合法
+   */
+  (() => {
+    // 校验 is_loading 是否为布尔值
+    if (typeof is_loading !== 'boolean') {
+      console.warn(`[Loading] is_loading 应该是布尔值，当前为 ${typeof is_loading}`);
+      is_loading = false; // 设置默认值
+    }
+
+    // 校验 loading_text 是否为字符串
+    if (typeof loading_text !== 'string') {
+      console.warn(`[Loading] loading_text 应该是字符串，当前为 ${typeof loading_text}`);
+      loading_text = '加载中...'; // 设置默认值
+    }
+  })();
 </script>
 
 {#if is_loading}

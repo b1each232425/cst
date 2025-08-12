@@ -329,33 +329,178 @@
   let page_size = $state(10);
 
   let exam_list = $state([
-    {
-      id: 6,
-      name: '数学期末',
-      type: '00',
-      exam_sessions: [
-        {
-          id: 11,
-          name: '数学考试',
-          start_time: new Date('2025-08-01T09:00').getTime(),
-          end_time: new Date('2025-08-01T11:00').getTime(),
-          mark_mode: '02',
-          respondent_count: 12,
-          unmarked_student_count: 10,
-          status: '06',
-          mark_status: '00',
-        },
-      ],
-    },
+    ...[
+      {
+        id: 1,
+        name: '数学期末',
+        type: '00',
+        exam_sessions: [
+          {
+            id: 11,
+            name: '数学考试A',
+            start_time: new Date('2025-08-01T09:00').getTime(),
+            end_time: new Date('2025-08-01T11:00').getTime(),
+            mark_mode: '02',
+            respondent_count: 12,
+            unmarked_student_count: 10,
+            status: '06',
+            mark_status: '00',
+          },
+          {
+            id: 12,
+            name: '数学考试B',
+            start_time: new Date('2025-08-01T13:00').getTime(),
+            end_time: new Date('2025-08-01T15:00').getTime(),
+            mark_mode: '02',
+            respondent_count: 10,
+            unmarked_student_count: 5,
+            status: '10',
+            mark_status: '01',
+          },
+          {
+            id: 13,
+            name: '数学考试C',
+            start_time: new Date('2025-08-01T16:00').getTime(),
+            end_time: new Date('2025-08-01T18:00').getTime(),
+            mark_mode: '02',
+            respondent_count: 15,
+            unmarked_student_count: 0,
+            status: '10',
+            mark_status: '02',
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: '语文期中',
+        type: '00',
+        exam_sessions: [
+          {
+            id: 21,
+            name: '语文考试A',
+            start_time: new Date('2025-08-02T09:00').getTime(),
+            end_time: new Date('2025-08-02T11:00').getTime(),
+            mark_mode: '10',
+            respondent_count: 15,
+            unmarked_student_count: 0,
+            status: '10',
+            mark_status: '02',
+          },
+          {
+            id: 22,
+            name: '语文考试B',
+            start_time: new Date('2025-08-02T12:00').getTime(),
+            end_time: new Date('2025-08-02T14:00').getTime(),
+            mark_mode: '10',
+            respondent_count: 20,
+            unmarked_student_count: 10,
+            status: '08',
+            mark_status: '00',
+          },
+        ],
+      },
+      {
+        id: 3,
+        name: '英语模拟',
+        type: '02',
+        exam_sessions: [
+          {
+            id: 31,
+            name: '英语考试A',
+            start_time: new Date('2025-08-03T09:00').getTime(),
+            end_time: new Date('2025-08-03T11:00').getTime(),
+            mark_mode: '00',
+            respondent_count: 8,
+            unmarked_student_count: 3,
+            status: '08',
+            mark_status: '00',
+          },
+          {
+            id: 32,
+            name: '英语考试B',
+            start_time: new Date('2025-08-03T12:00').getTime(),
+            end_time: new Date('2025-08-03T14:00').getTime(),
+            mark_mode: '00',
+            respondent_count: 10,
+            unmarked_student_count: 0,
+            status: '10',
+            mark_status: '02',
+          },
+          {
+            id: 33,
+            name: '英语考试C',
+            start_time: new Date('2025-08-03T15:00').getTime(),
+            end_time: new Date('2025-08-03T17:00').getTime(),
+            mark_mode: '00',
+            respondent_count: 12,
+            unmarked_student_count: 0,
+            status: '10',
+            mark_status: '01',
+          },
+        ],
+      },
+      {
+        id: 4,
+        name: '物理测试',
+        type: '01',
+        exam_sessions: [
+          {
+            id: 41,
+            name: '物理考试A',
+            start_time: new Date('2025-08-04T09:00').getTime(),
+            end_time: new Date('2025-08-04T11:00').getTime(),
+            mark_mode: '01',
+            respondent_count: 18,
+            unmarked_student_count: 4,
+            status: '06',
+            mark_status: '00',
+          },
+          {
+            id: 42,
+            name: '物理考试B',
+            start_time: new Date('2025-08-04T12:00').getTime(),
+            end_time: new Date('2025-08-04T14:00').getTime(),
+            mark_mode: '01',
+            respondent_count: 20,
+            unmarked_student_count: 0,
+            status: '10',
+            mark_status: '02',
+          },
+        ],
+      },
+      {
+        id: 5,
+        name: '物理测试C',
+        type: '01',
+        exam_sessions: [
+          {
+            id: 411,
+            name: '物理考试A',
+            start_time: new Date('2025-08-04T09:00').getTime(),
+            end_time: new Date('2025-08-04T11:00').getTime(),
+            mark_mode: '01',
+            respondent_count: 18,
+            unmarked_student_count: 4,
+            status: '88',
+            mark_status: '00',
+          },
+        ],
+      },
+    ],
   ]);
   let total_count = $state(0);
 
   const debounceSearch = debounce(handleSearch, 500);
 
+  // 是否为正常的状态
+  function isNormal(mark_mode, status, mark_status) {
+    return MARK_MODE_MAP[mark_mode] && STATUS_MAP[status] && MARK_STATUS_MAP[mark_status];
+  }
+
   // 能否进入批改
   function canCorrected(mark_mode, status, mark_status) {
     return (
-      MARK_MODE_MAP[mark_mode] &&
+      isNormal(mark_mode, status, mark_status) &&
       mark_mode !== '00' &&
       (status === '06' || status === '08' || status === '10') &&
       mark_status !== '04'
@@ -363,21 +508,20 @@
   }
 
   //能否查看详情
-  function canCheckDetail(status, mark_status) {
-    return (status === '10' || status === '12') && mark_status === '02';
-  }
+  // function canCheckDetail(mark_mode, status, mark_status) {
+  //   return isNormal(mark_mode, status, mark_status) && (status === '10' || status === '12') && mark_status === '02';
+  // }
 
   // 能否提交
-  function canSubmit(status, mark_status) {
-    return status === '10' && mark_status === '02';
+  function canSubmit(mark_mode, status, mark_status) {
+    return isNormal(mark_mode, status, mark_status) && status === '10';
   }
 
   // 能否查看日志
   // function canCheckLogs() {}
 
   function gotoCorrect(exam_session_name, exam_session_id) {
-    localStorage.setItem('current_paper_name', exam_session_name);
-    goto(`/teacher/correct/correct?exam_session_id=${exam_session_id}`);
+    goto(`/teacher/correct/correct?name=${exam_session_name}&exam_session_id=${exam_session_id}`);
   }
 
   function gotoDetail() {}
@@ -425,6 +569,11 @@
         if (!res.status) {
           exam_list = res.data?.exam_list ?? [];
           total_count = res.rowCount ?? 0;
+
+          if (!Array.isArray(exam_list)) {
+            exam_list = [];
+            throw new Error('exam_list 数据类型错误');
+          }
         } else throw new Error(res.msg ?? '获取考试列表失败');
       })
       .catch((err) => {
@@ -586,15 +735,15 @@
                       disabled={!canCorrected(mark_mode, status, mark_status) || respondent_count <= 0}
                       onclick={() => gotoCorrect(name, id)}>进入批改</button
                     >
-                    <button
+                    <!-- <button
                       class:disabled={!canCheckDetail(status, mark_status) || respondent_count <= 0}
                       disabled={!canCheckDetail(status, mark_status) || respondent_count <= 0}
                       onclick={gotoDetail()}>查看详情</button
-                    >
+                    > -->
                     <button
                       class:disabled={!canSubmit(mark_mode, status, mark_status) || respondent_count <= 0}
                       disabled={!canSubmit(mark_mode, status, mark_status) || respondent_count <= 0}
-                      onclick={submitExamSession(id)}>提交</button
+                      onclick={() => submitExamSession(id)}>提交</button
                     >
                     <!-- <button
                       class:disabled={!canCheckLogs(mark_mode, status, mark_status)}
@@ -698,6 +847,10 @@
                 flex-direction: column;
                 gap: 0.5rem;
                 align-items: center;
+
+                .unknown {
+                  color: red;
+                }
 
                 span {
                   $status-color: (
