@@ -16,7 +16,7 @@
   let current_page = $state(1);
   let page_size = $state(10);
   let total_items = $state(0);
-  
+
   // 确保 total_items 正确更新
   $effect(() => {
     total_items = filtered_student_list?.length || 0;
@@ -61,7 +61,7 @@
       toast.warning('请重新选择要导入的文件');
       return;
     }
-    const file = files[0];//仅单个文件
+    const file = files[0]; //仅单个文件
 
     // 检查文件类型仅允许excel文件
     //MIME类型验证（防止强制修改文件拓展名）
@@ -97,36 +97,43 @@
       failure_student_list = convertedData;
       show = true;
       if (file_input) {
-        file_input.value = null;
+        file_input.value = null; // 重置文件
       }
     }
   }
 
-  // 搜索筛选学生列表 
+  // 搜索筛选学生列表
   function filterStudentList() {
     let filtered = failure_student_list;
-    // 如果搜索框有内容
+    // 搜索框有内容
     if (search_text && search_text.trim()) {
       filtered = filtered.filter((student) => {
         const name = student.official_name || '';
         const phone = student.phone || '';
         const idCard = student.id_Card_No || '';
+        // 统一小写，避免大小写敏感
         const searchTerm = search_text.trim().toLowerCase();
-        return name.toLowerCase().includes(searchTerm) || 
-               phone.toLowerCase().includes(searchTerm) || 
-               idCard.toLowerCase().includes(searchTerm);
+        // 任意字段包含关键字即保留
+        return (
+          name.toLowerCase().includes(searchTerm) ||
+          phone.toLowerCase().includes(searchTerm) ||
+          idCard.toLowerCase().includes(searchTerm)
+        );
       });
     }
     return filtered;
   }
 
   function getCurrentPage() {
+    //排序：失败在前
     const sortedList = [...filtered_student_list].sort((a, b) => {
-      if (a.isOk !== b.isOk) return a.isOk ? 1 : -1; // 失败在前
+      if (a.isOk !== b.isOk) return a.isOk ? 1 : -1;
+      // 成功则按序号排序
       if (a.isOk && b.isOk) return a.serial_number - b.serial_number;
       return 0;
     });
 
+    // 计算当前页数据
     const start = (current_page - 1) * page_size;
     const end = start + page_size;
     return sortedList.slice(start, end);
@@ -146,6 +153,7 @@
     search_text = '';
     current_page = 1;
 
+    // 触发文件输入框点击事件
     if (file_input) {
       file_input.click();
     }
@@ -153,9 +161,9 @@
 
   //编辑按钮
   function handleEdit(student, idx) {
-    editing_index = idx;
-    editing_serial_number = student.serial_number;
-    editing_row = { ...student };
+    editing_index = idx; //TODO:后续可加上同时编辑或编辑高亮或直接删除
+    editing_serial_number = student.serial_number; // 唯一标识，后续需要增删改
+    editing_row = { ...student }; // 修改不影响原数组
   }
 
   //关闭按钮
@@ -331,12 +339,14 @@
               throw new Error(result.msg || '导入失败');
             }
             toast.success(`成功导入 ${payloads.length} 名学生`);
+            
             failure_student_list = failure_student_list.filter((s) => !s.isOk);
             onImport(true);
           });
       })
       .catch((err) => {
         toast.error(err.message || '导入失败，请稍后重试');
+        console.error('导入失败:', err);
       })
       .finally(() => {
         if (btn) btn.disabled = false;
@@ -428,10 +438,12 @@
                   <td>{student.phone}</td>
                   <td>{student.id_Card_No}</td>
                   <td class:error-text={student.error_type && student.error_type !== ''}>
-                    {student.error_type === null || student.error_type === '' ? '--' : ERRORTYPE[student.error_type]}</td
+                    {student.error_type === null || student.error_type === ''
+                      ? '--'
+                      : ERRORTYPE[student.error_type]}</td
                   >
                   <td class="action-btn-container">
-                      <button class="action-btn" onclick={() => handleEdit(student, index)}>编辑</button>
+                    <button class="action-btn" onclick={() => handleEdit(student, index)}>编辑</button>
                     <button class="action-btn" onclick={() => handleDelete(student)}>删除</button>
                   </td>
                 </tr>
@@ -449,10 +461,10 @@
       </div>
       <div class="pagination-container {total_items > 0 ? '' : 'hide'}">
         <Pagination
-          totalItems={total_items}
-          currentPage={current_page}
-          pageSize={page_size}
-          pageSizeOptions={[10]}
+          {total_items}
+          {current_page}
+          {page_size}
+          page_size_options={[10]}
           on:pageChange={handlePageChange}
           on:pageSizeChange={handlePageSizeChange}
         />
@@ -586,14 +598,14 @@
       font-size: 15px;
       gap: 8px;
 
-      .success-count{
-        color:var(--green);
-        padding:4px;
+      .success-count {
+        color: var(--green);
+        padding: 4px;
       }
 
-      .failure-count{
-        color:var(--red);
-        padding:4px;
+      .failure-count {
+        color: var(--red);
+        padding: 4px;
       }
     }
   }

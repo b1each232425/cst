@@ -34,4 +34,7 @@ export const GROUP_OPEN_STATE = writable({});
 // 试题展开状态
 export const QUESTION_OPEN_STATE = writable({});
 
+// 题组的每题分数
+export const GROUP_AVERAGE_SCORE = writable({});
+
 //////////////////// 自定义组卷区 //////////////////////

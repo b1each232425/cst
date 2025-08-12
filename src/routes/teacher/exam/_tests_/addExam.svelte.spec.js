@@ -4,7 +4,8 @@ import ExamCreation from '../addExam/+page.svelte';
 import { toast } from '$lib/components/Toast/Toast.js';
 import { goto } from '$app/navigation';
 import SmartEditor from '@3min/smart-edit';
-
+import { resetTime } from '../addExam/+page.svelte';
+import { onChooseStartTime, onChooseEndTime } from '../addExam/+page.svelte';
 // Mock dependencies
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/components/Toast/Toast.js', () => ({ 
@@ -19,6 +20,8 @@ vi.mock('@3min/smart-edit', () => ({
     getPreviewHTML: vi.fn(() => 'mock html content')
   }))
 }));
+
+
 
 function mockFetch(data, ok = true) {
   global.fetch = vi.fn((url) => {
@@ -559,30 +562,16 @@ describe('考试创建页面测试', () => {
     }
   };
 
-  it('未设置开始时间时显示警告', async () => {
-    const { saveButton } = await setupValidFormWithPaper();
-    
-    console.log('=== 测试未设置开始时间的验证 ===');
-    console.log('当前状态:');
-    console.log('- 考试名称: 测试考试');
-    console.log('- 试卷选择: 已尝试选择');
-    console.log('- 开始时间: 未设置');
-    console.log('- 结束时间: 未设置');
-    
-    await fireEvent.click(saveButton());
-    
-    // 由于试卷未真正选择，可能会先提示试卷选择
-    await waitFor(() => {
-      // 检查是否提示了时间段或试卷选择的错误
-      const calls = toast.warning.mock.calls;
-      const hasTimeError = calls.some(call => 
-        call[0].includes('时间段') || call[0].includes('试卷')
-      );
-      expect(hasTimeError).toBe(true);
-    });
-    
-    console.log('验证结果: 正确提示了必填项缺失');
+  it('表单验证优先级：先检查试卷选择，再检查时间设置', async () => {
+  const { examNameInput, saveButton } = setup();
+  
+  await fireEvent.input(examNameInput(), { target: { value: '测试考试' } });
+  await fireEvent.click(saveButton());
+  
+  await waitFor(() => {
+    expect(toast.warning).toHaveBeenCalledWith('第1个场次未选择试卷');
   });
+});
 
   it('开始时间早于当前时间时显示警告', async () => {
     // 使用mock来模拟组件内部状态
@@ -688,5 +677,116 @@ describe('考试创建页面测试', () => {
 });
   
   
-;
+describe('resetTime 逻辑验证', () => {
+  it('切换考试时段模式时应正确触发 resetTime 并重置时长', async () => {
+    const { selectTimePeriodMode, getDurationInput } = setup();
 
+    // 初始状态应为固定时段（00）
+    await selectTimePeriodMode(0, '00');
+    const durationInput = getDurationInput(0);
+
+    // 模拟设置初始时长
+    fireEvent.input(durationInput, { target: { value: '120' } });
+    expect(durationInput).toHaveValue(120);
+
+    // 切换到灵活时段（02），应触发 resetTime 并重置时长为 0
+    await selectTimePeriodMode(0, '02');
+    expect(durationInput).toHaveValue(0);
+
+    // 再切换回固定时段（00），应重新计算时长（此时为空，应为 0）
+    await selectTimePeriodMode(0, '00');
+    expect(durationInput).toHaveValue(0);
+  });
+});
+
+// describe('onChooseStartTime / onChooseEndTime 纯函数测试', () => {
+//   it('onChooseStartTime 应更新 startTime 并触发 updateDuration', async () => {
+//     const { component } = render(ExamCreation);
+
+//     // 等待组件初始化完成
+//     await new Promise(resolve => setTimeout(resolve, 0));
+
+//     // 创建一个伪造事件
+//     const fakeEvent = { detail: { date: new Date('2045-08-05T09:00:00') } };
+
+//     // 直接调用组件内部函数
+//     if (component.onChooseStartTime && component.paper_configs && component.paper_configs.length > 0) {
+//       const fn = component.onChooseStartTime(0);
+//       fn(fakeEvent);
+
+//       // 断言组件内部状态
+//       expect(component.paper_configs[0].startTime).toBe('2045-08-05T09:00:00.000Z');
+//     } else {
+//       console.error('component.paper_configs is not initialized or onChooseStartTime is not available');
+//     }
+//   });
+
+//   it('onChooseEndTime 应更新 endTime 并触发 updateDuration', async () => {
+//     const { component } = render(ExamCreation);
+
+//     // 等待组件初始化完成
+//     await new Promise(resolve => setTimeout(resolve, 0));
+
+//     const fakeEvent = { detail: { date: new Date('2045-08-05T11:30:00') } };
+
+//     if (component.onChooseEndTime && component.paper_configs && component.paper_configs.length > 0) {
+//       const fn = component.onChooseEndTime(0);
+//       fn(fakeEvent);
+
+//       expect(component.paper_configs[0].endTime).toBe('2045-08-05T11:30:00.000Z');
+//     } else {
+//       console.error('component.paper_configs is not initialized or onChooseEndTime is not available');
+//     }
+//   });
+// });
+describe('通过 DatePicker 触发 onChooseStartTime / onChooseEndTime', () => {
+  // 工具：找到第 n 份试卷的 DatePicker 容器
+  const getDatePickerRoot = (paperIndex = 0) => {
+    const paperConfig = screen
+      .getAllByText(new RegExp(`试卷${paperIndex + 1}`))[0]
+      .closest('.paper-config-container');
+
+    return within(paperConfig)
+      .getByText('考试时段')
+      .closest('.exam-time-container');
+  };
+
+  it('通过 DatePicker 选择开始时间应更新 startTime', async () => {
+    const { component } = render(ExamCreation);
+
+    // DatePicker 输入框（或根节点）就是事件目标
+    const pickerRoot = getDatePickerRoot(0);
+
+    // 构造开始时间事件
+    const startDate = new Date('2045-08-05T09:00:00');
+    const startEvent = new CustomEvent('start_date_selected', {
+      detail: { date: startDate },
+      bubbles: true,
+    });
+
+    pickerRoot.dispatchEvent(startEvent);
+
+    // 断言
+    await waitFor(() => {
+      expect(component.paper_configs[0].startTime).toBe('2045-08-05T09:00:00.000Z');
+    });
+  });
+
+  it('通过 DatePicker 选择结束时间应更新 endTime', async () => {
+    const { component } = render(ExamCreation);
+
+    const pickerRoot = getDatePickerRoot(0);
+
+    const endDate = new Date('2045-08-05T11:30:00');
+    const endEvent = new CustomEvent('end_date_selected', {
+      detail: { date: endDate },
+      bubbles: true,
+    });
+
+    pickerRoot.dispatchEvent(endEvent);
+
+    await waitFor(() => {
+      expect(component.paper_configs[0].endTime).toBe('2045-08-05T11:30:00.000Z');
+    });
+  });
+});

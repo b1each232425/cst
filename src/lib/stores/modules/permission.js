@@ -105,6 +105,12 @@ export const baseNavItems = writable([
       //   path: '/teacher/exam/invigilation/\\d+$',
       //   force_hide: true,
       // },
+      {
+        name:'previewExam',
+        title:'预览试卷',
+        path:'/teacher/exam/previewExam',
+        force_hide: true,
+      },
     ],
   },
   {
@@ -126,6 +132,11 @@ export const baseNavItems = writable([
         path: '/teacher/correct/practice-correct',
       },
     ],
+  },
+  {
+    name: 'correctDetail',
+    title: '批改详情',
+    path: '/teacher/correct/correct',
   },
   {
     name: 'gradeManagement',

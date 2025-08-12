@@ -1,3 +1,12 @@
+<!--
+ * @Author: yeweixuan t051521@163.com
+ * @Date: 2025-07-23 
+ * @LastEditors: yeweixuan t051521@163.com
+ * @LastEditTime: 2025-08-11 14:55:31
+ * @FilePath: \exam\src\routes\teacher\exam\components\ExamineeSelectionPanel
+ * @Description: 用于查看选中的考生以及为考试挑选学生的面板
+ * @Copyright (c) 2025 by yeweixuan t051521@163.com, All Rights Reserved. 
+-->
 <script>
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import StudentImportPanel from './StudentImportPanel.svelte';
@@ -105,10 +114,10 @@
   let studentImportPanel = $state(null);
 
   // 获取当前最大的serialNumber
-  function getMaxSerialNumber() {
-    if (selected_examinee.length === 0) return 0;
-    return Math.max(...selected_examinee.map((item) => item.serialNumber || 0));
-  }
+  // function getMaxSerialNumber() {
+  //   if (selected_examinee.length === 0) return 0;
+  //   return Math.max(...selected_examinee.map((item) => item.serialNumber || 0));
+  // }
 
 
   function searchSelectedExaminee(value) {
@@ -158,8 +167,11 @@
             examinee_list.forEach((examinee) => {
               examinee.selected = selected_id_set.has(examinee.ID);
             });
+            const currentPageSelected = examinee_list.filter(e => selected_id_set.has(e.ID));
+            is_total_selected = examinee_list.length > 0 && currentPageSelected.length === examinee_list.length;
           }
 
+          
           //is_total_selected = isAllSelected();
         }
       })
@@ -470,6 +482,7 @@ function handleCheckboxChange(examinee, event) {
             page_size_options={[10,20,50]}
             on:pageChange={(e) => {
               search_params.page = e.detail;
+              is_total_selected = false;
               searchExaminee();
             }}
           ></Pagination>

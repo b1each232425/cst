@@ -156,22 +156,19 @@
   }
 
   function resetTime(index) {
-    if (!paper_configs[index].startTime && !paper_configs[index].endTime) {
+    // paper_configs[index].startTime='';
+    // paper_configs[index].endTime = '';
+    if(paper_configs[index].periodMode==='02')
+    {
       paper_configs[index].duration = 0;
       paper_configs[index].maxDuration = 0;
-      return;
     }
-    const startTime = new Date(paper_configs[index].startTime);
-    const endTime = new Date(paper_configs[index].endTime);
-
-    const timeDifference = endTime.getTime() - startTime.getTime();
-    const durationInSeconds = Math.floor(timeDifference / (1000 * 60));
-
-    paper_configs[index].duration = durationInSeconds;
-    paper_configs[index].maxDuration = durationInSeconds;
+    else{
+      updateDuration(index);
+    }
   }
   
-  function onChooseStartTime(index) {
+  export function onChooseStartTime(index) {
     return function (event) {
       const startDate = event.detail.date;
       if (startDate) {
@@ -183,7 +180,7 @@
     };
   }
 
-  function onChooseEndTime(index) {
+  export function onChooseEndTime(index) {
     return function (event) {
       const endDate = event.detail.date;
       if (endDate) {
@@ -291,7 +288,7 @@
       paper_configs[i].earlySubmissionTime =
         paper_configs[i].earlySubmissionTime <= 0 ? 0 : paper_configs[i].earlySubmissionTime;
     }
-
+    
     const examSessionsdata = paper_configs.map((cfg) => ({
       PaperID: cfg.paperID,
       // PaperID:              61,
@@ -312,7 +309,7 @@
 
     // 附加文件：若用户上传了文件，则遍历填充；否则留空数组
     // const fileArr = files.length ? files.map((f) => ({ Name: f.name, Url: f.url || '' })) : [];
-
+    console.log("paper",paper_configs);
     const exam_data = {
       data: {
         examInfo: {
@@ -582,18 +579,21 @@
         <RequiredLabel text="考试时段模式" />
         <div class="config-row-content">
           <label class="label">
+
             <input
               type="radio"
-              bind:group={paper_configs[paperConfigIndex].periodMode}
+              checked={paper_configs[paperConfigIndex].periodMode === '00'}
               value={'00'}
               class="choice-radio-input"
               onchange={() => {
-                if (paper_configs[paperConfigIndex].periodMode === '00') {
-                  resetTime(paperConfigIndex);
-                }
-              }}
+              if (paper_configs[paperConfigIndex].periodMode !== '00') {
+                 paper_configs[paperConfigIndex].periodMode = '00';
+                 resetTime(paperConfigIndex);
+              }
+            }}
             />
             固定时段考试
+
 
             <span class="tip-wrapper">
               <img class="tip" alt="提示" src="/exam_list/tip.png" />
@@ -601,11 +601,28 @@
                 {TIP_TEXT['fixed']}
               </div>
             </span>
+
+          </label>
+          <label class="label">
+          <input
+              type="radio"
+              checked={paper_configs[paperConfigIndex].periodMode === '02'}
+              value={'02'}
+              class="choice-radio-input"
+               onchange={() => {
+              if (paper_configs[paperConfigIndex].periodMode !== '02') {
+                  paper_configs[paperConfigIndex].periodMode = '02';
+                  resetTime(paperConfigIndex);
+              }
+            }}
+            />
+            灵活时段考试
           </label>
         </div>
       </div>
 
       <div class="exam-time-container config-row">
+      <!-- class:hideButton={paper_configs[paperConfigIndex].periodMode === '02'} -->
         <RequiredLabel text="考试时段" />
         <div class="config-row-content">
           <DatePicker
@@ -614,6 +631,9 @@
             is_single_date_selection={false}
             on:start_date_selected={onChooseStartTime(paperConfigIndex)}
             on:end_date_selected={onChooseEndTime(paperConfigIndex)}
+            onDateConfirm={()=>[
+              updateDuration(paperConfigIndex)
+            ]}
           ></DatePicker>
         </div>
       </div>
@@ -622,11 +642,11 @@
         <RequiredLabel text="考试时长" />
         <div class="config-row-content">
           <input
-            class="duration-input"
+            class="{paper_configs[paperConfigIndex].periodMode==='00'?"duration-input":'simple-input'}"
             bind:value={paper_configs[paperConfigIndex].duration}
             type="number"
             min="1"
-            disabled
+            
           />
           <span style="font-size: 14px;">分钟</span>
         </div>
@@ -1017,7 +1037,10 @@
     padding-bottom: 10px;
     gap: 10px;
     .duration-input {
-      width: 50px;
+      height: 20px;
+      width: 60px;
+      pointer-events: none;
+      opacity: 0.5; /* 灰色显示 */
     }
   }
 

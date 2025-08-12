@@ -57,11 +57,6 @@
    * 获取当前路由路径数据（保持完整层级结构）
    */
   function getNavData(path, nav_map) {
-    // 添加对批改详情页的特殊处理
-    if (path === '/teacher/correct/correct') {
-      return [{ title: '批改详情', path: '/teacher/correct/correct' }];
-    }
-
     let result = [];
 
     for (let navData of nav_map) {
