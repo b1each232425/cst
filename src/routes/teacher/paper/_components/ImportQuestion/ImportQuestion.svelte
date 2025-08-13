@@ -61,20 +61,20 @@
         bankID = "", 
         page = 1,
         pageSize = 10,
-        name = "",
-        tags = "",
-        type = "",
-        difficulty = ""
+        content = "",
+        tags = [],
+        types = [],
+        difficulties = []
     ){
         const PARAMS = new URLSearchParams();
 
         PARAMS.append("bankID", bankID);
         PARAMS.append("page", page);
         PARAMS.append("pageSize", pageSize);
-        if (name) PARAMS.append("name", name);
-        if (tags) PARAMS.append("tags", tags);
-        if (type) PARAMS.append("type", type);
-        if (difficulty) PARAMS.append("difficulty", difficulty);
+        if (content!=="") PARAMS.append("content", content);
+        if(tags.length!==0) tags.forEach(tag => PARAMS.append("tags", tag));
+        if(types.length!==0) types.forEach(type => PARAMS.append("type", type));
+        if(difficulties.length!==0) difficulties.forEach(difficulty => PARAMS.append("difficulty", difficulty));
 
         return fetch(`/api/questions?${PARAMS.toString()}`, {
             method: "GET",
@@ -155,8 +155,8 @@
                 question_page_size,
                 question_name,
                 question_tags,
-                question_type,
-                question_difficulty
+                question_types,
+                question_difficulties
             ).then( result => {
                 question_list = result.data || [];
                 total_questions = result.rowCount;
@@ -184,12 +184,11 @@
     let question_page_size = $state(10);        // 页面大小
     let question_name = $state("");             // 搜索题目
     let question_tags = $state("");             // 筛选标签
-    let question_type = $state("");             // 筛选题型
-    let question_difficulty = $state("");       // 筛选难度
+    let question_types = $state([]);             // 筛选题型
+    let question_difficulties = $state([]);       // 筛选难度
     let total_questions = $state(0);            // 题目数量
     let question_list = $state([]);             // 题目列表
     let tag_list = $state([]);                  // 标签列表
-    let selected_tags = $state([]);             // 选中的标签
 
     let selected_question_infos = $state([]);   // 已选 ID 数组
     let all_question_selected = $state(false);  // 是否为全选状态
@@ -204,8 +203,8 @@
                 question_page_size,
                 question_name,
                 question_tags,
-                question_type,
-                question_difficulty
+                question_types,
+                question_difficulties
             ).then( result => {
                 question_list = result.data || [];
                 total_questions = result.rowCount;
@@ -221,10 +220,9 @@
         question_page = 1;
         question_page_size = 10;
         question_name = "";
-        question_tags = "";
-        question_type = "";
-        question_difficulty = "";
-        selected_tags = [];
+        question_tags = [];
+        question_types = [];
+        question_difficulties = [];
     }
 
     // 选中数据
@@ -306,8 +304,8 @@
                 question_page_size,
                 question_name,
                 question_tags,
-                question_type,
-                question_difficulty
+                question_types,
+                question_difficulties
             ).then( result => {
                 question_list = result.data || [];
                 total_questions = result.rowCount;
@@ -328,8 +326,8 @@
                 question_page_size,
                 question_name,
                 question_tags,
-                question_type,
-                question_difficulty
+                question_types,
+                question_difficulties
             ).then( result => {
                 question_list = result.data || [];
                 total_questions = result.rowCount;
@@ -339,11 +337,11 @@
     }
 
     // 筛选题目类型
-    function selectQuestionType(type) {
-        if (type !== question_type) {
-            question_type = type;
+    function selectQuestionType(target_type) {
+        if (question_types.includes(target_type)) {
+            question_types = question_types.filter(type => type !== target_type);
         } else {
-            question_type = "";
+            question_types.push(target_type);
         }
 
         // 搜索题库内的题目
@@ -354,8 +352,8 @@
                 question_page_size,
                 question_name,
                 question_tags,
-                question_type,
-                question_difficulty
+                question_types,
+                question_difficulties
             ).then( result => {
                 question_list = result.data || [];
                 total_questions = result.rowCount;
@@ -364,11 +362,11 @@
     }
 
     // 筛选题目难度
-    function selectQuestionDifficulty(diffculty) {
-        if (diffculty !== question_difficulty) {
-            question_difficulty = diffculty;
+    function selectQuestionDifficulty(target_diffculty) {
+        if (question_difficulties.includes(target_diffculty)) {
+            question_difficulties = question_difficulties.filter(difficulty => difficulty !== target_diffculty);
         } else {
-            question_difficulty = "";
+            question_difficulties.push(target_diffculty);
         }
 
         // 搜索题库内的题目
@@ -379,8 +377,8 @@
                 question_page_size,
                 question_name,
                 question_tags,
-                question_type,
-                question_difficulty
+                question_types,
+                question_difficulties
             ).then( result => {
                 question_list = result.data || [];
                 total_questions = result.rowCount;
@@ -390,13 +388,11 @@
 
     // 筛选题目标签
     function selectQuestionTags(target_tag) {
-        if (selected_tags.includes(target_tag)) {
-            selected_tags = selected_tags.filter(tag => tag!== target_tag);
+        if (question_tags.includes(target_tag)) {
+            question_tags = question_tags.filter(tag => tag!== target_tag);
         } else {
-            selected_tags.push(target_tag);
+            question_tags.push(target_tag);
         }
-
-        question_tags = String(selected_tags);
 
         // 搜索题库内的题目
         if(to_add_bankID !== "") {
@@ -406,8 +402,8 @@
                 question_page_size,
                 question_name,
                 question_tags,
-                question_type,
-                question_difficulty
+                question_types,
+                question_difficulties
             ).then( result => {
                 question_list = result.data || [];
                 total_questions = result.rowCount;
@@ -494,11 +490,10 @@
                 <div class="top-area">
                     <div class="input">
                         <input type="text"
-                            placeholder="搜索题目内容（暂不可用）" 
+                            placeholder="搜索题目内容" 
                             bind:value={question_name}
                             oninput={()=>debouncedFetchBankQuestionList()}
                             onchange={()=>debouncedFetchBankQuestionList()}
-                            disabled
                         >
                         <!-- svelte-ignore a11y_consider_explicit_label -->
                         <button data-name="clear"
@@ -517,19 +512,19 @@
                                 <!-- 题型 -->
                                 <div class="type">
                                     <span class="prompt">题型：</span>
-                                    <button onclick={()=>selectQuestionType("00")} class={question_type==="00"?"selected":""}>单选题</button>
-                                    <button onclick={()=>selectQuestionType("02")} class={question_type==="02"?"selected":""}>多选题</button>
-                                    <button onclick={()=>selectQuestionType("04")} class={question_type==="04"?"selected":""}>判断题</button>
-                                    <button onclick={()=>selectQuestionType("06")} class={question_type==="06"?"selected":""}>填空题</button>
-                                    <button onclick={()=>selectQuestionType("08")} class={question_type==="08"?"selected":""}>简答题</button>
+                                    <button onclick={()=>selectQuestionType("00")} class={question_types.includes("00")?"selected":""}>单选题</button>
+                                    <button onclick={()=>selectQuestionType("02")} class={question_types.includes("02")?"selected":""}>多选题</button>
+                                    <button onclick={()=>selectQuestionType("04")} class={question_types.includes("04")?"selected":""}>判断题</button>
+                                    <button onclick={()=>selectQuestionType("06")} class={question_types.includes("06")?"selected":""}>填空题</button>
+                                    <button onclick={()=>selectQuestionType("08")} class={question_types.includes("08")?"selected":""}>简答题</button>
                                 </div>
 
                                 <!-- 难度 -->
                                 <div class="level">
                                     <span class="prompt">难度：</span>
-                                    <button onclick={()=>{selectQuestionDifficulty("00")}} class={question_difficulty==="00"?"selected":""}>简单</button>
-                                    <button onclick={()=>{selectQuestionDifficulty("02")}} class={question_difficulty==="02"?"selected":""}>中等</button>
-                                    <button onclick={()=>{selectQuestionDifficulty("04")}} class={question_difficulty==="04"?"selected":""}>困难</button>
+                                    <button onclick={()=>{selectQuestionDifficulty(1)}} class={question_difficulties.includes(1)?"selected":""}>简单</button>
+                                    <button onclick={()=>{selectQuestionDifficulty(2)}} class={question_difficulties.includes(2)?"selected":""}>中等</button>
+                                    <button onclick={()=>{selectQuestionDifficulty(3)}} class={question_difficulties.includes(3)?"selected":""}>困难</button>
                                 </div>
 
                                 <!-- 标签 -->
@@ -538,7 +533,7 @@
                                     <div class="tags-box">
                                         {#if tag_list.length !== 0}
                                             {#each tag_list as tag}
-                                                <button class={selected_tags.includes(tag)?"selected":""}
+                                                <button class={question_tags.includes(tag)?"selected":""}
                                                     onclick={()=>selectQuestionTags(tag)}>{tag}</button>
                                             {/each}
                                         {/if}
@@ -845,9 +840,6 @@
                             input {
                                 padding: 8px 12px;
                                 
-                                &:hover{
-                                    cursor: not-allowed;
-                                }
                             }
 
                             .hide-clear {
