@@ -33,17 +33,6 @@ export const LEVEL_TRANS = {
     "困难": "hard-level",
 };
 
-// 共享状态转换
-export const ACCESS_MODE_TRANS = {
-    "00": "私有",
-    "02": "共享",
-    "04": "公开",
-
-    "私有": "info",
-    "共享": "primary",
-    "公开": "success",
-};
-
 // 题目类型转换
 export const QUESTION_TYPE_TRANS = {
     "00": "单选题",
@@ -51,7 +40,6 @@ export const QUESTION_TYPE_TRANS = {
     "04": "判断题",
     "06": "填空题",
     "08": "简答题",
-    "10": "编程题"
 };
 
 // 题目难度转换

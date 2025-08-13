@@ -1,3 +1,12 @@
+<!--
+ * @Author: yeweixuan t051521@163.com
+ * @Date: 2025-07-23 
+ * @LastEditors: yeweixuan t051521@163.com
+ * @LastEditTime: 2025-08-11 14:55:31
+ * @FilePath: \exam\src\routes\teacher\exam\components\ExamineeSelectionPanel
+ * @Description: 用于查看选中的考生以及为考试挑选学生的面板
+ * @Copyright (c) 2025 by yeweixuan t051521@163.com, All Rights Reserved. 
+-->
 <script>
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import StudentImportPanel from './StudentImportPanel.svelte';
@@ -5,7 +14,7 @@
   import Button from '$lib/components/Button/Button.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import {toast} from '$lib/components/Toast/Toast.js'
-
+  import '$lib/components/Button/index.scss';
   let {
     show_panel = false,
     ids = [],
@@ -56,6 +65,32 @@
   let loading = $state(false);
   //报错
   let error = $state('');
+  
+
+  function downloadTemplate() {
+    const url = '/student_import_excel/导入学生模版.xlsx';
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '导入学生模版.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  // 导入学生
+  function handleImport() {
+    if (student_import_panel) {
+      student_import_panel.triggerFileInput();
+    }
+  }
+
+
+   function handleImportSuccess(is_all_ok) {
+    if (is_all_ok) {
+      searchExaminee();
+    }
+    show_import_panel = false;
+  }
 
   function getFilteredSelectedExaminee() {
     let filtered = selected_examinee;
@@ -97,18 +132,18 @@
    */
   let is_total_selected = $state(false);
 
-  // let showStudentImportPanel = $state(false);
+  let show_import_panel = $state(false);
 
   /**
    * @type {any}
    */
-  let studentImportPanel = $state(null);
+  let student_import_panel = $state(null);
 
   // 获取当前最大的serialNumber
-  function getMaxSerialNumber() {
-    if (selected_examinee.length === 0) return 0;
-    return Math.max(...selected_examinee.map((item) => item.serialNumber || 0));
-  }
+  // function getMaxSerialNumber() {
+  //   if (selected_examinee.length === 0) return 0;
+  //   return Math.max(...selected_examinee.map((item) => item.serialNumber || 0));
+  // }
 
 
   function searchSelectedExaminee(value) {
@@ -158,8 +193,11 @@
             examinee_list.forEach((examinee) => {
               examinee.selected = selected_id_set.has(examinee.ID);
             });
+            const currentPageSelected = examinee_list.filter(e => selected_id_set.has(e.ID));
+            is_total_selected = examinee_list.length > 0 && currentPageSelected.length === examinee_list.length;
           }
 
+          
           //is_total_selected = isAllSelected();
         }
       })
@@ -396,16 +434,9 @@ function handleCheckboxChange(examinee, event) {
             <button class="back-btn" onclick={backToViewMode}>返回考生列表</button>
 
             <!-- <Button type="primary" >下载模板</Button> -->
-
-            <!-- <Button
-                            type="primary"
-                            onclick={() => {
-                            if (studentImportPanel) {
-                                studentImportPanel.triggerFileInput();
-                            }
-                            导入学生
-                        }}>
-                        </Button> -->
+             <button class="btn btn--primary is-plain" onclick={downloadTemplate}>下载导入模板</button>
+            <button class="btn btn--primary is-plain" onclick={handleImport}>导入考生</button>
+            
           </div>
         </div>
         <div class="examinee-selection-table-container">
@@ -470,6 +501,7 @@ function handleCheckboxChange(examinee, event) {
             page_size_options={[10,20,50]}
             on:pageChange={(e) => {
               search_params.page = e.detail;
+              is_total_selected = false;
               searchExaminee();
             }}
           ></Pagination>
@@ -501,46 +533,11 @@ function handleCheckboxChange(examinee, event) {
       >
     </div>
   </div>
+
+  <StudentImportPanel bind:show={show_import_panel} onImport={handleImportSuccess} bind:this={student_import_panel} />
 </div>
 
-<!-- <StudentImportPanel
-    onImport={(/** @type {any} */ success_student, /** @type {any} */ has_error) => {
-        if (success_student && success_student.length > 0) {
-            // 过滤掉已存在的id
-            const newStudents = success_student
-                .filter(
-                    (/** @type {any} */ student) =>
-                        !selected_examinee.some((item) => item.id === student),
-                )
-                .map((/** @type {any} */ student, /** @type {any} */ index) => ({
-                    id: student,
-                    OfficialName: `学生${student}`, // 临时名称
-                    Gender: "",
-                    account: "",
-                    MobilePhone: "",
-                    IDCardNo: "",
-                    serialNumber: 0, // 临时设置
-                }));
 
-            // 更新selected_examinee
-            selected_examinee = [...selected_examinee, ...newStudents];
-
-            // 重新计算序列号
-            recalculateSerialNumbers();
-
-            searchExaminee();
-        }
-
-        if (!has_error) {
-            showStudentImportPanel = false;
-        }
-    }}
-    onCancel={() => {
-        showStudentImportPanel = false;
-    }}
-    bind:show={showStudentImportPanel}
-    bind:this={studentImportPanel}
-/> -->
 
 <style lang="scss" scoped>
   .hide {

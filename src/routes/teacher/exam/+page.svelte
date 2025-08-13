@@ -1,4 +1,14 @@
-<script>
+  <!--
+ * @Author: yeweixuan t051521@163.com
+ * @Date: 2025-07-21 
+ * @LastEditors: yeweixuan t051521@163.com
+ * @LastEditTime: 2025-08-11 13:55:31
+ * @FilePath: \exam\src\routes\teacher\exam\+page@.svelte
+ * @Description: 考试列表页面 
+ * @Copyright (c) 2025 by yeweixuan t051521@163.com, All Rights Reserved. 
+-->
+  
+  <script>
   //@ts-nocheck
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
@@ -10,6 +20,8 @@
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Title from '$lib/components/Title/Title.svelte';
   import { toast } from '$lib/components/Toast/Toast';
+  import { CURRENT_PAPER_ID } from '../paper/_stores/store';
+  import Empty from '$lib/components/Table/Empty.svelte';
   let exam_list = $state([]);
   let name_search_time = null;
   let loading = $state(false);
@@ -23,6 +35,7 @@
   let is_delete_mode = $state(false); //是否是删除模式
   let selected_exam_ids = $state([]); // 用于存储选中的考试ID
   let is_all_selected = $state(false); 
+  let preview_id = $state();
   // 映射关系
   const TypeMap = {
     '00': '平时考试',
@@ -40,8 +53,8 @@
     '02': '待开始',
     '04': '进行中',
     '06': '已结束',
-    '10': '已归档',
-    '12': '考试异常',
+    '08': '已归档',
+    '10': '考试异常',
   };
 
   const StateClassMap = {
@@ -49,8 +62,8 @@
     '02': 'to-start',
     '04': 'on-going',
     '06': 'ended',
-    '10': 'archived',
-    '12': 'error',
+    '08': 'archived',
+    '10': 'error',
   };
 
   let search_params = $state({
@@ -62,8 +75,13 @@
     end_time: null,
   });
 
-  async function publishAndSearch(examID) {
-    await publishExam(examID);
+  async function publishAndSearch(selected_exam_ids) {
+    await publishExam(selected_exam_ids);
+    exam_list = exam_list.map(exam =>
+    selected_exam_ids.includes(exam.id)
+      ? { ...exam, status: '02' } // 状态改为“待开始”
+      : exam
+  );
     searchExam();
   }
 
@@ -154,13 +172,11 @@
   // 处理页码变化
   async function handlePageChange(event) {
     search_params.page = event.detail;
-    let deletableIDs = [];
+    let currentPageIDs = [];
     await searchExam();
+    currentPageIDs = exam_list.map(exam => exam.id);
     
-    deletableIDs = exam_list.filter(exam => (exam.status === '00' || exam.status === '02') && selected_exam_ids.includes(exam.id))
-      .map(exam => exam.id);
-
-    if(deletableIDs.length!=0 && deletableIDs.every(id => selected_exam_ids.includes(id)))
+    if(currentPageIDs.length!=0 && currentPageIDs.every(id => selected_exam_ids.includes(id)))
       { 
         is_all_selected = true;
         return;
@@ -172,12 +188,12 @@
   async function handlePageSizeChange(event) {
     search_params.page_size = event.detail;
     search_params.page = 1; // 重置到第一页
-    let deletableIDs = [];
+    let currentPageIDs = [];
     await searchExam();
-    deletableIDs = exam_list.filter(exam => (exam.status === '00' || exam.status === '02') && selected_exam_ids.includes(exam.id))
+    currentPageIDs = exam_list.filter(selected_exam_ids.includes(exam.id))
       .map(exam => exam.id);
 
-    if(deletableIDs.length!=0 && deletableIDs.every(id => selected_exam_ids.includes(id)))
+    if(currentPageIDs.length!=0 && currentPageIDs.every(id => selected_exam_ids.includes(id)))
       { 
         is_all_selected = true;
         return;
@@ -185,38 +201,41 @@
     is_all_selected=false;
   }
 
-  async function publishExam(examID) {
+  async function publishExam(selected_exam_ids) {
+    if (!Array.isArray(selected_exam_ids) || selected_exam_ids.length === 0) {
+    toast.error('请选择要发布的考试');
+    return;
+  }
     loading = true;
     message = '';
 
-    return fetch(`/api/exam/lock?exam_id=${examID}`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-    })
-      .then((lockRes) =>
-        lockRes.ok
-          ? lockRes
-          : res
-              .json()
-              .then((err) => Promise.reject(new Error(`获取考试锁失败：${err.Msg || '考试可能正在被其他用户编辑'}`))),
-      )
+    // return fetch(`/api/exam/lock?exam_id=${examID}`, {
+    //   method: 'GET',
+    //   credentials: 'include',
+    //   headers: { 'Content-Type': 'application/json' },
+    // })
+    //   .then((lockRes) =>
+    //     lockRes.ok
+    //       ? lockRes
+    //       : res
+    //           .json()
+    //           .then((err) => Promise.reject(new Error(`获取考试锁失败：${err.Msg || '考试可能正在被其他用户编辑'}`))),
+    //   )
 
-      .then(() => {
+     
         const params = {
           q: JSON.stringify({
-            data: { ID: parseInt(examID), Status: '02' },
+            data: { IDs: selected_exam_ids, Status: '02' },
           }),
         };
-
+        console.log("params",params);
         //占位
         const url = `/api/exam/status?${new URLSearchParams(params).toString()}`;
-        return fetch(url, {
+        fetch(url, {
           method: 'PUT',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-        });
-      })
+        })
       .then((response) => {
         return response.json();
       })
@@ -236,32 +255,30 @@
         toast.error(message);
       })
 
-      .finally(() =>
-        fetch(`/api/exam/lock?exam_id=${examID}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        })
-        .catch((releaseErr) => console.error('释放考试锁失败:', releaseErr)),
-      )
+      // .finally(() =>
+      //   fetch(`/api/exam/lock?exam_id=${examID}`, {
+      //     method: 'DELETE',
+      //     credentials: 'include',
+      //   })
+      //   .catch((releaseErr) => console.error('释放考试锁失败:', releaseErr)),
+      // )
       .finally(() => {
         loading = false;
+        selected_exam_ids=[];
       });
-  }
-
-  async function deleteExam(examID){
-    const delete_params={
-      q: JSON.stringify({
-            data: { ID: parseInt(examID), Status: '02' },
-          }),
     }
 
-    fetch(`/api/exam/status?${new URLSearchParams(delete_params).toString()}`,
-      {
-        method:"PUT",
+  async function deleteExam(selected_exam_ids){
+
+
+    fetch(`/api/exam`,
+      { 
+        method:"DELETE",
         credentials: "include",
         headers: {
                 "Content-Type": "application/json",
             },
+        body:JSON.stringify({data:selected_exam_ids})
       })
       .then((response)=>response.json())
       .then((result)=>{
@@ -277,7 +294,9 @@
           toast.error(error);
       })
       .finally(()=>{
+        searchExam();
         loading=false;
+        selected_exam_ids=[];
       })
   }
 
@@ -299,152 +318,150 @@
   // 处理全选/取消全选
 function handleSelectAll(event) {
    is_all_selected = event.target.checked;
-  // 当前页可删除的考试 ID
-  const currentPageDeletableIds = exam_list
-    .filter(exam => exam.status === '00' || exam.status === '02')
+  const currentPageIDs = exam_list
     .map(exam => exam.id);
 
   if (is_all_selected) {
-    selected_exam_ids = [...new Set([...selected_exam_ids, ...currentPageDeletableIds])];
+    selected_exam_ids = [...new Set([...selected_exam_ids, ...currentPageIDs])];
   } else {
-    selected_exam_ids = selected_exam_ids.filter(id => !currentPageDeletableIds.includes(id));
+    selected_exam_ids = selected_exam_ids.filter(id => !currentPageIDs.includes(id));
   }
 }
 
   // 模拟获取考试列表数据
-  exam_list = [
-    {
-      name: '数学考试',
-      type: '00',
-      method: '00',
-      start_time: '2023-10-01 10:00',
-      end_time: '2023-10-01 12:00',
-      duration: '120分钟',
-      status: '00',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '英语考试',
-      type: '02',
-      method: '02',
-      start_time: '2023-10-02 14:00',
-      end_time: '2023-10-02 15:30',
-      duration: '90分钟',
-      status: '04',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '物理期中',
-      type: '00',
-      method: '00',
-      start_time: '2023-10-03 09:00',
-      end_time: '2023-10-03 11:00',
-      duration: '120分钟',
-      status: '02',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '化学期末',
-      type: '02',
-      method: '02',
-      start_time: '2023-10-04 13:30',
-      end_time: '2023-10-04 15:00',
-      duration: '90分钟',
-      status: '04',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '语文模拟',
-      type: '04',
-      method: '00',
-      start_time: '2023-10-05 08:30',
-      end_time: '2023-10-05 10:00',
-      duration: '90分钟',
-      status: '00',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '生物测评',
-      type: '02',
-      method: '02',
-      start_time: '2023-10-06 10:00',
-      end_time: '2023-10-06 11:30',
-      duration: '90分钟',
-      status: '02',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '历史会考',
-      type: '00',
-      method: '02',
-      start_time: '2023-10-07 15:00',
-      end_time: '2023-10-07 16:30',
-      duration: '90分钟',
-      status: '04',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '历史会考',
-      type: '00',
-      method: '02',
-      start_time: '2023-10-07 15:00',
-      end_time: '2023-10-07 16:30',
-      duration: '90分钟',
-      status: '04',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '历史会考',
-      type: '00',
-      method: '02',
-      start_time: '2023-10-07 15:00',
-      end_time: '2023-10-07 16:30',
-      duration: '90分钟',
-      status: '04',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-    {
-      name: '历史会考',
-      type: '00',
-      method: '02',
-      start_time: '2023-10-07 15:00',
-      end_time: '2023-10-07 16:30',
-      duration: '90分钟',
-      status: '12',
-      delivery_status: '00',
-      addi: '',
-      actionExpanded: false,
-      num_of_examinee: 1,
-    },
-  ];
-
+  // exam_list = [
+  //   {
+  //     name: '数学考试',
+  //     type: '00',
+  //     method: '00',
+  //     start_time: '2023-10-01 10:00',
+  //     end_time: '2023-10-01 12:00',
+  //     duration: '120分钟',
+  //     status: '00',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '英语考试',
+  //     type: '02',
+  //     method: '02',
+  //     start_time: '2023-10-02 14:00',
+  //     end_time: '2023-10-02 15:30',
+  //     duration: '90分钟',
+  //     status: '04',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '物理期中',
+  //     type: '00',
+  //     method: '00',
+  //     start_time: '2023-10-03 09:00',
+  //     end_time: '2023-10-03 11:00',
+  //     duration: '120分钟',
+  //     status: '02',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '化学期末',
+  //     type: '02',
+  //     method: '02',
+  //     start_time: '2023-10-04 13:30',
+  //     end_time: '2023-10-04 15:00',
+  //     duration: '90分钟',
+  //     status: '04',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '语文模拟',
+  //     type: '04',
+  //     method: '00',
+  //     start_time: '2023-10-05 08:30',
+  //     end_time: '2023-10-05 10:00',
+  //     duration: '90分钟',
+  //     status: '00',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '生物测评',
+  //     type: '02',
+  //     method: '02',
+  //     start_time: '2023-10-06 10:00',
+  //     end_time: '2023-10-06 11:30',
+  //     duration: '90分钟',
+  //     status: '02',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '历史会考',
+  //     type: '00',
+  //     method: '02',
+  //     start_time: '2023-10-07 15:00',
+  //     end_time: '2023-10-07 16:30',
+  //     duration: '90分钟',
+  //     status: '04',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '历史会考',
+  //     type: '00',
+  //     method: '02',
+  //     start_time: '2023-10-07 15:00',
+  //     end_time: '2023-10-07 16:30',
+  //     duration: '90分钟',
+  //     status: '04',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '历史会考',
+  //     type: '00',
+  //     method: '02',
+  //     start_time: '2023-10-07 15:00',
+  //     end_time: '2023-10-07 16:30',
+  //     duration: '90分钟',
+  //     status: '04',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  //   {
+  //     name: '历史会考',
+  //     type: '00',
+  //     method: '02',
+  //     start_time: '2023-10-07 15:00',
+  //     end_time: '2023-10-07 16:30',
+  //     duration: '90分钟',
+  //     status: '12',
+  //     delivery_status: '00',
+  //     addi: '',
+  //     actionExpanded: false,
+  //     num_of_examinee: 1,
+  //   },
+  // ];
+  
   onMount(() => {
     searchExam();
   });
@@ -452,7 +469,7 @@ function handleSelectAll(event) {
 
 {#snippet tableHead()}
   <tr onclick={(event)=>handleSelectAll(event)}>
-      <th class = "{is_delete_mode?'':"hideButton"}" style="width: 40px;">
+      <th >
         <input
           type="checkbox"
           class="deleteCheck"
@@ -479,17 +496,31 @@ function handleSelectAll(event) {
         继续编辑</button>
     <button
       class="publish-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
-      onclick={() => {
-        ((publish_exam_dialog = true), (examID_to_publish = exam_list[index].id));
-      }}
-    >
+      onclick={(event) => {
+        event.stopPropagation(); // 阻止冒泡
+        publish_exam_dialog = true;
+        examID_to_publish = exam_list[index].id;
+      }}>
       发布考试</button
     >
-    <span class="{status == '00' ? 'hideButton' : 'EmptyData'} "> -- </span>
-    <!-- <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
+
+    <span class="{status == '00'||status == '02' ? 'hideButton' : 'EmptyData'} "> -- </span>
+
+    <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
+    onclick={(event)=>{
+        event.stopPropagation(); // 阻止冒泡
+        delete_exam_dialog=true;
+        examID_to_delete =exam_list[index].id
+    }}>
+    删除考试</button>
+
+    <button class="preview-exam-button action-button {status!='00'&&status!='02'&&status!='04' ?'hideButton' : ''}"
     onclick={()=>{
-        ((delete_exam_dialog=true),examID_to_delete =exam_list[index].id)
-    }}>删除考试</button> -->
+            preview_id = exam_list[index].exam_sessions.id;
+            CURRENT_PAPER_ID.set(91);
+            goto(`/teacher/exam/previewExam`)
+            
+        }}>预览试卷</button>
     <!-- <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}">取消考试</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">监考管理</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">操作日志</button> -->
@@ -501,12 +532,11 @@ function handleSelectAll(event) {
 
 {#snippet tableData(data, index)}
   <tr onclick={(event)=>handleCheckBoxChange(data,event)}>
-    <td class = "{is_delete_mode?'':"hideButton"}" style="width: 40px;">
+    <td >
         <input
           type="checkbox"
           class="deleteCheck"
           checked={selected_exam_ids.includes(data.id)}
-          disabled={data.status!='00'&& data.status!='02'}
         />
       </td>
     <td>{data.name} </td>
@@ -525,7 +555,7 @@ function handleSelectAll(event) {
 
 <!--考试状态标签-->
 {#snippet stateRender(/** @type {"00" | "02" | "04" | "08" | "10" | "12"} */ status, /** @type {string} */ addi)}
-  {#if status === '12'}
+  {#if status === '10'}
     <div class="statusError">
       <div class="statusTag {StateClassMap[status]}">
         {StateMap[status]}
@@ -561,8 +591,8 @@ function handleSelectAll(event) {
           <Option value="02" label="待开始" />
           <Option value="04" label="进行中" />
           <Option value="06" label="已结束" />
-          <Option value="10" label="已归档" />
-          <Option value="12" label="考试异常" />
+          <!-- <Option value="08" label="已归档" /> -->
+          <Option value="10" label="考试异常" />
         </Select>
       </div>
       <div class="datePart">
@@ -589,18 +619,24 @@ function handleSelectAll(event) {
     </div>
   </div>
 
+
   <div class="examListContainer">
     <table class="examListTable">
       <thead class="examListTableHead">
         {@render tableHead()}
       </thead>
       <tbody class="examListTableData">
+        {#if exam_list.length===0}
+          <Empty text = "暂无数据"/>
+          {:else}
         {#each exam_list as exam, index}
           {@render tableData(exam, index)}
         {/each}
+      {/if}
       </tbody>
     </table>
   </div>
+
   <div class="pagination-container"></div>
 
   <MessageBox
@@ -608,7 +644,12 @@ function handleSelectAll(event) {
     content="是否确认发布该考试?"
     cancel_text="取消"
     confirm_text="确认发布"
-    onConfirm={() => publishAndSearch(examID_to_publish)}
+    onConfirm={() => {
+      if (!selected_exam_ids.includes(examID_to_publish)) {
+      selected_exam_ids = [...selected_exam_ids, examID_to_publish];
+    }
+      publishAndSearch(selected_exam_ids)
+      }}
     onCancel={() => {
       publish_exam_dialog = false;
     }}
@@ -622,7 +663,12 @@ function handleSelectAll(event) {
     onCancel={() => {
       delete_exam_dialog = false;
     }}
-    onConfirm={() => deleteExam(examID_to_delete)}
+    onConfirm={() => {
+      if (!selected_exam_ids.includes(examID_to_delete)) {
+      selected_exam_ids = [...selected_exam_ids, examID_to_delete];
+    }
+      deleteExam(selected_exam_ids)
+      }}
     />
 
   <div class="paginationContainer">
@@ -868,4 +914,3 @@ function handleSelectAll(event) {
    outline:none;
   }
 </style>
-//占位

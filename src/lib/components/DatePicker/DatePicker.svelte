@@ -81,6 +81,51 @@
     onDateConfirm = () => {},
   } = $props();
 
+  // 校验传入参数
+  (() => {
+    // 校验 initial_start_date 参数
+    if (initial_start_date && !(initial_start_date instanceof Date)) {
+      console.warn(`[DatePicker] initial_start_date 应该是 Date 类型，当前为 ${typeof initial_start_date}`);
+      initial_start_date = null; // 设置默认值为 null
+    }
+
+    // 校验 initial_end_date 参数
+    if (initial_end_date && !(initial_end_date instanceof Date)) {
+      console.warn(`[DatePicker] initial_end_date 应该是 Date 类型，当前为 ${typeof initial_end_date}`);
+      initial_end_date = null; // 设置默认值为 null
+    }
+
+    // 校验 is_single_date_selection 参数
+    if (typeof is_single_date_selection !== 'boolean') {
+      console.warn(`[DatePicker] is_single_date_selection 应该是 boolean，当前为 ${typeof is_single_date_selection}`);
+      is_single_date_selection = true; // 设置默认值为 true
+    }
+
+    // 校验 is_time_selection 参数
+    if (typeof is_time_selection !== 'boolean') {
+      console.warn(`[DatePicker] is_time_selection 应该是 boolean，当前为 ${typeof is_time_selection}`);
+      is_time_selection = false; // 设置默认值为 false
+    }
+
+    // 校验 input_width 参数
+    if (typeof input_width !== 'string') {
+      console.warn(`[DatePicker] input_width 应该是字符串，当前为 ${typeof input_width}`);
+      input_width = '140px'; // 设置默认值为 '140px'
+    }
+
+    // 校验 onDateReset 参数
+    if (typeof onDateReset !== 'function') {
+      console.warn(`[DatePicker] onDateReset 应该是函数，当前为 ${typeof onDateReset}`);
+      onDateReset = () => {}; // 设置默认值为空函数
+    }
+
+    // 校验 onDateConfirm 参数
+    if (typeof onDateConfirm !== 'function') {
+      console.warn(`[DatePicker] onDateConfirm 应该是函数，当前为 ${typeof onDateConfirm}`);
+      onDateConfirm = () => {}; // 设置默认值为空函数
+    }
+  })();
+
   // 组件内部的状态
   let internal_start_date = $state(null); // 当前选择的开始日期
   let internal_end_date = $state(null); // 当前选择的结束日期
@@ -466,7 +511,7 @@
         <div class="calendar">
           <div class="calendar-header">
             <button onclick={prevStartMonth} data-testid="start-pre-month">«</button>
-            <span data-testid="start-current-date">{start_year}年 {month_names[start_month]}</span>
+            <span data-testid="start-current-date">{`${start_year}年 ${month_names[start_month]}`}</span>
             <button onclick={nextStartMonth} data-testid="start-next-month">»</button>
           </div>
           <div class="calendar-days">
@@ -525,7 +570,7 @@
           <div class="calendar">
             <div class="calendar-header">
               <button onclick={prevEndMonth} data-testid="end-pre-month">«</button>
-              <span data-testid="end-current-date">{end_year}年 {month_names[end_month]}</span>
+              <span data-testid="end-current-date">{`${end_year}年 ${month_names[end_month]}`}</span>
               <button onclick={nextEndMonth} data-testid="end-next-month">»</button>
             </div>
             <div class="calendar-days">

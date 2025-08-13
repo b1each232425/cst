@@ -1,3 +1,13 @@
+<!--
+ * @Author: 林炜佳 wj2144632819@qq.com
+ * @Date: 2025-07-23 9:00:00
+ * @LastEditors: 林炜佳 wj2144632819@qq.com
+ * @LastEditTime: 2025-08-06 14:18:07
+ * @FilePath: \exam-fe\src\routes\student\+layout.svelte
+ * @Description: 学生端 layout
+ * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
+-->
+
 <script>
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -5,23 +15,26 @@
   import { toast } from '$lib/components/Toast/Toast.js';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
 
-  const practicePath = '/student/practice';
-  const examPath = '/student/exam';
+  const PRACTICE_PATH = '/student/practice';
+  const EXAM_PATH = '/student/exam';
 
   let { children } = $props();
 
   function gotoPractice() {
-    goto(practicePath);
+    goto(PRACTICE_PATH);
   }
 
   function gotoExam() {
-    goto(examPath);
+    goto(EXAM_PATH);
   }
 
   function logout() {
     fetch(`/api/logout`)
       .then((res) => {
-        if (!res.ok) throw new Error('请求失败');
+        if (!res.ok)
+          return res.text().then((error_text) => {
+            throw new Error(`请求失败：${res.status} ${res.statusText}` + (error_text ? '-' + error_text : ''));
+          });
         return res.json();
       })
       .then((res) => {
@@ -49,7 +62,7 @@
     class="logo"
     style="
         display: flex;
-        font-family: 'Comic Sans MS';
+        font-family: 'ComicSansMS-Bold', 'Comic Sans MS Bold', 'Comic Sans MS', sans-serif;
         font-weight: 700;
         font-size: 2.5rem;
         color: #0336ff;
@@ -64,8 +77,8 @@
 <div class="header">
   <div class="logo-nav">
     {@render logo()}
-    <button class:selected={page.url.pathname === practicePath} onclick={gotoPractice}> 练习 </button>
-    <button class:selected={page.url.pathname === examPath} onclick={gotoExam}>考试</button>
+    <button class:selected={page.url.pathname === PRACTICE_PATH} onclick={gotoPractice}> 练习 </button>
+    <button class:selected={page.url.pathname === EXAM_PATH} onclick={gotoExam}>考试</button>
   </div>
   <button class="logout" onclick={handleLogout}>退出登录</button>
 </div>

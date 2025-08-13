@@ -68,12 +68,10 @@ describe('Crumb.svelte 面包屑组件测试', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
-    vi.clearAllMocks();
     delete global.someCustomVar;
   });
 
-  it('应该正确渲染面包屑', async () => {
+  it('应该正确渲染题库管理', async () => {
     render(Breadcrumb);
 
     // 验证 fetch 被调用
@@ -90,8 +88,9 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.queryByText('编辑题库')).not.toBeInTheDocument();
   });
 
-  it('正确渲染试卷管理', async () => {
-    setPathname('/teacher/paper');
+  it('应该正确渲染编辑题库', async () => {
+    setPathname('/teacher/question-bank/theory/editBank');
+
     render(Breadcrumb);
 
     // 验证 fetch 被调用
@@ -104,8 +103,28 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
-    expect(screen.getByText('试卷管理'));
+    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
+    expect(screen.queryByText('编辑题库')).toBeInTheDocument();
+  });
+
+  it('点击面包屑回退到理论题库管理', async () => {
+    setPathname('/teacher/question-bank/theory/editBank');
+
+    render(Breadcrumb);
+
+    // 验证初始面包屑内容
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
+
+    // 验证面包屑内容更新
+    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
+    expect(screen.getByText('编辑题库')).toBeInTheDocument();
+
+    // 模拟点击回退到上一路由
+    fireEvent.click(screen.getByText('理论题库管理'));
+
+    // 检查 goto 是否被正确调用
+    expect(goto).toHaveBeenCalledWith('/teacher/question-bank/theory');
   });
 
   it('正确渲染试卷管理', async () => {
@@ -123,7 +142,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
     // 正确显示理论题库管理
-    expect(screen.getByText('试卷管理'));
+    expect(screen.getByText('试卷管理')).toBeInTheDocument();
   });
 
   it('正确渲染练习管理', async () => {
@@ -141,7 +160,68 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
     // 正确显示理论题库管理
-    expect(screen.getByText('练习管理'));
+    expect(screen.getByText('练习管理')).toBeInTheDocument();
+  });
+
+  it('正确渲染创建练习', async () => {
+    setPathname('/teacher/practice/create');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('练习管理')).toBeInTheDocument();
+    expect(screen.getByText('创建练习')).toBeInTheDocument();
+  });
+
+  it('正确渲染编辑练习', async () => {
+    setPathname('/teacher/practice/edit/1');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('练习管理')).toBeInTheDocument();
+    expect(screen.getByText('编辑练习')).toBeInTheDocument();
+  });
+
+  it('点击面包屑回退到练习管理', async () => {
+    setPathname('/teacher/practice/create');
+
+    render(Breadcrumb);
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('练习管理')).toBeInTheDocument();
+    expect(screen.getByText('创建练习')).toBeInTheDocument();
+
+    // 模拟点击回退到上一路由
+    fireEvent.click(screen.getByText('练习管理'));
+
+    // 检查 goto 是否被正确调用
+    expect(goto).toHaveBeenCalledWith('/teacher/practice');
   });
 
   it('正确渲染考试管理', async () => {
@@ -159,7 +239,104 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
     // 正确显示理论题库管理
-    expect(screen.getByText('考试管理'));
+    expect(screen.getByText('考试管理')).toBeInTheDocument();
+  });
+
+  it('正确渲染创建考试', async () => {
+    setPathname('/teacher/exam/addExam');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('考试管理')).toBeInTheDocument();
+    expect(screen.getByText('创建考试')).toBeInTheDocument();
+  });
+
+  it('正确渲染编辑考试', async () => {
+    setPathname('/teacher/exam/editExam/1');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('考试管理')).toBeInTheDocument();
+    expect(screen.getByText('编辑考试')).toBeInTheDocument();
+  });
+
+  it('点击面包屑回退到考试管理', async () => {
+    setPathname('/teacher/exam/editExam/1');
+
+    render(Breadcrumb);
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('考试管理')).toBeInTheDocument();
+    expect(screen.getByText('编辑考试')).toBeInTheDocument();
+
+    // 模拟点击回退到上一路由
+    fireEvent.click(screen.getByText('考试管理'));
+
+    // 检查 goto 是否被正确调用
+    expect(goto).toHaveBeenCalledWith('/teacher/exam');
+  });
+
+  it('正确渲染考试批改', async () => {
+    setPathname('/teacher/correct/exam-correct');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('考试批改')).toBeInTheDocument();
+  });
+
+  it('正确渲染练习批改', async () => {
+    setPathname('/teacher/correct/practice-correct');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('练习批改')).toBeInTheDocument();
   });
 
   it('正确渲染考试成绩管理', async () => {
@@ -177,7 +354,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
     // 正确显示理论题库管理
-    expect(screen.getByText('考试成绩管理'));
+    expect(screen.getByText('考试成绩管理')).toBeInTheDocument();
   });
 
   it('正确渲染考试成绩管理', async () => {
@@ -195,7 +372,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
     // 正确显示理论题库管理
-    expect(screen.getByText('练习成绩管理'));
+    expect(screen.getByText('练习成绩管理')).toBeInTheDocument();
   });
 
   it('正确渲染学生管理', async () => {
@@ -213,7 +390,49 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
     // 正确显示理论题库管理
-    expect(screen.getByText('学生管理'));
+    expect(screen.getByText('学生管理')).toBeInTheDocument();
+  });
+
+  it('正确渲染创建学生', async () => {
+    setPathname('/teacher/student-management/addStudent');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('学生管理')).toBeInTheDocument();
+    expect(screen.getByText('创建学生')).toBeInTheDocument();
+  });
+
+  it('点击面包屑回退到学生管理', async () => {
+    setPathname('/teacher/student-management/addStudent');
+
+    render(Breadcrumb);
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('学生管理')).toBeInTheDocument();
+    expect(screen.getByText('创建学生')).toBeInTheDocument();
+
+    // 模拟点击回退到上一路由
+    fireEvent.click(screen.getByText('学生管理'));
+
+    // 检查 goto 是否被正确调用
+    expect(goto).toHaveBeenCalledWith('/teacher/student-management');
   });
 
   it('正确渲染用户管理', async () => {
@@ -234,27 +453,49 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByText('用户管理'));
   });
 
-  it('点击面包屑回退到上一路由', async () => {
-    setPathname('/teacher/question-bank/theory/editBank');
+  it('正确渲染添加用户', async () => {
+    setPathname('/teacher/user-management/addUser');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('用户管理')).toBeInTheDocument();
+    expect(screen.getByText('创建用户')).toBeInTheDocument();
+  });
+
+  it('点击面包屑回退到用户管理', async () => {
+    setPathname('/teacher/user-management/addUser');
 
     render(Breadcrumb);
 
-    // 验证初始面包屑内容
+    // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
-    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
 
-    // 验证面包屑内容更新
-    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
-    expect(screen.getByText('编辑题库')).toBeInTheDocument();
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示理论题库管理
+    expect(screen.getByText('用户管理')).toBeInTheDocument();
+    expect(screen.getByText('创建用户')).toBeInTheDocument();
 
     // 模拟点击回退到上一路由
-    fireEvent.click(screen.getByText('理论题库管理'));
+    fireEvent.click(screen.getByText('用户管理'));
 
     // 检查 goto 是否被正确调用
-    expect(goto).toHaveBeenCalledWith('/teacher/question-bank/theory');
+    expect(goto).toHaveBeenCalledWith('/teacher/user-management');
   });
 
-  it('应该正确渲染元素', async () => {
+  it('应该正确渲染用户菜单元素', async () => {
     // 模拟 Web Animations API
     global.Element.prototype.animate = vi.fn().mockImplementation(() => ({
       finished: Promise.resolve(),
@@ -291,6 +532,50 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+  });
+
+  it('点击外部关闭面包屑菜单栏', async () => {
+    // 模拟 Web Animations API
+    global.Element.prototype.animate = vi.fn().mockImplementation(() => ({
+      finished: Promise.resolve(),
+      cancel: vi.fn(),
+    }));
+
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 点击头像按钮，显示用户菜单
+    const userButton = screen.getByAltText('头像');
+    await fireEvent.click(userButton);
+
+    // 验证用户菜单已经显示（菜单项可见）
+    expect(screen.getByText('个人中心')).toBeInTheDocument();
+    expect(screen.getByText('设置')).toBeInTheDocument();
+    expect(screen.getByText('退出登录')).toBeInTheDocument();
+
+    // 模拟点击头像按钮以外的区域，触发菜单关闭逻辑
+    const outsideClickArea = document.createElement('div');
+    document.body.appendChild(outsideClickArea);
+
+    // 模拟点击外部区域
+    await fireEvent.click(outsideClickArea);
+
+    // 验证用户菜单是否被关闭（菜单项不再可见）
+    expect(screen.queryByText('个人中心')).not.toBeInTheDocument();
+    expect(screen.queryByText('设置')).not.toBeInTheDocument();
+    expect(screen.queryByText('退出登录')).not.toBeInTheDocument();
+
+    // 清理外部点击区域
+    document.body.removeChild(outsideClickArea);
   });
 
   it('应该正确退出登录', async () => {
@@ -366,7 +651,6 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     render(Breadcrumb);
 
     await waitFor(() => {
-      //expect(consoleErrorSpy).toHaveBeenCalledWith('获取用户权限失败:', expect.any(Error));
       expect(consoleErrorSpy.mock.calls[0][1].message).toMatch('用户数据不存在');
     });
   });
@@ -401,49 +685,5 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     await waitFor(() => {
       expect(consoleErrorSpy.mock.calls[0][1].message).toBe('用户数据不存在');
     });
-  });
-
-  it('点击外部关闭面包屑菜单栏', async () => {
-    // 模拟 Web Animations API
-    global.Element.prototype.animate = vi.fn().mockImplementation(() => ({
-      finished: Promise.resolve(),
-      cancel: vi.fn(),
-    }));
-
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
-
-    // 等待异步数据加载完成
-    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
-
-    // 使用 getByAltText 获取单个头像和通知图标
-    expect(screen.getByAltText('头像')).toBeInTheDocument();
-    expect(screen.getByAltText('通知')).toBeInTheDocument();
-
-    // 点击头像按钮，显示用户菜单
-    const userButton = screen.getByAltText('头像');
-    await fireEvent.click(userButton);
-
-    // 验证用户菜单已经显示（菜单项可见）
-    expect(screen.getByText('个人中心')).toBeInTheDocument();
-    expect(screen.getByText('设置')).toBeInTheDocument();
-    expect(screen.getByText('退出登录')).toBeInTheDocument();
-
-    // 模拟点击头像按钮以外的区域，触发菜单关闭逻辑
-    const outsideClickArea = document.createElement('div');
-    document.body.appendChild(outsideClickArea);
-
-    // 模拟点击外部区域
-    await fireEvent.click(outsideClickArea);
-
-    // 验证用户菜单是否被关闭（菜单项不再可见）
-    expect(screen.queryByText('个人中心')).not.toBeInTheDocument();
-    expect(screen.queryByText('设置')).not.toBeInTheDocument();
-    expect(screen.queryByText('退出登录')).not.toBeInTheDocument();
-
-    // 清理外部点击区域
-    document.body.removeChild(outsideClickArea);
   });
 });

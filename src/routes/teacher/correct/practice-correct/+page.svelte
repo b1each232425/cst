@@ -12,12 +12,13 @@
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
-  import InputBox from '$lib/components/Input/InputBox.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import { debounce } from '$lib/utils/optimize';
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { toast } from '$lib/components/Toast/Toast';
   import { goto } from '$app/navigation';
+  import '$lib/components/Input/index.scss';
+  import Title from '$lib/components/Title/Title.svelte';
 
   // const mockPractice = [
   //   {
@@ -119,7 +120,36 @@
     '10': '手动',
   };
 
-  let practice_list = $state([]);
+  let practice_list = $state([
+    // {
+    //   id: 1,
+    //   name: '基础语法练习',
+    //   respondent_count: 15,
+    //   unmarked_student_count: 5,
+    //   mark_mode: '10', // 手动批改
+    // },
+    // {
+    //   id: 2,
+    //   name: '数据结构练习',
+    //   respondent_count: 20,
+    //   unmarked_student_count: 0, // 没有待批改
+    //   mark_mode: '10',
+    // },
+    // {
+    //   id: 3,
+    //   name: '算法练习',
+    //   respondent_count: 10,
+    //   unmarked_student_count: 3,
+    //   mark_mode: '00', // 自动批改
+    // },
+    // {
+    //   id: 4,
+    //   name: '未知批改方式练习',
+    //   respondent_count: 8,
+    //   unmarked_student_count: 2,
+    //   mark_mode: '99', // 未知状态
+    // },
+  ]);
   let total_count = $state(0);
   let practice_type = $state('00');
   let practice_name = $state('');
@@ -130,8 +160,8 @@
     return unmarked_student_count > 0 && mark_mode === '10';
   }
 
-  function gotoCorrect(practice_id) {
-    goto(`/teacher/correct/correct?practice_id=${practice_id}`);
+  function gotoCorrect(practice_name, practice_id) {
+    goto(`/teacher/correct/correct?name=${practice_name}&practice_id=${practice_id}`);
   }
 
   function handleSearch() {
@@ -147,6 +177,11 @@
         if (!res.status) {
           practice_list = res.data?.practice_list ?? [];
           total_count = res.rowCount ?? 0;
+
+          if (!Array.isArray(practice_list)) {
+            practice_list = [];
+            throw new Error('practice_list 数据类型错误');
+          }
         } else throw new Error(res.msg ?? '获取练习列表失败');
       })
       .catch((err) => {
@@ -171,17 +206,13 @@
 </script>
 
 <div class="practice-correct-body">
+  <Title title="练习批改" />
+
   <!-- 筛选 -->
   <div class="options">
-    <div class="input">
+    <div class="practice-input">
       <div class="label">练习名称</div>
-      <InputBox
-        placeholder="请输入信息"
-        bind:value={practice_name}
-        type="text"
-        show_label={false}
-        onInput={debounceSearch}
-      />
+      <input type="text" class="input" placeholder="请输入信息" bind:value={practice_name} oninput={debounceSearch} />
     </div>
     <!-- <div class="select">
       <div class="label">练习类型</div>
@@ -219,7 +250,7 @@
                 <button
                   class:disabled={!canCorrected(unmarked_student_count, mark_mode)}
                   disabled={!canCorrected(unmarked_student_count, mark_mode)}
-                  onclick={gotoCorrect}>进入批改</button
+                  onclick={() => gotoCorrect(name, id)}>进入批改</button
                 >
               </div></td
             >
@@ -260,7 +291,7 @@
       z-index: 10;
 
       // .select,
-      .input {
+      .practice-input {
         display: flex;
         align-items: center;
         gap: 1rem;

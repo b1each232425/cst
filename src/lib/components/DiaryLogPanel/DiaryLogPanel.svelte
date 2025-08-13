@@ -1,64 +1,101 @@
 <!--
-/**
- * AwesomeLogPanel 组件使用规范
- *
- * 这是一个功能强大的日志显示面板组件，支持两种使用模式：
- *
- * 1. 静态数据模式（适用于一次性加载所有数据的场景）：
- *    operationLogPanel.showLogPanel(logs)
- *
- *    参数说明：
- *    - logs: 日志数组，每个日志对象包含以下字段：
- *      {
- *        id: number,           // 日志ID
- *        module: string,       // 模块名称
- *        entity_id: number,    // 实体ID
- *        content: string[],    // 操作内容（字符串数组）
- *        creator: number,      // 创建者ID
- *        creator_account: string,  // 创建者账号
- *        creator_name: string,     // 创建者姓名
- *        create_time: string       // 创建时间
- *      }
- *
- * 2. 分页模式（适用于大数据量场景，支持服务端分页）：
- *    operationLogPanel.showLogPanelWithPagination(fetchLogsFunc)
- *
- *    参数说明：
- *    - fetchLogsFunc: 获取日志数据的异步函数，函数签名如下：
- *      async function fetchLogsFunc(page: number, page_size: number): Promise<{
- *        data: LogItem[],  // 日志数据数组
- *        total: number     // 总记录数
- *      }>
- *
- *    函数要求：
- *    - 接收两个参数：page（页码，从1开始）和 page_size（每页数量）
- *    - 返回Promise，resolve的值必须包含data和total字段
- *    - data字段为当前页的日志数组
- *    - total字段为总记录数，用于计算分页信息
- *    - 如果请求失败，应该throw Error，组件会自动处理错误
- *
- * 使用示例：
- *
- * // 静态数据模式
- * const logs = [...];
- * operationLogPanel.showLogPanel(logs);
- *
- * // 分页模式
- * async function fetchLogs(page, page_size) {
- *   const response = await fetch(`/api/logs?page=${page}&page_size=${page_size}`);
- *   const result = await response.json();
- *   return {
- *     data: result.data,
- *     total: result.rowCount
- *   };
- * }
- * operationLogPanel.showLogPanelWithPagination(fetchLogs);
- */
--->
+  DiaryLogPanel 组件使用规范
 
+  这是一个功能强大的日志显示面板组件，支持两种使用模式：
+
+  1. 静态数据模式（适用于一次性加载所有数据的场景）：
+     operationLogPanel.showLogPanel(logs)
+
+     参数说明：
+     - logs: 日志数组，每个日志对象包含以下字段：
+       {
+         id: number,           // 日志ID
+         module: string,       // 模块名称
+         entity_id: number,    // 实体ID
+         content: string[],    // 操作内容（字符串数组）
+         creator: number,      // 创建者ID
+         creator_account: string,  // 创建者账号
+         creator_name: string,     // 创建者姓名
+         create_time: string       // 创建时间
+       }
+
+  2. 分页模式（适用于大数据量场景，支持服务端分页）：
+     operationLogPanel.showLogPanelWithPagination(fetchLogsFunc)
+
+     参数说明：
+     - fetchLogsFunc: 获取日志数据的异步函数，函数签名如下：
+       async function fetchLogsFunc(): Promise<{
+         data: LogItem[],  // 日志数据数组
+         total: number     // 总记录数
+       }>
+
+     函数要求：
+     - 返回Promise，resolve的值必须包含data和total字段
+     - data字段为当前页的日志数组
+     - total字段为总记录数，用于计算分页信息
+
+  使用示例：
+  import DiaryLogPanel from '$lib/components/DiaryLogPanel/DiaryLogPanel.svelte';
+
+  // 开启日志框
+  let operationLogPanel; //创建日志对象
+
+  // 静态数据模式
+  const logs = [...];
+
+  // 调用showLogPanel并传入数据即可打开日志框
+  operationLogPanel.showLogPanel(logs);
+
+  ---------------------------------------------------------------------------------------------
+
+  // 分页模式
+  let diary_current_page = $state(1); // 当前页数
+  let diary_page_size = $state(10); // 当前页面大小
+
+  async function fetchLogs() {
+    // 发请求获取当前页面数据
+    const response = await fetch(`/api/logs?page=${diary_current_page}&page_size=${diary_page_size}`);
+    const result = await response.json();
+    return {
+      data: result.data, // 返回需要日志框展示的数据
+      total: result.rowCount // 返回一共有多少条数据
+    };
+  }
+
+  // 调用showLogPanelWithPagination并传入所需函数即可打开日志框
+  operationLogPanel.showLogPanelWithPagination(fetchLogs);
+
+  // 页数变化
+  function handlePageChange(event) {
+    // 获取最新的当前页数
+    diary_current_page = event.detail;
+    // 刷新日志框
+    operationLogPanel.showLogPanelWithPagination(fetchLogs);
+  }
+
+  // 页数大小变化
+  function handlePageSizeChange(event) {
+    // 获取最新的页面大小
+    diary_page_size = event.detail;
+    // 刷新日志框
+    operationLogPanel.showLogPanelWithPagination(fetchLogs);
+  }
+
+  -----------------------------------------------------------------------------------------
+
+  <DiaryLogPanel
+    bind:this={operationLogPanel}
+    on:diaryPageChange={handlePageChange}
+    on:diaryPageSizeChange={handlePageSizeChange}
+  ></DiaryLogPanel>
+-->
 <script>
-  import Pagination from '$lib/components/DiaryLogPanel/Pagination.svelte';
+  import Pagination from '../Pagination/Pagination.svelte';
   import { formatISOString } from '$lib/utils/time_utils';
+  import { createEventDispatcher } from 'svelte';
+
+  // 创建事件分发器
+  const dispatch = createEventDispatcher();
 
   /**
    * @description: 日志数据
@@ -73,7 +110,7 @@
    * create_time: string
    * }[]}
    */
-  let logDatas = $state([]);
+  let log_data = $state([]);
 
   /**
    * @description: 是否显示日志面板
@@ -84,28 +121,21 @@
   /**
    * @description: 分页相关状态
    */
-  let currentPage = $state(1);
-  let pageSize = $state(10);
-  let totalItems = $state(0);
-  let totalPages = $state(0);
+  let current_page = $state(1);
+  let page_size = $state(10);
+  let total_items = $state(0);
 
   /**
    * @description: 获取日志数据的函数
    * @type {Function|null}
    */
-  let fetchLogsFunc = $state(null);
+  let fetch_logs_func = $state(null);
 
   /**
    * @description: 是否启用分页模式
    * @type {boolean}
    */
-  let paginationMode = $state(false);
-
-  /**
-   * @description: 加载状态
-   * @type {boolean}
-   */
-  let loading = $state(false);
+  let pagination_mode = $state(false);
 
   /**
    * @description: 当前页显示的日志
@@ -120,7 +150,7 @@
    * create_time: string
    * }[]}
    */
-  let currentPageLogs = $derived(getPageLogs());
+  let current_page_logs = $derived(getPageLogs());
 
   /**
    * @description：显示日志面板（静态数据模式）
@@ -136,12 +166,11 @@
    * }[]} logs - 操作日志数组
    */
   export const showLogPanel = (logs) => {
-    paginationMode = false;
-    fetchLogsFunc = null;
-    logDatas = logs || [];
-    totalItems = logDatas.length;
-    totalPages = Math.ceil(totalItems / pageSize);
-    currentPage = 1; // 重置到第一页
+    pagination_mode = false;
+    fetch_logs_func = null;
+    log_data = logs || [];
+    total_items = log_data.length;
+    current_page = 1;
     show_log_panel = true;
   };
 
@@ -150,10 +179,10 @@
    * @param {Function} fetchFunc - 获取日志的函数，接收(page, page_size)参数，返回Promise
    */
   export const showLogPanelWithPagination = async (fetchFunc) => {
-    paginationMode = true;
-    fetchLogsFunc = fetchFunc;
-    currentPage = 1;
-    pageSize = 10;
+    pagination_mode = true;
+    fetch_logs_func = fetchFunc;
+    current_page = 1;
+    page_size = 10;
     show_log_panel = true;
     await loadPageData();
   };
@@ -172,14 +201,14 @@
    * }[]}
    */
   function getPageLogs() {
-    if (paginationMode) {
+    if (pagination_mode) {
       // 分页模式下直接返回当前数据
-      return logDatas;
+      return log_data;
     } else {
       // 静态数据模式下进行客户端分页
-      const startIndex = (currentPage - 1) * pageSize;
-      const endIndex = Math.min(startIndex + pageSize, logDatas.length);
-      return logDatas.slice(startIndex, endIndex);
+      const start_index = (current_page - 1) * page_size;
+      const end_index = Math.min(start_index + page_size, log_data.length);
+      return log_data.slice(start_index, end_index);
     }
   }
 
@@ -187,188 +216,82 @@
    * @description: 加载分页数据
    */
   async function loadPageData() {
-    if (!paginationMode || !fetchLogsFunc) return;
+    if (!pagination_mode || !fetch_logs_func) return;
 
-    loading = true;
     try {
-      const result = await fetchLogsFunc(currentPage, pageSize);
+      const result = await fetch_logs_func();
       if (result && result.data) {
-        logDatas = result.data;
-        totalItems = result.total || 0;
-        totalPages = Math.ceil(totalItems / pageSize);
+        log_data = result.data;
+        total_items = result.total || 0;
       }
     } catch (error) {
       console.error('加载日志数据失败:', error);
-      logDatas = [];
-      totalItems = 0;
-      totalPages = 0;
-    } finally {
-      loading = false;
+      log_data = [];
+      total_items = 0;
     }
   }
 
-  /**
-   * @description: 处理页面导航（上一页/下一页）
-   * @param {boolean} is_next - 是否下一页
-   */
-  async function handlePageNavigation(is_next) {
-    if (is_next && currentPage < totalPages) {
-      currentPage++;
-    } else if (!is_next && currentPage > 1) {
-      currentPage--;
-    }
-
-    if (paginationMode) {
-      await loadPageData();
-    }
+  // 页数变化
+  function handlePageChange(event) {
+    current_page = event.detail;
+    dispatch('diaryPageChange', current_page);
   }
 
-  /**
-   * @description: 处理页面选择
-   * @param {number} page_num - 页码
-   */
-  async function handlePageSelect(page_num) {
-    if (page_num >= 1 && page_num <= totalPages) {
-      currentPage = page_num;
-      if (paginationMode) {
-        await loadPageData();
-      }
-    }
-  }
-
-  /**
-   * @description: 处理每页显示数量变化
-   * @param {number|Object} option - 选项值或选项对象
-   */
-  async function handlePageSizeChange(option) {
-    // 兼容处理：如果传入的是对象且包含value属性，取其value属性；如果是数字，直接使用
-    if (typeof option === 'object' && option !== null && 'value' in option) {
-      const numValue = Number(option.value);
-      if (!isNaN(numValue)) {
-        pageSize = numValue;
-      } else {
-        console.warn('handlePageSizeChange: option.value不是有效的数字', option.value);
-      }
-    } else if (typeof option === 'number') {
-      pageSize = option;
-    } else {
-      console.warn('handlePageSizeChange: 无效的option参数', option);
-      return;
-    }
-
-    totalPages = Math.ceil(totalItems / pageSize);
-    currentPage = 1; // 重置到第一页
-
-    if (paginationMode) {
-      await loadPageData();
-    }
-  }
-
-  /**
-   * @description: 处理页码搜索
-   * @param {string} page_str - 页码字符串
-   */
-  async function handlePageSearch(page_str) {
-    const page_num = parseInt(page_str);
-    if (!isNaN(page_num) && page_num >= 1 && page_num <= totalPages) {
-      currentPage = page_num;
-      if (paginationMode) {
-        await loadPageData();
-      }
-    }
+  // 页数大小变化
+  function handlePageSizeChange(event) {
+    page_size = event.detail;
+    dispatch('diaryPageSizeChange', page_size);
   }
 </script>
 
-<div class="modal" style="display: {show_log_panel ? 'flex' : 'none'};">
-  <div class="Panel">
-    <div class="topBar">
-      <span class="title">操作日志</span>
-      <button
-        class="closeBtn"
-        onclick={async () => {
-          show_log_panel = false;
-        }}>X</button
-      >
-    </div>
-    <div class="logView">
-      {#if loading}
-        <div class="loadingContainer">
-          <div class="loadingText">加载中...</div>
-        </div>
-      {:else}
-        {#each currentPageLogs as logData}
-          <div class="logItem">
-            <div class="logHeader">
+{#if show_log_panel}
+  <div class="modal">
+    <div class="panel">
+      <div class="top-bar">
+        <span class="title">操作日志</span>
+        <button
+          class="close-btn"
+          onclick={async () => {
+            show_log_panel = false;
+          }}
+          data-testid="closeDiary"
+        >
+          <img src="/clear/delete.svg" alt="" />
+        </button>
+      </div>
+      <div class="log-view">
+        {#each current_page_logs as log_data}
+          <div class="log-item">
+            <div class="log-header">
               <span
-                class="userInfo"
-                title={`用户帐号: ${logData.creator_account || '未知账号'} | 用户名: ${logData.creator_name || '未知用户'} | 用户ID: ${logData.creator || '未知用户ID'}`}
+                class="user-info"
+                title={`用户帐号: ${log_data.creator_account || '未知账号'} | 用户名: ${log_data.creator_name || '未知用户'} | 用户ID: ${log_data.creator || '未知用户ID'}`}
               >
-                用户帐号: {logData.creator_account || '未知账号'} | 用户名: {logData.creator_name || '未知用户'} | 用户ID:
-                {logData.creator || '未知用户ID'}
+                {`用户帐号: ${log_data.creator_account || '未知账号'} | 用户名: ${log_data.creator_name || '未知用户'} | 用户ID: ${log_data.creator || '未知用户ID'}`}
               </span>
             </div>
-            <div class="logContent">
-              {#if Array.isArray(logData.content)}
-                {#each logData.content as contentItem}
-                  <div class="contentItem">{contentItem}</div>
-                {/each}
-              {:else if logData.content}
-                <div class="contentItem">{logData.content}</div>
-              {/if}
+            <div class="log-content">
+              {#each log_data.content as content_item}
+                <div class="content-item">{content_item}</div>
+              {/each}
             </div>
-            <div class="logFooter">
-              <span class="timeStr">[{formatISOString(logData.create_time)}]</span>
+            <div class="log-footer">
+              <span class="time-str">[{formatISOString(log_data.create_time)}]</span>
             </div>
           </div>
         {/each}
-        {#if currentPageLogs.length === 0}
-          <div class="emptyLog">暂无日志数据</div>
+        {#if current_page_logs.length === 0}
+          <div class="empty-log">暂无日志数据</div>
         {/if}
-      {/if}
-    </div>
-    <div class="paginationContainer">
-      <Pagination
-        total_data_num={totalItems}
-        total_page_num={totalPages}
-        current_page_num={currentPage}
-        max_show_page_num={5}
-        data_num_per_page_options={[
-          { value: 10, label: '10条/页' },
-          { value: 20, label: '20条/页' },
-          { value: 50, label: '50条/页' },
-        ]}
-        selected={pageSize}
-        onPageChangeFunc={handlePageNavigation}
-        onPageChooseFunc={handlePageSelect}
-        selectOptionFunc={handlePageSizeChange}
-        onPageSearchFunc={handlePageSearch}
-        expand_direction="up"
-      />
+      </div>
+      <div class="pagination-container">
+        <Pagination {total_items} on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} />
+      </div>
     </div>
   </div>
-</div>
+{/if}
 
 <style lang="scss" scoped>
-  button {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background-color: transparent;
-    cursor: pointer;
-    user-select: none;
-
-    &:focus {
-      outline: none;
-    }
-  }
-  .logStr {
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-size: 15px;
-    width: 100%;
-    box-sizing: border-box;
-    display: block;
-  }
   .modal {
     position: fixed;
     top: 0;
@@ -378,37 +301,41 @@
     background-color: rgba(0, 0, 0, 0.5);
     justify-content: center;
     align-items: center;
-    z-index: 100;
+    z-index: 1005;
 
-    .Panel {
+    .panel {
       background-color: white;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      width: 560px;
+      width: 650px;
+      height: 650px;
       max-width: 90%;
       padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 20px;
 
-      height: 600px;
       max-height: 90%;
 
-      .topBar {
+      .top-bar {
         .title {
           font-size: 18px;
           font-weight: bold;
         }
 
-        .closeBtn {
+        .close-btn {
           font-size: 18px;
+
+          img {
+            width: 25px;
+          }
         }
 
         display: flex;
         justify-content: space-between;
       }
 
-      .logView {
+      .log-view {
         flex-grow: 1;
         overflow-y: auto;
         padding: 10px;
@@ -424,7 +351,7 @@
         scrollbar-gutter: stable both-edges;
       }
 
-      .logItem {
+      .log-item {
         font-family:
           SimSun,
           Microsoft YaHei,
@@ -438,7 +365,7 @@
         border: 1px solid #f0f0f0;
       }
 
-      .logHeader {
+      .log-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -451,7 +378,7 @@
         gap: 8px;
       }
 
-      .userInfo {
+      .user-info {
         color: #333;
         text-align: left;
         font-size: 14px;
@@ -463,7 +390,7 @@
         justify-content: flex-start;
       }
 
-      .logContent {
+      .log-content {
         background: #f6f8fa;
         border-radius: 5px;
         padding: 10px 14px;
@@ -474,24 +401,24 @@
         font-family: 'Microsoft YaHei', Arial, sans-serif;
         box-sizing: border-box;
         margin-bottom: 2px;
-        .contentItem {
+        .content-item {
           margin-bottom: 2px;
           line-height: 1.6;
           color: #333;
           word-break: break-all;
         }
-        .contentItem:last-child {
+        .content-item:last-child {
           margin-bottom: 0;
         }
       }
 
-      .logFooter {
+      .log-footer {
         display: flex;
         justify-content: flex-end;
         margin-top: 8px;
       }
 
-      .timeStr {
+      .time-str {
         color: var(--blue);
         font-size: 15px;
         font-family: 'Consolas', 'Menlo', monospace;
@@ -499,52 +426,30 @@
         letter-spacing: 0.5px;
       }
 
-      .emptyLog {
+      .empty-log {
         text-align: center;
         padding: 20px;
         color: #999;
         font-style: italic;
       }
 
-      .loadingContainer {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 40px;
-        min-height: 200px;
-      }
-
-      .loadingText {
-        color: #666;
-        font-size: 16px;
-        font-weight: 500;
-      }
-
-      .paginationContainer {
-        margin-top: 10px;
-        display: flex;
-        justify-content: flex-end;
-      }
-
-      .bottomBar {
+      .pagination-container {
         display: flex;
         justify-content: flex-end;
       }
     }
+  }
 
-    .confirmBtn {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: all 0.3s;
+  button {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    cursor: pointer;
+    user-select: none;
 
-      &:hover {
-        background-color: #0056b3;
-      }
+    &:focus {
+      outline: none;
     }
   }
 </style>
