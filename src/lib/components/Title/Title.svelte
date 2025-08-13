@@ -19,15 +19,9 @@
    * @example
    * <Title title="基本信息" line />
    */
-  let { title = 'Title', line = true } = $props();
+  import { getType } from '$lib/utils/index.js';
 
-  /**
-   * 获取精确的数据类型
-   * @type {Function}
-   */
-  function getType(value) {
-    return Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
-  }
+  let { title = 'Title', line = true } = $props();
 
   /**
    * 校验规则
