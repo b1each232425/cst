@@ -197,8 +197,6 @@
     const start = Math.max(2, current_page - 1);
     const end = Math.min(total - 1, current_page + 1);
 
-    console.log(start, end);
-
     if (current_page < 4) {
       // 当前页靠前时的处理
       for (let i = 2; i <= 4; i++) {
@@ -246,7 +244,7 @@
         <span class="dots">...</span>
       {:else}
         <!-- 页码按钮，高亮当前页 -->
-        <button class:active={current_page === page} onclick={() => goToPage(page)}>
+        <button class="page-button" class:active={current_page === page} onclick={() => goToPage(page)}>
           {page}
         </button>
       {/if}
@@ -317,12 +315,16 @@
         height: 0.7rem;
       }
 
+      .page-button:hover {
+        color: #0056b3;
+        background-color: #e6f0ff;
+      }
+
       button {
-        padding: 0.4rem 0.7rem;
         background: transparent;
         cursor: pointer;
         font-size: 0.9rem;
-        min-width: 2rem;
+        width: 2rem;
         height: 2rem;
         border: none;
         border-radius: 4px;
