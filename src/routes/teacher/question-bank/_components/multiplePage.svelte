@@ -3,12 +3,12 @@
  * @Date: 2025-07-24  19:31:15
  * @LastEditors: qjj qiaojunjie6@qq.com
  * @LastEditTime:  2025-07-24  19:31:15
- * @FilePath: \tutorial-platform-fe\src\lib\component\QuestionEditPanel\multipleSelect.svelte
+ * @FilePath:
  * @Description: 题目编辑面板
  * @
 -->
 <script>
-    import QuestionTag from "./editableTag.svelte";
+    import QuestionTag from "$lib/components/Tag/EditableTag.svelte";
     import SmartEditor from "@3min/smart-edit";
 
     /**
@@ -17,7 +17,7 @@
      */
 
     import { TheoryQuestion } from "../theory/type";
-    import { formatTimestamp } from "../utils/time_utils";
+    import { formatTimestamp } from "$lib/utils/time_utils";
     import QuestionPreviewPanel from "./QuestionPreviewPanel.svelte";
     import { questionLimit } from "../utils/questionConfig.js";
     import { getQuestionFilesPath } from "../utils/utils";

@@ -120,7 +120,36 @@
     '10': '手动',
   };
 
-  let practice_list = $state([]);
+  let practice_list = $state([
+    // {
+    //   id: 1,
+    //   name: '基础语法练习',
+    //   respondent_count: 15,
+    //   unmarked_student_count: 5,
+    //   mark_mode: '10', // 手动批改
+    // },
+    // {
+    //   id: 2,
+    //   name: '数据结构练习',
+    //   respondent_count: 20,
+    //   unmarked_student_count: 0, // 没有待批改
+    //   mark_mode: '10',
+    // },
+    // {
+    //   id: 3,
+    //   name: '算法练习',
+    //   respondent_count: 10,
+    //   unmarked_student_count: 3,
+    //   mark_mode: '00', // 自动批改
+    // },
+    // {
+    //   id: 4,
+    //   name: '未知批改方式练习',
+    //   respondent_count: 8,
+    //   unmarked_student_count: 2,
+    //   mark_mode: '99', // 未知状态
+    // },
+  ]);
   let total_count = $state(0);
   let practice_type = $state('00');
   let practice_name = $state('');
@@ -132,8 +161,7 @@
   }
 
   function gotoCorrect(practice_name, practice_id) {
-    localStorage.setItem('current_paper_name', practice_name);
-    goto(`/teacher/correct/correct?practice_id=${practice_id}`);
+    goto(`/teacher/correct/correct?name=${practice_name}&practice_id=${practice_id}`);
   }
 
   function handleSearch() {
@@ -149,6 +177,11 @@
         if (!res.status) {
           practice_list = res.data?.practice_list ?? [];
           total_count = res.rowCount ?? 0;
+
+          if (!Array.isArray(practice_list)) {
+            practice_list = [];
+            throw new Error('practice_list 数据类型错误');
+          }
         } else throw new Error(res.msg ?? '获取练习列表失败');
       })
       .catch((err) => {
