@@ -87,7 +87,7 @@
                 return response.json();
             })
             .then(data => {
-                // console.log(data);
+                console.log(data);
                 return data;
             })
             .catch(error => {
@@ -600,6 +600,42 @@
             });
     }
 
+    // 更新子题分数
+    function updateSubScore(new_sub_score,groupIndex,questionIndex) {
+        // 接收子组件参数
+        paper_groups[groupIndex].questions[questionIndex].sub_score = new_sub_score;
+        
+        // 修改题目总分
+        paper_groups[groupIndex].questions[questionIndex].score =
+            new_sub_score.reduce((sum, val) => sum + (Number(val) || 0), 0);
+
+        const ACTIONS = [
+            {
+                action: "update_question",
+                payload: [
+                    {
+                        id: paper_groups[groupIndex].questions[questionIndex].id,
+                        group_id: paper_groups[groupIndex].id,
+                        order: paper_groups[groupIndex].questions[questionIndex].order,
+                        score: paper_groups[groupIndex].questions[questionIndex].score,
+                        sub_score: paper_groups[groupIndex].questions[questionIndex].sub_score
+                    }
+                ]
+            }
+        ];
+
+        savePaper(paperID, ACTIONS)
+            .then(() => {
+                return fetchPaper(paperID);
+            })
+            .then(result => {
+                paper_groups = result.data.GroupsData;
+                paper_info = result.data;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+            });
+    }
+
     /***************** 题组列表区 *****************/
 
 
@@ -610,7 +646,7 @@
     let drag_over_group = $state(null);             // 目标元素数据
     let drag_over_group_position = $state(null);    // 相对位置："top" 或 "bottom"
     let is_dragging_group = $state(false);
-    let dragged_type = null;
+    let dragged_type = $state(null);
 
     // 题组开始拖拽
     function handleGroupDragStart(event, group) {
@@ -1100,7 +1136,7 @@
                                 <div class="group-question-list-outer-box">
                                     <div class="group-question-list {is_dragging_question ? "drag-over" : ""}">
                                         {#if group.questions.length !== 0}
-                                            {#each group.questions as question}
+                                            {#each group.questions as question, questionIndex}
                                                 <div class="single-question
                                                     {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'top' && dragged_type === 'question') ? 'drag-over-top' : ''}
                                                     {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'bottom' && dragged_type === 'question') ? 'drag-over-bottom' : ''}
@@ -1160,7 +1196,12 @@
                                                     <!-- 题目内容 -->
                                                     {#if $QUESTION_OPEN_STATE[question.id]}
                                                         <div class="question-container">                                          
-                                                            <QuestionPreviewPanel question={question} showHeader={false}/>
+                                                            <QuestionPreviewPanel
+                                                                question={question}
+                                                                showHeader={false}
+                                                                editSubScore={true}
+                                                                update={(new_sub_score)=>updateSubScore(new_sub_score,groupIndex,questionIndex)}
+                                                            />
                                                         </div>
                                                     {/if}
                                                 </div>
@@ -1659,6 +1700,7 @@
                             input {
                                 width: 75px;
                                 margin-right: 36px;
+                                padding-left: 12px;
                             }
 
                             span {
@@ -1836,6 +1878,7 @@
                                         input {
                                             width: 75px;
                                             margin-right: 36px;
+                                            padding-left: 12px;
                                         }
     
                                         .move-btn, .edit-question-btn, .delete-question-btn {
@@ -1889,6 +1932,10 @@
                                 /* 题目内容 */
                                 .question-container {
                                     padding-bottom: 10px;
+                                    
+                                    p {
+                                        padding: 0;
+                                    }
                                 }
                             }
                         }

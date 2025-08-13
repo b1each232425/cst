@@ -2,6 +2,7 @@
     import { TheoryQuestion } from "../theory/type";
     import UneditableTag from "$lib/components/Tag/UneditableTags.svelte";
     import { onMount} from "svelte";
+  import { debounce } from "$lib/utils/optimize";
     /**
      * @type {{
      *      question: TheoryQuestion,
@@ -9,7 +10,10 @@
      *      displayClosePanelBtn?: boolean
      * }}
      */
-    let { question, closePanel, displayClosePanelBtn, showHeader = true } = $props();
+    let { question, closePanel, displayClosePanelBtn, showHeader = true, editSubScore = false, update } = $props();
+
+    // 子题分值数组
+    let sub_score = $state(question.sub_score === null ? question.answers.map(answer => answer.score) : question.sub_score);
 
     let question_content = $state("")
 
@@ -350,6 +354,36 @@
             {@html question_content}
         </div>
     </div>
+
+    <!-- 试卷管理编辑子题分值功能 -->
+    {#if editSubScore}
+        <div class="question-answer">
+        {#if Array.isArray(question.answers)}
+            <span
+                class="answer-label piptap-content"
+                style="width:fit-content;"
+            >
+                <p style="margin-bottom:0px;">【答案】</p>
+            </span>
+            <div class="answer-container">
+                {#each question.answers as answer, index}
+                    {#if typeof answer !== "string"}
+                        <span class="answer-label">({answer.index})</span>
+                        <input type="number"
+                            class="input"
+                            placeholder="请输入"    
+                            min={1}
+                            bind:value={sub_score[index]}
+                            oninput={debounce(()=>update(sub_score),500,false)}
+                        >
+                        <br />
+                    {/if}
+                {/each}
+            </div>
+        {/if}
+    </div>    
+    {/if}
+
     <div class="question-answer">
         {#if Array.isArray(question.answers)}
             <span
@@ -390,6 +424,7 @@
             </div>
         {/if}
     </div>
+
     <div class="question-tag">
         <span class="tag-label piptap-content" style="width: auto;">
             <p style="margin-bottom:0px;">【标签】</p>
@@ -400,6 +435,7 @@
             
         </div>
     </div>
+
     <div class="question-analysis">
         {#if question.analysis}
             <span class="analysis-label piptap-content" style="width: auto;">
@@ -431,6 +467,36 @@
             {@html question.content}
         </div>
     </div>
+
+    <!-- 试卷管理编辑子题分值功能 -->
+    {#if editSubScore}
+        <div class="question-answer">
+        {#if Array.isArray(question.answers)}
+            <span
+                class="answer-label piptap-content"
+                style="width:fit-content;"
+            >
+                <p style="margin-bottom:0px;">【答案】</p>
+            </span>
+            <div class="answer-container">
+                {#each question.answers as answer, index}
+                    {#if typeof answer !== "string"}
+                        <span class="answer-label">({answer.index})</span>
+                        <input type="number"
+                            class="input"
+                            placeholder="请输入"    
+                            min={1}
+                            bind:value={sub_score[index]}
+                            oninput={debounce(()=>update(sub_score),500,false)}
+                        >
+                        <br />
+                    {/if}
+                {/each}
+            </div>
+        {/if}
+    </div>    
+    {/if}
+
     <div class="question-answer">
         {#if Array.isArray(question.answers)}
             <span
@@ -450,6 +516,7 @@
             </div>
         {/if}
     </div>
+
     <div class="question-tag">
         <span class="tag-label piptap-content" style="width: auto;">
             <p style="margin-bottom:0px;">【标签】</p>
@@ -460,6 +527,7 @@
           
         </div>
     </div>
+
     <div class="question-analysis">
         {#if question.analysis}
             <span class="analysis-label piptap-content" style="width: auto;">
@@ -786,6 +854,12 @@
                 word-wrap: break-word;
                 overflow-wrap: break-word;
                 word-break: break-all;
+            }
+
+            .input {
+                width: 75px;
+                height: 20px;
+                padding-left: 12px;
             }
         }
 
