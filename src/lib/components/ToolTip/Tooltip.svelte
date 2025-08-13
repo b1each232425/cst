@@ -28,6 +28,7 @@
    * @property {String} [cancel_text='取消']  - 取消按钮文本
    */
   import { tick, onMount } from 'svelte';
+  import { getType } from '$lib/utils/index.js';
 
   let {
     target,
@@ -50,14 +51,6 @@
    */
   const PLACEMENTS = ['top', 'left', 'right', 'bottom'];
   const HIDE_METHODS = ['click', 'hover'];
-
-  /**
-   * 获取数据类型
-   * @type {Function}
-   */
-  function getType(value) {
-    return Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
-  }
 
   /**
    * 属性校验规则
