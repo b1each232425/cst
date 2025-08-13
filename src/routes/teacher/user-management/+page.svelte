@@ -1,8 +1,8 @@
 <!--
  * @Author: yzh 3370157161@qq.com
- * @Date: 2025-08-11 07:14:33
+ * @Date: 2025-08-13 17:14
  * @LastEditors: yzh 3370157161@qq.com
- * @LastEditTime: 2025-08-11 07:14:33
+ * @LastEditTime: 2025-08-13 17:14
  * @FilePath: \src\routes\teacher\user-management\+page.svelte
  * @Description: 用户管理页面 
  * 
@@ -859,7 +859,7 @@ o.  )88b   888 .    `888'     888  888    .o
 
     .tip-wrapper {
       position: absolute;
-      left: 70%;
+      left: 73%;
       top: 50%;
       transform: translateY(-40%);
 
