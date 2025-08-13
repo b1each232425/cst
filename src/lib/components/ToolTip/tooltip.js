@@ -1,5 +1,14 @@
+/**
+ * @Author: 段春茂 2162105974@qq.com
+ * @Date: 2025-07-28 18:20:00
+ * @LastEditors: 段春茂 2162105974@qq.com
+ * @LastEditTime: 2025-08-12 18:00:00
+ * @FilePath: src\lib\components\Tooltip\tooltip.js
+ * @Description: tooltip-函数式组件
+ * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved.
+ */
 import Tooltip from './Tooltip.svelte';
-import { mount } from 'svelte';
+import { mount, unmount } from 'svelte';
 
 let container;
 
@@ -47,31 +56,25 @@ function ensureContainer() {
  */
 export function tooltip(node, options) {
   if (!options?.content) return;
-
-  let instance;
-  const mountTooltip = () => {
-    ensureContainer();
-    instance = mount(Tooltip, {
-      target: container,
-      props: {
-        target: node,
-        ...options,
-      },
-    });
-  };
-  mountTooltip();
-
-  return {
-    update(newOptions) {
-      if (instance?.$set && newOptions) {
-        instance.$set({ ...newOptions, target: node });
-      }
+  ensureContainer();
+  const TooltipInstance = mount(Tooltip, {
+    target: container,
+    props: {
+      target: node,
+      ...options,
     },
-    destroy() {
-      if (instance?.$destroy) {
-        instance.$destroy();
-        instance = null;
-      }
-    },
+  });
+
+  // 监听 node 是否从 DOM 移除
+  const observer = new MutationObserver(() => {
+    if (!document.body.contains(node)) {
+      unmount(TooltipInstance);
+      observer.disconnect();
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  return () => {
+    observer.disconnect();
   };
 }
