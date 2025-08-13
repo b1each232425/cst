@@ -146,7 +146,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       .then((response) => response.json())
       .then((res) => {
         if (res.status !== 0) {
-          throw new Error(res.msg || '未知错误');
+          throw new Error(res.msg);
         }
         if (res && Array.isArray(res.data)) {
           users = res.data.map((user) => ({
