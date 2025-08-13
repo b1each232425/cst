@@ -31,6 +31,7 @@
    * @property {Function} [options.onConfirm] 点击确认的回调函数
    */
   import '$lib/components/Button/index.scss';
+  import { getType } from '$lib/utils/index.js';
 
   let {
     content = '',
@@ -55,14 +56,6 @@
    * @type {Array}
    */
   const BASE_TYPES = ['primary', 'success', 'danger', 'warning', 'info'];
-
-  /**
-   * 获取精确的数据类型
-   * @type {Function}
-   */
-  function getType(value) {
-    return Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
-  }
 
   /**
    * @description 配置项验证数据正确性

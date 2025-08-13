@@ -4,7 +4,7 @@
  * @LastEditors: zdl 1311866870@qq.com
  * @LastEditTime: 2025-07-25 09:42:56
  * @FilePath: \exam\src\lib\utils\index.js
- * @Description: 
+ * @Description:
  */
 /**
  * @description 安全地访问结构体内的属性
@@ -13,19 +13,28 @@
  * @param defaultValue 默认值
  * @returns {Function} 结果值为 undefined 或 null 返回默认值，结果值为 0, "", false, NaN 这类 falsy 值会被返回
  */
-export function sget (obj, path, defaultValue) {
-  const keyList = path.toString().split('.')
-  const keyLength = keyList.length
+export function sget(obj, path, defaultValue) {
+  const keyList = path.toString().split('.');
+  const keyLength = keyList.length;
 
-  let result = obj
+  let result = obj;
   if (keyLength > 0) {
     for (let i = 0; i < keyLength; i++) {
       if (result == null) {
-        break
+        break;
       }
-      result = result[keyList[i]]
+      result = result[keyList[i]];
     }
   }
 
-  return result == null ? defaultValue : result
+  return result == null ? defaultValue : result;
+}
+
+/**
+ * 获取精确的数据类型
+ * @param v 要获取类型的值
+ * @returns {string} 类型名称
+ */
+export function getType(v) {
+  return Object.prototype.toString.call(v).slice(8, -1).toLowerCase();
 }
