@@ -1,9 +1,5 @@
 import { writable } from 'svelte/store';
 
-export const authMetadata = writable([]);
-
-export const permittedModulesKeyInCache = 'permittedModules';
-
 export const baseNavItems = writable([
   {
     name: 'login',
@@ -53,13 +49,6 @@ export const baseNavItems = writable([
     title: '试卷管理',
     path: '/teacher/paper',
     icon: '/sidebar/nav_icon/paper.svg',
-    children: [
-      {
-        name: 'manual',
-        title: '自定义组卷',
-        path: '/teacher/paper/manual',
-      },
-    ],
   },
   {
     name: 'practiceManagement',
@@ -106,9 +95,9 @@ export const baseNavItems = writable([
       //   force_hide: true,
       // },
       {
-        name:'previewExam',
-        title:'预览试卷',
-        path:'/teacher/exam/previewExam',
+        name: 'previewExam',
+        title: '预览试卷',
+        path: '/teacher/exam/previewExam',
         force_hide: true,
       },
     ],
@@ -133,11 +122,7 @@ export const baseNavItems = writable([
       },
     ],
   },
-  {
-    name: 'correctDetail',
-    title: '批改详情',
-    path: '/teacher/correct/correct',
-  },
+
   {
     name: 'gradeManagement',
     title: '成绩管理',
@@ -266,7 +251,7 @@ export const baseNavItems = writable([
     children: [
       {
         name: 'addUser',
-        title: '添加用户',
+        title: '创建用户',
         path: '/teacher/user-management/addUser',
         force_hide: true,
       },

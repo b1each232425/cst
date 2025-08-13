@@ -14,8 +14,100 @@ describe('Pagination 组件测试', () => {
   let handlePageSizeChange;
 
   beforeEach(() => {
+    // 在每个测试前，清空所有的模拟
+    vi.restoreAllMocks();
+
     handlePageChange = vi.fn();
     handlePageSizeChange = vi.fn();
+  });
+
+  /**
+   * 测试 total_items 参数
+   */
+  it('total_items 参数不是数字时，应输出警告并使用默认值', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Pagination, { props: { total_items: '100' } });
+
+    // 检查警告信息
+    expect(spy).toHaveBeenCalledWith('[Pagination] total_items 应该是一个数字，当前为 string');
+
+    // 检查是否使用默认值
+    const totalItemsElement = screen.getByText(/共 0 条/);
+    expect(totalItemsElement).toBeInTheDocument();
+  });
+
+  /**
+   * 测试 page_size 参数
+   */
+  it('page_size 参数不是数字时，应输出警告并使用默认值', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Pagination, { props: { page_size: '100' } });
+
+    // 检查警告信息
+    expect(spy).toHaveBeenCalledWith('[Pagination] page_size 应该是一个数字，当前为 string');
+
+    // 检查是否使用默认值
+    const pageSizeElement = screen.getByText('10条/页');
+    expect(pageSizeElement).toBeInTheDocument();
+  });
+
+  /**
+   * 测试 current_page 参数
+   */
+  it('current_page 参数不是数字时，应输出警告并使用默认值', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Pagination, { props: { total_items: 100, current_page: '2' } });
+
+    // 检查警告信息
+    expect(spy).toHaveBeenCalledWith('[Pagination] current_page 应该是一个数字，当前为 string');
+
+    // 检查是否使用默认值
+    expect(screen.getByText('1')).toHaveClass('active');
+  });
+
+  /**
+   * 测试 jump_page 参数
+   */
+  it('jump_page 参数不是数字时，应输出警告并使用默认值', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Pagination, { props: { jump_page: '1' } });
+
+    // 检查警告信息
+    expect(spy).toHaveBeenCalledWith('[Pagination] jump_page 应该是一个数字，当前为 string');
+
+    // 检查是否使用默认值
+    const jumpPageElement = screen.getByTestId('jump-to-input');
+    expect(jumpPageElement).toHaveValue(1);
+  });
+
+  /**
+   * 测试 page_size_options 参数
+   */
+  it('page_size_options 参数不是数组时，应输出警告并使用默认值', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Pagination, { props: { page_size_options: '10, 20, 30' } });
+
+    // 检查警告信息
+    expect(spy).toHaveBeenCalledWith('[Pagination] page_size_options 应该是一个数组，当前为 string');
+
+    // 检查是否使用默认值
+    const pageSizeOptionsElements = screen.getByText('10条/页');
+    expect(pageSizeOptionsElements).toBeInTheDocument();
+  });
+
+  /**
+   * 测试 page_size_options 数组项不是数字时，应输出警告并使用默认值
+   */
+  it('page_size_options 数组项不是数字时，应输出警告并使用默认值', () => {
+    const spy = vi.spyOn(console, 'warn');
+    render(Pagination, { props: { total_items: 100, page_size_options: ['hhah', 'kshf'] } });
+
+    // 检查警告信息
+    expect(spy).toHaveBeenCalledWith('[Pagination] page_size_options[1] 应该是一个数字，当前为 string');
+
+    // 检查是否使用默认值
+    const pageSizeOptionsElements = screen.getByText('10条/页');
+    expect(pageSizeOptionsElements).toBeInTheDocument();
   });
 
   it('应该渲染正确的总条数显示', async () => {
@@ -28,9 +120,9 @@ describe('Pagination 组件测试', () => {
       },
     });
 
-    await screen.findByText(`共 ${total_items} 条`);
     // 等待并确保总条数显示
-    expect(screen.getByText(`共 ${total_items} 条`)).toBeInTheDocument(); // 验证总条数
+    const totalItemsText = await screen.findByText(`共 ${total_items} 条`);
+    expect(totalItemsText).toBeInTheDocument(); // 验证总条数
   });
 
   it('应该渲染正确的页码按钮', async () => {
@@ -415,5 +507,56 @@ describe('Pagination 组件测试', () => {
 
     fireEvent.click(screen.getByText('10条/页'));
     expect(screen.getByText('2')).toHaveClass('active');
+  });
+
+  it('应该正确触发点击页数按钮跳转页码功能', async () => {
+    render(Pagination, {
+      props: {
+        total_items,
+        page_size,
+        current_page,
+        jump_page,
+        page_size_options,
+      },
+    });
+
+    // 验证按钮正确渲染
+    expect(screen.getByText('1')).toHaveClass('active');
+
+    // 点击按钮2跳转到第二页
+    fireEvent.click(screen.getByText('2'));
+    expect(screen.getByText('2')).toHaveClass('active');
+
+    // 点击按钮3跳转到第3页
+    fireEvent.click(screen.getByText('3'));
+    expect(screen.getByText('3')).toHaveClass('active');
+
+    // 点击按钮4跳转到第4页
+    fireEvent.click(screen.getByText('4'));
+    expect(screen.getByText('4')).toHaveClass('active');
+
+    // 点击按钮5跳转到第5页
+    fireEvent.click(screen.getByText('5'));
+    expect(screen.getByText('5')).toHaveClass('active');
+
+    // 点击按钮6跳转到第6页
+    fireEvent.click(screen.getByText('6'));
+    expect(screen.getByText('6')).toHaveClass('active');
+
+    // 点击按钮7跳转到第7页
+    fireEvent.click(screen.getByText('7'));
+    expect(screen.getByText('7')).toHaveClass('active');
+
+    // 点击按钮8跳转到第8页
+    fireEvent.click(screen.getByText('8'));
+    expect(screen.getByText('8')).toHaveClass('active');
+
+    // 点击按钮9跳转到第9页
+    fireEvent.click(screen.getByText('9'));
+    expect(screen.getByText('9')).toHaveClass('active');
+
+    // 点击按钮10跳转到第10页
+    fireEvent.click(screen.getByText('10'));
+    expect(screen.getByText('10')).toHaveClass('active');
   });
 });

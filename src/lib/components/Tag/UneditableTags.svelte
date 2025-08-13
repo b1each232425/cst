@@ -12,10 +12,13 @@
  * @Copyright: Copyright (c) 2025 by Mayux, All Rights Reserved. 
  */ 
  -->
-
 <script>
+  import { getType } from '$lib/utils/index.js';
+  /**
+   * 默认标签，默认颜色常量
+   * @type {Array}
+   */
   const DEFAULT_TAGS = ['frontend', 'backend', 'svelte', '前端', 'JavaScript', 'CSS', 'HTML', 'Node.js'];
-
   const DEFAULT_COLORS = [
     '#40d5ff',
     '#59dcff',
@@ -53,6 +56,41 @@
   let { tags = DEFAULT_TAGS, colors = DEFAULT_COLORS } = $props();
 
   /**
+   * 属性校验规则
+   * @type {Object}
+   */
+  const propRules = {
+    tags: { type: ['array'], default: DEFAULT_TAGS, check: (v) => v.length > 0 },
+    colors: { type: ['array'], default: DEFAULT_COLORS, check: (v) => v.length > 0 },
+  };
+
+  /**
+   * 校验props属性是否合法，以及进行容错处理
+   * @param data
+   * @param key
+   */
+  function validateAndAssign(data, key) {
+    const rule = propRules[key];
+    let value = data.value;
+    let reason = '';
+    if (!rule.type.includes(getType(value))) {
+      reason = `类型错误，传入类型为 '${getType(value)}'，期望类型为 '${rule.type.join(', ')}'`;
+    } else if (rule.check && !rule.check(value)) {
+      reason = `校验函数不通过`;
+    }
+    if (reason) {
+      console.warn(`[UneditableTags] 属性 '${key}' 无效:${reason},已使用默认值 '${rule.default}',传入值为:'${value}'`);
+      data.set(rule.default);
+    }
+  }
+
+  /**
+   * 校验props属性是否合法，以及进行容错处理
+   */
+  validateAndAssign({ value: tags, set: (v) => (tags = v) }, 'tags');
+  validateAndAssign({ value: colors, set: (v) => (colors = v) }, 'colors');
+
+  /**
    * Fisher-Yates 洗牌算法，打乱颜色数组
    * @param {string[]} array
    */
@@ -70,18 +108,14 @@
   let tag_colors = tags.map((_, i) => shuffled_colors[i % shuffled_colors.length]);
 </script>
 
-{#snippet courseTag(/** @type {string} */ tag, /** @type {number} */ i)}
-  <courseTag>
-    <div class="tag">
-      <span class="tag-square" style="background-color: {tag_colors[i]};"></span>
-      <span class="tag-text">{tag}</span>
-    </div>
-  </courseTag>
-{/snippet}
-
 <div class="tags">
-  {#each tags as tag, i}
-    {@render courseTag(tag, i)}
+  {#each tags as tag, i (i)}
+    <courseTag>
+      <div class="tag">
+        <span class="tag-square" style="background-color: {tag_colors[i]};"></span>
+        <span class="tag-text">{tag}</span>
+      </div>
+    </courseTag>
   {/each}
 </div>
 
@@ -95,26 +129,26 @@
     flex-wrap: wrap;
     overflow-y: auto;
     max-height: $max-container-height;
-  }
 
-  .tag {
-    display: flex;
-    align-items: center;
-    font-size: 14px;
-  }
+    .tag {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
 
-  .tag-text {
-    padding: 0 0 0 1px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: $max-tag-width;
-    color: #797979;
-  }
+      &-text {
+        padding: 0 0 0 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: $max-tag-width;
+        color: #797979;
+      }
 
-  .tag-square {
-    width: 15px;
-    height: 15px;
-    border-radius: 3px;
+      &-square {
+        width: 15px;
+        height: 15px;
+        border-radius: 3px;
+      }
+    }
   }
 </style>

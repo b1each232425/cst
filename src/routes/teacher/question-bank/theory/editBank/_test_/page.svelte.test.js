@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, getByText, render, screen ,waitFor,fireEvent} from '@testing-library/svelte';
+import { act, getByText, render, screen ,waitFor,fireEvent,within} from '@testing-library/svelte';
 import BankPage from '../+page.svelte';
 import { goto } from '$app/navigation';
-
+import { AddNewQuestion } from '../+page.svelte';
 // 模拟导航函数
 vi.mock('$app/navigation', () => ({
   goto: vi.fn(),
@@ -287,6 +287,87 @@ it('获取题目正确响应', async () => {
   });
     
 });
+
+
+
+it('点击"单选"按钮应该显示单选题编辑面板', async () => {
+
+   global.fetch = vi.fn(async (url, options) => {
+    const method = options?.method || 'GET';
+    if (url.includes('/api/questions') && method === 'GET') {
+      return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 0,
+          data: [] ,
+        }) 
+      });
+    }
+  });
+   render(BankPage);
+    
+    // 初始状态不应该显示编辑面板
+    expect(screen.queryByText('新增单选题')).toBeNull();
+    
+  // 1. 打开下拉菜单
+   fireEvent.click(screen.getByText('添加题目'));
+    fireEvent.click(screen.getByText('单选'));
+   
+  });
+ 
+  it('点击"多选"按钮应该显示多选题编辑面板', async () => {
+     global.fetch = vi.fn(async (url, options) => {
+    const method = options?.method || 'GET';
+    if (url.includes('/api/questions') && method === 'GET') {
+      return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 0,
+          data: [] ,
+        }) 
+      });await page.getByRole('option', { name: '单选' }).click();
+    }
+  });
+   render(BankPage);
+    
+    // 初始状态不应该显示编辑面板
+    expect(screen.queryByText('新增多选题')).toBeNull();
+    
+  // 1. 打开下拉菜单
+   fireEvent.click(screen.getByText('添加题目'));
+    fireEvent.click(screen.getByText('多选'));
+   
+  });
+ 
+  it('点击"判断"按钮应该显示判断题编辑面板', async () => {
+      global.fetch = vi.fn(async (url, options) => {
+    const method = options?.method || 'GET';
+    if (url.includes('/api/questions') && method === 'GET') {
+      return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 0,
+          data: [] ,
+        }) 
+      });
+    }
+  });
+   render(BankPage);
+    
+    // 初始状态不应该显示编辑面板
+    expect(screen.queryByText('新增判断题')).toBeNull();
+    
+  // 1. 打开下拉菜单
+   fireEvent.click(screen.getByText('添加题目'));
+    fireEvent.click(screen.getByText('判断'));
+   
+  });
 
 
 

@@ -19,19 +19,18 @@
     onCancel = (/** @type {boolean} */ load_new_file) => {
       console.log('取消选择');
     },
-    onConfirm = (/** @type {any} */ selected_ids) => {
+    onConfirm = (/** @type {any} */ newStudents,selected_ids) => {
       console.log(selected_ids);
     },
   } = $props();
 
-  /**
-   * @type {any[]}
-   */
-  let student_list = $state([]);
+  //新增的学生
+  let newStudents = $state([]);
 
-  // 是否处于选择模式（true为选择模式，false为查看已选择模式）
-  let is_selection_mode = $state(false);
   let page_size = $state(10);
+
+  //使用的api,用于区分导入考试还是练习导入
+  let import_api_url = '/api/practice';
 
   //搜索参数
   let search_params = $state({
@@ -64,10 +63,10 @@
     if (selected_search_params.name) {
       filtered = selected_ids.filter(
         (student) =>
-          (student.official_name &&
-            student.official_name.toLowerCase().includes(selected_search_params.name.toLowerCase())) ||
+          (student.officialName &&
+            student.officialName.toLowerCase().includes(selected_search_params.name.toLowerCase())) ||
           (student.phone && student.phone.includes(selected_search_params.name)) ||
-          (student.id_card_no && student.id_card_no.includes(selected_search_params.name)),
+          (student.idCardNo && student.idCardNo.includes(selected_search_params.name)),
       );
     }
     return filtered;
@@ -126,7 +125,7 @@
    * @type {boolean} 表示是否全选
    */
   let is_all_selected = $state(false);
-  let show_student_import_panel = $state(false);
+  let show_import_panel = $state(false);
 
   /**
    * @type {import("./StudentImportPanel.svelte").default & { triggerFileInput: () => void } | null}
@@ -137,38 +136,6 @@
   function getMaxSerialNumber() {
     if (selected_ids.length === 0) return 0;
     return Math.max(...selected_ids.map((item) => item.serial_number || 0));
-  }
-
-
-
-  /**
-   *
-   * 页数跳转
-   */
-  function onPageChooseFunc(event) {
-    if (loading === true) {
-      return;
-    }
-    search_params.page = event.detail;
-    searchExaminee();
-  }
-
-  /**
-   * @param {string} value
-   * 搜索
-   */
-  function onSearch(value) {
-    search_params.name = value === '' ? '' : value;
-
-    //防抖逻辑
-    if (name_search_timer) {
-      clearTimeout(name_search_timer);
-    }
-    name_search_timer = setTimeout(() => {
-      name_search_timer = null;
-      search_params.page = 1;
-      searchExaminee();
-    }, 300);
   }
 
   /**
@@ -189,85 +156,6 @@
     // 注意：Pagination组件传递的是 event.detail，而不是直接的页码
     const page = typeof event === 'number' ? event : event.detail;
     selected_search_params.page = page;
-  }
-
-  async function searchExaminee() {
-    loading = true;
-    error = '';
-
-    // 构建查询参数
-    let query_params = new URLSearchParams();
-
-    // 添加基础参数
-    query_params.append('page', search_params.page.toString());
-    query_params.append('pageSize', search_params.pageSize.toString());
-
-    // 添加可选参数
-    if (search_params.name && search_params.name !== '') {
-      query_params.append('officialName', search_params.name);
-    }
-
-    const response = await fetch(`/api/user?${query_params.toString()}`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-      .then((response) => {
-        if (response.status === 404) {
-          toast.error('找不到页面');
-          return;
-        }
-        return response.json();
-      })
-      .then((result) => {
-        if (result.status != 0) {
-          error = result.msg || '搜索失败';
-          student_list = [];
-          totals = 0;
-          search_params.page = current_page;
-          toast.error(error);
-        } else {
-          student_list = result.data === null ? [] : result.data;
-          totals = result.rowCount;
-          current_page = search_params.page;
-
-          if (student_list !== null) {
-            //更新选中状态
-            let selected_id_set = new Set(selected_ids.map((item) => item.id));
-            student_list.forEach((student) => {
-              if (!selected_id_set.has(student.ID)) {
-                student.selected = false;
-              } else {
-                student.selected = true;
-              }
-            });
-          }
-
-          is_all_selected = isAllSelected();
-        }
-        loading = false;
-      })
-      .catch((error) => {
-        console.log(error);
-        toast.error('获取学生列表失败');
-      });
-  }
-
-  // 切换到选择模式
-  function switchToSelectionMode() {
-    is_selection_mode = true;
-    search_params.page = 1;
-    searchExaminee();
-  }
-
-  // 返回查看模式
-  function backToViewMode() {
-    is_selection_mode = false;
-    // 重置已选择学生的分页参数
-    selected_search_params.page = 1;
-    selected_search_params.name = '';
   }
 
   let initial_load = $derived(show_panel);
@@ -313,9 +201,9 @@
       },
     })
       .then((response) => {
-        if (response.status === 404) {
+        if (!response.ok) {
           toast.error('获取学生列表失败');
-          return;
+          throw new Error('获取学生列表失败');
         }
         return response.json();
       })
@@ -328,7 +216,16 @@
           toast.error(error);
         } else if (selected_ids.length > 0 && selected_ids.length != result.data.length) {
         } else {
-          selected_ids = result.data === null ? [] : result.data;
+          selected_ids =
+            result.data === null
+              ? []
+              : result.data.map((item) => ({
+                  ...item,
+                  officialName: item.official_name,
+                  idCardNo: item.id_card_no,
+                  
+                }));
+              
         }
       })
       .catch((error) => {
@@ -341,46 +238,6 @@
       });
   }
 
-  // 切换全选状态
-  function toggleSelectAll() {
-    is_all_selected = !is_all_selected; // 切换全选状态
-    student_list.forEach((/** @type {{ selected: boolean; }} */ student) => {
-      student.selected = is_all_selected; // 更新所有行的选中状态
-    });
-
-    //根据全选状态调整已选择的数组
-    if (is_all_selected) {
-      student_list.forEach((student) => {
-        const exists = selected_ids.find((item) => item.id === student.ID);
-        if (!exists) {
-          selected_ids.push({
-            id: student.ID,
-            official_name: student.OfficialName,
-            gender: student.Gender,
-            account: student.Account,
-            phone: student.Phone,
-            id_card_no: student.IDCardNo,
-            serial_number: selected_ids.length + 1,
-          });
-        }
-      });
-    } else {
-      student_list.forEach(
-        /** @param {{ id: string }} student */
-        (student) => {
-          const index = selected_ids.findIndex((item) => item.id === student.ID);
-          if (index !== -1) {
-            selected_ids.splice(index, 1);
-          }
-        },
-      );
-
-      // 只在取消全选时检查是否需要重新计算序号
-      recalculateSerialNumbers();
-    }
-    is_all_selected = isAllSelected();
-  }
-
   //当打开面板时自动搜索学生列表
   $effect(() => {
     if (show_panel && initial_load) {
@@ -391,64 +248,57 @@
       if (practice_id) {
         // 获取已选学生的信息
         getStudentInfo(practice_id);
-        // 初始化为查看模式，不自动搜索
-        is_selection_mode = false;
-      } else {
-        // 初始化为查看模式，不自动搜索
-        is_selection_mode = false;
       }
     }
   });
 
-  // 判断是否全选
-  function isAllSelected() {
-    if (student_list !== null) {
-      return student_list.every((student) => student.selected);
-    } else {
-      return false;
+  //下载模板函数
+  // 下载模板
+  function downloadTemplate() {
+    const url = '/student_import_excel/导入学生模版.xlsx';
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '导入学生模版.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  // 导入学生
+  function handleImport() {
+    if (student_import_panel) {
+      student_import_panel.triggerFileInput();
     }
   }
 
-  //下载模板函数
-    async function downloadTemplate() {
-        
-         await fetch(
-                "/api/files/exam/d0a9rv6slh1c714h2fkg.xlsx",
-                {
-                    method: "GET",
-                },
-            ).then((response)=>{
-              if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.blob();
-            }).then(async(blob)=>{
-               let filename = "考生导入模板.xlsx";
-                 // 获取文件内容
-            // 创建下载链接
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
+  function handleImportSuccess(is_all_ok, import_data) {
+    if (is_all_ok && import_data) {
+      // importedData 包含了所有导入的学生信息
+      console.log('导入的学生数据:', import_data);
 
-            // 清理
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-            }).catch (error=>{
-            console.error("下载模板失败:", error);
-            toast.error("下载模板失败");
-        }) 
+      // 处理导入的学生数据，例如添加到学生列表
+       newStudents = import_data.map((student, index) => ({
+        serial_number: selected_ids.length + index + 1,
+        // 可以添加其他需要的字段
+        officialName: student.officialName,
+        mobilePhone: student.MobilePhone,
+        gender: student.Gender,
+        idCardNo: student.idCardNo,
+        account: student.Account,
+      }));
+
+      // 更新选中学生列表
+      selected_ids = [...selected_ids, ...newStudents];
+      recalculateSerialNumbers();
     }
-
-
+    show_import_panel = false;
+  }
 </script>
 
 <div class={show_panel ? 'examinee-panel-container' : 'hide'}>
   <div class="examinee-panel">
     <div class="panel-header">
-      <span class="panel-header-text">{is_selection_mode ? '选择学生' : '学生列表'}</span>
+      <span class="panel-header-text">{'学生列表'}</span>
       <Button
         onclick={() => {
           show_panel = false;
@@ -459,90 +309,28 @@
       >
     </div>
     <div class="panel-body">
-      {#if !is_selection_mode}
-        <!-- 查看已选择模式 -->
-        <div class="selected-examinees-container">
-          <div class="action-container">
-            <div class="examinee-search-container">
-              <InputBox label={'搜索学生：'} placeholder={'请输姓名/手机号/身份证号'} onInput={onSelectedSearch}
-              ></InputBox>
-            </div>
-            <div class="button-group">
-              <Button onclick={switchToSelectionMode}>选择学生</Button>
-            </div>
-          </div>
-          <div class="examinee-selection-table-container">
-            <table class="table">
-              <thead class="student-table-head">
-                <tr class="table-head-row">
-                  <th class="table-head">姓名</th>
-                  <th class="table-head">性别</th>
-                  <th class="table-head">手机号</th>
-                  <th class="table-head">身份证号</th>
-                </tr>
-              </thead>
-              <tbody>
-                {#each current_page_selected_ids as student}
-                  <tr class="examinee">
-                    <td>{student.official_name || '--'}</td>
-                    <td>{student.gender || '--'}</td>
-                    <td>{student.phone || '--'}</td>
-                    <td>{student.id_card_no || '--'}</td>
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
-            {#if filtered_selected_ids.length === 0}
-              <div style="height: 200px; padding: 0;">
-                <div class="empty-wrapper">
-                  <Empty text="暂无学生数据" />
-                </div>
-              </div>
-            {/if}
-          </div>
-          <div class="pagination-container">
-            <span style="font-size: 12px; margin-right:10px">
-              已选 <span style="color: #00A870; margin:0 5px 0 5px;">{filtered_selected_ids.length}</span> 条
-            </span>
-            <Pagination
-              total_items={filtered_selected_ids.length}
-              page_size={selected_search_params.pageSize}
-              current_page={selected_search_params.page}
-              on:pageChange={onSelectedPageChooseFunc}
-              on:pageSizeChange={handle_page_size_change}
-            ></Pagination>
-          </div>
-        </div>
-      {:else}
-        <!-- 选择模式 -->
+      <!-- 查看已选择模式 -->
+      <div class="selected-examinees-container">
         <div class="action-container">
           <div class="examinee-search-container">
-            <InputBox
-              label={'搜索学生'}
-              placeholder={'请输姓名/手机号/身份证号'}
-              bind:value={search_params.name}
-              onInput={onSearch}
+            <InputBox label={'搜索学生：'} placeholder={'请输姓名/手机号/身份证号'} onInput={onSelectedSearch}
             ></InputBox>
           </div>
           <div class="button-group">
-            <Button type="info" onclick={backToViewMode} plain>返回</Button>
-             <Button onclick={downloadTemplate}>
-                            下载模板
-                        </Button>
-                        <Button  onclick={() => {
-                            if (student_import_panel) {
-                                student_import_panel.triggerFileInput();
-                            }
-                        }}>导入学生</Button>
+            <Button onclick={downloadTemplate}>下载模板</Button>
+            <Button
+              onclick={() => {
+                if (student_import_panel) {
+                  student_import_panel.triggerFileInput();
+                }
+              }}>导入学生</Button
+            >
           </div>
         </div>
         <div class="examinee-selection-table-container">
           <table class="table">
             <thead class="student-table-head">
               <tr class="table-head-row">
-                <th class="table-head" style="width: 30px;">
-                  <input type="checkbox" class="custom-checkbox" onchange={toggleSelectAll} checked={is_all_selected} />
-                </th>
                 <th class="table-head">姓名</th>
                 <th class="table-head">性别</th>
                 <th class="table-head">手机号</th>
@@ -550,57 +338,17 @@
               </tr>
             </thead>
             <tbody>
-              {#each student_list as student, index}
-                <tr class={`examinee ${student.selected ? 'selected' : ''}`}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      class="custom-checkbox"
-                      checked={student.selected}
-                      onchange={/** @param {Event} event */
-                      (event) => {
-                        const target = /** @type {HTMLInputElement} */ (event.target);
-                        if (target && target.checked) {
-                          if (!selected_ids.find((g) => g.id === student.ID)) {
-                            const currentMaxSerial = getMaxSerialNumber();
-                            selected_ids.push({
-                              id: student.ID,
-                              official_name: student.OfficialName,
-                              account: student.Account,
-                              gender: student.Gender,
-                              phone: student.MobilePhone,
-                              id_card_no: student.IDCardNo,
-                              serial_number: currentMaxSerial + 1,
-                            });
-                          }
-                          student.selected = true;
-                          is_all_selected = isAllSelected();
-                        } else {
-                          const index = selected_ids.findIndex((g) => g.id === student.ID);
-                          if (index !== -1) {
-                            selected_ids.splice(index, 1);
-                          }
-                          student.selected = false;
-                          is_all_selected = isAllSelected();
-                        }
-                      }}
-                    />
-                  </td>
-                  <td>{student.OfficialName === null || student.OfficialName === '' ? '--' : student.OfficialName}</td>
-                  <td
-                    >{student.Gender === null || student.Gender === ''
-                      ? '--'
-                      : student.Gender === 'F'
-                        ? '女'
-                        : '男'}</td
-                  >
-                  <td>{student.MobilePhone === null || student.MobilePhone === '' ? '--' : student.MobilePhone}</td>
-                  <td>{student.IDCardNo === null || student.IDCardNo === '' ? '--' : student.IDCardNo}</td>
+              {#each current_page_selected_ids as student}
+                <tr class="examinee">
+                  <td>{student.officialName || '--'}</td>
+                  <td>{student.gender || '--'}</td>
+                  <td>{student.mobilePhone || '--'}</td>
+                  <td>{student.idCardNo || '--'}</td>
                 </tr>
               {/each}
             </tbody>
           </table>
-          {#if student_list.length === 0}
+          {#if filtered_selected_ids.length === 0}
             <div style="height: 200px; padding: 0;">
               <div class="empty-wrapper">
                 <Empty text="暂无学生数据" />
@@ -610,17 +358,17 @@
         </div>
         <div class="pagination-container">
           <span style="font-size: 12px; margin-right:10px">
-            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_ids.length}</span> 条
+            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{filtered_selected_ids.length}</span> 条
           </span>
           <Pagination
-            total_items={totals}
-            page_size={search_params.pageSize}
-            current_page={search_params.page}
-            on:pageChange={onPageChooseFunc}
+            total_items={filtered_selected_ids.length}
+            page_size={selected_search_params.pageSize}
+            current_page={selected_search_params.page}
+            on:pageChange={onSelectedPageChooseFunc}
             on:pageSizeChange={handle_page_size_change}
           ></Pagination>
         </div>
-      {/if}
+      </div>
     </div>
     <div class="panel-footer">
       <Button
@@ -637,46 +385,20 @@
         onclick={() => {
           show_panel = false;
           search_params.page = 1;
-          onConfirm(selected_ids);
+          onConfirm(newStudents,selected_ids);
         }}>确定</Button
       >
     </div>
   </div>
 </div>
 <StudentImportPanel
-    onImport={(/** @type {any[]} */ success_student, /** @type {boolean} */ has_error) => {
-        if (success_student && success_student.length > 0) {
-            // 过滤掉已存在的id
-            const newStudents = success_student
-                .filter(
-                    (/** @type {any} */ student) =>
-                        !selected_ids.some((item) => item.id === student),
-                )
-                .map((/** @type {any} */ student, /** @type {number} */ index) => ({
-                    id: student,
-                    serial_number: selected_ids.length + index + 1,
-                }));
-
-            // 更新selected_ids
-            selected_ids = [...selected_ids, ...newStudents];
-
-            searchExaminee();
-
-            // 检查是否需要重新计算序号
-            recalculateSerialNumbers();
-        }
-
-        if (!has_error) {
-            show_student_import_panel = false;
-        }
-    }}
-    onCancel={() => {
-        show_student_import_panel = false;
-    }}
-    bind:show={show_student_import_panel}
-    bind:this={student_import_panel}
+  onImport={handleImportSuccess}
+  onCancel={() => {
+    show_import_panel = false;
+  }}
+  bind:show={show_import_panel}
+  bind:this={student_import_panel}
 />
-
 
 <style lang="scss" scoped>
   .hide {
@@ -840,26 +562,26 @@
     overflow-y: auto;
   }
   .download-template-button {
-        border: none;
-        border-radius: 3px;
-        background-color: #e3e3e3;
-        width: 100px;
-        height: 32px;
-        color: #165dff;
-        font-size: 14px;
-        cursor: pointer;
-    }
+    border: none;
+    border-radius: 3px;
+    background-color: #e3e3e3;
+    width: 100px;
+    height: 32px;
+    color: #165dff;
+    font-size: 14px;
+    cursor: pointer;
+  }
 
-    .upload-file-button {
-        border: none;
-        border-radius: 3px;
-        background-color: #165dff;
-        width: 100px;
-        height: 32px;
-        color: white;
-        font-size: 14px;
-        cursor: pointer;
-    }
+  .upload-file-button {
+    border: none;
+    border-radius: 3px;
+    background-color: #165dff;
+    width: 100px;
+    height: 32px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+  }
 
   .panel-footer {
     display: flex;

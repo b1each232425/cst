@@ -5,6 +5,18 @@
    * }}
    */
   let { content } = $props();
+
+  // 校验 content 参数
+  (() => {
+    if (typeof content !== 'string') {
+      console.warn(`[Brand] content 应该是一个字符串，当前为 ${typeof content}`);
+      content = ''; // 设置默认值为空字符串
+    }
+    if (content.trim() === '') {
+      console.warn('[Brand] 版权信息内容不能为空');
+      content = '版权所有'; // 设置默认值
+    }
+  })();
 </script>
 
 <footer>

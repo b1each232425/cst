@@ -54,15 +54,56 @@
   let ball_element; // 绑定小球span
   let r_text_element; // 绑定右文本span
 
-  function checkProps() {
-    if (is_checked == null) is_checked = false;
-    if (iball_color == null) ball_color = 'white';
-    if (checked_background_color == null) checked_background_color = '#4a90e2';
-    if (unchecked_background_color == null) unchecked_background_color = '#ccc';
-    if (left_text == null) left_text = 'Off';
-    if (right_text == null) right_text = 'On';
-    if (width == null) width = '80px';
-  }
+  // 校验传入的参数
+  (() => {
+    // 校验 is_checked，必须是布尔值
+    if (typeof is_checked !== 'boolean') {
+      console.warn(`[Switch] is_checked 必须是布尔值，当前为 ${typeof is_checked}`);
+      is_checked = false; // 设置默认值
+    }
+
+    // 校验 ball_color，必须是字符串
+    if (typeof ball_color !== 'string') {
+      console.warn(`[Switch] ball_color 必须是字符串，当前为 ${typeof ball_color}`);
+      ball_color = 'white'; // 设置默认值
+    }
+
+    // 校验 checked_background_color，必须是字符串
+    if (typeof checked_background_color !== 'string') {
+      console.warn(`[Switch] checked_background_color 必须是字符串，当前为 ${typeof checked_background_color}`);
+      checked_background_color = '#4a90e2'; // 设置默认值
+    }
+
+    // 校验 unchecked_background_color，必须是字符串
+    if (typeof unchecked_background_color !== 'string') {
+      console.warn(`[Switch] unchecked_background_color 必须是字符串，当前为 ${typeof unchecked_background_color}`);
+      unchecked_background_color = '#ccc'; // 设置默认值
+    }
+
+    // 校验 left_text，必须是字符串
+    if (typeof left_text !== 'string') {
+      console.warn(`[Switch] left_text 必须是字符串，当前为 ${typeof left_text}`);
+      left_text = 'Off'; // 设置默认值
+    }
+
+    // 校验 right_text，必须是字符串
+    if (typeof right_text !== 'string') {
+      console.warn(`[Switch] right_text 必须是字符串，当前为 ${typeof right_text}`);
+      right_text = 'On'; // 设置默认值
+    }
+
+    // 校验 width，必须是字符串且符合 CSS 长度单位（px, em, %, 等）
+    if (typeof width !== 'string' || !/^(\d+(\.\d+)?)(px|em|rem|vw|vh|%)$/i.test(width)) {
+      console.warn(`[Switch] width 必须是有效的 CSS 长度单位，当前为 ${typeof width}`);
+      width = '80px'; // 设置默认值
+    }
+
+    // 校验 clickSwitchButton，必须是函数
+    if (typeof clickSwitchButton !== 'function') {
+      console.warn(`[Switch] clickSwitchButton 必须是函数，当前为 ${typeof clickSwitchButton}`);
+      clickSwitchButton = () => {}; // 设置默认空函数
+    }
+  })();
 
   onMount(() => {
     // 计算高度，保持 8:3 的比例
@@ -87,7 +128,7 @@
     switch_button_element.style.setProperty('--button-height', height);
     switch_button_element.style.setProperty('--ball-size', ball_size);
 
-    //初始化小球大小
+    // 初始化小球大小
     ball_element.style.setProperty('--ball-color', ball_color);
   });
 

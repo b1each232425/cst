@@ -1,16 +1,26 @@
+<!--
+ * @Author: 林炜佳 wj2144632819@qq.com
+ * @Date: 2025-07-23 10:00:00
+ * @LastEditors: 林炜佳 wj2144632819@qq.com
+ * @LastEditTime: 2025-08-06 14:18:07
+ * @FilePath: \exam\src\routes\student\exam\+page.svelte
+ * @Description: 学生端考试列表页面
+ * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
+-->
+
 <script>
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
-  import Button from '$lib/components/Button/Button.svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
-  import InputBox from '$lib/components/Input/InputBox.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import DatePicker from '$lib/components/DatePicker/DatePicker.svelte';
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Dialog from '../answer/_component/Dialog.svelte';
   import { formatTimestamp } from '$lib/utils/time_utils';
+  import '$lib/components/Button/index.scss';
+  import '$lib/components/Input/index.scss';
 
   // mock 数据
   // const mockExam = [
@@ -19,6 +29,7 @@
   //     name: 'H34',
   //     exam_sessions: [
   //       {
+  //         id: 1,
   //         start_time: '2025-08-01 09:00',
   //         end_time: '2025-08-01 11:00',
   //         session_num: '001',
@@ -29,6 +40,7 @@
   //         total_score: 100,
   //       },
   //       {
+  //         id: 2,
   //         start_time: '2025-08-01 09:00',
   //         end_time: '2025-08-01 11:00',
   //         session_num: '001',
@@ -216,61 +228,6 @@
   // 日期选择器对象
   let date_picker = null;
 
-  // 场次状态映射
-  const status_map = new Map([
-    ['02', '待开始'],
-    ['04', '进行中'],
-    ['06', '已结束'],
-    ['08', '批改中'],
-    ['10', '已批改'],
-    ['12', '已提交'],
-  ]);
-
-  // 考生状态映射
-  const examinee_status_map = new Map([
-    ['00', '未交卷'],
-    ['02', '缺考'],
-    ['04', '补考'],
-    ['06', '作弊'],
-    ['10', '已交卷'],
-  ]);
-
-  // 操作映射表
-  const action_map = new Map([
-    ['00', '进入考试'],
-    ['02', '查看试卷'],
-  ]);
-
-  const action_handlers = {
-    '00': (examId) => gotoExamDetail(examId),
-    '02': () => gotoExamResult(),
-  };
-
-  // 处理对应操作
-  function handleAction(action, examId) {
-    if (action && action_map.has(action)) {
-      const handler = action_handlers[action];
-      handler(examId);
-    }
-  }
-
-  // TODO 当前阶段使用分数是否为-1作为标准
-  // 是否已经批改好
-  function isMarked(status, score) {
-    return status === '10' && score !== -1;
-  }
-
-  //TODO 当前阶段特判
-  function statusText(status, score) {
-    if (status !== '10' || (status === '10' && score === -1)) return status_map.get(status);
-    return '已提交';
-  }
-
-  // 判断考试是否通过
-  function isPass(student_score, total_score) {
-    return student_score >= total_score * 0.6;
-  }
-
   // 考试列表
   let exam_list = $state([]);
 
@@ -285,50 +242,73 @@
   let page = $state(1);
   let page_size = $state(10);
 
+  // 场次状态映射
+  const STATUS_MAP = {
+    '02': '待开始',
+    '04': '进行中',
+    '06': '已结束',
+    '08': '批改中',
+    '10': '已批改',
+    '12': '已提交',
+  };
+
+  // 考生状态映射
+  const EXAMINEE_STATUS_MAP = {
+    '00': '未交卷',
+    '02': '缺考',
+    '04': '补考',
+    '06': '作弊',
+    '10': '已交卷',
+  };
+
+  // 操作映射表
+  const ACTION_MAP = {
+    '00': '进入考试',
+    '02': '查看试卷',
+  };
+
+  // 操作码对应的事件
+  const ACTION_HANDLERS = {
+    '00': (exam_id) => gotoExamDetail(exam_id),
+    '02': (exam_id) => gotoExamResult(exam_id),
+  };
+
+  // 处理对应操作
+  function handleAction(action, exam_id) {
+    if (action && ACTION_MAP[action]) {
+      const handler = ACTION_HANDLERS[action];
+      handler(exam_id);
+    }
+  }
+
+  // TODO 当前阶段使用分数是否为-1作为标准
+  // 是否已经批改好（场次状态为"已提交"）
+  function isMarked(status, score) {
+    return status === '10' && score !== -1;
+  }
+
+  //TODO 当前阶段特判
+  function statusText(status, score) {
+    if (status !== '10' || (status === '10' && score === -1)) return STATUS_MAP[status];
+    return '已提交';
+  }
+
+  // 判断考试是否通过
+  function isPass(student_score, total_score) {
+    return student_score >= total_score * 0.6;
+  }
+
   // 前往考试批改后的页面
-  function gotoExamResult(id) {
-    // goto('/student/');
+  function gotoExamResult(exam_id) {
+    const exam_session_ids = JSON.stringify(
+      exam_list.find((el) => el.id === exam_id)?.exam_sessions.map((es) => es.id),
+    );
+    goto(`/student/answer/result/exam?exam-session-id-arr=${exam_session_ids}`);
   }
 
   // 前往考试详情页进行考试
   function gotoExamDetail(exam_id) {
     goto(`/student/answer/exam-detail?exam-id=${exam_id}`);
-  }
-
-  // 获取考试列表
-  function getExamList(q) {
-    fetch(`/api/exam/list?q=${q}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('请求失败');
-        return res.json();
-      })
-      .then((res) => {
-        if (!res.status) {
-          exam_list = res.data ?? [];
-          total_count = res.rowCount ?? 0;
-
-          // 计算每个考试的 action，用于判断在表格中的操作类型
-          exam_list.forEach((exam) => {
-            // 如果某个 session 是 “已结束” 或 “批改中”，这类 session 本身不能做任何操作
-            // 但只要存在一个可以进入考试的 session（状态 02 或 04），整个 exam 还是可以“进入考试”
-            const sessions = Array.isArray(exam.exam_sessions) ? exam.exam_sessions : [];
-
-            const has_enterable = sessions.some((s) => s.status === '02' || s.status === '04');
-            const all_sessions_no_op = sessions.every(
-              (s) => s.status === '06' || s.status === '08' || (s.status === '10' && s.student_score === -1), // TODO 当前阶段使用分数是否为-1作为标准
-            );
-
-            if (all_sessions_no_op)
-              exam.action = null; // 全部都是不可操作的（比如都已结束/批改中），清空 action
-            else if (has_enterable)
-              exam.action = '00'; // 进入考试 // 存在一个可以进入的场次
-            else exam.action = '02'; // 查看试卷 // 没有可进入的，但不是全部不可操作（可能是已提交/已批改之类）
-          });
-        } else throw new Error(res.msg ?? '获取考试列表失败');
-      })
-      .catch((err) => {
-        toast.error(err.message);
-      });
   }
 
   // 重置
@@ -356,7 +336,49 @@
       pageSize: page_size,
     });
 
-    getExamList(q);
+    // 分支过多，越不容易测试
+
+    // 获取考试列表
+    fetch(`/api/exam/list?q=${q}`)
+      .then((res) => {
+        if (!res.ok)
+          return res.text().then((error_text) => {
+            throw new Error(`请求失败：${res.status} ${res.statusText}` + (error_text ? '-' + error_text : ''));
+          });
+        return res.json();
+      })
+      .then((res) => {
+        if (!res.status) {
+          exam_list = res.data ?? [];
+          total_count = res.rowCount ?? 0;
+
+          // 计算每个考试的 action，用于判断在表格中的操作类型
+          if (Array.isArray(exam_list))
+            exam_list.forEach((exam) => {
+              // 如果某个 session 是 “已结束” 或 “批改中”，这类 session 本身不能做任何操作
+              // 但只要存在一个可以进入考试的 session（状态 02 或 04），整个 exam 还是可以“进入考试”
+              const sessions = Array.isArray(exam.exam_sessions) ? exam.exam_sessions : [];
+
+              const has_enterable = sessions.some((s) => s.status === '02' || s.status === '04');
+              const all_sessions_no_op = sessions.every(
+                (s) => s.status === '06' || s.status === '08' || (s.status === '10' && s.student_score === -1), // TODO 当前阶段使用分数是否为-1作为标准
+              );
+
+              if (all_sessions_no_op)
+                exam.action = null; // 全部都是不可操作的（比如都已结束/批改中），清空 action
+              else if (has_enterable)
+                exam.action = '00'; // 进入考试 // 存在一个可以进入的场次
+              else exam.action = '02'; // 查看试卷  （可能是已提交/已批改之类）
+            });
+          else {
+            exam_list = [];
+            throw new Error('exam_list 数据类型错误');
+          }
+        } else throw new Error(res.msg ?? '获取考试列表失败');
+      })
+      .catch((err) => {
+        toast.error(err.message);
+      });
   }
 
   // 处理开始时间
@@ -390,12 +412,13 @@
 </svelte:head>
 
 <div class="exam-body">
+  <!-- 筛选框、按钮 -->
   <div class="options">
-    <div class="input">
+    <div class="exam-input">
       <div class="label">考试名称：</div>
-      <InputBox placeholder="请输入信息" bind:value={exam_name} type="text" showLabel={false} />
+      <input type="text" placeholder="请输入信息" bind:value={exam_name} class="input" />
     </div>
-    <div class="datePicker" data-testid="datePicker">
+    <div class="datePicker" data-testid="date-picker">
       <div class="label">考试时间：</div>
       <DatePicker
         input_width={'21rem'}
@@ -410,17 +433,16 @@
       <div class="label">考试状态：</div>
       <Select bind:value={exam_status}>
         <Option value="" label="全部" />
-        {#each status_map as [key, val], index (index)}
-          {#if index < 3}
-            <Option value={key} label={val} />
-          {/if}
-        {/each}
+        <Option value="02" label={STATUS_MAP['02']} />
+        <Option value="04" label={STATUS_MAP['04']} />
+        <Option value="06" label={STATUS_MAP['06']} />
       </Select>
     </div>
-    <div><Button type="info" onclick={handleReset}>重置</Button></div>
-    <div><Button type="primary" onclick={handleSearch}>搜索</Button></div>
+    <button class="btn btn--info is_plain" onclick={handleReset}>重置</button>
+    <button class="btn btn--primary" onclick={handleSearch}>搜索</button>
   </div>
 
+  <!-- 考试列表 -->
   <div class="table">
     <table>
       <thead>
@@ -436,27 +458,27 @@
           <th>操作</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody data-testid="exam-tbody">
         {#each exam_list as exam (exam.id)}
           <tr>
             <td>{exam.name}</td>
             <td
               ><div class="stack">
-                {#each exam.exam_sessions as { paper_name }, index (index)}
+                {#each exam.exam_sessions as { paper_name }}
                   <span>{paper_name}</span>
                 {/each}
               </div></td
             >
             <td
               ><div class="stack">
-                {#each exam.exam_sessions as { start_time, end_time }, index (index)}
+                {#each exam.exam_sessions as { start_time, end_time }}
                   <span>{formatTimestamp(start_time)} ~ {formatTimestamp(end_time)}</span>
                 {/each}
               </div></td
             >
             <td
               ><div class="stack">
-                {#each exam.exam_sessions as { status, student_score }, index (index)}
+                {#each exam.exam_sessions as { status, student_score }}
                   <span
                     class="status"
                     class:incoming={status === '02'}
@@ -465,26 +487,26 @@
                     class:marking={status === '08'}
                     class:marked={status === '10'}
                     class:submitted={status === '12'}
-                    class:unknown={!status_map.has(status)}>{statusText(status, student_score) ?? '未知状态'}</span
+                    class:unknown={!STATUS_MAP[status]}>{statusText(status, student_score) ?? '未知状态'}</span
                   >
                 {/each}
               </div></td
             >
             <td
               ><div class="stack">
-                {#each exam.exam_sessions as { examinee_status }, index (index)}
+                {#each exam.exam_sessions as { examinee_status }}
                   <span
                     class:unSubmitted={examinee_status === '00'}
-                    class:unknown={!examinee_status_map.has(examinee_status) ||
+                    class:unknown={!EXAMINEE_STATUS_MAP[examinee_status] ||
                       (examinee_status !== '00' && examinee_status !== '10')}
-                    >{examinee_status_map.get(examinee_status) ?? '未知状态'}</span
+                    >{EXAMINEE_STATUS_MAP[examinee_status] ?? '未知状态'}</span
                   >
                 {/each}
               </div></td
             >
             <td
               ><div class="stack">
-                {#each exam.exam_sessions as { total_score }, index (index)}
+                {#each exam.exam_sessions as { total_score }}
                   <span> {total_score}</span>
                 {/each}
               </div></td
@@ -492,7 +514,7 @@
             <td>
               <!-- TODO 应该是一个考试只有一个成绩结果 -->
               <div class="stack">
-                {#each exam.exam_sessions as { status, student_score, total_score }, index (index)}
+                {#each exam.exam_sessions as { status, student_score, total_score }}
                   <span
                     class="score"
                     class:pass={isMarked(status, student_score) && isPass(student_score, total_score)}
@@ -504,7 +526,7 @@
             >
             <td>
               <div class="stack">
-                {#each exam.exam_sessions as { status, student_score, total_score }, index (index)}
+                {#each exam.exam_sessions as { status, student_score, total_score }}
                   <span
                     class="score is-pass"
                     class:pass={isMarked(status, student_score) && isPass(student_score, total_score)}
@@ -522,10 +544,10 @@
             <td>
               <button
                 class="option"
-                class:can-click={exam.action && action_map.has(exam.action) && exam.action !== '02'}
+                class:can-click={exam.action && ACTION_MAP[exam.action]}
                 onclick={() => handleAction(exam.action, exam.id)}
               >
-                {action_map.has(exam.action) && exam.action !== '02' ? action_map.get(exam.action) : '--'}</button
+                {ACTION_MAP[exam.action] ? ACTION_MAP[exam.action] : '--'}</button
               >
             </td>
           </tr>
@@ -541,7 +563,7 @@
 </div>
 
 <div class="pagination">
-  <Pagination totalItems={total_count} on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} />
+  <Pagination total_items={total_count} on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} />
 </div>
 
 <style lang="scss">
@@ -559,7 +581,7 @@
       gap: 1rem;
       z-index: 10;
 
-      .input,
+      .exam-input,
       .datePicker,
       .select {
         display: flex;
@@ -578,6 +600,8 @@
     .table {
       height: 65vh;
       overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #ccc transparent;
 
       table {
         width: 100%;

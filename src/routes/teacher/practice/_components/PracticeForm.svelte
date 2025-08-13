@@ -10,11 +10,12 @@
   import { onMount } from 'svelte';
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Button from '$lib/components/Button/Button.svelte';
+  import { toast } from '$lib/components/Toast/Toast';
 
   // 组件属性
   let {
     PracticeId = null,
-    onSubmitFunc = (/** @type {Object} */ practiceData) => {},
+    onSubmitFunc = (/** @type {Object} */ practiceData,newStudents) => {},
     practiceData = null, // 添加练习数据属性，用于编辑功能
     onCancelFunc = () => {}, // 添加取消函数属性
   } = $props();
@@ -47,6 +48,8 @@
   // 学生数据
   /** @type {Array<{id: number, name: string}>} */
   let selectedStudents = $state([]);
+  //要新增的学生
+  let newStudents = $state([]);
   let practice_type = $state('');
   // 试卷数据
   /** @type {null|{id: number, name: string, assembly_type: string, difficulty?: string, questionCount?: number, totalScore?: number,suggest_duration?:number}} */
@@ -147,12 +150,17 @@
       credentials: 'include',
     }).then((response) => {
         if (!response.ok) {
+          toast.error('获取数据失败');
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
       })
       .then((result) => {
         console.log('获取试卷列表成功', result);
+        if (result.status !== 0) {
+          toast.error('获取数据失败');
+          return;
+        }
         const records = result.data;
         if (records) {
           paper_list = records.map((/** @type {any} */ item) => {
@@ -278,7 +286,7 @@
       };
       console.log('准备提交数据', practiceData);
       // 调用父组件传入的提交函数
-      onSubmitFunc(practiceData);
+      onSubmitFunc(practiceData,newStudents);
     }
   }
 
@@ -446,10 +454,17 @@
 <StudentSelectionPanel
   show_panel={show_student_modal}
   practice_id={PracticeId}
-  onConfirm={(selected) => {
+  onConfirm={(newStudent,selected) => {
     //确认后将选择的考生取出
     show_student_modal = false;
-    selectedStudents = selected;
+    selectedStudents = selected.map((item) => ({
+      ...item,
+      Domains:['cst.school^student']
+    }));
+    newStudents = newStudent.map((item) => ({
+      ...item,
+      Domains:['cst.school^student']
+    }));
   }}
   onCancel={(/** @type {boolean} */ load_new_file) => {
     show_student_modal = false;
