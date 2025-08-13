@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 15:21:42
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-07 11:35:41
+ * @LastEditTime: 2025-08-12 18:20:19
  * @FilePath: \exam\src\routes\teacher\paper\+page.svelte
  * @Description: 试卷列表页面
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -18,7 +18,7 @@
     import UneditableTag from "$lib/components/Tag/UneditableTag.svelte";
     import "$lib/components/Button/index.scss"
     import "$lib/components/Input/index.scss"
-    import { LEVEL_TRANS, CATEGORY_TRANS, ACCESS_MODE_TRANS, ASSEMBLY_TYPE_TRANS } from "./_utils/tool";
+    import { LEVEL_TRANS, CATEGORY_TRANS, ASSEMBLY_TYPE_TRANS } from "./_utils/tool";
     import { goto } from "$app/navigation";
     import { debounce } from "$lib/utils/optimize";
     import { onMount } from "svelte";
@@ -318,8 +318,6 @@
                     JSON.stringify(PREVIEW_QUESTIONS),
                 );
 
-                console.log(PREVIEW_QUESTIONS)
-
                 if (category === "00") {
                     window.location.href = "/student/answer/exam";
                 } else if (category === "02") {
@@ -414,7 +412,6 @@
                     <th>建议时长(分)</th>
                     <th>试卷标签</th>
                     <th>试卷难度</th>
-                    <th>共享状态</th>
                     <th>更新时间</th>
                     <th>创建日期</th>
                     <th>操作</th>
@@ -451,11 +448,6 @@
                                 </div>
                             </td>
                             <td class="level"><span class={LEVEL_TRANS[LEVEL_TRANS[paper.Level]]}>{LEVEL_TRANS[paper.Level]}</span></td>
-                            <td class="access-mode">
-                                <div class="access-mode-box">
-                                    <Tag type={ACCESS_MODE_TRANS[ACCESS_MODE_TRANS[paper.AccessMode]]} them="light">{ACCESS_MODE_TRANS[paper.AccessMode]}</Tag>
-                                </div>
-                            </td>
                             <td class="update-time">{formatTimestamp(paper.UpdateTime,{show_date:true,show_time:true})}</td>
                             <td class="create-time">{formatTimestamp(paper.CreateTime,{show_date:true,show_time:false})}</td>
                             <td>
@@ -463,8 +455,7 @@
                                     <!-- 第一行按钮 -->
                                     <div class="operation-line">
                                         <button onclick={()=>editPaper(paper.ID)} class="blue-btn">修改</button>
-                                        <!-- <button class="blue-btn">共享</button> -->
-                                        <!-- <button class="blue-btn" onclick={()=>previewPaper(paper.ID,paper.Category)}>预览</button> -->
+                                        <button class="blue-btn" onclick={()=>previewPaper(paper.ID,paper.Category)}>预览</button>
                                         <button onclick={()=>deleteSinglePaper(paper.ID)} class="red-btn">删除</button>
                                     </div>
         
@@ -593,32 +584,6 @@
                     .easy-level { font-size: 15px; color: var(--green); }
                     .normal-level { font-size: 15px; color: var(--orange); }
                     .hard-level { font-size: 15px; color: var(--red); }
-
-                    /* 共享状态 */
-                    .private-access {
-                        color: #666;
-                        background-color: #f5f5f5;
-                        font-size: 13px;
-                        padding: 2px 8px;
-                        border-radius: var(--border-radius-sm);
-                        font-weight: 500;
-                    }
-                    .share-access {
-                        color: var(--blue);
-                        background-color: #e6f4ff;
-                        font-size: 13px;
-                        padding: 2px 8px;
-                        border-radius: var(--border-radius-sm);
-                        font-weight: 500;
-                    }
-                    .public-access {
-                        color: var(--green);
-                        background-color: #f6ffed;
-                        font-size: 13px;
-                        padding: 2px 8px;
-                        border-radius: var(--border-radius-sm);
-                        font-weight: 500;
-                    }
                     
                     /* 操作按钮 */
                     .operation {
@@ -710,18 +675,6 @@
                 }
                 .level {
                     min-width: 58px;
-                }
-                .access-mode {
-                    min-width: 58px;
-
-                    .access-mode-box {
-                        padding-top: 4px;
-                        width: 40px;
-                        /* background-color: red; */
-                        width: 100%;
-                        display: flex;
-                        justify-content: center;
-                    }
                 }
                 .update-time {
                     min-width: 74px;
