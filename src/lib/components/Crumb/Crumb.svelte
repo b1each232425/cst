@@ -97,9 +97,7 @@
     return result;
   }
 
-  /**
-   * 处理退出登录点击事件
-   */
+  // 处理退出登录点击事件
   async function handleLogout() {
     // 清除 qNearSessions
     document.cookie = 'qNearSessions=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
@@ -114,6 +112,8 @@
       const current_url_path = to.url.pathname;
 
       current_nav_path_data = getNavData(current_url_path, nav_map);
+
+      if (current_nav_path_data.length === 0) return;
 
       // 设置标题：只使用最后一个导航项的title
       const currentNavItem = current_nav_path_data[current_nav_path_data.length - 1];

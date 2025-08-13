@@ -44,7 +44,7 @@
       height: 100%;
       background-color: var(--bg-thirdary);
       box-sizing: border-box;
-      z-index: 1000;
+      z-index: 1001;
     }
   }
 
@@ -60,7 +60,7 @@
       position: relative;
       width: 100%;
       height: max-content;
-      z-index: 1;
+      z-index: 1000;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
