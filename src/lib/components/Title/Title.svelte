@@ -27,8 +27,8 @@
    * 校验规则
    * @type {function}
    */
-  const rules = {
-    title: { type: ['string'], default: 'Title', check: (v) => v.trim() !== '' },
+  const propsRules = {
+    title: { type: ['string'], default: 'Title', check: (v) => v.trim() !== '', message: '标题title不能为空' },
     line: { type: ['boolean'], default: true },
   };
 
@@ -37,17 +37,17 @@
    * @type {function}
    */
   const validateAndAssign = (data, key) => {
-    const { type, default: defaultValue } = rules[key];
+    const rule = propsRules[key];
     const value = data.value;
     let reason = '';
-    if (!type.includes(getType(value))) {
-      reason = `类型错误，期望类型为${type.join('、')}，实际类型为${getType(value)}`;
-    } else if (rules[key].check && !rules[key].check(value)) {
-      reason = `校验函数不通过`;
+    if (!rule.type.includes(getType(value))) {
+      reason = `类型错误,期望类型为${rule.type.join('、')},实际类型为${getType(value)}`;
+    } else if (rule.check && !rule.check(value)) {
+      reason = rule.message ? rule.message : `不符合校验规则`;
     }
     if (reason) {
-      console.warn(`[Title] 属性 '${key}' 无效:${reason},已使用默认值 '${defaultValue}',传入值为:'${value}'`);
-      data.set(defaultValue);
+      console.warn(`[Title] 属性 '${key}' 无效: ${reason}, 已使用默认值 '${rule.default}', 传入值为: '${value}'`);
+      data.set(rule.default);
     }
   };
 
