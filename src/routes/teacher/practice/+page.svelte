@@ -35,6 +35,7 @@
   let practice_name = $state(''); // 练习名称/课程名称输入框的值
   let practice_type = $state('全部'); // 练习类型
   let practice_status = $state('全部'); // 练习状态
+  let practice_paper_id = $state('');
 
   // 对话框状态管理
   let publishDialogOpen = $state(false); // 发布确认对话框
@@ -142,10 +143,7 @@
           total_page_num = pageQueryHandle(total_data_num, page_size);
           current_page_num = page;
           data_per_page = page_size;
-          // 恢复选中状态
-          displayed_practice_list.forEach((practice) => {
-            practice.selected = currentPractice.some((p) => p.ID === practice.ID);
-          });
+          
 
           // 更新store
           practice_data_list.set(practice_list);
@@ -324,6 +322,8 @@
       })
       .finally(() => {
         publishDialogOpen = false;
+        currentPractice= []
+        is_all_selected=isAllSelected()
       });
   }
 
@@ -352,12 +352,13 @@
    */
   function confirm_cancel_publish() {
     if (!currentPractice) return;
+    console.log('currentPractice', currentPractice)
 
     // 实现取消发布的逻辑
     const queryParams = new URLSearchParams();
     queryParams.append(
       'id',
-      currentPractice.map((p) => p.ID),
+      currentPractice.map((practice) =>  practice.ID),
     );
     queryParams.append('status', '00');
     const url = `/api/practice?${queryParams.toString()}`;
@@ -406,6 +407,9 @@
       })
       .finally(() => {
         cancelPublishDialogOpen = false;
+        currentPractice=[];
+        is_all_selected=isAllSelected()
+       
       });
   }
 
@@ -536,6 +540,17 @@
    */
   function confirm_delete() {
     if (!currentPractice) return;
+   console.log('currentPractice:', currentPractice);
+    let publishPractice= currentPractice.find(item => {
+      // 判断是否有练习不处于可删除状态
+     return item.Status === "已发布"
+    });
+    console.log('publishPractice:', publishPractice);
+    if(publishPractice){
+      toast.error('请取消发布练习之后再删除');
+    return; // 直接返回，不执行删除操作
+    }
+    
 
     // 实现删除练习的逻辑
 
@@ -565,7 +580,7 @@
         console.log('删除练习响应:', data);
         if (data.status !== 0) {
           console.error('删除练习失败:', data.msg);
-          toast.error( '删除练习失败');
+          toast.error('删除练习失败');
           return;
         }
         // 从列表中移除
@@ -577,6 +592,7 @@
 
         // 显示删除成功提示
         toast.success('删除练习成功', 1000);
+        
       })
       .catch((error) => {
         console.error('删除练习请求异常:', error);
@@ -584,6 +600,9 @@
       })
       .finally(() => {
         deleteDialogOpen = false;
+        //清空现在选择的练习
+        currentPractice= [];
+        is_all_selected=isAllSelected()
       });
   }
   //全选练习
@@ -605,13 +624,12 @@
     } else {
       displayed_practice_list.forEach((practice) => {
         const index = currentPractice.findIndex((item) => {
-         return practice.id === item.id;
+          return practice.id === item.id;
         });
         if (index !== -1) {
           currentPractice.splice(index, 1);
         }
       });
-    
     }
     is_all_selected = isAllSelected();
   }
@@ -649,27 +667,72 @@
   //判断当前是否全选
   function isAllSelected() {
     if (displayed_practice_list != null) {
-      return displayed_practice_list.every((practice) => practice.selected);
+      return displayed_practice_list.length ===currentPractice.length;
     } else {
       return false;
     }
   }
 
-  function getPracticeData(practice) {
-    //todo
-  }
+  async function preview(practice) {
+    let GetPaperIdParam = new URLSearchParams();
+    GetPaperIdParam.append('id', practice.ID);
+    //获取练习的试卷ID
+    await fetch(`/api/practice?${GetPaperIdParam.toString()}`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((data) => {
+        if (!data.ok) {
+          throw new Error('请求练习详情失败');
+        }
+        return data.json();
+      })
+      .then((result) => {
+        if (result.status === 0) {
+          practice_paper_id = result.data.practice.PaperID;
+          let practiceName = result.data.paper_name;
+          //获取试卷的信息
+          let paperParam = new URLSearchParams();
+          paperParam.append('paper_id', practice_paper_id);
+          paperParam.append('mode', 'preview');
+          return fetch(`/api/paper/manual?${paperParam.toString()}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
 
-  function preview(practice) {
-    // 将练习数据存储到 localStorage
-    localStorage.setItem(
-      'practiceQuestions',
-      JSON.stringify({
-        // 假设你需要存储练习相关数据
-        practiceId: practice.ID,
-        // 其他需要存储的数据
-      }),
-    );
-    goto(`/student/answer/practice`);
+            credentials: 'include',
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error('请求试卷信息失败');
+              }
+              return response.json();
+            })
+            .then((paperInfo) => {
+              
+              let practiceQuestions = {
+                Questions: paperInfo.data.Questions,
+                QuestionGroupInfo: paperInfo.data.QuestionGroupInfo,
+              };
+              let practiceTitle = practiceName;
+              //存进localStorage
+              localStorage.setItem('practiceQuestions', JSON.stringify(practiceQuestions));
+              localStorage.setItem('practiceTitle', practiceTitle);
+              goto(`/student/answer/practice`);
+            });
+        } else {
+          throw new Error('请求练习详情失败');
+        }
+      })
+      .catch((e) => {
+        console.log(e);
+        toast.error(e);
+        throw new Error('请求练习详情失败');
+      });
   }
 </script>
 
@@ -711,10 +774,9 @@
         </div>
       </div>
       <div>
-        <button class="new-practice-btn" onclick={create_new_practice}> 新增 </button>
-        <button class="delete-practice-btn" onclick={() => delete_practice(currentPractice)}> 删除 </button>
-        <button class="publish-practice-btn" onclick={() => publish_practice(currentPractice)}> 发布 </button>
-        <button class="unpublish-practice-btn" onclick={() => cancel_publish(currentPractice)}> 取消发布 </button>
+        <button class="new-practice-btn" onclick={create_new_practice}> 新增练习 </button>
+        <button class="delete-practice-btn" onclick={() => delete_practice(currentPractice)}> 批量删除 </button>
+        
       </div>
     </div>
 
@@ -745,9 +807,10 @@
                     onchange={(event) => {
                       const target = event.target;
                       if (target && target.checked) {
+                       
                         if (
                           !currentPractice.find((g) => {
-                            g.ID === practice.ID;
+                          return  g.ID === practice.ID;
                           })
                         ) {
                           currentPractice.push(practice);
