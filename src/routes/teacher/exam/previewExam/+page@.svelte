@@ -140,7 +140,7 @@
             await goto("/teacher/exam");
             return;
         }
-        toast.warning("目前列表无法获取paperid,写死id用于测试中");
+        //toast.warning("目前列表无法获取paperid,写死id用于测试中");
         fetchPaper(paperID)
             .then(result => {
                 paper_info = result.data;
