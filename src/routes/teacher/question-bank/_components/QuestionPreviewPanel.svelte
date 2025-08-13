@@ -601,6 +601,13 @@
     label {
         font-family: PingFang FC;
     }
+    
+    // 重置p标签的默认样式，确保在所有环境下都有一致的表现
+    :global(p) {
+        margin: 0;
+        padding: 0;
+    }
+    
     .previewContainer {
         height: 100%;
     }

@@ -1932,10 +1932,6 @@
                                 /* 题目内容 */
                                 .question-container {
                                     padding-bottom: 10px;
-                                    
-                                    p {
-                                        padding: 0;
-                                    }
                                 }
                             }
                         }
