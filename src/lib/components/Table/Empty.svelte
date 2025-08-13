@@ -20,38 +20,46 @@
    * @example
    * <Empty text="暂无数据"/>
    */
+  import { getType } from '$lib/utils/index.js';
+
   let { text = '暂无数据', show_icon = true, show_text = true } = $props();
 
   /**
-   * 校验props属性是否合法，以及进行容错处理
-   * @type {function}
+   * 校验规则
+   * @type {Object}
    */
-  (
-    () => {
-      // 获取精确的数据类型
-      function getType(value) {
-        return Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
-      }
+  const propsRules = {
+    text: { type: ['string'], default: '暂无数据', check: (v) => v.trim() !== '' },
+    show_icon: { type: ['boolean'], default: true },
+    show_text: { type: ['boolean'], default: true },
+  };
 
-      // text 校验
-      if (getType(text) !== 'string' || text.trim() === '') {
-        console.warn(`[Empty] 内容无效: '${text}',应为非空字符串`);
-        text = '暂无数据';
-      }
-
-      // show_icon 校验
-      if (getType(show_icon) !== 'boolean') {
-        console.warn(`[Empty] 是否显示图标无效: '${show_icon}',应为布尔值boolean`);
-        show_icon = true;
-      }
-
-      // show_text 校验
-      if (getType(show_text) !== 'boolean') {
-        console.warn(`[Empty] 是否显示文本无效: '${show_text}',应为布尔值boolean`);
-        show_text = true;
-      }
+  /**
+   * 校验props属性是否合法，以及进行容错处理
+   * @param data
+   * @param key
+   */
+  function validateAndAssign(data, key) {
+    const rule = propsRules[key];
+    const value = data.value;
+    let reason = '';
+    if (!rule.type.includes(getType(value))) {
+      reason = `类型错误,期望类型为${rule.type.join('、')},实际类型为${getType(value)}`;
+    } else if (rule.check && !rule.check(value)) {
+      reason = rule.message ? rule.message : `不符合校验规则`;
     }
-  )();
+    if (reason) {
+      console.warn(`[Empty] 属性 '${key}' 无效: ${reason}, 已使用默认值 '${rule.default}', 传入值为: '${value}'`);
+      data.set(rule.default);
+    }
+  }
+
+  /**
+   * 校验props属性是否合法，以及进行容错处理
+   */
+  validateAndAssign({ value: text, set: (v) => (text = v) }, 'text');
+  validateAndAssign({ value: show_icon, set: (v) => (show_icon = v) }, 'show_icon');
+  validateAndAssign({ value: show_text, set: (v) => (show_text = v) }, 'show_text');
 </script>
 
 <div class="empty">
