@@ -9,6 +9,7 @@
  */
 import MessageBox from './MessageBox.svelte';
 import { mount, unmount } from 'svelte';
+import { getType } from '$lib/utils/index.js';
 
 /**
  * 默认配置
@@ -63,14 +64,8 @@ export default function (options = {}) {
    * @returns
    */
   const close = (callback, key) => async () => {
-    // 校验['function', 'asyncfunction']
-    function getType(value) {
-      return Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
-    }
     if (!['function', 'asyncfunction'].includes(getType(callback))) {
-      console.warn(
-      `[MessageBox] 属性 '${key}' 无效:类型错误，传入类型为 '${getType(callback)}'，期望类型为 '${['function', 'asyncfunction'].join(', ')}',已使用默认值 '() => {}',传入值为:'${callback}'`,
-      );
+      console.warn(`[MessageBox] 属性 '${key}' 无效: 类型错误, 期望类型为${['function', 'asyncfunction'].join('、')}, 实际类型为${getType(callback)}, 已使用默认值 '() => {}', 传入值为: '${callback}'`);
       callback = () => {};
     }
     await callback?.();
@@ -83,8 +78,8 @@ export default function (options = {}) {
     props: {
       ...props,
       visible: true,
-      onCancel: close(props.onCancel,'onCancel'),
-      onConfirm: close(props.onConfirm,'onConfirm'),
+      onCancel: close(props.onCancel, 'onCancel'),
+      onConfirm: close(props.onConfirm, 'onConfirm'),
     },
   });
 }

@@ -20,20 +20,9 @@
    * <Button type="primary" size="large" round> 提交 </Button>
    * <Button type="danger" size="small" icon="/alert.svg"> 警告 </Button>
    */
+  import { getType } from '$lib/utils/index.js';
 
-  let {
-    plain = false,
-    type = 'primary',
-    disabled = false,
-    round = false,
-    icon = '',
-    size = 'medium',
-    alt = 'icon',
-    width = '',
-    height = '',
-    onclick = () => {},
-    children,
-  } = $props();
+  let { plain = false, type = 'primary', disabled = false, round = false, icon = '', size = 'medium', alt = 'icon', width = '', height = '', onclick = () => {}, children } = $props();
 
   /**
    * 立即执行：校验 Button 组件的参数合法性。
@@ -45,11 +34,6 @@
     const BUTTON_TYPES = ['primary', 'success', 'danger', 'warning', 'info'];
     const BUTTON_SIZES = ['small', 'medium', 'large'];
     const VALID_UNITS = ['px', 'em', 'rem', '%', 'vw', 'vh'];
-
-    // 获取精确的数据类型
-    function getType(value) {
-      return Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
-    }
 
     // type 校验
     if (getType(type) !== 'string' || !BUTTON_TYPES.includes(type.trim())) {
@@ -173,26 +157,13 @@
    * 组合按钮的类名-采用bem架构模式
    *  @type {string}
    */
-  let classes = $state(
-    [
-      'button',
-      `button--${type}`,
-      plain && `is-plain`,
-      `button--${size}`,
-      disabled && `is-disabled`,
-      round && `is-round`,
-    ]
-      .filter(Boolean)
-      .join(' '),
-  );
+  let classes = $state(['button', `button--${type}`, plain && `is-plain`, `button--${size}`, disabled && `is-disabled`, round && `is-round`].filter(Boolean).join(' '));
 
   /**
    * 组合按钮的大小
    *  @type {string}
    */
-  let styleButton = $state(
-    [width ? `width: ${width};` : '', height ? `height: ${height};` : ''].filter(Boolean).join(' '),
-  );
+  let styleButton = $state([width ? `width: ${width};` : '', height ? `height: ${height};` : ''].filter(Boolean).join(' '));
 
   /**
    * 点击事件处理函数

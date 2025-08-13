@@ -40,7 +40,7 @@ describe('Title 组件测试', () => {
     expect(screen.getByText('Title')).toBeInTheDocument();
     // 控制台应该有警告
     expect(warnspy).toHaveBeenCalled();
-    expect(warnspy).toHaveBeenCalledWith("[Title] 属性 'title' 无效:校验函数不通过,已使用默认值 'Title',传入值为:''");
+    expect(warnspy).toHaveBeenCalledWith("[Title] 属性 'title' 无效: 标题title不能为空, 已使用默认值 'Title', 传入值为: ''");
   });
 
   it('测试tittle属性传入0时显示默认标题,同时控制台有警告', () => {
@@ -50,9 +50,7 @@ describe('Title 组件测试', () => {
     expect(screen.getByText('Title')).toBeInTheDocument();
 
     expect(warnspy).toHaveBeenCalled();
-    expect(warnspy).toHaveBeenCalledWith(
-      "[Title] 属性 'title' 无效:类型错误，期望类型为string，实际类型为number,已使用默认值 'Title',传入值为:'0'",
-    );
+    expect(warnspy).toHaveBeenCalledWith("[Title] 属性 'title' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 'Title', 传入值为: '0'");
   });
 
   it('测试tittle属性传入null时显示默认标题,同时控制台有警告', () => {
@@ -62,9 +60,7 @@ describe('Title 组件测试', () => {
     expect(screen.getByText('Title')).toBeInTheDocument();
 
     expect(warnspy).toHaveBeenCalled();
-    expect(warnspy).toHaveBeenCalledWith(
-      "[Title] 属性 'title' 无效:类型错误，期望类型为string，实际类型为null,已使用默认值 'Title',传入值为:'null'",
-    );
+    expect(warnspy).toHaveBeenCalledWith("[Title] 属性 'title' 无效: 类型错误,期望类型为string,实际类型为null, 已使用默认值 'Title', 传入值为: 'null'");
   });
 
   it('测试tittle属性传入undefined时显示默认标题', () => {
@@ -80,9 +76,7 @@ describe('Title 组件测试', () => {
     expect(screen.getByText('Title')).toBeInTheDocument();
 
     expect(warnspy).toHaveBeenCalled();
-    expect(warnspy).toHaveBeenCalledWith(
-      "[Title] 属性 'title' 无效:类型错误，期望类型为string，实际类型为number,已使用默认值 'Title',传入值为:'NaN'",
-    );
+    expect(warnspy).toHaveBeenCalledWith("[Title] 属性 'title' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 'Title', 传入值为: 'NaN'");
   });
 
   it('测试line属性传入undefined时显示默认显示横线,同时控制台有警告', () => {
@@ -100,9 +94,7 @@ describe('Title 组件测试', () => {
     expect(hr).toBeVisible();
 
     expect(warnspy).toHaveBeenCalled();
-    expect(warnspy).toHaveBeenCalledWith(
-      "[Title] 属性 'line' 无效:类型错误，期望类型为boolean，实际类型为null,已使用默认值 'true',传入值为:'null'",
-    );
+    expect(warnspy).toHaveBeenCalledWith("[Title] 属性 'line' 无效: 类型错误,期望类型为boolean,实际类型为null, 已使用默认值 'true', 传入值为: 'null'");
   });
 
   it('测试line属性传入NaN时显示默认显示横线,同时控制台有警告', () => {
@@ -113,9 +105,7 @@ describe('Title 组件测试', () => {
     expect(hr).toBeVisible();
 
     expect(warnspy).toHaveBeenCalled();
-    expect(warnspy).toHaveBeenCalledWith(
-      "[Title] 属性 'line' 无效:类型错误，期望类型为boolean，实际类型为number,已使用默认值 'true',传入值为:'NaN'",
-    );
+    expect(warnspy).toHaveBeenCalledWith("[Title] 属性 'line' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'true', 传入值为: 'NaN'");
   });
 
   it('测试line属性传入0时显示默认显示横线,同时控制台有警告', () => {
@@ -125,8 +115,6 @@ describe('Title 组件测试', () => {
     expect(hr).toBeVisible();
 
     expect(warnspy).toHaveBeenCalled();
-    expect(warnspy).toHaveBeenCalledWith(
-      "[Title] 属性 'line' 无效:类型错误，期望类型为boolean，实际类型为number,已使用默认值 'true',传入值为:'0'",
-    );
+    expect(warnspy).toHaveBeenCalledWith("[Title] 属性 'line' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'true', 传入值为: '0'");
   });
 });
