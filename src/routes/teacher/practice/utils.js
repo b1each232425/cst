@@ -66,6 +66,7 @@ export function transformPracticeData(practices) {
     let transformedStatus = practice.Status;
     if (practice.Status === '02') transformedStatus = '已发布';
     else if (practice.Status === '00') transformedStatus = '未发布';
+    else if (practice.Status === '06') transformedStatus = '已作废';
 
     // 创建新对象，包含practice的所有属性和转换后的字段
     return {
