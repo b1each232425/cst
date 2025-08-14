@@ -342,6 +342,7 @@
             .then(result => {
                 total_papers = result.rowCount;
                 paper_list = result.data || [];
+                // console.log(result)
             });
     });
 

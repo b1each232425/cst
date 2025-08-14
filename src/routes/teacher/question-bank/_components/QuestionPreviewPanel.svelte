@@ -13,7 +13,7 @@
     let { question, closePanel, displayClosePanelBtn, showHeader = true, editSubScore = false, update } = $props();
 
     // 子题分值数组
-    let sub_score = $state(question.sub_score === null ? question.answers.map(answer => answer.score) : question.sub_score);
+    let sub_score = $state(question.sub_score);
 
     let question_content = $state("")
 
