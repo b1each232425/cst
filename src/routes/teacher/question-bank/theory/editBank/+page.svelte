@@ -34,7 +34,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { compareBankMsg } from '../../utils/utils.js';
   import { formatTimestamp } from '$lib/utils/time_utils';
   import { TheoryQuestion } from '../type';
-  import { get } from 'svelte/store';
+  import { bankId} from '../../store';
 
 
   /**
@@ -65,27 +65,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * @description 题目标签
    * @type {Array<string>}
    */
-  let all_question_tags = $derived.by(() => {
-    /**
-     * @type {Array<string>}
-     */
-    let question_tags = [];
-    questions.forEach((item) => {
-      if (item.tags) {
-        item.tags.forEach(
-          /**
-           * @param tag {string}
-           */
-          (tag) => {
-            if (!question_tags.includes(tag)) {
-              question_tags.push(tag);
-            }
-          },
-        );
-      }
-    });
-    return question_tags;
-  });
+  let all_question_tags = $state([]);
 
   /**
    * @description 题库名称输入框
@@ -323,16 +303,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * @description 题目标签
    * @type {Array<string>}
    */
-  /**
-   * @description 筛选条件集合
-   */
-  let filter_conditions = $derived.by(() => {
-    return {
-      type: question_type_fileter,
-      difficulty: question_difficulty_fileter,
-      tags: question_tag_fileter,
-    };
-  });
+
 
    /**
      * @description 已有标签变更
@@ -425,6 +396,44 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     }
   };
 
+//*获取题库信息
+//
+   function getBank() {
+ 
+    const queryParams = new URLSearchParams({
+      bankID:bank_id
+    });
+
+    return fetch(`/api/question-banks?${queryParams}`, {
+      method: 'GET',
+      credentials: 'include',
+    })
+      .then((response) => {
+         if (!response.ok) {
+          throw new Error(`HTTP错误`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.status !== 0) {
+          throw new Error(`${data.msg}`);
+        }
+         
+         bank_name=data.data[0].Name;
+         bank_tags=data.data[0].Tags;
+         origin_bank_data.bank_name=data.data[0].Name;
+        origin_bank_data.bank_tags=data.data[0].Tags;
+        all_question_tags=data.data[0].QuestionTags;
+        bank_update_time=formatTimestamp(data.data[0].UpdateTime);
+        bank_create_time=formatTimestamp(data.data[0].CreateTime);
+       question_count=data.data[0].QuestionCount;
+       getQuestionList();
+      })
+      .catch((error) => {
+        toast.error(`获取题库信息失败:${error.message}`);
+        return null; 
+      });
+  }
   /**
    * @description 清空题库名称输入框
    */
@@ -580,9 +589,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       });
   }
 
-  $effect(() => {
-    getQuestionList();
-  });
+
 
   export function getBankWithQuestions() {
     // 构造查询参数（Query Params）
@@ -592,7 +599,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       pageSize: page_size,
       type:question_type_fileter,
       difficulty:question_difficulty_fileter,
-     
+      tags:question_tag_fileter,
     });
 
     return fetch(`/api/questions?${queryParams}`, {
@@ -673,25 +680,9 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   let bank_id = $state(0);
 
   onMount(async () => {
-    let start = new Date().getTime();
-    console.log('start loading ', start);
-    if (localStorage) {
-      let question_bank_data_json = localStorage.getItem('question_bank_data');
-      if (question_bank_data_json) {
-        let question_bank_data = JSON.parse(question_bank_data_json);
-        bank_id = question_bank_data.id;
-        bank_create_time = formatTimestamp(question_bank_data.create_time);
-        origin_bank_data.name = question_bank_data.name;
-        origin_bank_data.tags = question_bank_data.tags || [];
-        bank_name = question_bank_data.name;
-        bank_tags = question_bank_data.tags || [];
-        bank_update_time = formatTimestamp(question_bank_data.update_time);
-      }
-    } else {
-      toast.error('无法获得题库数据');
-      return;
-    }
-
+    bank_id=$bankId
+    await getBank();
+     
     
   });
 
@@ -701,35 +692,18 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    */
   let list_table_component;
   const filterConditionSelect = (value, condition) => {
-    // 单线程JS可能更新不过来，故在此手动同步更新
-    /**
-     * @type {string[]}
-     */
-    let filter_string_value = [];
-    /**
-     * @type {number[]}
-     */
-    let filter_number_value = [];
-    if (condition === 'type' || condition === 'tag') {
-      filter_string_value = value.filter((item) => typeof item === 'string');
-    } else if (condition === 'difficulty') {
-      filter_number_value = value.filter((item) => typeof item === 'number');
-    }
+ 
 
     if (condition === 'type') {
-      question_type_fileter = filter_string_value;
+      question_type_fileter = value;
     } else if (condition === 'tag') {
-      question_tag_fileter = filter_string_value;
+      question_tag_fileter = value;
     } else if (condition === 'difficulty') {
-      question_difficulty_fileter = filter_number_value;
+      question_difficulty_fileter = value;
     }
 
-    filter_conditions = {
-      type: question_type_fileter,
-      difficulty: question_difficulty_fileter,
-      tags: question_tag_fileter,
-    };
-
+  
+  getQuestionList();
    
   };
 
@@ -948,14 +922,16 @@ o888o o888o   "888" o888o o888o o888o o888o
 
   <!-- 题库内容栏 -->
   <div class="bankContent">
+    
     <div class="quesionFilter">
-      <div class="questionFilterTitle">
+       <div class="questionFilterTitle" >
         <div class="colorHolder"></div>
         <div style="display: flex;">
           <div class="leftColorBlock"></div>
           <span class="questionFilterTitleText">试题筛选</span>
         </div>
       </div>
+      <div class="quesionFilterbody" >
       <FilterBar
         filter_title="题型"
         all_filter_conditions={question_types}
@@ -980,7 +956,7 @@ o888o o888o   "888" o888o o888o o888o o888o
         ]}
         onSelectTag={(value) => filterConditionSelect(value, 'difficulty')}
       ></FilterBar>
-      <div class="hiddenValue">
+      
       <FilterBar
         filter_title="标签"
         all_filter_conditions={all_question_tags.map((tag) => {
@@ -1026,8 +1002,8 @@ o888o o888o   "888" o888o o888o o888o o888o
         bind:page_size
         bind:current_page
         question_types={question_types_map}
-        on:pageChange={(e) => (current_page = e.detail)}
-        on:pageSizeChange={(e) => (page_size = e.detail)}
+        on:pageChange={(e) => {current_page = e.detail;getQuestionList()}}
+        on:pageSizeChange={(e) => {page_size = e.detail;getQuestionList()}}
         onListItemClick={(question) => {
           preview_question_data = question;
           show_preview_panel = true;
@@ -1379,6 +1355,17 @@ o888o o888o   "888" o888o o888o o888o o888o
           transform 0.2s,
           box-shadow 0.2s;
 
+
+         .quesionFilterbody{
+             display: flex;
+        flex-direction: column;
+        background-color: var(--bg-primary);
+        max-height:66vh;
+        flex: 1;
+        overflow-y: auto;
+       
+
+         }
         .questionFilterTitle {
           position: sticky;
           top: 0;
