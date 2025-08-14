@@ -48,6 +48,7 @@
                 return response.json();
             })
             .then(data => {
+                if (data.status !== 0) toast.error(data.msg, 1000);
                 return data;
             })
             .catch(error => {
@@ -87,6 +88,7 @@
                 return response.json();
             })
             .then(data => {
+                if (data.status !== 0) toast.error(data.msg, 1000);
                 return data;
             })
             .catch(error => {
@@ -273,7 +275,7 @@
             {
                 action: "add_question",
                 payload: selected_questions.map((question, index) => {
-                    const payloadItem = {
+                    const PAYLOAT_ITEM = {
                         temp_id: `temp_question_${index + 1}`,
                         group_id: to_import_group.id,
                         order: to_import_group.questions.length + index + 1,
@@ -284,10 +286,10 @@
 
                     // 如果 Type 为 "06" 或 "08"，加 subscore 字段
                     if (question.Type === "06" || question.Type === "08") {
-                        payloadItem.sub_score = question.Answers.map(answer => answer.score);
+                        PAYLOAT_ITEM.sub_score = question.Answers.map(answer => answer.score);
                     }
 
-                    return payloadItem;
+                    return PAYLOAT_ITEM;
                 })
             }
         ];

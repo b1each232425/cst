@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 15:21:42
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-12 18:20:19
+ * @LastEditTime: 2025-08-14 17:17:04
  * @FilePath: \exam\src\routes\teacher\paper\+page.svelte
  * @Description: 试卷列表页面
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -49,6 +49,7 @@
                 return response.json();
             })
             .then(data => {
+                if (data.status !== 0) toast.error(data.msg, 1000);
                 return data;
             })
             .catch(error => {
@@ -82,6 +83,7 @@
                 return response.json();
             })
             .then(data => {
+                if (data.status !== 0) toast.error(data.msg, 1000);
                 return data;
             })
             .catch(error => {
@@ -117,6 +119,7 @@
                 return response.json();
             })
             .then(data => {
+                if (data.status !== 0) toast.error(data.msg, 1000);
                 return data;
             })
             .catch(error => {
@@ -155,9 +158,9 @@
 
     // 检查全选
     function checkAllSelected() {
-        const SELECTED_PAPER_IDS = get(SELECTED_PAPER_IDS);
+        const SELECTED_IDS = get(SELECTED_PAPER_IDS);
         const ALL_SELECTED = paper_list.length !== 0 && paper_list.every(p =>
-            SELECTED_PAPER_IDS.includes(p.ID)
+            SELECTED_IDS.includes(p.ID)
         );
         ALL_PAPER_SELECTED.set(ALL_SELECTED);
     }
@@ -188,8 +191,10 @@
         
         fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
         .then(result => {
-            total_papers = result.rowCount;
-            paper_list = result.data || [];
+            if (result) {
+                total_papers = result.rowCount;
+                paper_list = result.data || [];
+            }
         });
     }
 
@@ -198,9 +203,11 @@
         PAPER_PAGE.set(event.detail);
         fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
             .then(result => {
-                total_papers = result.rowCount;
-                paper_list = result.data || [];
-                checkAllSelected();
+                if (result) {
+                    total_papers = result.rowCount;
+                    paper_list = result.data || [];
+                    checkAllSelected();
+                }
             });
     }
 
@@ -210,9 +217,11 @@
         PAPER_PAGE.set(1);
         fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
             .then(result => {
-                total_papers = result.rowCount;
-                paper_list = result.data || [];
-                checkAllSelected();
+                if (result) {
+                    total_papers = result.rowCount;
+                    paper_list = result.data || [];
+                    checkAllSelected();
+                }
             });
     }
 
@@ -220,8 +229,10 @@
     const debouncedFetchPaperList = debounce(() => {
         fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
         .then(result => {
-            total_papers = result.rowCount;
-            paper_list = result.data || [];
+            if (result) {
+                total_papers = result.rowCount;
+                paper_list = result.data || [];
+            }
         });
     }, 500, false);
 
@@ -234,8 +245,12 @@
     // 自定义组卷
     function manual() {
         createEmptyPaper().then( result => {
-            CURRENT_PAPER_ID.set(result.data.paper.ID);
-            goto('/teacher/paper/manual');
+            if (result && result.data && result.data.paper && result.data.paper.ID) {
+                CURRENT_PAPER_ID.set(result.data.paper.ID);
+                goto('/teacher/paper/manual');
+            } else {
+                console.error('创建试卷失败：返回数据无效');
+            }
         });
     }
 
@@ -258,8 +273,10 @@
                         toast.success("删除成功", 1000);
                         fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
                             .then(result => {
-                                total_papers = result.rowCount;
-                                paper_list = result.data || [];
+                                if (result) {
+                                    total_papers = result.rowCount;
+                                    paper_list = result.data || [];
+                                }
                             })
                     });
             }
@@ -268,25 +285,27 @@
 
     // 批量删除试卷
     function deleteMultiplePapers() {
-        const SELECTEDIDS = get(SELECTED_PAPER_IDS);
-        if(SELECTEDIDS.length === 0) {
+        const SELECTED_IDS = get(SELECTED_PAPER_IDS);
+        if(SELECTED_IDS.length === 0) {
             toast.error("请先选择试卷", 1000);
             return;
         }
         MessageBox({
             title: "删除确认",
-            content: `请问是否要批量删除这 ${SELECTEDIDS.length} 张试卷？`,
+            content: `请问是否要批量删除这 ${SELECTED_IDS.length} 张试卷？`,
             confirm_button_type: "danger",
 
             onConfirm: () => {
-                deletePaper(SELECTEDIDS)
+                deletePaper(SELECTED_IDS)
                     .then(() => {
                         toast.success("删除成功", 1000);
-                         SELECTED_PAPER_IDS.update(current => current.filter(id => !SELECTEDIDS.includes(id)));
+                         SELECTED_PAPER_IDS.update(current => current.filter(id => !SELECTED_IDS.includes(id)));
                         fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
                             .then(result => {
-                                total_papers = result.rowCount;
-                                paper_list = result.data || [];
+                                if (result) {
+                                    total_papers = result.rowCount;
+                                    paper_list = result.data || [];
+                                }
                             })
                     });
             }
@@ -340,9 +359,11 @@
     onMount(() => {
         fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
             .then(result => {
-                total_papers = result.rowCount;
-                paper_list = result.data || [];
-                // console.log(result)
+                if (result) {
+                    total_papers = result.rowCount;
+                    paper_list = result.data || [];
+                    // console.log(result)
+                }
             });
     });
 
