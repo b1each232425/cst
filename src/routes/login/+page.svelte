@@ -19,6 +19,87 @@
     let credential = $state('');
     let password = $state('');
     let agreeTerms = $state(false);
+    
+    // Tab切换状态
+    let activeTab = $state('phone'); // 'phone', 'account', 'id'
+    
+    // 不同tab的输入字段
+    let phoneNumber = $state('');
+    let accountEmail = $state('');
+    let idNumber = $state('');
+    
+    // 区号选择
+    let selectedCountryCode = $state('+86');
+    const countryCodes = [
+        { code: '+86', name: '中国大陆' },
+        { code: '+852', name: '香港' },
+        { code: '+853', name: '澳门' },
+        { code: '+886', name: '台湾' },
+        { code: '+1', name: '美国/加拿大' },
+        { code: '+44', name: '英国' },
+        { code: '+81', name: '日本' },
+        { code: '+82', name: '韩国' }
+    ];
+    
+    // 证件类型选择
+    let selectedIdType = $state('居民身份证');
+    const idTypes = [
+        '居民身份证',
+        '护照',
+        '港澳通行证',
+        '台胞证',
+        '军官证'
+    ];
+    
+    /**
+     * 切换tab页面
+     * @param {string} tab - tab标识
+     */
+    function switchTab(tab) {
+        activeTab = tab;
+        // 清空所有输入字段
+        phoneNumber = '';
+        accountEmail = '';
+        idNumber = '';
+        password = '';
+        // 重置选择项
+        selectedCountryCode = '+86';
+        selectedIdType = '居民身份证';
+    }
+    
+    /**
+     * 获取当前tab的凭证值
+     * @returns {string} 当前tab的输入值
+     */
+    function getCurrentCredential() {
+        switch (activeTab) {
+            case 'phone':
+                return phoneNumber;
+            case 'account':
+                return accountEmail;
+            case 'id':
+                return idNumber;
+            default:
+                return credential;
+        }
+    }
+    
+    /**
+     * 获取当前tab的占位符文本
+     * @returns {string} 占位符文本
+     */
+    function getPlaceholderText() {
+        switch (activeTab) {
+            case 'phone':
+                return '请输入手机号';
+            case 'account':
+                return '请输入帐号/邮箱';
+            case 'id':
+                return '请输入证件号';
+            default:
+                return '请输入登录凭证';
+        }
+    }
 
     // 消息框状态
     let messageBoxVisible = $state(false);
@@ -34,7 +115,8 @@
      * 处理登录提交
      */
     function handleLogin() {
-        if (!credential || !password) {
+        const currentCredential = getCurrentCredential();
+        if (!currentCredential || !password) {
             showMessage('提示', '请输入登录凭证和密码');
             return;
         }
@@ -50,7 +132,7 @@
             },
             credentials: 'include',
             body: JSON.stringify({
-                name: credential,
+                name: currentCredential,
                 cert: password,
             }),
         })
@@ -194,14 +276,78 @@
         <div class="login-form">
             <h1 class="title">3min</h1>
 
-            <div class="form-content">
-                <div class="input-container">
-                    <input type="text" bind:value={credential} placeholder="请输入ID/帐号/手机号/邮箱/姓名"
-                           class="token-input"/>
-                </div>
+            <!-- Tab导航 -->
+            <div class="tab-navigation">
+                <button 
+                    class="tab-button" 
+                    class:active={activeTab === 'phone'} 
+                    onclick={() => switchTab('phone')}
+                >
+                    手机号登录
+                </button>
+                <button 
+                    class="tab-button" 
+                    class:active={activeTab === 'account'} 
+                    onclick={() => switchTab('account')}
+                >
+                    帐号/邮箱登录
+                </button>
+                <button 
+                    class="tab-button" 
+                    class:active={activeTab === 'id'} 
+                    onclick={() => switchTab('id')}
+                >
+                    证件号登录
+                </button>
+            </div>
 
-                <div class="input-container">
-                    <input type="password" bind:value={password} placeholder="请输入密码" class="password-input"/>
+            <div class="form-content">
+                <!-- 输入框容器 -->
+                <div class="inputs-container">
+                    <!-- 手机号登录 -->
+                    {#if activeTab === 'phone'}
+                        <div class="input-wrapper">
+                            <div class="phone-input-container">
+                                <div class="country-code-wrapper">
+                                    <select bind:value={selectedCountryCode} class="country-code-select-hidden">
+                                        {#each countryCodes as country}
+                                            <option value={country.code}>{country.code}{country.name}</option>
+                                        {/each}
+                                    </select>
+                                    <span class="country-code-display">{selectedCountryCode}</span>
+                                    <img src="/common/arrow-down.svg" alt="下拉箭头" class="country-code-arrow" />
+                                </div>
+                                <div class="input-divider"></div>
+                                <input type="tel" bind:value={phoneNumber} placeholder="请输入手机号" class="phone-input"/>
+                            </div>
+                        </div>
+                    {/if}
+                    
+                    <!-- 帐号/邮箱登录 -->
+                    {#if activeTab === 'account'}
+                        <div class="input-wrapper">
+                            <input type="text" bind:value={accountEmail} placeholder="请输入帐号/邮箱" class="form-input"/>
+                        </div>
+                    {/if}
+                    
+                    <!-- 证件号登录 -->
+                    {#if activeTab === 'id'}
+                        <div class="input-wrapper">
+                            <div class="id-input-container">
+                                <select bind:value={selectedIdType} class="id-type-select">
+                                    {#each idTypes as idType}
+                                        <option value={idType}>{idType}</option>
+                                    {/each}
+                                </select>
+                                <div class="input-divider"></div>
+                                <input type="text" bind:value={idNumber} placeholder="请输入证件号" class="id-input"/>
+                            </div>
+                        </div>
+                    {/if}
+
+                    <div class="input-wrapper">
+                        <input type="password" bind:value={password} placeholder="请输入密码" class="form-input"/>
+                    </div>
                 </div>
 
                 <button type="button" class="login-btn" onclick={handleLogin}>登录</button>
@@ -318,8 +464,75 @@
         font-size: 2.5rem;
         font-weight: bold;
         color: var(--primary-color);
-        margin: 0 0 2rem 0;
+        margin: 0 0 1.5rem 0;
         text-align: center;
+    }
+
+    /* Tab导航样式 */
+    .tab-navigation {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tab-button {
+        background: none;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9rem;
+        color: #666;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+
+    .tab-button:hover {
+        color: #0052d9;
+        background-color: rgba(0, 82, 217, 0.05);
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+    }
+    
+    .tab-button.active {
+        color: #0052d9;
+        border-bottom-color: #0052d9;
+        font-weight: 500;
+    }
+    
+    
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+        .tab-navigation {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .tab-button {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            flex: 1;
+            min-width: 0;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .tab-navigation {
+            flex-direction: column;
+            border-bottom: none;
+        }
+        
+        .tab-button {
+            border-bottom: 1px solid #e0e0e0;
+            border-radius: 0;
+            text-align: center;
+        }
+        
+        .tab-button.active {
+            background-color: rgba(0, 82, 217, 0.1);
+            border-bottom-color: #e0e0e0;
+        }
     }
 
     .form-content {
@@ -328,28 +541,153 @@
         gap: 1.5rem;
     }
 
-    .input-container {
+    /* 输入框容器 */
+    .inputs-container {
         display: flex;
-        align-items: center;
-        border-bottom: 2px solid #e0e0e0;
-        padding-bottom: 0.5rem;
+        flex-direction: column;
+        gap: 1rem;
     }
 
-    .token-input,
-    .password-input {
+    /* 封闭容器样式 */
+    .input-wrapper {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        background: #fff;
+        transition: border-color 0.3s ease;
+        min-height: 2rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-wrapper:focus-within {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(0, 82, 217, 0.1);
+    }
+
+    /* 通用输入框样式 */
+    .form-input {
+        width: 100%;
+        border: none;
+        outline: none;
+        font-size: 1rem;
+        background: transparent;
+        color: #333;
+    }
+
+    .form-input::placeholder {
+        color: #999;
+        font-size: 1rem;
+    }
+
+    /* 手机号输入容器 */
+    .phone-input-container {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .country-code-wrapper {
+        position: relative;
+        min-width: 4rem;
+        height: 100%;
+        display: flex;
+        align-items: center;
+    }
+
+    .country-code-select-hidden {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 1rem;
+    }
+
+    .country-code-display {
+        pointer-events: none;
+        font-size: 1rem;
+        color: #333;
+        padding-right: 0.5rem;
+        white-space: nowrap;
+    }
+
+    .country-code-arrow {
+        pointer-events: none;
+        width: 1.3rem;
+        height: 1.3rem;
+        margin-left: 0.5rem;
+        transition: opacity 0.2s;
+    }
+
+    .country-code-wrapper:hover .country-code-arrow {
+        opacity: 0.8;
+    }
+
+    .input-divider {
+        width: 1px;
+        height: 1.5rem;
+        background-color: #e0e0e0;
+        margin: 0 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .phone-input {
         flex: 1;
         border: none;
         outline: none;
-        font-size: 1.2rem;
-        padding: 0.5rem 0;
+        font-size: 1rem;
         background: transparent;
-        width: 100%;
+        color: #333;
+        height: 100%;
     }
 
-    .token-input::placeholder,
-    .password-input::placeholder {
+    .phone-input::placeholder {
         color: #999;
-        font-size: 1.1rem;
+        font-size: 1rem;
+    }
+
+    /* 证件号输入容器 */
+    .id-input-container {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .id-type-select {
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 1rem;
+        color: #333;
+        cursor: pointer;
+        padding-right: 0.5rem;
+        min-width: 4rem;
+        height: 100%;
+    }
+
+    .id-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 1rem;
+        background: transparent;
+        color: #333;
+        height: 100%;
+    }
+
+    .id-input::placeholder {
+        color: #999;
+        font-size: 1rem;
     }
 
     .login-btn {
@@ -642,6 +980,74 @@
         .role-select-footer {
             padding-left: 1.5rem;
             padding-right: 1.5rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .inputs-container {
+            gap: 0.8rem;
+        }
+
+        .input-wrapper {
+            padding: 0.6rem 0.8rem;
+            min-height: 2rem;
+        }
+
+        .form-input,
+        .phone-input,
+        .id-input {
+            font-size: 0.9rem;
+        }
+
+        .country-code-wrapper,
+        .id-type-select {
+            min-width: 2.8rem;
+        }
+
+        .country-code-display,
+        .id-type-select {
+            font-size: 0.9rem;
+        }
+
+        .input-divider {
+            height: 1.2rem;
+            margin: 0 0.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .login-form {
+            padding: 3rem 2rem;
+        }
+
+        .inputs-container {
+            gap: 0.7rem;
+        }
+
+        .input-wrapper {
+            padding: 0.5rem 0.7rem;
+            min-height: 2rem;
+        }
+
+        .phone-input-container,
+        .id-input-container {
+            gap: 0;
+        }
+
+        .country-code-wrapper,
+        .id-type-select {
+            min-width: 2.2rem;
+        }
+
+        .country-code-display,
+        .id-type-select {
+            font-size: 0.85rem;
+        }
+
+        .form-input,
+        .phone-input,
+        .id-input {
+            font-size: 0.85rem;
         }
     }
 </style>
