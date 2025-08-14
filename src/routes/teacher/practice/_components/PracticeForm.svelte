@@ -15,7 +15,7 @@
   // 组件属性
   let {
     PracticeId = null,
-    onSubmitFunc = (/** @type {Object} */ practiceData,newStudents) => {},
+    onSubmitFunc = (/** @type {Object} */ practiceData,newStudents,selectStudents) => {},
     practiceData = null, // 添加练习数据属性，用于编辑功能
     onCancelFunc = () => {}, // 添加取消函数属性
   } = $props();
@@ -280,13 +280,13 @@
       const practiceData = {
         practice_name,
         grading_method: mapGradingMethodToApi(grading_method),
-        student: selectedStudents.map(student => student.id),
+        student: [],
         test: selectedTestObj,
         allowed_attempts: mapAllowedAttemptsToApi(allowed_attempts_type),
       };
       console.log('准备提交数据', practiceData);
       // 调用父组件传入的提交函数
-      onSubmitFunc(practiceData,newStudents);
+      onSubmitFunc(practiceData,newStudents,selectedStudents);
     }
   }
 
