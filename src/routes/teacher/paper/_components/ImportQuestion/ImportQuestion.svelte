@@ -168,7 +168,7 @@
                     tag_list = [...new Set(TEMP_QUESTION_LIST.flatMap(question=>question.Tags ? question.Tags : []).filter(Boolean))];
                 })
                 .finally(() => {
-                    console.log(question_list)
+                    // console.log(question_list)
                 });
 
         } else {
