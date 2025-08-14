@@ -48,6 +48,7 @@
                 return response.json();
             })
             .then(data => {
+                if (data.status !== 0) toast.error(data.msg, 1000);
                 return data;
             })
             .catch(error => {
@@ -87,6 +88,7 @@
                 return response.json();
             })
             .then(data => {
+                if (data.status !== 0) toast.error(data.msg, 1000);
                 return data;
             })
             .catch(error => {
