@@ -159,7 +159,7 @@
                 <span class="fileterText">{condition.label}</span>
             </button>
         {/each}
-        <div class="hiddenValue">
+        
         <button
             class="filterItem_single changeFilterTypeBtn {filter_muti_select_mode
                 ? 'active'
@@ -177,7 +177,7 @@
            
             {/if}
         </button>
-         </div>
+       
     </div>
 </div>
 

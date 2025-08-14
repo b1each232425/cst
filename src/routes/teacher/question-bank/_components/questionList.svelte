@@ -20,7 +20,6 @@
    *      page_size, //每页显示的题目数量
    *      question_count:number                                          //筛选总题目数量
    *      onEdit?:(question:TheoryQuestion)=>void;                        //  编辑题目
-   *      onCopy?:(question:TheoryQuestion)=>void;                        //  复制题目
    *      onDelete?:(question:TheoryQuestion)=>void;                      //  删除题目
    *      update_filtered_question_count?: (count:number)=>void;          //  更新筛选题目数
    *      onListItemClick?:(question:TheoryQuestion)=>void;               //  点击题目
@@ -49,14 +48,6 @@
       question,
     ) => {
       console.log('编辑第' + question.id + '题');
-    },
-    onCopy = (
-      /**
-       * @type {TheoryQuestion}
-       */
-      question,
-    ) => {
-      console.log('复制第' + question.id + '题');
     },
     onDelete = (
       /**
@@ -267,7 +258,6 @@
     >
       <div class="controlBtns">
         <button style="color: #0036ff;" onclick={() => onEdit(question)}>编辑</button>
-        <button style="color: #0036ff;" onclick={() => onCopy(question)}>复制</button>
         <button style="color: #FF000F;" onclick={() => onDelete(question)}>删除</button>
       </div>
     </td>
