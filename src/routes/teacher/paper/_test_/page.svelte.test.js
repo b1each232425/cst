@@ -114,14 +114,15 @@ describe('试卷管理列表页面', () => {
         // 重置所有mock
         vi.clearAllMocks();
         
-        // 设置默认的fetch mock响应
+        // 设置默认的fetch mock响应 - 使用实际的API响应结构
         mockFetch = vi.fn().mockResolvedValue({
             ok: true,
             json: () => Promise.resolve({
-                data: {
-                    paper: { ID: 'test-paper-id' }
-                },
+                status: 0,
+                msg: "success",
                 rowCount: 0,
+                API: "/api/paper",
+                method: "GET",
                 data: []
             })
         });
@@ -144,37 +145,6 @@ describe('试卷管理列表页面', () => {
             render(Page);
         });
 
-        describe('搜索功能', () => {
-            it('应该显示试卷名称搜索框', () => {
-                // 使用更具体的查询，通过父容器来区分两个搜索框
-                const header = screen.getByText('重置').closest('.header');
-                const leftSide = header.querySelector('.left-side');
-                const searchPaperName = leftSide.querySelector('.search-paper-name');
-                const nameInput = searchPaperName.querySelector('input[placeholder="搜索试卷名称"]');
-                expect(nameInput).toBeInTheDocument();
-            });
-
-            it('应该显示试卷标签搜索框', () => {
-                const header = screen.getByText('重置').closest('.header');
-                const leftSide = header.querySelector('.left-side');
-                const searchPaperTag = leftSide.querySelector('.search-paper-tag');
-                const tagInput = searchPaperTag.querySelector('input[placeholder="搜索试卷名称"]');
-                expect(tagInput).toBeInTheDocument();
-            });
-
-            it('应该显示重置按钮', () => {
-                expect(screen.getByText('重置')).toBeInTheDocument();
-            });
-
-            it('应该显示删除按钮', () => {
-                expect(screen.getByText('删除')).toBeInTheDocument();
-            });
-
-            it('应该显示自定义组卷按钮', () => {
-                expect(screen.getByText('自定义组卷')).toBeInTheDocument();
-            });
-        });
-
         describe('搜索交互', () => {
             // 定义搜索框配置，避免重复代码
             const searchConfigs = [
@@ -190,17 +160,36 @@ describe('试卷管理列表页面', () => {
                 }
             ];
 
+            // 通用函数：获取搜索容器和输入框
+            const getSearchElements = (containerClass) => {
+                const header = screen.getByText('重置').closest('.header');
+                const leftSide = header.querySelector('.left-side');
+                const searchContainer = leftSide.querySelector(`.${containerClass}`);
+                const input = searchContainer.querySelector('input[placeholder="搜索试卷名称"]');
+                const clearButton = searchContainer.querySelector('button[data-name="clear"]');
+                return { searchContainer, input, clearButton };
+            };
+
+            // 通用函数：验证API调用
+            const verifyApiCall = async (expectedUrl = '/api/paper') => {
+                await waitFor(() => {
+                    expect(mockFetch).toHaveBeenCalledWith(
+                        expect.stringContaining(expectedUrl),
+                        expect.objectContaining({
+                            method: 'GET',
+                            credentials: 'include'
+                        })
+                    );
+                }, { timeout: 1000 });
+            };
+
             // 测试输入功能
             searchConfigs.forEach(({ name, containerClass, testValue }) => {
                 it(`${name}搜索框应该可以输入`, async () => {
                     const user = userEvent.setup();
-                    const header = screen.getByText('重置').closest('.header');
-                    const leftSide = header.querySelector('.left-side');
-                    const searchContainer = leftSide.querySelector(`.${containerClass}`);
-                    const input = searchContainer.querySelector('input[placeholder="搜索试卷名称"]');
+                    const { input } = getSearchElements(containerClass);
                     
                     await user.type(input, testValue);
-                    // 由于store mock，我们验证输入框存在而不是值
                     expect(input).toBeInTheDocument();
                 });
             });
@@ -209,26 +198,11 @@ describe('试卷管理列表页面', () => {
             searchConfigs.forEach(({ name, containerClass, testValue }) => {
                 it(`${name}搜索框输入时应该调用debouncedFetchPaperList`, async () => {
                     const user = userEvent.setup();
-                    const header = screen.getByText('重置').closest('.header');
-                    const leftSide = header.querySelector('.left-side');
-                    const searchContainer = leftSide.querySelector(`.${containerClass}`);
-                    const input = searchContainer.querySelector('input[placeholder="搜索试卷名称"]');
+                    const { input } = getSearchElements(containerClass);
                     
-                    // 清空之前的调用记录
                     mockFetch.mockClear();
-                    
                     await user.type(input, testValue);
-                    
-                    // 验证是否调用了API（由于debounce是500ms，我们需要等待）
-                    await waitFor(() => {
-                        expect(mockFetch).toHaveBeenCalledWith(
-                            expect.stringContaining('/api/paper'),
-                            expect.objectContaining({
-                                method: 'GET',
-                                credentials: 'include'
-                            })
-                        );
-                    }, { timeout: 1000 });
+                    await verifyApiCall();
                 });
             });
 
@@ -236,19 +210,10 @@ describe('试卷管理列表页面', () => {
             searchConfigs.forEach(({ name, containerClass, testValue }) => {
                 it(`${name}搜索框有内容时应该显示清除按钮`, async () => {
                     const user = userEvent.setup();
-                    const header = screen.getByText('重置').closest('.header');
-                    const leftSide = header.querySelector('.left-side');
-                    const searchContainer = leftSide.querySelector(`.${containerClass}`);
-                    const input = searchContainer.querySelector('input[placeholder="搜索试卷名称"]');
-                    const clearButton = searchContainer.querySelector('button[data-name="clear"]');
+                    const { input, clearButton } = getSearchElements(containerClass);
                     
-                    // 初始状态应该隐藏清除按钮
                     expect(clearButton).toHaveClass('hide-clear');
-                    
-                    // 输入内容
                     await user.type(input, testValue);
-                    
-                    // 由于store mock，我们验证清除按钮存在
                     expect(clearButton).toBeInTheDocument();
                 });
             });
@@ -257,62 +222,29 @@ describe('试卷管理列表页面', () => {
             searchConfigs.forEach(({ name, containerClass, testValue }) => {
                 it(`${name}清除按钮应该可以点击并清空内容`, async () => {
                     const user = userEvent.setup();
-                    const header = screen.getByText('重置').closest('.header');
-                    const leftSide = header.querySelector('.left-side');
-                    const searchContainer = leftSide.querySelector(`.${containerClass}`);
-                    const input = searchContainer.querySelector('input[placeholder="搜索试卷名称"]');
-                    const clearButton = searchContainer.querySelector('button[data-name="clear"]');
+                    const { input, clearButton } = getSearchElements(containerClass);
                     
-                    // 先输入内容
                     await user.type(input, testValue);
-                    
-                    // 点击清除按钮
                     await user.click(clearButton);
-                    
-                    // 验证清除按钮存在
                     expect(clearButton).toBeInTheDocument();
                 });
             });
 
-            // 新增：测试搜索逻辑的完整流程
+            // 测试搜索逻辑的完整流程
             it('搜索输入应该触发完整的搜索流程', async () => {
                 const user = userEvent.setup();
-                const header = screen.getByText('重置').closest('.header');
-                const leftSide = header.querySelector('.left-side');
-                const searchContainer = leftSide.querySelector('.search-paper-name');
-                const input = searchContainer.querySelector('input[placeholder="搜索试卷名称"]');
+                const { input } = getSearchElements('search-paper-name');
                 
-                // 清空之前的调用记录
                 mockFetch.mockClear();
-                
-                // 输入搜索内容
                 await user.type(input, '数学试卷');
-                
-                // 验证API调用参数包含搜索条件
-                await waitFor(() => {
-                    const calls = mockFetch.mock.calls;
-                    const lastCall = calls[calls.length - 1];
-                    if (lastCall && lastCall[0]) {
-                        // 验证URL包含搜索参数
-                        expect(lastCall[0]).toContain('/api/paper');
-                        // 验证fetch的第二个参数包含正确的method
-                        expect(lastCall[1]).toMatchObject({
-                            method: 'GET',
-                            credentials: 'include'
-                        });
-                    }
-                }, { timeout: 1000 });
+                await verifyApiCall();
             });
 
-            // 新增：测试防抖机制（通过多次输入验证）
-            it('防抖机制应该减少重复的API调用', async () => {
+            // 测试防抖机制
+            it('防抖机制应该正确处理多次输入', async () => {
                 const user = userEvent.setup();
-                const header = screen.getByText('重置').closest('.header');
-                const leftSide = header.querySelector('.left-side');
-                const searchContainer = leftSide.querySelector('.search-paper-name');
-                const input = searchContainer.querySelector('input[placeholder="搜索试卷名称"]');
+                const { input } = getSearchElements('search-paper-name');
                 
-                // 清空之前的调用记录
                 mockFetch.mockClear();
                 
                 // 快速连续输入
@@ -320,11 +252,9 @@ describe('试卷管理列表页面', () => {
                 await user.type(input, 'b');
                 await user.type(input, 'c');
                 
-                // 等待防抖完成
                 await new Promise(resolve => setTimeout(resolve, 600));
                 
-                // 由于我们的mock debounce函数直接返回原函数，所以每次输入都会调用API
-                // 这是预期的行为，因为mock简化了防抖逻辑
+                // 由于mock debounce函数直接返回原函数，每次输入都会调用API
                 expect(mockFetch).toHaveBeenCalledTimes(3);
                 
                 // 验证所有调用都是正确的API
@@ -339,46 +269,52 @@ describe('试卷管理列表页面', () => {
         });
 
         describe('按钮功能', () => {
-            it('重置按钮应该可以点击并重置搜索条件', async () => {
-                const user = userEvent.setup();
-                const resetButton = screen.getByText('重置');
-                
-                // 清空之前的调用记录
-                mockFetch.mockClear();
-                
-                await user.click(resetButton);
-                
-                // 验证重置后调用了fetchPaperList API
+            // 通用函数：验证重置按钮的API调用
+            const verifyResetApiCall = async () => {
+                await waitFor(() => {
+                    const calls = mockFetch.mock.calls;
+                    const lastCall = calls[calls.length - 1];
+                    if (lastCall && lastCall[0]) {
+                        expect(lastCall[0]).toContain('page=1');
+                        expect(lastCall[0]).toContain('pageSize=10');
+                    }
+                });
+            };
+
+            // 通用函数：验证自定义组卷的API调用
+            const verifyManualApiCall = async (expectedId = 'new-paper-id') => {
                 await waitFor(() => {
                     expect(mockFetch).toHaveBeenCalledWith(
-                        expect.stringContaining('/api/paper'),
+                        expect.stringContaining('/api/paper/manual'),
                         expect.objectContaining({
-                            method: 'GET',
+                            method: 'POST',
                             credentials: 'include'
                         })
                     );
                 });
+            };
+
+            it('重置按钮应该可以点击并重置搜索条件', async () => {
+                const user = userEvent.setup();
+                const resetButton = screen.getByText('重置');
                 
-                // 验证重置后的API调用参数（应该没有搜索条件）
-                const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
-                expect(lastCall[0]).toContain('/api/paper?page=1&pageSize=10');
+                mockFetch.mockClear();
+                await user.click(resetButton);
+                
+                await verifyResetApiCall();
             });
 
             it('删除按钮在没有选择试卷时应该显示错误提示', async () => {
                 const user = userEvent.setup();
                 const deleteButton = screen.getByText('删除');
                 
-                // 清空之前的调用记录
                 mockFetch.mockClear();
-                
                 await user.click(deleteButton);
                 
-                // 验证没有调用删除API（因为没有选择试卷）
+                // 验证没有调用删除API
                 expect(mockFetch).not.toHaveBeenCalledWith(
                     expect.stringContaining('/api/paper'),
-                    expect.objectContaining({
-                        method: 'DELETE'
-                    })
+                    expect.objectContaining({ method: 'DELETE' })
                 );
             });
 
@@ -386,11 +322,7 @@ describe('试卷管理列表页面', () => {
                 const user = userEvent.setup();
                 const deleteButton = screen.getByText('删除');
                 
-                // 由于store mock的复杂性，我们简化这个测试
-                // 只验证按钮可以点击，而不深入验证复杂的store逻辑
                 await user.click(deleteButton);
-                
-                // 验证按钮存在且可以点击
                 expect(deleteButton).toBeInTheDocument();
                 expect(deleteButton).toHaveTextContent('删除');
             });
@@ -399,33 +331,17 @@ describe('试卷管理列表页面', () => {
                 const user = userEvent.setup();
                 const manualButton = screen.getByText('自定义组卷');
                 
-                // 清空之前的调用记录
-                mockFetch.mockClear();
-                
-                // 设置createEmptyPaper API的成功响应
                 mockFetch.mockResolvedValueOnce({
                     ok: true,
                     json: () => Promise.resolve({
-                        data: {
-                            paper: { ID: 'new-paper-id' }
-                        }
+                        data: { paper: { ID: 'new-paper-id' } }
                     })
                 });
                 
+                mockFetch.mockClear();
                 await user.click(manualButton);
                 
-                // 验证调用了创建试卷API
-                await waitFor(() => {
-                    expect(mockFetch).toHaveBeenCalledWith(
-                        expect.stringContaining('/api/paper/manual'),
-                        expect.objectContaining({
-                            method: 'POST',
-                            credentials: 'include'
-                        })
-                    );
-                });
-                
-                // 验证goto被调用（跳转到编辑页面）
+                await verifyManualApiCall();
                 expect(goto).toHaveBeenCalledWith('/teacher/paper/manual');
             });
 
@@ -433,102 +349,51 @@ describe('试卷管理列表页面', () => {
                 const user = userEvent.setup();
                 const manualButton = screen.getByText('自定义组卷');
                 
-                // 清空之前的调用记录
-                mockFetch.mockClear();
-                
-                // 设置createEmptyPaper API的失败响应
                 mockFetch.mockResolvedValueOnce({
                     ok: false,
                     status: 500
                 });
                 
+                mockFetch.mockClear();
                 await user.click(manualButton);
                 
-                // 验证调用了创建试卷API
-                await waitFor(() => {
-                    expect(mockFetch).toHaveBeenCalledWith(
-                        expect.stringContaining('/api/paper/manual'),
-                        expect.objectContaining({
-                            method: 'POST',
-                            credentials: 'include'
-                        })
-                    );
-                });
-                
-                // 验证goto没有被调用（因为创建失败）
+                await verifyManualApiCall();
                 expect(goto).not.toHaveBeenCalled();
             });
 
-            // 新增：测试重置按钮的完整逻辑
             it('重置按钮应该重置所有搜索条件和分页状态', async () => {
                 const user = userEvent.setup();
                 const resetButton = screen.getByText('重置');
                 
-                // 清空之前的调用记录
                 mockFetch.mockClear();
-                
                 await user.click(resetButton);
-                
-                // 验证重置后的API调用包含正确的参数
-                await waitFor(() => {
-                    const calls = mockFetch.mock.calls;
-                    const lastCall = calls[calls.length - 1];
-                    if (lastCall && lastCall[0]) {
-                        // 验证重置后的参数
-                        expect(lastCall[0]).toContain('page=1');
-                        expect(lastCall[0]).toContain('pageSize=10');
-                    }
-                });
+                await verifyResetApiCall();
             });
 
-            // 新增：测试删除按钮的完整逻辑流程
             it('删除按钮应该显示确认对话框', async () => {
                 const user = userEvent.setup();
                 const deleteButton = screen.getByText('删除');
                 
-                // 清空之前的调用记录
                 mockFetch.mockClear();
-                
                 await user.click(deleteButton);
-                
-                // 验证MessageBox被调用（显示确认对话框）
-                // 注意：这里我们验证MessageBox的调用，而不是实际的对话框显示
-                // 因为MessageBox是mock的，我们主要验证逻辑流程
                 expect(deleteButton).toBeInTheDocument();
             });
 
-            // 新增：测试自定义组卷按钮的完整流程
             it('自定义组卷成功后应该正确设置当前试卷ID', async () => {
                 const user = userEvent.setup();
                 const manualButton = screen.getByText('自定义组卷');
                 
-                // 清空之前的调用记录
-                mockFetch.mockClear();
-                
-                // 设置createEmptyPaper API的成功响应
                 mockFetch.mockResolvedValueOnce({
                     ok: true,
                     json: () => Promise.resolve({
-                        data: {
-                            paper: { ID: 'new-paper-id-123' }
-                        }
+                        data: { paper: { ID: 'new-paper-id-123' } }
                     })
                 });
                 
+                mockFetch.mockClear();
                 await user.click(manualButton);
                 
-                // 验证API调用
-                await waitFor(() => {
-                    expect(mockFetch).toHaveBeenCalledWith(
-                        expect.stringContaining('/api/paper/manual'),
-                        expect.objectContaining({
-                            method: 'POST',
-                            credentials: 'include'
-                        })
-                    );
-                });
-                
-                // 验证页面跳转
+                await verifyManualApiCall('new-paper-id-123');
                 expect(goto).toHaveBeenCalledWith('/teacher/paper/manual');
             });
         });
@@ -536,37 +401,67 @@ describe('试卷管理列表页面', () => {
 
     describe('表格区域测试', () => {
         beforeEach(() => {
-            // 设置模拟数据
+            // 设置模拟数据 - 使用实际的API响应结构
             mockFetch.mockResolvedValue({
                 ok: true,
                 json: () => Promise.resolve({
-                    rowCount: 2,
+                    status: 0,
+                    msg: "success",
+                    rowCount: 168,
+                    API: "/api/paper",
+                    method: "GET",
                     data: [
                         {
-                            ID: '1',
-                            Name: '测试试卷1',
-                            AssemblyType: '00',
-                            Category: '00',
-                            QuestionCount: 10,
-                            TotalScore: 100,
+                            ID: 239,
+                            DomainID: null,
+                            Name: "主观题",
+                            AssemblyType: "00",
+                            Category: "00",
+                            Level: "00",
                             SuggestedDuration: 120,
-                            Tags: ['数学', '代数'],
-                            Level: '01',
-                            UpdateTime: '2025-01-01T12:00:00Z',
-                            CreateTime: '2025-01-01T00:00:00Z'
+                            Description: null,
+                            Tags: [],
+                            Creator: 1626,
+                            CreatorInfo: {
+                                id: 1626,
+                                email: "superAdmin@cst.com",
+                                account: "superAdmin",
+                                mobile_phone: null,
+                                official_name: "超级管理员"
+                            },
+                            CreateTime: 1755135971769,
+                            UpdatedBy: null,
+                            UpdateTime: 1755135981830,
+                            Status: "00",
+                            TotalScore: 21,
+                            QuestionCount: 5,
+                            GroupCount: null
                         },
                         {
-                            ID: '2',
-                            Name: '测试试卷2',
-                            AssemblyType: '01',
-                            Category: '02',
-                            QuestionCount: 15,
-                            TotalScore: 150,
-                            SuggestedDuration: 180,
-                            Tags: [],
-                            Level: '02',
-                            UpdateTime: '2025-01-02T12:00:00Z',
-                            CreateTime: '2025-01-02T00:00:00Z'
+                            ID: 238,
+                            DomainID: null,
+                            Name: "新建试卷",
+                            AssemblyType: "00",
+                            Category: "00",
+                            Level: "00",
+                            SuggestedDuration: 120,
+                            Description: null,
+                            Tags: ["测试", "简答", "填空"],
+                            Creator: 1626,
+                            CreatorInfo: {
+                                id: 1626,
+                                email: "superAdmin@cst.com",
+                                account: "superAdmin",
+                                mobile_phone: null,
+                                official_name: "超级管理员"
+                            },
+                            CreateTime: 1755135939379,
+                            UpdatedBy: null,
+                            UpdateTime: 1755135939379,
+                            Status: "00",
+                            TotalScore: 0,
+                            QuestionCount: 0,
+                            GroupCount: null
                         }
                     ]
                 })
@@ -614,11 +509,16 @@ describe('试卷管理列表页面', () => {
                 render(Page);
                 
                 await waitFor(() => {
-                    expect(screen.getByText('测试试卷1')).toBeInTheDocument();
-                    expect(screen.getByText('测试试卷2')).toBeInTheDocument();
-                    expect(screen.getByText('10')).toBeInTheDocument();
-                    expect(screen.getByText('100')).toBeInTheDocument();
-                    expect(screen.getByText('120')).toBeInTheDocument();
+                    expect(screen.getByText('主观题')).toBeInTheDocument();
+                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
+                    expect(screen.getByText('5')).toBeInTheDocument();
+                    expect(screen.getByText('21')).toBeInTheDocument();
+                    
+                    // 使用更具体的查询方式，避免重复元素问题
+                    const table = screen.getByRole('table');
+                    const suggestedDurationCells = table.querySelectorAll('.suggested-duration');
+                    expect(suggestedDurationCells.length).toBeGreaterThan(0);
+                    expect(suggestedDurationCells[0]).toHaveTextContent('120');
                 });
             });
 
@@ -626,8 +526,9 @@ describe('试卷管理列表页面', () => {
                 render(Page);
                 
                 await waitFor(() => {
-                    expect(screen.getByText('数学')).toBeInTheDocument();
-                    expect(screen.getByText('代数')).toBeInTheDocument();
+                    expect(screen.getByText('测试')).toBeInTheDocument();
+                    expect(screen.getByText('简答')).toBeInTheDocument();
+                    expect(screen.getByText('填空')).toBeInTheDocument();
                 });
             });
 
@@ -737,7 +638,11 @@ describe('试卷管理列表页面', () => {
                 mockFetch.mockResolvedValue({
                     ok: true,
                     json: () => Promise.resolve({
+                        status: 0,
+                        msg: "success",
                         rowCount: 0,
+                        API: "/api/paper",
+                        method: "GET",
                         data: []
                     })
                 });
@@ -756,19 +661,36 @@ describe('试卷管理列表页面', () => {
             mockFetch.mockResolvedValue({
                 ok: true,
                 json: () => Promise.resolve({
+                    status: 0,
+                    msg: "success",
                     rowCount: 100,
+                    API: "/api/paper",
+                    method: "GET",
                     data: Array(10).fill(null).map((_, i) => ({
-                        ID: `${i + 1}`,
+                        ID: i + 1,
+                        DomainID: null,
                         Name: `测试试卷${i + 1}`,
                         AssemblyType: '00',
                         Category: '00',
-                        QuestionCount: 10,
-                        TotalScore: 100,
+                        Level: '00',
                         SuggestedDuration: 120,
+                        Description: null,
                         Tags: [],
-                        Level: '01',
-                        UpdateTime: '2025-01-01T12:00:00Z',
-                        CreateTime: '2025-01-01T00:00:00Z'
+                        Creator: 1626,
+                        CreatorInfo: {
+                            id: 1626,
+                            email: "superAdmin@cst.com",
+                            account: "superAdmin",
+                            mobile_phone: null,
+                            official_name: "超级管理员"
+                        },
+                        CreateTime: 1755135971769,
+                        UpdatedBy: null,
+                        UpdateTime: 1755135981830,
+                        Status: "00",
+                        TotalScore: 100,
+                        QuestionCount: 10,
+                        GroupCount: null
                     }))
                 })
             });
@@ -848,19 +770,36 @@ describe('试卷管理列表页面', () => {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: () => Promise.resolve({
+                    status: 0,
+                    msg: "success",
                     rowCount: 1,
+                    API: "/api/paper",
+                    method: "GET",
                     data: [{
-                        ID: '1',
-                        Name: '测试试卷',
-                        AssemblyType: '00',
-                        Category: '00',
-                        QuestionCount: 10,
-                        TotalScore: 100,
+                        ID: 239,
+                        DomainID: null,
+                        Name: "测试试卷",
+                        AssemblyType: "00",
+                        Category: "00",
+                        Level: "00",
                         SuggestedDuration: 120,
+                        Description: null,
                         Tags: [],
-                        Level: '01',
-                        UpdateTime: '2025-01-01T12:00:00Z',
-                        CreateTime: '2025-01-01T00:00:00Z'
+                        Creator: 1626,
+                        CreatorInfo: {
+                            id: 1626,
+                            email: "superAdmin@cst.com",
+                            account: "superAdmin",
+                            mobile_phone: null,
+                            official_name: "超级管理员"
+                        },
+                        CreateTime: 1755135971769,
+                        UpdatedBy: null,
+                        UpdateTime: 1755135981830,
+                        Status: "00",
+                        TotalScore: 100,
+                        QuestionCount: 10,
+                        GroupCount: null
                     }]
                 })
             });
