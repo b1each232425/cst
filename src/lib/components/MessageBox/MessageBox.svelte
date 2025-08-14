@@ -31,6 +31,7 @@
    * @property {Function} [options.onConfirm] 点击确认的回调函数
    */
   import '$lib/components/Button/index.scss';
+  import { getType } from '$lib/utils/index.js';
 
   let {
     content = '',
@@ -57,31 +58,23 @@
   const BASE_TYPES = ['primary', 'success', 'danger', 'warning', 'info'];
 
   /**
-   * 获取精确的数据类型
-   * @type {Function}
-   */
-  function getType(value) {
-    return Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
-  }
-
-  /**
    * @description 配置项验证数据正确性
    * @type {Object}
    */
-  const propRules = {
+  const propsRules = {
     visible: { type: ['boolean'], default: false },
-    title: { type: ['string'], default: '温馨提示', check: (v) => v.trim() !== '' },
+    title: { type: ['string'], default: '温馨提示', check: (v) => v.trim() !== '', message: 'title 不能为空' },
     content: { type: ['string'], default: '' },
     center: { type: ['boolean'], default: false },
-    cancel_text: { type: ['string'], default: '取消', check: (v) => v.trim() !== '' },
-    confirm_text: { type: ['string'], default: '确定', check: (v) => v.trim() !== '' },
+    cancel_text: { type: ['string'], default: '取消', check: (v) => v.trim() !== '', message: 'cancel_text 不能为空' },
+    confirm_text: { type: ['string'], default: '确定', check: (v) => v.trim() !== '', message: 'confirm_text 不能为空' },
     show_cancel_icon: { type: ['boolean'], default: true },
     show_cancel_button: { type: ['boolean'], default: true },
     show_confirm_button: { type: ['boolean'], default: true },
     on_close_by_click_outside: { type: ['boolean'], default: true },
-    type: { type: ['string'], default: 'primary', check: (v) => BASE_TYPES.includes(v) },
-    cancel_button_type: { type: ['string'], default: 'info', check: (v) => BASE_TYPES.includes(v) },
-    confirm_button_type: { type: ['string'], default: 'primary', check: (v) => BASE_TYPES.includes(v) },
+    type: { type: ['string'], default: 'primary', check: (v) => BASE_TYPES.includes(v), message: `type 只能是 ${BASE_TYPES.join('、')} 中的一个` },
+    cancel_button_type: { type: ['string'], default: 'info', check: (v) => BASE_TYPES.includes(v), message: `cancel_button_type 只能是 ${BASE_TYPES.join('、')} 中的一个` },
+    confirm_button_type: { type: ['string'], default: 'primary', check: (v) => BASE_TYPES.includes(v), message: `confirm_button_type 只能是 ${BASE_TYPES.join('、')} 中的一个` },
     onCancel: { type: ['function', 'asyncfunction'], default: () => {} },
     onConfirm: { type: ['function', 'asyncfunction'], default: () => {} },
   };
@@ -91,16 +84,16 @@
    * @type {function}
    */
   function validateAndAssign(data, key) {
-    const rule = propRules[key];
-    let value = data.value;
+    const rule = propsRules[key];
+    const value = data.value;
     let reason = '';
     if (!rule.type.includes(getType(value))) {
-      reason = `类型错误，传入类型为 '${getType(value)}'，期望类型为 '${rule.type.join(', ')}'`;
+      reason = `类型错误,期望类型为${rule.type.join('、')},实际类型为${getType(value)}`;
     } else if (rule.check && !rule.check(value)) {
-      reason = `校验函数不通过`;
+      reason = rule.message ? rule.message : `不符合校验规则`;
     }
     if (reason) {
-      console.warn(`[MessageBox] 属性 '${key}' 无效:${reason},已使用默认值 '${rule.default}',传入值为:'${value}'`);
+      console.warn(`[MessageBox] 属性 '${key}' 无效: ${reason}, 已使用默认值 '${rule.default}', 传入值为: '${value}'`);
       data.set(rule.default);
     }
   }
@@ -117,10 +110,7 @@
   validateAndAssign({ value: show_cancel_icon, set: (v) => (show_cancel_icon = v) }, 'show_cancel_icon');
   validateAndAssign({ value: show_cancel_button, set: (v) => (show_cancel_button = v) }, 'show_cancel_button');
   validateAndAssign({ value: show_confirm_button, set: (v) => (show_confirm_button = v) }, 'show_confirm_button');
-  validateAndAssign(
-    { value: on_close_by_click_outside, set: (v) => (on_close_by_click_outside = v) },
-    'on_close_by_click_outside',
-  );
+  validateAndAssign({ value: on_close_by_click_outside, set: (v) => (on_close_by_click_outside = v) }, 'on_close_by_click_outside');
   validateAndAssign({ value: type, set: (v) => (type = v) }, 'type');
   validateAndAssign({ value: cancel_button_type, set: (v) => (cancel_button_type = v) }, 'cancel_button_type');
   validateAndAssign({ value: confirm_button_type, set: (v) => (confirm_button_type = v) }, 'confirm_button_type');
@@ -176,42 +166,14 @@
 </script>
 
 {#if visible}
-  <div
-    role="dialog"
-    tabindex="-1"
-    aria-label="关闭弹窗"
-    class="MessageBox__shadow"
-    onkeydown={handleKeyDown}
-    onclick={on_close_by_click_outside ? close : null}
-    data-testid="messagebox_shadow"
-  >
-    <div
-      tabindex="0"
-      role="button"
-      aria-label="弹窗内容"
-      class:is-center={center}
-      onclick={stopPropagation}
-      class="MessageBox__container"
-      onkeydown={handleKeyDown}
-    >
+  <div role="dialog" tabindex="-1" aria-label="关闭弹窗" class="MessageBox__shadow" onkeydown={handleKeyDown} onclick={on_close_by_click_outside ? close : null} data-testid="messagebox_shadow">
+    <div tabindex="0" role="button" aria-label="弹窗内容" class:is-center={center} onclick={stopPropagation} class="MessageBox__container" onkeydown={handleKeyDown}>
       {#if show_cancel_icon}
-        <button
-          onclick={() => handleAction(onCancel)}
-          class="MessageBox__cancel"
-          aria-label="关闭弹窗"
-          title="点击关闭"
-          data-testid="messagebox_closeBtn"
-        ></button>
+        <button onclick={() => handleAction(onCancel)} class="MessageBox__cancel" aria-label="关闭弹窗" title="点击关闭" data-testid="messagebox_closeBtn"></button>
       {/if}
       <div class="MessageBox__content">
         <div class="MessageBox__title" class:is-center={center}>
-          <img
-            class="MessageBox__title-icon"
-            src={ICON_URL[type]}
-            alt="icon"
-            loading="lazy"
-            data-testid="messagebox_typeIcon"
-          />
+          <img class="MessageBox__title-icon" src={ICON_URL[type]} alt="icon" loading="lazy" data-testid="messagebox_typeIcon" />
           {title}
         </div>
         <div class="MessageBox__text">
@@ -219,14 +181,10 @@
         </div>
         <div class="MessageBox__buttons" class:MessageBox__buttons--center={center} data-testid="messagebox_buttons">
           {#if show_cancel_button && cancel_text}
-            <button class="btn btn--medium btn--{cancel_button_type}" onclick={() => handleAction(onCancel)}
-              >{cancel_text}</button
-            >
+            <button class="btn btn--medium btn--{cancel_button_type}" onclick={() => handleAction(onCancel)}>{cancel_text}</button>
           {/if}
           {#if confirm_text && show_confirm_button}
-            <button class="btn btn--medium btn--{confirm_button_type}" onclick={() => handleAction(onConfirm)}
-              >{confirm_text}</button
-            >
+            <button class="btn btn--medium btn--{confirm_button_type}" onclick={() => handleAction(onConfirm)}>{confirm_text}</button>
           {/if}
         </div>
       </div>

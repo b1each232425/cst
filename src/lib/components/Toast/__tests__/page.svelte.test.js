@@ -129,7 +129,9 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 类型无效: 'null',应为 success, error, warning,当前为: null");
+    expect(spy).toHaveBeenCalledWith(
+      "[Toast] 属性 'type' 无效: 类型错误,期望类型为string,实际类型为null, 已使用默认值 'success', 传入值为: 'null'",
+    );
 
     await vi.advanceTimersByTime(3500);
 
@@ -140,7 +142,9 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 类型无效: '0',应为 success, error, warning,当前为: number");
+    expect(spy).toHaveBeenCalledWith(
+      "[Toast] 属性 'type' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 'success', 传入值为: '0'",
+    );
 
     await vi.advanceTimersByTime(3500);
 
@@ -151,7 +155,7 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 类型无效: '',应为 success, error, warning,当前为: string");
+    expect(spy).toHaveBeenCalledWith("[Toast] 属性 'type' 无效: 期望的数据格式为 'success, error, warning, 已使用默认值 'success', 传入值为: ''");
 
     await vi.advanceTimersByTime(3500);
 
@@ -162,7 +166,9 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 类型无效: 'warning11',应为 success, error, warning,当前为: string");
+    expect(spy).toHaveBeenCalledWith(
+      "[Toast] 属性 'type' 无效: 期望的数据格式为 'success, error, warning, 已使用默认值 'success', 传入值为: 'warning11'",
+    );
 
     await vi.advanceTimersByTime(3500);
 
@@ -173,7 +179,9 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 类型无效: '[object Object]',应为 success, error, warning,当前为: object");
+    expect(spy).toHaveBeenCalledWith(
+      "[Toast] 属性 'type' 无效: 类型错误,期望类型为string,实际类型为object, 已使用默认值 'success', 传入值为: '[object Object]'",
+    );
 
     await vi.advanceTimersByTime(3500);
 
@@ -184,7 +192,9 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 类型无效: '',应为 success, error, warning,当前为: array");
+    expect(spy).toHaveBeenCalledWith(
+      "[Toast] 属性 'type' 无效: 类型错误,期望类型为string,实际类型为array, 已使用默认值 'success', 传入值为: ''",
+    );
 
     await vi.advanceTimersByTime(3500);
 
@@ -195,7 +205,9 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 类型无效: '() => {}',应为 success, error, warning,当前为: function");
+    expect(spy).toHaveBeenCalledWith(
+      "[Toast] 属性 'type' 无效: 类型错误,期望类型为string,实际类型为function, 已使用默认值 'success', 传入值为: '() => {}'",
+    );
 
     await vi.advanceTimersByTime(3500);
 
@@ -206,7 +218,9 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 类型无效: 'true',应为 success, error, warning,当前为: boolean");
+    expect(spy).toHaveBeenCalledWith(
+      "[Toast] 属性 'type' 无效: 类型错误,期望类型为string,实际类型为boolean, 已使用默认值 'success', 传入值为: 'true'",
+    );
 
     await vi.advanceTimersByTime(3500);
 
@@ -217,7 +231,9 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 类型无效: '1',应为 success, error, warning,当前为: number");
+    expect(spy).toHaveBeenCalledWith(
+      "[Toast] 属性 'type' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 'success', 传入值为: '1'",
+    );
   });
 
   it('测试message属性传入的数据不符合规范后的处理方式,比如传入null,undefined,0,空字符串,其他类型数据,控制台打印相关警告信息,组件内部进行容错处理', async () => {
@@ -227,7 +243,9 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 内容无效: 'null',应为非空字符串");
+    expect(spy).toHaveBeenCalledWith(
+      "[Toast] 属性 'message' 无效: 类型错误,期望类型为string,实际类型为null, 已使用默认值 'success', 传入值为: 'null'",
+    );
 
     // 结束这个toast信息
     await vi.advanceTimersByTime(3500);
@@ -237,7 +255,9 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 内容无效: '',应为非空字符串"); // 因为svelte的props传入undefined时会回退到那个属性自己默认的值,就会出现这样的情况
+    expect(spy).toHaveBeenCalledWith(
+      "[Toast] 属性 'message' 无效: 类型错误,期望类型为string,实际类型为null, 已使用默认值 'success', 传入值为: 'null'",
+    ); // 因为svelte的props传入undefined时会回退到那个属性自己默认的值,就会出现这样的情况
 
     await vi.advanceTimersByTime(3500);
 
@@ -246,7 +266,9 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 内容无效: '0',应为非空字符串");
+    expect(spy).toHaveBeenCalledWith(
+      "[Toast] 属性 'message' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 'success', 传入值为: '0'",
+    );
 
     await vi.advanceTimersByTime(3500);
 
@@ -255,7 +277,7 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 内容无效: '',应为非空字符串");
+    expect(spy).toHaveBeenCalledWith("[Toast] 属性 'message' 无效: 提示文本内容不能为空, 已使用默认值 'success', 传入值为: ''");
 
     await vi.advanceTimersByTime(3500);
 
@@ -264,7 +286,9 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 内容无效: '[object Object]',应为非空字符串");
+    expect(spy).toHaveBeenCalledWith(
+      "[Toast] 属性 'message' 无效: 类型错误,期望类型为string,实际类型为object, 已使用默认值 'success', 传入值为: '[object Object]'",
+    );
 
     await vi.advanceTimersByTime(3500);
 
@@ -275,11 +299,13 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
   it('测试属性duration传入的数据不符合规茗后的处理方式,比如传入null,undefined,0,空字符串,其他类型数据,控制台打印相关警告信息,组件内部进行容错处理', async () => {
     const spy = vi.spyOn(console, 'warn');
     // 传入null
-    render(Toast, { props: { meaasge: '测试信息', duration: null } });
+    render(Toast, { props: { message: '测试信息', duration: null } });
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 自动关闭时间无效: 'null',应为 >= 500 的数字");
+    expect(spy).toHaveBeenCalledWith(
+      "[Toast] 属性 'duration' 无效: 类型错误,期望类型为number,实际类型为null, 已使用默认值 '3000', 传入值为: 'null'",
+    );
 
     // 结束这个toast信息
     await vi.advanceTimersByTime(3500);
@@ -290,7 +316,6 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
     // 不会爆出来警告信息，因为svelte的props传入undefined时会回退到那个属性自己默认的值,就会出现这样的情况，官网上有说明
-    // expect(spy).toHaveBeenCalledWith("[Toast] 自动关闭时间无效: 'undefined',应为 >= 500 的数字");
 
     await vi.advanceTimersByTime(3500);
 
@@ -299,7 +324,7 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 自动关闭时间无效: '0',应为 >= 500 的数字");
+    expect(spy).toHaveBeenCalledWith("[Toast] 属性 'duration' 无效: 自动关闭时间必须大于0, 已使用默认值 '3000', 传入值为: '0'");
 
     await vi.advanceTimersByTime(3500);
 
@@ -308,7 +333,7 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 自动关闭时间无效: '',应为 >= 500 的数字");
+    expect(spy).toHaveBeenCalledWith("[Toast] 属性 'duration' 无效: 类型错误,期望类型为number,实际类型为string, 已使用默认值 '3000', 传入值为: ''");
 
     await vi.advanceTimersByTime(3500);
 
@@ -317,7 +342,7 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 自动关闭时间无效: '[object Object]',应为 >= 500 的数字");
+    expect(spy).toHaveBeenCalledWith("[Toast] 属性 'duration' 无效: 类型错误,期望类型为number,实际类型为object, 已使用默认值 '3000', 传入值为: '[object Object]'");
 
     // 清除测试数据
     vi.clearAllTimers();
@@ -330,7 +355,7 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 是否显示关闭按钮无效: 'null',应为布尔值boolean");
+    expect(spy).toHaveBeenCalledWith("[Toast] 属性 'showClose' 无效: 类型错误,期望类型为boolean,实际类型为null, 已使用默认值 'true', 传入值为: 'null'");
 
     // 结束这个toast信息
     await vi.advanceTimersByTime(3500);
@@ -350,7 +375,7 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 是否显示关闭按钮无效: '0',应为布尔值boolean");
+    expect(spy).toHaveBeenCalledWith("[Toast] 属性 'showClose' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'true', 传入值为: '0'");
 
     await vi.advanceTimersByTime(3500);
 
@@ -359,7 +384,7 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 是否显示关闭按钮无效: '',应为布尔值boolean");
+    expect(spy).toHaveBeenCalledWith("[Toast] 属性 'showClose' 无效: 类型错误,期望类型为boolean,实际类型为string, 已使用默认值 'true', 传入值为: ''");
 
     await vi.advanceTimersByTime(3500);
 
@@ -368,7 +393,7 @@ describe('Toast 组件 & toast.js 函数式调用测试', () => {
 
     expect(screen.getByTestId('typeIcon')).toHaveAttribute('src', '/paper/action_success.svg');
 
-    expect(spy).toHaveBeenCalledWith("[Toast] 是否显示关闭按钮无效: '[object Object]',应为布尔值boolean");
+    expect(spy).toHaveBeenCalledWith("[Toast] 属性 'showClose' 无效: 类型错误,期望类型为boolean,实际类型为object, 已使用默认值 'true', 传入值为: '[object Object]'");
 
     // 清除测试数据
     vi.clearAllTimers();

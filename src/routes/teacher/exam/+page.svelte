@@ -35,6 +35,8 @@
   let is_delete_mode = $state(false); //是否是删除模式
   let selected_exam_ids = $state([]); // 用于存储选中的考试ID
   let is_all_selected = $state(false); 
+  let examID_to_cancel = $state(false);
+  let cancel_exam_dialog = $state(false);
   let preview_id = $state();
   // 映射关系
   const TypeMap = {
@@ -55,6 +57,7 @@
     '06': '已结束',
     '08': '已归档',
     '10': '考试异常',
+    '16': '已作废',
   };
 
   const StateClassMap = {
@@ -64,6 +67,7 @@
     '06': 'ended',
     '08': 'archived',
     '10': 'error',
+    '16': 'invalid',
   };
 
   let search_params = $state({
@@ -228,8 +232,7 @@
             data: { IDs: selected_exam_ids, Status: '02' },
           }),
         };
-        console.log("params",params);
-        //占位
+
         const url = `/api/exam/status?${new URLSearchParams(params).toString()}`;
         fetch(url, {
           method: 'PUT',
@@ -269,8 +272,6 @@
     }
 
   async function deleteExam(selected_exam_ids){
-
-
     fetch(`/api/exam`,
       { 
         method:"DELETE",
@@ -300,8 +301,39 @@
       })
   }
 
-  function batchDelete(){
-    toast.warning("功能还未实现");
+  async function cancelExam(selected_exam_ids)
+  {
+    const params = {
+          q: JSON.stringify({
+            data: { IDs: selected_exam_ids, Status: '16' },
+          }),
+        };
+
+        const url = `/api/exam/status?${new URLSearchParams(params).toString()}`;
+        fetch(url, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+
+      .then((response)=>response.json())
+      .then((result)=>{
+        if(result.status===0){
+          loading=false;
+          return;
+        }
+        else{
+          throw new Error(result.msg);
+        }
+      }).catch((error)=>{
+          console.log("错误提示:",error);
+          toast.error(error);
+      })
+      .finally(()=>{
+        searchExam();
+        loading=false;
+        selected_exam_ids=[];
+      })
   }
 
   function handleCheckBoxChange(data,event){
@@ -328,139 +360,6 @@ function handleSelectAll(event) {
   }
 }
 
-  // 模拟获取考试列表数据
-  // exam_list = [
-  //   {
-  //     name: '数学考试',
-  //     type: '00',
-  //     method: '00',
-  //     start_time: '2023-10-01 10:00',
-  //     end_time: '2023-10-01 12:00',
-  //     duration: '120分钟',
-  //     status: '00',
-  //     delivery_status: '00',
-  //     addi: '',
-  //     actionExpanded: false,
-  //     num_of_examinee: 1,
-  //   },
-  //   {
-  //     name: '英语考试',
-  //     type: '02',
-  //     method: '02',
-  //     start_time: '2023-10-02 14:00',
-  //     end_time: '2023-10-02 15:30',
-  //     duration: '90分钟',
-  //     status: '04',
-  //     delivery_status: '00',
-  //     addi: '',
-  //     actionExpanded: false,
-  //     num_of_examinee: 1,
-  //   },
-  //   {
-  //     name: '物理期中',
-  //     type: '00',
-  //     method: '00',
-  //     start_time: '2023-10-03 09:00',
-  //     end_time: '2023-10-03 11:00',
-  //     duration: '120分钟',
-  //     status: '02',
-  //     delivery_status: '00',
-  //     addi: '',
-  //     actionExpanded: false,
-  //     num_of_examinee: 1,
-  //   },
-  //   {
-  //     name: '化学期末',
-  //     type: '02',
-  //     method: '02',
-  //     start_time: '2023-10-04 13:30',
-  //     end_time: '2023-10-04 15:00',
-  //     duration: '90分钟',
-  //     status: '04',
-  //     delivery_status: '00',
-  //     addi: '',
-  //     actionExpanded: false,
-  //     num_of_examinee: 1,
-  //   },
-  //   {
-  //     name: '语文模拟',
-  //     type: '04',
-  //     method: '00',
-  //     start_time: '2023-10-05 08:30',
-  //     end_time: '2023-10-05 10:00',
-  //     duration: '90分钟',
-  //     status: '00',
-  //     delivery_status: '00',
-  //     addi: '',
-  //     actionExpanded: false,
-  //     num_of_examinee: 1,
-  //   },
-  //   {
-  //     name: '生物测评',
-  //     type: '02',
-  //     method: '02',
-  //     start_time: '2023-10-06 10:00',
-  //     end_time: '2023-10-06 11:30',
-  //     duration: '90分钟',
-  //     status: '02',
-  //     delivery_status: '00',
-  //     addi: '',
-  //     actionExpanded: false,
-  //     num_of_examinee: 1,
-  //   },
-  //   {
-  //     name: '历史会考',
-  //     type: '00',
-  //     method: '02',
-  //     start_time: '2023-10-07 15:00',
-  //     end_time: '2023-10-07 16:30',
-  //     duration: '90分钟',
-  //     status: '04',
-  //     delivery_status: '00',
-  //     addi: '',
-  //     actionExpanded: false,
-  //     num_of_examinee: 1,
-  //   },
-  //   {
-  //     name: '历史会考',
-  //     type: '00',
-  //     method: '02',
-  //     start_time: '2023-10-07 15:00',
-  //     end_time: '2023-10-07 16:30',
-  //     duration: '90分钟',
-  //     status: '04',
-  //     delivery_status: '00',
-  //     addi: '',
-  //     actionExpanded: false,
-  //     num_of_examinee: 1,
-  //   },
-  //   {
-  //     name: '历史会考',
-  //     type: '00',
-  //     method: '02',
-  //     start_time: '2023-10-07 15:00',
-  //     end_time: '2023-10-07 16:30',
-  //     duration: '90分钟',
-  //     status: '04',
-  //     delivery_status: '00',
-  //     addi: '',
-  //     actionExpanded: false,
-  //     num_of_examinee: 1,
-  //   },
-  //   {
-  //     name: '历史会考',
-  //     type: '00',
-  //     method: '02',
-  //     start_time: '2023-10-07 15:00',
-  //     end_time: '2023-10-07 16:30',
-  //     duration: '90分钟',
-  //     status: '12',
-  //     delivery_status: '00',
-  //     addi: '',
-  //     actionExpanded: false,
-  //     num_of_examinee: 1,
-  //   },
-  // ];
   
   onMount(() => {
     searchExam();
@@ -516,12 +415,17 @@ function handleSelectAll(event) {
 
     <button class="preview-exam-button action-button {status!='00'&&status!='02'&&status!='04' ?'hideButton' : ''}"
     onclick={()=>{
-            preview_id = exam_list[index].exam_sessions.id;
-            CURRENT_PAPER_ID.set(91);
+            preview_id = exam_list[index].exam_sessions[0].paper_id;
+            CURRENT_PAPER_ID.set(preview_id);
             goto(`/teacher/exam/previewExam`)
             
         }}>预览试卷</button>
-    <!-- <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}">取消考试</button> -->
+    <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}"
+    onclick={(event)=>{
+            event.stopPropagation(); // 阻止冒泡
+            examID_to_cancel=exam_list[index].id
+            cancel_exam_dialog=true;
+        }}>考试作废</button>
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">监考管理</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">操作日志</button> -->
     <!-- <button class="unpublished-more-action-button action-button {status !== '00' ? 'hideButton' : ''}"
@@ -543,8 +447,15 @@ function handleSelectAll(event) {
     <td>{TypeMap[data.type]} </td>
     <td>{MethodMap[data.method]} </td>
     <td>
-      {data.exam_sessions?.[0] ? formatDateTime(data.exam_sessions[0].start_time) : ''} -
-      {data.exam_sessions?.[0] ? formatDateTime(data.exam_sessions[0].end_time) : ''}
+    <div class = "examDateContainer">
+      {#each data.exam_sessions as session}
+        <div style="display: flex; flex-wrap: no-wrap; gap: 8px;">
+          <span>
+            {formatDateTime(session.start_time)} -- {formatDateTime(session.end_time)}
+          </span>
+        </div>
+      {/each}
+    </div>
     </td>
     <td>{data.duration}</td>
     <td>{@render stateRender(data.status, data.addi)}</td>
@@ -554,7 +465,7 @@ function handleSelectAll(event) {
 {/snippet}
 
 <!--考试状态标签-->
-{#snippet stateRender(/** @type {"00" | "02" | "04" | "08" | "10" | "12"} */ status, /** @type {string} */ addi)}
+{#snippet stateRender(/** @type {"00" | "02" | "04" | "08" | "10" | "12"  | "16"} */ status, /** @type {string} */ addi)}
   {#if status === '10'}
     <div class="statusError">
       <div class="statusTag {StateClassMap[status]}">
@@ -562,7 +473,7 @@ function handleSelectAll(event) {
       </div>
       <button class="tip"
         ><img src="/exam_list/tip.png" alt="提示" style="width: 16px; height:auto" />
-        <div class="tooltip-text">{addi}</div></button
+        <div class="tooltip-text">考试数据出现异常，请联系管理员处理</div></button
       >
     </div>
   {:else}
@@ -668,6 +579,22 @@ function handleSelectAll(event) {
       selected_exam_ids = [...selected_exam_ids, examID_to_delete];
     }
       deleteExam(selected_exam_ids)
+      }}
+    />
+
+    <MessageBox
+    bind:visible={cancel_exam_dialog}
+    content="是否确认将该考试作废"
+    cancel_text="取消"
+    confirm_text="确认"
+    onCancel={() => {
+      cancel_exam_dialog = false;
+    }}
+    onConfirm={() => {
+      if (!selected_exam_ids.includes(examID_to_cancel)) {
+      selected_exam_ids = [...selected_exam_ids, examID_to_cancel];
+    }
+      cancelExam(selected_exam_ids)
       }}
     />
 
@@ -826,7 +753,7 @@ function handleSelectAll(event) {
         border-right: none;
         padding: 4px 8px;
         font-size: 14px;
-        color: rgba(0, 0, 0, 0.75);
+        color: var(--text-primary);
         min-height: 60px;
 
         &:hover {
@@ -841,6 +768,13 @@ function handleSelectAll(event) {
           padding: 0 4px;
           text-align: center;
         }
+      }
+
+      .examDateContainer{
+        display: flex; 
+        flex-direction: column;
+        gap: 4px;
+        
       }
     }
   }
@@ -877,6 +811,30 @@ function handleSelectAll(event) {
     &.hidden {
       visibility: hidden;
     }
+
+    .tooltip-text {
+        visibility: hidden;
+        width: max-content;
+        max-width: 250px;
+        background-color: white;
+        border: 1px solid #d7d7d7;
+        color: var(--text-primary);
+        text-align: left;
+        padding: 6px 8px;
+        border-radius: 4px;
+        position: absolute;
+        z-index: 1;
+        bottom: 150%;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: pre-line;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    &:hover .tooltip-text {
+        visibility: visible;
+    }
   }
   .statusTag {
     border: none;
@@ -906,6 +864,9 @@ function handleSelectAll(event) {
     }
     &.error {
       background-color: #ff4d4f;
+    }
+    &.invalid {
+      background-color: var(--gray);
     }
   }
 

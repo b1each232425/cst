@@ -87,9 +87,7 @@ describe('MessageBox 组件测试', () => {
 
     // 验证是否渲染成功,默认值,并在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'title' 无效:类型错误，传入类型为 'null'，期望类型为 'string',已使用默认值 '温馨提示',传入值为:'null'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'title' 无效: 类型错误,期望类型为string,实际类型为null, 已使用默认值 '温馨提示', 传入值为: 'null'");
   });
 
   it('应该能渲染传入非正常值title属性值为NaN,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -103,9 +101,7 @@ describe('MessageBox 组件测试', () => {
 
     // 验证是否渲染成功,默认值,并在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'title' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 '温馨提示',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'title' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 '温馨提示', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值title属性值为0,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -119,9 +115,7 @@ describe('MessageBox 组件测试', () => {
 
     // 验证是否渲染成功,默认值,并在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'title' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 '温馨提示',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'title' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 '温馨提示', 传入值为: '0'");
   });
 
   it("应该能渲染传入非正常值title属性值为'',组件内部使用默认值,并在控制台提示相应警告信息", async () => {
@@ -135,9 +129,7 @@ describe('MessageBox 组件测试', () => {
 
     // 验证是否渲染成功,默认值,并在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'title' 无效:校验函数不通过,已使用默认值 '温馨提示',传入值为:''",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'title' 无效: title 不能为空, 已使用默认值 '温馨提示', 传入值为: ''");
   });
 
   /**
@@ -176,9 +168,7 @@ describe('MessageBox 组件测试', () => {
 
     // 验证是否渲染成功,默认值,并在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'content' 无效:类型错误，传入类型为 'null'，期望类型为 'string',已使用默认值 '',传入值为:'null'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'content' 无效: 类型错误,期望类型为string,实际类型为null, 已使用默认值 '', 传入值为: 'null'");
   });
 
   it('应该能渲染传入非正常值content属性值为NaN,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -191,9 +181,7 @@ describe('MessageBox 组件测试', () => {
     expect(screen.getByText('温馨提示')).toBeInTheDocument();
 
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'content' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 '',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'content' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 '', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值content属性值为0,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -206,9 +194,7 @@ describe('MessageBox 组件测试', () => {
     expect(screen.getByText('温馨提示')).toBeInTheDocument();
 
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'content' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 '',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'content' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 '', 传入值为: '0'");
   });
 
   it("应该能渲染传入正常值content属性值为'',组件内部使用默认值也是'',能正常显示", async () => {
@@ -275,9 +261,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'center' 无效:类型错误，传入类型为 'null'，期望类型为 'boolean',已使用默认值 'false',传入值为:'null'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'center' 无效: 类型错误,期望类型为boolean,实际类型为null, 已使用默认值 'false', 传入值为: 'null'");
   });
 
   it('应该能渲染传入非正常值center属性值为NaN,组件内部使用默认值false,并在控制台提示相应警告信息', async () => {
@@ -291,9 +275,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'center' 无效:类型错误，传入类型为 'number'，期望类型为 'boolean',已使用默认值 'false',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'center' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'false', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值center属性值为0,组件内部使用默认值false,并在控制台提示相应警告信息', async () => {
@@ -306,9 +288,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'center' 无效:类型错误，传入类型为 'number'，期望类型为 'boolean',已使用默认值 'false',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'center' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'false', 传入值为: '0'");
   });
 
   it("应该能渲染传入非正常值center属性值为'',组件内部使用默认值flase,并在控制台提示相应警告信息", async () => {
@@ -322,9 +302,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'center' 无效:类型错误，传入类型为 'string'，期望类型为 'boolean',已使用默认值 'false',传入值为:''",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'center' 无效: 类型错误,期望类型为boolean,实际类型为string, 已使用默认值 'false', 传入值为: ''");
   });
 
   /**
@@ -376,9 +354,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'show_cancel_button' 无效:类型错误，传入类型为 'null'，期望类型为 'boolean',已使用默认值 'true',传入值为:'null'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'show_cancel_button' 无效: 类型错误,期望类型为boolean,实际类型为null, 已使用默认值 'true', 传入值为: 'null'");
   });
 
   it('应该能渲染传入非正常值show_cancel_button属性值为NaN,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -391,9 +367,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'show_cancel_button' 无效:类型错误，传入类型为 'number'，期望类型为 'boolean',已使用默认值 'true',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'show_cancel_button' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'true', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值show_cancel_button属性值为0,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -406,9 +380,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'show_cancel_button' 无效:类型错误，传入类型为 'number'，期望类型为 'boolean',已使用默认值 'true',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'show_cancel_button' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'true', 传入值为: '0'");
   });
 
   it("应该能渲染传入非正常值show_cancel_button属性值为'',组件内部使用默认值,并在控制台提示相应警告信息", async () => {
@@ -421,9 +393,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'show_cancel_button' 无效:类型错误，传入类型为 'string'，期望类型为 'boolean',已使用默认值 'true',传入值为:''",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'show_cancel_button' 无效: 类型错误,期望类型为boolean,实际类型为string, 已使用默认值 'true', 传入值为: ''");
   });
 
   /**
@@ -474,9 +444,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'show_confirm_button' 无效:类型错误，传入类型为 'null'，期望类型为 'boolean',已使用默认值 'true',传入值为:'null'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'show_confirm_button' 无效: 类型错误,期望类型为boolean,实际类型为null, 已使用默认值 'true', 传入值为: 'null'");
   });
 
   it('应该能渲染传入非正常值show_confirm_button属性值为NaN,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -489,9 +457,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'show_confirm_button' 无效:类型错误，传入类型为 'number'，期望类型为 'boolean',已使用默认值 'true',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'show_confirm_button' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'true', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值show_confirm_button属性值为0,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -504,9 +470,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'show_confirm_button' 无效:类型错误，传入类型为 'number'，期望类型为 'boolean',已使用默认值 'true',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'show_confirm_button' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'true', 传入值为: '0'");
   });
 
   it("应该能渲染传入非正常值show_confirm_button属性值为'',组件内部使用默认值,并在控制台提示相应警告信息", async () => {
@@ -519,9 +483,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'show_confirm_button' 无效:类型错误，传入类型为 'string'，期望类型为 'boolean',已使用默认值 'true',传入值为:''",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'show_confirm_button' 无效: 类型错误,期望类型为boolean,实际类型为string, 已使用默认值 'true', 传入值为: ''");
   });
 
   /**
@@ -565,9 +527,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'cancel_text' 无效:类型错误，传入类型为 'null'，期望类型为 'string',已使用默认值 '取消',传入值为:'null'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'cancel_text' 无效: 类型错误,期望类型为string,实际类型为null, 已使用默认值 '取消', 传入值为: 'null'");
   });
 
   it('应该能渲染传入非正常值cancel_text属性值为NaN,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -580,9 +540,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'cancel_text' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 '取消',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'cancel_text' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 '取消', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值cancel_text属性值为0,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -595,9 +553,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'cancel_text' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 '取消',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'cancel_text' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 '取消', 传入值为: '0'");
   });
 
   it("应该能渲染传入非正常值cancel_text属性值为'',组件内部使用默认值,并在控制台提示相应警告信息", async () => {
@@ -610,9 +566,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'cancel_text' 无效:校验函数不通过,已使用默认值 '取消',传入值为:''",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'cancel_text' 无效: cancel_text 不能为空, 已使用默认值 '取消', 传入值为: ''");
   });
 
   /**
@@ -657,9 +611,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'confirm_text' 无效:类型错误，传入类型为 'null'，期望类型为 'string',已使用默认值 '确定',传入值为:'null'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'confirm_text' 无效: 类型错误,期望类型为string,实际类型为null, 已使用默认值 '确定', 传入值为: 'null'");
   });
 
   it('应该能渲染传入非正常值confirm_text属性值为NaN,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -673,9 +625,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'confirm_text' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 '确定',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'confirm_text' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 '确定', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值confirm_text属性值为0,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -689,9 +639,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'confirm_text' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 '确定',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'confirm_text' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 '确定', 传入值为: '0'");
   });
 
   it("应该能渲染传入非正常值confirm_text属性值为'',组件内部使用默认值,并在控制台提示相应警告信息", async () => {
@@ -704,9 +652,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'confirm_text' 无效:校验函数不通过,已使用默认值 '确定',传入值为:''",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'confirm_text' 无效: confirm_text 不能为空, 已使用默认值 '确定', 传入值为: ''");
   });
 
   /**
@@ -750,9 +696,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'show_cancel_icon' 无效:类型错误，传入类型为 'null'，期望类型为 'boolean',已使用默认值 'true',传入值为:'null'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'show_cancel_icon' 无效: 类型错误,期望类型为boolean,实际类型为null, 已使用默认值 'true', 传入值为: 'null'");
   });
 
   it('应该能渲染传入非正常值show_cancel_icon属性值为NaN,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -765,9 +709,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'show_cancel_icon' 无效:类型错误，传入类型为 'number'，期望类型为 'boolean',已使用默认值 'true',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'show_cancel_icon' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'true', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值show_cancel_icon属性值为0,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -780,9 +722,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'show_cancel_icon' 无效:类型错误，传入类型为 'number'，期望类型为 'boolean',已使用默认值 'true',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'show_cancel_icon' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'true', 传入值为: '0'");
   });
 
   it("应该能渲染传入非正常值show_cancel_icon属性值为'',组件内部使用默认值,并在控制台提示相应警告信息", async () => {
@@ -795,9 +735,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'show_cancel_icon' 无效:类型错误，传入类型为 'string'，期望类型为 'boolean',已使用默认值 'true',传入值为:''",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'show_cancel_icon' 无效: 类型错误,期望类型为boolean,实际类型为string, 已使用默认值 'true', 传入值为: ''");
   });
 
   /**
@@ -872,9 +810,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'type' 无效:类型错误，传入类型为 'null'，期望类型为 'string',已使用默认值 'primary',传入值为:'null'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'type' 无效: 类型错误,期望类型为string,实际类型为null, 已使用默认值 'primary', 传入值为: 'null'");
   });
 
   it('应该能渲染传入非正常值type属性值为NaN,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -888,9 +824,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'type' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 'primary',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'type' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 'primary', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值type属性值为0,组件内部使用默认值,并在控制台提示相应警告信息', async () => {
@@ -904,9 +838,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'type' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 'primary',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'type' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 'primary', 传入值为: '0'");
   });
 
   it("应该能渲染传入非正常值type属性值为'',组件内部使用默认值,并在控制台提示相应警告信息", async () => {
@@ -920,7 +852,7 @@ describe('MessageBox 组件测试', () => {
 
     // 在控制台提示相应警告信息
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'type' 无效:校验函数不通过,已使用默认值 'primary',传入值为:''");
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'type' 无效: type 只能是 primary、success、danger、warning、info 中的一个, 已使用默认值 'primary', 传入值为: ''");
   });
 
   /**
@@ -982,9 +914,7 @@ describe('MessageBox 组件测试', () => {
     expect(screen.getByText('取消')).toHaveClass(`btn--info`);
 
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'cancel_button_type' 无效:类型错误，传入类型为 'null'，期望类型为 'string',已使用默认值 'info',传入值为:'null'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'cancel_button_type' 无效: 类型错误,期望类型为string,实际类型为null, 已使用默认值 'info', 传入值为: 'null'");
   });
 
   it('应该能渲染传入非正常值cancel_button_type属性值为NaN,组件内部使用默认值info,并在控制台提示相应警告信息', async () => {
@@ -996,9 +926,7 @@ describe('MessageBox 组件测试', () => {
     expect(screen.getByText('取消')).toHaveClass(`btn--info`);
 
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'cancel_button_type' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 'info',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'cancel_button_type' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 'info', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值cancel_button_type属性值为0,组件内部使用默认值info,并在控制台提示相应警告信息', async () => {
@@ -1010,9 +938,7 @@ describe('MessageBox 组件测试', () => {
     expect(screen.getByText('取消')).toHaveClass(`btn--info`);
 
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'cancel_button_type' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 'info',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'cancel_button_type' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 'info', 传入值为: '0'");
   });
 
   it("应该能渲染传入非正常值cancel_button_type属性值为'',组件内部使用默认值info,并在控制台提示相应警告信息", async () => {
@@ -1024,9 +950,7 @@ describe('MessageBox 组件测试', () => {
     expect(screen.getByText('取消')).toHaveClass(`btn--info`);
 
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'cancel_button_type' 无效:校验函数不通过,已使用默认值 'info',传入值为:''",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'cancel_button_type' 无效: cancel_button_type 只能是 primary、success、danger、warning、info 中的一个, 已使用默认值 'info', 传入值为: ''");
   });
 
   /**
@@ -1089,9 +1013,7 @@ describe('MessageBox 组件测试', () => {
     expect(screen.getAllByText('确定')[0]).toHaveClass(`btn--primary`);
 
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'confirm_button_type' 无效:类型错误，传入类型为 'null'，期望类型为 'string',已使用默认值 'primary',传入值为:'null'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'confirm_button_type' 无效: 类型错误,期望类型为string,实际类型为null, 已使用默认值 'primary', 传入值为: 'null'");
   });
 
   it('应该能渲染传入非正常值confirm_button_type属性值为NaN,组件内部使用默认值primary,并在控制台提示相应警告信息', async () => {
@@ -1102,9 +1024,7 @@ describe('MessageBox 组件测试', () => {
     expect(screen.getAllByText('确定')[0]).toHaveClass(`btn--primary`);
 
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'confirm_button_type' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 'primary',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'confirm_button_type' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 'primary', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值confirm_button_type属性值为0,组件内部使用默认值primary,并在控制台提示相应警告信息', async () => {
@@ -1115,9 +1035,7 @@ describe('MessageBox 组件测试', () => {
     expect(screen.getAllByText('确定')[0]).toHaveClass(`btn--primary`);
 
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'confirm_button_type' 无效:类型错误，传入类型为 'number'，期望类型为 'string',已使用默认值 'primary',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'confirm_button_type' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 'primary', 传入值为: '0'");
   });
 
   it("应该能渲染传入非正常值confirm_button_type属性值为'',组件内部使用默认值primary,并在控制台提示相应警告信息", async () => {
@@ -1128,9 +1046,7 @@ describe('MessageBox 组件测试', () => {
     expect(screen.getAllByText('确定')[0]).toHaveClass(`btn--primary`);
 
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'confirm_button_type' 无效:校验函数不通过,已使用默认值 'primary',传入值为:''",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'confirm_button_type' 无效: confirm_button_type 只能是 primary、success、danger、warning、info 中的一个, 已使用默认值 'primary', 传入值为: ''");
   });
 
   /**
@@ -1195,9 +1111,7 @@ describe('MessageBox 组件测试', () => {
       expect(screen.queryByText('温馨提示')).not.toBeInTheDocument();
     });
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'on_close_by_click_outside' 无效:类型错误，传入类型为 'null'，期望类型为 'boolean',已使用默认值 'true',传入值为:'null'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'on_close_by_click_outside' 无效: 类型错误,期望类型为boolean,实际类型为null, 已使用默认值 'true', 传入值为: 'null'");
   });
 
   it('应该能渲染传入非正常值on_close_by_click_outside属性值为NaN,组件内部使用默认值true,并在控制台提示相应警告信息', async () => {
@@ -1212,9 +1126,7 @@ describe('MessageBox 组件测试', () => {
     // 验证关闭后不再存在
     await waitFor(() => {});
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'on_close_by_click_outside' 无效:类型错误，传入类型为 'number'，期望类型为 'boolean',已使用默认值 'true',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'on_close_by_click_outside' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'true', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值on_close_by_click_outside属性值为0,组件内部使用默认值true,并在控制台提示相应警告信息', async () => {
@@ -1230,9 +1142,7 @@ describe('MessageBox 组件测试', () => {
     // 验证关闭后不再存在
     await waitFor(() => {});
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'on_close_by_click_outside' 无效:类型错误，传入类型为 'number'，期望类型为 'boolean',已使用默认值 'true',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'on_close_by_click_outside' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'true', 传入值为: '0'");
   });
 
   it("应该能渲染传入非正常值on_close_by_click_outside属性值为'',组件内部使用默认值true,并在控制台提示相应警告信息", async () => {
@@ -1247,9 +1157,7 @@ describe('MessageBox 组件测试', () => {
     // 验证关闭后不再存在
     await waitFor(() => {});
     expect(spy).toHaveBeenCalled();
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'on_close_by_click_outside' 无效:类型错误，传入类型为 'string'，期望类型为 'boolean',已使用默认值 'true',传入值为:''",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'on_close_by_click_outside' 无效: 类型错误,期望类型为boolean,实际类型为string, 已使用默认值 'true', 传入值为: ''");
   });
 
   /**
@@ -1292,9 +1200,7 @@ describe('MessageBox 组件测试', () => {
     await waitFor(() => {
       expect(screen.queryByText('温馨提示')).not.toBeInTheDocument();
     });
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'onCancel' 无效:类型错误，传入类型为 'undefined'，期望类型为 'function, asyncfunction',已使用默认值 '() => {}',传入值为:'undefined'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'onCancel' 无效: 类型错误, 期望类型为function、asyncfunction, 实际类型为undefined, 已使用默认值 '() => {}', 传入值为: 'undefined'");
   });
 
   it('应该能渲染传入非正常值onCancel回调函数为null,组件内部不执行onCancel回调函数', async () => {
@@ -1309,9 +1215,7 @@ describe('MessageBox 组件测试', () => {
     await waitFor(() => {
       expect(screen.queryByText('温馨提示')).not.toBeInTheDocument();
     });
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'onCancel' 无效:类型错误，传入类型为 'null'，期望类型为 'function, asyncfunction',已使用默认值 '() => {}',传入值为:'null'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'onCancel' 无效: 类型错误, 期望类型为function、asyncfunction, 实际类型为null, 已使用默认值 '() => {}', 传入值为: 'null'");
   });
 
   it('应该能渲染传入非正常值onCancel回调函数为NaN,组件内部不执行onCancel回调函数', async () => {
@@ -1326,9 +1230,7 @@ describe('MessageBox 组件测试', () => {
     await waitFor(() => {
       expect(screen.queryByText('温馨提示')).not.toBeInTheDocument();
     });
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'onCancel' 无效:类型错误，传入类型为 'number'，期望类型为 'function, asyncfunction',已使用默认值 '() => {}',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'onCancel' 无效: 类型错误, 期望类型为function、asyncfunction, 实际类型为number, 已使用默认值 '() => {}', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值onCancel回调函数为0,组件内部不执行onCancel回调函数', async () => {
@@ -1343,9 +1245,7 @@ describe('MessageBox 组件测试', () => {
     await waitFor(() => {
       expect(screen.queryByText('温馨提示')).not.toBeInTheDocument();
     });
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'onCancel' 无效:类型错误，传入类型为 'number'，期望类型为 'function, asyncfunction',已使用默认值 '() => {}',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'onCancel' 无效: 类型错误, 期望类型为function、asyncfunction, 实际类型为number, 已使用默认值 '() => {}', 传入值为: '0'");
   });
 
   it("应该能渲染传入非正常值onCancel回调函数为'',组件内部不执行onCancel回调函数", async () => {
@@ -1360,9 +1260,7 @@ describe('MessageBox 组件测试', () => {
     await waitFor(() => {
       expect(screen.queryByText('温馨提示')).not.toBeInTheDocument();
     });
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'onCancel' 无效:类型错误，传入类型为 'string'，期望类型为 'function, asyncfunction',已使用默认值 '() => {}',传入值为:''",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'onCancel' 无效: 类型错误, 期望类型为function、asyncfunction, 实际类型为string, 已使用默认值 '() => {}', 传入值为: ''");
   });
 
   /**
@@ -1400,9 +1298,7 @@ describe('MessageBox 组件测试', () => {
     await waitFor(() => {
       expect(screen.queryByText('温馨提示')).not.toBeInTheDocument();
     });
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'onConfirm' 无效:类型错误，传入类型为 'undefined'，期望类型为 'function, asyncfunction',已使用默认值 '() => {}',传入值为:'undefined'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'onConfirm' 无效: 类型错误, 期望类型为function、asyncfunction, 实际类型为undefined, 已使用默认值 '() => {}', 传入值为: 'undefined'");
   });
 
   it('应该能渲染传入非正常值onConfirm回调函数为null,组件内部不执行onConfirm回调函数', async () => {
@@ -1417,10 +1313,8 @@ describe('MessageBox 组件测试', () => {
     await waitFor(() => {
       expect(screen.queryByText('温馨提示')).not.toBeInTheDocument();
     });
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'onConfirm' 无效:类型错误，传入类型为 'null'，期望类型为 'function, asyncfunction',已使用默认值 '() => {}',传入值为:'null'",
-    );
-  });
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'onConfirm' 无效: 类型错误, 期望类型为function、asyncfunction, 实际类型为null, 已使用默认值 '() => {}', 传入值为: 'null'");
+  }); 
 
   it('应该能渲染传入非正常值onConfirm回调函数为NaN,组件内部不执行onConfirm回调函数', async () => {
     const spy = vi.spyOn(console, 'warn');
@@ -1434,9 +1328,7 @@ describe('MessageBox 组件测试', () => {
     await waitFor(() => {
       expect(screen.queryByText('温馨提示')).not.toBeInTheDocument();
     });
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'onConfirm' 无效:类型错误，传入类型为 'number'，期望类型为 'function, asyncfunction',已使用默认值 '() => {}',传入值为:'NaN'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'onConfirm' 无效: 类型错误, 期望类型为function、asyncfunction, 实际类型为number, 已使用默认值 '() => {}', 传入值为: 'NaN'");
   });
 
   it('应该能渲染传入非正常值onConfirm回调函数为0,组件内部不执行onConfirm回调函数', async () => {
@@ -1451,9 +1343,7 @@ describe('MessageBox 组件测试', () => {
     await waitFor(() => {
       expect(screen.queryByText('温馨提示')).not.toBeInTheDocument();
     });
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'onConfirm' 无效:类型错误，传入类型为 'number'，期望类型为 'function, asyncfunction',已使用默认值 '() => {}',传入值为:'0'",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'onConfirm' 无效: 类型错误, 期望类型为function、asyncfunction, 实际类型为number, 已使用默认值 '() => {}', 传入值为: '0'");
   });
 
   it("应该能渲染传入非正常值onConfirm回调函数为'',组件内部不执行onConfirm回调函数", async () => {
@@ -1468,9 +1358,7 @@ describe('MessageBox 组件测试', () => {
     await waitFor(() => {
       expect(screen.queryByText('温馨提示')).not.toBeInTheDocument();
     });
-    expect(spy).toHaveBeenCalledWith(
-      "[MessageBox] 属性 'onConfirm' 无效:类型错误，传入类型为 'string'，期望类型为 'function, asyncfunction',已使用默认值 '() => {}',传入值为:''",
-    );
+    expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'onConfirm' 无效: 类型错误, 期望类型为function、asyncfunction, 实际类型为string, 已使用默认值 '() => {}', 传入值为: ''");
   });
 
   /**

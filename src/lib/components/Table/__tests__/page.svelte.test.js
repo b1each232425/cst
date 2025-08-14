@@ -60,7 +60,9 @@ describe('测试 Empty 组件', () => {
     // 传入null数据
     const { unmount } = render(Empty, { text: null });
     expect(screen.getByText('暂无数据')).toBeInTheDocument();
-    expect(spy).toHaveBeenCalledWith("[Empty] 内容无效: 'null',应为非空字符串");
+    expect(spy).toHaveBeenCalledWith(
+      "[Empty] 属性 'text' 无效: 类型错误,期望类型为string,实际类型为null, 已使用默认值 '暂无数据', 传入值为: 'null'",
+    );
     unmount();
 
     // 传入undefined数据（Svelte 会用默认值，不会警告）
@@ -71,7 +73,9 @@ describe('测试 Empty 组件', () => {
     // 传入0
     const { unmount: unmount3 } = render(Empty, { text: 0 });
     expect(screen.getByText('暂无数据')).toBeInTheDocument();
-    expect(spy).toHaveBeenCalledWith("[Empty] 内容无效: '0',应为非空字符串");
+    expect(spy).toHaveBeenCalledWith(
+      "[Empty] 属性 'text' 无效: 类型错误,期望类型为string,实际类型为number, 已使用默认值 '暂无数据', 传入值为: '0'",
+    );
     unmount3();
   });
 
@@ -82,7 +86,7 @@ describe('测试 Empty 组件', () => {
     const spy = vi.spyOn(console, 'warn');
     render(Empty, { text: '' });
     expect(screen.getByText('暂无数据')).toBeInTheDocument();
-    expect(spy).toHaveBeenCalledWith("[Empty] 内容无效: '',应为非空字符串");
+    expect(spy).toHaveBeenCalledWith("[Empty] 属性 'text' 无效: 不符合校验规则, 已使用默认值 '暂无数据', 传入值为: ''");
   });
 
   /**
@@ -93,7 +97,7 @@ describe('测试 Empty 组件', () => {
 
     // 传入 null
     let { unmount } = render(Empty, { show_icon: null });
-    expect(spy).toHaveBeenCalledWith("[Empty] 是否显示图标无效: 'null',应为布尔值boolean");
+    expect(spy).toHaveBeenCalledWith("[Empty] 属性 'show_icon' 无效: 类型错误,期望类型为boolean,实际类型为null, 已使用默认值 'true', 传入值为: 'null'");
     unmount();
 
     // 传入 undefined（Svelte 会使用默认值，不警告）
@@ -102,12 +106,12 @@ describe('测试 Empty 组件', () => {
 
     // 传入 0
     let { unmount: unmount3 } = render(Empty, { show_icon: 0 });
-    expect(spy).toHaveBeenCalledWith("[Empty] 是否显示图标无效: '0',应为布尔值boolean");
+    expect(spy).toHaveBeenCalledWith("[Empty] 属性 'show_icon' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'true', 传入值为: '0'");
     unmount3();
 
     // 传入字符串
     let { unmount: unmount4 } = render(Empty, { show_icon: 'abc' });
-    expect(spy).toHaveBeenCalledWith("[Empty] 是否显示图标无效: 'abc',应为布尔值boolean");
+    expect(spy).toHaveBeenCalledWith("[Empty] 属性 'show_icon' 无效: 类型错误,期望类型为boolean,实际类型为string, 已使用默认值 'true', 传入值为: 'abc'");
     unmount4();
   });
 
@@ -119,7 +123,7 @@ describe('测试 Empty 组件', () => {
 
     // 传入 null
     let { unmount } = render(Empty, { show_text: null });
-    expect(spy).toHaveBeenCalledWith("[Empty] 是否显示文本无效: 'null',应为布尔值boolean");
+    expect(spy).toHaveBeenCalledWith("[Empty] 属性 'show_text' 无效: 类型错误,期望类型为boolean,实际类型为null, 已使用默认值 'true', 传入值为: 'null'");
     unmount();
 
     // 传入 undefined（Svelte 会使用默认值，不警告）
@@ -128,12 +132,12 @@ describe('测试 Empty 组件', () => {
 
     // 传入 0
     let { unmount: unmount3 } = render(Empty, { show_text: 0 });
-    expect(spy).toHaveBeenCalledWith("[Empty] 是否显示文本无效: '0',应为布尔值boolean");
+    expect(spy).toHaveBeenCalledWith("[Empty] 属性 'show_text' 无效: 类型错误,期望类型为boolean,实际类型为number, 已使用默认值 'true', 传入值为: '0'");
     unmount3();
 
     // 传入对象
     let { unmount: unmount4 } = render(Empty, { show_text: { a: 1 } });
-    expect(spy).toHaveBeenCalledWith("[Empty] 是否显示文本无效: '[object Object]',应为布尔值boolean");
+    expect(spy).toHaveBeenCalledWith("[Empty] 属性 'show_text' 无效: 类型错误,期望类型为boolean,实际类型为object, 已使用默认值 'true', 传入值为: '[object Object]'");
     unmount4();
   });
 });

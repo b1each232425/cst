@@ -244,54 +244,52 @@
   }
 </script>
 
-<div class="modal" style="display: {show_log_panel ? 'flex' : 'none'};">
-  <div class="panel">
-    <div class="top-bar">
-      <span class="title">操作日志</span>
-      <button
-        class="close-btn"
-        onclick={async () => {
-          show_log_panel = false;
-        }}
-      >
-        <img src="/clear/delete.svg" alt="" />
-      </button>
-    </div>
-    <div class="log-view">
-      {#each current_page_logs as log_data}
-        <div class="log-item">
-          <div class="log-header">
-            <span
-              class="user-info"
-              title={`用户帐号: ${log_data.creator_account || '未知账号'} | 用户名: ${log_data.creator_name || '未知用户'} | 用户ID: ${log_data.creator || '未知用户ID'}`}
-            >
-              用户帐号: {log_data.creator_account || '未知账号'} | 用户名: {log_data.creator_name || '未知用户'} | 用户ID:
-              {log_data.creator || '未知用户ID'}
-            </span>
-          </div>
-          <div class="log-content">
-            {#if Array.isArray(log_data.content)}
+{#if show_log_panel}
+  <div class="modal">
+    <div class="panel">
+      <div class="top-bar">
+        <span class="title">操作日志</span>
+        <button
+          class="close-btn"
+          onclick={async () => {
+            show_log_panel = false;
+          }}
+          data-testid="closeDiary"
+        >
+          <img src="/clear/delete.svg" alt="" />
+        </button>
+      </div>
+      <div class="log-view">
+        {#each current_page_logs as log_data}
+          <div class="log-item">
+            <div class="log-header">
+              <span
+                class="user-info"
+                title={`用户帐号: ${log_data.creator_account || '未知账号'} | 用户名: ${log_data.creator_name || '未知用户'} | 用户ID: ${log_data.creator || '未知用户ID'}`}
+              >
+                {`用户帐号: ${log_data.creator_account || '未知账号'} | 用户名: ${log_data.creator_name || '未知用户'} | 用户ID: ${log_data.creator || '未知用户ID'}`}
+              </span>
+            </div>
+            <div class="log-content">
               {#each log_data.content as content_item}
                 <div class="content-item">{content_item}</div>
               {/each}
-            {:else if log_data.content}
-              <div class="content-item">{log_data.content}</div>
-            {/if}
+            </div>
+            <div class="log-footer">
+              <span class="time-str">[{formatISOString(log_data.create_time)}]</span>
+            </div>
           </div>
-          <div class="log-footer">
-            <span class="time-str">[{formatISOString(log_data.create_time)}]</span>
-          </div>
-        </div>
-      {/each}
-      {#if current_page_logs.length === 0}
-        <div class="empty-log">暂无日志数据</div>
-      {/if}
-    </div>
-    <div class="pagination-container">
-      <Pagination {total_items} on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} />
+        {/each}
+        {#if current_page_logs.length === 0}
+          <div class="empty-log">暂无日志数据</div>
+        {/if}
+      </div>
+      <div class="pagination-container">
+        <Pagination {total_items} on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} />
+      </div>
     </div>
   </div>
-</div>
+{/if}
 
 <style lang="scss" scoped>
   .modal {

@@ -1,3 +1,23 @@
+<!--
+ * @Author: yzh 3370157161@qq.com
+ * @Date: 2025-08-13 17:14
+ * @LastEditors: yzh 3370157161@qq.com
+ * @LastEditTime: 2025-08-13 17:14
+ * @FilePath: src\routes\teacher\user-management\addUser\+page.svelte
+ * @Description: 用户管理添加用户页面 
+ * 
+ * @Copyright (c) 2025 by yzh
+-->
+ <!--                         o8o                 .   
+                             `"'               .o8   
+ .oooo.o  .ooooo.  oooo d8b oooo  oo.ooooo.  .o888oo 
+d88(  "8 d88' `"Y8 `888""8P `888   888' `88b   888   
+`"Y88b.  888        888      888   888   888   888   
+o.  )88b 888   .o8  888      888   888   888   888 . 
+8""888P' `Y8bod8P' d888b    o888o  888bod8P'   "888" 
+                                   888               
+                                  o888o              
+                                                      -->
 <script>
   import Upload from '$lib/components/Upload/UploadImage.svelte';
   import Title from '$lib/components/Title/Title.svelte';
@@ -143,26 +163,42 @@
     };
     const requestBody = { data: [payload] };
     fetch('/api/user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(requestBody),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          return res.text().then((msg) => {
-            throw new Error(`请求失败: ${res.status} ${res.statusText} - ${msg}`);
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',
+  body: JSON.stringify(requestBody),
+})
+  .then((res) => {
+    if (!res.ok) {
+      return res.text().then((msg) => {
+        throw new Error(`操作失败: ${res.status} ${res.statusText} - ${msg}`);
+      });
+    }
+    return res.json();
+  })
+  .then((json) => {
+    if (json.status !== 0) {
+      // 业务逻辑错误
+      const failedUsers = json.data || [];
+      failedUsers.forEach((user) => {
+        if (Array.isArray(user.errorMsg)) {
+          user.errorMsg.forEach((msg) => {
+            console.error('创建失败：', msg);
+            toast.warning(msg); 
           });
         }
-        return res.json();
-      })
-      .then(() => goto('/teacher/user-management'))
-      .then(() => {
-        toast.success('操作成功');
-      })
-      .catch((err) => {
-        toast.warning('创建失败');
       });
+      return; // 不跳转
+    }
+
+    // 成功
+    toast.success('添加成功');
+    goto('/teacher/user-management');
+  })
+  .catch((err) => {
+    console.error('创建用户失败：', err);
+    toast.warning('创建失败');
+  });
   }
 
   onMount(() => {
@@ -199,6 +235,16 @@
   });
 </script>
 
+
+<!-- 
+oooo            .                     oooo  
+`888          .o8                     `888  
+ 888 .oo.   .o888oo ooo. .oo.  .oo.    888  
+ 888P"Y88b    888   `888P"Y88bP"Y88b   888  
+ 888   888    888    888   888   888   888  
+ 888   888    888 .  888   888   888   888  
+o888o o888o   "888" o888o o888o o888o o888o                                                     
+-->
 <div class="add-user-container">
   <!-- 基本信息部分 -->
   <div class="section-container">
@@ -341,6 +387,20 @@
   </div>
 </div>
 
+
+
+<!-- 
+             .               oooo            
+           .o8               `888            
+ .oooo.o .o888oo oooo    ooo  888   .ooooo.  
+d88(  "8   888    `88.  .8'   888  d88' `88b 
+`"Y88b.    888     `88..8'    888  888ooo888 
+o.  )88b   888 .    `888'     888  888    .o 
+8""888P'   "888"     .8'     o888o `Y8bod8P' 
+                 .o..P'                      
+                 `Y8P'                       
+                       
+ -->
 <style lang="scss" scoped>
   $primary-color: #0052d9;
   $normal-font-size: 14px;
@@ -424,7 +484,7 @@
     .form-input-container {
       position: relative;
       display: flex;
-      width: 31.5%; //为与性别框对齐
+      width: 35%; 
 
       .error-message {
         color: #e34d59;
