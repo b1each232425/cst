@@ -313,14 +313,18 @@
             .then(result => {
                 const PREVIEW_QUESTIONS = result.data;
 
-                localStorage.setItem(
-                    "examQuestions",
-                    JSON.stringify(PREVIEW_QUESTIONS),
-                );
-
+                
                 if (category === "00") {
+                    localStorage.setItem(
+                        "examQuestions",
+                        JSON.stringify(PREVIEW_QUESTIONS),
+                    );
                     window.location.href = "/student/answer/exam";
                 } else if (category === "02") {
+                    localStorage.setItem(
+                        "practiceQuestions",
+                        JSON.stringify(PREVIEW_QUESTIONS),
+                    );
                     window.location.href = "/student/answer/practice";
                 }
             })

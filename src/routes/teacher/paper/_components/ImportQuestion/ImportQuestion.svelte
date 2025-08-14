@@ -166,6 +166,9 @@
                 .then(result => {
                     const TEMP_QUESTION_LIST = result.data || [];
                     tag_list = [...new Set(TEMP_QUESTION_LIST.flatMap(question=>question.Tags ? question.Tags : []).filter(Boolean))];
+                })
+                .finally(() => {
+                    // console.log(question_list)
                 });
 
         } else {
@@ -270,13 +273,22 @@
         const ACTIONS = [
             {
                 action: "add_question",
-                payload: selected_question_infos.map((question,index) => ({
-                    temp_id: `temp_question_${index + 1}`,
-                    group_id: to_import_group.id,
-                    order: to_import_group.questions.length + index + 1,
-                    bank_question_id: question.id,
-                    score: question.score
-                }))
+                payload: selected_question_infos.map((question, index) => {
+                    const payloadItem = {
+                        temp_id: `temp_question_${index + 1}`,
+                        group_id: to_import_group.id,
+                        order: to_import_group.questions.length + index + 1,
+                        bank_question_id: question.id,
+                        score: question.score
+                    };
+
+                    // 如果 Type 为 "06" 或 "08"，加 subscore 字段
+                    if (question.Type === "06" || question.Type === "08") {
+                        payloadItem.sub_score = question.Answers.map(answer => answer.score);
+                    }
+
+                    return payloadItem;
+                })
             }
         ];
 
@@ -292,6 +304,7 @@
                     });
             });
     }
+
 
     // 处理页面跳转
     function handlePageChange(event) {
