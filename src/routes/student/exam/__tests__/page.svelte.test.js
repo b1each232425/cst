@@ -17,7 +17,7 @@ const MOCK_EXAMS = [
         paper_name: '语文试卷A',
         start_time: new Date('2025-08-01T09:00').getTime(),
         end_time: new Date('2025-08-01T11:00').getTime(),
-        status: '04', // 进行中
+        status: '04',
         examinee_status: '00', // 未交卷
         student_score: -1,
         total_score: 100,
@@ -27,13 +27,12 @@ const MOCK_EXAMS = [
         paper_name: '数学试卷B',
         start_time: new Date('2025-08-02T09:00').getTime(),
         end_time: new Date('2025-08-02T11:00').getTime(),
-        status: '02', // 待开始
+        status: '02',
         examinee_status: '00', // 未交卷
         student_score: -1,
         total_score: 100,
       },
     ],
-    action: '00', // 可进入考试
   },
   {
     id: 2,
@@ -44,13 +43,12 @@ const MOCK_EXAMS = [
         paper_name: '英语试卷C',
         start_time: new Date('2025-07-25T09:00').getTime(),
         end_time: new Date('2025-07-25T11:00').getTime(),
-        status: '10', // 已批改
+        status: '10',
         examinee_status: '10', // 已交卷
         student_score: 78,
         total_score: 100,
       },
     ],
-    action: '02', // 可查看试卷
   },
   {
     id: 3,
@@ -61,13 +59,12 @@ const MOCK_EXAMS = [
         paper_name: '理综试卷D',
         start_time: new Date('2025-07-20T09:00').getTime(),
         end_time: new Date('2025-07-20T11:00').getTime(),
-        status: '08', // 批改中
+        status: '08',
         examinee_status: '10', // 已交卷
         student_score: -1,
         total_score: 150,
       },
     ],
-    action: null, // 无操作
   },
   {
     id: 4,
@@ -78,13 +75,12 @@ const MOCK_EXAMS = [
         paper_name: '数学补考试卷',
         start_time: new Date('2025-08-05T09:00').getTime(),
         end_time: new Date('2025-08-05T11:00').getTime(),
-        status: '06', // 已结束
+        status: '06',
         examinee_status: '04', // 补考
         student_score: 65,
         total_score: 100,
       },
     ],
-    action: null, // 无操作
   },
   {
     id: 5,
@@ -95,7 +91,7 @@ const MOCK_EXAMS = [
         paper_name: '语文试卷E',
         start_time: new Date('2025-07-15T09:00').getTime(),
         end_time: new Date('2025-07-15T11:00').getTime(),
-        status: '10', // 已批改
+        status: '10',
         examinee_status: '02', // 缺考
         student_score: 0,
         total_score: 100,
@@ -105,13 +101,12 @@ const MOCK_EXAMS = [
         paper_name: '英语试卷F',
         start_time: new Date('2025-07-16T09:00').getTime(),
         end_time: new Date('2025-07-16T11:00').getTime(),
-        status: '10', // 已批改
+        status: '10',
         examinee_status: '06', // 作弊
         student_score: 0,
         total_score: 100,
       },
     ],
-    action: '02', // 可查看试卷
   },
   {
     id: 6,
@@ -122,13 +117,12 @@ const MOCK_EXAMS = [
         paper_name: '物理小测',
         start_time: new Date('2025-08-03T09:00').getTime(),
         end_time: new Date('2025-08-03T09:30').getTime(),
-        status: '12', // 已提交
+        status: '12',
         examinee_status: '10', // 已交卷
         student_score: -1,
         total_score: 30,
       },
     ],
-    action: null, // 无操作
   },
   {
     id: 7,
@@ -139,13 +133,12 @@ const MOCK_EXAMS = [
         paper_name: '综合能力测试',
         start_time: new Date('2025-08-10T09:00').getTime(),
         end_time: new Date('2025-08-10T12:00').getTime(),
-        status: '02', // 待开始
+        status: '02',
         examinee_status: '00', // 未交卷
         student_score: -1,
         total_score: 200,
       },
     ],
-    action: '00', // 可进入考试
   },
   {
     id: 8,
@@ -156,13 +149,12 @@ const MOCK_EXAMS = [
         paper_name: '数学竞赛题',
         start_time: new Date('2025-07-30T09:00').getTime(),
         end_time: new Date('2025-07-30T11:00').getTime(),
-        status: '10', // 已批改
+        status: '10',
         examinee_status: '10', // 已交卷
         student_score: 92,
         total_score: 100,
       },
     ],
-    action: '02', // 可查看试卷
   },
   {
     id: 9,
@@ -205,11 +197,10 @@ describe('考试列表组件测试', () => {
     expect(examStatusSelect).toHaveTextContent('进行中');
   });
 
-  describe('搜索功能', () => {
+  describe('fetch功能', () => {
     it('成功加载考试数据', async () => {
       mockFetch({ status: 0, data: MOCK_EXAMS, rowCount: MOCK_EXAMS.length });
       render(ExamList);
-      await fireEvent.click(screen.getByRole('button', { name: '搜索' }));
 
       await waitFor(() => {
         const rows = screen.getAllByRole('row');
@@ -224,7 +215,6 @@ describe('考试列表组件测试', () => {
     it('无数据时展示暂无信息', async () => {
       mockFetch({ status: 0 });
       render(ExamList);
-      await fireEvent.click(screen.getByRole('button', { name: '搜索' }));
 
       await waitFor(() => {
         expect(screen.getByText('暂无考试数据')).toBeInTheDocument();
@@ -241,7 +231,6 @@ describe('考试列表组件测试', () => {
         }),
       );
       render(ExamList);
-      await fireEvent.click(screen.getByRole('button', { name: '搜索' }));
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('请求失败：400 Bad Request-请求失败');
@@ -258,7 +247,6 @@ describe('考试列表组件测试', () => {
         }),
       );
       render(ExamList);
-      await fireEvent.click(screen.getByRole('button', { name: '搜索' }));
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('请求失败：400 Bad Request');
@@ -268,7 +256,6 @@ describe('考试列表组件测试', () => {
     it('请求失败显示后端返回的 msg', async () => {
       mockFetch({ status: -1, msg: '模拟失败消息' });
       render(ExamList);
-      await fireEvent.click(screen.getByRole('button', { name: '搜索' }));
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('模拟失败消息');
@@ -278,7 +265,6 @@ describe('考试列表组件测试', () => {
     it('请求失败但无 msg，使用默认错误提示', async () => {
       mockFetch({ status: -1 });
       render(ExamList);
-      await fireEvent.click(screen.getByRole('button', { name: '搜索' }));
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('获取考试列表失败');
@@ -288,7 +274,6 @@ describe('考试列表组件测试', () => {
     it('获取的exam_list 为 0，使用默认错误提示', async () => {
       mockFetch({ status: 0, data: 0 });
       render(ExamList);
-      await fireEvent.click(screen.getByRole('button', { name: '搜索' }));
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('exam_list 数据类型错误');
@@ -337,8 +322,8 @@ describe('考试列表组件测试', () => {
 
     render(ExamList);
     await fireEvent.click(within(screen.getByTestId('date-picker')).getByRole('textbox'));
-    await fireEvent.click(screen.getAllByRole('button', { name: '28' })[0]);
-    await fireEvent.click(screen.getAllByRole('button', { name: '28' })[2]);
+    await fireEvent.click(screen.getAllByRole('button', { name: '25' })[0]);
+    await fireEvent.click(screen.getAllByRole('button', { name: '26' })[2]);
     await fireEvent.click(screen.getByRole('button', { name: '确定' }));
 
     await fireEvent.click(screen.getByRole('button', { name: '搜索' }));
@@ -355,7 +340,6 @@ describe('考试列表组件测试', () => {
     });
 
     render(ExamList);
-    await fireEvent.click(screen.getByRole('button', { name: '搜索' }));
 
     await waitFor(() => fireEvent.click(screen.getAllByText('进入考试')[0]));
     expect(goto).toHaveBeenCalledWith(expect.stringContaining('/student/answer/exam-detail?exam-id=1'));
@@ -364,10 +348,9 @@ describe('考试列表组件测试', () => {
   it('点击"查看试卷"按钮跳转详情页', async () => {
     mockFetch({ status: 0, data: MOCK_EXAMS });
     render(ExamList);
-    await fireEvent.click(screen.getByRole('button', { name: '搜索' }));
 
-    await waitFor(() => fireEvent.click(screen.getAllByText('查看试卷')[0]));
-    expect(goto).toHaveBeenCalledWith('/student/answer/result/exam?exam-session-id-arr=[201]');
+    await waitFor(() => fireEvent.click(screen.getAllByText('查看试卷')[2]));
+    expect(goto).toHaveBeenCalledWith('/student/answer/result/exam?exam-session-id-arr=[301]');
   });
 
   it('重置按钮清空所有筛选条件', async () => {
@@ -411,6 +394,7 @@ describe('考试列表组件测试', () => {
           name: '竞赛选拔',
           exam_sessions: [
             {
+              id: 444,
               paper_name: '数学竞赛题',
               start_time: new Date('2025-07-30T09:00').getTime(),
               end_time: new Date('2025-07-30T11:00').getTime(),
@@ -424,7 +408,7 @@ describe('考试列表组件测试', () => {
       ],
     });
     render(ExamList);
-    await fireEvent.click(screen.getByRole('button', { name: '搜索' }));
+
     await waitFor(() => {
       expect(screen.queryByText('未知状态')).toBeInTheDocument();
     });
@@ -439,6 +423,7 @@ describe('考试列表组件测试', () => {
           name: '竞赛选拔',
           exam_sessions: [
             {
+              id: 444,
               paper_name: '数学竞赛题',
               start_time: new Date('2025-07-30T09:00').getTime(),
               end_time: new Date('2025-07-30T11:00').getTime(),
@@ -452,7 +437,7 @@ describe('考试列表组件测试', () => {
       ],
     });
     render(ExamList);
-    await fireEvent.click(screen.getByRole('button', { name: '搜索' }));
+
     await waitFor(() => {
       expect(screen.queryByText('未知状态')).toBeInTheDocument();
     });

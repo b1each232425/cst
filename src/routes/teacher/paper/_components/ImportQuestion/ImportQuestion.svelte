@@ -48,6 +48,7 @@
                 return response.json();
             })
             .then(data => {
+                if (data.status !== 0) toast.error(data.msg, 1000);
                 return data;
             })
             .catch(error => {
@@ -87,6 +88,7 @@
                 return response.json();
             })
             .then(data => {
+                if (data.status !== 0) toast.error(data.msg, 1000);
                 return data;
             })
             .catch(error => {
@@ -193,7 +195,7 @@
     let question_list = $state([]);             // 题目列表
     let tag_list = $state([]);                  // 标签列表
 
-    let selected_question_infos = $state([]);   // 已选 ID 数组
+    let selected_questions = $state([]);   // 已选题目数组
     let all_question_selected = $state(false);  // 是否为全选状态
 
     // 防抖搜索题目列表
@@ -231,13 +233,13 @@
     // 选中数据
     function toggleSelection(id, checked) {
         if (checked) {
-            // 查找对应题目，获取 score
+            // 查找对应题目，直接添加整个题目对象
             const QUESTION = question_list.find(question => question.ID === id);
             if (QUESTION) {
-                selected_question_infos.push({ id: QUESTION.ID, score: QUESTION.Score });
+                selected_questions.push(QUESTION);
             }
         } else {
-            selected_question_infos = selected_question_infos.filter(item => item.id !== id);
+            selected_questions = selected_questions.filter(question => question.ID !== id);
         }
         checkAllSelected();
     }
@@ -245,7 +247,7 @@
     // 检查全选
     function checkAllSelected() {
         const CURRENT_PAGE_IDS = question_list.map(item => item.ID);
-        const SELECTED_IDS = selected_question_infos.map(question => question.id);
+        const SELECTED_IDS = selected_questions.map(question => question.ID);
         all_question_selected = (
             question_list.length !== 0 &&
             CURRENT_PAGE_IDS.every(id => SELECTED_IDS.includes(id))
@@ -254,16 +256,15 @@
 
     // 全选
     function selectAllQuestions(checked) {
-        const CURRENT_PAGE_QUESTIONS = question_list.map(item => ({ id: item.ID, score: item.Score }));
         if (checked) {
             // 只追加未存在的
-            const EXISTING_IDS = selected_question_infos.map(item => item.id);
-            const TO_ADD_IDS = CURRENT_PAGE_QUESTIONS.filter(question => !EXISTING_IDS.includes(question.id));
-            selected_question_infos = [...selected_question_infos, ...TO_ADD_IDS];
+            const EXISTING_IDS = selected_questions.map(question => question.ID);
+            const TO_ADD_QUESTIONS = question_list.filter(question => !EXISTING_IDS.includes(question.ID));
+            selected_questions = [...selected_questions, ...TO_ADD_QUESTIONS];
         } else {
             // 移除当前页的
             const CURRENT_PAGE_IDS = question_list.map(item => item.ID);
-            selected_question_infos = selected_question_infos.filter(question => !CURRENT_PAGE_IDS.includes(question.id));
+            selected_questions = selected_questions.filter(question => !CURRENT_PAGE_IDS.includes(question.ID));
         }
         checkAllSelected();
     }
@@ -273,21 +274,22 @@
         const ACTIONS = [
             {
                 action: "add_question",
-                payload: selected_question_infos.map((question, index) => {
-                    const payloadItem = {
+                payload: selected_questions.map((question, index) => {
+                    const PAYLOAT_ITEM = {
                         temp_id: `temp_question_${index + 1}`,
                         group_id: to_import_group.id,
                         order: to_import_group.questions.length + index + 1,
-                        bank_question_id: question.id,
-                        score: question.score
+                        bank_question_id: question.ID,
+                        score: question.Score,
+                        type: question.Type
                     };
 
                     // 如果 Type 为 "06" 或 "08"，加 subscore 字段
                     if (question.Type === "06" || question.Type === "08") {
-                        payloadItem.sub_score = question.Answers.map(answer => answer.score);
+                        PAYLOAT_ITEM.sub_score = question.Answers.map(answer => answer.score);
                     }
 
-                    return payloadItem;
+                    return PAYLOAT_ITEM;
                 })
             }
         ];
@@ -592,11 +594,11 @@
                             <tbody>
                                 {#if question_list && question_list.length !== 0}
                                     {#each question_list as question}
-                                        <tr class:selected={selected_question_infos.map(question => question.id).includes(question.ID)}
-                                            onclick={() => toggleSelection(question.ID, !selected_question_infos.map(question => question.id).includes(question.ID))}>
+                                        <tr class:selected={selected_questions.map(question => question.ID).includes(question.ID)}
+                                            onclick={() => toggleSelection(question.ID, !selected_questions.map(question => question.ID).includes(question.ID))}>
                                         <td class="checkbox">
                                             <input type="checkbox"
-                                                checked={selected_question_infos.map(question => question.id).includes(question.ID)}
+                                                checked={selected_questions.map(question => question.ID).includes(question.ID)}
                                                 onclick={(e) => {
                                                     e.stopPropagation();
                                                     toggleSelection(question.ID, e.target.checked);
@@ -647,7 +649,7 @@
 
         <!-- 底部 -->
         <div class="container-footer">
-            <span class="selected-span">已选择 <span>{selected_question_infos.length}</span> 道题目</span>
+            <span class="selected-span">已选择 <span>{selected_questions.length}</span> 道题目</span>
             <span class="import-span">导入到题组：</span>
             <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div class="dropup-toggle" onmouseenter={()=>{drop_up_toggle_is_open=true}} onmouseleave={()=>{drop_up_toggle_is_open=false}}>
@@ -672,7 +674,7 @@
             </div>
             <div class="btn-box">
                 <button onclick={onclose} class="btn btn--primary is-plain">取消</button>
-                {#if to_add_bankID!=="" && to_import_group.id!==0 && selected_question_infos.length!==0}
+                {#if to_add_bankID!=="" && to_import_group.id!==0 && selected_questions.length!==0}
                     <button onclick={()=>confirmImport()} class="btn btn--primary">确认导入</button>
                 {:else}
                     <button class="btn btn--primary is-disabled">确认导入</button>
