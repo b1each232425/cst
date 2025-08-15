@@ -10,13 +10,18 @@
   let nav_map = $state();
   let current_path = $derived(page.url.pathname);
   let is_auto_fold = false;
+  // 需要自动折叠的路径
   const NEED_FOLD_NAV = [
     '/teacher/question-bank/theory/editBank',
     '/teacher/practice/create',
     '/teacher/exam/addExam',
     '/teacher/student-management/addStudent',
     '/teacher/user-management/addUser',
-  ]; // 需要自动折叠的路径
+    /\/teacher\/practice\/edit\/\d+/,
+    /\/teacher\/exam\/editExam\/\d+/,
+    /\/teacher\/grade\/exam-grade\/detail\?id=\d+/,
+    /\/teacher\/grade\/practice-grade\/detail\?id=\d+/,
+  ];
 
   /**
    * 侧边栏折叠状态
@@ -234,16 +239,24 @@
   // 监听导航事件，跳转前执行逻辑
   beforeNavigate(({ from, to, cancel }) => {
     if (to) {
-      const targetPath = to.url.pathname;
+      const targetPath = to.url.pathname + to.url.search; // 包括路径和查询参数
       console.log(targetPath);
 
-      if (NEED_FOLD_NAV.some((path) => targetPath.includes(path)) && !is_auto_fold && !sidebar_is_folded) {
+      // 遍历 NEED_FOLD_NAV，检查是否匹配
+      if (
+        NEED_FOLD_NAV.some((path) => (typeof path === 'string' ? targetPath.includes(path) : path.test(targetPath))) &&
+        !is_auto_fold &&
+        !sidebar_is_folded
+      ) {
         // 折叠侧边栏
         toggleSidebar(true);
 
         // 自动折叠时才触发
         is_auto_fold = true;
-      } else if (!NEED_FOLD_NAV.some((path) => targetPath.includes(path)) && is_auto_fold) {
+      } else if (
+        !NEED_FOLD_NAV.some((path) => (typeof path === 'string' ? targetPath.includes(path) : path.test(targetPath))) &&
+        is_auto_fold
+      ) {
         // 如果路径变化并且是自动折叠，展开侧边栏
         if (sidebar_is_folded) {
           toggleSidebar(false); // 展开侧边栏
