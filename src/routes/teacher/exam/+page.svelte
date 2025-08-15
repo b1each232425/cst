@@ -403,7 +403,7 @@ function handleSelectAll(event) {
       发布考试</button
     >
 
-    <span class="{status == '00'||status == '02' ? 'hideButton' : 'EmptyData'} "> -- </span>
+    <span class="{status == '00'||status == '02'|| status == '04' ? 'hideButton' : 'EmptyData'} "> -- </span>
 
     <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
     onclick={(event)=>{
@@ -505,6 +505,7 @@ function handleSelectAll(event) {
           <Option value="06" label="已结束" />
           <!-- <Option value="08" label="已归档" /> -->
           <Option value="10" label="考试异常" />
+          <Option value="16" label="已作废" />
         </Select>
       </div>
       <div class="datePart">

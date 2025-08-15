@@ -8,7 +8,8 @@
  * @Copyright: Copyright (c) 2025 by wusaber33, All Rights Reserved. 
  -->
 <script>
-  import { getType } from '$lib/utils/index.js';
+  import { validateAndAssign } from '$lib/utils/validate';
+
   const DEFAULT_TAGS = ['frontend', 'backend', 'svelte', '前端', 'JavaScript', 'CSS', 'HTML', 'Node.js'];
 
   let { tags = DEFAULT_TAGS } = $props();
@@ -17,36 +18,17 @@
    * 校验规则
    * @type {Object}
    */
-  const propRules = {
-    tags: { type: ['array'], default: DEFAULT_TAGS, check: (v) => v.length > 0 },
+  const propsRules = {
+    tags: { type: ['array'], default: DEFAULT_TAGS, check: (v) => v.length > 0, message: 'tags 不能为空' },
   };
 
-  /**
-   * 校验props属性是否合法，以及进行容错处理
-   * @param data
-   * @param key
-   */
-  function validateAndAssign(data, key) {
-    const rule = propRules[key];
-    let value = data.value;
-    let reason = '';
-    if (!rule.type.includes(getType(value))) {
-      reason = `类型错误，传入类型为 '${getType(value)}'，期望类型为 '${rule.type.join(', ')}'`;
-    } else if (rule.check && !rule.check(value)) {
-      reason = `校验函数不通过`;
-    }
-    if (reason) {
-      console.warn(
-        `[UneditableHashTags] 属性 '${key}' 无效:${reason},已使用默认值 '${rule.default}',传入值为:'${value}'`,
-      );
-      data.set(rule.default);
-    }
-  }
+  const propMap = {
+    tags: { get: () => tags, set: (v) => (tags = v) },
+  };
 
-  /**
-   * 校验props属性是否合法，以及进行容错处理
-   */
-  validateAndAssign({ value: tags, set: (v) => (tags = v) }, 'tags');
+  Object.keys(propMap).forEach((k) => {
+    validateAndAssign('UneditableHashTags', propMap[k].get, propMap[k].set, propsRules[k], k);
+  });
 
   /**
    * 字符串哈希函数
