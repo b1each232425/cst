@@ -831,7 +831,6 @@
                   old_mark_result={marking_results[getMarkResultIndex(current_student_info, question.ID)]
                     ?.MarkDetails ?? []}
                   on:saveMark={saveMark}
-                  on:handleNoMark={handleNoMark}
                 />
               {/each}
             </div>
@@ -852,7 +851,6 @@
                 old_mark_result={marking_results[getMarkResultIndex(current_student_info, current_question.ID)]
                   ?.MarkDetails ?? []}
                 on:saveMark={saveMark}
-                on:handleNoMark={handleNoMark}
               />
             </div>
             <div class="options">
