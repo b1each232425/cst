@@ -67,8 +67,6 @@
       return;
     }
 
-    console.log(answer_length);
-
     index_score_map[index] = Number(score_str);
 
     // 所有的空都批改了分数，那么就会保存（就说，只会出现一次“未批阅”）
