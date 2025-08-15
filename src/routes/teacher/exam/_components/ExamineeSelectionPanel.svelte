@@ -85,11 +85,26 @@
   }
 
 
-   function handleImportSuccess(is_all_ok) {
-    if (is_all_ok) {
-      searchExaminee();
-    }
-    show_import_panel = false;
+   function handleImportSuccess(is_all_ok,importedStudents = []) {
+    if (is_all_ok && importedStudents.length > 0) {
+    // 将导入的学生直接添加到已选择列表
+    importedStudents.forEach(student => {
+      if (!selected_examinee.find(item => item.ID === student.ID)) {
+        selected_examinee.push({
+          id: student.ID,
+          OfficialName: student.OfficialName,
+          Gender: student.Gender,
+          Account: student.Account,
+          MobilePhone: student.MobilePhone,
+          IDCardNo: student.IDCardNo,
+          serialNumber: 0
+        });
+      }
+    });
+    
+    searchExaminee(); // 刷新学生列表
+  }
+  show_import_panel = false;
   }
 
   function getFilteredSelectedExaminee() {
@@ -373,6 +388,8 @@ function handleCheckboxChange(examinee, event) {
             </div>
             <div class="button-group">
               <button class="upload-file-button" onclick={switchToSelectionMode}> 选择考生 </button>
+               <button class="btn btn--primary is-plain" onclick={downloadTemplate}>下载导入模板</button>
+            <button class="btn btn--primary is-plain" onclick={handleImport}>导入考生</button>
             </div>
           </div>
           <div class="examinee-selection-table-container">
