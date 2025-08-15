@@ -128,7 +128,8 @@
               existUsers.forEach((user)=>{
                 if(item['姓名']=== user.OfficialName&&item['手机号']===user.MobilePhone&&item['身份证号']===user.IDCardNo){
                   item.ID= user.ID
-                  item.isOk=false
+                  item.errorType=''
+                  item.isOk=true
                 }
               })
             })
@@ -349,7 +350,7 @@
     console.log('validStudents',validStudents);
     //获取已经存在的用户的信息
     const existStudentIDs = failure_student_list.filter((s) => s.isOk&&s.ID!=='');
-    if (validStudents.length === 0) {
+    if (validStudents.length === 0&&existStudentIDs.length===0) {
       toast.warning('没有可导入的学生，请先修正错误数据');
       return;
     }
