@@ -34,7 +34,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { compareBankMsg } from '../../utils/utils.js';
   import { formatTimestamp } from '$lib/utils/time_utils';
   import { TheoryQuestion } from '../type';
-    import { page } from '$app/stores';
+
 
 
   /**
@@ -677,9 +677,6 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   let bank_id = $state(0);
 
   onMount(async () => {
-
- 
-  
         await getBank();
     
   });
