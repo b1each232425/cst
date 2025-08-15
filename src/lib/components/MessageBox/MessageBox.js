@@ -9,6 +9,7 @@
  */
 import MessageBox from './MessageBox.svelte';
 import { mount, unmount } from 'svelte';
+import { getType } from '$lib/utils/index.js';
 
 /**
  * 默认配置
@@ -53,38 +54,35 @@ const DEFAULT_OPTIONS = {
  * @param {Function} [options.onConfirm] 点击确认的回调函数
  */
 export default function (options = {}) {
-  const props = { ...DEFAULT_OPTIONS, ...options };
-  const container = document.createElement('div');
-  document.body.appendChild(container);
+  return new Promise((resolve, reject) => {
+    const props = { ...DEFAULT_OPTIONS, ...options };
+    const container = document.createElement('div');
+    document.body.appendChild(container);
 
-  /**
-   * 关闭弹窗
-   * @param {*} callback
-   * @returns
-   */
-  const close = (callback, key) => async () => {
-    // 校验['function', 'asyncfunction']
-    function getType(value) {
-      return Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
-    }
-    if (!['function', 'asyncfunction'].includes(getType(callback))) {
-      console.warn(
-      `[MessageBox] 属性 '${key}' 无效:类型错误，传入类型为 '${getType(callback)}'，期望类型为 '${['function', 'asyncfunction'].join(', ')}',已使用默认值 '() => {}',传入值为:'${callback}'`,
-      );
-      callback = () => {};
-    }
-    await callback?.();
-    unmount(app, { outro: true });
-    container.remove();
-  };
+    /**
+     * 关闭弹窗
+     * @param {*} callback
+     * @returns
+     */
+    const close = (callback, key, endAction) => async () => {
+      if (!['function', 'asyncfunction'].includes(getType(callback))) {
+        console.warn(`[MessageBox] 属性 '${key}' 无效: 类型错误, 期望类型为${['function', 'asyncfunction'].join('、')}, 实际类型为${getType(callback)}, 已使用默认值 '() => {}', 传入值为: '${callback}'`);
+        callback = () => {};
+      }
+      await callback?.();
+      endAction?.();
+      unmount(app, { outro: true });
+      container.remove();
+    };
 
-  const app = mount(MessageBox, {
-    target: container,
-    props: {
-      ...props,
-      visible: true,
-      onCancel: close(props.onCancel,'onCancel'),
-      onConfirm: close(props.onConfirm,'onConfirm'),
-    },
+    const app = mount(MessageBox, {
+      target: container,
+      props: {
+        ...props,
+        visible: true,
+        onCancel: close(props.onCancel, 'onCancel', reject),
+        onConfirm: close(props.onConfirm, 'onConfirm', resolve),
+      },
+    });
   });
 }

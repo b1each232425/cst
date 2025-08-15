@@ -431,14 +431,18 @@
 
           //如果是预览的话直接从localStorage获取title
           const exam_title = localStorage.getItem('examTitle');
-          if (!title) {
-            //////////////////
-            if (!exam_title) {
-              title = '预览考试';
-            } else {
-              title = exam_title;
-            }
-          }
+
+          // 暂时统一名称为预览考试
+          title = '预览考试';
+
+          // if (!title) {
+          //   //////////////////
+          //   if (!exam_title) {
+          //     title = '预览考试';
+          //   } else {
+          //     title = exam_title;
+          //   }
+          // }
 
           // 允许渲染页面
           load_success = true;

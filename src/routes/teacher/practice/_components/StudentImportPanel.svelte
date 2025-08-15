@@ -48,7 +48,7 @@
 
   let {
     show = $bindable(false), // 是否显示弹窗
-    onImport = (isAllOk, importData) => {},
+    onImport = (isAllOk, importData,existStudents) => {},
   } = $props();
 
   let file_input = $state(null); // 文件输入框
@@ -85,7 +85,10 @@
       if (result.data.length <= 0) {
         return;
       }
-      let response = result.data;
+      let response = result.data.map((item)=>({
+        ...item,
+        ID :''
+      }));
       //给后端进行校验
       await fetch('/api/user/validate', {
         method: 'POST',
@@ -102,8 +105,9 @@
             IDCardType: '居民身份证',
             serial_number: item['编号'],
             Domains: ['cst.school^student'],
+            Email: null
           })),
-        }),
+        }), 
         credentials: 'include', // 添加凭证以处理跨域Cookie
       })
         .then((data) => {
@@ -115,34 +119,41 @@
         })
         .then((result) => {
           if (result.status === 0) {
+            //获取数据不合法的用户信息
+            const invalidUsers =result.data.invalidUsers
+            //更新不合法用户的错误信息
+            response.forEach((item)=>{
+              invalidUsers.forEach((user)=>{
+                if(item['姓名']=== user.OfficialName&&item['手机号']===user.MobilePhone&&item['身份证号']===user.IDCardNo){
+                  item.errorType = user.ErrorMsg.toString()
+                  item.isOk=false
+                }
+              })
+            })
+            //获取已经存在的用户信息
+            const existUsers =result.data.existingUsers
+            //获取其中已存在的ID
+              response.forEach((item)=>{
+              existUsers.forEach((user)=>{
+                if(item['姓名']=== user.OfficialName&&item['手机号']===user.MobilePhone&&item['身份证号']===user.IDCardNo){
+                  item.ID= user.ID
+                  item.isOk=false
+                }
+              })
+            })
             const convertedData = response.map((item) => ({
+              ID: item.ID,
               officialName: item['姓名'],
               mobilePhone: item['手机号'],
               idCardNo: item['身份证号'],
               serial_number: item['编号'],
               errorMsg: item.errorType,
               isOk: item.isOk,
+              Domains: ['cst.school^student']
             }));
             failure_student_list = convertedData;
           } else {
-            //如果识别出错误信息，则筛选正确的和后端返回的错误的信息进行拼接
-            result.data.forEach((serverStudent) => {
-              response.forEach((item) => {
-                if (item['手机号'] === serverStudent.mobilePhone) {
-                  item.errorType = serverStudent.errorMsg.toString();
-                  item.isOk = false;
-                }
-              });
-            });
-            const convertedData = response.map((item) => ({
-              officialName: item['姓名'],
-              mobilePhone: item['手机号'],
-              idCardNo: item['身份证号'],
-              serial_number: item['编号'],
-              errorMsg: item.errorType,
-              isOk: item.isOk,
-            }));
-            failure_student_list = convertedData;
+           throw new Error('校验角色失败');
           }
           show = true;
           if (file_input) {
@@ -257,20 +268,30 @@
       })
       .then((result) => {
         if (result.status === 0) {
-          tempList.forEach((item) => {
-            item.errorMsg = '';
-            item.isOk = true;
-          });
+         //获取数据不合法的用户信息
+            const invalidUsers =result.data.invalidUsers
+            //更新不合法用户的错误信息
+            tempList.forEach((item)=>{
+              invalidUsers.forEach((user)=>{
+                if(item['姓名']=== user.OfficialName&&item['手机号']===user.MobilePhone&&item['身份证号']===user.IDCardNo){
+                  item.errorType = user.ErrorMsg.toString()
+                  item.isOk=false
+                }
+              })
+            })
+            //获取已经存在的用户信息
+            const existUsers =result.data.existingUsers
+            //获取其中已存在的ID
+              tempList.forEach((item)=>{
+              existUsers.forEach((user)=>{
+                if(item['姓名']=== user.OfficialName&&item['手机号']===user.MobilePhone&&item['身份证号']===user.IDCardNo){
+                  item.ID= user.ID
+                  item.isOk=false
+                }
+              })
+            })
         } else {
-          //如果识别出错误信息，则筛选正确的和后端返回的错误的信息进行拼接
-          result.data.forEach((serverStudent) => {
-            tempList.forEach((item) => {
-              if (item.mobilePhone === serverStudent.mobilePhone) {
-                item.errorMsg = serverStudent.errorMsg.toString();
-                item.isOk = false;
-              }
-            });
-          });
+         throw new Error(result.message);
         }
         show = true;
         if (file_input) {
@@ -320,7 +341,10 @@
 
   // 确认导入按钮
   function handleImport() {
-    const validStudents = failure_student_list.filter((s) => s.isOk);
+    const validStudents = failure_student_list.filter((s) => s.isOk&&s.ID==='');
+    console.log('validStudents',validStudents);
+    //获取已经存在的用户的信息
+    const existStudentIDs = failure_student_list.filter((s) => s.isOk&&s.ID!=='');
     if (validStudents.length === 0) {
       toast.warning('没有可导入的学生，请先修正错误数据');
       return;
@@ -364,7 +388,7 @@
       ),
     )
       .then((payloads) => {
-        onImport(true, payloads);
+        onImport(true, payloads,existStudentIDs);
       })
       .catch((err) => {
         toast.error(err.message || '导入失败，请稍后重试');

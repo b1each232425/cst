@@ -22,16 +22,17 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 	import { onMount } from "svelte";
 	import EditableTag from "$lib/components/Tag/EditableTag.svelte";
 	import { fade, slide } from "svelte/transition";
+	 import { selection } from '../store';
+	 import { formatTimestamp } from '$lib/utils/time_utils';
     import '$lib/styles/global.css';
 	/**
 	 * @typedef BankData
-	 * @property {string}           id              - 题库ID
-	 * @property {string}           name            - 题库名称
-	 * @property {Array<string>}    [tags]          - 题库标签
-	 * @property {string}           create_time     - 创建时间
-	 * @property {string}           update_time     - 更新时间
-	 * @property {boolean}          [selected]      - 是否选中
-	 * @property {boolean}          [is_changed]    - 是否修改
+	 * @property {string}           ID              - 题库ID
+	 * @property {string}           Name            - 题库名称
+	 * @property {Array<string>}    [Tags]          - 题库标签
+	 * @property {string}           CreateTime     - 创建时间
+	 * @property {string}           UpdateTime     - 更新时间
+	
 	 */
 
 	/**
@@ -61,6 +62,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 	 * }}
 	 */
 	let { type, add_handle_func, icons, normal_handle_funcs, data } = $props();
+   
+
 
 	/**
 	 * @type {string} 添加tag的输入框内容
@@ -80,12 +83,12 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 	/**
 	 * @type {string} 原始题库名称
 	 */
-	let old_bank_name = $state(data?.name == null ? "" : data?.name);
+	let old_bank_name = $state(data?.Name == null ? "" : data?.Name);
 
 	/**
 	 * @type {string} 题库名称
 	 */
-	let bank_name = $state(data?.name == null ? "" : data?.name);
+	let bank_name = $state(data?.Name == null ? "" : data?.Name);
 
 	/**
 	 * @type {boolean} 是否删除
@@ -126,10 +129,10 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 							"Default add_tag function is strongly discouraged, because it will cause ownership_invalid_mutation[svelte:https://svelte.dev/e/ownership_invalid_mutation]. Please customize the add_tag function in normal_handle_funcs."
 						);
 
-						if (data?.tags) {
-							data.tags.push(content);
+						if (data?.Tags) {
+							data.Tags.push(content);
 						} else {
-							data.tags = [content];
+							data.Tags = [content];
 						}
 					};
 				}
@@ -142,8 +145,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 							"Default delete_tag function is strongly discouraged, because it will cause ownership_invalid_mutation[svelte:https://svelte.dev/e/ownership_invalid_mutation]. Please customize the delete_tag function in normal_handle_funcs."
 						);
 
-						if (data?.tags) {
-							data.tags.splice(index, 1);
+						if (data?.Tags) {
+							data.Tags.splice(index, 1);
 						}
 					};
 				}
@@ -157,7 +160,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 		// console.log("bank_data:", $state.snapshot(data))
 		// console.log("bank_name:", bank_name)
 
-		bank_name = data?.name == null ? "" : data?.name;
+		bank_name = data?.Name == null ? "" : data?.Name;
 	});
 </script>
 
@@ -203,12 +206,14 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 		>
 			<div class="bank-normal-content">
 				<!-- 左上角选中复选框 -->
+				
 				<button
 					class="check-mark"
 					onclick={() => {
 						normal_handle_funcs?.select?.();
+						   selection.toggle(data.ID);
 					}}
-					class:selected={data?.selected}
+					class:selected={$selection.has(data.ID)}
 				>
 					<img class="check-mark-img" src={icons?.check_mark} alt="选中" />
 				</button>
@@ -237,11 +242,11 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 				<!-- 题库操作时间 -->
 				<div class="bank-time">
 					<div class="bank-create-time">
-						<span>{data?.create_time} 创建</span>
+						<span>{formatTimestamp(data?.CreateTime)} 创建</span>
 					</div>
 
 					<div class="bank-update-time">
-						<span>{data?.update_time} 更新</span>
+						<span>{formatTimestamp(data?.UpdateTime)} 更新</span>
 					</div>
 				</div>
 
@@ -263,7 +268,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 						/>
 					</div>
 
-					{#each data?.tags ?? [] as tag, index}
+					{#each data?.Tags ?? [] as tag, index}
 						<div class="bank-tags-item">
 							<EditableTag
 								content={tag}
@@ -348,16 +353,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 								<div class="more-options-btns" 
                                     transition:slide={{ duration: 200}}
                                 >
-									<button
-										class="bank-edit-btn"
-										class:logs={true}
-										onclick={() => {
-                                            normal_handle_funcs?.logs?.();
-                                        }}
-										title="点击查看日志"
-									>
-										<span>日志</span>
-									</button>
+									
 
 									<button
 										class="bank-edit-btn"
@@ -390,7 +386,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 						style="font-size: 20px;width: 90%; top: 54px;"
 						class:name={true}
 					>
-						<span>{data?.name}</span>
+						<span>{data?.Name}</span>
 					</div>
 
 					<div
@@ -405,6 +401,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 					<button
 						class="bank-delete-btn"
 						onclick={() => {
+							
 							is_delete = false;
 						}}
 					>

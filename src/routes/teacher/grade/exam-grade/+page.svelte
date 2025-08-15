@@ -3,8 +3,8 @@
 	import Pagination from '$lib/components/Pagination/Pagination.svelte';
 	import InputBox from '$lib/components/Input/InputBox.svelte';
 	import Select from '$lib/components/Select/Select.svelte';
-	import Option from '$lib/components/Select/Option.svelte';
-	import { sget } from '$lib/utils';
+	import Option from '$lib/components/Select/Option.svelte';	
+	import { goto } from '$app/navigation';
 	import { handleApiError, handleSuccess, handleFeatureNotImplemented } from '../_utils/errorHandler.js';
 	import { formatExamData } from '../_utils/dataFormatter.js';
 
@@ -176,8 +176,8 @@
 		};
 		getExams(params)
 			.then((data) => {
-				state.exams = formatExamData(sget(data, 'data', []));
-				state.totalRecords = sget(data, 'rowCount', 0);
+				state.exams = formatExamData(data?.data || []);
+				state.totalRecords = data?.rowCount || 0;
 			})
 			.catch((error) => {
 				handleApiError(error, '获取考试成绩列表');
@@ -270,8 +270,12 @@
 		handleFeatureNotImplemented('查看日志');
 	}
 
-	function handleDetailClick() {
-		handleFeatureNotImplemented('查看详细');
+	/**
+	 * 查看考试详情
+	 * @param {number} examId - 考试ID
+	 */
+	function handleDetailClick(examId) {
+		goto(`/teacher/grade/exam-grade/detail?id=${examId}`);
 	}
 
 	function handleExport() {
@@ -455,7 +459,7 @@
 											{exam.submitted === null || exam.submitted === undefined ? '-' : exam.submitted ? '已提交' : '未提交'}
 										</td>
 										<td class="operation">
-											<button class="op-btn" onclick={handleDetailClick}>详情</button>
+											<button class="op-btn" onclick={() => handleDetailClick(exam.id)}>详情</button>
 											<button class="op-btn" onclick={handleExport} style="display: none;">导出</button>
 											{#if !exam.submitted}
 												<button class="op-btn op-btn-submit" onclick={() => submitGrades([exam.id])}>

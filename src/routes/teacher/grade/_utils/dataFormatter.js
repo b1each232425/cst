@@ -92,3 +92,62 @@ export function formatExamData(examData) {
 	}
 	return examData;
 }
+
+/**
+ * 安全显示数值，空值显示为 '-'
+ * @param {any} value - 原始值
+ * @param {number} [decimals] - 小数位数，默认不处理小数
+ * @returns {string} - 格式化后的显示值
+ */
+export function safeDisplayNumber(value, decimals) {
+	// 处理 null、undefined、空字符串、-1 等无效值
+	if (value === null || value === undefined || value === '' || value === -1) {
+		return '-';
+	}
+
+	// 转换为数字
+	const numValue = Number(value);
+
+	// 检查是否为有效数字
+	if (isNaN(numValue) || !isFinite(numValue)) {
+		return '-';
+	}
+
+	// 检查是否为负数
+	if (numValue < 0) {
+		return '-';
+	}
+
+	// 处理小数位数
+	if (typeof decimals === 'number' && decimals >= 0) {
+		return numValue.toFixed(decimals);
+	}
+
+	return String(numValue);
+}
+
+/**
+ * 安全显示文本，空值显示为 '-'
+ * @param {any} value - 原始值
+ * @returns {string} - 格式化后的显示值
+ */
+export function safeDisplayText(value) {
+	if (value === null || value === undefined || value === '') {
+		return '-';
+	}
+	return String(value);
+}
+
+/**
+ * 安全显示布尔值
+ * @param {any} value - 原始值
+ * @param {string} trueText - true 时显示的文本
+ * @param {string} falseText - false 时显示的文本
+ * @returns {string} - 格式化后的显示值
+ */
+export function safeDisplayBoolean(value, trueText = '是', falseText = '否') {
+	if (value === null || value === undefined) {
+		return '-';
+	}
+	return value ? trueText : falseText;
+}

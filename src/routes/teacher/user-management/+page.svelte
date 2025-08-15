@@ -1,3 +1,23 @@
+<!--
+ * @Author: yzh 3370157161@qq.com
+ * @Date: 2025-08-13 17:14
+ * @LastEditors: yzh 3370157161@qq.com
+ * @LastEditTime: 2025-08-13 17:14
+ * @FilePath: \src\routes\teacher\user-management\+page.svelte
+ * @Description: 用户管理页面 
+ * 
+ * @Copyright (c) 2025 by yzh
+-->
+ <!--                         o8o                 .   
+                             `"'               .o8   
+ .oooo.o  .ooooo.  oooo d8b oooo  oo.ooooo.  .o888oo 
+d88(  "8 d88' `"Y8 `888""8P `888   888' `88b   888   
+`"Y88b.  888        888      888   888   888   888   
+o.  )88b 888   .o8  888      888   888   888   888 . 
+8""888P' `Y8bod8P' d888b    o888o  888bod8P'   "888" 
+                                   888               
+                                  o888o              
+                                                      -->
 <script>
   import { onMount } from 'svelte';
   import Title from '$lib/components/Title/Title.svelte';
@@ -12,6 +32,9 @@
   import { goto } from '$app/navigation';
   import { toast } from '$lib/components/Toast/Toast.js';
 
+
+  // ============================== 状态变量定义 ==============================
+  
   // 用户列表
   let users = $state([]);
 
@@ -123,7 +146,7 @@
       .then((response) => response.json())
       .then((res) => {
         if (res.status !== 0) {
-          throw new Error(res.msg || '未知错误');
+          throw new Error(res.msg);
         }
         if (res && Array.isArray(res.data)) {
           users = res.data.map((user) => ({
@@ -355,6 +378,16 @@
   });
 </script>
 
+
+<!-- 
+oooo            .                     oooo  
+`888          .o8                     `888  
+ 888 .oo.   .o888oo ooo. .oo.  .oo.    888  
+ 888P"Y88b    888   `888P"Y88bP"Y88b   888  
+ 888   888    888    888   888   888   888  
+ 888   888    888 .  888   888   888   888  
+o888o o888o   "888" o888o o888o o888o o888o                                                     
+-->
 <div class="user-management-container">
   <Title title="用户列表" />
   <div class="table-action-container">
@@ -584,6 +617,20 @@
   </div>
 </div>
 
+
+
+<!-- 
+             .               oooo            
+           .o8               `888            
+ .oooo.o .o888oo oooo    ooo  888   .ooooo.  
+d88(  "8   888    `88.  .8'   888  d88' `88b 
+`"Y88b.    888     `88..8'    888  888ooo888 
+o.  )88b   888 .    `888'     888  888    .o 
+8""888P'   "888"     .8'     o888o `Y8bod8P' 
+                 .o..P'                      
+                 `Y8P'                       
+                       
+ -->
 <style lang="scss" scoped>
   $normal-font-size: 14px;
   $gray-font-color: rgb(0, 0, 0, 0.6);
@@ -812,7 +859,7 @@
 
     .tip-wrapper {
       position: absolute;
-      left: 70%;
+      left: 73%;
       top: 50%;
       transform: translateY(-40%);
 
