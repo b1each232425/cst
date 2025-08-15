@@ -9,13 +9,14 @@
 -->
 <script>
     import Button from "$lib/components/Button/Button.svelte";
-    import QuestionPreviewPanel from "../../question-bank/_components/QuestionPreviewPanel.svelte";
+    import QuestionPreviewPanel from "../../../question-bank/_components/QuestionPreviewPanel.svelte";
     import { goto } from "$app/navigation";
-    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../../paper/_utils/tool";
+    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../../_utils/previewMap";
     import { onMount } from "svelte";
     import { get } from "svelte/store";
-    import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE } from "../../paper/_stores/store";
+    import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE } from "../../_stores/previewStore"
     import {toast} from "$lib/components/Toast/Toast"
+    import Loading from "$lib/components/Loading/Loading.svelte";
 
     /******************* API 区 ********************/
 
@@ -61,7 +62,8 @@
     let question_count = $state(0);
     let description = $state("");
     let tags = $state([]);
-
+    let currentID = $state(0);
+    let loading = $state(true);
     /**************** 试卷信息区 *****************/
 
     /***************** 标签处理区 *****************/
@@ -129,11 +131,72 @@
         }
     }
 
+   async function gotoPrePaper(){
+    if (!Array.isArray(paperID) || currentID <= 0) {
+        toast.error("没有前一张试卷了");
+        return;
+    }
+    loading=true;
+    currentID--;
+    const prePaperID = paperID[currentID];
+    page_is_ready = false;
+    const result = await fetchPaper(prePaperID);
+
+    if (!result) {
+        toast.error("加载下一张试卷失败");
+        return;
+    }
+
+    paper_info = result.data;
+    paper_groups = result.data.GroupsData;
+    paper_name = paper_info.Name;
+    category = paper_info.Category;
+    level = paper_info.Level;
+    suggested_duration = paper_info.SuggestedDuration;
+    total_score = paper_info.TotalScore;
+    question_count = paper_info.QuestionCount;
+    description = paper_info.Description;
+    tags = paper_info.Tags;
+    page_is_ready = true;
+    goto(`/teacher/exam/previewExam/${prePaperID}`)
+    loading=false;
+}
+
+
+   async function gotoNextPaper(){
+       if (!Array.isArray(paperID) || currentID >= paperID.length - 1) {
+        toast.error("已经是最后一张试卷了");
+        return;
+    }
+    loading=true;
+    currentID++;
+    const nextPaperID = paperID[currentID];
+    page_is_ready = false;
+    const result = await fetchPaper(nextPaperID);
+
+    if (!result) {
+        toast.error("加载下一张试卷失败");
+        return;
+    }
+
+    paper_info = result.data;
+    paper_groups = result.data.GroupsData;
+    paper_name = paper_info.Name;
+    category = paper_info.Category;
+    level = paper_info.Level;
+    suggested_duration = paper_info.SuggestedDuration;
+    total_score = paper_info.TotalScore;
+    question_count = paper_info.QuestionCount;
+    description = paper_info.Description;
+    tags = paper_info.Tags;
+    page_is_ready = true;
+    goto(`/teacher/exam/previewExam/${nextPaperID}`)
+    loading=false;
+    }
     /***************** 题组列表区 *****************/
 
     // 挂载区
     onMount (async () => {
-        
         paperID = get(CURRENT_PAPER_ID);
         if(paperID === 0) {
             toast.error("申请查看的paperID不存在,返回考试列表");
@@ -141,7 +204,7 @@
             return;
         }
         //toast.warning("目前列表无法获取paperid,写死id用于测试中");
-        fetchPaper(paperID)
+        fetchPaper(paperID[currentID])
             .then(result => {
                 paper_info = result.data;
                 paper_groups = result.data.GroupsData;
@@ -157,11 +220,12 @@
             })
             .finally(() => {
                 page_is_ready = true;
+                loading=false;
             });
     })
 </script>
 
-{#if page_is_ready}
+{#if !loading}
     <div class="view-paper">
         <!-- 顶部栏 -->
         <div class="header">
@@ -179,6 +243,8 @@
                 <Button onclick={()=>expandAll()} plain={true}>一键展开</Button>
                 <Button onclick={()=>collapseAll()} plain={true}>一键收起</Button>
                 <Button type="danger" plain={true} onclick={()=>goto('/teacher/exam')}>返回</Button>
+                <Button plain={true} onclick={() => gotoPrePaper()}> 上一张 </Button>
+                <Button plain={true} onclick={() => gotoNextPaper()}> 下一张 </Button>
             </div>
         </div>
 
@@ -326,9 +392,7 @@
                                             {/each}
                                         {:else}
                                             <div class="no-questions-container">
-                                                <div class="no-questions-box">
-                                                    <span class="title">题组暂无题目</span>
-                                                </div>
+                                                
                                             </div>
                                         {/if}
                                     </div>
@@ -339,6 +403,10 @@
                 {/if}
             </div>
         </div>
+    </div>
+    {:else}
+    <div>
+    <Loading bind:value={loading} loadingText="正在加载"></Loading>
     </div>
 {/if}
 
