@@ -9,7 +9,7 @@
  */
 import MessageBox from './MessageBox.svelte';
 import { mount, unmount } from 'svelte';
-import { getType } from '$lib/utils/index.js';
+import { getType } from '$lib/utils/validate';
 
 /**
  * 默认配置
