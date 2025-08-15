@@ -1621,7 +1621,6 @@ describe('通过类型下拉框来筛选练习',(()=>{
       triggerInvalid();
       const confirmButton=screen.getAllByText('确定');
       fireEvent.click(confirmButton[0]);
-      
       expect(toast.success).toHaveBeenCalledWith('作废成功');
     }))
   }))
