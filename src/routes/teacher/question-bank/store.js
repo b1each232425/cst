@@ -1,7 +1,4 @@
 import { writable } from 'svelte/store';
-
-export const bankId = writable(0);
-
 function createMapStore() {
   const { subscribe, update } = writable(new Map());
   return {

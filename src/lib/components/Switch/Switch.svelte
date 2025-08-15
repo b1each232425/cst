@@ -41,11 +41,11 @@
   let {
     is_checked = false,
     ball_color = 'white',
-    checked_background_color = '#4a90e2', // 开启状态背景色
+    checked_background_color = 'blue', // 开启状态背景色
     unchecked_background_color = '#ccc', // 关闭状态背景色
     left_text = 'Off',
     right_text = 'On',
-    width = '80px', // 可自定义宽度
+    width = '40px', // 可自定义宽度
     clickSwitchButton, // 点击事件
   } = $props();
 
@@ -106,14 +106,14 @@
   })();
 
   onMount(() => {
-    // 计算高度，保持 8:3 的比例
-    let height = (parseInt(width) * 3) / 8 + 'px';
+    // 计算高度，保持 2:1 的比例
+    let height = parseInt(width) * 0.5 + 'px'; // 2:1 比例，宽度的 50%
 
     // 计算白球的大小，取高度的 0.66 作为球的直径，保持比例
     let ball_size = parseInt(height) * 0.66 + 'px';
 
     // 计算文本的字体大小，按宽度的比例来设置
-    let text_size = parseInt(width) / 5 + 'px';
+    let text_size = parseInt(width) / 3.5 + 'px';
 
     // 初始化文本大小
     l_text_element.style.setProperty('--left-size', text_size);
@@ -201,15 +201,13 @@
     }
 
     .left-text {
-      font-weight: bold;
       color: #000;
-      margin: 0 15px;
+      margin: 0 5px;
       font-size: var(--left-size);
     }
     .right-text {
-      font-weight: bold;
       color: #000;
-      margin: 0 15px;
+      margin: 0 5px;
       font-size: var(--right-size);
     }
   }

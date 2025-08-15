@@ -157,6 +157,22 @@ const MOCK_EXAMS = [
     ],
   },
   {
+    id: 10,
+    name: '竞赛选拔',
+    exam_sessions: [
+      {
+        id: 801,
+        paper_name: '英文竞赛题',
+        start_time: new Date('2025-07-30T09:00').getTime(),
+        end_time: new Date('2025-07-30T11:00').getTime(),
+        status: '12',
+        examinee_status: '10',
+        student_score: 92,
+        total_score: 100,
+      },
+    ],
+  },
+  {
     id: 9,
     name: '无场次考试',
     exam_sessions: null,
