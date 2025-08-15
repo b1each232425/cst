@@ -34,7 +34,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { compareBankMsg } from '../../utils/utils.js';
   import { formatTimestamp } from '$lib/utils/time_utils';
   import { TheoryQuestion } from '../type';
-  import { bankId} from '../../store';
+    import { page } from '$app/stores';
 
 
   /**
@@ -399,8 +399,10 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 //*获取题库信息
 //
    function getBank() {
- 
-    const queryParams = new URLSearchParams({
+ const params = new URLSearchParams(window.location.search);
+        bank_id = params.get('bankID');
+
+  const queryParams = new URLSearchParams({
       bankID:bank_id
     });
 
@@ -641,12 +643,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     const response = await getBankWithQuestions();
     const data = response.data || null;
     request_lock = false;
-    if (init == 1) {
-      init=0;
-    if(data!=null){
-      question_count=response.rowCount;
-    }
-    }
+    
 
      if(data!=null){
        question_filtered_count = response.rowCount;
@@ -680,9 +677,10 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   let bank_id = $state(0);
 
   onMount(async () => {
-    bank_id=$bankId
-    await getBank();
-     
+
+ 
+  
+        await getBank();
     
   });
 
