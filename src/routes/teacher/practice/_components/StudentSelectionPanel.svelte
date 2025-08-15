@@ -224,7 +224,7 @@
                   ...item,
                   officialName: item.official_name,
                   idCardNo: item.id_card_no,
-                  
+                  mobilePhone: item.phone
                 }));
               
         }
