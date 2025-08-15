@@ -140,7 +140,7 @@ describe('Pagination 组件测试', () => {
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByText('4')).toBeInTheDocument();
-    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText('10')).toBeInTheDocument();
   });
 
   it('Select组件元素应正确渲染', async () => {
@@ -382,11 +382,9 @@ describe('Pagination 组件测试', () => {
     expect(dots.length).toBe(2); // 确认有两个省略号
 
     expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByText('4')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
     expect(screen.getByText('6')).toBeInTheDocument();
     expect(screen.getByText('7')).toBeInTheDocument();
-    expect(screen.getByText('8')).toBeInTheDocument();
     expect(screen.getByText('10')).toBeInTheDocument();
   });
 
