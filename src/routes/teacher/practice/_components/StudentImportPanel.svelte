@@ -111,6 +111,7 @@
         .then((result) => {
           if (result.status === 0) {
             //获取数据不合法的用户信息
+            console.log("触发");
             const invalidUsers =result.data.invalidUsers
             //更新不合法用户的错误信息
             response.forEach((item)=>{

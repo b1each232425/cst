@@ -393,8 +393,8 @@
   .table {
   width: 100%;
   border-collapse: collapse;
-  flex: 1;
-
+// flex: 1;
+  
   th,
   td {
     position: relative;
@@ -411,7 +411,7 @@
     word-break: break-all;
     white-space: normal;
     vertical-align: middle;
-    height: 40px;
+    height: 50px;
     
     // 小屏幕适配 - 降低行高、字体大小和横向间距
     @media (max-width: 1440px) {
@@ -656,6 +656,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    
   }
 
   .pagination-container {

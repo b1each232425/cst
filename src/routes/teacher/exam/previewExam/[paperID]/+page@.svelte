@@ -220,6 +220,7 @@
             })
             .finally(() => {
                 page_is_ready = true;
+                expandAll();
                 loading=false;
             });
     })
