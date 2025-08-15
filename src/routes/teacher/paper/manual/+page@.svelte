@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 15:21:42
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-07 11:35:31
+ * @LastEditTime: 2025-08-15 22:11:27
  * @FilePath: \exam\src\routes\teacher\paper\manual\+page@.svelte
  * @Description: 自定义组卷页面
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -21,7 +21,6 @@
     import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../_utils/tool";
     import { onMount, tick } from "svelte";
     import { toast } from "$lib/components/Toast/Toast";
-    import { debounce } from "$lib/utils/optimize";
     import { get } from "svelte/store";
     import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, GROUP_AVERAGE_SCORE } from "../_stores/store";
     import { stopPropagation } from "svelte/legacy";
@@ -145,10 +144,45 @@
         savePaper(paperID, ACTIONS);
     }
 
-    // 防抖更新试卷信息
-    const debounceUpDatePaperInfo = debounce(() => {
-        UpDatePaperInfo();
-    }, 500, false);
+    // 预览试卷
+    function previewPaper() {
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("paper_id", paperID);
+        PARAMS.append("mode", "preview");
+
+        fetch(`/api/paper/manual?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                const PREVIEW_QUESTIONS = result.data;
+                
+                if (category === "00") {
+                    localStorage.setItem(
+                        "examQuestions",
+                        JSON.stringify(PREVIEW_QUESTIONS),
+                    );
+                    window.location.href = "/student/answer/exam";
+                } else if (category === "02") {
+                    localStorage.setItem(
+                        "practiceQuestions",
+                        JSON.stringify(PREVIEW_QUESTIONS),
+                    );
+                    window.location.href = "/student/answer/practice";
+                }
+            })
+            .catch(error => {
+                console.error('获取试卷详情出错：', error);
+                return null;
+            });
+    }
 
     /**************** 试卷信息区 *****************/
 
@@ -544,16 +578,47 @@
     }
 
     // 修改题目分数
-    function updateQuestionScore(questionID, groupID, question_order, question_score) {
+    function updateQuestionScore(question) {
+        // 验证分数必须大于0
+        if (question.score <= 0) {
+            toast.error("题目分数必须大于0", 1000);
+            return;
+        }
+        
+        let sub_score = undefined;
+        
+        // 如果题目有sub_score数组，则将总分平均分配
+        if (question.sub_score && question.sub_score.length > 0) {
+            const subScoreCount = question.sub_score.length;
+            
+            // 确保平均分数大于0
+            if (question.score < subScoreCount) {
+                toast.error(`题目总分${question.score}分不足以分配给${subScoreCount}个子题，每个子题至少需要1分`, 1000);
+                return;
+            }
+            
+            const averageScore = Math.floor(question.score / subScoreCount);
+            const remainder = question.score % subScoreCount;
+            
+            // 创建新的sub_score数组，尽可能平均分配分数
+            sub_score = new Array(subScoreCount).fill(averageScore);
+            
+            // 将余数分配给前面的几个子题
+            for (let i = 0; i < remainder; i++) {
+                sub_score[i]++;
+            }
+        }
+        
         const ACTIONS = [
             {
                 action: "update_question",
                 payload: [
                     {
-                        id: questionID,
-                        group_id: groupID,
-                        order: question_order,
-                        score: question_score
+                        id: question.id,
+                        group_id: question.group_id,
+                        order: question.order,
+                        score: question.score,
+                        sub_score: sub_score
                     }
                 ]
             }
@@ -567,7 +632,7 @@
                 paper_groups = result.data.GroupsData;
                 paper_info = result.data;
                 total_score = paper_info.TotalScore;
-                question_count = paper_info.QuestionCount;
+                question_count = result.data.QuestionCount;
             });
     }
 
@@ -880,6 +945,11 @@
             .finally(() => {
                 page_is_ready = true;
                 // console.log(paper_groups);
+                
+                // 页面加载完成后自动展开所有题组和题目
+                if (paper_groups && paper_groups.length > 0) {
+                    expandAll();
+                }
             });
     })
 
@@ -909,14 +979,15 @@
             </div>
 
             <!-- 试卷名称 -->
-            <input onchange={()=>debounceUpDatePaperInfo()} class="paper-name-input {paper_name===""?"name-warn":""}" type="text" bind:value={paper_name} placeholder="试卷名称不能为空">
+            <input onchange={()=>UpDatePaperInfo()} class="paper-name-input {paper_name===""?"name-warn":""}" type="text" bind:value={paper_name} placeholder="试卷名称不能为空">
             
             <!-- 操作区 -->
             <div class="operation">
                 <button onclick={()=>expandAll()} class="btn btn--primary is-plain">一键展开</button>
                 <button onclick={()=>collapseAll()} class="btn btn--primary is-plain">一键收起</button>
+                <button onclick={()=>previewPaper()} class="btn btn--primary is-plain">预览试卷</button>
                 <button onclick={()=>importQuestions({id:0,name:""})} class="btn btn--primary">从题库中导入</button>
-                <button onclick={()=>goto('/teacher/paper')} class="btn btn--primary is-plain">保存并退出</button>
+                <button onclick={()=>{UpDatePaperInfo();goto('/teacher/paper')}} class="btn btn--primary is-plain">保存并退出</button>
             </div>
         </div>
 
@@ -955,7 +1026,7 @@
                     <!-- 建议时长 -->
                     <div class="single-line">
                         <span class="info-label">建议时长</span>
-                        <InputBox onInput={()=>debounceUpDatePaperInfo()} bind:value={suggested_duration} type="number" show_label={false} clearable={false}/>
+                        <InputBox onchange={()=>UpDatePaperInfo()} bind:value={suggested_duration} type="number" show_label={false} clearable={false}/>
                         <span class="duration-span">分钟</span>
                     </div>
 
@@ -976,7 +1047,7 @@
                     <!-- 试卷说明 -->
                     <div class="paper-description">
                         <span class="info-label">试卷说明</span>
-                        <textarea oninput={()=>debounceUpDatePaperInfo()} class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
+                        <textarea onchange={()=>UpDatePaperInfo()} class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
                     </div>
 
                     <!-- 试卷标签 -->
@@ -1124,7 +1195,7 @@
                                             type="number"
                                             placeholder="请输入"
                                             bind:value={$GROUP_AVERAGE_SCORE[group.id]}
-                                            oninput={debounce(()=>updateAverageQuestionScore(group),500,false)}
+                                            oncahnge={()=>updateAverageQuestionScore(group)}
                                             min={1}
                                             onclick={(e)=>{e.stopPropagation()}}
                                             title=""
@@ -1168,7 +1239,7 @@
                                                                 type="number"
                                                                 placeholder="请输入"
                                                                 bind:value={question.score}
-                                                                oninput={debounce(()=>updateQuestionScore(question.id,group.id,question.order,question.score),500,false)}
+                                                                onchange={()=>updateQuestionScore(question)}
                                                                 min={1}
                                                             >
                                                             <button onclick={()=>moveQuestion(group,question,"up")} class="move-btn" title="上移">↑</button>

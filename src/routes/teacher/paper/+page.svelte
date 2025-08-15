@@ -362,7 +362,7 @@
                 if (result) {
                     total_papers = result.rowCount;
                     paper_list = result.data || [];
-                    console.log(result)
+                    // console.log(result)
                 }
             });
     });
