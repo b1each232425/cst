@@ -226,6 +226,10 @@ const setup = (mockDataOverride = {}) => {
       const preview = screen.getAllByText('预览');
       await fireEvent.click(preview[0]);
     },
+    triggerInvalid :async()=>{ 
+      const invalid = screen.getAllByText('作废');
+      await fireEvent.click(invalid[0]);
+    },
 
 
 
@@ -1594,6 +1598,31 @@ describe('通过类型下拉框来筛选练习',(()=>{
       await waitFor(()=>{ 
         expect(toast.error).toHaveBeenCalledWith('请求试卷信息失败');
       })
+    }))
+  }))
+
+  describe('作废按钮的功能测试',(()=>{
+    it('正常显示作废按钮',(()=>{
+      const {triggerInvalid}=setup();
+      triggerInvalid();
+      expect(screen.getByText('请问是否要作废练习？')).toBeInTheDocument();
+    }))
+    it('点击作废按钮，正常作废',(()=>{
+      const {triggerInvalid}=setup();
+      global.fetch.mockResolvedValueOnce({
+        ok:true,
+        json:async()=>({
+          status:0,
+          data:{
+            message:'作废成功'
+          }
+        })
+      })
+      triggerInvalid();
+      const confirmButton=screen.getAllByText('确定');
+      fireEvent.click(confirmButton[0]);
+      
+      expect(toast.success).toHaveBeenCalledWith('作废成功');
     }))
   }))
 

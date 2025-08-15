@@ -57,7 +57,7 @@
         name: searchText,
         tags: tagSearchText,
         assembly_type: selectedStructure,
-        page: String(event.detail),
+        page: event.detail,
       });
     }
   }
@@ -76,7 +76,7 @@
       tags: tagSearchText,
       assembly_type: selectedStructure,
       page: '1',
-      page_size: String(event.detail),
+      page_size: pageSize,
     });
   }
 
@@ -359,6 +359,7 @@
             total_items={totalTests}
             current_page={currentPage}
             page_size={pageSize}
+            page_size_options={[5,10, 20]} 
             on:pageChange={handlePageChoose}
             on:pageSizeChange={handlePageSizeChange}
           />
