@@ -1314,7 +1314,7 @@ describe('MessageBox 组件测试', () => {
       expect(screen.queryByText('温馨提示')).not.toBeInTheDocument();
     });
     expect(spy).toHaveBeenCalledWith("[MessageBox] 属性 'onConfirm' 无效: 类型错误, 期望类型为function、asyncfunction, 实际类型为null, 已使用默认值 '() => {}', 传入值为: 'null'");
-  }); 
+  });
 
   it('应该能渲染传入非正常值onConfirm回调函数为NaN,组件内部不执行onConfirm回调函数', async () => {
     const spy = vi.spyOn(console, 'warn');
@@ -1409,5 +1409,54 @@ describe('MessageBox 组件测试', () => {
     // 两个按钮上都应该有着相应的类名
     expect(screen.getByText('取消')).toHaveClass('btn--info btn btn--medium');
     expect(screen.getByText('确定')).toHaveClass('btn--success btn btn--medium');
+  });
+
+  /**
+   * 测试是否支持链式调用
+   */
+  it('应该能支持链式调用', async () => {
+    const spy = vi.spyOn(console, 'log');
+
+    // 调用messagebox函数渲染MessageBox组件
+    messagebox({
+      cancel_button_type: 'info',
+      confirm_button_type: 'success',
+      cancel_text: '取消',
+      confirm_text: '确定',
+    })
+      .then(() => {
+        console.log('点击了确定按钮');
+      })
+      .catch(() => {
+        console.log('点击了取消按钮');
+      });
+    // 验证是否渲染成功
+    expect(screen.getByText('取消')).toBeInTheDocument();
+    expect(screen.getByText('确定')).toBeInTheDocument();
+
+    // 模拟点击了确定按钮
+    await fireEvent.click(screen.getByText('确定'));
+    // 是否执行了.then之后的函数
+    expect(spy).toHaveBeenCalled();
+    expect(spy).toHaveBeenCalledWith('点击了确定按钮');
+
+    // 调用messagebox函数渲染MessageBox组件
+    messagebox({
+      cancel_button_type: 'info',
+      confirm_button_type: 'success',
+      cancel_text: '取消',
+      confirm_text: '确定',
+    })
+      .then(() => {
+        console.log('点击了确定按钮');
+      })
+      .catch(() => {
+        console.log('点击了取消按钮');
+      });
+    // 模拟点击了取消按钮
+    await fireEvent.click(screen.getByText('取消'));
+    // 是否执行了.catch之后的函数
+    expect(spy).toHaveBeenCalled();
+    expect(spy).toHaveBeenCalledWith('点击了取消按钮');
   });
 });
