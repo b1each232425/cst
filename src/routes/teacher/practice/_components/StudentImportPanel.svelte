@@ -37,15 +37,6 @@
 
   //报错
   let error = $state('');
-  const ERRORTYPE = {
-    duplicate_id_card: '身份证号重复',
-    duplicate_phone: '手机号重复',
-    phone_used: '手机号已被其他用户使用',
-    缺少必填项: '缺少必填项',
-    手机号格式错误: '手机号格式错误',
-    身份证号格式错误: '身份证号格式错误',
-  };
-
   let {
     show = $bindable(false), // 是否显示弹窗
     onImport = (isAllOk, importData,existStudents) => {},
@@ -273,8 +264,9 @@
             //更新不合法用户的错误信息
             tempList.forEach((item)=>{
               invalidUsers.forEach((user)=>{
-                if(item['姓名']=== user.OfficialName&&item['手机号']===user.MobilePhone&&item['身份证号']===user.IDCardNo){
-                  item.errorType = user.ErrorMsg.toString()
+                if(item.officialName=== user.OfficialName&&item.mobilePhone===user.MobilePhone&&item.idCardNo===user.IDCardNo){
+                  console.log('更新错误信息')
+                  item.errorMsg = user.ErrorMsg
                   item.isOk=false
                 }
               })
@@ -284,9 +276,21 @@
             //获取其中已存在的ID
               tempList.forEach((item)=>{
               existUsers.forEach((user)=>{
-                if(item['姓名']=== user.OfficialName&&item['手机号']===user.MobilePhone&&item['身份证号']===user.IDCardNo){
+                if(item.officialName=== user.OfficialName&&item.mobilePhone===user.MobilePhone&&item.idCardNo===user.IDCardNo){
+                  item.errorMsg=''
                   item.ID= user.ID
-                  item.isOk=false
+                  item.isOk=true
+                }
+              })
+            })
+            //给更新的用户进行更新信息
+            const validList = result.data.validUsers;
+              tempList.forEach((item)=>{
+              validList.forEach((user)=>{
+                if(item.officialName=== user.OfficialName&&item.mobilePhone===user.MobilePhone&&item.idCardNo===user.IDCardNo){
+                  console.log('更新用户信息')
+                  item.errorMsg=''
+                  item.isOk=true
                 }
               })
             })

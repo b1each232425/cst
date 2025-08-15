@@ -25,7 +25,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { formatTimestamp } from '$lib/utils/time_utils';
   import { goto} from '$app/navigation';
   import { toast } from '$lib/components/Toast/Toast.js';
-  import { selection,bankId} from '../store';
+  import { selection} from '../store';
+  import MessageBox from '$lib/components/MessageBox/MessageBox.js';
   /**
    * @typedef BankCardItemData
    * @property {number}           ID              - 题库ID
@@ -156,6 +157,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   }
 
   onMount(async () => {
+    selection.clear();
       getBankList();
   });
 
@@ -188,11 +190,11 @@ o.  )88b 888   .o8  888      888   888   888   888 .
             throw new Error(`${result.msg}`);
         }
        
-               bankId.set(result.data.ID)
-      
+              
+        
 
         // 跳转页面
-        goto(`${window.location.pathname}/editBank`);
+         goto(`${window.location.pathname}/editBank?bankID=${ result.data.ID}`);
         return;
       })
       .catch((error) => {
@@ -469,11 +471,30 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * @param {BankCardItemData} item
    */
   async function onGoToEditBank(item) {
-   bankId.set(item.ID)
+
     // window.location.href = `${window.location.pathname}/editBank`;
-    goto(`${window.location.pathname}/editBank`);
+    goto(`${window.location.pathname}/editBank?bankID=${item.ID}`);
   }
 
+  //显示删除题库题型
+  	function deleteMessageBox() {
+     if(selected_bank_list.length==0){
+      toast.warning("请先选择要删除的题库")
+      return ;
+     }
+
+		MessageBox({
+			title: '确认操作',
+			content: '你确定要删除题库吗？',
+			onConfirm: () => {
+        deleteBank(selected_bank_list)
+				console.log('点击了确认');
+			},
+			onCancel: () => {
+				console.log('点击了取消');
+			}
+		});
+	}
 
 </script>
 
@@ -508,7 +529,7 @@ o888o o888o   "888" o888o o888o o888o o888o
 
     <div class="operation-btns">
       <button class="button-delete" onclick={()=>{
-        deleteBank(selected_bank_list);
+        deleteMessageBox()
       }} >
          <span class="icon"></span>
         <span>批量删除</span>

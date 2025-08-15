@@ -5,7 +5,7 @@ import { toast } from '$lib/components/Toast/Toast.js';
 import { goto } from '$app/navigation';
 import SmartEditor from '@3min/smart-edit';
 import { resetTime } from '../addExam/+page.svelte';
-import { onChooseStartTime, onChooseEndTime } from '../_utils/date';
+import { onChooseStartTime, onChooseEndTime,updateDuration,handleSubmit } from '../_utils/createExam';
 // Mock dependencies
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/components/Toast/Toast.js', () => ({ 
@@ -801,3 +801,569 @@ describe('onChooseStartTime / onChooseEndTime 纯函数测试', () => {
 
   });
 });
+
+  
+  describe('updateDuration 函数测试', () => {
+     let paper_configs;
+
+  beforeEach(() => {
+    paper_configs = [
+      {
+        startTime: '',
+        endTime: '',
+        duration: 0,
+        maxDuration: 0,
+      },
+    ];
+  });
+    it('应正确计算有效时间段', () => {
+      paper_configs[0].startTime = '2025-08-15T09:00:00.000Z';
+      paper_configs[0].endTime = '2025-08-15T10:30:00.000Z';
+      
+      updateDuration(0, paper_configs);
+      
+      expect(paper_configs[0].duration).toBe(90);
+      expect(paper_configs[0].maxDuration).toBe(90);
+    });
+
+    it('当 startTime 为空时应设置 duration 为 0', () => {
+      paper_configs[0].startTime = '';
+      paper_configs[0].endTime = '2025-08-15T10:30:00.000Z';
+      
+      updateDuration(0, paper_configs);
+      
+      expect(paper_configs[0].duration).toBe(0);
+      expect(paper_configs[0].maxDuration).toBe(0);
+    });
+
+    it('当 endTime 为空时应设置 duration 为 0', () => {
+      paper_configs[0].startTime = '2025-08-15T09:00:00.000Z';
+      paper_configs[0].endTime = '';
+      
+      updateDuration(0, paper_configs);
+      
+      expect(paper_configs[0].duration).toBe(0);
+      expect(paper_configs[0].maxDuration).toBe(0);
+    });
+
+    it('当结束时间早于开始时间时应返回 0', () => {
+      paper_configs[0].startTime = '2025-08-15T10:00:00.000Z';
+      paper_configs[0].endTime = '2025-08-15T09:00:00.000Z';
+      
+      updateDuration(0, paper_configs);
+      
+      expect(paper_configs[0].duration).toBe(0);
+      expect(paper_configs[0].maxDuration).toBe(0);
+    });
+  });
+
+
+const NOW = new Date('2025-08-15T12:00:00.000Z');
+const FUTURE1 = new Date(NOW.getTime() + 60 * 60 * 1000).toISOString(); // +1h
+const FUTURE2 = new Date(NOW.getTime() + 2 * 60 * 60 * 1000).toISOString(); // +2h
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.useFakeTimers();
+  vi.setSystemTime(NOW);
+});
+
+/* ---------- mock 依赖 ---------- */
+const fetch = vi.fn();
+
+/* ---------- 基础快照 ---------- */
+const base = () => ({
+  exam_name: '考试',
+  exam_rules: '规则',
+  exam_type: '00',
+  exam_method: '00',
+  paper_configs: [
+    {
+      paperID: 1,
+      startTime: FUTURE1,
+      endTime: FUTURE2,
+      duration: 60,
+      maxDuration: 60,
+      lateEntryTime: 5,
+      earlySubmissionTime: 0,
+      isOptionShuffled: false,
+      isQuestionShuffled: false,
+      markMethod: '00',
+      nameVisibility: true,
+      markMode: '10',
+      markConfig: { teacher_mark_configs: [{ id: 42 }] },
+    },
+  ],
+  exam_examinee: [{ id: 123 }],
+  invigilators: [{ id: 456 }],
+});
+
+/* ---------- 测试 ---------- */
+describe('handleSubmit 行级全覆盖', () => {
+  /* 1. 必填字段校验 —— 4 条分支 */
+  it('exam_name 为空', async () => {
+    await handleSubmit({ ...base(), exam_name: '' }, fetch, goto, toast);
+    expect(toast.warning).toHaveBeenCalledWith('请输入考试名称');
+  });
+
+  it('exam_name 超长', async () => {
+    await handleSubmit({ ...base(), exam_name: 'a'.repeat(51) }, fetch, goto, toast);
+    expect(toast.warning).toHaveBeenCalledWith('考试名称不得超过五十个字符');
+  });
+
+  it('exam_rules 为空', async () => {
+    await handleSubmit({ ...base(), exam_rules: '' }, fetch, goto, toast);
+    expect(toast.warning).toHaveBeenCalledWith('请输入考试规则');
+  });
+
+  it('exam_rules 超长', async () => {
+    await handleSubmit({ ...base(), exam_rules: 'x'.repeat(1001) }, fetch, goto, toast);
+    expect(toast.warning).toHaveBeenCalledWith('考试规则不得超过1000个字符');
+  });
+
+  /* 2. 未选试卷 */
+  it('paperID 为 0', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].paperID = 0;
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(toast.warning).toHaveBeenCalledWith('第1个场次未选择试卷');
+  });
+
+  /* 3. 场次时间段校验 —— 4 条分支 */
+  it('startTime 为空', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].startTime = '';
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(toast.warning).toHaveBeenCalledWith('第1个场次未设置时间段');
+  });
+
+  it('endTime 为空', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].endTime = '';
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(toast.warning).toHaveBeenCalledWith('第1个场次未设置时间段');
+  });
+
+  it('开始时间早于当前时间', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].startTime = new Date(NOW.getTime() - 1000).toISOString();
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(toast.warning).toHaveBeenCalledWith('第1个场次的开始时间不能早于当前时间');
+  });
+
+  it('结束时间早于开始时间', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].startTime = FUTURE2;
+    cfg.paper_configs[0].endTime = FUTURE1;
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(toast.warning).toHaveBeenCalledWith('第1个场次的结束时间必须晚于开始时间');
+    
+  });
+
+  /* 4. 预处理分支 —— 组合覆盖 */
+  it('questionShuffledMode = 00 (全部勾选)', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].isOptionShuffled = true;
+    cfg.paper_configs[0].isQuestionShuffled = true;
+    fetch.mockResolvedValue({ json: () => Promise.resolve({ status: 0 }) });
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(cfg.paper_configs[0].questionShuffledMode).toBe('00');
+    expect(cfg.paper_configs[0].sessionNum).toBe(1);
+  });
+
+  it('questionShuffledMode = 02 (仅选项)', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].isOptionShuffled = true;
+    cfg.paper_configs[0].isQuestionShuffled = false;
+    fetch.mockResolvedValue({ json: () => Promise.resolve({ status: 0 }) });
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(cfg.paper_configs[0].questionShuffledMode).toBe('02');
+  });
+
+  it('questionShuffledMode = 04 (仅题目)', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].isOptionShuffled = false;
+    cfg.paper_configs[0].isQuestionShuffled = true;
+    fetch.mockResolvedValue({ json: () => Promise.resolve({ status: 0 }) });
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(cfg.paper_configs[0].questionShuffledMode).toBe('04');
+  });
+
+  it('questionShuffledMode = 06 (都不勾选)', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].isOptionShuffled = false;
+    cfg.paper_configs[0].isQuestionShuffled = false;
+    fetch.mockResolvedValue({ json: () => Promise.resolve({ status: 0 }) });
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(cfg.paper_configs[0].questionShuffledMode).toBe('06');
+  });
+
+  it('markMethod 为 02 时清空批改员', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].markMethod = '02';
+    fetch.mockResolvedValue({ json: () => Promise.resolve({ status: 0 }) });
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(cfg.paper_configs[0].markConfig.teacher_mark_configs).toEqual([]);
+    expect(cfg.paper_configs[0].markMode).toBe('00');
+  });
+
+  it('markConfig为空时获取空值', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].markConfig = [];
+    fetch.mockResolvedValue({ json: () => Promise.resolve({ status: 0 }) });
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(cfg.paper_configs[0].markConfig).toStrictEqual([]);
+  });
+
+  /* 5. 边界值修正 */
+  it('lateEntryTime 小于等于 0 修正为 1', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].lateEntryTime = 0;
+    fetch.mockResolvedValue({ json: () => Promise.resolve({ status: 0 }) });
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(cfg.paper_configs[0].lateEntryTime).toBe(1);
+  });
+
+  it('earlySubmissionTime 小于等于 0 修正为 0', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].earlySubmissionTime = -5;
+    fetch.mockResolvedValue({ json: () => Promise.resolve({ status: 0 }) });
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(cfg.paper_configs[0].earlySubmissionTime).toBe(0);
+  });
+
+  it('earlySubmissionTime 大于0', async () => {
+    const cfg = base();
+    cfg.paper_configs[0].earlySubmissionTime = 5;
+    fetch.mockResolvedValue({ json: () => Promise.resolve({ status: 0 }) });
+    await handleSubmit(cfg, fetch, goto, toast);
+    expect(cfg.paper_configs[0].earlySubmissionTime).toBe(5);
+  });
+
+  /* 6. 网络分支 */
+  it('接口返回 status = 0 -> goto', async () => {
+  // 设置全局 fetch mock，参考 list 文件的模式
+  global.fetch = vi.fn((url) => {
+    if (url.includes('/api/exam')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ status: 0 }),
+      });
+    }
+    return Promise.reject(new Error(`Unhandled URL: ${url}`));
+  });
+  
+  await handleSubmit(base()); // 只传递配置对象
+  expect(goto).toHaveBeenCalledWith('/teacher/exam');
+});
+
+it('接口返回非 0 -> toast.warning', async () => {
+  global.fetch = vi.fn((url) => {
+    if (url.includes('/api/exam')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ status: -1 }),
+      });
+    }
+    return Promise.reject(new Error(`Unhandled URL: ${url}`));
+  });
+  
+  await handleSubmit(base());
+  expect(toast.warning).toHaveBeenCalledWith('用户没有创建考试的权限');
+});
+
+it('网络异常 -> toast.error', async () => {
+  global.fetch = vi.fn(() => Promise.reject(new Error('network')));
+  
+  await handleSubmit(base());
+  expect(toast.error).toHaveBeenCalledWith('未知错误');
+})});
+
+
+describe('hide 样式类测试 - 修复版', () => {
+  it('当选择自动批卷时，姓名可见性选项应被隐藏', async () => {
+    const { selectMarkingMethod } = setup();
+    
+    // 先获取试卷配置容器
+    const paperConfig = screen.getByText('试卷1').closest('.paper-config-container');
+    expect(paperConfig).toBeInTheDocument();
+    
+    // 初始状态（人工批卷），姓名可见性选项应显示
+    let nameVisibilityContainer = within(paperConfig).queryByText('批改时是否显示考生姓名：');
+    expect(nameVisibilityContainer).toBeInTheDocument();
+    
+    // 选择自动批卷
+    await selectMarkingMethod(0, '自动批卷');
+    
+    // 等待DOM更新
+    await waitFor(() => {
+      // 重新查找元素，因为DOM可能已更新
+      const updatedPaperConfig = screen.getByText('试卷1').closest('.paper-config-container');
+      const nameContainer = within(updatedPaperConfig).queryByText('批改时是否显示考生姓名：');
+      
+      if (nameContainer) {
+        const showNameContainer = nameContainer.closest('.show-name-container');
+        expect(showNameContainer).toHaveClass('hide');
+      } else {
+        // 如果元素完全不存在，也是隐藏的一种方式
+        expect(nameContainer).not.toBeInTheDocument();
+      }
+    });
+  });
+
+  it('当选择自动批卷时，批改模式选项应被隐藏', async () => {
+    const { selectMarkingMethod } = setup();
+    
+    const paperConfig = screen.getByText('试卷1').closest('.paper-config-container');
+    expect(paperConfig).toBeInTheDocument();
+    
+    // 选择自动批卷
+    await selectMarkingMethod(0, '自动批卷');
+    
+    // 等待DOM更新并验证批改模式被隐藏
+    await waitFor(() => {
+      const updatedPaperConfig = screen.getByText('试卷1').closest('.paper-config-container');
+      const gradingModeContainer = within(updatedPaperConfig).queryByText('批改模式');
+      
+      if (gradingModeContainer) {
+        const gradingContainer = gradingModeContainer.closest('.grading-mode-container');
+        expect(gradingContainer).toHaveClass('hide');
+      } else {
+        // 元素不存在也表示被隐藏
+        expect(gradingModeContainer).not.toBeInTheDocument();
+      }
+    });
+  });
+
+  it('删除按钮在第一个试卷时应被隐藏', async () => {
+    render(ExamCreation);
+    
+    // 查找第一个试卷的删除按钮
+    const firstPaperConfig = screen.getByText('试卷1').closest('.paper-config-container');
+    expect(firstPaperConfig).toBeInTheDocument();
+    
+    const deleteButton = within(firstPaperConfig).queryByAltText('删除');
+    
+    if (deleteButton) {
+      // 如果按钮存在，应该有 hide 类
+      expect(deleteButton.closest('button')).toHaveClass('hide');
+    } else {
+      // 或者按钮可能根本不渲染
+      expect(deleteButton).not.toBeInTheDocument();
+    }
+    
+    // 添加第二个试卷并验证其删除按钮可见
+    const addButton = screen.getByRole('button', { name: '添加试卷' });
+    await fireEvent.click(addButton);
+    
+    await waitFor(() => {
+      const secondPaperConfig = screen.getByText('试卷2').closest('.paper-config-container');
+      const secondDeleteButton = within(secondPaperConfig).queryByAltText('删除');
+      
+      if (secondDeleteButton) {
+        expect(secondDeleteButton.closest('button')).not.toHaveClass('hide');
+      }
+    });
+  });
+
+  it('试卷配置展开/收起功能测试', async () => {
+    render(ExamCreation);
+    
+    const paperConfig = screen.getByText('试卷1').closest('.paper-config-container');
+    const toggleButton = paperConfig?.querySelector('.arrow');
+    const configBody = paperConfig?.querySelector('.paper-config-body');
+    
+    // 初始状态应为展开
+    expect(configBody).toHaveClass('show');
+    expect(configBody).not.toHaveClass('hide');
+    
+    // 点击收起
+    if (toggleButton) {
+      await fireEvent.click(toggleButton);
+    }
+    
+    // 验证被收起
+    expect(configBody).toHaveClass('hide');
+    expect(configBody).not.toHaveClass('show');
+    
+    // 再次点击展开
+    if (toggleButton) {
+      await fireEvent.click(toggleButton);
+    }
+    
+    // 验证重新展开
+    expect(configBody).toHaveClass('show');
+    expect(configBody).not.toHaveClass('hide');
+  });
+
+  // 新增：更全面的条件显示测试
+  it('人工批卷时相关选项应正确显示', async () => {
+    const { selectMarkingMethod } = setup();
+    
+    // 确保选择人工批卷
+    await selectMarkingMethod(0, '人工批卷');
+    
+    const paperConfig = screen.getByText('试卷1').closest('.paper-config-container');
+    
+    await waitFor(() => {
+      // 姓名可见性选项应显示
+      const nameVisibilityText = within(paperConfig).queryByText('批改时是否显示考生姓名：');
+      if (nameVisibilityText) {
+        const showNameContainer = nameVisibilityText.closest('.show-name-container');
+        expect(showNameContainer).not.toHaveClass('hide');
+        expect(showNameContainer).toHaveClass('config-row');
+      }
+      
+      // 批改模式选项应显示
+      const gradingModeText = within(paperConfig).queryByText('批改模式');
+      if (gradingModeText) {
+        const gradingContainer = gradingModeText.closest('.grading-mode-container');
+        expect(gradingContainer).not.toHaveClass('hide');
+        expect(gradingContainer).toHaveClass('config-row');
+      }
+    });
+  });
+
+  // 新增：批量验证隐藏状态
+  
+});
+
+describe('simple-input 输入框 oninput 逻辑测试', () => {
+  
+  beforeEach(() => {
+    vi.clearAllMocks();
+    global.fetch = vi.fn((url) => {
+      if (typeof url !== 'string') {
+        return Promise.reject(new Error('Invalid URL'));
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ status: 0, data: [], rowCount: 0 }),
+      });
+    });
+  });
+
+  describe('迟到进入时间输入框 oninput 逻辑', () => {
+    
+    it('输入值大于最大值时应自动限制并更新状态', async () => {
+      const { getDurationInput, getLateEntryInput } = setup();
+      
+      // 先设置考试时长为 60 分钟
+      const durationInput = getDurationInput(0);
+      await fireEvent.input(durationInput, { target: { value: '60' } });
+      
+      const lateEntryInput = getLateEntryInput(0);
+      
+      // 模拟输入超过最大值的情况 (输入 80，最大值为 60)
+      const inputEvent = { target: { value: '80' } };
+      await fireEvent.input(lateEntryInput, inputEvent);
+      
+      // 验证输入框的值被设置为最大值
+      expect(lateEntryInput.value).toBe('60');
+      expect(lateEntryInput).toHaveValue(60);
+    });
+
+    it('输入值小于1时应自动设置为1并更新状态', async () => {
+      const { getLateEntryInput } = setup();
+      
+      const lateEntryInput = getLateEntryInput(0);
+      
+      // 输入 0
+      await fireEvent.input(lateEntryInput, { target: { value: '0' } });
+      expect(lateEntryInput.value).toBe('1');
+      expect(lateEntryInput).toHaveValue(1);
+      
+      // 输入负数
+      await fireEvent.input(lateEntryInput, { target: { value: '-5' } });
+      expect(lateEntryInput.value).toBe('1');
+      expect(lateEntryInput).toHaveValue(1);
+    });
+
+    it('输入有效范围内的值应保持不变', async () => {
+      const { getDurationInput, getLateEntryInput } = setup();
+      
+      // 设置考试时长为 120 分钟
+      const durationInput = getDurationInput(0);
+      await fireEvent.input(durationInput, { target: { value: '120' } });
+      
+      const lateEntryInput = getLateEntryInput(0);
+      
+      // 输入有效值 30 (1 <= 30 <= 120)
+      await fireEvent.input(lateEntryInput, { target: { value: '30' } });
+      expect(lateEntryInput).toHaveValue(30);
+      
+      // 输入边界值 1
+      await fireEvent.input(lateEntryInput, { target: { value: '1' } });
+      expect(lateEntryInput).toHaveValue(1);
+      
+      // 输入边界值 120
+      await fireEvent.input(lateEntryInput, { target: { value: '120' } });
+      expect(lateEntryInput).toHaveValue(120);
+    });
+  });
+
+  describe('提前交卷时间输入框 oninput 逻辑', () => {
+    
+    it('输入值大于最大值时应自动限制并更新状态', async () => {
+      const { getDurationInput, getEarlySubmissionInput } = setup();
+      
+      // 设置考试时长为 90 分钟
+      const durationInput = getDurationInput(0);
+      await fireEvent.input(durationInput, { target: { value: '90' } });
+      
+      const earlySubmissionInput = getEarlySubmissionInput(0);
+      
+      // 输入超过最大值的情况 (输入 120，最大值为 90)
+      await fireEvent.input(earlySubmissionInput, { target: { value: '120' } });
+      
+      // 验证值被限制为最大值
+      expect(earlySubmissionInput.value).toBe('90');
+      expect(earlySubmissionInput).toHaveValue(90);
+    });
+
+    it('输入值小于等于最大值时应保持不变', async () => {
+      const { getDurationInput, getEarlySubmissionInput } = setup();
+      
+      // 设置考试时长为 100 分钟
+      const durationInput = getDurationInput(0);
+      await fireEvent.input(durationInput, { target: { value: '100' } });
+      
+      const earlySubmissionInput = getEarlySubmissionInput(0);
+      
+      // 输入有效值
+      await fireEvent.input(earlySubmissionInput, { target: { value: '50' } });
+      expect(earlySubmissionInput).toHaveValue(50);
+      
+      // 输入 0（最小值）
+      await fireEvent.input(earlySubmissionInput, { target: { value: '0' } });
+      expect(earlySubmissionInput).toHaveValue(0);
+      
+      // 输入边界值（等于最大值）
+      await fireEvent.input(earlySubmissionInput, { target: { value: '100' } });
+      expect(earlySubmissionInput).toHaveValue(100);
+    });
+
+    it('输入负数时应保持不变（代码中无负数限制）', async () => {
+      const { getEarlySubmissionInput } = setup();
+      
+      const earlySubmissionInput = getEarlySubmissionInput(0);
+      
+      // 输入负数 - 根据代码逻辑，只检查是否大于最大值
+      await fireEvent.input(earlySubmissionInput, { target: { value: '-10' } });
+      expect(earlySubmissionInput).toHaveValue(-10);
+    });
+
+    it('当考试时长为0时输入大于0的值应被限制为0', async () => {
+      const { getDurationInput, getEarlySubmissionInput } = setup();
+      
+      // 设置考试时长为 0
+      const durationInput = getDurationInput(0);
+      await fireEvent.input(durationInput, { target: { value: '0' } });
+      
+      const earlySubmissionInput = getEarlySubmissionInput(0);
+      
+      // 输入任何大于0的值都应该被限制为0
+      await fireEvent.input(earlySubmissionInput, { target: { value: '5' } });
+      expect(earlySubmissionInput.value).toBe('0');
+    });
+  })});

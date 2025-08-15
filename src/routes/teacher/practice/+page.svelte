@@ -548,7 +548,7 @@
     });
     console.log('publishPractice:', publishPractice);
     if(publishPractice){
-      toast.error('有练习正在发布中，无法删除');
+      toast.error('存在练习无法删除');
     return; // 直接返回，不执行删除操作
     }
     
@@ -839,7 +839,7 @@
                 <td style="text-align: center;" title={practice?.student_count?.toString()}>{practice.student_count}</td
                 >
                 <td style="text-align: center;">
-                  <span class="Status-tag {practice.Status === '已发布' ? 'published' : 'unpublished'}">
+                  <span class="Status-tag {practice.Status === '已发布' ? 'published' : practice.Status==='未发布'?'unpublished' : 'invalidated'}">
                     {practice.Status}
                   </span>
                 </td>
@@ -848,7 +848,7 @@
                 </td>
                 <td class="operation-column">
                   <div class="operation-row">
-                    {#if practice.Status !== '未发布'}
+                    {#if practice.Status === '已发布'}
                       <button class="op-btn edit" onclick={() => selectStudents(practice)}> 选择学生 </button>
                       <button class="op-btn unpublish" onclick={() => invalidated(practice)}> 作废 </button>
                     {/if}
@@ -856,13 +856,19 @@
                     {#if practice.Status === '未发布'}
                       <button class="op-btn edit" onclick={() => continue_edit(practice)}> 编辑 </button>
                       <button class="op-btn publish" onclick={() => publish_practice(practice)}> 发布 </button>
+                        <button class="op-btn unpublish" onclick={() => invalidated(practice)}> 作废 </button>
+                    {/if}
+                    {#if practice.Status === '已作废'}
+                    <button class="op-btn unpublish" disabled>无法操作</button>
                     {/if}
                   </div>
                   <!-- 添加下载学生名单按钮 -->
 
                   <div class="operation-row">
+                    {#if practice.Status !== '已作废'}
                     <button class="op-btn download" onclick={() => getStudentInfos(practice)}> 下载学生名单 </button>
                     <button class="op-btn preview" onclick={() => preview(practice)}> 预览 </button>
+                    {/if}
                     {#if practice.Status === '未发布'}
                       <button class="op-btn delete" onclick={() => delete_practice(practice)}> 删除 </button>
                     {/if}
@@ -1149,6 +1155,10 @@
 
         &.unpublished {
           background-color: #689bff;
+          color: #ffffff;
+        }
+        &.invalidated {
+          background-color: #ff0000;
           color: #ffffff;
         }
       }
