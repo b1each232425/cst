@@ -83,42 +83,44 @@
       console.log('获取答题情况失败:', e);
     }
   }
+
   function replaceSpansWithLines(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
-    const spans = doc.querySelectorAll('span.blank-item');
 
-    spans.forEach((span) => {
-      const blankNumber = span.getAttribute('blanknumber') || '';
-      const id = span.id;
+    // 找到所有的括号 ( )
+    const matches = doc.body.innerHTML.match(/\(\)/g); // 匹配所有括号
 
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'blank-item-input';
-      input.setAttribute('data-blank-number', blankNumber);
-      input.setAttribute('data-original-id', id);
-      input.maxLength = max_input_len;
-      input.style.width = '80px'; // 初始宽度
-      input.style.minWidth = '80px'; // 最小宽度
-      input.style.textAlign = 'center';
-      input.style.border = 'none';
-      input.style.borderBottom = '1px solid black';
-      input.style.outline = 'none';
-      input.style.boxSizing = 'content-box';
-      input.style.padding = '0px 0px 0px 0px';
-      input.style.margin = '0px 0px 0px 0px';
-      input.style.fontSize = '16px';
+    if (matches) {
+      // 根据括号的数量动态替换成 input
+      matches.forEach(() => {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'blank-item-input';
+        input.maxLength = max_input_len;
+        input.style.width = '80px'; // 初始宽度
+        input.style.minWidth = '80px'; // 最小宽度
+        input.style.textAlign = 'center';
+        input.style.border = 'none';
+        input.style.borderBottom = '1px solid black';
+        input.style.outline = 'none';
+        input.style.boxSizing = 'content-box';
+        input.style.padding = '0px 0px 0px 0px';
+        input.style.margin = '0px 0px 0px 0px';
+        input.style.fontSize = '16px';
 
-      // 移除事件监听器，因为我们在onMount中添加
-      span.replaceWith(input);
-    });
+        // 替换括号为输入框
+        doc.body.innerHTML = doc.body.innerHTML.replace('()', input.outerHTML);
+      });
+    }
 
     return doc.body.innerHTML;
   }
 
   onMount(async () => {
+    console.log('question', question);
     if (question.Type !== '06') return;
-    question.Content = replaceSpansWithLines(question.Content);
+    question.Content = replaceSpansWithLines(question.Content); // 替换括号为输入框
 
     // 在DOM渲染后，为所有input添加事件监听器
     setTimeout(async () => {
@@ -126,7 +128,6 @@
         await getStudentAnswer(); // 渲染完后填充答案
         const inputs = contentWrapper.querySelectorAll('input.blank-item-input');
         inputs.forEach((input) => {
-          // 创建一个隐藏 span，用于测量文字宽度
           const mirror = document.createElement('span');
           mirror.style.visibility = 'hidden';
           mirror.style.position = 'absolute';
@@ -138,22 +139,19 @@
           mirror.style.width = 'fit-content';
           document.body.appendChild(mirror);
 
-          // 初始宽度设置
+          // 调整输入框宽度
           const adjustWidth = () => {
             mirror.textContent = input.value || '_';
-            console.log(mirror.offsetWidth);
             input.style.width = mirror.offsetWidth + 'px';
           };
 
           adjustWidth(); // 初始调用一次
+
           input.addEventListener('input', async () => {
             adjustWidth();
-            // console.log("input change:", input.value);
-
             const allInputs = contentWrapper.querySelectorAll('input.blank-item-input');
             const combinedAnswer = Array.from(allInputs).map((el) => el.value.trim());
             question.Answer = combinedAnswer;
-            // console.log("combinedAnswer:", combinedAnswer);
 
             const answer = {
               question_id: Number(question.ID),
@@ -161,10 +159,9 @@
               type: question.Type,
             };
 
-            await saveAnswer(answer, question, false, []);
+            await saveAnswer(answer, question, false, []); // 保存答案
           });
         });
-        // console.log('事件监听器已添加到', inputs.length, '个输入框');
       } else {
         console.log('没有找到题干容器');
       }
