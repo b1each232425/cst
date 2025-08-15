@@ -11,6 +11,7 @@
   import { toast } from '$lib/components/Toast/Toast.js';
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import { onChooseStartTime, onChooseEndTime,updateDuration,handleSubmit } from '../_utils/createExam';
+  import {onMount} from 'svelte'
   const TIP_TEXT = {
     final_exam: '当一门考试的考试性质为期末成绩考试时，它将决定学生在此课程的最终期末成绩',
     qualifying_exams: '当一门考试是资格证考试时，学生需要以真实身份进入考试',
@@ -62,6 +63,7 @@
     menuBarExcludeKeys: ['attachment', 'audio', 'image', 'video'],
   };
 
+  let examID = $state();
   //考试名称
   let exam_name = $state('');
   //考试规则
@@ -169,7 +171,32 @@
     }
   }
   
-
+  async function fetchExamID(){
+      fetch('/api/exam',{
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+  })
+      .then((response) => response.json())
+      .then((result) => {
+        if(result.status != 0)
+        {
+          toast.warning('用户没有创建考试的权限');
+          goto('/teacher/exam');
+        }
+        else{
+          examID=result.data.id;
+        }
+        console.log(examID);
+      })
+      .catch((error) => {
+        toast.error('未知错误');
+      });
+  }
+onMount(async () =>{
+    await fetchExamID();
+    //console.log(examID);
+})
   
 
   
@@ -334,6 +361,7 @@
         class="save-action-button"
         onclick={() => {
   handleSubmit({ 
+    examID,
     exam_name, 
     exam_rules, 
     exam_type, 

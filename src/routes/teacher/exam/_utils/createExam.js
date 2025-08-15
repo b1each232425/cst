@@ -41,7 +41,7 @@ export function updateDuration(index,paper_configs) {
     paper_configs[index].maxDuration = Math.max(0, durationInMinutes);
   }
 
-export async function handleSubmit({ exam_name, exam_rules, exam_type, exam_method, paper_configs, exam_examinee = [], invigilators = [] }) {
+export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, exam_method, paper_configs, exam_examinee = [], invigilators = [] }) {
     /* 1. 必填字段校验（保持原逻辑） */
     if (exam_name === '') {
       toast.warning('请输入考试名称');
@@ -120,7 +120,6 @@ export async function handleSubmit({ exam_name, exam_rules, exam_type, exam_meth
     
     const examSessionsdata = paper_configs.map((cfg) => ({
       PaperID: cfg.paperID,
-      // PaperID:              61,
       PeriodMode: cfg.periodMode,
       StartTime:  new Date(cfg.startTime).getTime() ,
       EndTime:  new Date(cfg.endTime).getTime() ,
@@ -142,6 +141,7 @@ export async function handleSubmit({ exam_name, exam_rules, exam_type, exam_meth
     const exam_data = {
       data: {
         examInfo: {
+          id:examID,
           Name: exam_name,
           Rules: exam_rules,
           Type: exam_type,
@@ -158,19 +158,17 @@ export async function handleSubmit({ exam_name, exam_rules, exam_type, exam_meth
     console.log('exam_data', exam_data);
     console.log('paperconfig',paper_configs);
     fetch('/api/exam', {
-      method: 'POST',
+      method: 'PUT',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(exam_data),
     })
       .then((response) => response.json())
       .then((result) => {
-        console.log("所有检验通过");
-        if (result.status === 0) {
-          
+        
+        if (result.status === 0) {   
           goto('/teacher/exam');
         } else {
-          console.log("所有检验通过");
           toast.warning('用户没有创建考试的权限');
         }
       })
