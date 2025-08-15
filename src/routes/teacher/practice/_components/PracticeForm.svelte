@@ -459,6 +459,7 @@
     show_student_modal = false;
     selectedStudents = selected.map((item) => ({
       ...item,
+      id:item.ID,
       Domains:['cst.school^student']
     }));
     newStudents = newStudent.map((item) => ({
