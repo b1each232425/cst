@@ -40,7 +40,7 @@
   // 对话框状态管理
   let publishDialogOpen = $state(false); // 发布确认对话框
   let deleteDialogOpen = $state(false); // 删除确认对话框
-  let cancelPublishDialogOpen = $state(false); // 取消发布确认对话框
+  let invalidatedDialogOpen = $state(false); // 取消发布确认对话框
   let show_student_selectionPanel = $state(false); // 学生选择面板
   /** @type {Practice[] | null} */
   let currentPractice = $state([]); // 当前操作的练习对象
@@ -74,7 +74,7 @@
   // 下拉选项配置
   let type_options = ['全部', '经典巩固', '随机组卷', '智能提升'];
 
-  let status_options = ['全部', '已发布', '未发布'];
+  let status_options = ['全部', '已发布', '未发布','已作废'];
 
   // 分页配置
   let total_data_num = $state(0);
@@ -112,6 +112,7 @@
       let statusCode = '';
       if (status === '已发布') statusCode = '02';
       else if (status === '未发布') statusCode = '00';
+      else if (status === '已作废') statusCode = '06';
 
       if (statusCode) queryParams.append('status', statusCode);
     }
@@ -328,10 +329,10 @@
   }
 
   /**
-   * 取消发布按钮点击事件
+   * 作废按钮点击事件
    * @param {Practice} practice - 练习对象
    */
-  function cancel_publish(practice) {
+  function invalidated(practice) {
     if (!Array.isArray(practice)) {
       practice = [practice];
     }
@@ -339,28 +340,28 @@
     // 保存当前操作的练习
     currentPractice = practice;
     if (!currentPractice || currentPractice.length == 0) {
-      toast.error('请选择要取消发布的练习');
+      toast.error('请选择要作废的练习');
       return;
     }
 
-    // 打开取消发布确认对话框
-    cancelPublishDialogOpen = true;
+    // 打开作废确认对话框
+    invalidatedDialogOpen = true;
   }
 
   /**
    * 确认取消发布
    */
-  function confirm_cancel_publish() {
+  function confirm_invalidated() {
     if (!currentPractice) return;
     console.log('currentPractice', currentPractice)
 
-    // 实现取消发布的逻辑
+    // 实现作废的逻辑
     const queryParams = new URLSearchParams();
     queryParams.append(
       'id',
       currentPractice.map((practice) =>  practice.ID),
     );
-    queryParams.append('status', '00');
+    queryParams.append('status', '06');
     const url = `/api/practice?${queryParams.toString()}`;
     // 调用API取消发布练习
     fetch(url, {
@@ -380,10 +381,10 @@
       })
       .then((response) => response.json())
       .then((data) => {
-        console.log('取消发布练习响应:', data);
+        console.log('作废练习响应:', data);
         if (data.status !== 0) {
-          console.error('取消发布练习失败:', data.msg);
-          toast.error('取消发布练习失败');
+          console.error('作废练习失败:', data.msg);
+          toast.error('作废练习失败');
           return;
         }
         // 更新练习状态
@@ -391,7 +392,7 @@
         practiceIds.forEach((id) => {
           const index = practice_list.findIndex((p) => p.ID === id);
           if (index !== -1) {
-            practice_list[index].Status = '未发布';
+            practice_list[index].Status = '已作废';
           }
         });
         practice_data_list.set(practice_list);
@@ -399,14 +400,14 @@
         filter_practice_list();
 
         // 显示取消发布成功提示
-        toast.success('取消发布练习成功', 1000);
+        toast.success('作废练习成功', 1000);
       })
       .catch((error) => {
-        console.error('取消发布练习请求异常:', error);
-        toast.error('取消发布练习请求异常', 1000);
+        console.error('作废练习请求异常:', error);
+        toast.error('作废练习请求异常', 1000);
       })
       .finally(() => {
-        cancelPublishDialogOpen = false;
+        invalidatedDialogOpen = false;
         currentPractice=[];
         is_all_selected=isAllSelected()
        
@@ -500,7 +501,7 @@
           return;
         }
         // 显示更新成功提示
-        toast.success('更新学生成功', 1000);
+        toast.success('更新学生成功');
       })
       .catch((error) => {
         console.error('更新学生失败:', error);
@@ -543,11 +544,11 @@
    console.log('currentPractice:', currentPractice);
     let publishPractice= currentPractice.find(item => {
       // 判断是否有练习不处于可删除状态
-     return item.Status === "已发布"
+     return item.Status === "已发布"|| item.Status === "已作废";
     });
     console.log('publishPractice:', publishPractice);
     if(publishPractice){
-      toast.error('请取消发布练习之后再删除');
+      toast.error('有练习正在发布中，无法删除');
     return; // 直接返回，不执行删除操作
     }
     
@@ -672,7 +673,7 @@
       return false;
     }
   }
-
+//预览函数的实现
   async function preview(practice) {
     let GetPaperIdParam = new URLSearchParams();
     GetPaperIdParam.append('id', practice.ID);
@@ -713,6 +714,9 @@
               return response.json();
             })
             .then((paperInfo) => {
+              if (paperInfo.status !== 0) {
+                throw new Error('请求试卷信息失败');
+              }
               
               let practiceQuestions = {
                 Questions: paperInfo.data.Questions,
@@ -725,12 +729,12 @@
               goto(`/student/answer/practice`);
             });
         } else {
-          throw new Error('请求练习详情失败');
+          throw new Error('请求试卷详情失败');
         }
       })
       .catch((e) => {
         console.log(e);
-        toast.error(e);
+        toast.error(e.message);
         throw new Error('请求练习详情失败');
       });
   }
@@ -774,8 +778,8 @@
         </div>
       </div>
       <div>
-        <button class="new-practice-btn" onclick={create_new_practice}> 新增练习 </button>
-        <button class="delete-practice-btn" onclick={() => delete_practice(currentPractice)}> 批量删除 </button>
+        <button class="new-practice-btn" onclick={create_new_practice}> 新增 </button>
+        <button class="delete-practice-btn" onclick={() => delete_practice(currentPractice)}> 删除 </button>
         
       </div>
     </div>
@@ -846,7 +850,7 @@
                   <div class="operation-row">
                     {#if practice.Status !== '未发布'}
                       <button class="op-btn edit" onclick={() => selectStudents(practice)}> 选择学生 </button>
-                      <button class="op-btn unpublish" onclick={() => cancel_publish(practice)}> 取消发布 </button>
+                      <button class="op-btn unpublish" onclick={() => invalidated(practice)}> 作废 </button>
                     {/if}
 
                     {#if practice.Status === '未发布'}
@@ -916,16 +920,16 @@
     }}
   />
 
-  <!-- 取消发布确认对话框 -->
+  <!-- 作废确认对话框 -->
   <MessageBox
-    bind:visible={cancelPublishDialogOpen}
-    title="请问是否要取消发布练习？"
-    content="取消发布后学生将无法参与该练习。"
+    bind:visible={invalidatedDialogOpen}
+    title="请问是否要作废练习？"
+    content="作废后学生将无法参与该练习。"
     confirm_text="确定"
     cancel_text="取消"
-    onConfirm={confirm_cancel_publish}
+    onConfirm={confirm_invalidated}
     onCancel={() => {
-      cancelPublishDialogOpen = false;
+      invalidatedDialogOpen = false;
     }}
   />
 
