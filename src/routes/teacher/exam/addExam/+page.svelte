@@ -718,6 +718,7 @@ onMount(async () =>{
         //确认后将选择的考生取出
         show_examinee_panel = false;
         exam_examinee = selected;
+        console.log(exam_examinee);
       }}
       onCancel={(/** @type {boolean} */ load_new_file) => {
         show_examinee_panel = false;

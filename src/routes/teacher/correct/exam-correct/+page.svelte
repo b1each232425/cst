@@ -329,164 +329,164 @@
   let page_size = $state(10);
 
   let exam_list = $state([
-    ...[
-      {
-        id: 1,
-        name: '数学期末',
-        type: '00',
-        exam_sessions: [
-          {
-            id: 11,
-            name: '数学考试A',
-            start_time: new Date('2025-08-01T09:00').getTime(),
-            end_time: new Date('2025-08-01T11:00').getTime(),
-            mark_mode: '02',
-            respondent_count: 12,
-            unmarked_student_count: 10,
-            status: '06',
-            mark_status: '00',
-          },
-          {
-            id: 12,
-            name: '数学考试B',
-            start_time: new Date('2025-08-01T13:00').getTime(),
-            end_time: new Date('2025-08-01T15:00').getTime(),
-            mark_mode: '02',
-            respondent_count: 10,
-            unmarked_student_count: 5,
-            status: '10',
-            mark_status: '01',
-          },
-          {
-            id: 13,
-            name: '数学考试C',
-            start_time: new Date('2025-08-01T16:00').getTime(),
-            end_time: new Date('2025-08-01T18:00').getTime(),
-            mark_mode: '02',
-            respondent_count: 15,
-            unmarked_student_count: 0,
-            status: '10',
-            mark_status: '02',
-          },
-        ],
-      },
-      {
-        id: 2,
-        name: '语文期中',
-        type: '00',
-        exam_sessions: [
-          {
-            id: 21,
-            name: '语文考试A',
-            start_time: new Date('2025-08-02T09:00').getTime(),
-            end_time: new Date('2025-08-02T11:00').getTime(),
-            mark_mode: '10',
-            respondent_count: 15,
-            unmarked_student_count: 0,
-            status: '10',
-            mark_status: '02',
-          },
-          {
-            id: 22,
-            name: '语文考试B',
-            start_time: new Date('2025-08-02T12:00').getTime(),
-            end_time: new Date('2025-08-02T14:00').getTime(),
-            mark_mode: '10',
-            respondent_count: 20,
-            unmarked_student_count: 10,
-            status: '08',
-            mark_status: '00',
-          },
-        ],
-      },
-      {
-        id: 3,
-        name: '英语模拟',
-        type: '02',
-        exam_sessions: [
-          {
-            id: 31,
-            name: '英语考试A',
-            start_time: new Date('2025-08-03T09:00').getTime(),
-            end_time: new Date('2025-08-03T11:00').getTime(),
-            mark_mode: '00',
-            respondent_count: 8,
-            unmarked_student_count: 3,
-            status: '08',
-            mark_status: '00',
-          },
-          {
-            id: 32,
-            name: '英语考试B',
-            start_time: new Date('2025-08-03T12:00').getTime(),
-            end_time: new Date('2025-08-03T14:00').getTime(),
-            mark_mode: '00',
-            respondent_count: 10,
-            unmarked_student_count: 0,
-            status: '10',
-            mark_status: '02',
-          },
-          {
-            id: 33,
-            name: '英语考试C',
-            start_time: new Date('2025-08-03T15:00').getTime(),
-            end_time: new Date('2025-08-03T17:00').getTime(),
-            mark_mode: '00',
-            respondent_count: 12,
-            unmarked_student_count: 0,
-            status: '10',
-            mark_status: '01',
-          },
-        ],
-      },
-      {
-        id: 4,
-        name: '物理测试',
-        type: '01',
-        exam_sessions: [
-          {
-            id: 41,
-            name: '物理考试A',
-            start_time: new Date('2025-08-04T09:00').getTime(),
-            end_time: new Date('2025-08-04T11:00').getTime(),
-            mark_mode: '01',
-            respondent_count: 18,
-            unmarked_student_count: 4,
-            status: '06',
-            mark_status: '00',
-          },
-          {
-            id: 42,
-            name: '物理考试B',
-            start_time: new Date('2025-08-04T12:00').getTime(),
-            end_time: new Date('2025-08-04T14:00').getTime(),
-            mark_mode: '01',
-            respondent_count: 20,
-            unmarked_student_count: 0,
-            status: '10',
-            mark_status: '02',
-          },
-        ],
-      },
-      {
-        id: 5,
-        name: '物理测试C',
-        type: '01',
-        exam_sessions: [
-          {
-            id: 411,
-            name: '物理考试A',
-            start_time: new Date('2025-08-04T09:00').getTime(),
-            end_time: new Date('2025-08-04T11:00').getTime(),
-            mark_mode: '01',
-            respondent_count: 18,
-            unmarked_student_count: 4,
-            status: '88',
-            mark_status: '00',
-          },
-        ],
-      },
-    ],
+    // ...[
+    //   {
+    //     id: 1,
+    //     name: '数学期末',
+    //     type: '00',
+    //     exam_sessions: [
+    //       {
+    //         id: 11,
+    //         name: '数学考试A',
+    //         start_time: new Date('2025-08-01T09:00').getTime(),
+    //         end_time: new Date('2025-08-01T11:00').getTime(),
+    //         mark_mode: '02',
+    //         respondent_count: 12,
+    //         unmarked_student_count: 10,
+    //         status: '06',
+    //         mark_status: '00',
+    //       },
+    //       {
+    //         id: 12,
+    //         name: '数学考试B',
+    //         start_time: new Date('2025-08-01T13:00').getTime(),
+    //         end_time: new Date('2025-08-01T15:00').getTime(),
+    //         mark_mode: '02',
+    //         respondent_count: 10,
+    //         unmarked_student_count: 5,
+    //         status: '10',
+    //         mark_status: '01',
+    //       },
+    //       {
+    //         id: 13,
+    //         name: '数学考试C',
+    //         start_time: new Date('2025-08-01T16:00').getTime(),
+    //         end_time: new Date('2025-08-01T18:00').getTime(),
+    //         mark_mode: '02',
+    //         respondent_count: 15,
+    //         unmarked_student_count: 0,
+    //         status: '10',
+    //         mark_status: '02',
+    //       },
+    //     ],
+    //   },
+    //   {
+    //     id: 2,
+    //     name: '语文期中',
+    //     type: '00',
+    //     exam_sessions: [
+    //       {
+    //         id: 21,
+    //         name: '语文考试A',
+    //         start_time: new Date('2025-08-02T09:00').getTime(),
+    //         end_time: new Date('2025-08-02T11:00').getTime(),
+    //         mark_mode: '10',
+    //         respondent_count: 15,
+    //         unmarked_student_count: 0,
+    //         status: '10',
+    //         mark_status: '02',
+    //       },
+    //       {
+    //         id: 22,
+    //         name: '语文考试B',
+    //         start_time: new Date('2025-08-02T12:00').getTime(),
+    //         end_time: new Date('2025-08-02T14:00').getTime(),
+    //         mark_mode: '10',
+    //         respondent_count: 20,
+    //         unmarked_student_count: 10,
+    //         status: '08',
+    //         mark_status: '00',
+    //       },
+    //     ],
+    //   },
+    //   {
+    //     id: 3,
+    //     name: '英语模拟',
+    //     type: '02',
+    //     exam_sessions: [
+    //       {
+    //         id: 31,
+    //         name: '英语考试A',
+    //         start_time: new Date('2025-08-03T09:00').getTime(),
+    //         end_time: new Date('2025-08-03T11:00').getTime(),
+    //         mark_mode: '00',
+    //         respondent_count: 8,
+    //         unmarked_student_count: 3,
+    //         status: '08',
+    //         mark_status: '00',
+    //       },
+    //       {
+    //         id: 32,
+    //         name: '英语考试B',
+    //         start_time: new Date('2025-08-03T12:00').getTime(),
+    //         end_time: new Date('2025-08-03T14:00').getTime(),
+    //         mark_mode: '00',
+    //         respondent_count: 10,
+    //         unmarked_student_count: 0,
+    //         status: '10',
+    //         mark_status: '02',
+    //       },
+    //       {
+    //         id: 33,
+    //         name: '英语考试C',
+    //         start_time: new Date('2025-08-03T15:00').getTime(),
+    //         end_time: new Date('2025-08-03T17:00').getTime(),
+    //         mark_mode: '00',
+    //         respondent_count: 12,
+    //         unmarked_student_count: 0,
+    //         status: '10',
+    //         mark_status: '01',
+    //       },
+    //     ],
+    //   },
+    //   {
+    //     id: 4,
+    //     name: '物理测试',
+    //     type: '01',
+    //     exam_sessions: [
+    //       {
+    //         id: 41,
+    //         name: '物理考试A',
+    //         start_time: new Date('2025-08-04T09:00').getTime(),
+    //         end_time: new Date('2025-08-04T11:00').getTime(),
+    //         mark_mode: '01',
+    //         respondent_count: 18,
+    //         unmarked_student_count: 4,
+    //         status: '06',
+    //         mark_status: '00',
+    //       },
+    //       {
+    //         id: 42,
+    //         name: '物理考试B',
+    //         start_time: new Date('2025-08-04T12:00').getTime(),
+    //         end_time: new Date('2025-08-04T14:00').getTime(),
+    //         mark_mode: '01',
+    //         respondent_count: 20,
+    //         unmarked_student_count: 0,
+    //         status: '10',
+    //         mark_status: '02',
+    //       },
+    //     ],
+    //   },
+    //   {
+    //     id: 5,
+    //     name: '物理测试C',
+    //     type: '01',
+    //     exam_sessions: [
+    //       {
+    //         id: 411,
+    //         name: '物理考试A',
+    //         start_time: new Date('2025-08-04T09:00').getTime(),
+    //         end_time: new Date('2025-08-04T11:00').getTime(),
+    //         mark_mode: '01',
+    //         respondent_count: 18,
+    //         unmarked_student_count: 4,
+    //         status: '88',
+    //         mark_status: '00',
+    //       },
+    //     ],
+    //   },
+    // ],
   ]);
   let total_count = $state(0);
 
@@ -498,12 +498,13 @@
   }
 
   // 能否进入批改
-  function canCorrected(mark_mode, status, mark_status) {
+  function canCorrected(mark_mode, status, mark_status, respondent_count) {
     return (
       isNormal(mark_mode, status, mark_status) &&
       mark_mode !== '00' &&
-      (status === '06' || status === '08' || status === '10') &&
-      mark_status !== '04'
+      (status === '06' || status === '08') &&
+      mark_status !== '04' &&
+      respondent_count
     );
   }
 
@@ -514,7 +515,7 @@
 
   // 能否提交
   function canSubmit(mark_mode, status, mark_status) {
-    return isNormal(mark_mode, status, mark_status) && status === '10';
+    return isNormal(mark_mode, status, mark_status) && status === '08';
   }
 
   // 能否查看日志
@@ -524,14 +525,16 @@
     goto(`/teacher/correct/correct?name=${exam_session_name}&exam_session_id=${exam_session_id}`);
   }
 
-  function gotoDetail() {}
+  // function gotoDetail() {}
 
   function submitExamSession(exam_session_id) {
     MessageBox({
       title: '确认操作',
-      content: '你确定要提交吗？',
+      content: '批改完后才能提交，你确定要提交吗？',
       onConfirm: () => {
-        fetch(`/api/mark/results-submission?exam_session_id=${exam_session_id}`)
+        fetch(`/api/mark/results-submission?exam_session_id=${exam_session_id}`, {
+          method: 'PATCH',
+        })
           .then((res) => {
             if (!res.ok)
               return res.text().then((error_text) => {
@@ -540,23 +543,24 @@
             return res.json();
           })
           .then((res) => {
-            if (!res.status) {
-              toast.success('提交成功');
-            } else throw new Error(res.msg ?? '提交失败');
+            if (!res.status) toast.success('提交成功');
+            else throw new Error(res.msg ?? '提交失败');
           })
           .catch((err) => {
             toast.error(err.message);
+            console.error(err);
           });
       },
     });
   }
 
-  function checkLogs() {}
+  // function checkLogs() {}
 
   function handleSearch() {
     fetch(
       `/api/mark/exam?page=${page}&page_size=${page_size}&exam_name=${exam_name}` +
-        (start_time ? `&start_time=${start_time}` : '' + (end_time ? `&end_time=${end_time}` : '')),
+        (start_time ? `&start_time=${start_time}` : '') +
+        (end_time ? `&end_time=${end_time}` : ''),
     )
       .then((res) => {
         if (!res.ok)
@@ -578,8 +582,16 @@
       })
       .catch((err) => {
         toast.error(err.message);
-        console.log(err);
+        console.error(err);
       });
+  }
+
+  // 处理时间重置
+  function handleTimeReset() {
+    start_time = 0;
+    end_time = 0;
+
+    handleSearch();
   }
 
   // 处理开始时间
@@ -626,7 +638,7 @@
         on:start_date_selected={handleStartDateSelected}
         on:end_date_selected={handleEndDateSelected}
         onDateConfirm={handleSearch}
-        onDateReset={handleSearch}
+        onDateReset={handleTimeReset}
       />
     </div>
   </div>
@@ -731,8 +743,10 @@
                 {#each exam.exam_sessions as { id, name, respondent_count, mark_mode, status, mark_status }}
                   <div class="options">
                     <button
-                      class:disabled={!canCorrected(mark_mode, status, mark_status) || respondent_count <= 0}
-                      disabled={!canCorrected(mark_mode, status, mark_status) || respondent_count <= 0}
+                      class:disabled={!canCorrected(mark_mode, status, mark_status, respondent_count) ||
+                        respondent_count <= 0}
+                      disabled={!canCorrected(mark_mode, status, mark_status, respondent_count) ||
+                        respondent_count <= 0}
                       onclick={() => gotoCorrect(name, id)}>进入批改</button
                     >
                     <!-- <button
@@ -861,7 +875,7 @@
                     'marking': #c6690b,
                     'marked': #027213,
                     'submitted': #0052d9,
-                    'deleted': #d9d9d9,
+                    'deleted': red,
                   );
 
                   &.status {

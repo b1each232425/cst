@@ -1,3 +1,12 @@
+<!--
+ * @Author: 段春茂 2162105974@qq.com
+ * @Date: 2025-07-28 18:20:00
+ * @LastEditors: 段春茂 2162105974@qq.com
+ * @LastEditTime: 2025-08-12 18:00:00
+ * @FilePath: src\lib\components\Select\Select.svelte
+ * @Description: Tooltip-组件
+ * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
+-->
 <script>
   /**
    * @component Select + (Option)
@@ -12,51 +21,57 @@
    * @property {boolean} [filterable=false] - 是否允许输入搜索。
    * @property {functino} [changeValue] - 选中值变化的回调函数。
    *
-   * @slot - <Option> 子组件
-   *
    * @example
    * <Select value="1" placeholder="请选择" multiple filterable >
    *   <Option value="1" label="选项1"></Option>
    *   <Option value="2" label="选项2"></Option>
-   *   <Option value="3" label="选项3"></Option>
    * </Select>
-   *
-   * @tips
-   *  选项的value值不能重复，否则会导致选项显示异常
    */
-  import { setContext, getContext } from 'svelte';
+  import { setContext } from 'svelte';
   import { writable } from 'svelte/store';
+  import { validateAndAssign } from '$lib/utils/validate';
 
   // props
-  let {
-    value = $bindable(),
-    placeholder = '请选择',
-    direction = 'bottom',
-    disabled = false,
-    multiple = false,
-    filterable = false,
-    changeValue = () => {},
-    children,
-  } = $props();
+  let { value = $bindable(), placeholder = '请选择', direction = 'bottom', disabled = false, multiple = false, filterable = false, changeValue = () => {}, children } = $props();
+
+  const DIRECTIONS = ['top', 'bottom'];
+
+  const propRules = {
+    placeholder: { type: ['string'], default: '请选择' },
+    direction: { type: ['string'], default: 'bottom', check: (v) => DIRECTIONS.includes(v), message: `direction 只能是 ${DIRECTIONS.join('、')} 中的一个` },
+    disabled: { type: ['boolean'], default: false },
+    multiple: { type: ['boolean'], default: false },
+    filterable: { type: ['boolean'], default: false },
+    changeValue: { type: ['function'], default: () => {} },
+  };
+
+  const propMap = {
+    placeholder: { get: () => placeholder, set: (v) => (placeholder = v) },
+    direction: { get: () => direction, set: (v) => (direction = v) },
+    disabled: { get: () => disabled, set: (v) => (disabled = v) },
+    multiple: { get: () => multiple, set: (v) => (multiple = v) },
+    filterable: { get: () => filterable, set: (v) => (filterable = v) },
+    changeValue: { get: () => changeValue, set: (v) => (changeValue = v) },
+  };
+
+  Object.keys(propMap).forEach((k) => {
+    validateAndAssign('Tooltip', propMap[k].get, propMap[k].set, propRules[k], k);
+  });
 
   // 处理 value,如果是多选就会返回arr[]
   if (multiple) value = Array.isArray(value) ? value : [];
 
   // 状态管理
   let isShow = $state(false);
-  let selectedLabel = $state([]);
-  let OptionCounts = $state(0);
   let OptionData = $state([]);
   let filterText = writable('');
+  let selectedLabel = $state([]);
 
   // 上下文通信
   setContext('SELECT-OPTIONS', {
     filterable,
     filterText,
     getSelectShow: () => isShow,
-    add: () => (OptionCounts = OptionCounts + 1),
-    sub: () => (OptionCounts = OptionCounts - 1),
-    reset: () => (OptionCounts = 0),
     getOptionData: ({ value, label }) => {
       OptionData.push({ selectValue: value, selectLabel: label });
       initLabelvalue();
@@ -73,11 +88,9 @@
       if (multiple) {
         if (value.includes(selectValue)) {
           // 创建新数组进行修改
-          const newValue = value.filter((v) => v !== selectValue);
-          const newSelectedLabel = selectedLabel.filter((l) => l !== selectLabel);
-          value = newValue;
-          selectedLabel = newSelectedLabel;
-          changeValue(newValue);
+          value = value.filter((v) => v !== selectValue);
+          selectedLabel = selectedLabel.filter((l) => l !== selectLabel);
+          changeValue(value);
           return false;
         } else {
           // 创建新数组进行修改
@@ -132,6 +145,12 @@
     closeSelect();
   }
 
+  let dropdownContainer;
+  /** 点击外部关闭选择器 @type {function} */
+  function handleClickOutside(event) {
+    if (!dropdownContainer.contains(event.target)) closeSelect();
+  }
+
   /**
    * 处理键盘事件
    * @type {function}
@@ -139,12 +158,6 @@
    */
   function handleKeyInput(event) {
     if (event.key === 'Enter') toggleSelect;
-  }
-
-  let dropdownContainer;
-  /** 点击外部关闭选择器 @type {function} */
-  function handleClickOutside(event) {
-    if (!dropdownContainer.contains(event.target)) closeSelect();
   }
 
   /** 处理输入框的事件 @type {function} */
@@ -173,14 +186,14 @@
 
 <svelte:window on:click={handleClickOutside} />
 
-<div class="dropdown-container" bind:this={dropdownContainer}>
+<div class="select" bind:this={dropdownContainer}>
   {#if multiple}
-    <div class="input" onclick={toggleSelect} tabindex="-1" role="button" onkeydown={handleKeyInput}>
+    <div class="select__input" tabindex="-1" role="button" onclick={toggleSelect} onkeydown={handleKeyInput}>
       {#if selectedLabel.length > 0}
         <div class="tags">
           {#each selectedLabel as label, index (index)}
             <span class="tag-item">
-              <button onclick={() => handleConcelOption(index)} aria-label="取消选择"></button>
+              <button aria-label="取消选择" onclick={() => handleConcelOption(index)}></button>
               <span class="tag-label">{label}</span>
             </span>
           {/each}
@@ -190,23 +203,15 @@
       {/if}
     </div>
   {:else}
-    <input
-      class="input"
-      value={selectedLabel.join(',')}
-      readonly={!filterable}
-      {placeholder}
-      {disabled}
-      oninput={onInputChange}
-      onclick={toggleSelect}
-    />
+    <input class="select__input" value={selectedLabel.join(',')} readonly={!filterable} {placeholder} {disabled} oninput={onInputChange} onclick={toggleSelect} />
   {/if}
-  <button class="icon" onclick={toggleSelect} aria-label="Toggle dropdown" tabindex="-1">
+  <button class="select__icon" aria-label="Toggle dropdown" tabindex="-1" onclick={toggleSelect}>
     <img src="/dropdown/arrow_black.png" alt="Dropdown icon" style={isShow ? 'transform: rotate(180deg);' : ''} />
   </button>
-  <ul class="options {direction} {isShow ? '' : 'hidle'}" role="listbox">
+  <ul class="select__options {direction}" class:is-hidden={!isShow} role="listbox">
     <section>
       {@render children()}
-      {#if OptionCounts <= 0}<div class="no-options"><li class="no-data">暂无数据</li></div>{/if}
+      {#if OptionData.length <= 0}<div class="no-options"><li class="no-data">暂无数据</li></div>{/if}
     </section>
   </ul>
 </div>
@@ -216,10 +221,12 @@
   input {
     all: unset;
   }
+
   input[placeholder] {
     color: var(--text-primary);
   }
-  .dropdown-container {
+
+  .select {
     position: relative;
     display: inline-flex;
     flex-direction: column;
@@ -227,7 +234,8 @@
     font-size: 14px;
     min-width: 80px;
     width: 100%;
-    .input {
+
+    &__input {
       padding: 5px 20px 5px 8px;
       border: 1px solid #dcdfe6;
       border-radius: 4px;
@@ -243,6 +251,7 @@
       &:focus {
         border-color: #409eff;
       }
+
       .tags {
         display: flex;
         flex-wrap: nowrap;
@@ -250,6 +259,7 @@
         overflow: hidden;
         overflow-x: auto;
         scrollbar-width: none;
+
         .tag-item {
           display: flex;
           align-items: center;
@@ -259,6 +269,7 @@
           border-radius: 4px;
           font-size: 10px;
           color: var(--text-primary);
+
           button {
             width: 12px;
             height: 12px;
@@ -272,17 +283,20 @@
               background-image: url('/clear/delete-active.svg');
             }
           }
+
           .tag-label {
             white-space: nowrap;
           }
         }
       }
+
       .placeholder {
         color: var(--text-primary);
         font-size: 14px;
       }
     }
-    .icon {
+
+    &__icon {
       position: absolute;
       right: 4px;
       top: 50%;
@@ -294,13 +308,15 @@
       display: flex;
       align-items: center;
       z-index: 999;
+
       img {
         width: 16px;
         height: 16px;
         transition: transform 0.3s ease;
       }
     }
-    .options {
+
+    &__options {
       position: absolute;
       left: 0;
       width: 100%;
@@ -320,12 +336,17 @@
       &.bottom {
         top: calc(100%);
       }
+      &.is-hidden {
+        display: none;
+      }
+
       section {
         display: flex;
         flex-direction: column;
         padding: 6px;
         gap: 3px;
       }
+
       .no-options {
         padding: 4px 8px;
         cursor: pointer;
@@ -334,6 +355,7 @@
           color 0.2s ease;
         color: #333;
         border-radius: 6px;
+
         .no-data {
           white-space: nowrap;
           overflow: hidden;
@@ -342,8 +364,5 @@
         }
       }
     }
-  }
-  .hidle {
-    display: none;
   }
 </style>
