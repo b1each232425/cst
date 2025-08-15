@@ -9,7 +9,7 @@
 -->
 <script>
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
-  import StudentImportPanel from './StudentImportPanel.svelte';
+  import StudentImportPanel from '../../practice/_components/StudentImportPanel.svelte';
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Button from '$lib/components/Button/Button.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
@@ -85,27 +85,63 @@
   }
 
 
-   function handleImportSuccess(is_all_ok,importedStudents = []) {
-    if (is_all_ok && importedStudents.length > 0) {
-    // 将导入的学生直接添加到已选择列表
-    importedStudents.forEach(student => {
-      if (!selected_examinee.find(item => item.ID === student.ID)) {
-        selected_examinee.push({
-          id: student.ID,
-          OfficialName: student.OfficialName,
-          Gender: student.Gender,
-          Account: student.Account,
-          MobilePhone: student.MobilePhone,
-          IDCardNo: student.IDCardNo,
-          serialNumber: 0
-        });
-      }
-    });
+  //  function handleImportSuccess(is_all_ok,importedStudents = []) {
+  //   if (is_all_ok && importedStudents.length > 0) {
+  //   // 将导入的学生直接添加到已选择列表
+  //   importedStudents.forEach(student => {
+  //     if (!selected_examinee.find(item => item.ID === student.ID)) {
+  //       selected_examinee.push({
+  //         id: student.ID,
+  //         OfficialName: student.OfficialName,
+  //         Gender: student.Gender,
+  //         Account: student.Account,
+  //         MobilePhone: student.MobilePhone,
+  //         IDCardNo: student.IDCardNo,
+  //         Domains: ['cst.school^student'],
+  //         serialNumber: 1
+  //       });
+  //     }
+  //   });
     
-    searchExaminee(); // 刷新学生列表
+  //   searchExaminee(); // 刷新学生列表
+  // }
+  // show_import_panel = false;
+  // }
+
+  function handleImportSuccess(is_all_ok, import_data, exist_students) {
+  if (is_all_ok && import_data) {
+    const newStudents = import_data.map((student, index) => ({
+      //id: '', // 新导入的学生没有 ID
+      OfficialName: student.officialName || '',
+      Gender: student.Gender,
+      MobilePhone: student.MobilePhone || '',
+      IDCardNo: student.idCardNo || '',
+      Account: student.Account || '',
+       Domains: ['cst.school^student'],
+      serialNumber: selected_examinee.length + index + 1,
+    }));
+
+    // exist_students 中的学生已有 ID，直接使用
+    const existingStudents = exist_students.map(s => ({
+      id: s.ID,
+      OfficialName: s.officialName || '',
+      Gender: s.gender,
+      MobilePhone: s.mobilePhone || '',
+      IDCardNo: s.idCardNo || '',
+      Account: s.account || '',
+      Domains: ['cst.school^student'],
+      serialNumber: 0, // 后续重新编号
+    }));
+
+    // 合并已选、新导入、已存在的学生
+    selected_examinee = [...selected_examinee, ...newStudents, ...existingStudents];
+
+    // 重新编号
+    recalculateSerialNumbers();
   }
   show_import_panel = false;
-  }
+  
+}
 
   function getFilteredSelectedExaminee() {
     let filtered = selected_examinee;
@@ -388,8 +424,8 @@ function handleCheckboxChange(examinee, event) {
             </div>
             <div class="button-group">
               <button class="upload-file-button" onclick={switchToSelectionMode}> 选择考生 </button>
-               <button class="btn btn--primary is-plain" onclick={downloadTemplate}>下载导入模板</button>
-            <button class="btn btn--primary is-plain" onclick={handleImport}>导入考生</button>
+               <button class="btn btn--primary " onclick={downloadTemplate}>下载导入模板</button>
+            <button class="btn btn--primary " onclick={handleImport}>导入考生</button>
             </div>
           </div>
           <div class="examinee-selection-table-container">
@@ -451,8 +487,8 @@ function handleCheckboxChange(examinee, event) {
             <button class="back-btn" onclick={backToViewMode}>返回考生列表</button>
 
             <!-- <Button type="primary" >下载模板</Button> -->
-             <button class="btn btn--primary is-plain" onclick={downloadTemplate}>下载导入模板</button>
-            <button class="btn btn--primary is-plain" onclick={handleImport}>导入考生</button>
+             <button class="btn btn--primary " onclick={downloadTemplate}>下载导入模板</button>
+            <button class="btn btn--primary " onclick={handleImport}>导入考生</button>
             
           </div>
         </div>
@@ -551,7 +587,11 @@ function handleCheckboxChange(examinee, event) {
     </div>
   </div>
 
-  <StudentImportPanel bind:show={show_import_panel} onImport={handleImportSuccess} bind:this={student_import_panel} />
+  <StudentImportPanel 
+  bind:show={show_import_panel}
+  bind:this={student_import_panel}
+  onImport={handleImportSuccess}  
+  onCancel={() =>{ show_import_panel=false;}}  />
 </div>
 
 
@@ -628,7 +668,7 @@ function handleCheckboxChange(examinee, event) {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 2000;
   }
 
   .examinee-panel {
