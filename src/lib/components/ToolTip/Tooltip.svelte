@@ -28,23 +28,9 @@
    * @property {String} [cancel_text='取消']  - 取消按钮文本
    */
   import { tick, onMount } from 'svelte';
-  import { getType } from '$lib/utils/index.js';
+  import { validateAndAssign } from '$lib/utils/validate';
 
-  let {
-    target,
-    placement = 'bottom',
-    content = '',
-    color = '#ffffff',
-    hide_method = 'hover',
-    show_actions = false,
-    show_cancel = true,
-    show_title = false,
-    title = '',
-    onConfirm = () => {},
-    onCancel = () => {},
-    confirm_text = '确认',
-    cancel_text = '取消',
-  } = $props();
+  let { target, placement = 'bottom', content = '', color = '#ffffff', hide_method = 'hover', show_actions = false, show_cancel = true, show_title = false, title = '', onConfirm = () => {}, onCancel = () => {}, confirm_text = '确认', cancel_text = '取消' } = $props();
 
   /**
    * 常量
@@ -58,54 +44,37 @@
    */
   const propRules = {
     content: { type: ['string', 'number'], default: '' },
-    placement: { type: ['string'], default: 'bottom', check: (v) => PLACEMENTS.includes(v) },
+    placement: { type: ['string'], default: 'bottom', check: (v) => PLACEMENTS.includes(v), message: `placement 只能是 ${PLACEMENTS.join('、')} 中的一个` },
     color: { type: ['string'], default: '#ffffff' },
-    hide_method: { type: ['string'], default: 'hover', check: (v) => HIDE_METHODS.includes(v) },
+    hide_method: { type: ['string'], default: 'hover', check: (v) => HIDE_METHODS.includes(v), message: `hide_method 只能是 ${HIDE_METHODS.join('、')} 中的一个` },
     show_actions: { type: ['boolean'], default: false },
     show_cancel: { type: ['boolean'], default: true },
     show_title: { type: ['boolean'], default: false },
     title: { type: ['string'], default: '' },
     onConfirm: { type: ['function', 'asyncfunction'], default: () => {} },
     onCancel: { type: ['function', 'asyncfunction'], default: () => {} },
-    confirm_text: { type: ['string'], default: '确认', check: (v) => v.trim() !== '' },
-    cancel_text: { type: ['string'], default: '取消', check: (v) => v.trim() !== '' },
+    confirm_text: { type: ['string'], default: '确认', check: (v) => v.trim() !== '', message: 'confirm_text 不能为空' },
+    cancel_text: { type: ['string'], default: '取消', check: (v) => v.trim() !== '', message: 'cancel_text 不能为空' },
   };
 
-  /**
-   * 校验props属性是否合法，以及进行容错处理
-   * @param data {Object} - 属性对象
-   * @param key {String} - 属性名称
-   */
-  const validateAndAssign = (data, key) => {
-    const rule = propRules[key];
-    let value = data.value;
-    let reason = '';
-    if (!rule.type.includes(getType(value))) {
-      reason = `类型错误，传入类型为 '${getType(value)}'，期望类型为 '${rule.type.join(', ')}'`;
-    } else if (rule.check && !rule.check(value)) {
-      reason = `校验函数不通过`;
-    }
-    if (reason) {
-      console.warn(`[Tooltip] 属性 '${key}' 无效:${reason},已使用默认值 '${rule.default}',传入值为:'${value}'`);
-      data.set(rule.default);
-    }
+  const propMap = {
+    content: { get: () => content, set: (v) => (content = v) },
+    placement: { get: () => placement, set: (v) => (placement = v) },
+    color: { get: () => color, set: (v) => (color = v) },
+    hide_method: { get: () => hide_method, set: (v) => (hide_method = v) },
+    show_actions: { get: () => show_actions, set: (v) => (show_actions = v) },
+    show_cancel: { get: () => show_cancel, set: (v) => (show_cancel = v) },
+    show_title: { get: () => show_title, set: (v) => (show_title = v) },
+    title: { get: () => title, set: (v) => (title = v) },
+    onConfirm: { get: () => onConfirm, set: (v) => (onConfirm = v) },
+    onCancel: { get: () => onCancel, set: (v) => (onCancel = v) },
+    confirm_text: { get: () => confirm_text, set: (v) => (confirm_text = v) },
+    cancel_text: { get: () => cancel_text, set: (v) => (cancel_text = v) },
   };
 
-  /**
-   * 校验props属性是否合法，以及进行容错处理
-   */
-  validateAndAssign({ value: placement, set: (v) => (placement = v) }, 'placement');
-  validateAndAssign({ value: content, set: (v) => (content = v) }, 'content');
-  validateAndAssign({ value: color, set: (v) => (color = v) }, 'color');
-  validateAndAssign({ value: hide_method, set: (v) => (hide_method = v) }, 'hide_method');
-  validateAndAssign({ value: show_actions, set: (v) => (show_actions = v) }, 'show_actions');
-  validateAndAssign({ value: show_cancel, set: (v) => (show_cancel = v) }, 'show_cancel');
-  validateAndAssign({ value: show_title, set: (v) => (show_title = v) }, 'show_title');
-  validateAndAssign({ value: title, set: (v) => (title = v) }, 'title');
-  validateAndAssign({ value: onConfirm, set: (v) => (onConfirm = v) }, 'onConfirm');
-  validateAndAssign({ value: onCancel, set: (v) => (onCancel = v) }, 'onCancel');
-  validateAndAssign({ value: confirm_text, set: (v) => (confirm_text = v) }, 'confirm_text');
-  validateAndAssign({ value: cancel_text, set: (v) => (cancel_text = v) }, 'cancel_text');
+  Object.keys(propMap).forEach((k) => {
+    validateAndAssign('Tooltip', propMap[k].get, propMap[k].set, propRules[k], k);
+  });
 
   /**
    * 变量初始化
@@ -184,8 +153,7 @@
   function handleClick(event) {
     if (!target || !Tooltip_Element) return;
     if (target.contains(event.target) && isShow === true) isShow = false;
-    else if (isShow !== (target.contains(event.target) || Tooltip_Element.contains(event.target)))
-      isShow = target.contains(event.target) || Tooltip_Element.contains(event.target);
+    else if (isShow !== (target.contains(event.target) || Tooltip_Element.contains(event.target))) isShow = target.contains(event.target) || Tooltip_Element.contains(event.target);
   }
 
   /**
@@ -298,17 +266,7 @@
   });
 </script>
 
-<div
-  class="tooltip"
-  class:is-show={isShow}
-  class:is-fadeout={!isShow && isAnimatingHide}
-  class:is-hiddle={!isShow && !isAnimatingHide}
-  data-placement={finalPlacement}
-  bind:this={Tooltip_Element}
-  aria-hidden={!isShow}
-  role="tooltip"
-  data-testid="tooltip"
->
+<div class="tooltip" class:is-show={isShow} class:is-fadeout={!isShow && isAnimatingHide} class:is-hiddle={!isShow && !isAnimatingHide} data-placement={finalPlacement} bind:this={Tooltip_Element} aria-hidden={!isShow} role="tooltip" data-testid="tooltip">
   <div class="tooltip__arrow"></div>
   <div class="tooltip__content" class:have-title={show_title} style="background-color: {color};">
     {#if show_title}

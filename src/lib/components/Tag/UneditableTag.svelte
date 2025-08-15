@@ -8,7 +8,7 @@
  * @Copyright (c) 2025 by wusaber33, All Rights Reserved. 
  */ -->
 <script>
-  import { getType } from '$lib/utils/index.js';
+  import { validateAndAssign } from '$lib/utils/validate';
   /**
    * 颜色列表
    */
@@ -48,36 +48,19 @@
    * 属性校验规则
    * @type {Object}
    */
-  const propRules = {
+  const propsRules = {
     content: { type: ['string'], default: '标签文本' },
-    colors: { type: ['array'], default: COLOR_LIST, check: (v) => v.length > 0 },
+    colors: { type: ['array'], default: COLOR_LIST, check: (v) => v.length > 0, message: 'colors 不能为空' },
   };
 
-  /**
-   * 校验props属性是否合法，以及进行容错处理
-   * @param data
-   * @param key
-   */
-  function validateAndAssign(data, key) {
-    const rule = propRules[key];
-    let value = data.value;
-    let reason = '';
-    if (!rule.type.includes(getType(value))) {
-      reason = `类型错误，传入类型为 '${getType(value)}'，期望类型为 '${rule.type.join(', ')}'`;
-    } else if (rule.check && !rule.check(value)) {
-      reason = `校验函数不通过`;
-    }
-    if (reason) {
-      console.warn(`[UneditableTag] 属性 '${key}' 无效:${reason},已使用默认值 '${rule.default}',传入值为:'${value}'`);
-      data.set(rule.default);
-    }
-  }
+  const propMap = {
+    content: { get: () => content, set: (v) => (content = v) },
+    colors: { get: () => colors, set: (v) => (colors = v) },
+  };
 
-  /**
-   * 校验props属性是否合法，以及进行容错处理
-   */
-  validateAndAssign({ value: content, set: (v) => (content = v) }, 'content');
-  validateAndAssign({ value: colors, set: (v) => (colors = v) }, 'colors');
+  Object.keys(propMap).forEach((k) => {
+    validateAndAssign('UneditableTag', propMap[k].get, propMap[k].set, propsRules[k], k);
+  });
 </script>
 
 <div class="tag-container">

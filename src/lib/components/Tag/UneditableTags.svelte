@@ -13,7 +13,7 @@
  */ 
  -->
 <script>
-  import { getType } from '$lib/utils/index.js';
+  import { validateAndAssign } from '$lib/utils/validate';
   /**
    * 默认标签，默认颜色常量
    * @type {Array}
@@ -59,36 +59,19 @@
    * 属性校验规则
    * @type {Object}
    */
-  const propRules = {
+  const propsRules = {
     tags: { type: ['array'], default: DEFAULT_TAGS, check: (v) => v.length > 0 },
     colors: { type: ['array'], default: DEFAULT_COLORS, check: (v) => v.length > 0 },
   };
 
-  /**
-   * 校验props属性是否合法，以及进行容错处理
-   * @param data
-   * @param key
-   */
-  function validateAndAssign(data, key) {
-    const rule = propRules[key];
-    let value = data.value;
-    let reason = '';
-    if (!rule.type.includes(getType(value))) {
-      reason = `类型错误，传入类型为 '${getType(value)}'，期望类型为 '${rule.type.join(', ')}'`;
-    } else if (rule.check && !rule.check(value)) {
-      reason = `校验函数不通过`;
-    }
-    if (reason) {
-      console.warn(`[UneditableTags] 属性 '${key}' 无效:${reason},已使用默认值 '${rule.default}',传入值为:'${value}'`);
-      data.set(rule.default);
-    }
-  }
+  const propMap = {
+    tags: { get: () => tags, set: (v) => (tags = v) },
+    colors: { get: () => colors, set: (v) => (colors = v) },
+  };
 
-  /**
-   * 校验props属性是否合法，以及进行容错处理
-   */
-  validateAndAssign({ value: tags, set: (v) => (tags = v) }, 'tags');
-  validateAndAssign({ value: colors, set: (v) => (colors = v) }, 'colors');
+  Object.keys(propMap).forEach((k) => {
+    validateAndAssign('UneditableTags', propMap[k].get, propMap[k].set, propsRules[k], k);
+  });
 
   /**
    * Fisher-Yates 洗牌算法，打乱颜色数组
