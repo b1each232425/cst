@@ -15,13 +15,13 @@
    * @props
    * @property {Element} [target='']   - 触发气泡提示的元素，必填
    * @property {'top' | 'left' | 'right' | 'bottom'} [placement='bottom']   - 气泡框位置
-   * @property {String} [content='']   - 气泡提示的内容
+   * @property {String} [content='提示信息']   - 气泡提示的内容
    * @property {String} [color='#ffffff']   - 组件背景颜色
    * @property {'click' | 'hover'} [hide_method='hover']   - 隐藏方式
    * @property {Boolean} [show_actions=false]   - 使用对话框
    * @property {Boolean} [show_title=false]   - 使用标题
    * @property {Boolean} [show_cancel=true]   - 显示取消按钮
-   * @property {Boolean} [title='']   - 标题内容
+   * @property {Boolean} [title='标题']   - 标题内容
    * @property {Function} onConfirm   - 确认按钮回调函数
    * @property {Function} onCancel   - 取消按钮回调函数
    * @property {String} [confirm_text='确认']  - 确认按钮文本
@@ -29,34 +29,50 @@
    */
   import { tick, onMount } from 'svelte';
   import { validateAndAssign } from '$lib/utils/validate';
+  import { debounce, throttle } from '$lib/utils/optimize';
 
-  let { target, placement = 'bottom', content = '', color = '#ffffff', hide_method = 'hover', show_actions = false, show_cancel = true, show_title = false, title = '', onConfirm = () => {}, onCancel = () => {}, confirm_text = '确认', cancel_text = '取消' } = $props();
+  let {
+    target,
+    placement = 'bottom',
+    content = '提示信息',
+    color = '#ffffff',
+    hide_method = 'hover',
+    show_actions = false,
+    show_cancel = true,
+    show_title = false,
+    title = '标题',
+    onConfirm = () => {},
+    onCancel = () => {},
+    confirm_text = '确认',
+    cancel_text = '取消',
+  } = $props();
 
   /**
    * 常量
    */
   const PLACEMENTS = ['top', 'left', 'right', 'bottom'];
   const HIDE_METHODS = ['click', 'hover'];
+  const colorRegex =
+    /^#([0-9a-fA-F]{3}){1,2}([0-9a-fA-F]{2})?$|^rgb\(\s*(\d{1,2}|1\d{2}|2[0-4]\d|25[0-5])\s*,\s*(\d{1,2}|1\d{2}|2[0-4]\d|25[0-5])\s*,\s*(\d{1,2}|1\d{2}|2[0-4]\d|25[0-5])\s*\)$|^rgb\(\s*(\d{1,2}%|100%)\s*,\s*(\d{1,2}%|100%)\s*,\s*(\d{1,2}%|100%)\s*\)$|^rgba\(\s*(\d{1,2}|1\d{2}|2[0-4]\d|25[0-5])\s*,\s*(\d{1,2}|1\d{2}|2[0-4]\d|25[0-5])\s*,\s*(\d{1,2}|1\d{2}|2[0-4]\d|25[0-5])\s*,\s*(0(\.\d+)?|1)\s*\)$|^rgba\(\s*(\d{1,2}%|100%)\s*,\s*(\d{1,2}%|100%)\s*,\s*(\d{1,2}%|100%)\s*,\s*(0(\.\d+)?|1)\s*\)$|^hsl\(\s*(\d{1,3}|[1-9]\d{0,2}|360)\s*,\s*(\d{1,2}%|100%)\s*,\s*(\d{1,2}%|100%)\s*\)$|^hsla\(\s*(\d{1,3}|[1-9]\d{0,2}|360)\s*,\s*(\d{1,2}%|100%)\s*,\s*(\d{1,2}%|100%)\s*,\s*(0(\.\d+)?|1)\s*\)$/;
 
   /**
    * 属性校验规则
    * @type {Object}
    */
   const propRules = {
-    content: { type: ['string', 'number'], default: '' },
+    content: { type: ['string'], default: '提示信息', check: (v) => v.trim() !== '', message: 'content 不能为空' },
     placement: { type: ['string'], default: 'bottom', check: (v) => PLACEMENTS.includes(v), message: `placement 只能是 ${PLACEMENTS.join('、')} 中的一个` },
-    color: { type: ['string'], default: '#ffffff' },
+    color: { type: ['string'], default: '#ffffff', check: (v) => colorRegex.test(v), message: 'color 格式不正确' },
     hide_method: { type: ['string'], default: 'hover', check: (v) => HIDE_METHODS.includes(v), message: `hide_method 只能是 ${HIDE_METHODS.join('、')} 中的一个` },
     show_actions: { type: ['boolean'], default: false },
     show_cancel: { type: ['boolean'], default: true },
     show_title: { type: ['boolean'], default: false },
-    title: { type: ['string'], default: '' },
+    title: { type: ['string'], default: '标题' },
     onConfirm: { type: ['function', 'asyncfunction'], default: () => {} },
     onCancel: { type: ['function', 'asyncfunction'], default: () => {} },
     confirm_text: { type: ['string'], default: '确认', check: (v) => v.trim() !== '', message: 'confirm_text 不能为空' },
     cancel_text: { type: ['string'], default: '取消', check: (v) => v.trim() !== '', message: 'cancel_text 不能为空' },
   };
-
   const propMap = {
     content: { get: () => content, set: (v) => (content = v) },
     placement: { get: () => placement, set: (v) => (placement = v) },
@@ -71,7 +87,6 @@
     confirm_text: { get: () => confirm_text, set: (v) => (confirm_text = v) },
     cancel_text: { get: () => cancel_text, set: (v) => (cancel_text = v) },
   };
-
   Object.keys(propMap).forEach((k) => {
     validateAndAssign('Tooltip', propMap[k].get, propMap[k].set, propRules[k], k);
   });
@@ -81,42 +96,11 @@
    */
   let hideTimer;
   let isShow = $state(false);
-  let Tooltip_Element = $state(null);
+  let Tooltip_Element = null;
   let isAnimatingHide = $state(false);
   let isMouseOverTarget = $state(false);
   let isMouseOverTooltip = $state(false);
   let finalPlacement = $state('');
-
-  /**
-   *  防抖函数
-   *  @type {funcrion}
-   *  @param {Function} fn - 需要防抖的函数
-   *  @param {Number} delay - 延迟时间
-   */
-  const debounce = (fn, delay) => {
-    let timer;
-    return (...args) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => fn(...args), delay);
-    };
-  };
-
-  /**
-   * 节流函数
-   *  @type {function}
-   *  @param {Function} fn - 需要节流的函数
-   *  @param {Number} wait - 延迟时间
-   */
-  function throttle(fn, wait = 100) {
-    let lastTime = 0;
-    return function (...args) {
-      const now = Date.now();
-      if (now - lastTime >= wait) {
-        fn.apply(this, args);
-        lastTime = now;
-      }
-    };
-  }
 
   /**
    *  动画效果
@@ -220,7 +204,7 @@
    * 经过防抖处理过的气泡框位置设置函数
    * @type {function}
    */
-  const debouncedSetPosition = debounce(setPosition, 20);
+  const debouncedSetPosition = debounce(setPosition, 20, false);
 
   /**
    * 经过防抖处理过的鼠标移动事件
@@ -266,7 +250,17 @@
   });
 </script>
 
-<div class="tooltip" class:is-show={isShow} class:is-fadeout={!isShow && isAnimatingHide} class:is-hiddle={!isShow && !isAnimatingHide} data-placement={finalPlacement} bind:this={Tooltip_Element} aria-hidden={!isShow} role="tooltip" data-testid="tooltip">
+<div
+  bind:this={Tooltip_Element}
+  aria-hidden={!isShow}
+  role="tooltip"
+  data-testid="tooltip"
+  class="tooltip"
+  class:is-show={isShow}
+  class:is-fadeout={!isShow && isAnimatingHide}
+  class:is-hidden={!isShow && !isAnimatingHide}
+  data-placement={finalPlacement}
+>
   <div class="tooltip__arrow"></div>
   <div class="tooltip__content" class:have-title={show_title} style="background-color: {color};">
     {#if show_title}
@@ -308,7 +302,7 @@
         transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    &.is-hiddle {
+    &.is-hidden {
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
