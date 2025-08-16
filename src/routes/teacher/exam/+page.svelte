@@ -20,7 +20,7 @@
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Title from '$lib/components/Title/Title.svelte';
   import { toast } from '$lib/components/Toast/Toast';
-  import { CURRENT_PAPER_ID } from '../paper/_stores/store';
+  import { CURRENT_PAPER_ID } from './_stores/previewStore';
   import Empty from '$lib/components/Table/Empty.svelte';
   let exam_list = $state([]);
   let name_search_time = null;
@@ -37,7 +37,7 @@
   let is_all_selected = $state(false); 
   let examID_to_cancel = $state(false);
   let cancel_exam_dialog = $state(false);
-  let preview_id = $state();
+  let preview_id = $state([]);
   // 映射关系
   const TypeMap = {
     '00': '平时考试',
@@ -206,10 +206,7 @@
   }
 
   async function publishExam(selected_exam_ids) {
-    if (!Array.isArray(selected_exam_ids) || selected_exam_ids.length === 0) {
-    toast.error('请选择要发布的考试');
-    return;
-  }
+    
     loading = true;
     message = '';
 
@@ -245,7 +242,8 @@
       .then((result) => {
         if (result.status === 0) {
           return result;
-        } else if (result.status === -1) {
+        } 
+        else if (result.status === -1) {
           message = result.msg;
           toast.error(message);
         } else {
@@ -288,11 +286,11 @@
           return;
         }
         else{
-          throw new Error(result.msg);
+          return Promise.reject(new Error(`删除失败：${result.msg || '未知错误'}`));
         }
       }).catch((error)=>{
-          console.log("错误提示:",error);
-          toast.error(error);
+          const msg = error.message;
+          toast.error(msg);
       })
       .finally(()=>{
         searchExam();
@@ -325,9 +323,11 @@
         else{
           throw new Error(result.msg);
         }
-      }).catch((error)=>{
+      })
+      .catch((error)=>{
           console.log("错误提示:",error);
-          toast.error(error);
+          const msg = error.message;
+          toast.error(msg);
       })
       .finally(()=>{
         searchExam();
@@ -360,7 +360,7 @@ function handleSelectAll(event) {
   }
 }
 
-  
+
   onMount(() => {
     searchExam();
   });
@@ -403,7 +403,7 @@ function handleSelectAll(event) {
       发布考试</button
     >
 
-    <span class="{status == '00'||status == '02' ? 'hideButton' : 'EmptyData'} "> -- </span>
+    <span class="{status == '00'||status == '02'|| status == '04' ? 'hideButton' : 'EmptyData'} "> -- </span>
 
     <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
     onclick={(event)=>{
@@ -415,9 +415,10 @@ function handleSelectAll(event) {
 
     <button class="preview-exam-button action-button {status!='00'&&status!='02'&&status!='04' ?'hideButton' : ''}"
     onclick={()=>{
-            preview_id = exam_list[index].exam_sessions[0].paper_id;
+            preview_id = exam_list[index].exam_sessions.map(session => session.paper_id);
             CURRENT_PAPER_ID.set(preview_id);
-            goto(`/teacher/exam/previewExam`)
+            console.log(preview_id);
+            goto(`/teacher/exam/previewExam/${preview_id[0]}`)
             
         }}>预览试卷</button>
     <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}"
@@ -504,6 +505,7 @@ function handleSelectAll(event) {
           <Option value="06" label="已结束" />
           <!-- <Option value="08" label="已归档" /> -->
           <Option value="10" label="考试异常" />
+          <Option value="16" label="已作废" />
         </Select>
       </div>
       <div class="datePart">

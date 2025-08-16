@@ -26,7 +26,7 @@ function ensureContainer() {
  * @param {Element} node - 被绑定 tooltip 的 DOM 元素（由 use:tooltip 自动传入）
  * @param {Object} options - tooltip 配置对象
  * @param {'top' | 'left' | 'right' | 'bottom'} [options.placement='bottom'] - 提示框位置
- * @param {string} [options.content=''] - 提示框显示内容（支持 HTML）
+ * @param {string} [options.content='提示信息'] - 提示框显示内容（支持 HTML）
  * @param {string} [options.color='#ffffff'] - 提示框背景颜色
  * @param {'click' | 'hover'} [options.hide_method='hover'] - 隐藏方式
  * @param {boolean} [options.show_actions=false] - 是否显示操作按钮区域
@@ -55,7 +55,6 @@ function ensureContainer() {
  * </button>
  */
 export function tooltip(node, options) {
-  if (!options?.content) return;
   ensureContainer();
   const TooltipInstance = mount(Tooltip, {
     target: container,

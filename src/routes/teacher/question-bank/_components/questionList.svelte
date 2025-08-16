@@ -247,7 +247,7 @@
     </td>
     <td style="overflow:hidden;text-overflow:ellipsis;cursor:pointer;">
       <div class="tags-container">
-        <UneditableTags tags={question.tags} />
+       <UneditableTags tags={question.tags || []} />
       </div>
     </td>
     <td style="cursor:pointer;">{question.update_time_str}</td>
@@ -258,7 +258,7 @@
     >
       <div class="controlBtns">
         <button style="color: #0036ff;" onclick={() => onEdit(question)}>编辑</button>
-        <button style="color: #FF000F;" onclick={() => onDelete(question)}>删除</button>
+        <button style="color: #FF000F;" onclick={() => onDelete(question.id)}>删除</button>
       </div>
     </td>
   </tr>

@@ -397,7 +397,7 @@
                 <span class="prompt">试卷标签</span>
                 <div class="input">
                     <input type="text"
-                        placeholder="搜索试卷名称"
+                        placeholder="搜索试卷标签"
                         bind:value={$SEARCH_PAPER_TAGS}
                         oninput={()=>debouncedFetchPaperList()}
                         onchange={()=>debouncedFetchPaperList()}

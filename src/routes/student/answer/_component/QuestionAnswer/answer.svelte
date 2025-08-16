@@ -8,12 +8,12 @@
  */ -->
 
 <script>
-  import RichTextEditor from "@3min/smart-edit";
-  import Option from "./option.svelte";
-  import { onMount } from "svelte";
-  import { Answer, getAnswerFilesPath } from "./utils";
-  import { createUploadHandler } from "./uploadHandler.js";
-  import { QUESTION_TYPES } from "./constants.js";
+  import RichTextEditor from '@3min/smart-edit';
+  import Option from './option.svelte';
+  import { onMount } from 'svelte';
+  import { Answer, getAnswerFilesPath } from './utils';
+  import { createUploadHandler } from './uploadHandler.js';
+  import { QUESTION_TYPES } from './constants.js';
 
   /**
    * @typedef {Object} Option
@@ -32,16 +32,16 @@
    */
 
   // 配置项
-  const editor_width = "100%";
-  const uploadHandler = createUploadHandler("/exam_answer");
+  const editor_width = '100%';
+  const uploadHandler = createUploadHandler('/exam_answer');
 
   // 组件属性
-  let { question=$bindable(), ifPreview, query_url, saveAnswer, editor_height } = $props();
+  let { question = $bindable(), ifPreview, query_url, saveAnswer, editor_height } = $props();
 
   // 状态管理
   let question_id = $state(question.ID);
   let student_answer = $state({ answer: initialAnswer(question) });
-  
+
   /**
    * 富文本编辑器组件实例
    * @type {Array<any | null>}
@@ -56,15 +56,15 @@
   function initialAnswer(question) {
     switch (question.Type) {
       case QUESTION_TYPES.SINGLE_CHOICE: // "00"
-      return [];
+        return [];
       case QUESTION_TYPES.MULTIPLE_CHOICE: // "02"
-      return [];
+        return [];
       case QUESTION_TYPES.TRUE_FALSE: // "04"
         return [];
       case QUESTION_TYPES.ESSAY: // "08"
-      return Array(question.Answer_num || 1).fill(""); // 简答题，初始化为空字符串数组
+        return Array(question.Answer_num || 1).fill(''); // 简答题，初始化为空字符串数组
       case QUESTION_TYPES.FILL_BLANK: // "06"
-        return Array(question.Answer_num || 1).fill("");
+        return Array(question.Answer_num || 1).fill('');
       default:
         return [];
     }
@@ -72,7 +72,6 @@
 
   // 生命周期钩子
   onMount(async () => {
-    
     await getStudentAnswer();
   });
 
@@ -93,38 +92,38 @@
     return {
       autoFocus: false,
       editable: !ifPreview,
-      content: "",
+      content: '',
       table: { overflow: false },
       image: {
         inline: true,
-        uploadFormName: "image",
+        uploadFormName: 'image',
         uploader: uploadHandler,
         sizeLimit: 30,
       },
       video: {
         inline: true,
-        uploadFormName: "video",
+        uploadFormName: 'video',
         uploader: uploadHandler,
         defaultSize: 30,
         sizeLimit: 30,
       },
       attachment: {
         inline: true,
-        uploadFormName: "attachment",
+        uploadFormName: 'attachment',
         uploader: uploadHandler,
         sizeLimit: 30,
       },
       link: { protocols: [] },
       audio: {
         inline: true,
-        uploadFormName: "audio",
+        uploadFormName: 'audio',
         uploader: uploadHandler,
         sizeLimit: 30,
       },
       onContentChange: handleContentChange(index),
     };
   }
-  
+
   /**
    * 创建内容变更处理函数
    * @param {number} index 编辑器索引
@@ -133,10 +132,10 @@
   function handleContentChange(index) {
     return (/** @type {any} */ editor) => {
       if (ifPreview) return;
-      
+
       if (rich_text_editors[index]) {
         const editor_text = rich_text_editors[index].getHTML();
-        
+
         setTimeout(async () => {
           // 仅当内容不一样的时候才发送修改请求
           if (editor_text != student_answer.answer[index]) {
@@ -144,9 +143,9 @@
 
             // 构建答案数据并保存
             const answer = {
-     //         question_id: Number(question.Id),
+              //         question_id: Number(question.Id),
               answer: student_answer.answer,
-     //         type: question.Type,
+              //         type: question.Type,
             };
 
             // 获取作答中的文件路径
@@ -162,36 +161,35 @@
    * 获取学生题目的答题情况
    */
   async function getStudentAnswer() {
-
     if (ifPreview) return;
-    
+
     try {
       const res = await fetch(`${query_url}&question_id=${question.ID}`, {
-        method: "GET",
-        credentials: "include",
+        method: 'GET',
+        credentials: 'include',
       });
-      
+
       if (!res.ok) {
         resetAndSaveEmptyAnswer();
         return;
       }
 
       const data = await res.json();
-      
+
       if (data.status !== 0) {
         if (data.status === -10) {
           resetAndSaveEmptyAnswer();
         }
         return;
       }
-      
+
       // 处理成功响应
       const answer = data.data.Answer;
-      
+
       if (Object.keys(answer).length !== 0) {
         // 有答案数据，更新状态
         student_answer.answer = answer.answer;
-        
+
         // 对于填空题和简答题，需要更新富文本编辑器内容
         if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {
           updateRichTextEditors();
@@ -204,7 +202,7 @@
       resetAndSaveEmptyAnswer();
     }
   }
-  
+
   /**
    * 更新富文本编辑器内容
    */
@@ -216,16 +214,16 @@
       }
     });
   }
-  
+
   /**
    * 重置并保存空答案
    */
   async function resetAndSaveEmptyAnswer() {
     student_answer.answer = initialAnswer(question);
     const answer = {
-   //   question_id: Number(question.Id),
+      //   question_id: Number(question.Id),
       answer: student_answer.answer,
-  //    type: question.Type,
+      //    type: question.Type,
     };
     await saveAnswer(answer, question, false, []);
   }
@@ -237,10 +235,10 @@
    */
   async function handleOptionSelect(question_id, option_id) {
     if (ifPreview) return;
-    
+
     // 单选题只保留一个选项
     student_answer.answer = [option_id];
-    
+
     // 创建并保存答案
     await createAndSaveAnswer(question_id);
   }
@@ -252,34 +250,34 @@
    */
   async function handleMultiOptionSelect(question_id, option_id) {
     if (ifPreview) return;
-    
+
     // 初始化答案数组（如果不存在）
     if (!student_answer.answer || !Array.isArray(student_answer.answer)) {
       student_answer.answer = [];
     }
-    
+
     // 切换选项状态（选中/取消选中）
     if (!student_answer.answer.includes(option_id)) {
       student_answer.answer.push(option_id);
     } else {
-      student_answer.answer = student_answer.answer.filter(id => id !== option_id);
+      student_answer.answer = student_answer.answer.filter((id) => id !== option_id);
     }
-    
+
     // 创建并保存答案
     await createAndSaveAnswer(question_id);
   }
-  
+
   /**
    * 创建并保存答案
    * @param {string} question_id 题目ID
    */
   async function createAndSaveAnswer(question_id) {
     const answer = {
-  //    question_id: Number(question_id),
+      //    question_id: Number(question_id),
       answer: student_answer.answer,
-  //    type: question.Type,
+      //    type: question.Type,
     };
-    
+
     await saveAnswer(answer, question, false, []);
   }
 </script>
@@ -287,7 +285,7 @@
 <div class="layout">
   <!-- 单选题 -->
   <!-- 判断题 -->
-  {#if question.Type === QUESTION_TYPES.SINGLE_CHOICE||question.Type === QUESTION_TYPES.TRUE_FALSE}
+  {#if question.Type === QUESTION_TYPES.SINGLE_CHOICE || question.Type === QUESTION_TYPES.TRUE_FALSE}
     <div class="options">
       {#each question.Options as option}
         <label class="option">
@@ -351,14 +349,14 @@
     max-width: 100%;
     width: 100%;
   }
-  
+
   .rich-text-editor {
     width: 95%;
     max-width: 95%;
     flex-grow: 0;
     flex-shrink: 0;
   }
-  
+
   .options {
     display: flex;
     flex-direction: column;
@@ -373,13 +371,13 @@
     max-width: 100%;
     margin-bottom: 15px;
   }
-  
+
   .question-id {
     width: 5%;
     max-width: 5%;
     font-size: 14px;
   }
-  
+
   // 选项样式
   .option {
     display: flex;
@@ -396,7 +394,7 @@
     input {
       margin-right: 10px;
     }
-    
+
     // 单选选项样式
     .option-id {
       display: flex;
@@ -412,7 +410,7 @@
       margin-right: 10px;
       font-size: 16px;
     }
-    
+
     // 多选选项样式
     .option-id-multiple {
       display: flex;
@@ -428,7 +426,7 @@
       font-size: 16px;
       border-radius: 8px;
     }
-    
+
     // 选中状态样式
     input:checked + .option-id,
     input:checked + .option-id-multiple {

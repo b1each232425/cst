@@ -25,7 +25,9 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { formatTimestamp } from '$lib/utils/time_utils';
   import { goto} from '$app/navigation';
   import { toast } from '$lib/components/Toast/Toast.js';
-  import { selection,bankId} from '../store';
+  import { selection} from '../store';
+  import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+  import '$lib/components/Button/index.scss';
   /**
    * @typedef BankCardItemData
    * @property {number}           ID              - 题库ID
@@ -156,6 +158,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   }
 
   onMount(async () => {
+    selection.clear();
       getBankList();
   });
 
@@ -188,11 +191,11 @@ o.  )88b 888   .o8  888      888   888   888   888 .
             throw new Error(`${result.msg}`);
         }
        
-               bankId.set(result.data.ID)
-      
+              
+        
 
         // 跳转页面
-        goto(`${window.location.pathname}/editBank`);
+         goto(`${window.location.pathname}/editBank?bankID=${ result.data.ID}`);
         return;
       })
       .catch((error) => {
@@ -469,11 +472,30 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * @param {BankCardItemData} item
    */
   async function onGoToEditBank(item) {
-   bankId.set(item.ID)
+
     // window.location.href = `${window.location.pathname}/editBank`;
-    goto(`${window.location.pathname}/editBank`);
+    goto(`${window.location.pathname}/editBank?bankID=${item.ID}`);
   }
 
+  //显示删除题库题型
+  	function deleteMessageBox() {
+     if(selected_bank_list.length==0){
+      toast.warning("请先选择要删除的题库")
+      return ;
+     }
+
+		MessageBox({
+			title: '确认操作',
+			content: '你确定要删除题库吗？',
+			onConfirm: () => {
+        deleteBank(selected_bank_list)
+				console.log('点击了确认');
+			},
+			onCancel: () => {
+				console.log('点击了取消');
+			}
+		});
+	}
 
 </script>
 
@@ -491,6 +513,7 @@ o888o o888o   "888" o888o o888o o888o o888o
 
 <div class="question-bank-container">
   <!-- 顶部栏 -->
+ 
   <div class="top-bar">
     <div class="search-input-container">
       <input class="search-input" type="text" placeholder="请输入题库名/标签" bind:value={search_input} />
@@ -506,9 +529,10 @@ o888o o888o   "888" o888o o888o o888o o888o
       {/if}
     </div>
 
+       
     <div class="operation-btns">
       <button class="button-delete" onclick={()=>{
-        deleteBank(selected_bank_list);
+        deleteMessageBox()
       }} >
          <span class="icon"></span>
         <span>批量删除</span>
@@ -523,6 +547,7 @@ o888o o888o   "888" o888o o888o o888o o888o
         <img src={icons.cross} alt="取消选中" />
         <span>取消选中</span>
       </button>
+
     </div>
   </div>
 
@@ -593,36 +618,10 @@ o.  )88b   888 .    `888'     888  888    .o
                        
  -->
 <style lang="scss" scoped>
-  button {
-    margin: 0px;
-    padding: 0px;
-    border: 0px;
-    background-color: transparent;
-    cursor: pointer;
-    user-select: none;
 
-    transition: all 0.2s ease;
-    &:focus {
-      outline: none;
-    }
-  }
+ 
 
-  .button-delete {
-    background-color: red
-  }
- .button-delete .icon {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    background-image: url("/programming_question_bank/icons/delete.svg");
-    background-size: contain;
-    background-repeat: no-repeat;
-    color: red;
-  }
-
-  .button-cancelSelect {
-    background-color: #7787a2;
-  }
+ 
 
   .question-bank-container {
     position: relative;
@@ -734,6 +733,25 @@ o.  )88b   888 .    `888'     888  888    .o
         margin-left: 10px;
         cursor: pointer;
       }
+       .button-cancelSelect {
+    background-color: #7787a2;
+  } 
+
+   .button-delete {
+    color: rgb(255, 255, 255);
+    background-color: rgb(248, 104, 104)
+   
+  }
+ .button-delete .icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-image: url("/programming_question_bank/icons/delete.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-color :rgb(248, 104, 104);
+  }
+
     }
   }
 

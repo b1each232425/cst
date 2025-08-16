@@ -20,7 +20,7 @@
    * <Button type="primary" size="large" round> 提交 </Button>
    * <Button type="danger" size="small" icon="/alert.svg"> 警告 </Button>
    */
-  import { getType } from '$lib/utils/index.js';
+  import { getType } from '$lib/utils/validate';
 
   let { plain = false, type = 'primary', disabled = false, round = false, icon = '', size = 'medium', alt = 'icon', width = '', height = '', onclick = () => {}, children } = $props();
 

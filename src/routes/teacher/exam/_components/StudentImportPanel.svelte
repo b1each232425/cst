@@ -161,7 +161,7 @@
   //关闭按钮
   function closePanel() {
     show = false;
-    onImport(false);
+    onImport(false,[]);
   }
 
   //编辑后的保存按钮
@@ -262,7 +262,7 @@
   // 取消按钮
   function handleCancel() {
     show = false;
-    onImport(false);
+    onImport(false,[]);
   }
 
   // 确认导入按钮
@@ -332,7 +332,7 @@
             }
             toast.success(`成功导入 ${payloads.length} 名学生`);
             failure_student_list = failure_student_list.filter((s) => !s.isOk);
-            onImport(true);
+            onImport(true,result.data); //把导入数据传给学生选择面板
           });
       })
       .catch((err) => {
