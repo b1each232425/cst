@@ -285,8 +285,8 @@
             targetGroupStartIndex += paper_groups[i].questions.length;
         }
         
-        // 将要添加的题目的临时ID插入到目标题组的末尾位置
-        const newQuestionIDs = selected_questions.map((_, index) => `temp_question_${index + 1}`);
+        // 将要添加的题目的临时ID插入到目标题组的末尾位置，从-1开始递减
+        const newQuestionIDs = selected_questions.map((_, index) => -(index + 1));
         
         // 构建包含新题目的完整题目ID数组，新题目使用temp_id插入到目标题组的末尾
         const questionIDs = [
@@ -301,7 +301,7 @@
                 action: "add_question",
                 payload: selected_questions.map((question, index) => {
                     const PAYLOAT_ITEM = {
-                        temp_id: `temp_question_${index + 1}`,
+                        temp_id: -(index + 1),
                         group_id: to_import_group.id,
                         order: targetGroupStartIndex + to_import_group.questions.length + index + 1, // 这里的值应该是添加的题目的ID在插入questionIDs后的索引+1
                         bank_question_id: question.ID,
