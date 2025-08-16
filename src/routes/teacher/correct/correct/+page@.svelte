@@ -10,12 +10,10 @@
 
 <script>
   import Switch from '$lib/components/Switch/Switch.svelte';
-  import Button from '$lib/components/Button/Button.svelte';
   import { onMount, onDestroy } from 'svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
   import { page } from '$app/state';
-  import { get } from 'svelte/store';
-  import QuestionGradingSection from './_components/QuestionGradingSection.svelte';
+  import QuestionGradingSection from './_components/QuestionGradingSection/index.svelte';
   import { toast } from '$lib/components/Toast/Toast';
   import '$lib/components/Button/index.scss';
   import { goto } from '$app/navigation';
@@ -177,7 +175,7 @@
       //   PracticeID: 9001,
       //   PracticeSubmissionID: 7001,
       //   QuestionID: 1001,
-      //   MarkDetails: [{ Index: 1, Score: 5, Analyze: '答对了单选题。' }],
+      //   MarkDetails: [{ Index: 1, Score: 5  }],
       //   Score: 5,
       // },
       // {
@@ -188,8 +186,8 @@
       //   PracticeSubmissionID: 7001,
       //   QuestionID: 1002,
       //   MarkDetails: [
-      //     { Index: 1, Score: 5, Analyze: '选择正确选项A。' },
-      //     { Index: 2, Score: 5, Analyze: '选择正确选项C。' },
+      //     { Index: 1, Score: 5  },
+      //     { Index: 2, Score: 5  },
       //   ],
       //   Score: 10,
       // },
@@ -200,7 +198,7 @@
       //   PracticeID: 9001,
       //   PracticeSubmissionID: 7001,
       //   QuestionID: 1003,
-      //   MarkDetails: [{ Index: 1, Score: 0, Analyze: '判断错误，正确答案是 false。' }],
+      //   MarkDetails: [{ Index: 1, Score: 0  }],
       //   Score: 0,
       // },
       // {
@@ -211,8 +209,8 @@
       //   PracticeSubmissionID: 7001,
       //   QuestionID: 2001,
       //   MarkDetails: [
-      //     { Index: 1, Score: 5, Analyze: '第一个空填空正确。' },
-      //     { Index: 2, Score: 5, Analyze: '第二个空填空正确。' },
+      //     { Index: 1, Score: 5  },
+      //     { Index: 2, Score: 5  },
       //   ],
       //   Score: 10,
       // },
@@ -223,7 +221,7 @@
       //   PracticeID: 9001,
       //   PracticeSubmissionID: 7001,
       //   QuestionID: 2002,
-      //   MarkDetails: [{ Index: 1, Score: 10, Analyze: '简答题回答全面。' }],
+      //   MarkDetails: [{ Index: 1, Score: 10  }],
       //   Score: 10,
       // },
       // {
@@ -233,7 +231,7 @@
       //   PracticeID: 9001,
       //   PracticeSubmissionID: 7001,
       //   QuestionID: 2003,
-      //   MarkDetails: [{ Index: 1, Score: 20, Analyze: '编程题实现正确。' }],
+      //   MarkDetails: [{ Index: 1, Score: 20  }],
       //   Score: 20,
       // },
       // 学生 2 批改结果
@@ -255,8 +253,8 @@
         PracticeSubmissionID: 7002,
         QuestionID: 1002,
         MarkDetails: [
-          { Index: 1, Score: 5, Analyze: '选择正确选项A。' },
-          { Index: 2, Score: 5, Analyze: '选择正确选项C。' },
+          { Index: 1, Score: 5 },
+          { Index: 2, Score: 5 },
         ],
         Score: 10,
       },
@@ -267,7 +265,7 @@
         PracticeID: 9001,
         PracticeSubmissionID: 7002,
         QuestionID: 1003,
-        MarkDetails: [{ Index: 1, Score: 5, Analyze: '判断正确。' }],
+        MarkDetails: [{ Index: 1, Score: 5 }],
         Score: 5,
       },
       {
@@ -278,8 +276,8 @@
         PracticeSubmissionID: 7002,
         QuestionID: 2001,
         MarkDetails: [
-          { Index: 1, Score: 5, Analyze: '第一个空填空正确。' },
-          { Index: 2, Score: 0, Analyze: '第二个空填空错误。' },
+          { Index: 1, Score: 5 },
+          { Index: 2, Score: 0 },
         ],
         Score: 5,
       },
@@ -290,7 +288,7 @@
         PracticeID: 9001,
         PracticeSubmissionID: 7002,
         QuestionID: 2002,
-        MarkDetails: [{ Index: 1, Score: 8, Analyze: '简答题基本正确。' }],
+        MarkDetails: [{ Index: 1, Score: 8 }],
         Score: 8,
       },
       {
@@ -300,7 +298,7 @@
         PracticeID: 9001,
         PracticeSubmissionID: 7002,
         QuestionID: 2003,
-        MarkDetails: [{ Index: 1, Score: 15, Analyze: '编程题部分实现。' }],
+        MarkDetails: [{ Index: 1, Score: 15 }],
         Score: 15,
       },
       // 学生 3 批改结果
@@ -311,7 +309,7 @@
         PracticeID: 9001,
         PracticeSubmissionID: 7003,
         QuestionID: 1001,
-        MarkDetails: [{ Index: 1, Score: 5, Analyze: '答对了单选题。' }],
+        MarkDetails: [{ Index: 1, Score: 5 }],
         Score: 5,
       },
       {
@@ -322,8 +320,8 @@
         PracticeSubmissionID: 7003,
         QuestionID: 1002,
         MarkDetails: [
-          { Index: 1, Score: 5, Analyze: '选择正确选项A。' },
-          { Index: 2, Score: 5, Analyze: '选择正确选项C。' },
+          { Index: 1, Score: 5 },
+          { Index: 2, Score: 5 },
         ],
         Score: 10,
       },
@@ -334,7 +332,7 @@
         PracticeID: 9001,
         PracticeSubmissionID: 7003,
         QuestionID: 1003,
-        MarkDetails: [{ Index: 1, Score: 0, Analyze: '判断错误，正确答案是 false。' }],
+        MarkDetails: [{ Index: 1, Score: 0 }],
         Score: 0,
       },
       {
@@ -345,8 +343,8 @@
         PracticeSubmissionID: 7003,
         QuestionID: 2001,
         MarkDetails: [
-          { Index: 1, Score: 0, Analyze: '第一个空填空错误。' },
-          { Index: 2, Score: 5, Analyze: '第二个空填空正确。' },
+          { Index: 1, Score: 0 },
+          { Index: 2, Score: 5 },
         ],
         Score: 5,
       },
@@ -357,7 +355,7 @@
         PracticeID: 9001,
         PracticeSubmissionID: 7003,
         QuestionID: 2002,
-        MarkDetails: [{ Index: 1, Score: 7, Analyze: '简答题部分正确。' }],
+        MarkDetails: [{ Index: 1, Score: 7 }],
         Score: 7,
       },
       {
@@ -367,7 +365,7 @@
         PracticeID: 9001,
         PracticeSubmissionID: 7003,
         QuestionID: 2003,
-        MarkDetails: [{ Index: 1, Score: 20, Analyze: '编程题实现正确。' }],
+        MarkDetails: [{ Index: 1, Score: 20 }],
         Score: 20,
       },
     ],
@@ -377,24 +375,21 @@
   let practice_id = $state(0);
 
   // 当前批改类型
-  let is_exam_mode = $derived.by(() => {
-    if (exam_session_id) return true;
-    return false;
-  });
+  let is_exam_mode = $derived(exam_session_id > 0);
 
   let student_id_key = $derived(is_exam_mode ? 'ExamineeID' : 'PracticeSubmissionID');
 
   // 是否开启逐题模式
-  let correct_item_by_item = $state(false); // TODO是否出现闪烁？
+  let correct_item_by_item = $state(false);
 
   let current_question_set_index = $state(0); // 逐题模式下，当前题组
   let current_question_index = $state(0); // 逐题模式下，当前题目
   let current_student_info_index = $state(0); // 当前考生的下标
 
-  let question_sets = $state([]); // 题组
-  let student_answers = $state([]); // 学生信息
-  let student_infos = $state([]); // 考生信息
-  let marking_results = $state([]); // 历史批改结果
+  let question_sets = $state([...mockData.question_sets]); // 题组
+  let student_answers = $state([...mockData.student_answers]); // 学生信息
+  let student_infos = $state([...mockData.student_infos]); // 考生信息
+  let marking_results = $state([...mockData.marking_results]); // 历史批改结果
 
   // 总问题数
   let total_question = $derived(question_sets.reduce((acc, cur) => acc + cur.Questions.length, 0));
@@ -406,36 +401,34 @@
   // 绑定批改区域，用于切换考生的时候滚动条滚动到最顶部（逐题模式切换题目不需要，因为切换题目会销毁整个题目组件）
   let correction_content = null;
 
-  let current_page_name = $state('');
+  let current_paper_name = $state('');
 
   // 用于处理之前已批改，但是之后被清除了分数（这时是不会保存批改的，因为没有不会保存未批改的题目的分数），这时需要在总览显示“未批阅”的状态
   // let has_unmarked = $state(-1);
 
-  // 记录练习是否被批改过，防止过多的发送提交请求（练习时每次点击下一位就会提交）
+  // 练习，是否被批改过，防止过多的发送提交请求（练习时每次点击下一位就会提交）
   let is_marked = $state(false);
+
+  // 练习，记录同学是否批改完成
+  let is_finished_correcting = $derived(
+    total_question ===
+      marking_results.filter((mr) => mr.PracticeSubmissionID === current_student_info.PracticeSubmissionID).length,
+  );
 
   function scrollToTop() {
     if (correction_content) correction_content.scrollTop = 0;
   }
 
+  // 回到上个页面
   function goBack() {
     history.back();
   }
 
-  // 上一位考生
-  function lastExaminee() {
-    if (!is_exam_mode && is_marked) submitCorrection();
-
+  function toggleExaminee(toggle_mode = '+') {
     scrollToTop();
-    current_student_info_index--;
-  }
 
-  // 下一位考生
-  function nextExaminee() {
-    if (!is_exam_mode && is_marked) submitCorrection();
-
-    scrollToTop();
-    current_student_info_index++;
+    if (toggle_mode === '+') current_student_info_index++;
+    else current_student_info_index--;
   }
 
   // 展示提交弹窗（考试需要）
@@ -467,7 +460,7 @@
       .then((res) => {
         if (!res.status) {
           is_marked = false;
-          toast.success(res.msg ?? '提交成功');
+          toast.success('提交成功');
           goBack();
         } else throw new Error(res.msg ?? '提交失败');
       })
@@ -558,7 +551,6 @@
 
   // 获取学生对于该问题的答案
   function getStudentAnswer(student, question_id) {
-    // TODO 答案参数校验长度
     return (
       student_answers.find((sa) => sa[student_id_key] === student[student_id_key] && sa.QuestionID === question_id)
         ?.Answer ?? { answer: [] }
@@ -598,8 +590,6 @@
     exam_session_id = Number(page.url.searchParams.get('exam_session_id'));
     practice_id = Number(page.url.searchParams.get('practice_id'));
 
-    console.log(practice_id);
-
     // 都是空 || 都不是空
     if ((!exam_session_id && !practice_id) || (exam_session_id && practice_id)) {
       showDialog('danger'); // 报错，终止对改页面的操作
@@ -620,23 +610,22 @@
       .then((res) => {
         if (!res.status) {
           question_sets = res.data?.question_sets ?? []; // 不会吞错误（错误类型的话，不会取默认值；空的话才会取）
-          student_answers = res.data?.student_answers ?? [];
-          student_infos = res.data?.student_infos ?? [];
-          marking_results = res.data?.marking_results ?? [];
-
-          // 数组类型判断
-          if (
-            !Array.isArray(question_sets) ||
-            !Array.isArray(student_answers) ||
-            !Array.isArray(student_infos) ||
-            !Array.isArray(marking_results)
-          )
-            throw new Error(res.msg ?? '获取批改信息失败');
-
+          if (!Array.isArray(question_sets)) throw new Error('试卷题目类型错误');
           if (!question_sets.length) {
-            showDialog('primary', '当前考试/练习没有主观题目');
+            showDialog('primary', `当前${is_exam_mode ? '考试' : '练习'}没有主观题目`);
             return;
           }
+
+          student_answers = res.data?.student_answers ?? [];
+          if (!Array.isArray(student_answers)) throw new Error('学生答案类型错误');
+          if (!student_answers.length) throw new Error('获取学生答案失败');
+
+          student_infos = res.data?.student_infos ?? [];
+          if (!Array.isArray(student_infos)) throw new Error('学生信息类型错误');
+          if (!student_infos.length) throw new Error('获取学生信息失败');
+
+          marking_results = res.data?.marking_results ?? [];
+          if (!Array.isArray(marking_results)) throw new Error('历史批改类型错误');
 
           // 获取的题目进行排序
           question_sets
@@ -646,9 +635,7 @@
               qs.Questions.sort((a, b) => a.Order - b.Order);
             });
 
-          if (!student_answers.length || !student_infos.length) throw new Error(res.msg ?? '获取批改信息失败');
-
-          current_page_name = page.url.searchParams.get('name');
+          current_paper_name = page.url.searchParams.get('name');
         } else throw new Error(res.msg ?? '获取批改信息失败');
       })
       .catch((err) => {
@@ -658,10 +645,10 @@
   }
 
   // 上传批改
-  function saveMark(event) {
+  function onSaveMark(event) {
     // 更新考试场次的状态
     // 没有批改记录，就代表第一次批改
-
+    // 将考试状态从“已结束”改为“批改中”
     if (is_exam_mode && marking_results.length === 0) {
       fetch(`/api/mark/state?exam_session_id=${exam_session_id}`, {
         method: 'PATCH',
@@ -691,11 +678,12 @@
 
     const data = {
       ...temp_param,
-      QuestionID: event.detail.question_id,
-      MarkDetails: event.detail.new_mark_result,
-      Score: event.detail.total_score,
+      QuestionID: event.question_id,
+      MarkDetails: event.new_mark_result,
+      Score: event.total_score,
     };
 
+    // 保存一道题目的批改分数
     fetch(`/api/mark/marking-results`, {
       method: 'POST',
       headers: {
@@ -729,6 +717,9 @@
         toast.error(err.message);
         console.error(err);
       });
+
+    // 练习，批改好一个同学就直接提交
+    if (!is_exam_mode && is_finished_correcting) submitCorrection();
   }
 
   // 展示错误弹窗
@@ -745,15 +736,15 @@
     });
   }
 
-  onMount(() => checkQueriesAndGetData());
+  // onMount(() => checkQueriesAndGetData());
 </script>
 
 <div class="correct">
   <!-- 顶部信息与按钮 -->
   <div class="header">
     <div class="left-header">
-      <button class="btn is-text btn--primary is-plain" onclick={goBack}>← 返回</button>
-      <div class="name">{current_page_name}</div>
+      <button class="btn is-text btn--large btn--primary is-plain" onclick={goBack}>返回</button>
+      <div class="name">{current_paper_name}</div>
       <div class="info"><span>总人数：</span><span class="data"> {student_infos.length}</span></div>
       <div class="info"><span>未批改人数：</span><span class="data"> {getUnmarkedExamineeCount()}</span></div>
       <div class="info"><span>总未批改题数：</span><span class="data"> {getAllUnMarkedQuestionCount()}</span></div>
@@ -794,7 +785,7 @@
           <button
             class="btn btn--info is-plain"
             class:is-disabled={current_student_info_index === 0}
-            onclick={lastExaminee}>上一位</button
+            onclick={() => toggleExaminee('-')}>上一位</button
           >
           {#if is_exam_mode && current_student_info_index === student_infos.length - 1}
             <button
@@ -806,7 +797,7 @@
             <button
               class="btn btn--primary"
               class:is-disabled={current_student_info_index === student_infos.length - 1}
-              onclick={nextExaminee}>下一位</button
+              onclick={() => toggleExaminee('+')}>下一位</button
             >
           {/if}
         </div>
@@ -830,7 +821,7 @@
                   answer_object={getStudentAnswer(current_student_info, question.ID)}
                   old_mark_result={marking_results[getMarkResultIndex(current_student_info, question.ID)]
                     ?.MarkDetails ?? []}
-                  on:saveMark={saveMark}
+                  {onSaveMark}
                 />
               {/each}
             </div>
@@ -850,7 +841,7 @@
                 answer_object={getStudentAnswer(current_student_info, current_question.ID)}
                 old_mark_result={marking_results[getMarkResultIndex(current_student_info, current_question.ID)]
                   ?.MarkDetails ?? []}
-                on:saveMark={saveMark}
+                {onSaveMark}
               />
             </div>
             <div class="options">
@@ -905,7 +896,6 @@
 </div>
 
 <style lang="scss">
-  // TODO 其他文件同样的处理
   @mixin flex-center {
     display: flex;
     justify-content: center;
@@ -1075,6 +1065,7 @@
           .scores {
             display: flex;
             justify-content: left;
+            flex-wrap: wrap;
             gap: 1rem;
 
             .scores-item {
