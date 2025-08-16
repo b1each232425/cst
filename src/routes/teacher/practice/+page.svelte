@@ -541,7 +541,7 @@
           }));
          
           //检验是否有相同的ID，进行过滤
-           existStudentIds = selectedStudentIds.filter((item) => !existStudentIds.some((item2) => item2.id === item.id));
+           existStudentIds = existStudentIds.filter((item) => !selectedStudentIds.some((item2) => item2.id === item.id));
           //创建需要关联的学生ID
           selectedStudentIds = [...selectedStudentIds, ...studentIds, ...existStudentIds];
           // 导入成功后执行创建练习
@@ -553,12 +553,13 @@
         });
     } else {
       //获取已经有账号的学生的ID
-      let existStudentIds = selected.filter((item) => item.id).map((item) => ({
-            id: item.id
+      let existStudentIds = selected.filter((item) => item.ID).map((item) => ({
+            id: item.ID
           }));
-      console.log('existStudentIds', existStudentIds);
+     
        //检验是否有相同的ID，进行过滤
-           existStudentIds = selectedStudentIds.filter((item) => !existStudentIds.some((item2) => item2.id === item.id));
+           existStudentIds = existStudentIds.filter((item) => !selectedStudentIds.some((item2) => item2.id === item.id));
+            
       //创建需要关联的学生ID
       selectedStudentIds = [...selectedStudentIds, ...existStudentIds];
 

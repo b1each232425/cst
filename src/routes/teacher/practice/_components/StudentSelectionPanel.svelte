@@ -290,14 +290,11 @@
       }));
 
        // 过滤掉已经在 selected_ids 中存在的学生（避免重复）
-    let filtered_exist_students = exist_students.filter(exist_student => {
-      return !selected_ids.some(selected_student => selected_student.id === exist_student.ID);
+     exist_students = exist_students.filter(exist_student => {
+      return !selected_ids.some(selected_student => selected_student.ID === exist_student.ID);
     });
-      
-      
-
       // 更新选中学生列表
-      selected_ids = [...selected_ids, ...newStudents,...filtered_exist_students];
+      selected_ids = [...selected_ids, ...newStudents,...exist_students];
       console.log('selected',selected_ids);
       recalculateSerialNumbers();
     }
