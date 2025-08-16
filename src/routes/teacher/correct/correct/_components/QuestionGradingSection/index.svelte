@@ -9,8 +9,6 @@
 -->
 
 <script>
-  import { createEventDispatcher } from 'svelte';
-  import Score from '../../../../student/answer/_component/QuestionCheck/score.svelte';
   // TODO 属性检查，比如批改，是否真的存在
 
   // 做到，本地保存批改的分数的同时（修改外部的old_mark_result，这样逐题模式和全卷模式的分数不一致问题就可以解决），发送更新批改的请求即可；下一次接收响应就能获取新的分数
@@ -27,12 +25,9 @@
     '10': '编程题',
   };
 
-  let { question, student, answer_object, old_mark_result } = $props();
-
-  const dispatch = createEventDispatcher();
+  let { question, student, answer_object, old_mark_result, onSaveMark } = $props();
 
   // index --> score
-  // 一次性计算映射
   let index_score_map = $derived(
     old_mark_result.reduce((acc, cur) => {
       acc[cur.Index] = cur.Score;
@@ -40,46 +35,32 @@
     }, {}),
   );
 
-  // 保证显示的值正确
-  function checkScore(event, answer_score) {
-    // console.log(event.target.value);
-    let val = Number(event.target.value);
-
-    if (val > answer_score) event.target.value = answer_score;
-    else if (val < 0) event.target.value = '';
-  }
-
   // 注意，一个空没有批改，就算做"未批改"
   // 以一道题目为单位
-  // input 失去焦点时，检查该题所有的 input 是否都有 value
-  // 所以必须记录一道题目所有的 input 的值（index_score_map）
-  function handleScoreChange(event, index, answer_length) {
-    const score_str = event.target.value;
-    if (score_str === '') {
-      delete index_score_map[index]; // 删除对应的记录
+  // 记录一道题目所有的 input 的值（index_score_map）
+  function handleScoreChange(event, index, answer_score, answer_total_length) {
+    let score_str = event.target.value;
+    if (score_str === '') return; // Number('') === 0
 
-      // 特殊情况：
-      // 一道题目已经有旧的批改记录，但是此时把一个分数删除了，那么这道题目就是未批改
-      // 虽然不会保存这个批改，但是要显示未批改的状态
-      // 此时需要暴露一个事件，让外部知道这道题目是未批改的，在右侧总览中显示“未批改”
-      // dispatch('handleNoMark', question.ID);
+    // 输入分数的判断
+    let score = Number(score_str);
+    if (score > answer_score)
+      event.target.value = answer_score; // 同步更新 input 的值
+    else if (score < 0) event.target.value = '';
 
-      return;
-    }
-
-    index_score_map[index] = Number(score_str);
+    index_score_map[index] = Number(event.target.value);
 
     // 所有的空都批改了分数，那么就会保存（就说，只会出现一次“未批阅”）
-    if (answer_length === Object.keys(index_score_map).length) {
+    if (answer_total_length === Object.keys(index_score_map).length) {
       const new_mark_result = [];
 
-      for (const key in index_score_map) {
+      for (const key in index_score_map)
         new_mark_result.push({ Index: Number(key), Score: Number(index_score_map[key]) });
-      }
 
       const total_score = new_mark_result.reduce((acc, cur) => acc + cur.Score, 0);
 
-      dispatch('saveMark', {
+      // 触发保存事件
+      onSaveMark({
         question_id: question.ID,
         new_mark_result,
         total_score,
@@ -88,7 +69,7 @@
   }
 </script>
 
-<section id="question-{question.ID}">
+<section id="question-{question.ID}" data-testid="question-section">
   <!-- 题干 -->
   <div class="question-stem">
     <div class="question-basic">
@@ -122,8 +103,7 @@
             type="number"
             placeholder="输入得分"
             value={index_score_map[answer.index]}
-            oninput={(e) => checkScore(e, answer.score)}
-            onchange={(e) => handleScoreChange(e, answer.index, question.Answers.length)}
+            oninput={(e) => handleScoreChange(e, answer.index, answer.score, question.Answers.length)}
           />({answer.score}分)
         </div>
       {/each}
@@ -131,16 +111,6 @@
 
     <!-- 折叠页面 -->
     <div class="details">
-      {#if old_mark_result.length !== 0}
-        <details open>
-          <summary>【解析】</summary>
-          {#each old_mark_result as mark}
-            <p>
-              {old_mark_result.length !== 1 ? `(${mark.Index})` : ''} <span class="details-text"> {mark.Analyze}</span>
-            </p>
-          {/each}
-        </details>
-      {/if}
       <details open>
         <summary>【批改规则/提示词】</summary>
         {#each question.Answers as answer}
