@@ -12,6 +12,7 @@
     handleFeatureNotImplemented,
   } from '../_utils/errorHandler.js';
   import { formatPracticeData } from '../_utils/dataFormatter.js';
+  import { debounce } from '../_utils/debounce.js';
 
   /**
    * @typedef {object} PracticeInfo
@@ -44,6 +45,15 @@
 
   /** @type {any} */
   let timeoutId = null;
+
+  // 执行搜索的核心逻辑
+  function performSearch() {
+    state.pagination.page = 1;
+    fetchPractices();
+  }
+
+  // 创建防抖后的搜索函数
+  const debouncedSearch = debounce(performSearch, 500);
 
   // API 函数
   /**
@@ -122,12 +132,7 @@
   }
 
   // 业务逻辑函数
-  function fetchPractices(debounce = false) {
-    if (debounce) {
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => fetchPractices(false), 500);
-      return;
-    }
+  function fetchPractices() {
     state.loading = true;
     const params = {
       practiceName: state.filters.name,
@@ -149,8 +154,7 @@
   /** @param {Partial<typeof state.filters>} newFilters */
   function setFilters(newFilters) {
     state.filters = { ...state.filters, ...newFilters };
-    state.pagination.page = 1;
-    fetchPractices(true);
+    debouncedSearch();
   }
 
   /** @param {number} page */

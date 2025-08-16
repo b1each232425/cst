@@ -9,6 +9,7 @@
   import { goto } from '$app/navigation';
   import { handleApiError, handleSuccess, handleFeatureNotImplemented } from '../_utils/errorHandler.js';
   import { formatExamData } from '../_utils/dataFormatter.js';
+  import { debounce } from '../_utils/debounce.js';
 
   /**
    * @typedef {object} ExamSessionInfo
@@ -58,6 +59,15 @@
 
   /** @type {any} */
   let getExamInfoTimeout = null;
+
+  // 执行搜索的核心逻辑
+  function performSearch() {
+    state.pagination.page = 1;
+    fetchExams();
+  }
+
+  // 创建防抖后的搜索函数
+  const debouncedSearch = debounce(performSearch, 500);
 
   // API 函数
   /**
@@ -147,17 +157,7 @@
   }
 
   // 业务逻辑函数
-  function fetchExams(debounce = false) {
-    if (debounce) {
-      if (getExamInfoTimeout) {
-        clearTimeout(getExamInfoTimeout);
-      }
-      getExamInfoTimeout = setTimeout(() => {
-        fetchExams(false);
-      }, 500);
-      return;
-    }
-
+  function fetchExams() {
     state.loading = true;
     state.selected = {};
     state.selectAll = false;
@@ -184,8 +184,7 @@
   /** @param {Partial<typeof state.filters>} newFilters */
   function setFilters(newFilters) {
     state.filters = { ...state.filters, ...newFilters };
-    state.pagination.page = 1;
-    fetchExams(true);
+    debouncedSearch();
   }
 
   /** @param {number} page */
