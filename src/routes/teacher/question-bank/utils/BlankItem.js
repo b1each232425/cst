@@ -1,6 +1,6 @@
 // CustomBlock.js
 import { Node } from '@tiptap/core'
-import TextStyle from '@tiptap/extension-text-style'
+import {TextStyle} from '@tiptap/extension-text-style'
 
 // 定义空白填空节点的 schema
 export const BlankItem = Node.create({
