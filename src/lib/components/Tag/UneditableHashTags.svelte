@@ -1,8 +1,8 @@
 <!-- /*
  * @Author: wusaber33
  * @Date: 2025-04-07 20:05:21 
- * @Last Modified by: 段春茂 
- * @Last Modified time: 2025-08-15 20:05:21 
+ * @Last Modified by: 段春茂 2162105974@qq.com 
+ * @Last Modified time: 2025-08-17 2:28:07
  * @FilePath: src\lib\components\Tag\UneditableHashTags.svelte
  * @Description: 生成标签颜色映射，使用HSL颜色模型
  * @Copyright: Copyright (c) 2025 by wusaber33, All Rights Reserved. 
@@ -63,8 +63,8 @@
 <div class="tags">
   {#each tags as tag, i (i)}
     <div class="tag">
-      <span class="tag-square" style="background-color: {tagColorMap.get(tag)};"></span>
-      <span class="tag-text">{tag}</span>
+      <span class="tag__square" style="background-color: {tagColorMap.get(tag)};"></span>
+      <span class="tag__text">{tag}</span>
     </div>
   {/each}
 </div>
@@ -87,7 +87,7 @@
       align-items: center;
       font-size: 14px;
 
-      &-text {
+      &__text {
         padding: 0 0 0 1px;
         white-space: nowrap;
         overflow: hidden;
@@ -96,7 +96,7 @@
         color: #797979;
       }
 
-      &-square {
+      &__square {
         width: 15px;
         height: 15px;
         border-radius: 3px;
