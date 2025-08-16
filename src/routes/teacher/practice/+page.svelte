@@ -30,6 +30,7 @@
   import Option from '$lib/components/Select/Option.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import { transformPracticeData } from './utils.js';
+  import { isTemplateMiddle } from 'typescript';
 
   // 状态管理
   let practice_name = $state(''); // 练习名称/课程名称输入框的值
@@ -48,6 +49,8 @@
   // 学生选择相关
   /** @type {Array<{id: string, serial_number: number}>} */
   let selectedStudentIds = $state([]);
+
+  
 
   //练习复选框状态
   let is_all_selected = $state(false);
@@ -74,7 +77,7 @@
   // 下拉选项配置
   let type_options = ['全部', '经典巩固', '随机组卷', '智能提升'];
 
-  let status_options = ['全部', '已发布', '未发布','已作废'];
+  let status_options = ['全部', '已发布', '未发布', '已作废'];
 
   // 分页配置
   let total_data_num = $state(0);
@@ -144,7 +147,6 @@
           total_page_num = pageQueryHandle(total_data_num, page_size);
           current_page_num = page;
           data_per_page = page_size;
-          
 
           // 更新store
           practice_data_list.set(practice_list);
@@ -323,8 +325,8 @@
       })
       .finally(() => {
         publishDialogOpen = false;
-        currentPractice= []
-        is_all_selected=isAllSelected()
+        currentPractice = [];
+        is_all_selected = isAllSelected();
       });
   }
 
@@ -349,17 +351,17 @@
   }
 
   /**
-   * 确认取消发布
+   * 确认作废
    */
   function confirm_invalidated() {
     if (!currentPractice) return;
-    console.log('currentPractice', currentPractice)
+    console.log('currentPractice', currentPractice);
 
     // 实现作废的逻辑
     const queryParams = new URLSearchParams();
     queryParams.append(
       'id',
-      currentPractice.map((practice) =>  practice.ID),
+      currentPractice.map((practice) => practice.ID),
     );
     queryParams.append('status', '06');
     const url = `/api/practice?${queryParams.toString()}`;
@@ -408,9 +410,8 @@
       })
       .finally(() => {
         invalidatedDialogOpen = false;
-        currentPractice=[];
-        is_all_selected=isAllSelected()
-       
+        currentPractice = [];
+        is_all_selected = isAllSelected();
       });
   }
 
@@ -467,46 +468,105 @@
    * 学生选择确认回调
    * @param {Array<{id: string, serial_number: number}>} selected - 选中的学生
    */
-  async function handleStudentSelectionConfirm(selected) {
+  async function handleStudentSelectionConfirm(newStudents, selected) {
     if (!currentPractice) return;
-    // 调用API更新练习的学生
-    const requestBody = {
-      Action: 'POST',
-      Data: {
-        practice_id: currentPractice.ID,
-        student: selected.map((s) => s.id), // 发送学生 ID 数组
-      },
-    };
+    const UPDATE_STUDENTS = () => {
+      // 调用API更新练习的学生
+      const requestBody = {
+        Action: 'POST',
+        Data: {
+          practice_id: currentPractice.ID,
+          student: selectedStudentIds.map((s) => s.id), // 发送学生 ID 数组
+        },
+      };
 
-    const response = await fetch('/api/practiceStudentList', {
-      method: 'POST',
-      body: JSON.stringify(requestBody),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          let err_text = await response.text();
-          toast.error(err_text);
-          throw new Error(`HTTP error! err_text: ${err_text}`);
-        }
-        return response.json();
+      return fetch('/api/practiceStudentList', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
       })
-      .then((data) => {
-        if (data.status !== 0) {
-          console.error('更新学生失败:', data.msg);
-          toast.error('更新学生失败');
-          return;
-        }
-        // 显示更新成功提示
-        toast.success('更新学生成功');
+        .then(async (response) => {
+          if (!response.ok) {
+            let err_text = await response.text();
+            toast.error(err_text);
+            throw new Error(`HTTP error! err_text: ${err_text}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.status !== 0) {
+            console.error('更新学生失败:', data.msg);
+            toast.error('更新学生失败');
+            return;
+          }
+          // 显示更新成功提示
+          toast.success('更新学生成功');
+        })
+        .catch((error) => {
+          console.error('更新学生失败:', error);
+          toast.error('更新学生失败', 1000);
+        });
+    };
+    if (newStudents && newStudents.length > 0) {
+      // 先执行导入操作
+      fetch('/api/user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ data: newStudents }),
       })
-      .catch((error) => {
-        console.error('更新学生失败:', error);
-        toast.error('更新学生失败', 1000);
+        .then((res) => {
+          if (!res.ok) {
+            return res.text().then((msg) => {
+              throw new Error(`导入失败: ${res.status} ${res.statusText} - ${msg}`);
+            });
+          }
+          return res.json();
+        })
+        .then((result) => {
+          if (result.status !== 0) {
+            throw new Error(result.msg || '导入失败');
+          }
+          console.log('333333',selectedStudentIds)
+          //获取新增之后的学生ID
+          let studentIds = result.data.map((item) => ({
+            id: item.ID
+          }));
+          //获取已经有账号的学生的ID
+          let existStudentIds = selected.filter((item) => item.id).map((item) => ({
+            id: item.id
+          }));
+         
+          //检验是否有相同的ID，进行过滤
+           existStudentIds = selectedStudentIds.filter((item) => !existStudentIds.some((item2) => item2.id === item.id));
+          //创建需要关联的学生ID
+          selectedStudentIds = [...selectedStudentIds, ...studentIds, ...existStudentIds];
+          // 导入成功后执行创建练习
+          return UPDATE_STUDENTS();
+        })
+        .catch((error) => {
+          console.error('导入学生异常:', error);
+          toast.error('导入学生异常', 1000);
+        });
+    } else {
+      //获取已经有账号的学生的ID
+      let existStudentIds = selected.filter((item) => item.id).map((item) => ({
+            id: item.id
+          }));
+      console.log('existStudentIds', existStudentIds);
+       //检验是否有相同的ID，进行过滤
+           existStudentIds = selectedStudentIds.filter((item) => !existStudentIds.some((item2) => item2.id === item.id));
+      //创建需要关联的学生ID
+      selectedStudentIds = [...selectedStudentIds, ...existStudentIds];
+
+      UPDATE_STUDENTS().catch((error) => {
+        console.error('编辑练习请求异常:', error);
+        toast.error('编辑练习请求异常', 1000);
       });
+    }
   }
 
   /**
@@ -541,17 +601,16 @@
    */
   function confirm_delete() {
     if (!currentPractice) return;
-   console.log('currentPractice:', currentPractice);
-    let publishPractice= currentPractice.find(item => {
+    console.log('currentPractice:', currentPractice);
+    let publishPractice = currentPractice.find((item) => {
       // 判断是否有练习不处于可删除状态
-     return item.Status === "已发布"|| item.Status === "已作废";
+      return item.Status === '已发布' || item.Status === '已作废';
     });
     console.log('publishPractice:', publishPractice);
-    if(publishPractice){
+    if (publishPractice) {
       toast.error('存在练习无法删除');
-    return; // 直接返回，不执行删除操作
+      return; // 直接返回，不执行删除操作
     }
-    
 
     // 实现删除练习的逻辑
 
@@ -593,7 +652,6 @@
 
         // 显示删除成功提示
         toast.success('删除练习成功', 1000);
-        
       })
       .catch((error) => {
         console.error('删除练习请求异常:', error);
@@ -602,8 +660,8 @@
       .finally(() => {
         deleteDialogOpen = false;
         //清空现在选择的练习
-        currentPractice= [];
-        is_all_selected=isAllSelected()
+        currentPractice = [];
+        is_all_selected = isAllSelected();
       });
   }
   //全选练习
@@ -668,12 +726,12 @@
   //判断当前是否全选
   function isAllSelected() {
     if (displayed_practice_list != null) {
-      return displayed_practice_list.length ===currentPractice.length;
+      return displayed_practice_list.length === currentPractice.length;
     } else {
       return false;
     }
   }
-//预览函数的实现
+  //预览函数的实现
   async function preview(practice) {
     let GetPaperIdParam = new URLSearchParams();
     GetPaperIdParam.append('id', practice.ID);
@@ -717,7 +775,7 @@
               if (paperInfo.status !== 0) {
                 throw new Error('请求试卷信息失败');
               }
-              
+
               let practiceQuestions = {
                 Questions: paperInfo.data.Questions,
                 QuestionGroupInfo: paperInfo.data.QuestionGroupInfo,
@@ -780,7 +838,6 @@
       <div>
         <button class="new-practice-btn" onclick={create_new_practice}> 新增 </button>
         <button class="delete-practice-btn" onclick={() => delete_practice(currentPractice)}> 删除 </button>
-        
       </div>
     </div>
 
@@ -811,10 +868,9 @@
                     onchange={(event) => {
                       const target = event.target;
                       if (target && target.checked) {
-                       
                         if (
                           !currentPractice.find((g) => {
-                          return  g.ID === practice.ID;
+                            return g.ID === practice.ID;
                           })
                         ) {
                           currentPractice.push(practice);
@@ -839,7 +895,13 @@
                 <td style="text-align: center;" title={practice?.student_count?.toString()}>{practice.student_count}</td
                 >
                 <td style="text-align: center;">
-                  <span class="Status-tag {practice.Status === '已发布' ? 'published' : practice.Status==='未发布'?'unpublished' : 'invalidated'}">
+                  <span
+                    class="Status-tag {practice.Status === '已发布'
+                      ? 'published'
+                      : practice.Status === '未发布'
+                        ? 'unpublished'
+                        : 'invalidated'}"
+                  >
                     {practice.Status}
                   </span>
                 </td>
@@ -856,18 +918,18 @@
                     {#if practice.Status === '未发布'}
                       <button class="op-btn edit" onclick={() => continue_edit(practice)}> 编辑 </button>
                       <button class="op-btn publish" onclick={() => publish_practice(practice)}> 发布 </button>
-                        <button class="op-btn unpublish" onclick={() => invalidated(practice)}> 作废 </button>
+                      <button class="op-btn unpublish" onclick={() => invalidated(practice)}> 作废 </button>
                     {/if}
                     {#if practice.Status === '已作废'}
-                    <button class="op-btn unpublish" disabled>无法操作</button>
+                      <button class="op-btn unpublish" disabled>无法操作</button>
                     {/if}
                   </div>
                   <!-- 添加下载学生名单按钮 -->
 
                   <div class="operation-row">
                     {#if practice.Status !== '已作废'}
-                    <button class="op-btn download" onclick={() => getStudentInfos(practice)}> 下载学生名单 </button>
-                    <button class="op-btn preview" onclick={() => preview(practice)}> 预览 </button>
+                      <button class="op-btn download" onclick={() => getStudentInfos(practice)}> 下载学生名单 </button>
+                      <button class="op-btn preview" onclick={() => preview(practice)}> 预览 </button>
                     {/if}
                     {#if practice.Status === '未发布'}
                       <button class="op-btn delete" onclick={() => delete_practice(practice)}> 删除 </button>
@@ -947,12 +1009,17 @@
       show_student_selectionPanel = false;
     }}
     practice_id={practiceID}
-    onConfirm={(selected) => {
-      handleStudentSelectionConfirm(selected);
+    onConfirm={(newStudents, selected) => {
+      newStudents = newStudents.map((item)=>({
+        ...item,
+        Domains:['cst.school^student']
+      }))
+      handleStudentSelectionConfirm(newStudents, selected);
       show_student_selectionPanel = false;
       setTimeout(() => {
+       
         window.location.reload();
-      }, 1000);
+      }, 100000);
     }}
   />
 </div>

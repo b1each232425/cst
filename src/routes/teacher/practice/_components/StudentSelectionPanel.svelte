@@ -286,6 +286,7 @@
         gender: student.Gender,
         idCardNo: student.idCardNo,
         account: student.Account,
+        
       }));
 
        // 过滤掉已经在 selected_ids 中存在的学生（避免重复）

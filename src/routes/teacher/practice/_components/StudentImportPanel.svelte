@@ -293,6 +293,7 @@
                   console.log('更新用户信息')
                   item.errorMsg=''
                   item.isOk=true
+                  item.ID=''
                 }
               })
             })
