@@ -1,3 +1,12 @@
+<!--
+ * @Author: 段春茂 2162105974@qq.com
+ * @Date: 2025-07-28 18:20:00
+ * @LastEditors: 段春茂 2162105974@qq.com
+ * @LastEditTime: 2025-08-12 18:00:00
+ * @FilePath: src\lib\components\Select\Option.svelte
+ * @Description: Tooltip-组件
+ * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
+-->
 <script>
   /**
    * @component (Select) + Option
@@ -8,28 +17,41 @@
    * @property {string} [label=''] - 选择器的标签
    * @property {boolean} [disabled=false] - 选择器是否禁用
    */
-  import { getContext, setContext } from 'svelte';
-  import { onMount, onDestroy } from 'svelte';
   import { writable } from 'svelte/store';
+  import { getContext, onMount, onDestroy } from 'svelte';
+  import { validateAndAssign } from '$lib/utils/validate';
 
-  // props
   let { value, label, disabled = false } = $props();
 
+  const propRules = {
+    label: { type: ['string'], default: '' },
+    disabled: { type: ['boolean'], default: false },
+    value: { type: ['string', 'number', 'boolean'], default: '' },
+  };
+
+  const propMap = {
+    label: { get: () => label, set: (v) => (label = v) },
+    disabled: { get: () => disabled, set: (v) => (disabled = v) },
+    value: { get: () => value, set: (v) => (value = v) },
+  };
+
+  Object.keys(propMap).forEach((k) => {
+    validateAndAssign('Option', propMap[k].get, propMap[k].set, propRules[k], k);
+  });
+
   /** 上下文通信 */
-  const { add, sub, reset, getSelectShow, getOptionData, filterText, filterable, handerSelectValue, setActive } =
-    getContext('SELECT-OPTIONS');
+  const { getSelectShow, getOptionData, filterText, filterable, handerSelectValue, setActive } = getContext('SELECT-OPTIONS');
 
   // 状态管理
-  let isSelectShow = $state(getSelectShow());
-  let isSelected = $state(false);
   let isShow = $state(false);
+  let isSelected = $state(false);
+  let isSelectShow = $state(getSelectShow());
 
   /** 订阅store @type {function} */
   const filterTextStore = filterText.subscribe((text) => {
     isShow = label.toLowerCase().includes(text.toLowerCase());
   });
 
-  // 监听 isShow 变化
   $effect(() => {
     if (isSelectShow === true || isSelectShow === false) keepActive();
   });
@@ -55,26 +77,29 @@
 
   onMount(() => {
     keepActive();
-    add();
     getOptionData({ value, label });
   });
 
   onDestroy(() => {
     filterTextStore();
-    reset();
   });
 </script>
 
-<button
-  class="dropdown-container {disabled ? 'disabled' : ''}  {isShow ? '' : 'hiddle'}"
-  onclick={handerSelected}
-  class:active={isSelected}
->
-  <li class="item">{label}</li>
+<button class="option" class:is-disabled={disabled} class:is-hiddle={!isShow} class:is-active={isSelected} onclick={handerSelected}>
+  <li class="option__item">{label}</li>
 </button>
 
 <style lang="scss" scoped>
-  .dropdown-container {
+  @mixin when($state) {
+    @at-root {
+      &.#{'is-' + $state} {
+        @content;
+      }
+    }
+  }
+
+  .option {
+    all: unset;
     padding: 4px 8px;
     cursor: pointer;
     transition:
@@ -82,33 +107,35 @@
       color 0.2s ease;
     color: #333;
     border-radius: 6px;
-    &:hover {
-      background-color: #fafafa;
-    }
-    &.disabled {
+
+    @include when(disabled) {
       color: #c0c4cc;
       cursor: not-allowed;
       &:hover {
         background-color: transparent;
       }
     }
-    &.active {
+
+    @include when(active) {
       background-color: #e7e7e7;
       &:hover {
         background-color: #e7e7e7;
       }
     }
-    &.hiddle {
+
+    @include when(hiddle) {
       display: none;
     }
-    .item {
+
+    &:hover {
+      background-color: #fafafa;
+    }
+
+    &__item {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       font-weight: 400;
     }
-  }
-  button {
-    all: unset;
   }
 </style>

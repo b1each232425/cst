@@ -183,7 +183,7 @@ const setup = (mockDataOverride = {}) => {
     },
     triggerCancelPublish:async()=>{
       const cancelButton = screen.getAllByText('取消发布');
-  await fireEvent.click(cancelButton[1]);
+  await fireEvent.click(cancelButton[0]);
   
   // 等待确认对话框出现
   
@@ -220,7 +220,16 @@ const setup = (mockDataOverride = {}) => {
     triggerExportStudent :async()=>{
       const exportStudent = screen.getAllByText('下载学生名单');
       await fireEvent.click(exportStudent[0]);
-    }
+    },
+
+    triggerPreview :async()=>{ 
+      const preview = screen.getAllByText('预览');
+      await fireEvent.click(preview[0]);
+    },
+    triggerInvalid :async()=>{ 
+      const invalid = screen.getAllByText('作废');
+      await fireEvent.click(invalid[0]);
+    },
 
 
 
@@ -400,7 +409,7 @@ const table = screen.getAllByRole('table');
     setup();
     
     const publishButtons = screen.getAllByText('发布');
-    await fireEvent.click(publishButtons[1]);
+    await fireEvent.click(publishButtons[0]);
     
     expect(screen.getByText('请问是否要发布练习？')).toBeInTheDocument();
   });
@@ -418,7 +427,7 @@ const table = screen.getAllByRole('table');
     setup();
     
     const unpublishButtons = screen.getAllByText('取消发布');
-    await fireEvent.click(unpublishButtons[1]);
+    await fireEvent.click(unpublishButtons[0]);
     
     expect(screen.getByText('请问是否要取消发布练习？')).toBeInTheDocument();
   });
@@ -539,7 +548,7 @@ it('确认取消发布练习应正确调用API并更新状态', async () => {
 
   // 打开取消发布确认对话框
   const unpublishButtons = screen.getAllByText('取消发布');
-  await fireEvent.click(unpublishButtons[1]);
+  await fireEvent.click(unpublishButtons[0]);
 
   // 确认取消发布
   const confirmButton = screen.getAllByText('确定');
@@ -721,7 +730,7 @@ describe('通过类型下拉框来筛选练习',(()=>{
     it('取消取消发布练习',(async()=>{
       setup();
       const cancelPublishButton = screen.getAllByText('取消发布');
-      await fireEvent.click(cancelPublishButton[1]);
+      await fireEvent.click(cancelPublishButton[0]);
       await waitFor(()=>{
         expect(screen.getByText('请问是否要取消发布练习？')).toBeInTheDocument();
       })
@@ -736,7 +745,7 @@ describe('通过类型下拉框来筛选练习',(()=>{
     it('确认取消发布练习',(async()=>{
       setup();
       const cancelButton = screen.getAllByText('取消发布');
-  await fireEvent.click(cancelButton[1]);
+  await fireEvent.click(cancelButton[0]);
   
   // 等待确认对话框出现
   
@@ -1010,6 +1019,609 @@ describe('通过类型下拉框来筛选练习',(()=>{
               fireEvent.click(page2Button);
             }
           })
+    }))
+  }))
+  describe('测试预览练习',(()=>{
+    it('预览练习获取试卷ID时ok不为true',(async()=>{
+     const {triggerPreview} =setup()
+    global.fetch.mockResolvedValueOnce({
+        ok:false,
+        json: async () => ({ status: 1}),
+      })
+       triggerPreview();
+      await waitFor(()=>{ 
+        expect(toast.error).toHaveBeenCalledWith('请求练习详情失败');
+      })
+
+    }))
+    it('请求试卷信息时ok不为true',(async()=>{
+        const {triggerPreview} =setup()
+    global.fetch.mockResolvedValueOnce({
+        ok:true,
+        json: async () => ({ status: 0,
+          data:{
+            practice:{
+            PaperID:1,
+            
+          },
+          paper_name:'测试',
+        }
+        }),
+      }).mockResolvedValueOnce({
+        ok:false,
+        json: async () => ({ status: 0}),
+      })
+       triggerPreview();
+      await waitFor(()=>{ 
+        expect(toast.error).toHaveBeenCalledWith('请求试卷信息失败');
+      })
+    }))
+
+    it('正常请求试卷信息',(async()=>{
+       const {triggerPreview} =setup()
+    global.fetch.mockResolvedValueOnce({
+        ok:true,
+        json: async () => ({ status: 0,
+          data:{
+            practice:{
+            PaperID:1,
+            
+          },
+          paper_name:'测试',
+        }
+        }),
+      }).mockResolvedValueOnce({
+        ok:true,
+        json: async () => ({ 
+           "status": 0,
+  "msg": "success",
+  "API": "/api/paper/manual",
+  "method": "GET",
+  "data": {
+    "Paper": {
+      "ID": 3841,
+      "Name": "新建试卷",
+      "AssemblyType": "00",
+      "Category": "00",
+      "Level": "00",
+      "SuggestedDuration": 120,
+      "Description": null,
+      "Tags": [],
+      "Creator": 1626,
+      "CreateTime": 1754892038918,
+      "UpdatedBy": null,
+      "UpdateTime": 1754892038918,
+      "Status": "00",
+      "AccessMode": null,
+      "TotalScore": 37,
+      "QuestionCount": 10,
+      "GroupCount": 5
+    },
+    "QuestionGroupInfo": {
+      "19154": {
+        "ID": 19154,
+        "PaperID": null,
+        "Name": "一、单选题",
+        "Order": 1,
+        "Creator": 1626,
+        "CreateTime": null,
+        "UpdatedBy": null,
+        "UpdateTime": null,
+        "Addi": null,
+        "Status": "00"
+      },
+      "19155": {
+        "ID": 19155,
+        "PaperID": null,
+        "Name": "二、多选题",
+        "Order": 2,
+        "Creator": 1626,
+        "CreateTime": null,
+        "UpdatedBy": null,
+        "UpdateTime": null,
+        "Addi": null,
+        "Status": "00"
+      },
+      "19156": {
+        "ID": 19156,
+        "PaperID": null,
+        "Name": "三、判断题",
+        "Order": 3,
+        "Creator": 1626,
+        "CreateTime": null,
+        "UpdatedBy": null,
+        "UpdateTime": null,
+        "Addi": null,
+        "Status": "00"
+      },
+      "19157": {
+        "ID": 19157,
+        "PaperID": null,
+        "Name": "四、填空题",
+        "Order": 4,
+        "Creator": 1626,
+        "CreateTime": null,
+        "UpdatedBy": null,
+        "UpdateTime": null,
+        "Addi": null,
+        "Status": "00"
+      },
+      "19158": {
+        "ID": 19158,
+        "PaperID": null,
+        "Name": "五、简答题",
+        "Order": 5,
+        "Creator": 1626,
+        "CreateTime": null,
+        "UpdatedBy": null,
+        "UpdateTime": null,
+        "Addi": null,
+        "Status": "00"
+      }
+    },
+    "Questions": {
+      "19154": [
+        {
+          "ID": 1268,
+          "Type": "08",
+          "Content": "<p>什么是软件测试？它的主要目标是什么？</p>",
+          "Options": null,
+          "Answers": [
+            {
+              "index": 1,
+              "score": 5,
+              "answer": "软件测试是为了发现软件缺陷的过程，目标是验证软件是否符合需求、提升质量、减少缺陷。",
+              "grading_rule": "必须提到‘发现缺陷’和‘验证需求’两个目标",
+              "alternative_answers": []
+            }
+          ],
+          "Score": 5,
+          "Difficulty": 2,
+          "Tags": [
+            "软件工程",
+            "测试"
+          ],
+          "Analysis": "<p>测试是软件开发生命周期的重要环节，用于确保产品质量。</p>",
+          "Title": null,
+          "Input": null,
+          "Output": null,
+          "Example": null,
+          "Repo": null,
+          "Order": 1,
+          "Creator": null,
+          "CreateTime": null,
+          "UpdatedBy": null,
+          "UpdateTime": null,
+          "Status": "00",
+          "BelongTo": null,
+          "sub_score": null,
+          "BankQuestionID": null,
+          "AnswerNum": 0
+        },
+        {
+          "ID": 1269,
+          "Type": "08",
+          "Content": "<p>请说明 HTTP 和 HTTPS 的主要区别。</p>",
+          "Options": null,
+          "Answers": [
+            {
+              "index": 1,
+              "score": 5,
+              "answer": "HTTP 是明文传输，HTTPS 使用 SSL/TLS 加密传输；HTTPS 更安全，适合敏感数据传输。",
+              "grading_rule": "提到加密、安全性和传输协议的不同即可得满分",
+              "alternative_answers": []
+            }
+          ],
+          "Score": 5,
+          "Difficulty": 3,
+          "Tags": [
+            "网络协议",
+            "HTTP"
+          ],
+          "Analysis": "<p>HTTPS 基于 SSL/TLS，在安全通信方面比 HTTP 更具优势。</p>",
+          "Title": null,
+          "Input": null,
+          "Output": null,
+          "Example": null,
+          "Repo": null,
+          "Order": 2,
+          "Creator": null,
+          "CreateTime": null,
+          "UpdatedBy": null,
+          "UpdateTime": null,
+          "Status": "00",
+          "BelongTo": null,
+          "sub_score": null,
+          "BankQuestionID": null,
+          "AnswerNum": 0
+        },
+        {
+          "ID": 1270,
+          "Type": "08",
+          "Content": "<p>简述操作系统中进程与线程的区别。</p>",
+          "Options": null,
+          "Answers": [
+            {
+              "index": 1,
+              "score": 5,
+              "answer": "进程是系统资源分配的最小单位，线程是程序执行的最小单位；同一进程中的线程共享资源，进程之间相互独立。",
+              "grading_rule": "答出资源隔离、共享、执行单位等关键点即可得分",
+              "alternative_answers": []
+            }
+          ],
+          "Score": 5,
+          "Difficulty": 2,
+          "Tags": [
+            "操作系统",
+            "进程线程"
+          ],
+          "Analysis": "<p>理解进程和线程的关系有助于掌握并发编程。</p>",
+          "Title": null,
+          "Input": null,
+          "Output": null,
+          "Example": null,
+          "Repo": null,
+          "Order": 3,
+          "Creator": null,
+          "CreateTime": null,
+          "UpdatedBy": null,
+          "UpdateTime": null,
+          "Status": "00",
+          "BelongTo": null,
+          "sub_score": null,
+          "BankQuestionID": null,
+          "AnswerNum": 0
+        },
+        {
+          "ID": 1271,
+          "Type": "08",
+          "Content": "<p>什么是数据库事务？它具有哪些特性？</p>",
+          "Options": null,
+          "Answers": [
+            {
+              "index": 1,
+              "score": 5,
+              "answer": "数据库事务是一组操作的集合，这些操作作为一个单元执行，要么全部执行成功，要么全部失败回滚。事务的特性包括原子性、一致性、隔离性、持久性（ACID）。",
+              "grading_rule": "答出事务定义和ACID四个特性即可得满分",
+              "alternative_answers": []
+            }
+          ],
+          "Score": 5,
+          "Difficulty": 3,
+          "Tags": [
+            "数据库",
+            "事务管理"
+          ],
+          "Analysis": "<p>事务是数据库中的重要概念，确保数据一致性和完整性。</p>",
+          "Title": null,
+          "Input": null,
+          "Output": null,
+          "Example": null,
+          "Repo": null,
+          "Order": 4,
+          "Creator": null,
+          "CreateTime": null,
+          "UpdatedBy": null,
+          "UpdateTime": null,
+          "Status": "00",
+          "BelongTo": null,
+          "sub_score": null,
+          "BankQuestionID": null,
+          "AnswerNum": 0
+        },
+        {
+          "ID": 1272,
+          "Type": "08",
+          "Content": "<p>简述计算机病毒的传播途径。</p>",
+          "Options": null,
+          "Answers": [
+            {
+              "index": 1,
+              "score": 5,
+              "answer": "通过网络下载、移动存储设备、电子邮件等方式传播",
+              "grading_rule": "答出3种主要传播方式即可得满分",
+              "alternative_answers": []
+            }
+          ],
+          "Score": 5,
+          "Difficulty": 2,
+          "Tags": [
+            "信息安全",
+            "病毒传播"
+          ],
+          "Analysis": "<p>病毒可通过网络传播、U盘拷贝、邮件附件、盗版软件等途径感染主机。</p>",
+          "Title": null,
+          "Input": null,
+          "Output": null,
+          "Example": null,
+          "Repo": null,
+          "Order": 5,
+          "Creator": null,
+          "CreateTime": null,
+          "UpdatedBy": null,
+          "UpdateTime": null,
+          "Status": "00",
+          "BelongTo": null,
+          "sub_score": null,
+          "BankQuestionID": null,
+          "AnswerNum": 0
+        },
+        {
+          "ID": 1273,
+          "Type": "06",
+          "Content": "<p>在类之间可以通过关系来建立联系，常见的关系包括 ()、() 和 ()。</p>",
+          "Options": null,
+          "Answers": [
+            {
+              "index": 1,
+              "score": 1,
+              "answer": "包含",
+              "grading_rule": "可以是乱序填写，但必须是包含、扩展和继承这三个关系，每空1分",
+              "alternative_answers": []
+            },
+            {
+              "index": 2,
+              "score": 1,
+              "answer": "扩展",
+              "grading_rule": "可以是乱序填写，但必须是包含、扩展和继承这三个关系，每空1分",
+              "alternative_answers": []
+            },
+            {
+              "index": 3,
+              "score": 1,
+              "answer": "继承",
+              "grading_rule": "可以是乱序填写，但必须是包含、扩展和继承这三个关系，每空1分",
+              "alternative_answers": []
+            }
+          ],
+          "Score": 3,
+          "Difficulty": 3,
+          "Tags": [
+            "软件工程",
+            "面向对象"
+          ],
+          "Analysis": "<p>包含、扩展和继承是类之间最常见的三种关系。</p>",
+          "Title": null,
+          "Input": null,
+          "Output": null,
+          "Example": null,
+          "Repo": null,
+          "Order": 6,
+          "Creator": null,
+          "CreateTime": null,
+          "UpdatedBy": null,
+          "UpdateTime": null,
+          "Status": "00",
+          "BelongTo": null,
+          "sub_score": null,
+          "BankQuestionID": null,
+          "AnswerNum": 0
+        },
+        {
+          "ID": 1274,
+          "Type": "06",
+          "Content": "<p>在 TCP/IP 模型中，应用层对应的是 OSI 的第()</p>",
+          "Options": null,
+          "Answers": [
+            {
+              "index": 1,
+              "score": 2,
+              "answer": "七层",
+              "grading_rule": "填写‘七层’或‘第七层’均可",
+              "alternative_answers": [
+                "第七层"
+              ]
+            }
+          ],
+          "Score": 2,
+          "Difficulty": 2,
+          "Tags": [
+            "计算机网络",
+            "TCP/IP",
+            "OSI模型"
+          ],
+          "Analysis": "<p>应用层在 OSI 模型中对应第七层：应用层。</p>",
+          "Title": null,
+          "Input": null,
+          "Output": null,
+          "Example": null,
+          "Repo": null,
+          "Order": 7,
+          "Creator": null,
+          "CreateTime": null,
+          "UpdatedBy": null,
+          "UpdateTime": null,
+          "Status": "00",
+          "BelongTo": null,
+          "sub_score": null,
+          "BankQuestionID": null,
+          "AnswerNum": 0
+        },
+        {
+          "ID": 1275,
+          "Type": "06",
+          "Content": "<p>面向对象的三大基本特性是()、() 和 ()。</p>",
+          "Options": null,
+          "Answers": [
+            {
+              "index": 1,
+              "score": 1,
+              "answer": "封装",
+              "grading_rule": "顺序不限，必须包含三个特性",
+              "alternative_answers": []
+            },
+            {
+              "index": 2,
+              "score": 1,
+              "answer": "继承",
+              "grading_rule": "顺序不限，必须包含三个特性",
+              "alternative_answers": []
+            },
+            {
+              "index": 3,
+              "score": 1,
+              "answer": "多态",
+              "grading_rule": "顺序不限，必须包含三个特性",
+              "alternative_answers": []
+            }
+          ],
+          "Score": 3,
+          "Difficulty": 3,
+          "Tags": [
+            "面向对象",
+            "软件设计"
+          ],
+          "Analysis": "<p>面向对象的三大特性是封装、继承、多态。</p>",
+          "Title": null,
+          "Input": null,
+          "Output": null,
+          "Example": null,
+          "Repo": null,
+          "Order": 8,
+          "Creator": null,
+          "CreateTime": null,
+          "UpdatedBy": null,
+          "UpdateTime": null,
+          "Status": "00",
+          "BelongTo": null,
+          "sub_score": null,
+          "BankQuestionID": null,
+          "AnswerNum": 0
+        },
+        {
+          "ID": 1276,
+          "Type": "06",
+          "Content": "<p>关系型数据库中，主键具有()</p>",
+          "Options": null,
+          "Answers": [
+            {
+              "index": 1,
+              "score": 2,
+              "answer": "唯一性",
+              "grading_rule": "必须填写‘唯一性’才能得分",
+              "alternative_answers": []
+            }
+          ],
+          "Score": 2,
+          "Difficulty": 3,
+          "Tags": [
+            "数据库",
+            "主键"
+          ],
+          "Analysis": "<p>主键必须唯一，用于唯一标识记录。</p>",
+          "Title": null,
+          "Input": null,
+          "Output": null,
+          "Example": null,
+          "Repo": null,
+          "Order": 9,
+          "Creator": null,
+          "CreateTime": null,
+          "UpdatedBy": null,
+          "UpdateTime": null,
+          "Status": "00",
+          "BelongTo": null,
+          "sub_score": null,
+          "BankQuestionID": null,
+          "AnswerNum": 0
+        },
+        {
+          "ID": 1277,
+          "Type": "06",
+          "Content": "<p><span style=\"font-family: 等线; font-size: 12pt\">具有风险分析的软件生命周期模型是</span><span style=\"font-family: Aptos, sans-serif; font-size: 12pt\">()</span></p>",
+          "Options": null,
+          "Answers": [
+            {
+              "index": 1,
+              "score": 2,
+              "answer": "螺旋模型",
+              "grading_rule": "答案必须准确匹配“螺旋模型”",
+              "alternative_answers": []
+            }
+          ],
+          "Score": 2,
+          "Difficulty": 2,
+          "Tags": [
+            "软件工程",
+            "生命周期模型"
+          ],
+          "Analysis": "<p>螺旋模型是唯一支持风险分析的软件生命周期模型。</p>",
+          "Title": null,
+          "Input": null,
+          "Output": null,
+          "Example": null,
+          "Repo": null,
+          "Order": 10,
+          "Creator": null,
+          "CreateTime": null,
+          "UpdatedBy": null,
+          "UpdateTime": null,
+          "Status": "00",
+          "BelongTo": null,
+          "sub_score": null,
+          "BankQuestionID": null,
+          "AnswerNum": 0
+        }
+      ],
+      "19155": [],
+      "19156": [],
+      "19157": [],
+      "19158": []
+    }
+  }
+        }),
+      })
+       triggerPreview();
+      await waitFor(()=>{ 
+        expect(global.fetch).toBeCalled();
+      })
+    }))
+
+    it('获取试卷详情时status不为0',(async()=>{
+        const {triggerPreview} =setup()
+    global.fetch.mockResolvedValueOnce({
+        ok:true,
+        json: async () => ({ status: 0,
+          data:{
+            practice:{
+            PaperID:1,
+            
+          },
+          paper_name:'测试',
+        }
+        }),
+      }).mockResolvedValueOnce({
+        ok:true,
+        json: async () => ({ status: 1}),
+      })
+       triggerPreview();
+      await waitFor(()=>{ 
+        expect(toast.error).toHaveBeenCalledWith('请求试卷信息失败');
+      })
+    }))
+  }))
+
+  describe('作废按钮的功能测试',(()=>{
+    it('正常显示作废按钮',(()=>{
+      const {triggerInvalid}=setup();
+      triggerInvalid();
+      expect(screen.getByText('请问是否要作废练习？')).toBeInTheDocument();
+    }))
+    it('点击作废按钮，正常作废',(()=>{
+      const {triggerInvalid}=setup();
+      global.fetch.mockResolvedValueOnce({
+        ok:true,
+        json:async()=>({
+          status:0,
+          data:{
+            message:'作废成功'
+          }
+        })
+      })
+      triggerInvalid();
+      const confirmButton=screen.getAllByText('确定');
+      fireEvent.click(confirmButton[0]);
+      expect(toast.success).toHaveBeenCalledWith('作废成功');
     }))
   }))
 

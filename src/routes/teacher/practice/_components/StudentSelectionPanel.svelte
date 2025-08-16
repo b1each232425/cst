@@ -27,6 +27,7 @@
   //新增的学生
   let newStudents = $state([]);
 
+
   let page_size = $state(10);
 
   //使用的api,用于区分导入考试还是练习导入
@@ -223,7 +224,7 @@
                   ...item,
                   officialName: item.official_name,
                   idCardNo: item.id_card_no,
-                  
+                  mobilePhone: item.phone
                 }));
               
         }
@@ -271,7 +272,7 @@
     }
   }
 
-  function handleImportSuccess(is_all_ok, import_data) {
+  function handleImportSuccess(is_all_ok, import_data,exist_students) {
     if (is_all_ok && import_data) {
       // importedData 包含了所有导入的学生信息
       console.log('导入的学生数据:', import_data);
@@ -287,8 +288,16 @@
         account: student.Account,
       }));
 
+       // 过滤掉已经在 selected_ids 中存在的学生（避免重复）
+    let filtered_exist_students = exist_students.filter(exist_student => {
+      return !selected_ids.some(selected_student => selected_student.id === exist_student.ID);
+    });
+      
+      
+
       // 更新选中学生列表
-      selected_ids = [...selected_ids, ...newStudents];
+      selected_ids = [...selected_ids, ...newStudents,...filtered_exist_students];
+      console.log('selected',selected_ids);
       recalculateSerialNumbers();
     }
     show_import_panel = false;

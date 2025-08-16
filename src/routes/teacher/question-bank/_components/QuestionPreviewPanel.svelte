@@ -12,8 +12,8 @@
      */
     let { question, closePanel, displayClosePanelBtn, showHeader = true, editSubScore = false, update } = $props();
 
-    // 子题分值数组
-    let sub_score = $state(question.sub_score);
+    // 子题分值数组 - 使用 derived 确保与父组件数据同步
+    let sub_score = $derived.by(() => question.sub_score || []);
 
     let question_content = $state("")
 

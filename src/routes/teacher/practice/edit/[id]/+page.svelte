@@ -19,13 +19,15 @@
   const practiceId = $page.params.id;
   // 使用runes接收页面数据
   let practice = $state();
+  //需要关联的学生ID
+  let practiceStudentIds = $state([]);
 
   // Dialog状态
   let isDialogOpen = $state(false);
   /**
    * @param {{ practice_name: any; grading_method: any; test: { id: any;suggest_duration?:number }; students: any[];allowed_attempts:any}} practiceData
    */
-  async function handleSubmit(practiceData, newStudents) {
+  async function handleSubmit(practiceData, newStudents,selectedStudents) {
     const EDIT_PRACTICE = () => {
       // 准备请求数据
       const requestData = {
@@ -40,7 +42,7 @@
             AllowedAttempts: practiceData.allowed_attempts,
             duration: practiceData.test.suggest_duration,
           },
-          student: practiceData.student[0] ? practiceData.student : [],
+          student: practiceStudentIds,
         },
       };
 
@@ -114,7 +116,12 @@
           if (result.status !== 0) {
             throw new Error(result.msg || '导入失败');
           }
-          toast.success(`成功导入 ${newStudents.length} 名学生`);
+           //获取新增之后的学生ID
+          let studentIds = result.data.map((item) => item.ID);
+          //获取已经有账号的学生的ID
+         let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
+          //创建需要关联的学生ID
+          practiceStudentIds = [...practiceStudentIds,...studentIds,...existStudentIds]
           // 导入成功后执行创建练习
           return EDIT_PRACTICE();
         })
@@ -123,6 +130,12 @@
           toast.error('编辑练习请求异常', 1000);
         });
     } else {
+      //获取已经有账号的学生的ID
+          let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
+          console.log('existStudentIds',existStudentIds)
+          //创建需要关联的学生ID
+          practiceStudentIds = [...practiceStudentIds,...existStudentIds]
+
       EDIT_PRACTICE().catch((error) => {
         console.error('编辑练习请求异常:', error);
         toast.error('编辑练习请求异常', 1000);
@@ -132,13 +145,13 @@
   /**
    * @param {{ practice_name: any; grading_method: any; test: { id: any;suggest_duration?:number }; students: any[];allowed_attempts:any}} practiceData
    */
-  async function updateStudents(practiceData, selectStudents) {
+  async function updateStudents(practiceData,newStudents ,selectedStudents) {
     const UPDATE_STUDENTS = () => {
       // 准备请求数据
       const requestData = {
         data: {
           id: practice.data.id,
-          students: practiceData.students,
+          students: practiceStudentIds,
         },
       };
       // 发送请求
@@ -170,13 +183,13 @@
           }
         });
     };
-    if (selectStudents && selectStudents.length > 0) {
+    if (newStudents && newStudents.length > 0) {
       // 先执行导入操作
       fetch('/api/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ data: selectStudents }),
+        body: JSON.stringify({ data: newStudents }),
       })
         .then((res) => {
           if (!res.ok) {
@@ -190,7 +203,13 @@
           if (result.status !== 0) {
             throw new Error(result.msg || '导入失败');
           }
-          toast.success(`成功导入 ${selectStudents.length} 名学生`);
+          //获取新增之后的学生ID
+          let studentIds = result.data.map((item) => item.ID);
+          //获取已经有账号的学生的ID
+         let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
+         
+          //创建需要关联的学生ID
+          practiceStudentIds = [...practiceStudentIds,...studentIds,...existStudentIds]
           // 导入成功后执行创建练习
           return UPDATE_STUDENTS();
         })
@@ -200,6 +219,10 @@
         });
     } else {
       // 直接执行创建练习
+      //获取已经有账号的学生的ID
+          let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
+          //创建需要关联的学生ID
+          practiceStudentIds = [...practiceStudentIds,...existStudentIds]
       UPDATE_STUDENTS().catch((error) => {
         console.error('编辑练习请求异常:', error);
         toast.error('编辑练习请求异常', 1000);

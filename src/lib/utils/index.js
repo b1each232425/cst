@@ -29,12 +29,3 @@ export function sget(obj, path, defaultValue) {
 
   return result == null ? defaultValue : result;
 }
-
-/**
- * 获取精确的数据类型
- * @param v 要获取类型的值
- * @returns {string} 类型名称
- */
-export function getType(v) {
-  return Object.prototype.toString.call(v).slice(8, -1).toLowerCase();
-}

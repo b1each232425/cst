@@ -25,17 +25,17 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { formatTimestamp } from '$lib/utils/time_utils';
   import { goto} from '$app/navigation';
   import { toast } from '$lib/components/Toast/Toast.js';
-
+  import { selection} from '../store';
+  import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+  import '$lib/components/Button/index.scss';
   /**
    * @typedef BankCardItemData
-   * @property {number}           id              - 题库ID
-   * @property {string}           name            - 题库名称
-   * @property {Array<string>}    [tags]          - 题库标签
-   * @property {string}           create_time     - 创建时间
-   * @property {string}           update_time     - 更新时间
-   * @property {boolean}          [selected]      - 是否选中
-   * @property {boolean}          [is_changed]    - 是否有变更
-   * @property {boolean}          [is_hidden]     - 是否隐藏
+   * @property {number}           ID              - 题库ID
+   * @property {string}           Name            - 题库名称
+   * @property {Array<string>}    [Tags]          - 题库标签
+   * @property {string}           CreateTime     - 创建时间
+   * @property {string}           UpdateTime     - 更新时间
+  
    */
 
   /**
@@ -55,7 +55,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       tags: ['示例', 'example', 'test', '测试', 'svelte', '编程', 'hello world', 'javascript', 'html', 'css'],
       create_time: `${formatTimestamp(Date.now(), { show_time: false })}`,
       update_time: `${formatTimestamp(Date.now())}`,
-      selected: false,
+    
     },
   ]);
 
@@ -97,14 +97,14 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   let selected_bank_list = $state([]);
 
 
-  function getBankList({ keyword = '', page = '', pageSize = '', bankID = '' } = {}) {
+  function getBankList({ keyword = '', page = '', pageSize = '' } = {}) {
   bank_list=[];
   origin_bank_list=[];
     const queryParams = new URLSearchParams({
       keyword,
       page,
       pageSize,
-      bankID,
+      
     });
 
     return fetch(`/api/question-banks?${queryParams}`, {
@@ -122,7 +122,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
           throw new Error(`${data.msg}`);
         }
        
-        return data.data; // 返回实际数据
+       bank_list=data.data; // 返回实际数据
+       origin_bank_list=data.data;
       })
       .catch((error) => {
         toast.error(`获取题库列表失败:${error.message}`);
@@ -130,33 +131,35 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       });
   }
 
+ function deleteBank(deleteBank) {
+
+    return fetch(`/api/question-banks`, {
+      method: 'DELETE',
+      credentials: 'include',
+      body: JSON.stringify({data:deleteBank}),
+    })
+      .then((response) => {
+         if (!response.ok) {
+          throw new Error(`HTTP错误`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.status !== 0) {
+          throw new Error(`${data.msg}`);
+        }
+           getBankList();
+       
+      })
+      .catch((error) => {
+        toast.error(`删除题库失败:${error.message}`);
+        return null; 
+      });
+  }
+
   onMount(async () => {
-
-    const data = await getBankList();
-    for (let bank of data) {
-      bank_list.push({
-        id: bank.ID,
-        name: bank.Name,
-        tags: bank.Tags || [],
-        create_time: `${formatTimestamp(bank.CreateTime, { show_time: false })}`,
-        update_time: `${formatTimestamp(bank.UpdateTime)}`,
-        is_changed: false,
-        is_hidden: false,
-        selected: false,
-      });
-
-      origin_bank_list.push({
-        id: bank.ID,
-        name: bank.Name,
-        tags: bank.Tags || [],
-        create_time: `${formatTimestamp(bank.CreateTime, { show_time: false })}`,
-        update_time: `${formatTimestamp(bank.UpdateTime)}`,
-        is_changed: false,
-        is_hidden: false,
-        selected: false,
-      });
-    }
-  
+    selection.clear();
+      getBankList();
   });
 
   /**
@@ -188,21 +191,11 @@ o.  )88b 888   .o8  888      888   888   888   888 .
             throw new Error(`${result.msg}`);
         }
        
-
-        // 存储到 localStorage
-        localStorage.setItem(
-          'question_bank_data',
-          JSON.stringify({
-            id: result.data.ID,
-            name: '未命名题库',
-            tags: [],
-            create_time: formatTimestamp(Date.now()),
-            update_time: formatTimestamp(Date.now()),
-          }),
-        );
+              
+        
 
         // 跳转页面
-        goto(`${window.location.pathname}/editBank`);
+         goto(`${window.location.pathname}/editBank?bankID=${ result.data.ID}`);
         return;
       })
       .catch((error) => {
@@ -223,12 +216,12 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   function selectHandleFunc(item) {
     // // console.log("选中题库:", item);
 
-    item.selected = item.selected == null ? true : !item.selected;
+    selection.toggle(item.ID); 
 
-    if (item.selected) {
-      selected_bank_list.push(item);
+    if ($selection.has(item.ID)) {
+      selected_bank_list.push(item.ID);
     } else {
-      selected_bank_list = selected_bank_list.filter((bank) => bank.id !== item.id);
+      selected_bank_list = selected_bank_list.filter((bank) => bank!== item.ID);
     }
 
     // console.log("选中题库列表:", $state.snapshot(selected_bank_list));
@@ -238,10 +231,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * 取消所有选中题库处理函数
    */
   function antiSelectAllHandleFunc() {
-    for (let item of selected_bank_list) {
-      item.selected = false;
-    }
-
+  selection.clear();
     selected_bank_list = [];
 
     // console.log("取消选中题库列表:", $state.snapshot(selected_bank_list));
@@ -263,7 +253,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       throw new Error('name must be a string');
     }
 
-    item.name = name;
+    item.Name = name;
 
     item.is_changed = checkBankDataChange(item);
 
@@ -293,7 +283,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       throw new Error('old_name is required');
     }
 
-    item.name = old_name;
+    item.Name = old_name;
 
     item.is_changed = checkBankDataChange(item);
   }
@@ -314,10 +304,10 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       throw new Error('content must be a string');
     }
 
-    if (item?.tags) {
-      item.tags.push(content);
+    if (item?.Tags) {
+      item.Tags.push(content);
     } else {
-      item.tags = [content];
+      item.Tags = [content];
     }
 
     item.is_changed = checkBankDataChange(item);
@@ -337,8 +327,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 
     // console.log("删除标签:", item?.tags?.[index],index);
 
-    if (item?.tags) {
-      item.tags.splice(index, 1);
+    if (item?.Tags) {
+      item.Tags.splice(index, 1);
     }
 
     item.is_changed = checkBankDataChange(item);
@@ -363,8 +353,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       throw new Error('content must be a string');
     }
 
-    if (item?.tags) {
-      item.tags[index] = content;
+    if (item?.Tags) {
+      item.Tags[index] = content;
     } else {
       throw new Error('current item tags is null');
     }
@@ -400,8 +390,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 
     new_content = new_content == '' ? old_content : new_content;
 
-    if (item?.tags) {
-      item.tags[index] = new_content;
+    if (item?.Tags) {
+      item.Tags[index] = new_content;
     } else {
       throw new Error('current item tags is null');
     }
@@ -419,7 +409,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       return;
     }
 
-    let bank_index = bank_list.findIndex((bank) => bank.id === item.id);
+    let bank_index = bank_list.findIndex((bank) => bank.ID === item.ID);
 
     if (bank_index === -1) {
       return;
@@ -428,11 +418,11 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     let origin_item =origin_bank_list[bank_index];
 
     if (origin_item == null) {
-      throw new Error(`origin_item(${item.id}) is null`);
+      throw new Error(`origin_item(${item.ID}) is null`);
     }
 
-    item.name = origin_item.name;
-    item.tags = origin_item.tags ?? [];
+    item.Name = origin_item.Name;
+    item.Tags = origin_item.Tags ?? [];
 
     item.is_changed = false;
   }
@@ -443,7 +433,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * @return {boolean} - 是否有变更
    */
   function checkBankDataChange(item) {
-    let bank_index = bank_list.findIndex((bank) => bank.id === item.id);
+    let bank_index = bank_list.findIndex((bank) => bank.ID === item.ID);
 
     let origin_item = origin_bank_list[bank_index];
 
@@ -451,11 +441,11 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       return false;
     }
 
-    let tags = item.tags ?? [];
+    let tags = item.Tags ?? [];
 
-    let origin_tags = origin_item.tags ?? [];
+    let origin_tags = origin_item.Tags ?? [];
 
-    let bank_is_changed = item.name != origin_item.name;
+    let bank_is_changed = item.Name != origin_item.Name;
 
     let tags_is_changed = bank_is_changed || tags.length !== origin_tags.length;
 
@@ -482,20 +472,30 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * @param {BankCardItemData} item
    */
   async function onGoToEditBank(item) {
-    localStorage.setItem(
-      'question_bank_data',
-      JSON.stringify({
-        id: item.id,
-        name: item.name,
-        tags: item.tags ?? [],
-        create_time: item.create_time,
-        update_time: item.update_time,
-      }),
-    );
+
     // window.location.href = `${window.location.pathname}/editBank`;
-    goto(`${window.location.pathname}/editBank`);
+    goto(`${window.location.pathname}/editBank?bankID=${item.ID}`);
   }
 
+  //显示删除题库题型
+  	function deleteMessageBox() {
+     if(selected_bank_list.length==0){
+      toast.warning("请先选择要删除的题库")
+      return ;
+     }
+
+		MessageBox({
+			title: '确认操作',
+			content: '你确定要删除题库吗？',
+			onConfirm: () => {
+        deleteBank(selected_bank_list)
+				console.log('点击了确认');
+			},
+			onCancel: () => {
+				console.log('点击了取消');
+			}
+		});
+	}
 
 </script>
 
@@ -509,8 +509,11 @@ oooo            .                     oooo
 o888o o888o   "888" o888o o888o o888o o888o                                                     
 -->
 
+
+
 <div class="question-bank-container">
   <!-- 顶部栏 -->
+ 
   <div class="top-bar">
     <div class="search-input-container">
       <input class="search-input" type="text" placeholder="请输入题库名/标签" bind:value={search_input} />
@@ -526,8 +529,11 @@ o888o o888o   "888" o888o o888o o888o o888o
       {/if}
     </div>
 
+       
     <div class="operation-btns">
-      <button class="button-delete" >
+      <button class="button-delete" onclick={()=>{
+        deleteMessageBox()
+      }} >
          <span class="icon"></span>
         <span>批量删除</span>
       </button>
@@ -541,6 +547,7 @@ o888o o888o   "888" o888o o888o o888o o888o
         <img src={icons.cross} alt="取消选中" />
         <span>取消选中</span>
       </button>
+
     </div>
   </div>
 
@@ -550,15 +557,14 @@ o888o o888o   "888" o888o o888o o888o o888o
       <div class="bank-card-container">
         <BankCard type="add" {icons} add_handle_func={addNewBank} />
       </div>
-
       {#each bank_list as item, index}
-        <div class="bank-card-container" class:hidden={item.is_hidden}>
+        <div class="bank-card-container">
           <BankCard
             type="normal"
             {icons}
             data={{
               ...item,
-              id: String(item.id),
+              ID: String(item.ID),
             }}
             normal_handle_funcs={{
               select: () => {
@@ -585,6 +591,10 @@ o888o o888o   "888" o888o o888o o888o o888o
               discard: () => {
                 discardChanges(item);
               },
+              delete:()=>{
+                const delteData=[item.ID];
+                deleteBank(delteData)    
+              },
               edit: () => onGoToEditBank(item),
              
             }}
@@ -608,36 +618,10 @@ o.  )88b   888 .    `888'     888  888    .o
                        
  -->
 <style lang="scss" scoped>
-  button {
-    margin: 0px;
-    padding: 0px;
-    border: 0px;
-    background-color: transparent;
-    cursor: pointer;
-    user-select: none;
 
-    transition: all 0.2s ease;
-    &:focus {
-      outline: none;
-    }
-  }
+ 
 
-  .button-delete {
-    background-color: red
-  }
- .button-delete .icon {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    background-image: url("/programming_question_bank/icons/delete.svg");
-    background-size: contain;
-    background-repeat: no-repeat;
-    color: red;
-  }
-
-  .button-cancelSelect {
-    background-color: #7787a2;
-  }
+ 
 
   .question-bank-container {
     position: relative;
@@ -749,6 +733,25 @@ o.  )88b   888 .    `888'     888  888    .o
         margin-left: 10px;
         cursor: pointer;
       }
+       .button-cancelSelect {
+    background-color: #7787a2;
+  } 
+
+   .button-delete {
+    color: rgb(255, 255, 255);
+    background-color: rgb(248, 104, 104)
+   
+  }
+ .button-delete .icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-image: url("/programming_question_bank/icons/delete.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-color :rgb(248, 104, 104);
+  }
+
     }
   }
 

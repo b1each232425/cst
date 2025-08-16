@@ -10,7 +10,7 @@
 <script>
     import QuestionTag from "$lib/components/Tag/EditableTag.svelte";
     import SmartEditor from "@3min/smart-edit";
-
+ import {BlankItem, CustomTextStyle} from '../utils/BlankItem'
     /**
      * @typedef {import('@3min/cst-tiptap/dist/types').PiptapEditor} PiptapEditor
      * @typedef {import('@3min/cst-tiptap/dist/types').PiptapEditorOptions} PiptapEditorOptions
@@ -1349,7 +1349,7 @@
     bottom: 0;
     left: 0;
 
-    z-index: 999;
+    z-index: 1002;
     background-color: #fff;
 
     transition: all 0.3s ease-in-out;
@@ -1377,44 +1377,43 @@
       .topBarControlBtns {
         display: flex;
 
-        .cancelBtn {
-          background-color: #f0f0f0;
-          width: 110px;
-          height: 35px;
-          font-size: 16px;
-          border-radius: 5px;
+         .cancelBtn {
+                    background-color:  #7787a2;
+                    width: 110px;
+                    height: 35px;
+                    font-size: 16px;
+                    border-radius: 5px;
 
-          display: flex;
-          justify-content: center;
-          align-items: center;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
 
-          color: #619cf5;
-          border: 1px solid #619cf5;
+                    color: white;
+                   
 
-          &:hover {
-            background-color: #e3e3e3;
-          }
-        }
+                    &:hover {
+                        background-color:  gray;
+                    }
+                }
 
-        .confirmBtn {
-          margin-left: 25px;
-          background-color: #619cf5;
-          width: 110px;
-          height: 35px;
-          font-size: 16px;
-          border-radius: 5px;
+                .confirmBtn {
+                    margin-left: 25px;
+                    background-color: #619cf5;
+                    width: 110px;
+                    height: 35px;
+                    font-size: 16px;
+                    border-radius: 5px;
 
-          display: flex;
-          justify-content: center;
-          align-items: center;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
 
-          color: #fff;
-          border: 1px solid #797979;
+                    color: #fff;
 
-          &:hover {
-            background-color: #578ddd;
-          }
-        }
+                    &:hover {
+                        background-color: #578ddd;
+                    }
+                }
       }
     }
 

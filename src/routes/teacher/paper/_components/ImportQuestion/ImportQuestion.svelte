@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 21:09:59
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-07 11:34:36
+ * @LastEditTime: 2025-08-15 20:58:51
  * @FilePath: \exam\src\routes\teacher\paper\_components\ImportQuestion\ImportQuestion.svelte
  * @Description: 从题库导入题目组件
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -48,6 +48,7 @@
                 return response.json();
             })
             .then(data => {
+                if (data.status !== 0) toast.error(data.msg, 1000);
                 return data;
             })
             .catch(error => {
@@ -87,6 +88,7 @@
                 return response.json();
             })
             .then(data => {
+                if (data.status !== 0) toast.error(data.msg, 1000);
                 return data;
             })
             .catch(error => {
@@ -269,14 +271,39 @@
 
     // 确认导入题目
     function confirmImport() {
+        // 要通过paper_groups获取原来题目的ID数组
+        const originalQuestionIDs = paper_groups.flatMap(group => 
+            group.questions.map(question => question.id || question.ID)
+        ).filter(Boolean);
+        
+        // 找到目标题组在原始题目数组中的位置
+        let targetGroupStartIndex = 0;
+        for (let i = 0; i < paper_groups.length; i++) {
+            if (paper_groups[i].id === to_import_group.id) {
+                break;
+            }
+            targetGroupStartIndex += paper_groups[i].questions.length;
+        }
+        
+        // 将要添加的题目的临时ID插入到目标题组的末尾位置
+        const newQuestionIDs = selected_questions.map((_, index) => `temp_question_${index + 1}`);
+        
+        // 构建包含新题目的完整题目ID数组，新题目使用temp_id插入到目标题组的末尾
+        const questionIDs = [
+            ...originalQuestionIDs.slice(0, targetGroupStartIndex + to_import_group.questions.length),
+            ...newQuestionIDs,
+            ...originalQuestionIDs.slice(targetGroupStartIndex + to_import_group.questions.length)
+        ];
+        
+        // 计算每个新题目的order值（在questionIDs中的索引+1）
         const ACTIONS = [
             {
                 action: "add_question",
                 payload: selected_questions.map((question, index) => {
-                    const payloadItem = {
+                    const PAYLOAT_ITEM = {
                         temp_id: `temp_question_${index + 1}`,
                         group_id: to_import_group.id,
-                        order: to_import_group.questions.length + index + 1,
+                        order: targetGroupStartIndex + to_import_group.questions.length + index + 1, // 这里的值应该是添加的题目的ID在插入questionIDs后的索引+1
                         bank_question_id: question.ID,
                         score: question.Score,
                         type: question.Type
@@ -284,11 +311,15 @@
 
                     // 如果 Type 为 "06" 或 "08"，加 subscore 字段
                     if (question.Type === "06" || question.Type === "08") {
-                        payloadItem.sub_score = question.Answers.map(answer => answer.score);
+                        PAYLOAT_ITEM.sub_score = question.Answers.map(answer => answer.score);
                     }
 
-                    return payloadItem;
+                    return PAYLOAT_ITEM;
                 })
+            },
+            {
+                action: "move_question",
+                payload: questionIDs // 这里的questionIDs是添加题目后的题目ID数组
             }
         ];
 

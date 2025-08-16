@@ -44,23 +44,7 @@
   let totalTests = $state(0);
   let totalPages = $derived(Math.ceil(totalTests / pageSize));
 
-  // 当页码改变时的处理函数
-  /**
-   * @param {boolean} isNext - 是否前往下一页
-   */
-  function handlePageChange(isNext) {
-    const newPage = isNext ? Math.min(totalPages, currentPage + 1) : Math.max(1, currentPage - 1);
 
-    if (newPage !== currentPage) {
-      currentPage = newPage;
-      fetchPaperList({
-        name: searchText,
-        tags: tagSearchText,
-        assembly_type: selectedStructure,
-        page: String(newPage),
-      });
-    }
-  }
 
   // 当选择特定页码时的处理函数
   /**
@@ -73,7 +57,7 @@
         name: searchText,
         tags: tagSearchText,
         assembly_type: selectedStructure,
-        page: String(event.detail),
+        page: event.detail,
       });
     }
   }
@@ -92,26 +76,11 @@
       tags: tagSearchText,
       assembly_type: selectedStructure,
       page: '1',
-      page_size: String(event.detail),
+      page_size: pageSize,
     });
   }
 
-  // 当输入页码跳转时的处理函数
-  /**
-   * @param {string} value - 输入的页码字符串
-   */
-  function handlePageSearch(value) {
-    const pageNum = parseInt(value);
-    if (!isNaN(pageNum) && pageNum > 0 && pageNum <= totalPages) {
-      currentPage = pageNum;
-      fetchPaperList({
-        name: searchText,
-        tags: tagSearchText,
-        assembly_type: selectedStructure,
-        page: String(pageNum),
-      });
-    }
-  }
+ 
 
   // 选择试卷
   /**
@@ -390,6 +359,7 @@
             total_items={totalTests}
             current_page={currentPage}
             page_size={pageSize}
+            page_size_options={[5,10, 20]} 
             on:pageChange={handlePageChoose}
             on:pageSizeChange={handlePageSizeChange}
           />
@@ -416,7 +386,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 10000;
   }
 
   .modal-content {

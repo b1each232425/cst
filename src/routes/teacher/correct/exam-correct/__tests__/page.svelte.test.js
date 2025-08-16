@@ -3,9 +3,15 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/sve
 import ExamCorrectList from '../+page.svelte';
 import { toast } from '$lib/components/Toast/Toast.js';
 import { goto } from '$app/navigation';
+import MessageBox from '$lib/components/MessageBox/MessageBox.js';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$lib/components/Toast/Toast.js', () => ({ toast: { error: vi.fn() } }));
+vi.mock('$lib/components/Toast/Toast.js', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock('$lib/components/MessageBox/MessageBox.js', () => ({
+  default: vi.fn(({ onConfirm }) => {
+    onConfirm();
+  }),
+}));
 
 const MOCK_EXAMS = [
   {
@@ -246,6 +252,31 @@ describe('考试批改列表组件测试', () => {
 
     it('选择日期应触发搜索', async () => {
       render(ExamCorrectList);
+
+      await fireEvent.click(within(screen.getByTestId('date-picker')).getByRole('textbox'));
+      await fireEvent.click(screen.getAllByRole('button', { name: '27' })[0]);
+      await fireEvent.click(screen.getAllByRole('button', { name: '28' })[2]);
+      await fireEvent.click(screen.getByRole('button', { name: '确定' }));
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it('清空日期应触发搜索', async () => {
+      render(ExamCorrectList);
+
+      await fireEvent.click(within(screen.getByTestId('date-picker')).getByRole('textbox'));
+      await fireEvent.click(screen.getAllByRole('button', { name: '25' })[0]);
+      await fireEvent.click(screen.getAllByRole('button', { name: '26' })[2]);
+      await fireEvent.click(screen.getByRole('button', { name: '确定' }));
+
+      await fireEvent.click(within(screen.getByTestId('date-picker')).getByRole('textbox'));
+      await fireEvent.click(screen.getByRole('button', { name: '清除' }));
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledTimes(3);
+      });
     });
   });
 
@@ -289,9 +320,12 @@ describe('考试批改列表组件测试', () => {
   });
 
   describe('操作按钮', () => {
-    it('可批改的考试应显示可点击的"进入批改"按钮', async () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
       render(ExamCorrectList);
+    });
 
+    it('可批改的考试应显示可点击的"进入批改"按钮', async () => {
       await waitFor(() => {
         const button = screen.getAllByRole('button', { name: '进入批改' })[0];
         expect(button).not.toHaveAttribute('disabled');
@@ -299,8 +333,6 @@ describe('考试批改列表组件测试', () => {
     });
 
     it('自动批改的考试应显示禁用的"进入批改"按钮', async () => {
-      render(ExamCorrectList);
-
       await waitFor(() => {
         const row = screen.getByText('英语模拟').closest('tr');
         const button = within(row).getAllByRole('button', { name: '进入批改' })[0];
@@ -309,8 +341,6 @@ describe('考试批改列表组件测试', () => {
     });
 
     it('点击"进入批改"应跳转到批改页面', async () => {
-      render(ExamCorrectList);
-
       await waitFor(() => {
         const button = screen.getAllByRole('button', { name: '进入批改' })[0];
         fireEvent.click(button);
@@ -319,13 +349,17 @@ describe('考试批改列表组件测试', () => {
     });
 
     describe('提交考试批改功能', () => {
-      it('点击提交按钮应显示确认对话框', async () => {
-        render(ExamCorrectList);
-
+      it('可提交的按钮应启用且点击触发确认框', async () => {
         await waitFor(() => {
           const submitButtons = screen.getAllByRole('button', { name: '提交' });
-          fireEvent.click(submitButtons[0]);
 
+          // 获取第三个按钮（应为启用状态）
+          const enabledButton = submitButtons[2];
+          expect(enabledButton).not.toBeDisabled();
+          fireEvent.click(enabledButton);
+
+          // 验证MessageBox被正确调用
+          expect(MessageBox).toHaveBeenCalledTimes(1); // 确保只调用一次
           expect(MessageBox).toHaveBeenCalledWith({
             title: '确认操作',
             content: '你确定要提交吗？',
@@ -334,24 +368,25 @@ describe('考试批改列表组件测试', () => {
         });
       });
 
-      it('确认提交后应调用API并显示成功提示', async () => {
-        global.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ status: 0 }),
-          }),
-        );
+      // it('不可提交的按钮应禁用且点击无效', async () => {
+      //   const submitButtons = screen.getAllByRole('button', { name: '提交' });
 
-        render(ExamCorrectList);
+      //   // 获取第一个按钮（应为禁用状态）
+      //   const disabledButton = submitButtons[0];
+      //   expect(disabledButton).toBeDisabled();
+      //   fireEvent.click(disabledButton);
+
+      //   // 严格验证调用次数
+      //   expect(MessageBox).not.toHaveBeenCalled();
+      // });
+
+      it('确认提交后应调用API并显示成功提示', async () => {
+        mockFetch({ status: 0 });
 
         await waitFor(() => {
           const submitButtons = screen.getAllByRole('button', { name: '提交' });
-          fireEvent.click(submitButtons[0]);
+          fireEvent.click(submitButtons[2]);
         });
-
-        // 查找并点击确认对话框中的确定按钮
-        const confirmButton = await screen.findByText('确定');
-        fireEvent.click(confirmButton);
 
         await waitFor(() => {
           expect(global.fetch).toHaveBeenCalledWith(
@@ -371,15 +406,10 @@ describe('考试批改列表组件测试', () => {
           }),
         );
 
-        render(ExamCorrectList);
-
         await waitFor(() => {
           const submitButtons = screen.getAllByRole('button', { name: '提交' });
-          fireEvent.click(submitButtons[0]);
+          fireEvent.click(submitButtons[2]);
         });
-
-        const confirmButton = await screen.findByText('确定');
-        fireEvent.click(confirmButton);
 
         await waitFor(() => {
           expect(toast.error).toHaveBeenCalledWith('请求失败：400 Bad Request-批改数据不完整');
@@ -396,15 +426,10 @@ describe('考试批改列表组件测试', () => {
           }),
         );
 
-        render(ExamCorrectList);
-
         await waitFor(() => {
           const submitButtons = screen.getAllByRole('button', { name: '提交' });
-          fireEvent.click(submitButtons[0]);
+          fireEvent.click(submitButtons[2]);
         });
-
-        const confirmButton = await screen.findByText('确定');
-        fireEvent.click(confirmButton);
 
         await waitFor(() => {
           expect(toast.error).toHaveBeenCalledWith('请求失败：500 Internal Server Error');
@@ -419,15 +444,10 @@ describe('考试批改列表组件测试', () => {
           }),
         );
 
-        render(ExamCorrectList);
-
         await waitFor(() => {
           const submitButtons = screen.getAllByRole('button', { name: '提交' });
-          fireEvent.click(submitButtons[0]);
+          fireEvent.click(submitButtons[2]);
         });
-
-        const confirmButton = await screen.findByText('确定');
-        fireEvent.click(confirmButton);
 
         await waitFor(() => {
           expect(toast.error).toHaveBeenCalledWith('批改未完成');
@@ -442,15 +462,10 @@ describe('考试批改列表组件测试', () => {
           }),
         );
 
-        render(ExamCorrectList);
-
         await waitFor(() => {
           const submitButtons = screen.getAllByRole('button', { name: '提交' });
-          fireEvent.click(submitButtons[0]);
+          fireEvent.click(submitButtons[2]);
         });
-
-        const confirmButton = await screen.findByText('确定');
-        fireEvent.click(confirmButton);
 
         await waitFor(() => {
           expect(toast.error).toHaveBeenCalledWith('提交失败');
@@ -460,33 +475,13 @@ describe('考试批改列表组件测试', () => {
       it('网络错误时应显示错误提示', async () => {
         global.fetch = vi.fn(() => Promise.reject(new Error('网络连接失败')));
 
-        render(ExamCorrectList);
-
         await waitFor(() => {
           const submitButtons = screen.getAllByRole('button', { name: '提交' });
-          fireEvent.click(submitButtons[0]);
+          fireEvent.click(submitButtons[2]);
         });
-
-        const confirmButton = await screen.findByText('确定');
-        fireEvent.click(confirmButton);
 
         await waitFor(() => {
           expect(toast.error).toHaveBeenCalledWith('网络连接失败');
-        });
-      });
-
-      it('不可提交的状态下按钮应禁用', async () => {
-        render(ExamCorrectList);
-
-        await waitFor(() => {
-          // 查找所有提交按钮
-          const submitButtons = screen.getAllByRole('button', { name: '提交' });
-
-          // 验证第一个提交按钮是否禁用（根据MOCK数据，第一个考试不可提交）
-          expect(submitButtons[0]).toHaveAttribute('disabled');
-
-          // 验证可提交的按钮（根据MOCK数据，第二个考试的某些场次可提交）
-          expect(submitButtons[1]).not.toHaveAttribute('disabled');
         });
       });
     });

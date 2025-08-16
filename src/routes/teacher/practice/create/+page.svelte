@@ -15,11 +15,13 @@
 
   // Dialog状态
   let isDialogOpen = $state(false);
+  //需要关联的学生ID
+  let practiceStudentIds = $state([]);
 
   /**
    * @param {{ practice_name: any; grading_method: any; test: { id: any; suggest_duration?:number}; students: any[]; allowed_attempts:any}} practiceData
    */
-  async function handleSubmit(practiceData, selectedStudents) {
+  async function handleSubmit(practiceData, newStudents,selectedStudents) {
     const CREATE_PRACTICE =()=>{
         // 准备请求数据
       const requestData = {
@@ -33,7 +35,7 @@
             AllowedAttempts: practiceData.allowed_attempts,
             duration: practiceData.test.suggest_duration,
           },
-          student: practiceData.students,
+          student: practiceStudentIds,
         },
       };
       console.log(requestData);
@@ -92,13 +94,13 @@
     //先发送请求创建账号再与练习关联
  
     // 判断是否需要导入学生
-    if (selectedStudents && selectedStudents.length > 0) {
-      // 先执行导入操作
+    if (newStudents && newStudents.length > 0) {
+      // 先执行对没有账号的学生生成账号操作
       fetch('/api/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ data: selectedStudents }),
+        body: JSON.stringify({ data: newStudents }),
       })
         .then((res) => {
           if (!res.ok) {
@@ -112,9 +114,15 @@
           if (result.status !== 0) {
             throw new Error(result.msg || '导入失败');
           }
-          toast.success(`成功导入 ${selectedStudents.length} 名学生`);
+          //获取新增之后的学生ID
+          let studentIds = result.data.map((item) => item.ID);
+          //获取已经有账号的学生的ID
+          let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
+          console.log('exist',selectedStudents.filter(item=>item.ID))
+             //创建需要关联的学生ID
+          practiceStudentIds = [...practiceStudentIds,...studentIds,...existStudentIds]
           // 导入成功后执行创建练习
-          return createPractice();
+          return CREATE_PRACTICE(practiceStudentIds);
         })
         .catch((error) => {
           console.error('创建练习请求异常:', error);
@@ -122,6 +130,11 @@
         });
     } else {
       // 直接执行创建练习
+       //获取已经有账号的学生的ID
+        let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
+          //创建需要关联的学生ID
+          practiceStudentIds = [...practiceStudentIds,...existStudentIds]
+          
       CREATE_PRACTICE()
         .catch((error) => {
           console.error('创建练习请求异常:', error);

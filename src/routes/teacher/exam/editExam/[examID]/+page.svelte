@@ -13,6 +13,7 @@
   import{onMount} from 'svelte'
   import { page } from '$app/stores';
   import Loading from '$lib/components/Loading/Loading.svelte';
+  import { onChooseStartTime, onChooseEndTime,updateDuration } from '../../_utils/createExam';
   const TIP_TEXT = {
     final_exam: '当一门考试的考试性质为期末成绩考试时，它将决定学生在此课程的最终期末成绩',
     qualifying_exams: '当一门考试是资格证考试时，学生需要以真实身份进入考试',
@@ -169,52 +170,10 @@
       paper_configs[index].maxDuration = 0;
     }
     else{
-      updateDuration(index);
+      updateDuration(index,paper_configs);
     }
   }
   
-  function onChooseStartTime(index) {
-    return function (event) {
-      const startDate = event.detail.date;
-      if (startDate) {
-        startDate.setSeconds(0, 0);
-        const startISO = startDate.toISOString();
-        paper_configs[index].startTime = startISO;
-        updateDuration(index);
-      }
-    };
-  }
-
-  function onChooseEndTime(index) {
-    return function (event) {
-      const endDate = event.detail.date;
-      if (endDate) {
-        endDate.setSeconds(0, 0);
-        const endISO = endDate.toISOString();
-        paper_configs[index].endTime = endISO;
-        updateDuration(index);
-      }
-    };
-  }
-  //计算考试时长
-  function updateDuration(index) {
-    const startTime = paper_configs[index].startTime;
-    const endTime = paper_configs[index].endTime;
-
-    if (!startTime || !endTime) {
-      paper_configs[index].duration = 0;
-      paper_configs[index].maxDuration = 0;
-      return;
-    }
-
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const timeDifference = end.getTime() - start.getTime();
-    const durationInMinutes = Math.floor(timeDifference / (1000 * 60));
-
-    paper_configs[index].duration = Math.max(0, durationInMinutes);
-    paper_configs[index].maxDuration = Math.max(0, durationInMinutes);
-  }
 
   async function handleSubmit() {
     /* 1. 必填字段校验（保持原逻辑） */
@@ -740,10 +699,10 @@
             is_time_selection={true}
             input_width={'350px'}
             is_single_date_selection={false}
-            on:start_date_selected={onChooseStartTime(paperConfigIndex)}
-            on:end_date_selected={onChooseEndTime(paperConfigIndex)}
+            on:start_date_selected={onChooseStartTime(paperConfigIndex,paper_configs, updateDuration)}
+            on:end_date_selected={onChooseEndTime(paperConfigIndex,paper_configs, updateDuration)}
             onDateConfirm={()=>[
-              updateDuration(paperConfigIndex)
+              updateDuration(paperConfigIndex,paper_configs)
             ]}
           ></DatePicker>
         </div>

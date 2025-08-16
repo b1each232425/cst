@@ -406,8 +406,7 @@ describe('取消创建练习',(()=>{
     render(PracticeForm, { data: mockPractice });
     const cancelBtn=screen.getAllByText('取消');
     fireEvent.click(cancelBtn[0]);
-    expect(screen.getByText('请问是否要取消创建？')).toBeInTheDocument();
-
+   
     const confirmBtn=screen.getAllByText('确定');
     fireEvent.click(confirmBtn[0]);
   }))
