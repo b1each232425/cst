@@ -1091,7 +1091,12 @@
             </div>
 
             <!-- 试卷名称 -->
-            <input onchange={()=>{if(paper_name!=="")UpDatePaperInfo()}} class="paper-name-input {paper_name===""?"name-warn":""}" type="text" bind:value={paper_name} placeholder="试卷名称不能为空">
+            <input type="text" 
+                onchange={()=>{if(paper_name!=="")UpDatePaperInfo()}}
+                class="paper-name-input {paper_name===""?"name-warn":""}"
+                bind:value={paper_name} placeholder="试卷名称不能为空"
+                maxlength={50}
+            >
             
             <!-- 操作区 -->
             <div class="operation">

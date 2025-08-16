@@ -633,7 +633,7 @@
                                                     toggleSelection(question.ID, e.target.checked);
                                                 }}>
                                         </td>
-                                        <td class="question-content">{@html question.Content}</td>
+                                        <td class="question-content"><div>{@html question.Content}</div></td>
                                         <td class="question-type">{QUESTION_TYPE_TRANS[question.Type]}</td>
                                         <td class="question-level"><span class={DIFFICULTY_TRANS[DIFFICULTY_TRANS[question.Difficulty]]}>{DIFFICULTY_TRANS[question.Difficulty]}</span></td>
                                         <td class="question-score">{question.Score}</td>
@@ -1045,6 +1045,7 @@
 
                                 th, td {
                                     padding: 6px 3px;
+
                                 }
 
                                 th {
@@ -1066,6 +1067,7 @@
 
                                 td {
                                     border-bottom: 1px solid var(--border-light);
+                                    height: 50px;
                                 }
 
                                 .checkbox {
@@ -1087,6 +1089,16 @@
                                     white-space: nowrap;      /* 不允许文本换行 */
                                     overflow: hidden;         /* 超出容器的文本被隐藏 */
                                     text-overflow: ellipsis;  /* 超出的文本用省略号显示 */
+
+                                    div {
+                                        &:hover {
+                                            white-space: normal;
+                                            overflow: visible;
+                                            background: white;
+                                            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                        }
+                                    }
+
                                 }
                                 .question-type {
                                     font-size: 14px;
@@ -1110,7 +1122,7 @@
                                 .update-time {
                                     font-size: 14px;
                                     text-align: center;
-                                    min-width: 42px;
+                                    min-width: 80px;
                                 }
                                 .question-tags {
                                     font-size: 14px;
@@ -1133,7 +1145,7 @@
                                             height: max-content;
                     
                                             /* 颜色块 */
-                                            .tag-block{
+                                            .ta42block{
                                                 width: 12px;
                                                 height: 12px;
                                                 border-radius: 2px;
