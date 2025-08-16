@@ -14,10 +14,7 @@
  -->
 <script>
   import { validateAndAssign } from '$lib/utils/validate';
-  /**
-   * 默认标签，默认颜色常量
-   * @type {Array}
-   */
+
   const DEFAULT_TAGS = ['frontend', 'backend', 'svelte', '前端', 'JavaScript', 'CSS', 'HTML', 'Node.js'];
   const DEFAULT_COLORS = [
     '#40d5ff',
@@ -56,19 +53,16 @@
   let { tags = DEFAULT_TAGS, colors = DEFAULT_COLORS } = $props();
 
   /**
-   * 属性校验规则
-   * @type {Object}
+   * 校验参数是否合法,以及做一些默认处理
    */
   const propsRules = {
-    tags: { type: ['array'], default: DEFAULT_TAGS, check: (v) => v.length > 0 },
-    colors: { type: ['array'], default: DEFAULT_COLORS, check: (v) => v.length > 0 },
+    tags: { type: ['array'], default: DEFAULT_TAGS },
+    colors: { type: ['array'], default: DEFAULT_COLORS },
   };
-
   const propMap = {
     tags: { get: () => tags, set: (v) => (tags = v) },
     colors: { get: () => colors, set: (v) => (colors = v) },
   };
-
   Object.keys(propMap).forEach((k) => {
     validateAndAssign('UneditableTags', propMap[k].get, propMap[k].set, propsRules[k], k);
   });

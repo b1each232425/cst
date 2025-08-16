@@ -1,7 +1,7 @@
 <!--/**
  * @Author: wusaber33
  * @Date: 2025-04-23 20:22:44
- * @LastEditors: wusaber33
+ * @LastEditors: 段春茂 
  * @LastEditTime: 2025-04-26 22:05:58
  * @FilePath: src\lib\components\Tag\UneditableTag.svelte
  * @Description: 
@@ -9,9 +9,7 @@
  */ -->
 <script>
   import { validateAndAssign } from '$lib/utils/validate';
-  /**
-   * 颜色列表
-   */
+
   const COLOR_LIST = [
     '#40d5ff',
     '#59dcff',
@@ -45,19 +43,16 @@
   let { content, colors = COLOR_LIST } = $props();
 
   /**
-   * 属性校验规则
-   * @type {Object}
+   * 校验参数是否合法,以及做一些默认处理
    */
   const propsRules = {
     content: { type: ['string'], default: '标签文本' },
     colors: { type: ['array'], default: COLOR_LIST, check: (v) => v.length > 0, message: 'colors 不能为空' },
   };
-
   const propMap = {
     content: { get: () => content, set: (v) => (content = v) },
     colors: { get: () => colors, set: (v) => (colors = v) },
   };
-
   Object.keys(propMap).forEach((k) => {
     validateAndAssign('UneditableTag', propMap[k].get, propMap[k].set, propsRules[k], k);
   });
