@@ -3,6 +3,7 @@
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
+  import Loading from '$lib/components/Loading/Loading.svelte';
   import { goto } from '$app/navigation';
   import {
     handleApiError,
@@ -265,7 +266,7 @@
   <div class="table-container">
     <div class="table-content">
       {#if state.loading}
-        <p>加载中...</p>
+        <Loading bind:value={state.loading} loadingText="正在加载"></Loading>
       {:else}
         <!-- 练习表格 -->
         <div class="practice-table-container">

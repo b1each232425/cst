@@ -3,6 +3,7 @@
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
+  import { debounce } from '../../_utils/debounce.js';
 
   /**
    * @typedef {Object} Props
@@ -42,7 +43,6 @@
   let error = $state(null);
 
   let isfolded = $state(false);
-  let searchTimeout = null;
   let searchKeyword = $state('');
 
   // 切换折叠状态
@@ -167,22 +167,15 @@
   }
 
   /**
-   * 搜索功能
+   * 执行搜索
    */
-  function handleSearch(keyword) {
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-
-    searchTimeout = setTimeout(async () => {
-      current_page = 1;
-      searchKeyword = keyword;
-      await fetchGradesData();
-
-      clearTimeout(searchTimeout);
-      searchTimeout = null;
-    }, 500);
+  async function performSearch() {
+    current_page = 1;
+    await fetchGradesData();
   }
+
+  // 创建防抖后的搜索函数
+  const debouncedSearch = debounce(performSearch, 500);
 
   // 页码选择处理（按照用户管理页面的风格）
   function handlePageChange(event) {
@@ -208,13 +201,6 @@
     }
   }
 
-  // 搜索防抖处理
-  $effect(() => {
-    if (searchKeyword !== undefined) {
-      handleSearch(searchKeyword);
-    }
-  });
-
   // 初始化
   onMount(async () => {
     await fetchGradesData();
@@ -235,7 +221,12 @@
   {#if !isfolded}
     <div class="card-body">
       <div class="search-section">
-        <InputBox show_label={false} placeholder="请输入学生电话/昵称/姓名" bind:value={searchKeyword} />
+        <InputBox 
+          show_label={false} 
+          placeholder="请输入学生电话/昵称/姓名" 
+          bind:value={searchKeyword} 
+          onInput={debouncedSearch}
+        />
       </div>
       {#if loading}
         <div class="loading-indicator">
@@ -303,7 +294,7 @@
                 </tr>
               {:else}
                 <tr>
-                  <td colspan="6" class="empty-row"
+                  <td colspan="7" class="empty-row"
                     ><div class="empty-container">
                       <Empty text="暂无数据" />
                     </div></td

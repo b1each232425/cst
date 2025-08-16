@@ -5,6 +5,7 @@
   import Select from '$lib/components/Select/Select.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import Option from '$lib/components/Select/Option.svelte';
+  import Loading from '$lib/components/Loading/Loading.svelte';
   import { goto } from '$app/navigation';
   import { handleApiError, handleSuccess, handleFeatureNotImplemented } from '../_utils/errorHandler.js';
   import { formatExamData } from '../_utils/dataFormatter.js';
@@ -337,7 +338,8 @@
   <div class="table-container">
     <div class="table-content">
       {#if state.loading}
-        <p>加载中...</p>
+        <Loading bind:value={state.loading} loadingText="正在加载"></Loading>
+
       {:else}
         <!-- 考试表格 -->
         <div class="exam-table-container">
