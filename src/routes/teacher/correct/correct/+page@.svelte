@@ -736,7 +736,7 @@
     });
   }
 
-  // onMount(() => checkQueriesAndGetData());
+  onMount(() => checkQueriesAndGetData());
 </script>
 
 <div class="correct">
