@@ -224,7 +224,8 @@
                   ...item,
                   officialName: item.official_name,
                   idCardNo: item.id_card_no,
-                  mobilePhone: item.phone
+                  mobilePhone: item.phone,
+                  ID: item.id
                 }));
               
         }
@@ -288,11 +289,11 @@
         account: student.Account,
         
       }));
-
        // 过滤掉已经在 selected_ids 中存在的学生（避免重复）
      exist_students = exist_students.filter(exist_student => {
       return !selected_ids.some(selected_student => selected_student.ID === exist_student.ID);
     });
+    console.log('exist_students',exist_students)
       // 更新选中学生列表
       selected_ids = [...selected_ids, ...newStudents,...exist_students];
       console.log('selected',selected_ids);

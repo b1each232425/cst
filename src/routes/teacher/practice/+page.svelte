@@ -553,12 +553,14 @@
         });
     } else {
       //获取已经有账号的学生的ID
+      console.log("selecteds",selected)
       let existStudentIds = selected.filter((item) => item.ID).map((item) => ({
             id: item.ID
           }));
      
        //检验是否有相同的ID，进行过滤
            existStudentIds = existStudentIds.filter((item) => !selectedStudentIds.some((item2) => item2.id === item.id));
+            console.log('existStudentIds', existStudentIds);
             
       //创建需要关联的学生ID
       selectedStudentIds = [...selectedStudentIds, ...existStudentIds];
@@ -1005,7 +1007,10 @@
   <!-- 学生选择面板 -->
   <StudentSelectionPanel
     show_panel={show_student_selectionPanel}
-    ids={selectedStudentIds}
+    ids={selectedStudentIds.map(item=>({
+      ID : item.id,
+      ...item
+    }))}
     onCancel={() => {
       show_student_selectionPanel = false;
     }}
@@ -1020,7 +1025,7 @@
       setTimeout(() => {
        
         window.location.reload();
-      }, 1000);
+      }, 100000);
     }}
   />
 </div>
