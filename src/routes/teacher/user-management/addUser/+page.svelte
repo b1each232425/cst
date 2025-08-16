@@ -484,7 +484,7 @@ o.  )88b   888 .    `888'     888  888    .o
     .form-input-container {
       position: relative;
       display: flex;
-      width: 35%; 
+      width: 50%; 
 
       .error-message {
         color: #e34d59;
@@ -625,7 +625,7 @@ o.  )88b   888 .    `888'     888  888    .o
     min-width: 70px;
 
     @media (min-resolution: 1.25dppx) {
-      min-width: auto;
+      min-width: 70px;
     }
   }
 
