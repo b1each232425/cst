@@ -1504,16 +1504,16 @@
 
                 &:focus {
                     outline: none;
-                    border-color: var(--primary-hover);
-                    color: var(--primary-hover);
+                    border-color: var(--primary-color);
+                    color: var(--primary-color);
                 }
 
                 &:hover {
                     white-space: normal;
                     overflow: visible;
                     width: 40%;
-                    border-color: var(--primary-hover);
-                    color: var(--primary-hover);
+                    border-color: var(--primary-color);
+                    color: var(--primary-color);
                 }
             }
             .name-warn {
