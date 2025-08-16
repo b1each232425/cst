@@ -110,6 +110,20 @@ describe('Loading 组件测试', () => {
     expect(loadingElement).toBeInTheDocument();
   });
 
+  it('is_fullscreen 参数为非布尔值时，应输出警告并渲染默认值 false', () => {
+    const spy = vi.spyOn(console, 'warn'); // 监听 console.warn
+
+    // 测试传入非布尔值，如字符串
+    render(Loading, { props: { value: true, is_fullscreen: 'string' } });
+
+    // 检查警告信息
+    expect(spy).toHaveBeenCalledWith('[Loading] is_fullscreen 应该是布尔值，当前为 string');
+
+    // 检查默认渲染
+    const loadingElement = screen.getByText('加载中...');
+    expect(loadingElement).toBeInTheDocument();
+  });
+
   it('应该在 is_loading 为 true 时显示加载动画和文本', async () => {
     // 使用 writable store 初始化 is_loading
     let is_loading = false;
@@ -156,6 +170,19 @@ describe('Loading 组件测试', () => {
     let is_loading = true;
     // 渲染 Loading 组件并绑定 is_loading
     render(Loading, { props: { value: is_loading, loading_text: custom_text } });
+
+    // 等待加载文本的更新
+    await waitFor(() => {
+      expect(screen.getByText(custom_text)).toBeInTheDocument();
+    });
+  });
+
+  it('应该正确处理局部loading', async () => {
+    const custom_text = '数据加载中，请稍候...';
+
+    let is_loading = true;
+    // 渲染 Loading 组件并绑定 is_loading
+    render(Loading, { props: { value: is_loading, loading_text: custom_text, is_fullscreen: false } });
 
     // 等待加载文本的更新
     await waitFor(() => {

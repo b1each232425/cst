@@ -2,7 +2,7 @@
     import { TheoryQuestion } from "../theory/type";
     import UneditableTag from "$lib/components/Tag/UneditableTags.svelte";
     import { onMount} from "svelte";
-  import { debounce } from "$lib/utils/optimize";
+    import { debounce } from "$lib/utils/optimize";
     /**
      * @type {{
      *      question: TheoryQuestion,
