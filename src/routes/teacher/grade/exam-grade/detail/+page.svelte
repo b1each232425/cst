@@ -349,8 +349,6 @@
       display: flex;
       flex-direction: column;
       height: 100%;
-      width: 100%;
-      background-color: var(--bg-primary);
       gap: 20px;
       overflow: auto;
       padding: 10px;

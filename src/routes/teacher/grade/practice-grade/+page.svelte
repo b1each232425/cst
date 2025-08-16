@@ -52,7 +52,7 @@
     fetchPractices();
   }
 
-  // 创建防抖后的搜索函数
+  // 防抖处理搜索函数
   const debouncedSearch = debounce(performSearch, 500);
 
   // API 函数
@@ -255,64 +255,69 @@
           />
         </div>
       </div>
-      <div class="actions">
+      <!-- <div class="actions">
         <div class="selection-info">
           <span>当前已选中</span>
           <span class="count">{selectedCount}</span>
           <span>项</span>
         </div>
-        <button class="action-btn export" disabled={!hasSelection} onclick={handleExportClick} style="display: none;"
+        <button class="action-btn export" disabled={!hasSelection} onclick={handleExportClick} 
           >批量导出</button
         >
-      </div>
+      </div> -->
     </div>
   </div>
   <div class="table-container">
     <div class="table-content">
-      {#if state.loading}
-        <Loading bind:value={state.loading} loadingText="正在加载"></Loading>
-      {:else}
-        <!-- 练习表格 -->
-        <div class="practice-table-container">
-          <table class="practice-table">
-            <thead>
-              <!-- 表头 -->
-              <tr class="practice-list-head">
-                <th class="practice-select">
-                  <button class="square-container {state.selectAll ? 'checked' : ''}" onclick={toggleSelectAll}>
-                    {#if state.selectAll}
-                      <div class="check-square"></div>
-                    {/if}
-                  </button>
-                </th>
-                <th class="practice-name">名称</th>
-                <th class="practice-total-score">总分</th>
-                <th class="practice-avg-score">
-                  <span class="header-text">平均分</span>
-                  <span class="tooltip-container">
-                    <svg class="info-icon" viewBox="0 0 16 16" width="14" height="14">
-                      <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" />
-                      <text x="8" y="12" text-anchor="middle" font-size="10" fill="currentColor">i</text>
-                    </svg>
-                    <div class="tooltip">计算方式:练习总分/练习次数</div>
-                  </span>
-                </th>
-                <th class="practice-completed">作答人数</th>
-                <th class="practice-passed">通过人数</th>
-                <th class="practice-operation">操作</th>
+      <!-- 练习表格 -->
+      <div class="practice-table-container">
+        <table class="practice-table">
+          <thead>
+            <!-- 表头 -->
+            <tr class="practice-list-head">
+              <th class="practice-select">
+                <button class="square-container {state.selectAll ? 'checked' : ''}" onclick={toggleSelectAll}>
+                  {#if state.selectAll}
+                    <div class="check-square"></div>
+                  {/if}
+                </button>
+              </th>
+              <th class="practice-name">名称</th>
+              <th class="practice-total-score">总分</th>
+              <th class="practice-avg-score">
+                <span class="header-text">平均分</span>
+                <span class="tooltip-container">
+                  <svg class="info-icon" viewBox="0 0 16 16" width="14" height="14">
+                    <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" />
+                    <text x="8" y="12" text-anchor="middle" font-size="10" fill="currentColor">i</text>
+                  </svg>
+                  <div class="tooltip">计算方式:练习总分/练习次数</div>
+                </span>
+              </th>
+              <th class="practice-completed">作答人数</th>
+              <th class="practice-passed">通过人数</th>
+              <th class="practice-operation">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#if state.loading}
+              <tr>
+                <td colspan="7" class="loading-row">
+                  <div class="loading-container">
+                    <Loading bind:value={state.loading} loading_text="正在加载" is_fullscreen={false}></Loading>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {#if state.practices.length === 0}
-                <tr>
-                  <td colspan="7" class="no-data"
-                    ><div class="empty-container">
-                      <Empty text="暂无练习数据" />
-                    </div></td
-                  >
-                </tr>
-              {:else}
-                {#each state.practices as practice (practice.id)}
+            {:else if state.practices.length === 0}
+              <tr>
+                <td colspan="7" class="no-data"
+                  ><div class="empty-container">
+                    <Empty text="暂无练习数据" />
+                  </div></td
+                >
+              </tr>
+            {:else}
+              {#each state.practices as practice (practice.id)}
                   <!-- 表格行 -->
                   <tr class="practice-list-row">
                     <td class="practice-select">
@@ -339,7 +344,6 @@
             </tbody>
           </table>
         </div>
-      {/if}
     </div>
     <div class="pagination-wrapper">
       <Pagination
@@ -626,6 +630,16 @@
     border: none;
     cursor: pointer;
     padding: 4px 8px;
+  }
+
+  .loading-row {
+    text-align: center;
+    padding: 0;
+  }
+
+  .loading-container {
+    padding-top: 500px;
+    position: relative;
   }
 
   /* 复选框样式 */

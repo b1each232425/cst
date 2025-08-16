@@ -66,7 +66,7 @@
     fetchExams();
   }
 
-  // 创建防抖后的搜索函数
+  // 防抖处理搜索函数
   const debouncedSearch = debounce(performSearch, 500);
 
   // API 函数
@@ -336,56 +336,60 @@
 
   <div class="table-container">
     <div class="table-content">
-      {#if state.loading}
-        <Loading bind:value={state.loading} loadingText="正在加载"></Loading>
-
-      {:else}
-        <!-- 考试表格 -->
-        <div class="exam-table-container">
-          <table class="exam-table">
-            <thead>
-              <!-- 表头 -->
-              <tr class="exam-list-head">
-                <th class="exam-select">
-                  <button class="square-container {state.selectAll ? 'checked' : ''}" onclick={toggleSelectAll}>
-                    {#if state.selectAll}
-                      <div class="check-square"></div>
-                    {/if}
-                  </button>
-                </th>
-                <th class="exam-name">名称</th>
-                <th class="exam-type">类型</th>
-                <th class="exam-sessions">场次</th>
-                <th class="exam-time">时间</th>
-                <th class="exam-total-score">总分</th>
-                <th class="exam-average-score">
-                  <span class="header-text">平均分</span>
-                  <span class="tooltip-container">
-                    <svg class="info-icon" viewBox="0 0 16 16" width="14" height="14">
-                      <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" />
-                      <text x="8" y="12" text-anchor="middle" font-size="10" fill="currentColor">i</text>
-                    </svg>
-                    <div class="tooltip">计算方式:考试总分/考试次数</div>
-                  </span>
-                </th>
-                <th class="exam-scheduled-examinees">应考人数</th>
-                <th class="exam-actual-examinees">实考人数</th>
-                <th class="exam-pass-examinees">通过人数</th>
-                <th class="exam-submitted">提交状态</th>
-                <th class="operation">操作</th>
+      <!-- 考试表格 -->
+      <div class="exam-table-container">
+        <table class="exam-table">
+          <thead>
+            <!-- 表头 -->
+            <tr class="exam-list-head">
+              <th class="exam-select">
+                <button class="square-container {state.selectAll ? 'checked' : ''}" onclick={toggleSelectAll}>
+                  {#if state.selectAll}
+                    <div class="check-square"></div>
+                  {/if}
+                </button>
+              </th>
+              <th class="exam-name">名称</th>
+              <th class="exam-type">类型</th>
+              <th class="exam-sessions">场次</th>
+              <th class="exam-time">时间</th>
+              <th class="exam-total-score">总分</th>
+              <th class="exam-average-score">
+                <span class="header-text">平均分</span>
+                <span class="tooltip-container">
+                  <svg class="info-icon" viewBox="0 0 16 16" width="14" height="14">
+                    <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5" />
+                    <text x="8" y="12" text-anchor="middle" font-size="10" fill="currentColor">i</text>
+                  </svg>
+                  <div class="tooltip">计算方式:考试总分/考试次数</div>
+                </span>
+              </th>
+              <th class="exam-scheduled-examinees">应考人数</th>
+              <th class="exam-actual-examinees">实考人数</th>
+              <th class="exam-pass-examinees">通过人数</th>
+              <th class="exam-submitted">提交状态</th>
+              <th class="operation">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#if state.loading}
+              <tr>
+                <td colspan="12" class="loading-row">
+                  <div class="loading-container">
+                    <Loading bind:value={state.loading} loading_text="正在加载" is_fullscreen={false}></Loading>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {#if state.exams.length === 0}
-                <tr>
-                  <td colspan="12" class="no-data">
-                    <div class="empty-container">
-                      <Empty text="暂无考试数据" />
-                    </div>
-                  </td>
-                </tr>
-              {:else}
-                {#each state.exams as exam (exam.id)}
+            {:else if state.exams.length === 0}
+              <tr>
+                <td colspan="12" class="no-data">
+                  <div class="empty-container">
+                    <Empty text="暂无考试数据" />
+                  </div>
+                </td>
+              </tr>
+            {:else}
+              {#each state.exams as exam (exam.id)}
                   <!-- 表格行 -->
                   <tr class="exam-list-row">
                     <td class="exam-select">
@@ -470,7 +474,6 @@
             </tbody>
           </table>
         </div>
-      {/if}
     </div>
     <div class="pagination-wrapper">
       <Pagination
@@ -622,6 +625,7 @@
     overflow: auto;
     flex: 1;
     min-height: 0;
+    
 
     // 自定义滚动条
     &::-webkit-scrollbar {
@@ -663,6 +667,16 @@
     padding: 40px;
     color: #999;
     font-size: 14px;
+  }
+
+  .loading-row {
+    text-align: center;
+    padding: 0;
+  }
+
+  .loading-container {
+    padding-top: 500px;
+    position: relative;
   }
 
   /* 表头样式 */
