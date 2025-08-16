@@ -365,9 +365,6 @@
           {/if}
         </div>
         <div class="pagination-container">
-          <span style="font-size: 12px; margin-right:10px">
-            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{filtered_selected_ids.length}</span> 条
-          </span>
           <Pagination
             total_items={filtered_selected_ids.length}
             page_size={selected_search_params.pageSize}

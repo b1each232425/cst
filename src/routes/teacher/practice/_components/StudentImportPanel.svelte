@@ -521,7 +521,7 @@
     </div>
     <div class="panel-footer">
       <Button type="primary" plain onclick={handleCancel}>取消</Button>
-      <Button type="primary" onclick={handleImport}>确认导入</Button>
+      <Button type="primary" onclick={handleImport}>确认选择</Button>
     </div>
   </div>
 </div>
@@ -540,7 +540,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10001;
+    z-index: 1001;
   }
 
   .student-panel {
@@ -663,7 +663,7 @@
   .student-table-container {
     margin: 20px 0px 0 0px;
     flex: 1;
-    min-height: 500px;
+    min-height: 527px;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -810,7 +810,7 @@
     background: white;
     padding: 8px 0px;
     position: absolute;
-    bottom: 0px; /* 距离底部距离，避免与页脚重叠 */
+    bottom: 10px; /* 距离底部距离，避免与页脚重叠 */
     right: 10px;
     z-index: 10;
   }
