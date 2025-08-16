@@ -229,8 +229,8 @@
   // TODO 当前阶段使用分数是否为-1作为标准
   // 是否可以查看成绩
   function canSeeResult(status, score) {
-    // return (status === '10' && score !== -1) || status === '12';
-    return status === '12';
+    return (status === '10' && score !== -1) || status === '12';
+    // return status === '12';
   }
 
   function canEnterExam(exam_sessions) {
