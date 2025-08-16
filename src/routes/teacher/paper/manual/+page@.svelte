@@ -17,13 +17,13 @@
     import "$lib/components/Button/index.scss"
     import "$lib/components/Input/index.scss"
     import { goto } from "$app/navigation";
-    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../_utils/tool";
+    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS, utf8MaxLength } from "../_utils/tool";
     import { onMount, tick } from "svelte";
     import { toast } from "$lib/components/Toast/Toast";
     import { get } from "svelte/store";
     import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, GROUP_AVERAGE_SCORE } from "../_stores/store";
     import { stopPropagation } from "svelte/legacy";
-  import { debounce } from "$lib/utils/optimize";
+    import { debounce } from "$lib/utils/optimize";
 
     /******************* API 区 ********************/
 
@@ -1094,8 +1094,9 @@
             <input type="text" 
                 onchange={()=>{if(paper_name!=="")UpDatePaperInfo()}}
                 class="paper-name-input {paper_name===""?"name-warn":""}"
-                bind:value={paper_name} placeholder="试卷名称不能为空"
-                maxlength={50}
+                bind:value={paper_name}
+                placeholder="试卷名称不能为空"
+                use:utf8MaxLength={50}
             >
             
             <!-- 操作区 -->
@@ -1170,7 +1171,14 @@
                     <!-- 试卷说明 -->
                     <div class="paper-description">
                         <span class="info-label">试卷说明</span>
-                        <textarea onchange={()=>UpDatePaperInfo()} class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
+                        <textarea
+                            onchange={()=>UpDatePaperInfo()}
+                            class="description-textarea"
+                            bind:value={description}
+                            placeholder="输入试卷说明"
+                            use:utf8MaxLength={500}
+                        >
+                        </textarea>
                     </div>
 
                     <!-- 试卷标签 -->
@@ -1181,7 +1189,12 @@
                             <div class="paper-tag" style="border: 1.5px dashed var(--border-medium);">
                                 <div class="color-block" style="background-color: {to_add_tag===""? "#40d5ff":TAG_COLOR_LIST[getColorIndex(to_add_tag)]};"></div>
                                 <div class="btn-box">
-                                    <input type="text" bind:value={to_add_tag} onchange={addTag} placeholder="+标签" maxlength="30"/>
+                                    <input type="text"
+                                        bind:value={to_add_tag}
+                                        onchange={addTag}
+                                        placeholder="+标签"
+                                        use:utf8MaxLength={30}
+                                    />
                                     <button onmousedown={clearToAddTagContent}>✕</button>
                                 </div>
                             </div>
@@ -1485,10 +1498,22 @@
                 width: 30%;
                 margin-left: auto;
                 min-width: 108px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
 
                 &:focus {
                     outline: none;
                     border-color: var(--primary-hover);
+                    color: var(--primary-hover);
+                }
+
+                &:hover {
+                    white-space: normal;
+                    overflow: visible;
+                    width: 40%;
+                    border-color: var(--primary-hover);
+                    color: var(--primary-hover);
                 }
             }
             .name-warn {

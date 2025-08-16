@@ -18,7 +18,7 @@
     import UneditableTag from "$lib/components/Tag/UneditableTag.svelte";
     import "$lib/components/Button/index.scss"
     import "$lib/components/Input/index.scss"
-    import { LEVEL_TRANS, CATEGORY_TRANS, ASSEMBLY_TYPE_TRANS } from "./_utils/tool";
+    import { LEVEL_TRANS, CATEGORY_TRANS, ASSEMBLY_TYPE_TRANS, utf8MaxLength } from "./_utils/tool";
     import { goto } from "$app/navigation";
     import { debounce } from "$lib/utils/optimize";
     import { onMount } from "svelte";
@@ -386,6 +386,7 @@
                         bind:value={$SEARCH_PAPER_NAME}
                         oninput={()=>debouncedFetchPaperList()}
                         onchange={()=>debouncedFetchPaperList()}
+                        use:utf8MaxLength={50}
                     > 
                     <!-- svelte-ignore a11y_consider_explicit_label -->
                     <button data-name="clear" class="{$SEARCH_PAPER_NAME===""?"hide-clear":""}" onclick={()=>{SEARCH_PAPER_NAME.set("")}}></button>
@@ -401,6 +402,7 @@
                         bind:value={$SEARCH_PAPER_TAGS}
                         oninput={()=>debouncedFetchPaperList()}
                         onchange={()=>debouncedFetchPaperList()}
+                        use:utf8MaxLength={50}
                     >
                     <!-- svelte-ignore a11y_consider_explicit_label -->
                     <button data-name="clear" class="{$SEARCH_PAPER_TAGS===""?"hide-clear":""}" onclick={()=>{SEARCH_PAPER_TAGS.set("")}}></button>
