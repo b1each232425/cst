@@ -6,6 +6,8 @@
   import StudentGradeTable from '../../_components/detail/StudentGradeTable.svelte';
   import GradeChart from '../../_components/detail/GradeChart.svelte';
   import AnalysisPanel from '../../_components/detail/AnalysisPanel.svelte';
+  import { toast } from '$lib/components/Toast/Toast.js';
+
 
   // 后端返回数据类型
   /**
@@ -156,7 +158,7 @@
 
     // 总应考人数
     const totalExaminees = sessions.reduce((sum, s) => sum + (s.scheduled_examinees || 0), 0);
-    
+
     const passExaminees = sessions.reduce((sum, s) => sum + (s.pass_examinees || 0), 0);
 
     // 总分，取每个试卷的分数之和
@@ -202,8 +204,8 @@
       category: 'exam',
       page: '1',
       pageSize: '10',
-      submitted: '0',
-      examID: String(examId),
+      submitted: '-1',
+      examID: examId,
     });
 
     return fetch(`/api/grade/list?${query.toString()}`, {
@@ -225,6 +227,7 @@
       })
       .catch((err) => {
         console.error('获取考试数据失败:', err);
+        toast.error(`获取考试数据失败: ${err.message}`);
         return null;
       });
   }
@@ -232,38 +235,38 @@
   /**
    * 提交考试成绩
    */
-  // async function handleExamSubmitted(exam_ids) {
-  // 	try {
-  // 		const response = await fetch('/api/teacher/exam-grades', {
-  // 			method: 'PATCH',
-  // 			headers: {
-  // 				'Content-Type': 'application/json'
-  // 			},
-  // 			credentials: 'include',
-  // 			body: JSON.stringify({
-  // 				exam_ids: exam_ids
-  // 			})
-  // 		});
+  function handleExamSubmitted(examIds) {
+    const body = JSON.stringify({ data: { exam_ids: examIds } });
 
-  // 		if (!response.ok) {
-  // 			throw new Error(`HTTP error! status: ${response.status}`);
-  // 		}
-
-  // 		const result = await response.json();
-
-  // 		if (result.status === 0) {
-  // 			console.log('成绩提交成功');
-  // 			// 更新提交状态
-  // 			if (examData) {
-  // 				examData.submitted = true;
-  // 			}
-  // 		} else {
-  // 			throw new Error(result.msg || '提交失败');
-  // 		}
-  // 	} catch (err) {
-  // 		console.error('提交成绩失败:', err);
-  // 	}
-  // }
+    return fetch('/api/grade/submission', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body,
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((result) => {
+        if (result.status === 0) {
+          console.log('成绩提交成功');
+          toast.success('成绩提交成功');
+          // 更新本地提交状态
+          if (examData) {
+            examData.submitted = true;
+          }
+        } else {
+          throw new Error(result.msg || '提交失败');
+        }
+      })
+      .catch((err) => {
+        console.error('提交成绩失败:', err);
+        toast.error(`提交成绩失败: ${err.message}`);
+      });
+  }
 
   // 页面初始化
   onMount(async () => {
@@ -273,6 +276,7 @@
 
     if (!examId) {
       console.error('缺少考试ID参数');
+
       goto('/teacher/grade/exam-grade');
       return;
     }
@@ -295,22 +299,14 @@
         </section>
         <!-- 成绩分布图表 -->
         <section class="card chart-section">
-			<GradeChart
-				type="exam"
-				resourceId={examId}
-				papers={examData?.papers || []}
-			/>
-			</section>
+          <GradeChart type="exam" resourceId={examId} papers={examData?.papers || []} />
+        </section>
       </div>
       <div class="second-row">
         <!-- 学生成绩表格 -->
-        <!-- <section class="card grade-section">
-			<StudentGradeTable
-				type="exam"
-				resourceId={examId}
-				papers={examData?.papers || []}
-			/>
-		</section> -->
+        <section class="card grade-section">
+          <StudentGradeTable type="exam" resourceId={examId} papers={examData?.papers || []} />
+        </section>
       </div>
 
       <div class="third-row">

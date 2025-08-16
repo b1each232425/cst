@@ -30,47 +30,24 @@
     // Context 不存在时忽略
   }
 
-  // 状态变量（按照旧项目命名）
+  // 状态变量（按照用户管理页面的命名风格）
   let currentData = $state([]);
-  let searchParams = $state({
-    examID: type === 'exam' ? resourceId : undefined,
-    practiceID: type === 'practice' ? resourceId : undefined,
-    keyword: '',
-    page: 1,
-    pageSize: 10,
-  });
+  
+  // 分页相关状态（按照用户管理页面的风格）
+  let current_page = $state(1);
+  let page_size = $state(10);
+  let total_items = $state(0);
 
-  let paginationConfig = $state({
-    total_data_num: 100,
-    total_page_num: 10,
-    current_page_num: 1,
-    max_show_page_num: 5,
-    show_per_page: true,
-    data_num_per_page_options: [
-      { value: 10, label: '10条/页' },
-      { value: 20, label: '20条/页' },
-    ],
-    selected: 10,
-    dropdown_open: false,
-    expand_direction: 'up',
-  });
+  let loading = $state(false);
+  let error = $state(null);
 
   let isfolded = $state(false);
-  let isLoading = $state(true);
   let searchTimeout = null;
   let searchKeyword = $state('');
 
   // 切换折叠状态
   function toggleFold() {
     isfolded = !isfolded;
-  }
-
-  /**
-   * 更新分页配置
-   */
-  function updatePagination(number) {
-    paginationConfig.total_data_num = number;
-    paginationConfig.total_page_num = Math.ceil(paginationConfig.total_data_num / paginationConfig.selected);
   }
 
   /**
@@ -112,55 +89,81 @@
   }
 
   /**
-   * 获取数据
+   * 获取学生成绩数据
    */
-  async function fetchData() {
-    try {
-      isLoading = true;
-      currentData = [];
+  async function fetchGradesData() {
+    loading = true;
+    error = null;
+    currentData = [];
 
-      let url;
-      if (type === 'practice') {
-        url = `/api/teacher/practice-grade/examinee-grade-list?practiceID=${searchParams.practiceID}&page=${searchParams.page}&pageSize=${searchParams.pageSize}&keyword=${encodeURIComponent(searchParams.keyword)}`;
-      } else {
-        url = `/api/teacher/exam-grade/examinee-grade-list?examID=${searchParams.examID}&page=${searchParams.page}&pageSize=${searchParams.pageSize}&keyword=${encodeURIComponent(searchParams.keyword)}`;
-      }
+    // 组装查询参数
+    const params = new URLSearchParams({
+      category: type,               
+      page: String(current_page),
+      pageSize: String(page_size),
+      ...(type === 'exam'
+        ? { examID: resourceId }
+        : { practiceID: resourceId }),
+      keyword: searchKeyword.trim()
+    });
 
-      const response = await fetch(url, {
-        method: 'GET',
-        credentials: 'include',
+    return fetch(`/api/grade/examinee/list?${params.toString()}`, {
+      method: 'GET',
+      credentials: 'include'
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((json) => {
+        if (json.status !== 0) throw new Error(json.msg || '接口异常');
+
+        const raw = json.data || [];
+        if (type === 'practice') {
+          currentData = raw.map((stu) => ({
+            stuId: stu.student_id,
+            phone: stu.phone || '-',
+            name: stu.name || '-',
+            nickname: stu.nickname || '-',
+            highestScore: stu.highest_score ?? 0,
+            submitCount: stu.submitted_cnt ?? 0,
+            remark: stu.remark || '-'
+          }));
+          total_items = json.rowCount || 0;
+        } else {
+          const merged = [];
+          raw.forEach((item) => {
+            item.student_scores.forEach((stu) => {
+              const totalScore = stu.exam_sessions.reduce((sum, s) => sum + (s.score ?? 0), 0);
+              merged.push({
+                stu_id: stu.student_id,
+                phone: stu.phone || '-',
+                name: stu.name || '-',
+                nickname: stu.nickname || '-',
+                scores: stu.exam_sessions.map((s) => ({
+                  exam_session_id: s.exam_session_id,
+                  score: s.score ?? 0
+                })),
+                total_score: totalScore,
+                remark: stu.remark || '-'
+              });
+            });
+          });
+          currentData = merged;
+
+          // 后端 rowCount 是人次数，前端按学生人数算
+          total_items = Math.ceil((json.rowCount || 0) / (papers.length || 1));
+        }
+        
+        loading = false;
+      })
+      .catch((err) => {
+        console.error('拉取学生成绩失败:', err);
+        error = err.message;
+        currentData = [];
+        total_items = 0;
+        loading = false;
       });
-
-      const response_data = await response.json();
-      if (response_data.status < 0) {
-        throw new Error(response_data.msg);
-      }
-
-      if (type === 'practice') {
-        const data = response_data.data || [];
-        currentData = data.map((item) => ({
-          stuId: item.stu_id || 0,
-          phone: item.phone || '-',
-          nickname: item.nickname || '-',
-          name: item.name || '-',
-          highestScore: item.highest_score || 0,
-          submitCount: item.submitted_cnt || 0,
-          remark: item.remark || '-',
-        }));
-        const total = response_data.row_count || 0;
-        updatePagination(total);
-      } else {
-        const data = response_data.data;
-        currentData = mergeStudentGrades(data);
-        const total = Math.ceil(response_data.row_count / (contextData?.papers?.length || 1));
-        updatePagination(total);
-      }
-
-      isLoading = false;
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      isLoading = false;
-    }
   }
 
   /**
@@ -172,64 +175,26 @@
     }
 
     searchTimeout = setTimeout(async () => {
-      searchParams.page = 1;
-      searchParams.keyword = keyword;
-      await fetchData();
+      current_page = 1;
+      searchKeyword = keyword;
+      await fetchGradesData();
 
       clearTimeout(searchTimeout);
       searchTimeout = null;
     }, 500);
   }
 
-  /**
-   * 处理页码变化
-   */
-  async function handlePageChange(is_next) {
-    const new_page = is_next
-      ? Math.min(paginationConfig.total_page_num, paginationConfig.current_page_num + 1)
-      : Math.max(1, paginationConfig.current_page_num - 1);
-
-    if (new_page !== paginationConfig.current_page_num) {
-      paginationConfig.current_page_num = new_page;
-      searchParams.page = new_page;
-      await fetchData();
-    }
+  // 页码选择处理（按照用户管理页面的风格）
+  function handlePageChange(event) {
+    current_page = event.detail;
+    fetchGradesData();
   }
 
-  /**
-   * 处理页码选择
-   */
-  async function handlePageChoose(page_num) {
-    if (page_num !== paginationConfig.current_page_num && page_num > 0 && page_num <= paginationConfig.total_page_num) {
-      paginationConfig.current_page_num = page_num;
-      searchParams.page = page_num;
-      await fetchData();
-    }
-  }
-
-  /**
-   * 处理每页显示条数变化
-   */
-  async function handlePageSizeChange(value) {
-    const size_value = typeof value === 'string' ? parseInt(value) : value;
-    paginationConfig.show_per_page = true;
-    paginationConfig.current_page_num = 1;
-    paginationConfig.selected = size_value;
-    searchParams.pageSize = size_value;
-    searchParams.page = 1;
-    await fetchData();
-  }
-
-  /**
-   * 处理页码搜索
-   */
-  async function handlePageSearch(value) {
-    const page_num = parseInt(value);
-    if (!isNaN(page_num) && page_num > 0 && page_num <= paginationConfig.total_page_num) {
-      paginationConfig.current_page_num = page_num;
-      searchParams.page = page_num;
-      await fetchData();
-    }
+  // 每页大小变更处理（按照用户管理页面的风格）
+  function handlePageSizeChange(event) {
+    page_size = event.detail;
+    current_page = 1;
+    fetchGradesData();
   }
 
   /**
@@ -252,7 +217,7 @@
 
   // 初始化
   onMount(async () => {
-    await fetchData();
+    await fetchGradesData();
   });
 </script>
 
@@ -272,7 +237,7 @@
       <div class="search-section">
         <InputBox show_label={false} placeholder="请输入学生电话/昵称/姓名" bind:value={searchKeyword} />
       </div>
-      {#if isLoading}
+      {#if loading}
         <div class="loading-indicator">
           <div class="spinner"></div>
           <span>正在加载，请稍候...</span>
@@ -303,7 +268,7 @@
             <tbody>
               {#each currentData || [] as student, index}
                 <tr>
-                  <td>{(searchParams.page - 1) * searchParams.pageSize + index + 1}</td>
+                  <td>{(current_page - 1) * page_size + index + 1}</td>
                   <td>{student.phone || '-'}</td>
                   <td>{student.nickname || '-'}</td>
                   <td>{student.name || '-'}</td>
@@ -348,14 +313,17 @@
             </tbody>
           </table>
         </div>
-        <div class="pagination">
-          <Pagination
-            {...paginationConfig}
-            onPageChangeFunc={handlePageChange}
-            onPageChooseFunc={handlePageChoose}
-            selectOptionFunc={handlePageSizeChange}
-            onPageSearchFunc={handlePageSearch}
-          />
+        <div class="pagination-wrapper">
+          <div class="pagination-container {total_items > 0 ? '' : 'hide'}">
+            <Pagination
+              {total_items}
+              {current_page}
+              {page_size}
+              page_size_options={[10, 20]}
+              on:pageChange={handlePageChange}
+              on:pageSizeChange={handlePageSizeChange}
+            />
+          </div>
         </div>
       {/if}
     </div>
@@ -461,26 +429,39 @@
           }
 
           .empty-row {
-            text-align: center;
-            color: var(--gray);
-            font-style: italic;
-          }
+      border-bottom: none;
+    }
         }
       }
     }
 
-    .pagination {
+    .pagination-wrapper {
       display: flex;
-      align-items: center;
       justify-content: flex-end;
+      align-items: center;
       margin-top: 20px;
+
+      .pagination-container {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+
+        &.hide {
+          display: none;
+        }
+      }
     }
+
     /* 响应式设计 */
     @media (max-width: 768px) {
       .card-header {
         flex-direction: column;
         gap: 10px;
         align-items: flex-start;
+      }
+
+      .pagination-wrapper {
+        justify-content: center;
       }
     }
   }

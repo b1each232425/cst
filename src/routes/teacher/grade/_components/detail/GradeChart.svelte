@@ -2,7 +2,7 @@
   import { onMount, getContext } from 'svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
-  import BarChart from '../../_components/detail/charts/BarChart.svelte';
+  import '$lib/components/Button/index.scss';
 
   /**
    * @typedef {Object} Props
@@ -76,7 +76,7 @@
     const params = new URLSearchParams({
       category: type, 
       columnNum,
-       ...(type === 'practice' ? { practiceID: String(resourceId) }
+      ...(type === 'practice' ? { practiceID: String(resourceId) }
                             : { examID: String(resourceId) })
     });
 
@@ -113,7 +113,6 @@
             }))
       };
 
-        console.log('成绩分布数据:', distributionData);
       })
       .catch((err) => {
         console.error('获取成绩分布数据失败:', err);
@@ -121,6 +120,8 @@
       })
       .finally(() => {
         loading = false;
+        // 数据加载完成后更新图表
+        updateSeriesData();
       });
   }
 
@@ -138,31 +139,62 @@
    * 更新系列数据
    */
   function updateSeriesData() {
+    console.log('updateSeriesData调用:', { type, currentPaperId, distributionData, papers });
+    
     if (type === 'practice') {
-      if (distributionData) {
+      if (distributionData && distributionData.gradeDistribution) {
         series_data = distributionData.gradeDistribution.slice().reverse();
         xAxis_data = getScoreSegments(contextData?.totalScore || 100, columnNum);
       }
     } else {
       // 考试类型
-      if (currentPaperId && distributionData) {
-        const selectedPaper = papers.find((paper) => paper.id == currentPaperId);
-        const selectedSession = distributionData.grade_distribution?.find(
+      if (distributionData && distributionData.gradeDistribution) {
+        console.log('考试数据处理:', {
+          currentPaperId,
+          gradeDistribution: distributionData.gradeDistribution,
+          papers,
+          'papers结构': papers.map(p => ({ id: p.id, name: p.name })),
+          '分布数据结构': distributionData.gradeDistribution.map(g => ({ 
+            exam_session_id: g.exam_session_id, 
+            exam_paper_name: g.exam_paper_name,
+            score_distribution: g.score_distribution 
+          }))
+        });
+        
+        // 如果没有选择试卷ID，使用第一个试卷
+        const targetPaperId = currentPaperId || papers[0]?.id;
+        console.log('目标试卷ID:', targetPaperId);
+        
+        const selectedPaper = papers.find((paper) => paper.id == targetPaperId);
+        const selectedSession = distributionData.gradeDistribution.find(
           (session) => session.exam_session_id == selectedPaper?.id,
         );
+        
+        console.log('匹配过程:', {
+          targetPaperId,
+          selectedPaper,
+          selectedSession,
+          '匹配条件': selectedPaper ? `${selectedPaper.id} == session.exam_session_id` : '无选中试卷',
+          '所有session的exam_session_id': distributionData.gradeDistribution.map(s => s.exam_session_id)
+        });
 
         if (selectedSession && selectedPaper) {
           series_data = selectedSession.score_distribution.slice().reverse();
-          xAxis_data = getScoreSegments(selectedPaper.totalScore || 100, columnNum);
+          xAxis_data = getScoreSegments(selectedPaper.totalScore || selectedSession.total_score || 100, columnNum);
+          console.log('设置图表数据:', { series_data, xAxis_data });
         } else {
+          console.warn('未找到匹配的试卷或会话');
           series_data = [];
           xAxis_data = [];
         }
       } else {
+        console.warn('缺少分布数据');
         series_data = [];
         xAxis_data = [];
       }
     }
+    
+    console.log('最终图表数据:', { series_data, xAxis_data });
   }
 
   /**
@@ -176,13 +208,16 @@
   // 初始化
   onMount(async () => {
 	console.log('初始化 GradeChart:', { type, resourceId, papers });
-    await getExamDistributionData();
-
-    updateSeriesData();
-    if (type === 'exam') {
+    
+    // 先设置考试类型的选项和默认试卷ID
+    if (type === 'exam' && papers && papers.length > 0) {
       options = examDataToOptions();
       currentPaperId = options.length > 0 ? options[0].value : '';
+      console.log('设置默认试卷ID:', currentPaperId);
     }
+    
+    await getExamDistributionData();
+    // updateSeriesData() 已在 getExamDistributionData 的 finally 中调用
   });
 </script>
 
@@ -205,11 +240,35 @@
           <div class="loading-state">加载中...</div>
         {:else if error}
           <div class="error-state">
-            <div class="error-message">暂时无法加载数据</div>
-            <button class="retry-button" onclick={() => getExamDistributionData()}>重试</button>
+            <div class="error-message">暂无数据</div>
+            <button class="btn btn--primary" onclick={() => getExamDistributionData()}>重试</button>
           </div>
         {:else if series_data.length === 0}
-          <div class="empty-state">暂无成绩分布数据</div>
+          <div class="empty-state">
+            暂无成绩分布数据
+            <div class="debug-info" style="font-size: 12px; color: #666; margin-top: 10px;">
+              <p>调试信息:</p>
+              <p>类型: {type}</p>
+              <p>资源ID: {resourceId}</p>
+              <p>分布数据: {distributionData ? '已加载' : '未加载'}</p>
+              {#if type === 'exam'}
+                <p>试卷数量: {papers?.length || 0}</p>
+                <p>当前试卷ID: {currentPaperId || '未选择'}</p>
+                <p>选项数量: {options?.length || 0}</p>
+                {#if distributionData}
+                  <p>分布数据内容: {JSON.stringify(distributionData, null, 2)}</p>
+                {/if}
+              {/if}
+              <button 
+                onclick={() => {
+                  //onsole.log('手动更新数据');
+                  updateSeriesData();
+                }}
+              >
+                重新更新数据
+              </button>
+            </div>
+          </div>
         {:else}
           <div class="bar-chart">
             {#each xAxis_data as category, index}
@@ -242,8 +301,8 @@
     .title {
       font-size: 22px;
       font-weight: bold;
-      margin-top: 10px;
-      margin-bottom: 20px;
+      margin-top: 8px;
+      margin-bottom: 15px;
     }
 
     .dropdown {
@@ -262,7 +321,7 @@
       .chart-content {
         width: 100%;
         height: 100%;
-        padding: 20px;
+        padding: 10px;
         display: flex;
         flex-direction: column;
 
@@ -271,7 +330,7 @@
           font-size: 18px;
           font-weight: normal;
           color: #333;
-          margin-bottom: 20px;
+          margin-bottom: 5px;
         }
 
         .empty-state {
@@ -305,19 +364,6 @@
             font-size: 14px;
           }
 
-          .retry-button {
-            padding: 6px 12px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-
-            &:hover {
-              background-color: #2980b9;
-            }
-          }
         }
 
         .bar-chart {
@@ -326,7 +372,7 @@
           justify-content: center;
           gap: 20px;
           height: 100%;
-          padding: 20px 0;
+          padding-bottom: 20px;
 
           .bar-item {
             display: flex;
