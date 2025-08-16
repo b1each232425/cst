@@ -39,3 +39,20 @@ export function debounce(func, wait, immediate) {
     return result;
   };
 }
+
+/**
+ *  @description 节流函数
+ *  @param {Function} fn - 需要节流的函数
+ *  @param {Number} wait - 延迟时间
+ *  @return {Function} - 节流后的函数
+ */
+export function throttle(fn, wait = 100) {
+  let lastTime = 0;
+  return function (...args) {
+    const now = Date.now();
+    if (now - lastTime >= wait) {
+      fn.apply(this, args);
+      lastTime = now;
+    }
+  };
+}
