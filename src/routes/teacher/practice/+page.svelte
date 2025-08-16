@@ -1019,7 +1019,7 @@
       setTimeout(() => {
        
         window.location.reload();
-      }, 100000);
+      }, 1000);
     }}
   />
 </div>
