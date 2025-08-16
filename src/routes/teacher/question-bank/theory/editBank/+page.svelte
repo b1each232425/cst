@@ -34,7 +34,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { compareBankMsg } from '../../utils/utils.js';
   import { formatTimestamp } from '$lib/utils/time_utils';
   import { TheoryQuestion } from '../type';
-
+  import MessageBox from '$lib/components/MessageBox/MessageBox.js';
 
 
   /**
@@ -593,16 +593,19 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 
 
 
-  export function getBankWithQuestions() {
+
+
+  function getBankWithQuestions() {
     // 构造查询参数（Query Params）
     const queryParams = new URLSearchParams({
       bankID: bank_id,
       page: current_page,
       pageSize: page_size,
-      type:question_type_fileter,
-      difficulty:question_difficulty_fileter,
-      tags:question_tag_fileter,
     });
+  
+    question_type_fileter.forEach(type => queryParams.append('type', type));
+ question_difficulty_fileter.forEach(difficulty => queryParams.append('difficulty', difficulty));
+  question_tag_fileter.forEach(tag=> queryParams.append('tags', tag));
 
     return fetch(`/api/questions?${queryParams}`, {
       method: 'GET',
@@ -626,6 +629,52 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       });
   }
 
+ //显示删除题目提醒
+  	function deleteMessageBox(id) {
+
+		MessageBox({
+			title: '确认操作',
+			content: '你确定要删除该题目吗？',
+			onConfirm: () => {
+       deleteQuestion(id)
+				console.log('点击了确认');
+			},
+			onCancel: () => {
+				console.log('点击了取消');
+			}
+		});
+	}
+
+//删除题目api
+  function deleteQuestion(questionID) {
+  const arr=[];
+  arr.push(questionID);
+    return fetch(`/api/questions`, {
+      method: 'DELETE',
+      credentials: 'include',
+      body: JSON.stringify({data:arr}),
+    })
+      .then((response) => {
+         if (!response.ok) {
+          throw new Error(`HTTP错误`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.status !== 0) {
+          throw new Error(`${data.msg}`);
+        }
+        question_count--;
+           getQuestionList();
+       
+      })
+      .catch((error) => {
+        toast.error(`删除题目失败:${error.message}`);
+        return null; 
+      });
+  }
+
+
   /**
    * 是否初始化
   */
@@ -643,7 +692,14 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     const response = await getBankWithQuestions();
     const data = response.data || null;
     request_lock = false;
-    
+    if(data==null){
+     if(current_page!=1){
+      current_page--;
+        getQuestionList();
+        return;
+     }
+
+    }
 
      if(data!=null){
        question_filtered_count = response.rowCount;
@@ -1004,6 +1060,7 @@ o888o o888o   "888" o888o o888o o888o o888o
           show_preview_panel = true;
         }}
         onEdit={onListTableClickEdit}
+        onDelete={deleteMessageBox}
       ></QuestionList>
     </div>
   </div>

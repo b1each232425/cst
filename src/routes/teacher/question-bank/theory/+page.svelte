@@ -27,6 +27,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { toast } from '$lib/components/Toast/Toast.js';
   import { selection} from '../store';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+  import '$lib/components/Button/index.scss';
   /**
    * @typedef BankCardItemData
    * @property {number}           ID              - 题库ID
@@ -512,6 +513,7 @@ o888o o888o   "888" o888o o888o o888o o888o
 
 <div class="question-bank-container">
   <!-- 顶部栏 -->
+ 
   <div class="top-bar">
     <div class="search-input-container">
       <input class="search-input" type="text" placeholder="请输入题库名/标签" bind:value={search_input} />
@@ -527,6 +529,7 @@ o888o o888o   "888" o888o o888o o888o o888o
       {/if}
     </div>
 
+       
     <div class="operation-btns">
       <button class="button-delete" onclick={()=>{
         deleteMessageBox()
@@ -544,6 +547,7 @@ o888o o888o   "888" o888o o888o o888o o888o
         <img src={icons.cross} alt="取消选中" />
         <span>取消选中</span>
       </button>
+
     </div>
   </div>
 
@@ -614,36 +618,10 @@ o.  )88b   888 .    `888'     888  888    .o
                        
  -->
 <style lang="scss" scoped>
-  button {
-    margin: 0px;
-    padding: 0px;
-    border: 0px;
-    background-color: transparent;
-    cursor: pointer;
-    user-select: none;
 
-    transition: all 0.2s ease;
-    &:focus {
-      outline: none;
-    }
-  }
+ 
 
-  .button-delete {
-    background-color: red
-  }
- .button-delete .icon {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    background-image: url("/programming_question_bank/icons/delete.svg");
-    background-size: contain;
-    background-repeat: no-repeat;
-    color: red;
-  }
-
-  .button-cancelSelect {
-    background-color: #7787a2;
-  }
+ 
 
   .question-bank-container {
     position: relative;
@@ -755,6 +733,25 @@ o.  )88b   888 .    `888'     888  888    .o
         margin-left: 10px;
         cursor: pointer;
       }
+       .button-cancelSelect {
+    background-color: #7787a2;
+  } 
+
+   .button-delete {
+    color: rgb(255, 255, 255);
+    background-color: rgb(248, 104, 104)
+   
+  }
+ .button-delete .icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-image: url("/programming_question_bank/icons/delete.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-color :rgb(248, 104, 104);
+  }
+
     }
   }
 
