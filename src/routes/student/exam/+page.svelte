@@ -417,7 +417,8 @@
                     class:marked={status === '10'}
                     class:submitted={status === '12'}
                     class:deleted={status === '14'}
-                    class:unknown={!STATUS_MAP[status]}>{STATUS_MAP[status] ?? '未知状态'}</span
+                    class:unknown={!STATUS_MAP[status]}
+                    >{status === '10' && student_score !== -1 ? '已提交' : (STATUS_MAP[status] ?? '未知状态')}</span
                   >
                 {/each}
               </div></td
