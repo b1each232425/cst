@@ -1,7 +1,7 @@
 <script>
-    // import {goto} from '$app/navigation';
     import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
     import {goto} from "$app/navigation";
+    import { isValidPhoneNumber, parsePhoneNumberWithError } from 'libphonenumber-js';
 
     const DomainsMap = {
         "cst.school^superAdmin": "超级管理员",
@@ -31,25 +31,88 @@
     // 区号选择
     let selectedCountryCode = $state('+86');
     const countryCodes = [
-        { code: '+86', name: '中国大陆' },
-        { code: '+852', name: '香港' },
-        { code: '+853', name: '澳门' },
-        { code: '+886', name: '台湾' },
-        { code: '+1', name: '美国/加拿大' },
-        { code: '+44', name: '英国' },
-        { code: '+81', name: '日本' },
-        { code: '+82', name: '韩国' }
+        { code: '+86', name: '中国大陆', country: 'CN' },
+        { code: '+852', name: '中国香港', country: 'HK' },
+        { code: '+853', name: '中国澳门', country: 'MO' },
+        { code: '+886', name: '台湾', country: 'TW' },
+        { code: '+1', name: '美国/加拿大', country: 'US' },
+        { code: '+44', name: '英国', country: 'GB' },
+        { code: '+81', name: '日本', country: 'JP' },
+        { code: '+82', name: '韩国', country: 'KR' }
     ];
+    
+    // 手机号验证状态
+    let phoneValidationError = $state('');
+    let isPhoneValid = $state(true);
     
     // 证件类型选择
     let selectedIdType = $state('居民身份证');
     const idTypes = [
         '居民身份证',
+        '准考证',
         '护照',
         '港澳通行证',
         '台胞证',
         '军官证'
     ];
+    
+    /**
+     * 验证手机号格式
+     * @param {string} phone - 手机号
+     * @param {string} countryCode - 国家代码
+     * @returns {boolean} 是否有效
+     */
+    function validatePhoneNumber(phone, countryCode) {
+        if (!phone.trim()) {
+            phoneValidationError = '';
+            isPhoneValid = true;
+            return true;
+        }
+        
+        const currentCountry = countryCodes.find(c => c.code === countryCode);
+        if (!currentCountry) {
+            phoneValidationError = '不支持的国家代码';
+            isPhoneValid = false;
+            return false;
+        }
+        
+        const fullPhoneNumber = countryCode + phone;
+        
+        try {
+            const isValid = isValidPhoneNumber(fullPhoneNumber);
+            
+            if (!isValid) {
+                phoneValidationError = `请输入有效手机号`;
+                isPhoneValid = false;
+                return false;
+            }
+            
+            phoneValidationError = '';
+            isPhoneValid = true;
+            return true;
+        } catch (error) {
+            console.log("验证手机号格式失败: ", error);
+            phoneValidationError = `请输入有效手机号`;
+            isPhoneValid = false;
+            return false;
+        }
+    }
+    
+    /**
+     * 手机号输入变化处理
+     */
+    function handlePhoneNumberChange() {
+        validatePhoneNumber(phoneNumber, selectedCountryCode);
+    }
+    
+    /**
+     * 国家代码变化处理
+     */
+    function handleCountryCodeChange() {
+        if (phoneNumber) {
+            validatePhoneNumber(phoneNumber, selectedCountryCode);
+        }
+    }
     
     /**
      * 切换tab页面
@@ -65,6 +128,9 @@
         // 重置选择项
         selectedCountryCode = '+86';
         selectedIdType = '居民身份证';
+        // 重置手机号验证状态
+        phoneValidationError = '';
+        isPhoneValid = true;
     }
     
     /**
@@ -74,7 +140,8 @@
     function getCurrentCredential() {
         switch (activeTab) {
             case 'phone':
-                return phoneNumber;
+                // 手机号登录时使用libphonenumber-js标准化处理
+                return getFormattedPhoneNumber();
             case 'account':
                 return accountEmail;
             case 'id':
@@ -85,19 +152,32 @@
     }
     
     /**
-     * 获取当前tab的占位符文本
-     * @returns {string} 占位符文本
+     * 获取标准化的手机号格式
+     * @returns {string} 标准化后的手机号
      */
-    function getPlaceholderText() {
-        switch (activeTab) {
-            case 'phone':
-                return '请输入手机号';
-            case 'account':
-                return '请输入帐号/邮箱';
-            case 'id':
-                return '请输入证件号';
-            default:
-                return '请输入登录凭证';
+    function getFormattedPhoneNumber() {
+        if (!phoneNumber.trim()) {
+            return '';
+        }
+        
+        const fullPhoneNumber = selectedCountryCode + phoneNumber;
+        
+        try {
+            // 使用parsePhoneNumber解析手机号
+            const parsedPhone = parsePhoneNumberWithError(fullPhoneNumber);
+            
+            if (parsedPhone && parsedPhone.isValid()) {
+                // 返回E.164格式的手机号（国际标准格式）
+                return parsedPhone.format('E.164');
+            } else {
+                // 如果解析失败，返回原始拼接格式
+                console.log('手机号解析失败，使用原始格式');
+                return fullPhoneNumber;
+            }
+        } catch (error) {
+            console.log('手机号格式化失败: ', error);
+            // 如果出现异常，返回原始拼接格式
+            return fullPhoneNumber;
         }
     }
 
@@ -115,11 +195,20 @@
      * 处理登录提交
      */
     function handleLogin() {
+        // 如果是手机号登录，先验证和处理手机号
+        if (activeTab === 'phone') {
+            if (!validatePhoneNumber(phoneNumber, selectedCountryCode)) {
+                showMessage('提示', phoneValidationError || '请输入有效的手机号');
+                return;
+            }
+        }
+        
         const currentCredential = getCurrentCredential();
         if (!currentCredential || !password) {
             showMessage('提示', '请输入登录凭证和密码');
             return;
         }
+        
         if (!agreeTerms) {
             showMessage('提示', '请先同意用户协议');
             return;
@@ -130,7 +219,6 @@
             headers: {
                 'Content-Type': 'application/json',
             },
-            credentials: 'include',
             body: JSON.stringify({
                 name: currentCredential,
                 cert: password,
@@ -157,7 +245,7 @@
     }
 
     /**
-     * 选择登录角色
+     * 获取用户信息，选择登录角色
      */
     function selectLoginRole() {
         // 请求获取我的角色信息
@@ -307,9 +395,9 @@
                     <!-- 手机号登录 -->
                     {#if activeTab === 'phone'}
                         <div class="input-wrapper">
-                            <div class="phone-input-container">
+                            <div class="phone-input-container" class:error={!isPhoneValid}>
                                 <div class="country-code-wrapper">
-                                    <select bind:value={selectedCountryCode} class="country-code-select-hidden">
+                                    <select bind:value={selectedCountryCode} class="country-code-select-hidden" onchange={handleCountryCodeChange}>
                                         {#each countryCodes as country}
                                             <option value={country.code}>{country.code}{country.name}</option>
                                         {/each}
@@ -318,8 +406,18 @@
                                     <img src="/common/arrow-down.svg" alt="下拉箭头" class="country-code-arrow" />
                                 </div>
                                 <div class="input-divider"></div>
-                                <input type="tel" bind:value={phoneNumber} placeholder="请输入手机号" class="phone-input"/>
+                                <input 
+                                    type="tel" 
+                                    bind:value={phoneNumber} 
+                                    placeholder="请输入手机号" 
+                                    class="phone-input"
+                                    class:error={!isPhoneValid}
+                                    oninput={handlePhoneNumberChange}
+                                />
                             </div>
+                            {#if phoneValidationError}
+                                <div class="validation-error">{phoneValidationError}</div>
+                            {/if}
                         </div>
                     {/if}
                     
@@ -365,16 +463,7 @@
             </div>
         </div>
 
-        <!-- 右侧微信扫码 -->
-        <div class="qr-section">
-            <h3 class="qr-title">微信扫码登录</h3>
-            <div class="qr-code">
-                <!-- 这里应该是实际的二维码，暂时用占位符 -->
-                <div class="qr-placeholder">
-                    <div class="qr-pattern"></div>
-                </div>
-            </div>
-        </div>
+
     </div>
 </div>
 
@@ -403,9 +492,9 @@
                     {#each availableRoles as role (role)}
                         <label class="role-option">
                             <input 
-                                type="radio" 
+                                type="radio"
                                 bind:group={selectedRole} 
-                                value={role} 
+                                value={role}
                                 name="role"
                                 class="role-radio"
                             />
@@ -449,7 +538,7 @@
         border-radius: var(--border-radius-lg);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         overflow: hidden;
-        max-width: 65rem;
+        max-width: 40rem;
         width: 100%;
     }
 
@@ -457,7 +546,7 @@
         flex: 1;
         padding: 4rem 5.5rem;
         min-width: 0;
-        max-width: 60%;
+        max-width: 100%;
     }
 
     .title {
@@ -739,65 +828,6 @@
         text-decoration: underline;
     }
 
-    .qr-section {
-        flex: 1;
-        padding: 3rem 2.5rem;
-        background: #fafafa;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-width: 0;
-        max-width: 50%;
-        text-align: center;
-    }
-
-    .qr-title {
-        font-size: 1.2rem;
-        color: #333;
-        margin: 0 0 2rem 0;
-        text-align: center;
-    }
-
-    .qr-code {
-        width: 80%;
-        max-width: 200px;
-        aspect-ratio: 1;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f9f9f9;
-        margin: 0 auto;
-        position: relative;
-    }
-
-    .qr-placeholder {
-        width: 90%;
-        aspect-ratio: 1;
-        border: 2px dashed #ccc;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #999;
-        font-size: 0.875rem;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .qr-pattern {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: repeating-linear-gradient(0deg, #333 0px, #333 10px, transparent 10px, transparent 20px),
-        repeating-linear-gradient(90deg, #333 0px, #333 10px, transparent 10px, transparent 20px);
-        opacity: 0.3;
-    }
-
     /* 角色选择对话框样式 */
     .role-select-overlay {
         position: fixed;
@@ -934,40 +964,40 @@
         background: var(--primary-hover);
     }
 
+    /* 手机号验证错误样式 */
+    .phone-input-container.error {
+        border-color: #ff4757;
+    }
+
+    .phone-input.error {
+        border-color: #ff4757;
+    }
+
+    .validation-error {
+        color: #ff4757;
+        font-size: 0.8rem;
+        padding-left: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .validation-error::before {
+        content: '⚠';
+        font-size: 0.9rem;
+    }
+
     /* 响应式设计 */
     @media (max-width: 1200px) {
         .login-panel {
             flex-direction: column;
-            max-width: 80%;
+            max-width: 60%;
             min-width: 30rem;
             width: 100%;
         }
 
         .login-form {
             max-width: 80%;
-        }
-
-        .qr-section {
-            min-width: auto;
-            max-width: 100%;
-            padding: 2rem 1.5rem;
-        }
-
-        .qr-code {
-            width: 70%;
-            max-width: 170px;
-        }
-
-        .qr-placeholder {
-            width: 85%;
-        }
-
-        .qr-pattern {
-            background-size: 1rem 1rem;
-            background-position: 0 0,
-            0 0.5rem,
-            0.5rem -0.5rem,
-            -0.5rem 0;
         }
 
         .role-select-dialog {
