@@ -229,7 +229,7 @@
   let exam_list = $state([]);
   let total_count = $state(0);
 
-  const debounceSearch = debounce(handleSearch, 500);
+  const debounceSearch = debounce(handleSearch, 200);
 
   // 是否为正常的状态
   function isNormal(mark_mode, status, mark_status) {
@@ -570,14 +570,12 @@
           position: sticky;
           top: 0;
           font-size: 14px;
-          color: rgba(0, 0, 0, 0.3);
+          color: rgb(178, 178, 178);
           background-color: white;
         }
 
         tr {
-          height: 3rem;
-          color: rgb(102, 102, 102);
-          border-bottom: 1px lightgray solid;
+          height: 3.5rem;
 
           th {
             font-weight: lighter;
@@ -588,7 +586,8 @@
 
         tbody {
           tr {
-            color: black;
+            border-bottom: 1px rgb(221, 221, 221) solid;
+            color: #333333;
 
             td {
               font-size: 0.9rem;
