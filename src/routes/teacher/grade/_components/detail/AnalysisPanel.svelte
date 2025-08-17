@@ -253,12 +253,12 @@
 			{/if}
 		</div>
 	{/if}
-	{#if !isLoaded}
+	<!-- {#if !isLoaded}
 		<div class="loading-indicator">
 			<div class="spinner"></div>
 			<span>正在加载，请稍候...</span>
 		</div>
-	{/if}
+	{/if} -->
 </div>
 
 <style lang="scss" scoped>

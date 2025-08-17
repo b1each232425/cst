@@ -49,7 +49,7 @@ const MOCK_EXAMS = [
         mark_mode: '02',
         respondent_count: 15,
         unmarked_student_count: 0,
-        status: '10',
+        status: '08',
         mark_status: '02',
       },
     ],
@@ -321,7 +321,6 @@ describe('考试批改列表组件测试', () => {
 
   describe('操作按钮', () => {
     beforeEach(() => {
-      vi.clearAllMocks();
       render(ExamCorrectList);
     });
 
@@ -349,36 +348,34 @@ describe('考试批改列表组件测试', () => {
     });
 
     describe('提交考试批改功能', () => {
+      beforeEach(() => {
+        render(ExamCorrectList);
+      });
+
       it('可提交的按钮应启用且点击触发确认框', async () => {
-        await waitFor(() => {
-          const submitButtons = screen.getAllByRole('button', { name: '提交' });
+        const submitButtons = screen.getAllByRole('button', { name: '提交' });
 
-          // 获取第三个按钮（应为启用状态）
-          const enabledButton = submitButtons[2];
-          expect(enabledButton).not.toBeDisabled();
-          fireEvent.click(enabledButton);
+        // 获取第三个按钮（应为启用状态）
+        const enabledButton = submitButtons[2];
+        await expect(enabledButton).not.toBeDisabled();
+        await fireEvent.click(enabledButton);
 
-          // 验证MessageBox被正确调用
-          expect(MessageBox).toHaveBeenCalledTimes(1); // 确保只调用一次
-          expect(MessageBox).toHaveBeenCalledWith({
-            title: '确认操作',
-            content: '你确定要提交吗？',
-            onConfirm: expect.any(Function),
-          });
+        // 验证MessageBox被正确调用
+        await expect(MessageBox).toHaveBeenCalledTimes(1); // 确保只调用一次 // waitFor 可能导致次数不是一次（循环等待）
+        await expect(MessageBox).toHaveBeenCalledWith({
+          title: '确认操作',
+          content: '批改完后才能提交，你确定要提交吗？',
+          onConfirm: expect.any(Function),
         });
       });
 
-      // it('不可提交的按钮应禁用且点击无效', async () => {
-      //   const submitButtons = screen.getAllByRole('button', { name: '提交' });
+      it('不可提交的按钮应禁用且点击无效', async () => {
+        const submitButtons = screen.getAllByRole('button', { name: '提交' });
 
-      //   // 获取第一个按钮（应为禁用状态）
-      //   const disabledButton = submitButtons[0];
-      //   expect(disabledButton).toBeDisabled();
-      //   fireEvent.click(disabledButton);
-
-      //   // 严格验证调用次数
-      //   expect(MessageBox).not.toHaveBeenCalled();
-      // });
+        // 获取第一个按钮（应为禁用状态）
+        const disabledButton = submitButtons[0];
+        await expect(disabledButton).toBeDisabled();
+      });
 
       it('确认提交后应调用API并显示成功提示', async () => {
         mockFetch({ status: 0 });
@@ -390,7 +387,8 @@ describe('考试批改列表组件测试', () => {
 
         await waitFor(() => {
           expect(global.fetch).toHaveBeenCalledWith(
-            expect.stringContaining('/api/mark/results-submission?exam_session_id='),
+            expect.stringContaining('/api/mark/results-submission?exam_session_id=13'),
+            { method: 'PATCH' },
           );
           expect(toast.success).toHaveBeenCalledWith('提交成功');
         });

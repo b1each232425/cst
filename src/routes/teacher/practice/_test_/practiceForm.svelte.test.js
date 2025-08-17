@@ -411,3 +411,11 @@ describe('取消创建练习',(()=>{
     fireEvent.click(confirmBtn[0]);
   }))
 }))
+
+describe('什么都不输入直接点确定',(()=>{
+  it('直接点确定',(()=>{
+    render(PracticeForm, { data: mockPractice });
+    const createBtn=screen.getAllByText('保存');
+    fireEvent.click(createBtn[0]);
+  }))
+}))

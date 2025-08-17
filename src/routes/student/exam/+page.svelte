@@ -229,8 +229,8 @@
   // TODO 当前阶段使用分数是否为-1作为标准
   // 是否可以查看成绩
   function canSeeResult(status, score) {
-    // return (status === '10' && score !== -1) || status === '12';
-    return status === '12';
+    return (status === '10' && score !== -1) || status === '12';
+    // return status === '12';
   }
 
   function canEnterExam(exam_sessions) {
@@ -417,7 +417,8 @@
                     class:marked={status === '10'}
                     class:submitted={status === '12'}
                     class:deleted={status === '14'}
-                    class:unknown={!STATUS_MAP[status]}>{STATUS_MAP[status] ?? '未知状态'}</span
+                    class:unknown={!STATUS_MAP[status]}
+                    >{status === '10' && student_score !== -1 ? '已提交' : (STATUS_MAP[status] ?? '未知状态')}</span
                   >
                 {/each}
               </div></td
