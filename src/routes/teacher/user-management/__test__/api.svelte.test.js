@@ -765,6 +765,28 @@ it('选择“教师”后，URL 中应出现 domain=cst.school^teacher', async (
 
   });
 
+  describe('日期选择器测试', () => {
+    it('找到日期选择器组件', async () => {
+      const { container } = render(UserManagementPage);
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledTimes(1);
+      });
+      await tick();
+
+      const datePickerContainer = container.querySelector('.date-picker-container') ||
+        container.querySelector('.date-input') ||
+        container.querySelector('[class*="date"]');
+
+
+
+      
+    });
+    
+
+
+    
+  });
 
 });
 
