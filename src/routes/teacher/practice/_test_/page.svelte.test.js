@@ -14,6 +14,16 @@ vi.mock('$app/navigation', () => ({
 vi.mock('$lib/components/Toast/Toast.js', () => ({
   toast: { error: vi.fn(), success: vi.fn() }
 }));
+// 添加到文件顶部的模拟数据区域
+const MOCK_STUDENTS = [
+  { id: '1', name: '张三', serial_number: 1 },
+  { id: '2', name: '李四', serial_number: 2 }
+];
+
+const MOCK_NEW_STUDENTS = [
+  { name: '王五', email: 'wangwu@example.com' },
+  { name: '赵六', email: 'zhaoliu@example.com' }
+];
 
 // 模拟练习数据
 const MOCK_PRACTICES = [
@@ -837,6 +847,30 @@ describe('通过类型下拉框来筛选练习',(()=>{
   }))
 
   describe('确认选择学生函数回调',(()=>{
+    it('正常进行确认学生',(async()=>{
+       const {triggerConfirmSelectStudent} =setup();
+        global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ 
+          status: 0,
+          data: [] // 返回空的学生列表
+        }),
+      })
+      // 模拟第二次 fetch 调用(确认选择学生)
+      .mockResolvedValueOnce({
+        ok:true,
+         json: async () => ({ 
+          status: 0,
+          data: [] // 返回空的学生列表
+        })
+      });
+      await triggerConfirmSelectStudent();
+     await waitFor(()=>{
+      expect(toast.success).toHaveBeenCalledWith('更新学生成功')
+     })
+      }))
+
     it('ok不为true',(async()=>{
       const {triggerConfirmSelectStudent} =setup();
         global.fetch
@@ -1648,5 +1682,83 @@ describe('通过类型下拉框来筛选练习',(()=>{
       fireEvent.click(button);
     }))
   }))
+describe('分页组件交互测试', () => {
+  it('点击第2页按钮应加载对应页数据', async () => {
+    setup({ total_page: 3, current_page: 1, page_size: 10 });
 
+    // 等待初始数据加载完成 (page=1)
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('page=1'),
+        expect.anything()
+      );
+    });
 
+    fetch.mockClear();
+
+    // 找到分页的第2页按钮并点击
+    const page2Button = await screen.getByText('2');
+    await fireEvent.click(page2Button);
+
+    // 验证发起了 page=2 的请求
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('page=2'),
+        expect.anything()
+      );
+    });
+  });
+
+  it('点击当前页码按钮时不应重复触发请求', async () => {
+    setup({ total_page: 3, current_page: 1, page_size: 10 });
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalled();
+    });
+    const initialCalls = fetch.mock.calls.length;
+
+    const page1Button = await screen.findByText('1');
+    await fireEvent.click(page1Button);
+
+    expect(fetch.mock.calls.length).toBe(initialCalls);
+  });
+
+  it('切换每页条数时应重置到第1页并重新加载数据', async () => {
+    setup({ total_page: 3, current_page: 2, page_size: 10 });
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalled();
+    });
+
+    fetch.mockClear();
+
+    // 找到条数下拉框（假设分页组件渲染了 select）
+    const pageSizeSelect = screen.getByRole('combobox'); // 或根据实际 DOM 改成 getByLabelText
+    await fireEvent.change(pageSizeSelect, { target: { value: '20' } });
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('page=1'),
+        expect.anything()
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('page_size=20'),
+        expect.anything()
+      );
+    });
+  });
+
+  it('选择相同的每页条数时不应触发新请求', async () => {
+    setup({ total_page: 3, current_page: 1, page_size: 10 });
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalled();
+    });
+    const initialCalls = fetch.mock.calls.length;
+
+    const pageSizeSelect = screen.getByRole('combobox');
+    await fireEvent.change(pageSizeSelect, { target: { value: '10' } });
+
+    expect(fetch.mock.calls.length).toBe(initialCalls);
+  });
+});
