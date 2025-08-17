@@ -25,3 +25,17 @@ export const PAPER_TWO = {
     TotalScore: 10,
     QuestionCount: 2,
 }
+
+export const PAPER_THREE = {
+    ID: 261,
+    Name: "测试试卷3",
+    AssemblyType: "04",
+    Category: "00",
+    Level: "04",
+    SuggestedDuration: 120,
+    Tags: [],
+    CreateTime: 1755395658022,
+    UpdateTime: 1755398374447,
+    TotalScore: 20,
+    QuestionCount: 5,
+}

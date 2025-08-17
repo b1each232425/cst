@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 15:21:42
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-17 16:32:05
+ * @LastEditTime: 2025-08-17 21:31:39
  * @FilePath: \exam\src\routes\teacher\paper\+page.svelte
  * @Description: 试卷列表页面
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -89,6 +89,7 @@
             if (data.status !== 0){
                 throw new Error(data.msg);  
             }
+            console.log(data);
             return data;
         })
         .catch(error => {
@@ -112,7 +113,7 @@
         if (paperTags) PARAMS.append("tags", paperTags);
         PARAMS.append("page", paperPage);
         PARAMS.append("pageSize", paperPageSize);
-        if (paperCategory) PARAMS.append("category", paperCategory);
+        PARAMS.append("category", paperCategory);
 
         return fetch(`/api/paper?${PARAMS.toString()}`, {
             method: "GET",
@@ -152,10 +153,7 @@
         SELECTED_PAPER_IDS.update(current => {
             if (checked) {
                 // 添加 ID（防止重复）
-                if (!current.includes(ID)) {
-                    return [...current, ID];
-                }
-                return current;
+                return [...current, ID];
             } else {
                 // 移除 ID
                 return current.filter(item => item !== ID);
@@ -199,11 +197,14 @@
         SELECTED_PAPER_IDS.set([]);
         
         fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
-        .then(result => {
-            if (result) {
-                total_papers = result.rowCount;
-                paper_list = result.data || [];
-            }
+            .then(result => {
+                if (result) {
+                    total_papers = result.rowCount;
+                    paper_list = result.data || [];
+                } else {
+                    total_papers = 0;
+                    paper_list = [];
+                }
         });
     }
 
@@ -214,8 +215,11 @@
             .then(result => {
                 if (result) {
                     total_papers = result.rowCount;
-                    paper_list = result.data || [];
+                    paper_list = result.data;
                     checkAllSelected();
+                } else {
+                    total_papers = 0;
+                    paper_list = [];
                 }
             });
     }
@@ -230,6 +234,9 @@
                     total_papers = result.rowCount;
                     paper_list = result.data || [];
                     checkAllSelected();
+                } else {
+                    total_papers = 0;
+                    paper_list = [];
                 }
             });
     }
@@ -237,11 +244,14 @@
     // 防抖搜索试卷
     const debouncedFetchPaperList = debounce(() => {
         fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
-        .then(result => {
-            if (result) {
-                total_papers = result.rowCount;
-                paper_list = result.data || [];
-            }
+            .then(result => {
+                if (result) {
+                    total_papers = result.rowCount;
+                    paper_list = result.data || [];
+                } else {
+                    total_papers = 0;
+                    paper_list = [];
+                }
         });
     }, 500, false);
 
@@ -261,7 +271,7 @@
         });
     }
 
-    // 编辑试卷
+    // 修改试卷
     function editPaper(ID) {
         CURRENT_PAPER_ID.set(ID);
         goto('/teacher/paper/manual');
@@ -283,6 +293,10 @@
                                 if (result) {
                                     total_papers = result.rowCount;
                                     paper_list = result.data || [];
+                                    SELECTED_PAPER_IDS.update(current => current.filter(id => id !== ID));
+                                } else {
+                                    total_papers = 0;
+                                    paper_list = [];
                                 }
                             })
                     });
@@ -313,6 +327,10 @@
                                     if (result2) {
                                         total_papers = result2.rowCount;
                                         paper_list = result2.data || [];
+                                        SELECTED_PAPER_IDS.update(current => current.filter(id => !SELECTED_IDS.includes(id)));
+                                    } else {
+                                        total_papers = 0;
+                                        paper_list = [];
                                     }
                                 })
                         }
@@ -339,8 +357,12 @@
                 return response.json();
             })
             .then(result => {
-                const PREVIEW_QUESTIONS = result.data;
 
+                if (result.status !== 0){
+                    throw new Error(result.msg);  
+                }
+
+                const PREVIEW_QUESTIONS = result.data;
                 
                 if (category === "00") {
                     localStorage.setItem(
@@ -357,7 +379,8 @@
                 }
             })
             .catch(error => {
-                console.error('获取试卷详情出错：', error);
+                toast.error(error.message, 1000);
+                console.error('预览试卷出错：', error);
                 return null;
             });
     }
@@ -371,7 +394,9 @@
                 if (result) {
                     total_papers = result.rowCount;
                     paper_list = result.data || [];
-                    console.log(result)
+                } else {
+                    total_papers = 0;
+                    paper_list = [];
                 }
             });
     });
