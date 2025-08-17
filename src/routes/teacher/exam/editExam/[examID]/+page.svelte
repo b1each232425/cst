@@ -81,6 +81,7 @@
   let RichTextEditor; //富文本编辑器
   let exam_rooms = $state([]); //考试场地
   let invigilators = $state([]); //监考人员
+  let examinee_ID = $state([]);
   //考试场次数组
   let paper_configs = $state([
     {
@@ -174,6 +175,13 @@
     }
   }
   
+  // 获取已选择的试卷ID列表（排除当前索引）
+function getSelectedPaperIDs(excludeIndex = -1) {
+  return paper_configs
+    .map((config, index) => ({ id: config.paperID, index }))
+    .filter(item => item.index !== excludeIndex && item.id !== 0)
+    .map(item => item.id);
+}
 
   async function handleSubmit() {
     /* 1. 必填字段校验（保持原逻辑） */
@@ -348,7 +356,7 @@
                 exam_rules = examData.examInfo.Rules;
                 exam_type = examData.examInfo.Type;
                 exam_method = examData.examInfo.Mode;
-                exam_examinee = examData.examinee||[0];
+                examinee_ID = examData.examinee||[];
                 // invigilators = examData.invigilators.map(i => ({ id: i }));
                 paper_configs = examData.examSessions.map((s, idx) => {
                 
@@ -387,16 +395,16 @@
         .finally(() =>{
           loading=false;
           checkShuffledMode();
+          fetchSelectedStudents();
         })
     }
 
   async function fetchSelectedStudents() {
      const query = encodeURIComponent(JSON.stringify({
     data: {
-      IDs: examID, // 必须是数组，例如 [123, 456, 789]
+      IDs: examinee_ID, // 必须是数组，例如 [123, 456, 789]
     },
   }));
-
     fetch(`/api/exam/user?q=${query}`,
       {
         method:"GET",
@@ -417,9 +425,8 @@
         page.subscribe(value => {
         examID = value.params.examID;
     });
-         await fetchSelectedStudents();
+         
          await fetchExamInfo();
-         //console.log("examinee",exam_examinee);
     })
 
 
@@ -909,6 +916,7 @@
       selected_name={paper_configs[paperConfigIndex].paperName}
       selected_type={paper_configs[paperConfigIndex].paperType}
       show_panel={paper_configs[paperConfigIndex].show_paper_selection_panel}
+      excludedPaperIDs={getSelectedPaperIDs(paperConfigIndex)}
       onCancel={() => {
         paper_configs[paperConfigIndex].show_paper_selection_panel = false;
       }}

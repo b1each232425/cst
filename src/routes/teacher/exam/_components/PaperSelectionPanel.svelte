@@ -36,6 +36,7 @@
     selected_ID,
     selected_name,
     selected_type,
+    excludedPaperIDs = [],
     onCancel = () => {},
     onConfirm = (
       /** @type {any} */ selected_ID,
@@ -300,11 +301,14 @@
           </thead>
           <tbody>
             {#each paperList as paper, index}
-              <tr class="paper-list"
+            {@const isDisabled = excludedPaperIDs.includes(paper.ID)}
+              <tr class="paper-list {isDisabled ? 'disabled-row' : ''}"
               onclick={() => {
-                paperselected_ID = paper.ID;
-                paperselected_name = paper.Name;
-                paperselected_type = paper.AssemblyType;
+                if (!isDisabled) {
+        paperselected_ID = paper.ID;
+        paperselected_name = paper.Name;
+        paperselected_type = paper.AssemblyType;
+      }
               }}>
                 <td>
                   <input
@@ -781,4 +785,25 @@
     position: absolute;
     pointer-events: none;
   }
+
+  .disabled-row {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+  
+  td {
+    color: var(--gray);
+  }
+}
+
+.disabled-hint {
+  color: #ff6b6b;
+  font-size: 12px;
+  margin-left: 5px;
+}
+
+.custom-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
 </style>

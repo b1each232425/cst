@@ -172,6 +172,15 @@
     }
   }
   
+  // 获取已选择的试卷ID列表（排除当前索引）
+function getSelectedPaperIDs(excludeIndex = -1) {
+  return paper_configs
+    .map((config, index) => ({ id: config.paperID, index }))
+    .filter(item => item.index !== excludeIndex && item.id !== 0)
+    .map(item => item.id);
+}
+
+
   async function fetchExamID(){
       fetch('/api/exam',{
       method: 'POST',
@@ -708,6 +717,7 @@ onMount(async () =>{
       selected_name={paper_configs[paperConfigIndex].paperName}
       selected_type={paper_configs[paperConfigIndex].paperType}
       show_panel={paper_configs[paperConfigIndex].show_paper_selection_panel}
+      excludedPaperIDs={getSelectedPaperIDs(paperConfigIndex)}
       onCancel={() => {
         paper_configs[paperConfigIndex].show_paper_selection_panel = false;
       }}
@@ -715,7 +725,9 @@ onMount(async () =>{
         /** @type {number} */ selected_id,
         /** @type {string} */ selected_name,
         /** @type {string} */ selected_type,
+        
       ) => {
+        
         paper_configs[paperConfigIndex].show_paper_selection_panel = false;
         paper_configs[paperConfigIndex].paperID = selected_id;
         paper_configs[paperConfigIndex].paperName = selected_name;
