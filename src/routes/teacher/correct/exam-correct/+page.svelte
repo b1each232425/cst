@@ -23,263 +23,161 @@
 
   // const mockExam = [
   //   {
-  //     id: 5,
-  //     name: 'H34',
+  //     id: 1,
+  //     name: '数学期末',
   //     type: '00',
   //     exam_sessions: [
   //       {
   //         id: 11,
-  //         name: 'session_name',
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         mark_mode: '00',
-  //         respondent_count: 12,
-  //         unmarked_student_count: 10,
-  //         status: '04',
-  //         mark_status: '00',
-  //       },
-  //       {
-  //         id: 11,
-  //         name: 'session_name',
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         mark_mode: '00',
-  //         respondent_count: 12,
-  //         unmarked_student_count: 10,
-  //         status: '04',
-  //         mark_status: '00',
-  //       },
-  //       {
-  //         id: 11,
-  //         name: 'session_name',
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
-  //         mark_mode: '00',
-  //         respondent_count: 12,
-  //         unmarked_student_count: 10,
-  //         status: '06',
-  //         mark_status: '00',
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: 6,
-  //     name: 'H34',
-  //     type: '00',
-  //     exam_sessions: [
-  //       {
-  //         id: 11,
-  //         name: '《Svelte入门实战课》2025年第1期阶段考试',
-  //         start_time: '2025-08-01 09:00',
-  //         end_time: '2025-08-01 11:00',
+  //         name: '数学考试A',
+  //         start_time: new Date('2025-08-01T09:00').getTime(),
+  //         end_time: new Date('2025-08-01T11:00').getTime(),
   //         mark_mode: '02',
   //         respondent_count: 12,
   //         unmarked_student_count: 10,
   //         status: '06',
   //         mark_status: '00',
   //       },
+  //       {
+  //         id: 12,
+  //         name: '数学考试B',
+  //         start_time: new Date('2025-08-01T13:00').getTime(),
+  //         end_time: new Date('2025-08-01T15:00').getTime(),
+  //         mark_mode: '02',
+  //         respondent_count: 10,
+  //         unmarked_student_count: 5,
+  //         status: '10',
+  //         mark_status: '01',
+  //       },
+  //       {
+  //         id: 13,
+  //         name: '数学考试C',
+  //         start_time: new Date('2025-08-01T16:00').getTime(),
+  //         end_time: new Date('2025-08-01T18:00').getTime(),
+  //         mark_mode: '02',
+  //         respondent_count: 15,
+  //         unmarked_student_count: 0,
+  //         status: '08',
+  //         mark_status: '02',
+  //       },
   //     ],
   //   },
-  //   // {
-  //   //   id: 3,
-  //   //   name: 'H34',
-  //   //   type: '00',
-  //   //   exam_sessions: [
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '04',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '04',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '06',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //   ],
-  //   // },
-  //   // {
-  //   //   id: 2,
-  //   //   name: 'H34',
-  //   //   type: '00',
-  //   //   exam_sessions: [
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '04',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '04',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '06',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //   ],
-  //   // },
-  //   // {
-  //   //   id: 59,
-  //   //   name: 'H34',
-  //   //   type: '00',
-  //   //   exam_sessions: [
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '04',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '04',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '06',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //   ],
-  //   // },
-  //   // {
-  //   //   id: 8,
-  //   //   name: 'H34',
-  //   //   type: '00',
-  //   //   exam_sessions: [
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '04',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '04',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '06',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //   ],
-  //   // },
-  //   // {
-  //   //   id: 51,
-  //   //   name: 'H34',
-  //   //   type: '00',
-  //   //   exam_sessions: [
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '04',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '04',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //     {
-  //   //       id: 11,
-  //   //       name: 'session_name',
-  //   //       start_time: '2025-08-01 09:00',
-  //   //       end_time: '2025-08-01 11:00',
-  //   //       mark_mode: '00',
-  //   //       respondent_count: 12,
-  //   //       unmarked_student_count: 10,
-  //   //       status: '06',
-  //   //       mark_status: '00',
-  //   //     },
-  //   //   ],
-  //   // },
+  //   {
+  //     id: 2,
+  //     name: '语文期中',
+  //     type: '00',
+  //     exam_sessions: [
+  //       {
+  //         id: 21,
+  //         name: '语文考试A',
+  //         start_time: new Date('2025-08-02T09:00').getTime(),
+  //         end_time: new Date('2025-08-02T11:00').getTime(),
+  //         mark_mode: '10',
+  //         respondent_count: 15,
+  //         unmarked_student_count: 0,
+  //         status: '10',
+  //         mark_status: '02',
+  //       },
+  //       {
+  //         id: 22,
+  //         name: '语文考试B',
+  //         start_time: new Date('2025-08-02T12:00').getTime(),
+  //         end_time: new Date('2025-08-02T14:00').getTime(),
+  //         mark_mode: '10',
+  //         respondent_count: 20,
+  //         unmarked_student_count: 10,
+  //         status: '08',
+  //         mark_status: '00',
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 3,
+  //     name: '英语模拟',
+  //     type: '02',
+  //     exam_sessions: [
+  //       {
+  //         id: 31,
+  //         name: '英语考试A',
+  //         start_time: new Date('2025-08-03T09:00').getTime(),
+  //         end_time: new Date('2025-08-03T11:00').getTime(),
+  //         mark_mode: '00',
+  //         respondent_count: 8,
+  //         unmarked_student_count: 3,
+  //         status: '08',
+  //         mark_status: '00',
+  //       },
+  //       {
+  //         id: 32,
+  //         name: '英语考试B',
+  //         start_time: new Date('2025-08-03T12:00').getTime(),
+  //         end_time: new Date('2025-08-03T14:00').getTime(),
+  //         mark_mode: '00',
+  //         respondent_count: 10,
+  //         unmarked_student_count: 0,
+  //         status: '10',
+  //         mark_status: '02',
+  //       },
+  //       {
+  //         id: 33,
+  //         name: '英语考试C',
+  //         start_time: new Date('2025-08-03T15:00').getTime(),
+  //         end_time: new Date('2025-08-03T17:00').getTime(),
+  //         mark_mode: '00',
+  //         respondent_count: 12,
+  //         unmarked_student_count: 0,
+  //         status: '10',
+  //         mark_status: '01',
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 4,
+  //     name: '物理测试',
+  //     type: '01',
+  //     exam_sessions: [
+  //       {
+  //         id: 41,
+  //         name: '物理考试A',
+  //         start_time: new Date('2025-08-04T09:00').getTime(),
+  //         end_time: new Date('2025-08-04T11:00').getTime(),
+  //         mark_mode: '01',
+  //         respondent_count: 18,
+  //         unmarked_student_count: 4,
+  //         status: '06',
+  //         mark_status: '00',
+  //       },
+  //       {
+  //         id: 42,
+  //         name: '物理考试B',
+  //         start_time: new Date('2025-08-04T12:00').getTime(),
+  //         end_time: new Date('2025-08-04T14:00').getTime(),
+  //         mark_mode: '01',
+  //         respondent_count: 20,
+  //         unmarked_student_count: 0,
+  //         status: '10',
+  //         mark_status: '02',
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 5,
+  //     name: '物理测试C',
+  //     type: '01',
+  //     exam_sessions: [
+  //       {
+  //         id: 411,
+  //         name: '物理考试A',
+  //         start_time: new Date('2025-08-04T09:00').getTime(),
+  //         end_time: new Date('2025-08-04T11:00').getTime(),
+  //         mark_mode: '01',
+  //         respondent_count: 18,
+  //         unmarked_student_count: 4,
+  //         status: '88',
+  //         mark_status: '00',
+  //       },
+  //     ],
+  //   },
   // ];
 
   // 考试类型映射
@@ -328,169 +226,10 @@
   let page = $state(1);
   let page_size = $state(10);
 
-  let exam_list = $state([
-    // ...[
-    //   {
-    //     id: 1,
-    //     name: '数学期末',
-    //     type: '00',
-    //     exam_sessions: [
-    //       {
-    //         id: 11,
-    //         name: '数学考试A',
-    //         start_time: new Date('2025-08-01T09:00').getTime(),
-    //         end_time: new Date('2025-08-01T11:00').getTime(),
-    //         mark_mode: '02',
-    //         respondent_count: 12,
-    //         unmarked_student_count: 10,
-    //         status: '06',
-    //         mark_status: '00',
-    //       },
-    //       {
-    //         id: 12,
-    //         name: '数学考试B',
-    //         start_time: new Date('2025-08-01T13:00').getTime(),
-    //         end_time: new Date('2025-08-01T15:00').getTime(),
-    //         mark_mode: '02',
-    //         respondent_count: 10,
-    //         unmarked_student_count: 5,
-    //         status: '10',
-    //         mark_status: '01',
-    //       },
-    //       {
-    //         id: 13,
-    //         name: '数学考试C',
-    //         start_time: new Date('2025-08-01T16:00').getTime(),
-    //         end_time: new Date('2025-08-01T18:00').getTime(),
-    //         mark_mode: '02',
-    //         respondent_count: 15,
-    //         unmarked_student_count: 0,
-    //         status: '10',
-    //         mark_status: '02',
-    //       },
-    //     ],
-    //   },
-    //   {
-    //     id: 2,
-    //     name: '语文期中',
-    //     type: '00',
-    //     exam_sessions: [
-    //       {
-    //         id: 21,
-    //         name: '语文考试A',
-    //         start_time: new Date('2025-08-02T09:00').getTime(),
-    //         end_time: new Date('2025-08-02T11:00').getTime(),
-    //         mark_mode: '10',
-    //         respondent_count: 15,
-    //         unmarked_student_count: 0,
-    //         status: '10',
-    //         mark_status: '02',
-    //       },
-    //       {
-    //         id: 22,
-    //         name: '语文考试B',
-    //         start_time: new Date('2025-08-02T12:00').getTime(),
-    //         end_time: new Date('2025-08-02T14:00').getTime(),
-    //         mark_mode: '10',
-    //         respondent_count: 20,
-    //         unmarked_student_count: 10,
-    //         status: '08',
-    //         mark_status: '00',
-    //       },
-    //     ],
-    //   },
-    //   {
-    //     id: 3,
-    //     name: '英语模拟',
-    //     type: '02',
-    //     exam_sessions: [
-    //       {
-    //         id: 31,
-    //         name: '英语考试A',
-    //         start_time: new Date('2025-08-03T09:00').getTime(),
-    //         end_time: new Date('2025-08-03T11:00').getTime(),
-    //         mark_mode: '00',
-    //         respondent_count: 8,
-    //         unmarked_student_count: 3,
-    //         status: '08',
-    //         mark_status: '00',
-    //       },
-    //       {
-    //         id: 32,
-    //         name: '英语考试B',
-    //         start_time: new Date('2025-08-03T12:00').getTime(),
-    //         end_time: new Date('2025-08-03T14:00').getTime(),
-    //         mark_mode: '00',
-    //         respondent_count: 10,
-    //         unmarked_student_count: 0,
-    //         status: '10',
-    //         mark_status: '02',
-    //       },
-    //       {
-    //         id: 33,
-    //         name: '英语考试C',
-    //         start_time: new Date('2025-08-03T15:00').getTime(),
-    //         end_time: new Date('2025-08-03T17:00').getTime(),
-    //         mark_mode: '00',
-    //         respondent_count: 12,
-    //         unmarked_student_count: 0,
-    //         status: '10',
-    //         mark_status: '01',
-    //       },
-    //     ],
-    //   },
-    //   {
-    //     id: 4,
-    //     name: '物理测试',
-    //     type: '01',
-    //     exam_sessions: [
-    //       {
-    //         id: 41,
-    //         name: '物理考试A',
-    //         start_time: new Date('2025-08-04T09:00').getTime(),
-    //         end_time: new Date('2025-08-04T11:00').getTime(),
-    //         mark_mode: '01',
-    //         respondent_count: 18,
-    //         unmarked_student_count: 4,
-    //         status: '06',
-    //         mark_status: '00',
-    //       },
-    //       {
-    //         id: 42,
-    //         name: '物理考试B',
-    //         start_time: new Date('2025-08-04T12:00').getTime(),
-    //         end_time: new Date('2025-08-04T14:00').getTime(),
-    //         mark_mode: '01',
-    //         respondent_count: 20,
-    //         unmarked_student_count: 0,
-    //         status: '10',
-    //         mark_status: '02',
-    //       },
-    //     ],
-    //   },
-    //   {
-    //     id: 5,
-    //     name: '物理测试C',
-    //     type: '01',
-    //     exam_sessions: [
-    //       {
-    //         id: 411,
-    //         name: '物理考试A',
-    //         start_time: new Date('2025-08-04T09:00').getTime(),
-    //         end_time: new Date('2025-08-04T11:00').getTime(),
-    //         mark_mode: '01',
-    //         respondent_count: 18,
-    //         unmarked_student_count: 4,
-    //         status: '88',
-    //         mark_status: '00',
-    //       },
-    //     ],
-    //   },
-    // ],
-  ]);
+  let exam_list = $state([]);
   let total_count = $state(0);
 
-  const debounceSearch = debounce(handleSearch, 500);
+  const debounceSearch = debounce(handleSearch, 200);
 
   // 是否为正常的状态
   function isNormal(mark_mode, status, mark_status) {
@@ -642,6 +381,7 @@
       />
     </div>
   </div>
+
   <div class="table">
     <table>
       <thead>
@@ -830,14 +570,12 @@
           position: sticky;
           top: 0;
           font-size: 14px;
-          color: rgba(0, 0, 0, 0.3);
+          color: rgb(178, 178, 178);
           background-color: white;
         }
 
         tr {
-          height: 3rem;
-          color: rgb(102, 102, 102);
-          border-bottom: 1px lightgray solid;
+          height: 3.5rem;
 
           th {
             font-weight: lighter;
@@ -848,7 +586,8 @@
 
         tbody {
           tr {
-            color: black;
+            border-bottom: 1px rgb(221, 221, 221) solid;
+            color: #333333;
 
             td {
               font-size: 0.9rem;

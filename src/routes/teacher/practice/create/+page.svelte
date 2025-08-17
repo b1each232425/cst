@@ -119,6 +119,7 @@
           //获取已经有账号的学生的ID
           let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
           console.log('exist',selectedStudents.filter(item=>item.ID))
+
              //创建需要关联的学生ID
           practiceStudentIds = [...practiceStudentIds,...studentIds,...existStudentIds]
           // 导入成功后执行创建练习
@@ -132,6 +133,7 @@
       // 直接执行创建练习
        //获取已经有账号的学生的ID
         let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
+            
           //创建需要关联的学生ID
           practiceStudentIds = [...practiceStudentIds,...existStudentIds]
           

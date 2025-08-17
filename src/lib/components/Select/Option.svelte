@@ -2,7 +2,7 @@
  * @Author: 段春茂 2162105974@qq.com
  * @Date: 2025-07-28 18:20:00
  * @LastEditors: 段春茂 2162105974@qq.com
- * @LastEditTime: 2025-08-12 18:00:00
+ * @LastEditTime: 2025-08-17 2:00:00
  * @FilePath: src\lib\components\Select\Option.svelte
  * @Description: Tooltip-组件
  * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
@@ -23,18 +23,17 @@
 
   let { value, label, disabled = false } = $props();
 
+  /**
+   * 校验参数是否合法,以及做一些默认处理
+   */
   const propRules = {
-    label: { type: ['string'], default: '' },
+    label: { type: ['string', 'number', 'boolean'], default: '' },
     disabled: { type: ['boolean'], default: false },
-    value: { type: ['string', 'number', 'boolean'], default: '' },
   };
-
   const propMap = {
     label: { get: () => label, set: (v) => (label = v) },
     disabled: { get: () => disabled, set: (v) => (disabled = v) },
-    value: { get: () => value, set: (v) => (value = v) },
   };
-
   Object.keys(propMap).forEach((k) => {
     validateAndAssign('Option', propMap[k].get, propMap[k].set, propRules[k], k);
   });
@@ -49,7 +48,7 @@
 
   /** 订阅store @type {function} */
   const filterTextStore = filterText.subscribe((text) => {
-    isShow = label.toLowerCase().includes(text.toLowerCase());
+    isShow = String(label).toLowerCase().includes(text.toLowerCase());
   });
 
   $effect(() => {
@@ -85,7 +84,7 @@
   });
 </script>
 
-<button class="option" class:is-disabled={disabled} class:is-hiddle={!isShow} class:is-active={isSelected} onclick={handerSelected}>
+<button class="option" class:is-disabled={disabled} class:is-hiddle={!isShow} class:is-active={isSelected} data-testid="option" onclick={handerSelected}>
   <li class="option__item">{label}</li>
 </button>
 
