@@ -678,13 +678,17 @@ describe('考试创建页面测试', () => {
   
   
 describe('resetTime 逻辑验证', () => {
+  
   it('切换考试时段模式时应正确触发 resetTime 并重置时长', async () => {
     const { selectTimePeriodMode, getDurationInput } = setup();
 
     // 初始状态应为固定时段（00）
     await selectTimePeriodMode(0, '00');
-    const durationInput = getDurationInput(0);
+    const durationInput = getDurationInput(120);
+    const handler = onChooseStartTime(0, paper_configs, updateDuration);
+    const mockEvent = { detail: { date: new Date('2045-08-05T09:00:00') } };
 
+    handler(mockEvent);
     // 模拟设置初始时长
     fireEvent.input(durationInput, { target: { value: '120' } });
     expect(durationInput).toHaveValue(120);

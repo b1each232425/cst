@@ -35,8 +35,15 @@
                 }
                 return response.json();
             })
-            .then(data => {
-                return data;
+            .then(result =>{
+                if(result.status===0)
+                 {
+                    return result;
+                 }
+                 else{
+                    goto('/teacher/exam');
+                    toast.error(result.msg);
+                 }
             })
             .catch(error => {
                 console.error('获取试卷详情出错：', error);
@@ -203,7 +210,6 @@
             await goto("/teacher/exam");
             return;
         }
-        //toast.warning("目前列表无法获取paperid,写死id用于测试中");
         fetchPaper(paperID[currentID])
             .then(result => {
                 paper_info = result.data;
