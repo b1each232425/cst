@@ -391,7 +391,13 @@
     }
 
   async function fetchSelectedStudents() {
-    fetch(`/api/examinee?exam_id=${examID}`,
+     const query = encodeURIComponent(JSON.stringify({
+    data: {
+      IDs: examID, // 必须是数组，例如 [123, 456, 789]
+    },
+  }));
+
+    fetch(`/api/exam/user?q=${query}`,
       {
         method:"GET",
         credentials: "include",

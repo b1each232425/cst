@@ -336,6 +336,11 @@
       })
   }
 
+
+  async function acquireExaminee(selected_exam_ids) {
+    
+  }
+
   function handleCheckBoxChange(data,event){
      const examID = data.id;
      const is_selected = selected_exam_ids.includes(examID);
@@ -427,6 +432,12 @@ function handleSelectAll(event) {
             examID_to_cancel=exam_list[index].id
             cancel_exam_dialog=true;
         }}>考试作废</button>
+    
+    <button class="acquire-examinee-button action-button"
+    onclick={(event)=>{
+            event.stopPropagation(); // 阻止冒泡
+
+        }}>获取考生名单</button>
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">监考管理</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">操作日志</button> -->
     <!-- <button class="unpublished-more-action-button action-button {status !== '00' ? 'hideButton' : ''}"

@@ -163,8 +163,9 @@
     // paper_configs[index].endTime = '';
     if(paper_configs[index].periodMode==='02')
     {
+
       paper_configs[index].duration = 0;
-      paper_configs[index].maxDuration = 0;
+
     }
     else{
       updateDuration(index,paper_configs);
@@ -506,16 +507,26 @@ onMount(async () =>{
         <div class="config-row-content">
           <input
             class="{paper_configs[paperConfigIndex].periodMode==='00'?"duration-input":'simple-input'}"
-            bind:value={paper_configs[paperConfigIndex].duration}
+            value={paper_configs[paperConfigIndex].duration}
             type="number"
             min="1"
-            
+            max={paper_configs[paperConfigIndex].maxDuration}
+            oninput={(e) => {
+              const max = paper_configs[paperConfigIndex].maxDuration;
+              let v = Number(e.target.value);
+              // 非法或空值 → 1
+              if (!Number.isFinite(v) || v < 1) v = 1;
+              // 超出最大值 → 最大值
+              if (v > max) v = max;
+              paper_configs[paperConfigIndex].duration = v;
+              e.target.value = v;
+            }}
           />
           <span style="font-size: 14px;">分钟</span>
         </div>
       </div>
 
-      <div class="exam-duration-container config-row">
+      <div class="exam-duration-container config-row {paper_configs[paperConfigIndex].periodMode === '02' ? 'hideButton' : ''}">
         <RequiredLabel text="考场规则" />
 
         <div class="config-row-content">
