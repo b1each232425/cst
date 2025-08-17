@@ -459,8 +459,10 @@
       .then((res) => {
         if (!res.status) {
           is_marked = false;
-          toast.success('提交成功');
-          goBack();
+          if (is_exam_mode) {
+            toast.success('提交成功'); // 考试需要提示，练习是直接提交
+            goBack();
+          }
         } else throw new Error(res.msg ?? '提交失败');
       })
       .catch((err) => {
@@ -710,15 +712,15 @@
               ...data,
             };
           else marking_results.push(data);
+
+          // 练习，批改好一个同学就直接提交
+          if (!is_exam_mode && is_finished_correcting) submitCorrection();
         } else throw new Error(res.msg ?? '批改操作失败');
       })
       .catch((err) => {
         toast.error(err.message);
         console.error(err);
       });
-
-    // 练习，批改好一个同学就直接提交
-    if (!is_exam_mode && is_finished_correcting) submitCorrection();
   }
 
   // 展示错误弹窗
