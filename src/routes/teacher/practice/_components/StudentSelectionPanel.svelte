@@ -224,7 +224,8 @@
                   ...item,
                   officialName: item.official_name,
                   idCardNo: item.id_card_no,
-                  mobilePhone: item.phone
+                  mobilePhone: item.phone,
+                  ID: item.id
                 }));
               
         }
@@ -288,16 +289,13 @@
         account: student.Account,
         
       }));
-
        // 过滤掉已经在 selected_ids 中存在的学生（避免重复）
-    let filtered_exist_students = exist_students.filter(exist_student => {
-      return !selected_ids.some(selected_student => selected_student.id === exist_student.ID);
+     exist_students = exist_students.filter(exist_student => {
+      return !selected_ids.some(selected_student => selected_student.ID === exist_student.ID);
     });
-      
-      
-
+    console.log('exist_students',exist_students)
       // 更新选中学生列表
-      selected_ids = [...selected_ids, ...newStudents,...filtered_exist_students];
+      selected_ids = [...selected_ids, ...newStudents,...exist_students];
       console.log('selected',selected_ids);
       recalculateSerialNumbers();
     }
@@ -367,9 +365,6 @@
           {/if}
         </div>
         <div class="pagination-container">
-          <span style="font-size: 12px; margin-right:10px">
-            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{filtered_selected_ids.length}</span> 条
-          </span>
           <Pagination
             total_items={filtered_selected_ids.length}
             page_size={selected_search_params.pageSize}

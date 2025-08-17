@@ -2,8 +2,8 @@
  * @Author: 林炜佳 wj2144632819@qq.com
  * @Date: 2025-08-06 16:00:00
  * @LastEditors: 林炜佳 wj2144632819@qq.com
- * @LastEditTime: 2025-08-07 00:18:07
- * @FilePath: \exam\src\routes\teacher\correct\correct\_components\QuestionGradingSection.svelte
+ * @LastEditTime: 2025-08-17 00:18:07
+ * @FilePath: \exam\src\routes\teacher\correct\correct\_components\QuestionGradingSection\index.svelte
  * @Description: 教师端试卷批改页面题组题目组件
  * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
 -->
@@ -180,9 +180,9 @@
         .answer-item {
           padding-left: 1rem;
 
-          .answer-content {
-            color: #3399ff;
-          }
+          // .answer-content {
+          //   color: #3399ff;
+          // }
         }
       }
     }

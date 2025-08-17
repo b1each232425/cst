@@ -16,7 +16,6 @@
   import QuestionGradingSection from './_components/QuestionGradingSection/index.svelte';
   import { toast } from '$lib/components/Toast/Toast';
   import '$lib/components/Button/index.scss';
-  import { goto } from '$app/navigation';
 
   const mockData = {
     question_sets: [
@@ -460,8 +459,10 @@
       .then((res) => {
         if (!res.status) {
           is_marked = false;
-          toast.success('提交成功');
-          goBack();
+          if (is_exam_mode) {
+            toast.success('提交成功'); // 考试需要提示，练习是直接提交
+            goBack();
+          }
         } else throw new Error(res.msg ?? '提交失败');
       })
       .catch((err) => {
@@ -702,7 +703,7 @@
       })
       .then((res) => {
         if (!res.status) {
-          const index = getMarkResultIndex(current_student_info, event.detail.question_id);
+          const index = getMarkResultIndex(current_student_info, event.question_id);
 
           // 进行本地分数的批改更新，响应式更新 QuestionGradingSection 组件的题目批改分数，确保页面一直激活状态下（不刷新），切换阅卷模式不会数据消失
           if (index !== -1)
@@ -711,15 +712,15 @@
               ...data,
             };
           else marking_results.push(data);
+
+          // 练习，批改好一个同学就直接提交
+          if (!is_exam_mode && is_finished_correcting) submitCorrection();
         } else throw new Error(res.msg ?? '批改操作失败');
       })
       .catch((err) => {
         toast.error(err.message);
         console.error(err);
       });
-
-    // 练习，批改好一个同学就直接提交
-    if (!is_exam_mode && is_finished_correcting) submitCorrection();
   }
 
   // 展示错误弹窗
@@ -1075,13 +1076,18 @@
               height: 2rem;
               border-radius: 5px;
 
+              @mixin outline-style {
+                outline: 2px solid gray;
+                outline-offset: 2px;
+              }
+
               &:hover {
                 cursor: pointer;
+                @include outline-style;
               }
 
               &.active {
-                outline: 2px solid gray;
-                outline-offset: 2px;
+                @include outline-style;
               }
 
               &.unreviewed {

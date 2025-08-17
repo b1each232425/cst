@@ -388,6 +388,7 @@ function handleCheckboxChange(examinee, event) {
         ...item,
         serialNumber: index + 1,
       }));
+      console.log("ids",ids);
     }
   });
 </script>
@@ -441,10 +442,10 @@ function handleCheckboxChange(examinee, event) {
               <tbody>
                 {#each current_page_selected_examinee as examinee}
                   <tr class="examinee">
-                    <td>{examinee.OfficialName || '--'}</td>
-                    <td>{examinee.Gender || '--'}</td>
-                    <td>{examinee.MobilePhone || '--'}</td>
-                    <td>{examinee.IDCardNo || '--'}</td>
+                    <td>{examinee.OfficialName || examinee.name ||'--'}</td>
+                    <td>{examinee.Gender || examinee.gender || '--'}</td>
+                    <td>{examinee.MobilePhone || examinee.mobile_phone || '--'}</td>
+                    <td>{examinee.IDCardNo || examinee.id_card_no || '--'}</td>
                   </tr>
                 {/each}
               </tbody>
@@ -455,20 +456,7 @@ function handleCheckboxChange(examinee, event) {
             </div>
 
           </div>
-          <div class="pagination-container">
-            <span style="font-size: 12px; margin-right:10px">
-              已选 <span style="color: #00A870; margin:0 5px 0 5px;">{filteredselected_examinee.length}</span> 条
-            </span>
-
-            <Pagination
-              total_items={filteredselected_examinee.length}
-              current_page={selected_search_params.page}
-              page_size_options={[10,20,50]}
-              on:pageChange={(e) => {
-                selected_search_params.page = e.detail;
-              }}
-            />
-          </div>
+          
         </div>
       {:else}
         <!-- 选择模式 -->
@@ -541,10 +529,30 @@ function handleCheckboxChange(examinee, event) {
               <Empty text = "暂无数据"/>
             </div>
 
-        </div>
+        </div>      
+      {/if}
+    </div>
 
+    <div class="pagination-container {!is_selection_mode ? ' ' : 'hideButton'}">
+            <span style="font-size: 12px; margin-right:10px">
+              已选 <span style="color: #00A870; margin:0 5px 0 5px;">{filteredselected_examinee.length}</span> 条
+            </span>
 
-        <div class="pagination-container">
+            <Pagination
+              total_items={filteredselected_examinee.length}
+              current_page={selected_search_params.page}
+              page_size_options={[10,20,50]}
+              on:pageChange={(e) => {
+                selected_search_params.page = e.detail;
+              }}
+              on:pageSizeChange={(e) => {
+              selected_search_params.pageSize = e.detail;
+              selected_search_params.page = 1; // 重置到第一页
+            }}
+            />
+          </div>
+
+    <div class="pagination-container {is_selection_mode ? ' ' : 'hideButton'}">
           <span style="font-size: 12px; margin-right:10px">
             已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_examinee.length}</span> 条
           </span>
@@ -557,11 +565,14 @@ function handleCheckboxChange(examinee, event) {
               is_total_selected = false;
               searchExaminee();
             }}
+            on:pageSizeChange={(e) => {
+              search_params.pageSize = e.detail;
+              search_params.page = 1; // 重置到第一页
+              is_total_selected = false;
+              searchExaminee();
+            }}
           ></Pagination>
         </div>
-      {/if}
-    </div>
-
 
     <div class="panel-footer">
       
@@ -674,7 +685,7 @@ function handleCheckboxChange(examinee, event) {
   .examinee-panel {
     width: 1000px;
     min-width: 800px;
-    max-height: 90vh;
+    height: 75vh;
     overflow-y: auto;
     background-color: white;
     display: flex;
@@ -921,4 +932,6 @@ function handleCheckboxChange(examinee, event) {
     position: absolute;
     pointer-events: none;
   }
+
+  
 </style>

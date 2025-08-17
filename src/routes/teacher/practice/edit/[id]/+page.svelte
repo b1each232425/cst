@@ -14,6 +14,7 @@
   import { onMount } from 'svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
   import { transFormType } from '../../utils';
+  import Title from '$lib/components/Title/Title.svelte';
 
   // 获取路由参数中的 id (即 practice_id)
   const practiceId = $page.params.id;
@@ -306,7 +307,7 @@
 </script>
 
 <main>
-  <div class="page-header">编辑练习</div>
+  <div class="page-header"><Title title="编辑练习"></Title></div>
   {#if practice}
     <PracticeForm
       PracticeId={practiceId}

@@ -1,23 +1,18 @@
 <!-- 
- /*
  * @Author: git config Mayux && dbs45412@163.com
  * @Date: 2025-04-04 17:35:50
- * @LastEditors: Mayux dbs45412@163.com
- * @LastEditTime: 2025-04-07 17:31:20
+ * @LastEditors: 段春茂 2162105974@qq.com
+ * @LastEditTime: 2025-08-17 2:28:07
  * @FilePath: src\lib\components\Tag\UneditableTags.svelte
  * @Description: 不可进行编辑的标签组件，用于显示一系列标签
  * @Props:
  * - tags (Array): 要显示的标签数组
  * - colors (Array): 颜色数组
  * @Copyright: Copyright (c) 2025 by Mayux, All Rights Reserved. 
- */ 
  -->
 <script>
   import { validateAndAssign } from '$lib/utils/validate';
-  /**
-   * 默认标签，默认颜色常量
-   * @type {Array}
-   */
+  /** 默认标签，默认颜色常量 */
   const DEFAULT_TAGS = ['frontend', 'backend', 'svelte', '前端', 'JavaScript', 'CSS', 'HTML', 'Node.js'];
   const DEFAULT_COLORS = [
     '#40d5ff',
@@ -56,19 +51,16 @@
   let { tags = DEFAULT_TAGS, colors = DEFAULT_COLORS } = $props();
 
   /**
-   * 属性校验规则
-   * @type {Object}
+   * 校验参数是否合法,以及做一些默认处理
    */
   const propsRules = {
-    tags: { type: ['array'], default: DEFAULT_TAGS, check: (v) => v.length > 0 },
-    colors: { type: ['array'], default: DEFAULT_COLORS, check: (v) => v.length > 0 },
+    tags: { type: ['array'], default: DEFAULT_TAGS },
+    colors: { type: ['array'], default: DEFAULT_COLORS },
   };
-
   const propMap = {
     tags: { get: () => tags, set: (v) => (tags = v) },
     colors: { get: () => colors, set: (v) => (colors = v) },
   };
-
   Object.keys(propMap).forEach((k) => {
     validateAndAssign('UneditableTags', propMap[k].get, propMap[k].set, propsRules[k], k);
   });
@@ -95,8 +87,8 @@
   {#each tags as tag, i (i)}
     <courseTag>
       <div class="tag">
-        <span class="tag-square" style="background-color: {tag_colors[i]};"></span>
-        <span class="tag-text">{tag}</span>
+        <span class="tag__square" style="background-color: {tag_colors[i]};"></span>
+        <span class="tag__text">{tag}</span>
       </div>
     </courseTag>
   {/each}
@@ -118,7 +110,7 @@
       align-items: center;
       font-size: 14px;
 
-      &-text {
+      &__text {
         padding: 0 0 0 1px;
         white-space: nowrap;
         overflow: hidden;
@@ -127,7 +119,7 @@
         color: #797979;
       }
 
-      &-square {
+      &__square {
         width: 15px;
         height: 15px;
         border-radius: 3px;
