@@ -793,6 +793,7 @@
   
   td {
     color: var(--gray);
+    //
   }
 }
 
