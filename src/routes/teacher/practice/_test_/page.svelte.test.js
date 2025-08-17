@@ -40,6 +40,14 @@ const MOCK_PRACTICES = [
     Status: '02',
     AllowedAttempts: 1,
     student_count: 8
+  },
+   {
+    ID: 3,
+    Name: '物理提升练习',
+    Type: '04',
+    Status: '06',
+    AllowedAttempts: 1,
+    student_count: 8
   }
 ];
 
@@ -66,6 +74,14 @@ const MOCK_TRANSFORMED_PRACTICES = [
     Name: '物理提升练习',
     Type: '智能提升',
     Status: '已发布',
+    AllowedAttempts: 1,
+    student_count: 8
+  },
+    {
+    ID: 3,
+    Name: '物理提升练习',
+    Type: '智能提升',
+    Status: '已作废',
     AllowedAttempts: 1,
     student_count: 8
   }
@@ -182,12 +198,12 @@ const setup = (mockDataOverride = {}) => {
 
     },
     triggerCancelPublish:async()=>{
-      const cancelButton = screen.getAllByText('取消发布');
+      const cancelButton = screen.getAllByText('作废');
   await fireEvent.click(cancelButton[0]);
   
   // 等待确认对话框出现
   
-    expect(screen.getByText('请问是否要取消发布练习？')).toBeInTheDocument();
+    expect(screen.getByText('请问是否要作废练习？')).toBeInTheDocument();
  
   const comBtn = screen.getAllByText('确定');
   await fireEvent.click(comBtn[0]);
@@ -225,6 +241,10 @@ const setup = (mockDataOverride = {}) => {
     triggerPreview :async()=>{ 
       const preview = screen.getAllByText('预览');
       await fireEvent.click(preview[0]);
+    },
+    triggerInvalid :async()=>{ 
+      const invalid = screen.getAllByText('作废');
+      await fireEvent.click(invalid[0]);
     },
 
 
@@ -292,7 +312,7 @@ const table = screen.getAllByRole('table');
     
     // 检查已发布练习的操作按钮
     const selectStudentButtons = screen.getAllByText('选择学生');
-    const unpublishButtons = screen.getAllByText('取消发布');
+    const unpublishButtons = screen.getAllByText('作废');
     expect(selectStudentButtons.length).toBeGreaterThan(0);
     expect(unpublishButtons.length).toBeGreaterThan(0);
     
@@ -422,7 +442,7 @@ const table = screen.getAllByRole('table');
   it('点击取消发布按钮应显示确认对话框', async () => {
     setup();
     
-    const unpublishButtons = screen.getAllByText('取消发布');
+    const unpublishButtons = screen.getAllByText('作废');
     await fireEvent.click(unpublishButtons[0]);
     
     expect(screen.getByText('请问是否要取消发布练习？')).toBeInTheDocument();
@@ -1594,6 +1614,38 @@ describe('通过类型下拉框来筛选练习',(()=>{
       await waitFor(()=>{ 
         expect(toast.error).toHaveBeenCalledWith('请求试卷信息失败');
       })
+    }))
+  }))
+
+  describe('作废按钮的功能测试',(()=>{
+    it('正常显示作废按钮',(()=>{
+      const {triggerInvalid}=setup();
+      triggerInvalid();
+      expect(screen.getByText('请问是否要作废练习？')).toBeInTheDocument();
+    }))
+    it('点击作废按钮，正常作废',(()=>{
+      const {triggerInvalid}=setup();
+      global.fetch.mockResolvedValueOnce({
+        ok:true,
+        json:async()=>({
+          status:0,
+          data:{
+            message:'作废成功'
+          }
+        })
+      })
+      triggerInvalid();
+      const confirmButton=screen.getAllByText('确定');
+      fireEvent.click(confirmButton[0]);
+      expect(global.fetch).toHaveBeenCalled();
+    }))
+  }))
+
+  describe('显示无法操作的按钮',(()=>{
+    it('点击无法操作按钮',(()=>{
+      setup();
+      const button=screen.getByText('无法操作');
+      fireEvent.click(button);
     }))
   }))
 

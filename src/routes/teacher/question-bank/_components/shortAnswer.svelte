@@ -1195,7 +1195,7 @@
             .topBarControlBtns {
                 display: flex;
                 .cancelBtn {
-                    background-color: #f0f0f0;
+                    background-color:  #7787a2;
                     width: 110px;
                     height: 35px;
                     font-size: 16px;
@@ -1205,11 +1205,11 @@
                     justify-content: center;
                     align-items: center;
 
-                    color: #619cf5;
-                    border: 1px solid #619cf5;
+                    color: white;
+                   
 
                     &:hover {
-                        background-color: #e3e3e3;
+                        background-color:  gray;
                     }
                 }
 
@@ -1226,7 +1226,6 @@
                     align-items: center;
 
                     color: #fff;
-                    border: 1px solid #797979;
 
                     &:hover {
                         background-color: #578ddd;

@@ -1,23 +1,16 @@
 import { vi, beforeEach, describe, it, expect } from 'vitest';
 import { render, fireEvent, screen, waitFor } from '@testing-library/svelte';
 
-// Mock 模块
 vi.mock('$app/state', () => ({
   page: {
     url: new URL('http://localhost/student/practice'),
   },
 }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$lib/components/Toast/Toast.js', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
+vi.mock('$lib/components/Toast/Toast.js', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('$lib/components/MessageBox/MessageBox.js', () => ({
   default: vi.fn(({ onConfirm }) => {
     onConfirm();
-    return;
   }),
 }));
 

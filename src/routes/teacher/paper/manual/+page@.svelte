@@ -2,14 +2,13 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 15:21:42
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-07 11:35:31
+ * @LastEditTime: 2025-08-16 12:21:26
  * @FilePath: \exam\src\routes\teacher\paper\manual\+page@.svelte
  * @Description: 自定义组卷页面
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
 -->
 <script>
     import ImportQuestion from "../_components/ImportQuestion/ImportQuestion.svelte";
-    import InputBox from "$lib/components/Input/InputBox.svelte";
     import Select from "$lib/components/Select/Select.svelte";
     import Option from "$lib/components/Select/Option.svelte";
     import Toast from "$lib/components/Toast/Toast.svelte";
@@ -21,10 +20,10 @@
     import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../_utils/tool";
     import { onMount, tick } from "svelte";
     import { toast } from "$lib/components/Toast/Toast";
-    import { debounce } from "$lib/utils/optimize";
     import { get } from "svelte/store";
     import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, GROUP_AVERAGE_SCORE } from "../_stores/store";
     import { stopPropagation } from "svelte/legacy";
+  import { debounce } from "$lib/utils/optimize";
 
     /******************* API 区 ********************/
 
@@ -145,10 +144,45 @@
         savePaper(paperID, ACTIONS);
     }
 
-    // 防抖更新试卷信息
-    const debounceUpDatePaperInfo = debounce(() => {
-        UpDatePaperInfo();
-    }, 500, false);
+    // 预览试卷
+    function previewPaper() {
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("paper_id", paperID);
+        PARAMS.append("mode", "preview");
+
+        fetch(`/api/paper/manual?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                const PREVIEW_QUESTIONS = result.data;
+                
+                if (category === "00") {
+                    localStorage.setItem(
+                        "examQuestions",
+                        JSON.stringify(PREVIEW_QUESTIONS),
+                    );
+                    window.location.href = "/student/answer/exam";
+                } else if (category === "02") {
+                    localStorage.setItem(
+                        "practiceQuestions",
+                        JSON.stringify(PREVIEW_QUESTIONS),
+                    );
+                    window.location.href = "/student/answer/practice";
+                }
+            })
+            .catch(error => {
+                console.error('获取试卷详情出错：', error);
+                return null;
+            });
+    }
 
     /**************** 试卷信息区 *****************/
 
@@ -179,18 +213,21 @@
     }
 
     let to_add_tag = $state("");
+    let is_clearing_tag = $state(false);
 
     // 新增标签
     function addTag() {
-        if (event.key === "Enter" && to_add_tag.trim() !== "") {
+        if (!is_clearing_tag && to_add_tag.trim() !== "") {
             tags = [to_add_tag, ...tags];
             to_add_tag = "";
             UpDatePaperInfo();
         }
+        is_clearing_tag = false;
     }
 
     // 清除新建标签内容
     function clearToAddTagContent() {
+        is_clearing_tag = true;
         to_add_tag = "";
     }
 
@@ -201,10 +238,25 @@
         }
     }
 
+    // 修改旧标签
+    function updateOldTag(index) {
+        if(!is_deleting_tag) {
+            if(tags[index].trim() !== "") {
+                UpDatePaperInfo();
+            } else {
+                deleteTag(index);
+            }
+        }
+    }
+
+    let is_deleting_tag = $state(false);
+
     // 删除旧标签
     function deleteTag(index) {
+        is_deleting_tag = true;
         tags = tags.toSpliced(index, 1);
         UpDatePaperInfo();
+        is_deleting_tag = false;
     }
 
     /***************** 标签处理区 *****************/    
@@ -275,11 +327,17 @@
     // 取消添加题组
     function cancelAddGroup() {
         is_adding_group = false;
+        to_add_group_name = "";
     }
 
     // 确认添加题组
     function confirmAddgroup() {
-        if(event.key === "Enter" && to_add_group_name.trim() !== "") {
+        if(is_adding_group && (to_add_group_name.trim() === "" || !to_add_group_name)) {
+            cancelAddGroup();
+            return;
+        }
+
+        if(is_adding_group && to_add_group_name.trim() !== "") {
 
             to_add_group.blur();
 
@@ -404,6 +462,15 @@
         paper_info = updatedInfo;
         question_count = updatedInfo.QuestionCount;
         total_score = updatedInfo.TotalScore;
+        
+        // 检查每个题组的分数一致性，如果不一致则清空每题分值输入框
+        if (updatedGroups && updatedGroups.length > 0) {
+            updatedGroups.forEach(group => {
+                if (!checkGroupScoreConsistency(group)) {
+                    clearGroupAverageScore(group);
+                }
+            });
+        }
         
         // 重置导入参数
         to_add_group = { id: 0, name: ""};
@@ -544,20 +611,56 @@
     }
 
     // 修改题目分数
-    function updateQuestionScore(questionID, groupID, question_order, question_score) {
+    function updateQuestionScore(question) {
+        
+        let sub_score = undefined;
+        
+        // 如果题目有sub_score数组，则将总分平均分配（最小单位为0.5）
+        if (question.sub_score && question.sub_score.length > 0) {
+            const subScoreCount = question.sub_score.length;
+            
+            // 确保平均分数大于0
+            if (question.score < subScoreCount/2) {
+                toast.error(`该题至少需要${subScoreCount/2}分`, 1000);
+                return;
+            }
+
+            // 将总分平均分配（最小单位为0.5）
+            const baseScore = Math.floor(question.score / subScoreCount * 2) / 2; // 确保是0.5的整数倍
+            sub_score = new Array(subScoreCount).fill(baseScore);
+            
+            // 计算剩余分数
+            const totalAssigned = baseScore * subScoreCount;
+            const remainder = question.score - totalAssigned;
+            
+            // 将剩余分数按0.5为单位分配给前面的几个子题
+            const remainderSteps = Math.round(remainder * 2); // 转换为0.5的步数
+            for (let i = 0; i < Math.abs(remainderSteps) && i < subScoreCount; i++) {
+                if (remainderSteps > 0) {
+                    sub_score[i] += 0.5;
+                } else {
+                    sub_score[i] -= 0.5;
+                }
+            }
+        }
+        
         const ACTIONS = [
             {
                 action: "update_question",
                 payload: [
                     {
-                        id: questionID,
-                        group_id: groupID,
-                        order: question_order,
-                        score: question_score
+                        id: question.id,
+                        group_id: question.group_id,
+                        order: question.order,
+                        score: question.score,
                     }
                 ]
             }
         ];
+
+        if(question.type==="06" || question.type==="08") {
+            ACTIONS[0].payload[0].sub_score = sub_score;
+        }
 
         savePaper(paperID, ACTIONS)
             .then(() => {
@@ -567,26 +670,88 @@
                 paper_groups = result.data.GroupsData;
                 paper_info = result.data;
                 total_score = paper_info.TotalScore;
-                question_count = paper_info.QuestionCount;
+                question_count = result.data.QuestionCount;
+                
+                // 检查题组是否还保持统一的每题分值，如果不一致则清空每题分值输入框
+                const group = paper_groups.find(g => g.id === question.group_id);
+                if (group && !checkGroupScoreConsistency(group)) {
+                    clearGroupAverageScore(group);
+                }
             });
+    }
+
+    // 检查题组是否还保持统一的每题分值
+    function checkGroupScoreConsistency(group) {
+        if (group.questions.length === 0) return true;
+        
+        const firstScore = group.questions[0].score;
+        return group.questions.every(question => question.score === firstScore);
+    }
+
+    // 清空题组的每题分值输入框
+    function clearGroupAverageScore(group) {
+        GROUP_AVERAGE_SCORE.update(state => ({ ...state, [group.id]: "" }));
     }
 
     // 修改每题分值
     function updateAverageQuestionScore(group) {
-        if(group.questions.length === 0) return;
+        if(group.questions.length === 0) {
+            toast.error("请先添加题目", 1000);
+            return;
+        }
 
         // 获取每题分数
         const AVERAGE_SCORE = get(GROUP_AVERAGE_SCORE)[group.id];
+        
+        // 最小分值为该题组里type为06或08的题的小题数的最大值的一半
+        const MIN_SCORE = Math.max(...group.questions.filter(question => question.type==="06" || question.type==="08").map(question => question.answers.length/2));
+        if(AVERAGE_SCORE < MIN_SCORE) {
+            toast.error(`每题分值至少为${MIN_SCORE}分`, 1000);
+            return;
+        }
+
+        // 构建题目更新数据
+        const questionUpdates = group.questions.map((question, index) => {
+            const updateData = {
+                id: question.id,
+                group_id: group.id,
+                order: question.order,
+                score: AVERAGE_SCORE
+            };
+
+            // 如果type为06或08，需要处理sub_score数组
+            if (question.type === "06" || question.type === "08") {
+                const subScoreCount = question.sub_score.length;
+
+                // 将总分平均分配（最小单位为0.5）
+                const baseScore = Math.floor(AVERAGE_SCORE / subScoreCount * 2) / 2; // 确保是0.5的整数倍
+                const sub_score = new Array(subScoreCount).fill(baseScore);
+                
+                // 计算剩余分数
+                const totalAssigned = baseScore * subScoreCount;
+                const remainder = AVERAGE_SCORE - totalAssigned;
+                
+                // 将剩余分数按0.5为单位分配给前面的几个子题
+                const remainderSteps = Math.round(remainder * 2); // 转换为0.5的步数
+                for (let i = 0; i < Math.abs(remainderSteps) && i < subScoreCount; i++) {
+                    if (remainderSteps > 0) {
+                        sub_score[i] += 0.5;
+                    } else {
+                        sub_score[i] -= 0.5;
+                    }
+                }
+                
+                updateData.sub_score = sub_score;
+                
+            }
+
+            return updateData;
+        });
 
         const ACTIONS = [
             {
                 action: "update_question",
-                payload: group.questions.map((question, index) => ({
-                    id: question.id,
-                    group_id: group.id,
-                    order: group.order,
-                    score: AVERAGE_SCORE
-                }))
+                payload: questionUpdates
             }
         ];
 
@@ -635,6 +800,12 @@
                 paper_info = result.data;
                 total_score = paper_info.TotalScore;
                 question_count = paper_info.QuestionCount;
+                
+                // 检查题组是否还保持统一的每题分值，如果不一致则清空每题分值输入框
+                const group = paper_groups[groupIndex];
+                if (group && !checkGroupScoreConsistency(group)) {
+                    clearGroupAverageScore(group);
+                }
             });
     }
 
@@ -879,7 +1050,18 @@
             })
             .finally(() => {
                 page_is_ready = true;
-                // console.log(paper_groups);
+                
+                // 页面加载完成后自动展开所有题组和题目
+                if (paper_groups && paper_groups.length > 0) {
+                    expandAll();
+                    
+                    // 检查每个题组的分数一致性，如果不一致则清空每题分值输入框
+                    paper_groups.forEach(group => {
+                        if (!checkGroupScoreConsistency(group)) {
+                            clearGroupAverageScore(group);
+                        }
+                    });
+                }
             });
     })
 
@@ -909,14 +1091,15 @@
             </div>
 
             <!-- 试卷名称 -->
-            <input onchange={()=>debounceUpDatePaperInfo()} class="paper-name-input {paper_name===""?"name-warn":""}" type="text" bind:value={paper_name} placeholder="试卷名称不能为空">
+            <input onchange={()=>{if(paper_name!=="")UpDatePaperInfo()}} class="paper-name-input {paper_name===""?"name-warn":""}" type="text" bind:value={paper_name} placeholder="试卷名称不能为空">
             
             <!-- 操作区 -->
             <div class="operation">
                 <button onclick={()=>expandAll()} class="btn btn--primary is-plain">一键展开</button>
                 <button onclick={()=>collapseAll()} class="btn btn--primary is-plain">一键收起</button>
+                <button onclick={()=>previewPaper()} class="btn btn--primary is-plain">预览试卷</button>
                 <button onclick={()=>importQuestions({id:0,name:""})} class="btn btn--primary">从题库中导入</button>
-                <button onclick={()=>goto('/teacher/paper')} class="btn btn--primary is-plain">保存并退出</button>
+                <button onclick={()=>{UpDatePaperInfo();goto('/teacher/paper')}} class="btn btn--primary is-plain">保存并退出</button>
             </div>
         </div>
 
@@ -955,7 +1138,13 @@
                     <!-- 建议时长 -->
                     <div class="single-line">
                         <span class="info-label">建议时长</span>
-                        <InputBox onInput={()=>debounceUpDatePaperInfo()} bind:value={suggested_duration} type="number" show_label={false} clearable={false}/>
+                        <input type="number"
+                            bind:value={suggested_duration}
+                            onchange={()=>UpDatePaperInfo()}
+                            class="input"
+                            min={1}
+                            step={1}
+                        >
                         <span class="duration-span">分钟</span>
                     </div>
 
@@ -976,7 +1165,7 @@
                     <!-- 试卷说明 -->
                     <div class="paper-description">
                         <span class="info-label">试卷说明</span>
-                        <textarea oninput={()=>debounceUpDatePaperInfo()} class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
+                        <textarea onchange={()=>UpDatePaperInfo()} class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
                     </div>
 
                     <!-- 试卷标签 -->
@@ -987,8 +1176,8 @@
                             <div class="paper-tag" style="border: 1.5px dashed var(--border-medium);">
                                 <div class="color-block" style="background-color: {to_add_tag===""? "#40d5ff":TAG_COLOR_LIST[getColorIndex(to_add_tag)]};"></div>
                                 <div class="btn-box">
-                                    <input type="text" bind:value={to_add_tag} onkeydown={addTag} placeholder="+标签" maxlength="30"/>
-                                    <button onclick={clearToAddTagContent}>✕</button>
+                                    <input type="text" bind:value={to_add_tag} onchange={addTag} placeholder="+标签" maxlength="30"/>
+                                    <button onmousedown={clearToAddTagContent}>✕</button>
                                 </div>
                             </div>
 
@@ -997,8 +1186,8 @@
                                 <div class="paper-tag">
                                     <div class="color-block" style="background-color: {tag===""? "#40d5ff":TAG_COLOR_LIST[getColorIndex(tag)]};"></div>
                                     <div class="btn-box">
-                                        <input type="text" bind:value={tags[index]} onkeydown={oldTagEnter} placeholder="+标签" maxlength="30"/>
-                                        <button onclick={()=>deleteTag(index)}>✕</button>
+                                        <input type="text" bind:value={tags[index]} onkeydown={oldTagEnter} onblur={()=>updateOldTag(index)} placeholder="+标签" maxlength="30"/>
+                                        <button onmousedown={()=>deleteTag(index)}>✕</button>
                                     </div>
                                 </div>
                             {/each}
@@ -1087,10 +1276,10 @@
                             <!-- 添加题组 -->
                             {#if is_adding_group}
                                 <div class="single-group">
-                                    <input bind:value={to_add_group_name} onkeydown={confirmAddgroup} bind:this={to_add_group} class="add-group-input" type="text" placeholder="按 Enter 键确认添加">
+                                    <input bind:value={to_add_group_name} onchange={confirmAddgroup} onblur={()=>{if(to_add_group_name.trim() === "")cancelAddGroup()}} bind:this={to_add_group} class="add-group-input" type="text" placeholder="请输入题组名称">
                                     <div class="btn-box">
                                         <!-- 取消按钮 -->
-                                        <button onclick={()=>cancelAddGroup()} class="delete-group-btn" title="删除">✖</button>
+                                        <button onmousedown={()=>cancelAddGroup()} class="delete-group-btn" title="删除">✖</button>
                                     </div>
                                 </div>
                             {/if}
@@ -1125,9 +1314,11 @@
                                             placeholder="请输入"
                                             bind:value={$GROUP_AVERAGE_SCORE[group.id]}
                                             oninput={debounce(()=>updateAverageQuestionScore(group),500,false)}
-                                            min={1}
+                                            min={0.5}
+                                            step={0.5}
                                             onclick={(e)=>{e.stopPropagation()}}
                                             title=""
+                                            onchange={()=>updateAverageQuestionScore(group)}
                                         >
                                     <button onclick={(e)=>{e.stopPropagation();importQuestions(group)}} class="btn btn--primary" title="">导入题目</button>
                                 </div>
@@ -1168,8 +1359,10 @@
                                                                 type="number"
                                                                 placeholder="请输入"
                                                                 bind:value={question.score}
-                                                                oninput={debounce(()=>updateQuestionScore(question.id,group.id,question.order,question.score),500,false)}
-                                                                min={1}
+                                                                oninput={debounce(()=>updateQuestionScore(question),500,false)}
+                                                                min={(question.type==="06" || question.type==="08")?question.answers.length/2:0.5}
+                                                                step={0.5}
+                                                                onchange={()=>updateQuestionScore(question)}
                                                             >
                                                             <button onclick={()=>moveQuestion(group,question,"up")} class="move-btn" title="上移">↑</button>
                                                             <button onclick={()=>moveQuestion(group,question,"down")} class="move-btn" title="下移">↓</button>

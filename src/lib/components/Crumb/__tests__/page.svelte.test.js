@@ -141,7 +141,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示试卷管理
     expect(screen.getByText('试卷管理')).toBeInTheDocument();
   });
 
@@ -159,7 +159,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示练习管理
     expect(screen.getByText('练习管理')).toBeInTheDocument();
   });
 
@@ -177,7 +177,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示创建练习
     expect(screen.getByText('练习管理')).toBeInTheDocument();
     expect(screen.getByText('创建练习')).toBeInTheDocument();
   });
@@ -196,7 +196,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示编辑练习
     expect(screen.getByText('练习管理')).toBeInTheDocument();
     expect(screen.getByText('编辑练习')).toBeInTheDocument();
   });
@@ -213,7 +213,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示创建练习
     expect(screen.getByText('练习管理')).toBeInTheDocument();
     expect(screen.getByText('创建练习')).toBeInTheDocument();
 
@@ -238,7 +238,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示考试管理
     expect(screen.getByText('考试管理')).toBeInTheDocument();
   });
 
@@ -256,7 +256,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示创建考试
     expect(screen.getByText('考试管理')).toBeInTheDocument();
     expect(screen.getByText('创建考试')).toBeInTheDocument();
   });
@@ -275,7 +275,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示编辑考试
     expect(screen.getByText('考试管理')).toBeInTheDocument();
     expect(screen.getByText('编辑考试')).toBeInTheDocument();
   });
@@ -292,7 +292,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示编辑考试
     expect(screen.getByText('考试管理')).toBeInTheDocument();
     expect(screen.getByText('编辑考试')).toBeInTheDocument();
 
@@ -317,7 +317,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示考试批改
     expect(screen.getByText('考试批改')).toBeInTheDocument();
   });
 
@@ -335,7 +335,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示练习批改
     expect(screen.getByText('练习批改')).toBeInTheDocument();
   });
 
@@ -353,7 +353,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示考试成绩管理
     expect(screen.getByText('考试成绩管理')).toBeInTheDocument();
   });
 
@@ -371,7 +371,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示练习成绩管理
     expect(screen.getByText('练习成绩管理')).toBeInTheDocument();
   });
 
@@ -389,7 +389,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示学生管理
     expect(screen.getByText('学生管理')).toBeInTheDocument();
   });
 
@@ -407,7 +407,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示创建学生
     expect(screen.getByText('学生管理')).toBeInTheDocument();
     expect(screen.getByText('创建学生')).toBeInTheDocument();
   });
@@ -424,7 +424,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示创建学生
     expect(screen.getByText('学生管理')).toBeInTheDocument();
     expect(screen.getByText('创建学生')).toBeInTheDocument();
 
@@ -449,7 +449,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示用户管理
     expect(screen.getByText('用户管理'));
   });
 
@@ -467,7 +467,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示创建用户
     expect(screen.getByText('用户管理')).toBeInTheDocument();
     expect(screen.getByText('创建用户')).toBeInTheDocument();
   });
@@ -484,7 +484,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     expect(screen.getByAltText('头像')).toBeInTheDocument();
     expect(screen.getByAltText('通知')).toBeInTheDocument();
 
-    // 正确显示理论题库管理
+    // 正确显示创建用户
     expect(screen.getByText('用户管理')).toBeInTheDocument();
     expect(screen.getByText('创建用户')).toBeInTheDocument();
 
@@ -621,6 +621,27 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     await waitFor(() => {
       expect(screen.getByText('你好，张三')).toBeInTheDocument();
     });
+  });
+
+  it('应该正确处理跳转到不在仓库里面的路径', async () => {
+    setPathname('/teacher/practice');
+    render(Breadcrumb);
+
+    // 验证 fetch 被调用
+    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+
+    // 等待异步数据加载完成
+    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+
+    // 使用 getByAltText 获取单个头像和通知图标
+    expect(screen.getByAltText('头像')).toBeInTheDocument();
+    expect(screen.getByAltText('通知')).toBeInTheDocument();
+
+    // 正确显示练习管理
+    expect(screen.getByText('练习管理')).toBeInTheDocument();
+
+    // 模拟路径跳转到学生端
+    triggerBeforeNavigate('/teacher/practice', '/student/answer/practice');
   });
 
   it('处理API请求失败', async () => {

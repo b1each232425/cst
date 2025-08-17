@@ -118,10 +118,7 @@
 					<span class="value">{safeDisplayNumber(displayData.averageScore, 1)}</span>
 				</div>
 
-				<div class="info-item">
-					<span class="label">知识点涉及</span>
-					<span class="value">-</span>
-				</div>
+
 
 				<div class="info-item">
 					<span class="label">应考人数</span>
@@ -295,6 +292,7 @@
 
 		.papers-wrapper {
 			display: flex;
+			grid-column: 1 / -1;
 
 			.label {
 				font-size: 14px;

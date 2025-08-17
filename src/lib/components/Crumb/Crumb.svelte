@@ -44,6 +44,7 @@
         } else {
           // 获取用户名称
           display_name = data.data.OfficialName;
+
           // toast.success(`你好：${display_name}，欢迎登录本系统`);
         }
       })

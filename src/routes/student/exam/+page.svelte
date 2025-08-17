@@ -23,161 +23,161 @@
   import '$lib/components/Input/index.scss';
 
   // mock 数据
-  const mockExam = [
-    {
-      id: 1,
-      name: '期中考试',
-      exam_sessions: [
-        {
-          id: 101,
-          paper_name: '语文试卷A',
-          start_time: new Date('2025-08-01T09:00').getTime(),
-          end_time: new Date('2025-08-01T11:00').getTime(),
-          status: '04',
-          examinee_status: '00', // 未交卷
-          student_score: -1,
-          total_score: 100,
-        },
-        {
-          id: 102,
-          paper_name: '数学试卷B',
-          start_time: new Date('2025-08-02T09:00').getTime(),
-          end_time: new Date('2025-08-02T11:00').getTime(),
-          status: '02',
-          examinee_status: '00', // 未交卷
-          student_score: -1,
-          total_score: 100,
-        },
-      ],
-    },
-    {
-      id: 2,
-      name: '期末考试',
-      exam_sessions: [
-        {
-          id: 201,
-          paper_name: '英语试卷C',
-          start_time: new Date('2025-07-25T09:00').getTime(),
-          end_time: new Date('2025-07-25T11:00').getTime(),
-          status: '10',
-          examinee_status: '10', // 已交卷
-          student_score: 78,
-          total_score: 100,
-        },
-      ],
-    },
-    {
-      id: 3,
-      name: '模拟考试',
-      exam_sessions: [
-        {
-          id: 301,
-          paper_name: '理综试卷D',
-          start_time: new Date('2025-07-20T09:00').getTime(),
-          end_time: new Date('2025-07-20T11:00').getTime(),
-          status: '08',
-          examinee_status: '10', // 已交卷
-          student_score: -1,
-          total_score: 150,
-        },
-      ],
-    },
-    {
-      id: 4,
-      name: '补考',
-      exam_sessions: [
-        {
-          id: 401,
-          paper_name: '数学补考试卷',
-          start_time: new Date('2025-08-05T09:00').getTime(),
-          end_time: new Date('2025-08-05T11:00').getTime(),
-          status: '06',
-          examinee_status: '04', // 补考
-          student_score: 65,
-          total_score: 100,
-        },
-      ],
-    },
-    {
-      id: 5,
-      name: '月考',
-      exam_sessions: [
-        {
-          id: 501,
-          paper_name: '语文试卷E',
-          start_time: new Date('2025-07-15T09:00').getTime(),
-          end_time: new Date('2025-07-15T11:00').getTime(),
-          status: '10',
-          examinee_status: '02', // 缺考
-          student_score: 0,
-          total_score: 100,
-        },
-        {
-          id: 502,
-          paper_name: '英语试卷F',
-          start_time: new Date('2025-07-16T09:00').getTime(),
-          end_time: new Date('2025-07-16T11:00').getTime(),
-          status: '10',
-          examinee_status: '06', // 作弊
-          student_score: 0,
-          total_score: 100,
-        },
-      ],
-    },
-    {
-      id: 6,
-      name: '随堂测验',
-      exam_sessions: [
-        {
-          id: 601,
-          paper_name: '物理小测',
-          start_time: new Date('2025-08-03T09:00').getTime(),
-          end_time: new Date('2025-08-03T09:30').getTime(),
-          status: '12',
-          examinee_status: '10', // 已交卷
-          student_score: -1,
-          total_score: 30,
-        },
-      ],
-    },
-    {
-      id: 7,
-      name: '分班考试',
-      exam_sessions: [
-        {
-          id: 701,
-          paper_name: '综合能力测试',
-          start_time: new Date('2025-08-10T09:00').getTime(),
-          end_time: new Date('2025-08-10T12:00').getTime(),
-          status: '02',
-          examinee_status: '00', // 未交卷
-          student_score: -1,
-          total_score: 200,
-        },
-      ],
-    },
-    {
-      id: 8,
-      name: '竞赛选拔',
-      exam_sessions: [
-        {
-          id: 801,
-          paper_name: '数学竞赛题',
-          start_time: new Date('2025-07-30T09:00').getTime(),
-          end_time: new Date('2025-07-30T11:00').getTime(),
-          status: '10',
-          examinee_status: '10', // 已交卷
-          student_score: 92,
-          total_score: 100,
-        },
-      ],
-    },
-    {
-      id: 9,
-      name: '无场次考试',
-      exam_sessions: null,
-    },
-  ];
+  // const mockExam = [
+  //   {
+  //     id: 1,
+  //     name: '期中考试',
+  //     exam_sessions: [
+  //       {
+  //         id: 101,
+  //         paper_name: '语文试卷A',
+  //         start_time: new Date('2025-08-01T09:00').getTime(),
+  //         end_time: new Date('2025-08-01T11:00').getTime(),
+  //         status: '04',
+  //         examinee_status: '00', // 未交卷
+  //         student_score: -1,
+  //         total_score: 100,
+  //       },
+  //       {
+  //         id: 102,
+  //         paper_name: '数学试卷B',
+  //         start_time: new Date('2025-08-02T09:00').getTime(),
+  //         end_time: new Date('2025-08-02T11:00').getTime(),
+  //         status: '02',
+  //         examinee_status: '00', // 未交卷
+  //         student_score: -1,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 2,
+  //     name: '期末考试',
+  //     exam_sessions: [
+  //       {
+  //         id: 201,
+  //         paper_name: '英语试卷C',
+  //         start_time: new Date('2025-07-25T09:00').getTime(),
+  //         end_time: new Date('2025-07-25T11:00').getTime(),
+  //         status: '10',
+  //         examinee_status: '10', // 已交卷
+  //         student_score: 78,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 3,
+  //     name: '模拟考试',
+  //     exam_sessions: [
+  //       {
+  //         id: 301,
+  //         paper_name: '理综试卷D',
+  //         start_time: new Date('2025-07-20T09:00').getTime(),
+  //         end_time: new Date('2025-07-20T11:00').getTime(),
+  //         status: '08',
+  //         examinee_status: '10', // 已交卷
+  //         student_score: -1,
+  //         total_score: 150,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 4,
+  //     name: '补考',
+  //     exam_sessions: [
+  //       {
+  //         id: 401,
+  //         paper_name: '数学补考试卷',
+  //         start_time: new Date('2025-08-05T09:00').getTime(),
+  //         end_time: new Date('2025-08-05T11:00').getTime(),
+  //         status: '06',
+  //         examinee_status: '04', // 补考
+  //         student_score: 65,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 5,
+  //     name: '月考',
+  //     exam_sessions: [
+  //       {
+  //         id: 501,
+  //         paper_name: '语文试卷E',
+  //         start_time: new Date('2025-07-15T09:00').getTime(),
+  //         end_time: new Date('2025-07-15T11:00').getTime(),
+  //         status: '10',
+  //         examinee_status: '02', // 缺考
+  //         student_score: 0,
+  //         total_score: 100,
+  //       },
+  //       {
+  //         id: 502,
+  //         paper_name: '英语试卷F',
+  //         start_time: new Date('2025-07-16T09:00').getTime(),
+  //         end_time: new Date('2025-07-16T11:00').getTime(),
+  //         status: '10',
+  //         examinee_status: '06', // 作弊
+  //         student_score: 0,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 6,
+  //     name: '随堂测验',
+  //     exam_sessions: [
+  //       {
+  //         id: 601,
+  //         paper_name: '物理小测',
+  //         start_time: new Date('2025-08-03T09:00').getTime(),
+  //         end_time: new Date('2025-08-03T09:30').getTime(),
+  //         status: '12',
+  //         examinee_status: '10', // 已交卷
+  //         student_score: -1,
+  //         total_score: 30,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 7,
+  //     name: '分班考试',
+  //     exam_sessions: [
+  //       {
+  //         id: 701,
+  //         paper_name: '综合能力测试',
+  //         start_time: new Date('2025-08-10T09:00').getTime(),
+  //         end_time: new Date('2025-08-10T12:00').getTime(),
+  //         status: '02',
+  //         examinee_status: '00', // 未交卷
+  //         student_score: -1,
+  //         total_score: 200,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 8,
+  //     name: '竞赛选拔',
+  //     exam_sessions: [
+  //       {
+  //         id: 801,
+  //         paper_name: '数学竞赛题',
+  //         start_time: new Date('2025-07-30T09:00').getTime(),
+  //         end_time: new Date('2025-07-30T11:00').getTime(),
+  //         status: '10',
+  //         examinee_status: '10', // 已交卷
+  //         student_score: 92,
+  //         total_score: 100,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 9,
+  //     name: '无场次考试',
+  //     exam_sessions: null,
+  //   },
+  // ];
 
   // 日期选择器对象
   let date_picker = null;
@@ -202,9 +202,10 @@
     '02': '待开始',
     '04': '进行中',
     '06': '已结束',
-    '08': '已归档',
-    '10': '考试异常',
-    '12': '已删除',
+    '08': '批改中',
+    '10': '已批改',
+    '12': '已提交',
+    '14': '已删除',
   };
 
   // 考生状态映射
@@ -228,7 +229,8 @@
   // TODO 当前阶段使用分数是否为-1作为标准
   // 是否可以查看成绩
   function canSeeResult(status, score) {
-    return (status === '06' && score !== -1) || status === '08';
+    return (status === '10' && score !== -1) || status === '12';
+    // return status === '12';
   }
 
   function canEnterExam(exam_sessions) {
@@ -411,10 +413,12 @@
                     class:incoming={status === '02'}
                     class:underway={status === '04'}
                     class:ended={status === '06'}
-                    class:archived={status === '08'}
-                    class:error={status === '10'}
-                    class:deleted={status === '12'}
-                    class:unknown={!STATUS_MAP[status]}>{STATUS_MAP[status] ?? '未知状态'}</span
+                    class:marking={status === '08'}
+                    class:marked={status === '10'}
+                    class:submitted={status === '12'}
+                    class:deleted={status === '14'}
+                    class:unknown={!STATUS_MAP[status]}
+                    >{status === '10' && student_score !== -1 ? '已提交' : (STATUS_MAP[status] ?? '未知状态')}</span
                   >
                 {/each}
               </div></td
@@ -582,9 +586,10 @@
                     'incoming': #ff8100,
                     'underway': #39bb4c,
                     'ended': #787d81,
-                    'archived': #c6690b,
-                    'error': red,
-                    'deleted': #d9d9d9,
+                    'marking': #c6690b,
+                    'marked': #027213,
+                    'submitted': #0052d9,
+                    'deleted': red,
                   );
 
                   &.status {

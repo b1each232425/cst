@@ -119,7 +119,7 @@
            //获取新增之后的学生ID
           let studentIds = result.data.map((item) => item.ID);
           //获取已经有账号的学生的ID
-          let existStudentIds = selectedStudents.filter(item=>item.ID!=='').map(item=>item.ID)
+         let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
           //创建需要关联的学生ID
           practiceStudentIds = [...practiceStudentIds,...studentIds,...existStudentIds]
           // 导入成功后执行创建练习
@@ -131,9 +131,11 @@
         });
     } else {
       //获取已经有账号的学生的ID
-          let existStudentIds = selectedStudents.filter(item=>item.ID!=='').map(item=>item.ID)
+          let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
+          console.log('existStudentIds',existStudentIds)
           //创建需要关联的学生ID
           practiceStudentIds = [...practiceStudentIds,...existStudentIds]
+
       EDIT_PRACTICE().catch((error) => {
         console.error('编辑练习请求异常:', error);
         toast.error('编辑练习请求异常', 1000);
@@ -204,7 +206,8 @@
           //获取新增之后的学生ID
           let studentIds = result.data.map((item) => item.ID);
           //获取已经有账号的学生的ID
-          let existStudentIds = selectedStudents.filter(item=>item.ID!=='').map(item=>item.ID)
+         let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
+         
           //创建需要关联的学生ID
           practiceStudentIds = [...practiceStudentIds,...studentIds,...existStudentIds]
           // 导入成功后执行创建练习
@@ -217,7 +220,7 @@
     } else {
       // 直接执行创建练习
       //获取已经有账号的学生的ID
-          let existStudentIds = selectedStudents.filter(item=>item.ID!=='').map(item=>item.ID)
+          let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
           //创建需要关联的学生ID
           practiceStudentIds = [...practiceStudentIds,...existStudentIds]
       UPDATE_STUDENTS().catch((error) => {

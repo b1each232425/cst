@@ -19,7 +19,7 @@
    * @example
    * <Title title="基本信息" line />
    */
-  import { getType } from '$lib/utils/index.js';
+  import { validateAndAssign } from '$lib/utils/validate';
 
   let { title = 'Title', line = true } = $props();
 
@@ -32,27 +32,14 @@
     line: { type: ['boolean'], default: true },
   };
 
-  /**
-   * 校验props属性是否合法，以及进行容错处理
-   * @type {function}
-   */
-  const validateAndAssign = (data, key) => {
-    const rule = propsRules[key];
-    const value = data.value;
-    let reason = '';
-    if (!rule.type.includes(getType(value))) {
-      reason = `类型错误,期望类型为${rule.type.join('、')},实际类型为${getType(value)}`;
-    } else if (rule.check && !rule.check(value)) {
-      reason = rule.message ? rule.message : `不符合校验规则`;
-    }
-    if (reason) {
-      console.warn(`[Title] 属性 '${key}' 无效: ${reason}, 已使用默认值 '${rule.default}', 传入值为: '${value}'`);
-      data.set(rule.default);
-    }
+  const propMap = {
+    title: { get: () => title, set: (v) => (title = v) },
+    line: { get: () => line, set: (v) => (line = v) },
   };
 
-  validateAndAssign({ value: title, set: (v) => (title = v) }, 'title');
-  validateAndAssign({ value: line, set: (v) => (line = v) }, 'line');
+  Object.keys(propMap).forEach((k) => {
+    validateAndAssign('Title', propMap[k].get, propMap[k].set, propsRules[k], k);
+  });
 </script>
 
 <section class="title">

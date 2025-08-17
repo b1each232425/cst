@@ -22,6 +22,7 @@
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
   import { formatTimestamp } from '$lib/utils/time_utils.js';
   import { sget } from '$lib/utils/index.js';
+  import BulmaSwitchBlue from '../_component/SwitchBtn/BulmaSwitchBlue.svelte';
 
   /**
    * @typedef {Object} Question
@@ -560,7 +561,7 @@
   <div class="exam-container" class:full-mode={is_full_examMode}>
     <div class="exam-header">
       {#if ifPreview}
-        <Button
+        <!-- <Button
           type="info"
           plain
           size="middle"
@@ -570,7 +571,13 @@
         >
           <span class="icon">←</span>
           <span>返回</span>
-        </Button>
+        </Button> -->
+        <button
+          class="return-button-span"
+          onclick={() => {
+            ifPreview ? goBackForPreview() : goBackToPracticeList();
+          }}>返回</button
+        >
       {/if}
       <div class="exam-title">{title}</div>
       <div class="exam-header-right">
@@ -586,9 +593,10 @@
           />
         {/if}
 
-        <Button type="primary" round size="large" onclick={submitMessageBox}>
+        <!-- <Button type="primary" round size="large" onclick={submitMessageBox}>
           <span> 提交 </span>
-        </Button>
+        </Button> -->
+        <button class="submit-button" onclick={submitMessageBox}>提交</button>
       </div>
     </div>
     <!-- 预览提醒用visibility控制 -->
@@ -847,6 +855,39 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
+  .return-button-span {
+    all: unset;
+    width: 70px;
+    height: 35px;
+    text-align: center;
+    background-color: white;
+    border: 1px solid #ddd;
+    color: black;
+    cursor: pointer;
+    display: inline-block;
+    line-height: 35px;
+    border-radius: 5px;
+  }
+
+  /* 鼠标悬停时的样式 */
+  .return-button-span:hover {
+    background-color: #888888;
+    color: white;
+  }
+
+  .submit-button {
+    all: unset;
+    width: 70px;
+    height: 35px;
+    text-align: center;
+    background-color: #0052d9;
+    color: white;
+    cursor: pointer;
+    display: inline-block;
+    line-height: 12.5px;
+    border-radius: 5px;
+  }
+
   .exam-title {
     // 居中对齐
     position: absolute;
@@ -867,9 +908,8 @@
     display: flex;
     align-items: center;
     width: fit-content;
-    right: 7px;
+    right: 17px;
     z-index: 1001; /* 确保在其他元素之上 */
-    min-width: 170px; /* 设置最小宽度 */
   }
 
   .submit-btn {

@@ -186,6 +186,7 @@
       })
       .catch((err) => {
         toast.error(err.message);
+        console.error(err);
       });
   }
 
@@ -211,7 +212,7 @@
   <!-- 筛选 -->
   <div class="options">
     <div class="practice-input">
-      <div class="label">练习名称</div>
+      <div class="label">练习名称：</div>
       <input type="text" class="input" placeholder="请输入信息" bind:value={practice_name} oninput={debounceSearch} />
     </div>
     <!-- <div class="select">
@@ -244,7 +245,9 @@
             <td>{name}</td>
             <td>{respondent_count}</td>
             <td>{unmarked_student_count}</td>
-            <td class:unknown={!MARK_MODE_MAP[mark_mode]}>{MARK_MODE_MAP[mark_mode] ?? '未知状态'}</td>
+            <td class:manual={mark_mode === '10'} class:unknown={!MARK_MODE_MAP[mark_mode]}
+              >{MARK_MODE_MAP[mark_mode] ?? '未知状态'}</td
+            >
             <td
               ><div class="options">
                 <button
@@ -294,7 +297,7 @@
       .practice-input {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.5rem;
       }
 
       .label {
@@ -346,6 +349,10 @@
               font-size: 0.9rem;
               text-align: center;
               vertical-align: middle;
+
+              &.manual {
+                color: green;
+              }
 
               &.unknown {
                 color: red;
