@@ -16,7 +16,6 @@
   import QuestionGradingSection from './_components/QuestionGradingSection/index.svelte';
   import { toast } from '$lib/components/Toast/Toast';
   import '$lib/components/Button/index.scss';
-  import { goto } from '$app/navigation';
 
   const mockData = {
     question_sets: [
@@ -702,7 +701,7 @@
       })
       .then((res) => {
         if (!res.status) {
-          const index = getMarkResultIndex(current_student_info, event.detail.question_id);
+          const index = getMarkResultIndex(current_student_info, event.question_id);
 
           // 进行本地分数的批改更新，响应式更新 QuestionGradingSection 组件的题目批改分数，确保页面一直激活状态下（不刷新），切换阅卷模式不会数据消失
           if (index !== -1)
@@ -1075,13 +1074,18 @@
               height: 2rem;
               border-radius: 5px;
 
+              @mixin outline-style {
+                outline: 2px solid gray;
+                outline-offset: 2px;
+              }
+
               &:hover {
                 cursor: pointer;
+                @include outline-style;
               }
 
               &.active {
-                outline: 2px solid gray;
-                outline-offset: 2px;
+                @include outline-style;
               }
 
               &.unreviewed {
