@@ -1,1046 +1,1112 @@
 /*
  * @Author: WangKaidun 1597225095@qq.com
- * @Date: 2025-08-15 14:29:04
+ * @Date: 2025-08-17 10:34:48
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-15 14:32:47
+ * @LastEditTime: 2025-08-17 21:46:16
  * @FilePath: \exam\src\routes\teacher\paper\_test_\page.svelte.test.js
- * @Description: 试卷管理页面 HTML 结构测试
+ * @Description: 试卷管理页面测试
  * Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
-import userEvent from '@testing-library/user-event';
+vi.mock('$app/navigation', () => ({
+    goto: vi.fn()
+}));
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/svelte';
+
+import { goto } from '$app/navigation';
+
 import Page from '../+page.svelte';
-import { mockHelpers, testDataHelpers } from './utils';
+import { PAPER_ONE, PAPER_TWO, PAPER_THREE } from './utils';
 
-// Mock MessageBox模块
-vi.mock('$lib/components/MessageBox/MessageBox', () => ({
-    default: vi.fn()
-}));
-
-// Mock SvelteKit运行时以避免导航错误
-vi.mock('@sveltejs/kit', () => ({
-    browser: true,
-    dev: false,
-    building: false,
-    version: '1.0.0'
-}));
-
-// 获取MessageBox mock
-const MessageBox = vi.mocked(await import('$lib/components/MessageBox/MessageBox')).default;
-
-describe('试卷管理页面 - 组件渲染和交互测试', () => {
-    // 设置全局错误处理器来捕获SvelteKit导航错误
-    beforeAll(() => {
-        // 捕获并忽略SvelteKit导航错误
-        const originalError = console.error;
-        console.error = (...args) => {
-            if (args[0]?.includes?.('Cannot read properties of undefined (reading \'hash\')')) {
-                return; // 忽略SvelteKit导航错误
-            }
-            originalError(...args);
-        };
-
-        // 捕获并忽略未处理的Promise拒绝
-        const originalUnhandledRejection = window.addEventListener;
-        window.addEventListener = (type, listener, options) => {
-            if (type === 'unhandledrejection') {
-                // 忽略SvelteKit导航相关的未处理Promise拒绝
-                const wrappedListener = (event) => {
-                    if (event.reason?.message?.includes?.('Cannot read properties of undefined (reading \'hash\')')) {
-                        event.preventDefault();
-                        return;
-                    }
-                    listener(event);
-                };
-                return originalUnhandledRejection.call(window, type, wrappedListener, options);
-            }
-            return originalUnhandledRejection.call(window, type, listener, options);
-        };
+describe('试卷管理页面测试', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        cleanup(); // 清理上一次渲染的 DOM
+    
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve({
+                API: "/api/paper",
+                data: [PAPER_ONE, PAPER_TWO],
+                method: "GET",
+                msg: "success",
+                rowCount: 2,
+                status: 0
+            })
+        });
     });
-
-    beforeEach(async () => {
-        // 使用封装的工具函数进行初始化
-        mockHelpers.setupAllMocks();
-        testDataHelpers.setupPageTestData();
-    });
-
+    
     afterEach(() => {
-        // 使用封装的工具函数进行清理
-        testDataHelpers.cleanupTestData();
+        vi.clearAllMocks();
+        cleanup();
     });
 
     describe('标题', () => {
-        describe('渲染', () => {
-            it('应该正确渲染页面标题"试卷管理"', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 检查页面标题是否正确显示
-                expect(screen.getByText('试卷管理')).toBeInTheDocument();
-            });
 
-            it('标题应该使用正确的组件和样式', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 检查标题组件是否存在
-                const titleElement = screen.getByText('试卷管理');
-                expect(titleElement).toBeInTheDocument();
-                
-                // 检查标题文本内容
-                expect(titleElement.textContent).toBe('试卷管理');
-            });
+        it('标题应该正确显示', async () => {
+
+            render(Page);
+
+            expect(screen.getByText('试卷管理')).toBeInTheDocument();
         });
+
     });
 
     describe('操作栏', () => {
+
         describe('左侧区域', () => {
-            describe('渲染', () => {
-                it('应该正确渲染搜索区域', () => {
-                    // 渲染页面组件
-                    render(Page);
-                    
-                    // 检查搜索区域是否存在 - 使用更精确的选择器
-                    const searchArea = screen.getByText('试卷名称', { selector: '.search-paper-name .prompt' }).closest('.left-side');
-                    expect(searchArea).toBeInTheDocument();
-                });
 
-                it('应该正确渲染搜索输入框', () => {
-                    // 渲染页面组件
-                    render(Page);
-                    
-                    // 检查搜索输入框是否存在 - 分别检查两个输入框
-                    const nameInput = screen.getByPlaceholderText('搜索试卷名称');
-                    const tagInput = screen.getByPlaceholderText('搜索试卷标签');
-                    
-                    expect(nameInput).toBeInTheDocument();
-                    expect(tagInput).toBeInTheDocument();
-                    
-                    // 检查两个输入框的类型和属性
-                    [nameInput, tagInput].forEach(input => {
-                        expect(input).toBeInTheDocument();
-                        expect(input).toHaveAttribute('type', 'text');
-                    });
-                });
+            describe('输入框', () => {
 
-                it('应该正确渲染搜索标签', () => {
-                    // 渲染页面组件
-                    render(Page);
-                    
-                    // 检查两个搜索标签是否存在 - 使用更精确的选择器
-                    expect(screen.getByText('试卷名称', { selector: '.search-paper-name .prompt' })).toBeInTheDocument();
-                    expect(screen.getByText('试卷标签', { selector: '.search-paper-tag .prompt' })).toBeInTheDocument();
-                });
+                it('渲染', async () => {
+                    const { container } = render(Page);
 
-                it('搜索输入框应该显示正确的占位符文本', () => {
-                    // 渲染页面组件
-                    render(Page);
-                    
-                    // 检查两个输入框的占位符文本
-                    const nameInput = screen.getByPlaceholderText('搜索试卷名称');
-                    const tagInput = screen.getByPlaceholderText('搜索试卷标签');
-                    
-                    expect(nameInput).toBeInTheDocument();
-                    expect(tagInput).toBeInTheDocument();
-                    
-                    // 验证占位符文本正确
-                    expect(nameInput).toHaveAttribute('placeholder', '搜索试卷名称');
-                    expect(tagInput).toHaveAttribute('placeholder', '搜索试卷标签');
-                });
+                    // 提示词
+                    expect(container.querySelectorAll('.prompt').length).toBe(2);
 
-                it('清空按钮应该在有内容时显示，无内容时隐藏', () => {
-                    // 渲染页面组件
-                    render(Page);
-                    
-                    // 获取所有清空按钮
-                    const clearButtons = screen.getAllByRole('button', { name: '' });
-                    
-                    // 检查清空按钮的数量（应该有2个，对应两个输入框）
-                    expect(clearButtons).toHaveLength(2);
-                    
-                    // 检查清空按钮的data-name属性
-                    clearButtons.forEach(button => {
-                        expect(button).toHaveAttribute('data-name', 'clear');
-                    });
-                });
-            });
-    
-            describe('交互', () => {
-                it('搜索输入框应该能正确输入和清空', async () => {
-                    // 渲染页面组件
-                    render(Page);
-                    
-                    // 获取两个搜索输入框
-                    const nameInput = screen.getByPlaceholderText('搜索试卷名称');
-                    const tagInput = screen.getByPlaceholderText('搜索试卷标签');
-                    
-                    // 测试第一个输入框（试卷名称）
-                    await userEvent.type(nameInput, '测试试卷');
-                    expect(nameInput.value).toBe('测试试卷');
-                    await userEvent.clear(nameInput);
-                    expect(nameInput.value).toBe('');
-                    
-                    // 测试第二个输入框（试卷标签）
-                    await userEvent.type(tagInput, '数学');
-                    expect(tagInput.value).toBe('数学');
-                    await userEvent.clear(tagInput);
-                    expect(tagInput.value).toBe('');
-                });
+                    // 输入框
+                    expect(screen.getByPlaceholderText('搜索试卷名称')).toBeInTheDocument();
+                    expect(screen.getByPlaceholderText('搜索试卷标签')).toBeInTheDocument();
 
-                it('搜索输入应该正确触发防抖搜索', async () => {
-                    // 渲染页面组件
-                    render(Page);
-                    
-                    // 获取试卷名称输入框
-                    const nameInput = screen.getByPlaceholderText('搜索试卷名称');
-                    
-                    // 模拟输入文本，触发防抖搜索
-                    await userEvent.type(nameInput, '测试');
-                    
-                    // 等待防抖延迟
+                    // 初始状态下清除按钮应该被隐藏（有hide-clear类）
+                    expect(container.querySelector('.clear-name-btn')).toHaveClass('hide-clear');
+                    expect(container.querySelector('.clear-tags-btn')).toHaveClass('hide-clear');
+
+                    // 输入内容后清除按钮应该显示（没有hide-clear类）
+                    fireEvent.input(screen.getByPlaceholderText('搜索试卷名称'), { target: { value: '测试' } });
+                    fireEvent.input(screen.getByPlaceholderText('搜索试卷标签'), { target: { value: '测试' } });
+
+                    // 等待DOM更新
                     await waitFor(() => {
-                        // 验证fetch被调用（通过mock验证）
-                        expect(global.fetch).toHaveBeenCalled();
-                    }, { timeout: 1000 });
+                        expect(container.querySelector('.clear-name-btn')).not.toHaveClass('hide-clear');
+                        expect(container.querySelector('.clear-tags-btn')).not.toHaveClass('hide-clear');
+                    });
                 });
 
-                it('清空按钮应该能正确清空对应输入框', async () => {
-                    // 渲染页面组件
-                    render(Page);
-                    
-                    // 获取所有清空按钮
-                    const clearButtons = screen.getAllByRole('button', { name: '' });
-                    const nameClearButton = clearButtons[0];
-                    const tagClearButton = clearButtons[1];
-                    
-                    // 获取输入框
-                    const nameInput = screen.getByPlaceholderText('搜索试卷名称');
-                    const tagInput = screen.getByPlaceholderText('搜索试卷标签');
-                    
-                    // 先输入一些文本
-                    await userEvent.type(nameInput, '测试名称');
-                    await userEvent.type(tagInput, '测试标签');
-                    
-                    // 点击清空按钮
-                    await userEvent.click(nameClearButton);
-                    await userEvent.click(tagClearButton);
-                    
-                    // 验证输入框被清空
-                    expect(nameInput.value).toBe('');
-                    expect(tagInput.value).toBe('');
-                });
             });
+
         });
-            
+
         describe('右侧区域', () => {
-            describe('渲染', () => {
-                it('应该正确渲染所有操作按钮', () => {
-                    // 渲染页面组件
-                    render(Page);
-                    
-                    // 定义按钮配置
-                    const buttonConfigs = [
-                        { text: '重置', classes: ['btn', 'btn--primary', 'is-plain'] },
-                        { text: '删除', classes: ['btn', 'btn--danger', 'is-plain'] },
-                        { text: '自定义组卷', classes: ['btn', 'btn--primary', 'is-plain'] }
-                    ];
-                    
-                    // 检查每个按钮的渲染和样式
-                    buttonConfigs.forEach(config => {
-                        const button = screen.getByText(config.text);
-                        expect(button).toBeInTheDocument();
-                        expect(button).toHaveClass(...config.classes);
-                    });
-                    
-                    // 验证按钮总数
-                    const actionButtons = screen.getAllByRole('button').filter(button => 
-                        buttonConfigs.some(config => config.text === button.textContent)
-                    );
-                    expect(actionButtons).toHaveLength(3);
-                });
+                
+            it('渲染', async () => {
+
+                const { container } = render(Page);
+
+                // 验证三个按钮
+                expect(screen.getByText('重置')).toBeInTheDocument();
+                expect(screen.getByText('删除')).toBeInTheDocument();
+                expect(screen.getByText('自定义组卷')).toBeInTheDocument();
+
             });
-    
+
             describe('交互', () => {
-                it('所有操作按钮应该能正确触发对应功能', async () => {
-                    // 渲染页面组件
-                    render(Page);
-                    
-                    // 定义按钮配置和验证逻辑
-                    const buttonConfigs = [
-                        { 
-                            text: '重置', 
-                            shouldCallFetch: true,
-                            description: '重置功能'
-                        },
-                        { 
-                            text: '删除', 
-                            shouldCallFetch: false, // 删除按钮会调用MessageBox，不直接调用fetch
-                            shouldCallMessageBox: true, // 删除按钮应该调用MessageBox
-                            description: '批量删除功能'
-                        },
-                        { 
-                            text: '自定义组卷', 
-                            shouldCallFetch: true,
-                            description: '创建试卷功能'
-                        }
-                    ];
-                    
-                    // 测试每个按钮的点击响应
-                    for (const config of buttonConfigs) {
-                        // 使用更精确的选择器来避免重复文本的问题
-                        let button;
-                        if (config.text === '删除') {
-                            // 删除按钮在操作栏中，使用类名来精确定位
-                            button = screen.getByText('删除', { selector: '.right-side button' });
-                        } else if (config.text === '自定义组卷') {
-                            // 自定义组卷按钮在操作栏中，使用类名来精确定位
-                            button = screen.getByText('自定义组卷', { selector: '.right-side button' });
-                        } else {
-                            // 重置按钮在操作栏中，使用类名来精确定位
-                            button = screen.getByText('重置', { selector: '.right-side button' });
-                        }
+
+                describe('重置', () => {
+
+                    it('正常数据', async () => {
+
+                        const { container } = render(Page);
+
+                        // 验证被调用一次
+                        expect(global.fetch).toHaveBeenCalledTimes(1);
                         
-                        // 验证按钮可点击
-                        expect(button).not.toBeDisabled();
-                        
-                        // 点击按钮
-                        await userEvent.click(button);
-                        
-                        // 根据配置验证fetch调用
-                        if (config.shouldCallFetch) {
-                            expect(global.fetch).toHaveBeenCalled();
-                        }
-                        
-                        // 根据配置验证MessageBox调用
-                        if (config.shouldCallMessageBox) {
-                            // 对于删除按钮，我们验证它被点击了，但不验证MessageBox的具体调用
-                            // 因为MessageBox的mock比较复杂，我们主要测试按钮的交互性
-                            expect(button).toBeInTheDocument();
-                            expect(button).not.toBeDisabled();
-                        }
-                        
-                        // 清理mock，为下一个按钮测试做准备
-                        if (global.fetch) {
-                            global.fetch.mockClear();
-                        }
-                    }
+                        // 等待表格渲染两条数据
+                        await waitFor(() => {
+                            expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                        });
+
+                        // 输入试卷名称
+                        fireEvent.input(screen.getByPlaceholderText('搜索试卷名称'), { target: { value: '测试名称' } });
+
+                        // 输入试卷标签
+                        fireEvent.input(screen.getByPlaceholderText('搜索试卷标签'), { target: { value: '测试标签' } });
+
+                        // 等待防抖延迟（真的等了600ms）
+                        await new Promise(resolve => setTimeout(resolve, 600));
+
+                        // 验证被调用两次
+                        expect(global.fetch).toHaveBeenCalledTimes(3);
+
+                        // 点击重置
+                        fireEvent.click(screen.getByText('重置'));
+
+                        // 等待DOM更新
+                        await waitFor(() => {
+                            expect(screen.getByPlaceholderText('搜索试卷名称')).toHaveValue('');
+                            expect(screen.getByPlaceholderText('搜索试卷标签')).toHaveValue('');
+                        });
+
+                        // 等待防抖延迟（真的等了600ms）
+                        await new Promise(resolve => setTimeout(resolve, 600));
+
+                        // 验证被调用三次
+                        expect(global.fetch).toHaveBeenCalledTimes(4);
+                    });
+
+                    it('返回空列表', async () => {
+
+                        const { container } = render(Page);
+
+                        // 等待表格渲染两条数据
+                        await waitFor(() => {
+                            expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                        });
+
+                        // 临时mock数据
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                API: "/api/paper",
+                                data: null,
+                                method: "GET",
+                                msg: "success",
+                                rowCount: 0,
+                                status: 0
+                            })
+                        });
+
+                        // 点击重置
+                        fireEvent.click(screen.getByText('重置'));
+
+                        // 等待表格渲染空列表
+                        await waitFor(() => {
+                            expect(container.querySelectorAll('tbody tr').length).toBe(0);
+                        });
+                    });
+
                 });
+
+                describe('删除', () => {
+
+                    it('正常情况', async () => {
+                        const { container } = render(Page);
+
+                        // 等待表格渲染两条数据
+                        await waitFor(() => {
+                            expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                        });
+                        
+                        // 选中第一条数据（checkbox）
+                        const firstRow = container.querySelectorAll('tbody tr')[0];
+                        fireEvent.click(firstRow.querySelector('input[type="checkbox"]'));
+
+                        // 点击删除（通过class选择）
+                        fireEvent.click(container.querySelector('.btn.btn--danger.is-plain'));
+                        
+                        // 验证弹窗内容
+                        expect(screen.getByText('删除确认')).toBeInTheDocument();
+                        expect(screen.getByText('请问是否要批量删除这 1 张试卷？')).toBeInTheDocument();
+
+                        // 点击确认
+                        fireEvent.click(screen.getByText('确定'));
+                        
+                        // 验证toast提示
+                        await waitFor(() => {
+                            expect(screen.getByText('删除成功')).toBeInTheDocument();
+                        });
+                    });
+
+                    it('没有选中数据', async () => {
+                        const { container } = render(Page);
+
+                        // 点击删除（通过class选择）
+                        fireEvent.click(container.querySelector('.btn.btn--danger.is-plain'));
+
+                        // 验证toast提示
+                        await waitFor(() => {
+                            expect(screen.getByText('请先选择试卷')).toBeInTheDocument();
+                        });
+                    });
+
+                    it('返回空列表', async () => {
+                        const { container } = render(Page);
+
+                        // 等待表格渲染两条数据
+                        await waitFor(() => {
+                            expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                        });
+
+                        // 选中第一条和第二条数据（checkbox）
+                        const firstRow = container.querySelectorAll('tbody tr')[0];
+                        const secondRow = container.querySelectorAll('tbody tr')[1];
+                        fireEvent.click(firstRow.querySelector('input[type="checkbox"]'));
+                        fireEvent.click(secondRow.querySelector('input[type="checkbox"]'));
+
+                        // 点击删除（通过class选择）
+                        fireEvent.click(container.querySelector('.btn.btn--danger.is-plain'));
+
+                        // 验证弹窗内容
+                        expect(screen.getByText('删除确认')).toBeInTheDocument();
+                        expect(screen.getByText('请问是否要批量删除这 2 张试卷？')).toBeInTheDocument();
+
+                        // 点击确认
+                        fireEvent.click(screen.getByText('确定'));
+                        
+                        // 验证toast提示
+                        await waitFor(() => {
+                            expect(screen.getByText('删除成功')).toBeInTheDocument();
+                        });
+
+                        global.fetch = vi.fn().mockResolvedValue({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                API: "/api/paper",
+                                data: null,
+                                method: "GET",
+                                msg: "success",
+                                rowCount: 0,
+                                status: 0
+                            })
+                        });
+
+                        // 等待表格渲染空列表
+                        await waitFor(() => {
+                            expect(container.querySelectorAll('tbody tr').length).toBe(0);
+                        });
+                    });
+
+                    it('失败情况1：请求失败', async () => {
+                        const { container } = render(Page);
+
+                        // 等待表格渲染两条数据
+                        await waitFor(() => {
+                            expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                        });
+
+                        global.fetch.mockResolvedValueOnce({
+                            ok: false,
+                            status: 400
+                        });
+
+                        // 选中第一条数据（checkbox）
+                        const firstRow = container.querySelectorAll('tbody tr')[0];
+                        fireEvent.click(firstRow.querySelector('input[type="checkbox"]'));
+
+                        // 点击删除（通过class选择）
+                        fireEvent.click(container.querySelector('.btn.btn--danger.is-plain'));
+
+                        // 验证弹窗内容
+                        expect(screen.getByText('删除确认')).toBeInTheDocument();
+                        expect(screen.getByText('请问是否要批量删除这 1 张试卷？')).toBeInTheDocument();
+
+                        // 点击确定
+                        fireEvent.click(screen.getByText('确定'));
+
+                        // 验证toast提示
+                        await waitFor(() => {
+                            expect(screen.getByText(`请求失败，状态码：400`)).toBeInTheDocument();
+                        });
+                    });
+
+                    it('失败情况2：业务错误', async () => {
+                        const { container } = render(Page);
+
+                        // 等待表格渲染两条数据
+                        await waitFor(() => {
+                            expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                        });
+                        
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                status: -1,
+                                msg: "业务错误"
+                            })
+                        });
+
+                        // 选中第一条数据（checkbox）
+                        const firstRow = container.querySelectorAll('tbody tr')[1];
+                        fireEvent.click(firstRow.querySelector('input[type="checkbox"]'));
+
+                        // 点击删除（通过class选择）
+                        fireEvent.click(container.querySelector('.btn.btn--danger.is-plain'));
+
+                        // 验证弹窗内容
+                        expect(screen.getByText('删除确认')).toBeInTheDocument();
+                        expect(screen.getByText('请问是否要批量删除这 2 张试卷？')).toBeInTheDocument();
+                        
+                        // 点击确定
+                        fireEvent.click(screen.getByText('确定'));
+                        
+                        // 验证toast提示
+                        await waitFor(() => {
+                            expect(screen.getByText(`业务错误`)).toBeInTheDocument();
+                        });
+
+                        
+                    });
+                    
+                });
+
+                describe('自定义组卷', () => {
+
+                    it('成功情况', async () => {;
+                    
+                        const { container } = render(Page);
+
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                status: 0,
+                                rowCount: 1,
+                                API: "/api/paper/manual",
+                                method: "POST",
+                                data: {
+                                    paper: {
+                                        ID: 142,
+                                        Name: "新建试卷",
+                                        AssemblyType: "00",
+                                        Category: "00",
+                                        Level: "00",
+                                        SuggestedDuration: 120,
+                                        Description: null,
+                                        Tags: [],
+                                        Creator: 1626,
+                                        CreateTime: 1755418019695,
+                                        UpdatedBy: 1626,
+                                        UpdateTime: 1755418019695,
+                                        Status: "00",
+                                        DomainID: 1999
+                                    },
+                                    paper_groups: [
+                                        {
+                                            ID: 512,
+                                            PaperID: 142,
+                                            Name: "一、单选题",
+                                            Order: 1,
+                                            Creator: 1626,
+                                            CreateTime: 1755418019695,
+                                            UpdatedBy: 1626,
+                                            UpdateTime: 1755418019695,
+                                            Status: "00"
+                                        },
+                                        {
+                                            ID: 513,
+                                            PaperID: 142,
+                                            Name: "二、多选题",
+                                            Order: 2,
+                                            Creator: 1626,
+                                            CreateTime: 1755418019695,
+                                            UpdatedBy: 1626,
+                                            UpdateTime: 1755418019695,
+                                            Status: "00"
+                                        },
+                                        {
+                                            ID: 514,
+                                            PaperID: 142,
+                                            Name: "三、判断题",
+                                            Order: 3,
+                                            Creator: 1626,
+                                            CreateTime: 1755418019695,
+                                            UpdatedBy: 1626,
+                                            UpdateTime: 1755418019695,
+                                            Status: "00"
+                                        },
+                                        {
+                                            ID: 515,
+                                            PaperID: 142,
+                                            Name: "四、填空题",
+                                            Order: 4,
+                                            Creator: 1626,
+                                            CreateTime: 1755418019695,
+                                            UpdatedBy: 1626,
+                                            UpdateTime: 1755418019695,
+                                            Status: "00"
+                                        },
+                                        {
+                                            ID: 516,
+                                            PaperID: 142,
+                                            Name: "五、简答题",
+                                            Order: 5,
+                                            Creator: 1626,
+                                            CreateTime: 1755418019695,
+                                            UpdatedBy: 1626,
+                                            UpdateTime: 1755418019695,
+                                            Status: "00"
+                                        }
+                                ]
+                                }
+                            })
+                        });
+                        
+                        // 点击自定义组卷（通过class选择，有两个按钮，点击第二个）
+                        fireEvent.click(container.querySelectorAll('.btn.btn--primary.is-plain')[1]);
+
+                        // 验证goto被调用
+                        await waitFor(() => {
+                            expect(goto).toHaveBeenCalledWith('/teacher/paper/manual');
+                        });
+                    });
+
+                    it('失败情况1：请求失败', async () => {
+                        const { container } = render(Page);
+                        
+                        global.fetch.mockResolvedValueOnce({
+                            ok: false,
+                            status: 400
+                        });
+
+                        // 点击自定义组卷（通过class选择，有两个按钮，点击第二个）
+                        fireEvent.click(container.querySelectorAll('.btn.btn--primary.is-plain')[1]);
+
+                        // 验证toast提示
+                        await waitFor(() => {
+                            expect(screen.getByText(`请求失败，状态码：400`)).toBeInTheDocument();
+                        });
+                    });
+
+                    it('失败情况2：业务错误', async () => {
+                        const { container } = render(Page);
+
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                status: -1,
+                                msg: "业务错误"
+                            })
+                        });
+
+                        // 点击自定义组卷（通过class选择，有两个按钮，点击第二个）
+                        fireEvent.click(container.querySelectorAll('.btn.btn--primary.is-plain')[1]);
+
+                        // 验证toast提示
+                        await waitFor(() => {
+                            expect(screen.getByText(`业务错误`)).toBeInTheDocument();
+                        });
+                    });
+                });
+
             });
+
         });
-        
+
     });
 
-    describe('表格', () => {
-        describe('渲染', () => {
-            it('应该正确渲染表格头部', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 检查表格头部是否存在
-                const tableHeader = screen.getByRole('table').querySelector('thead');
-                expect(tableHeader).toBeInTheDocument();
-                
-                // 检查表头行是否存在
-                const headerRow = tableHeader.querySelector('tr');
-                expect(headerRow).toBeInTheDocument();
+    describe('表格测试', () => {
+
+        it('渲染', async () => {
+
+            // 临时mock数据
+            global.fetch.mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({
+                    API: "/api/paper",
+                    data: [PAPER_ONE, PAPER_TWO, PAPER_THREE],
+                    method: "GET",
+                    msg: "success",
+                    rowCount: 3,
+                    status: 0
+                })
+            });
+            
+            const { container } = render(Page);
+          
+            // 等待表格渲染三条数据
+            await waitFor(() => {
+                expect(container.querySelectorAll('tbody tr').length).toBe(3);
             });
 
-            it('应该正确渲染全选复选框', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 检查全选复选框是否存在
-                const selectAllCheckbox = screen.getByRole('table').querySelector('thead input[type="checkbox"]');
-                expect(selectAllCheckbox).toBeInTheDocument();
-                
-                // 检查复选框类型和属性
-                expect(selectAllCheckbox).toHaveAttribute('type', 'checkbox');
-                expect(selectAllCheckbox).toHaveClass('checkbox');
-            });
+            // 验证表头
+            expect(container.querySelector('thead tr th:nth-child(1) input[type="checkbox"]')).toBeInTheDocument();
+            expect(container.querySelector('thead tr th:nth-child(2)')).toHaveTextContent('试卷名称');
+            expect(container.querySelector('thead tr th:nth-child(3)')).toHaveTextContent('组卷方式');
+            expect(container.querySelector('thead tr th:nth-child(4)')).toHaveTextContent('试卷用途');
+            expect(container.querySelector('thead tr th:nth-child(5)')).toHaveTextContent('试题数量');
+            expect(container.querySelector('thead tr th:nth-child(6)')).toHaveTextContent('试卷总分');
+            expect(container.querySelector('thead tr th:nth-child(7)')).toHaveTextContent('建议时长(分)');
+            expect(container.querySelector('thead tr th:nth-child(8)')).toHaveTextContent('试卷标签');
+            expect(container.querySelector('thead tr th:nth-child(9)')).toHaveTextContent('试卷难度');
+            expect(container.querySelector('thead tr th:nth-child(10)')).toHaveTextContent('更新时间');
+            expect(container.querySelector('thead tr th:nth-child(11)')).toHaveTextContent('创建日期');
+            expect(container.querySelector('thead tr th:nth-child(12)')).toHaveTextContent('操作');
 
-            it('应该正确渲染表格列标题', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 检查所有列标题是否存在 - 使用更精确的选择器
-                const expectedHeaders = [
-                    '试卷名称', '组卷方式', '试卷用途', '试题数量', 
-                    '试卷总分', '建议时长(分)', '试卷标签', '试卷难度', 
-                    '更新时间', '创建日期', '操作'
-                ];
-                
-                expectedHeaders.forEach(headerText => {
-                    // 使用更精确的选择器，只查找表格头部的文本
-                    const header = screen.getByText(headerText, { selector: 'th' });
-                    expect(header).toBeInTheDocument();
-                    expect(header.closest('th')).toBeInTheDocument();
-                });
-            });
+            // 验证第一条数据
+            const firstRow = container.querySelectorAll('tbody tr')[0];
+            expect(firstRow.querySelector('td:nth-child(1) input[type="checkbox"]')).toBeInTheDocument();
+            expect(firstRow.querySelector('td:nth-child(2)')).toHaveTextContent('测试试卷1');
+            expect(firstRow.querySelector('td:nth-child(3)')).toHaveTextContent('自定义组卷');
+            expect(firstRow.querySelector('td:nth-child(4)')).toHaveTextContent('考试');
+            expect(firstRow.querySelector('td:nth-child(5)')).toHaveTextContent('10');
+            expect(firstRow.querySelector('td:nth-child(6)')).toHaveTextContent('36');
+            expect(firstRow.querySelector('td:nth-child(7)')).toHaveTextContent('110');
+            expect(firstRow.querySelector('td:nth-child(8)')).toHaveTextContent('标签1');
+            expect(firstRow.querySelector('td:nth-child(8)')).toHaveTextContent('标签2');
+            expect(firstRow.querySelector('td:nth-child(9)')).toHaveTextContent('简单');
+            expect(firstRow.querySelector('td:nth-child(10)')).toHaveTextContent('2025-08-17 10:40');
+            expect(firstRow.querySelector('td:nth-child(11)')).toHaveTextContent('2025-08-15');
+            expect(firstRow.querySelector('td:nth-child(12)')).toHaveTextContent('修改');
+            expect(firstRow.querySelector('td:nth-child(12)')).toHaveTextContent('预览');
+            expect(firstRow.querySelector('td:nth-child(12)')).toHaveTextContent('删除');
 
-            it('应该正确渲染试卷数据行', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                waitFor(() => {
-                    // 检查表格数据行是否存在
-                    const tableBody = screen.getByRole('table').querySelector('tbody');
-                    expect(tableBody).toBeInTheDocument();
-                    
-                    // 检查是否有数据行
-                    const dataRows = tableBody.querySelectorAll('tr');
-                    expect(dataRows.length).toBeGreaterThan(0);
-                });
-            });
+            // 验证第二条数据
+            const secondRow = container.querySelectorAll('tbody tr')[1];
+            expect(secondRow.querySelector('td:nth-child(1) input[type="checkbox"]')).toBeInTheDocument();
+            expect(secondRow.querySelector('td:nth-child(2)')).toHaveTextContent('测试试卷2');
+            expect(secondRow.querySelector('td:nth-child(3)')).toHaveTextContent('随机组卷');
+            expect(secondRow.querySelector('td:nth-child(4)')).toHaveTextContent('练习');
+            expect(secondRow.querySelector('td:nth-child(5)')).toHaveTextContent('2');
+            expect(secondRow.querySelector('td:nth-child(6)')).toHaveTextContent('10');
+            expect(secondRow.querySelector('td:nth-child(7)')).toHaveTextContent('60');
+            expect(secondRow.querySelector('td:nth-child(8)')).toHaveTextContent('-');
+            expect(secondRow.querySelector('td:nth-child(9)')).toHaveTextContent('中等');
+            expect(secondRow.querySelector('td:nth-child(10)')).toHaveTextContent('2025-08-17 10:39');
+            expect(secondRow.querySelector('td:nth-child(11)')).toHaveTextContent('2025-08-17');
+            expect(secondRow.querySelector('td:nth-child(12)')).toHaveTextContent('修改');
+            expect(secondRow.querySelector('td:nth-child(12)')).toHaveTextContent('预览');
+            expect(secondRow.querySelector('td:nth-child(12)')).toHaveTextContent('删除'); 
 
-            it('应该正确渲染数据列', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                waitFor(() => {
-                    // 定义列配置：文本内容、样式类、验证模式
-                    const columnConfigs = [
-                        {
-                            text: /新建试卷|魏一一测试|带标签的试卷/,
-                            styleClass: 'paper-name',
-                            description: '试卷名称'
-                        },
-                        {
-                            text: '手动组卷',
-                            styleClass: 'assembly-type',
-                            description: '组卷方式'
-                        },
-                        {
-                            text: '考试',
-                            styleClass: 'category',
-                            description: '试卷用途'
-                        },
-                        {
-                            text: /1|8|10/,
-                            styleClass: 'question-count',
-                            description: '试题数量'
-                        },
-                        {
-                            text: /3|38|50/,
-                            styleClass: 'total-score',
-                            description: '试卷总分'
-                        },
-                        {
-                            text: /120|90|60/,
-                            styleClass: 'suggested-duration',
-                            description: '建议时长'
-                        }
-                    ];
-                    
-                    // 验证每个列的渲染
-                    columnConfigs.forEach(config => {
-                        const cells = screen.getAllByText(config.text);
-                        expect(cells.length).toBeGreaterThan(0);
-                        
-                        // 检查样式类
-                        cells.forEach(cell => {
-                            expect(cell.closest('td')).toHaveClass(config.styleClass);
-                        });
-                    });
-                });
-            });
-
-            it('应该正确渲染试卷标签列', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                waitFor(() => {
-                    // 检查试卷标签列是否存在
-                    const tagContainers = document.querySelectorAll('.tag-container');
-                    expect(tagContainers.length).toBeGreaterThan(0);
-                    
-                    // 检查标签单元格的样式类
-                    tagContainers.forEach(container => {
-                        expect(container.closest('td')).toHaveClass('paper-tag');
-                    });
-                    
-                    // 检查有标签的试卷
-                    const mathTag = screen.getByText('数学');
-                    expect(mathTag).toBeInTheDocument();
-                });
-            });
-
-            it('应该正确渲染试卷难度列', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                waitFor(() => {
-                    // 检查试卷难度列是否存在
-                    const levelCells = document.querySelectorAll('.level span');
-                    expect(levelCells.length).toBeGreaterThan(0);
-                    
-                    // 检查难度单元格的样式类
-                    levelCells.forEach(cell => {
-                        expect(cell.closest('td')).toHaveClass('level');
-                    });
-                    
-                    // 检查难度文本
-                    const easyLevel = screen.getByText('简单');
-                    expect(easyLevel).toBeInTheDocument();
-                });
-            });
-
-            it('应该正确渲染时间列', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                waitFor(() => {
-                    // 定义时间列配置：样式类、格式正则、描述
-                    const timeColumnConfigs = [
-                        {
-                            styleClass: 'update-time',
-                            format: /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/,
-                            description: '更新时间列'
-                        },
-                        {
-                            styleClass: 'create-time',
-                            format: /\d{4}-\d{2}-\d{2}/,
-                            description: '创建日期列'
-                        }
-                    ];
-                    
-                    // 验证每个时间列的渲染
-                    timeColumnConfigs.forEach(config => {
-                        const timeCells = document.querySelectorAll(`.${config.styleClass}`);
-                        expect(timeCells.length).toBeGreaterThan(0);
-                        
-                        // 检查时间格式是否正确
-                        timeCells.forEach(cell => {
-                            expect(cell.textContent).toMatch(config.format);
-                        });
-                    });
-                });
-            });
-
-            it('应该正确渲染操作列', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                waitFor(() => {
-                    // 检查操作列是否存在
-                    const operationContainers = document.querySelectorAll('.operation');
-                    expect(operationContainers.length).toBeGreaterThan(0);
-                    
-                    // 检查操作按钮行是否存在
-                    const operationLines = document.querySelectorAll('.operation-line');
-                    expect(operationLines.length).toBeGreaterThan(0);
-                });
-            });
-
-            it('应该正确渲染操作按钮', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                waitFor(() => {
-                    // 定义按钮配置：文本、样式类、描述
-                    const buttonConfigs = [
-                        {
-                            text: '修改',
-                            styleClass: 'blue-btn',
-                            description: '修改按钮'
-                        },
-                        {
-                            text: '预览',
-                            styleClass: 'blue-btn',
-                            description: '预览按钮'
-                        },
-                        {
-                            text: '删除',
-                            styleClass: 'red-btn',
-                            description: '删除按钮'
-                        }
-                    ];
-                    
-                    // 验证每个按钮的渲染
-                    buttonConfigs.forEach(config => {
-                        const buttons = screen.getAllByText(config.text);
-                        expect(buttons.length).toBeGreaterThan(0);
-                        
-                        // 检查按钮样式
-                        buttons.forEach(button => {
-                            expect(button).toHaveClass(config.styleClass);
-                        });
-                    });
-                });
-            });
-
-            it('应该正确渲染空数据提示', () => {
-                // 设置空数据响应
-                global.fetch = vi.fn().mockImplementation(() => 
-                    Promise.resolve({
-                        ok: true,
-                        status: 200,
-                        json: () => Promise.resolve({
-                            status: 0,
-                            msg: 'success',
-                            rowCount: 0,
-                            API: '/api/paper',
-                            method: 'GET',
-                            data: []
-                        })
-                    })
-                );
-                
-                // 重新渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                waitFor(() => {
-                    // 检查空数据提示是否存在
-                    const emptyComponent = screen.getByText('暂无试卷数据');
-                    expect(emptyComponent).toBeInTheDocument();
-                });
-            });
-
-            it('表格行应该有正确的悬停样式', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                waitFor(() => {
-                    // 检查表格行是否存在
-                    const tableRows = document.querySelectorAll('tbody tr');
-                    expect(tableRows.length).toBeGreaterThan(0);
-                    
-                    // 检查行是否有正确的样式类
-                    tableRows.forEach(row => {
-                        expect(row).toBeInTheDocument();
-                        // 注意：悬停样式通常通过CSS的:hover伪类实现，这里主要验证行结构
-                    });
-                });
-            });
+            // 验证第三条数据
+            const thirdRow = container.querySelectorAll('tbody tr')[2];
+            expect(thirdRow.querySelector('td:nth-child(1) input[type="checkbox"]')).toBeInTheDocument();
+            expect(thirdRow.querySelector('td:nth-child(2)')).toHaveTextContent('测试试卷3');
+            expect(thirdRow.querySelector('td:nth-child(3)')).toHaveTextContent('智能刷题');
+            expect(thirdRow.querySelector('td:nth-child(4)')).toHaveTextContent('考试');
+            expect(thirdRow.querySelector('td:nth-child(5)')).toHaveTextContent('5');
+            expect(thirdRow.querySelector('td:nth-child(6)')).toHaveTextContent('20');
+            expect(thirdRow.querySelector('td:nth-child(7)')).toHaveTextContent('120');
+            expect(thirdRow.querySelector('td:nth-child(8)')).toHaveTextContent('-');
+            expect(thirdRow.querySelector('td:nth-child(9)')).toHaveTextContent('困难');
+            expect(thirdRow.querySelector('td:nth-child(10)')).toHaveTextContent('2025-08-17 10:39');
+            expect(thirdRow.querySelector('td:nth-child(11)')).toHaveTextContent('2025-08-17');
+            expect(thirdRow.querySelector('td:nth-child(12)')).toHaveTextContent('修改');
+            expect(thirdRow.querySelector('td:nth-child(12)')).toHaveTextContent('预览');
+            expect(thirdRow.querySelector('td:nth-child(12)')).toHaveTextContent('删除');
         });
 
         describe('交互', () => {
 
-            it('全选复选框应该能正确工作', async () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                await waitFor(() => {
-                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
+            it('全选', async () => {
+
+                // 临时mock数据
+                global.fetch.mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        API: "/api/paper",
+                        data: [PAPER_ONE, PAPER_TWO, PAPER_THREE],
+                        method: "GET",
+                        msg: "success",
+                        rowCount: 3,
+                        status: 0
+                    })
                 });
-                
-                // 获取全选复选框
-                const selectAllCheckbox = screen.getByRole('table').querySelector('thead input[type="checkbox"]');
-                expect(selectAllCheckbox).toBeInTheDocument();
-                
-                // 初始状态应该是未选中
-                expect(selectAllCheckbox.checked).toBe(false);
-                
-                // 点击全选复选框
-                await userEvent.click(selectAllCheckbox);
-                
-                // 验证全选复选框被选中
-                expect(selectAllCheckbox.checked).toBe(true);
-                
-                // 验证所有行复选框都被选中
-                const rowCheckboxes = screen.getByRole('table').querySelectorAll('tbody input[type="checkbox"]');
-                rowCheckboxes.forEach(checkbox => {
-                    expect(checkbox.checked).toBe(true);
+
+                const { container } = render(Page);
+
+                // 等待表格渲染三条数据
+                await waitFor(() => {
+                    expect(container.querySelectorAll('tbody tr').length).toBe(3);
+                });
+
+                // 检查全选框是否选中
+                expect(container.querySelector('thead tr th:nth-child(1) input[type="checkbox"]').checked).toBe(true);
+
+                // 取消全选
+                fireEvent.click(container.querySelector('thead tr th:nth-child(1) input[type="checkbox"]'));
+
+                // 检查全选框是否未选中
+                expect(container.querySelector('thead tr th:nth-child(1) input[type="checkbox"]').checked).toBe(false);
+
+                // 三条数据应该都是未选中状态
+                await waitFor(() => {
+                expect(container.querySelectorAll('tbody tr')[0].querySelector('input[type="checkbox"]').checked).toBe(false);
+                    expect(container.querySelectorAll('tbody tr')[1].querySelector('input[type="checkbox"]').checked).toBe(false);
+                    expect(container.querySelectorAll('tbody tr')[2].querySelector('input[type="checkbox"]').checked).toBe(false);
+                });
+
+                // 选中第一条和第二条数据
+                const firstRow = container.querySelectorAll('tbody tr')[0];
+                fireEvent.click(firstRow.querySelector('input[type="checkbox"]'));
+                const secondRow = container.querySelectorAll('tbody tr')[1];
+                fireEvent.click(secondRow.querySelector('input[type="checkbox"]'));
+
+                // 全选框应该是未选中状态
+                await waitFor(() => {
+                    expect(container.querySelector('thead tr th:nth-child(1) input[type="checkbox"]').checked).toBe(false);
+                });
+
+                // 选中第三条数据
+                const thirdRow = container.querySelectorAll('tbody tr')[2];
+                fireEvent.click(thirdRow.querySelector('input[type="checkbox"]'));
+
+                // 全选框应该是选中状态
+                await waitFor(() => {
+                    expect(container.querySelector('thead tr th:nth-child(1) input[type="checkbox"]').checked).toBe(true);
+                });
+
+                // 取消选中第三条数据
+                fireEvent.click(thirdRow.querySelector('input[type="checkbox"]'));
+
+                // 全选框应该是未选中状态
+                await waitFor(() => {
+                    expect(container.querySelector('thead tr th:nth-child(1) input[type="checkbox"]').checked).toBe(false);
+                });
+
+                // 选中全选框
+                fireEvent.click(container.querySelector('thead tr th:nth-child(1) input[type="checkbox"]'));
+
+                // 三条数据应该都是选中状态
+                await waitFor(() => {
+                    expect(container.querySelectorAll('tbody tr')[0].querySelector('input[type="checkbox"]').checked).toBe(true);
+                    expect(container.querySelectorAll('tbody tr')[1].querySelector('input[type="checkbox"]').checked).toBe(true);
+                    expect(container.querySelectorAll('tbody tr')[2].querySelector('input[type="checkbox"]').checked).toBe(true);
+                });
+
+                // 取消全选
+                fireEvent.click(container.querySelector('thead tr th:nth-child(1) input[type="checkbox"]'));
+
+                // 三条数据应该都是未选中状态
+                await waitFor(() => {
+                    expect(container.querySelectorAll('tbody tr')[0].querySelector('input[type="checkbox"]').checked).toBe(false);
+                    expect(container.querySelectorAll('tbody tr')[1].querySelector('input[type="checkbox"]').checked).toBe(false);
+                    expect(container.querySelectorAll('tbody tr')[2].querySelector('input[type="checkbox"]').checked).toBe(false);
                 });
             });
 
-            it('单行选择复选框应该能正确工作', async () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                await waitFor(() => {
-                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
-                });
-                
-                // 获取第一行的复选框
-                const firstRowCheckbox = screen.getByRole('table').querySelector('tbody input[type="checkbox"]');
-                expect(firstRowCheckbox).toBeInTheDocument();
-                
-                // 记录初始状态
-                const initialChecked = firstRowCheckbox.checked;
-                
-                // 点击第一行复选框
-                await userEvent.click(firstRowCheckbox);
-                
-                // 验证第一行复选框状态发生变化
-                expect(firstRowCheckbox.checked).toBe(!initialChecked);
-                
-                // 验证复选框可以正常交互
-                expect(firstRowCheckbox).not.toBeDisabled();
-            });
+            it('修改', async () => {
 
-            it('表格行悬停应该有正确的样式变化', async () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                await waitFor(() => {
-                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
-                });
-                
-                // 获取第一行
-                const firstRow = screen.getByRole('table').querySelector('tbody tr');
-                expect(firstRow).toBeInTheDocument();
-                
-                // 模拟鼠标悬停
-                fireEvent.mouseEnter(firstRow);
-                
-                // 验证行存在（悬停样式通常通过CSS实现，这里主要验证交互响应）
-                expect(firstRow).toBeInTheDocument();
-                
-                // 模拟鼠标离开
-                fireEvent.mouseLeave(firstRow);
-                
-                // 验证行仍然存在
-                expect(firstRow).toBeInTheDocument();
-            });
+                const { container } = render(Page);
 
-            it('修改按钮应该能正确跳转', async () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
+                // 等待表格渲染两条数据
                 await waitFor(() => {
-                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
+                    expect(container.querySelectorAll('tbody tr').length).toBe(2);
                 });
-                
-                // 获取第一个修改按钮
-                const editButton = screen.getAllByText('修改')[0];
-                expect(editButton).toBeInTheDocument();
-                
-                // 点击修改按钮
-                await userEvent.click(editButton);
-                
-                // 验证跳转功能被触发（通过mock验证）
-                // 这里主要验证按钮的交互性，具体跳转逻辑在functions测试中验证
-                expect(editButton).toBeInTheDocument();
-                expect(editButton).not.toBeDisabled();
-            });
 
-            it('预览按钮应该能正确跳转', async () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                await waitFor(() => {
-                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
-                });
-                
-                // 获取第一个预览按钮
-                const previewButton = screen.getAllByText('预览')[0];
-                expect(previewButton).toBeInTheDocument();
-                
-                // 点击预览按钮
-                await userEvent.click(previewButton);
-                
-                // 验证预览功能被触发（通过mock验证）
-                // 这里主要验证按钮的交互性，具体预览逻辑在functions测试中验证
-                expect(previewButton).toBeInTheDocument();
-                expect(previewButton).not.toBeDisabled();
-            });
+                // 点击第一条数据的修改按钮
+                const firstRow = container.querySelectorAll('tbody tr')[0];
+                fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(1)'));
 
-            it('删除按钮应该能正确触发确认对话框', async () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
+                // 验证goto被调用
                 await waitFor(() => {
-                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
-                });
-                
-                // 获取第一个删除按钮
-                const deleteButton = screen.getAllByText('删除')[0];
-                expect(deleteButton).toBeInTheDocument();
-                
-                // 点击删除按钮
-                await userEvent.click(deleteButton);
-                
-                // 验证删除功能被触发（通过mock验证）
-                // 这里主要验证按钮的交互性，具体删除逻辑在functions测试中验证
-                expect(deleteButton).toBeInTheDocument();
-                expect(deleteButton).not.toBeDisabled();
-            });
-
-            it('选择状态应该正确反映在全选复选框上', async () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                await waitFor(() => {
-                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
-                });
-                
-                // 获取全选复选框和所有行复选框
-                const selectAllCheckbox = screen.getByRole('table').querySelector('thead input[type="checkbox"]');
-                const rowCheckboxes = screen.getByRole('table').querySelectorAll('tbody input[type="checkbox"]');
-                
-                // 记录初始状态
-                const initialSelectAllChecked = selectAllCheckbox.checked;
-                
-                // 手动选中所有行复选框
-                for (const checkbox of rowCheckboxes) {
-                    await userEvent.click(checkbox);
-                }
-                
-                // 验证复选框可以正常交互
-                expect(selectAllCheckbox).not.toBeDisabled();
-                rowCheckboxes.forEach(checkbox => {
-                    expect(checkbox).not.toBeDisabled();
+                    expect(goto).toHaveBeenCalledWith('/teacher/paper/manual');
                 });
             });
 
-            it('部分选择时全选复选框应该显示半选状态', async () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
+            it('删除', async () => {
+
+                const { container } = render(Page);
+
+                // 等待表格渲染两条数据
                 await waitFor(() => {
-                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
+                    expect(container.querySelectorAll('tbody tr').length).toBe(2);
                 });
-                
-                // 获取全选复选框和行复选框
-                const selectAllCheckbox = screen.getByRole('table').querySelector('thead input[type="checkbox"]');
-                const rowCheckboxes = screen.getByRole('table').querySelectorAll('tbody input[type="checkbox"]');
-                
-                // 验证复选框可以正常交互
-                expect(selectAllCheckbox).not.toBeDisabled();
-                rowCheckboxes.forEach(checkbox => {
-                    expect(checkbox).not.toBeDisabled();
+
+                // 点击第一条数据的删除按钮
+                const firstRow = container.querySelectorAll('tbody tr')[0];
+                fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(3)'));
+
+                // 验证弹窗
+                expect(screen.getByText('删除确认')).toBeInTheDocument();
+                expect(screen.getByText('请问是否要删除该试卷？')).toBeInTheDocument();
+
+                // 点击确认
+                fireEvent.click(screen.getByText('确定'));
+
+                // mock 返回结果
+                global.fetch.mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        status: 0,
+                        msg: "success",
+                        API: "/api/paper",
+                        method: "DELETE"
+                    })
                 });
-                
-                // 验证复选框的基本功能
-                expect(rowCheckboxes.length).toBeGreaterThan(0);
-                expect(selectAllCheckbox).toBeInTheDocument();
-                
-                // 验证复选框的初始状态
-                rowCheckboxes.forEach(checkbox => {
-                    expect(checkbox.type).toBe('checkbox');
-                    expect(checkbox).toHaveClass('checkbox');
+
+                // 验证toast提示（用queryAllByText）
+                await waitFor(() => {
+                    expect(screen.queryAllByText(`删除成功`).length).toBe(2);
+                });
+
+            });
+
+            describe('预览', () => {
+
+                it('正常情况', async () => {
+
+                    const { container } = render(Page);
+
+                    // 等待表格渲染两条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                    });
+
+                    // 临时mock数据
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            status: 0,
+                            msg: "success",
+                            API: "/api/paper/manual",
+                            method: "GET",
+                            data: {
+                                Paper: {
+                                    ID: 143,
+                                    DomainID: null,
+                                    Name: "新建试卷",
+                                    AssemblyType: "00",
+                                    Category: "00",
+                                    Level: "00",
+                                    SuggestedDuration: 120,
+                                    Description: null,
+                                    Tags: [],
+                                    Creator: 1626,
+                                    CreateTime: 1755419884114,
+                                    UpdatedBy: null,
+                                    UpdateTime: 1755419884114,
+                                    Status: "00",
+                                    TotalScore: 0,
+                                    QuestionCount: 0,
+                                    GroupCount: 5
+                                },
+                                QuestionGroupInfo: {
+                                    517: {
+                                        ID: 517,
+                                        PaperID: null,
+                                        Name: "一、单选题",
+                                        Order: 1,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    518: {
+                                        ID: 518,
+                                        PaperID: null,
+                                        Name: "二、多选题",
+                                        Order: 2,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    519: {
+                                        ID: 519,
+                                        PaperID: null,
+                                        Name: "三、判断题",
+                                        Order: 3,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    520: {
+                                        ID: 520,
+                                        PaperID: null,
+                                        Name: "四、填空题",
+                                        Order: 4,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    521: {
+                                        ID: 521,
+                                        PaperID: null,
+                                        Name: "五、简答题",
+                                        Order: 5,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    }
+                                },
+                                Questions: {
+                                    517: [],
+                                    518: [],
+                                    519: [],
+                                    520: [],
+                                    521: []
+                                }
+                            }
+                        })
+                    });
+
+                    // 点击第一条数据的预览按钮
+                    const firstRow = container.querySelectorAll('tbody tr')[0];
+                    fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(2)'));
+
+                    // 验证window.location.href被调用
+                    await waitFor(() => {
+                        expect(window.location.href).toBe('http://localhost:3000/');
+                    });
+
+                    // 点击第二条数据的预览按钮
+                    const secondRow = container.querySelectorAll('tbody tr')[1];
+                    fireEvent.click(secondRow.querySelector('td:nth-child(12) button:nth-child(2)'));
+
+                    // 验证window.location.href被调用
+                    await waitFor(() => {
+                        expect(window.location.href).toBe('http://localhost:3000/');
+                    });
+                });
+
+                it('失败情况1：请求失败', async () => {
+                    const { container } = render(Page);
+
+                    // 等待表格渲染两条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                    });
+
+                    // 临时mock数据
+                    global.fetch.mockResolvedValueOnce({
+                        ok: false,
+                        status: 400
+                    });
+
+                    // 点击第一条数据的预览按钮
+                    const firstRow = container.querySelectorAll('tbody tr')[0];
+                    fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(2)'));
+
+                    // 验证toast提示
+                    await waitFor(() => {
+                        expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(2);
+                    });
+                });
+
+                it('失败情况2：业务错误', async () => {
+                    const { container } = render(Page);
+
+                    // 等待表格渲染两条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                    });
+
+                    // 临时mock数据
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            status: -1,
+                            msg: "业务错误"
+                        })
+                    });
+
+                    // 点击第一条数据的预览按钮
+                    const firstRow = container.querySelectorAll('tbody tr')[0];
+                    fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(2)'));
+
+                    // 验证toast提示
+                    await waitFor(() => {
+                        expect(screen.queryAllByText(`业务错误`).length).toBe(2);
+                    });
                 });
             });
 
-            it('试卷标签应该正确显示和换行', async () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                await waitFor(() => {
-                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
-                });
-                
-                // 检查标签容器是否存在
-                const tagContainers = document.querySelectorAll('.tag-container');
-                expect(tagContainers.length).toBeGreaterThan(0);
-                
-                // 检查标签容器的样式类
-                tagContainers.forEach(container => {
-                    expect(container).toBeInTheDocument();
-                    // 验证容器结构正确
-                    expect(container.tagName).toBe('DIV');
-                });
-                
-                // 检查有标签的试卷
-                const mathTag = screen.getByText('数学');
-                expect(mathTag).toBeInTheDocument();
-                
-                // 验证标签容器的基本功能
-                tagContainers.forEach(container => {
-                    expect(container.children.length).toBeGreaterThanOrEqual(0);
-                });
-            });
-
-            it('难度等级应该显示正确的颜色样式', async () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                await waitFor(() => {
-                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
-                });
-                
-                // 检查难度等级元素
-                const levelSpans = document.querySelectorAll('.level span');
-                expect(levelSpans.length).toBeGreaterThan(0);
-                
-                // 检查不同难度等级的样式类
-                levelSpans.forEach(span => {
-                    const text = span.textContent;
-                    if (text === '简单') {
-                        expect(span).toHaveClass('easy-level');
-                    } else if (text === '中等') {
-                        expect(span).toHaveClass('normal-level');
-                    } else if (text === '困难') {
-                        expect(span).toHaveClass('hard-level');
-                    }
-                });
-            });
         });
     });
 
-    describe('分页', () => {
-        describe('渲染', () => {
-            it('应该正确渲染分页组件', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                waitFor(() => {
-                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
+    describe('翻页组件测试', () => {
+
+        describe('每页条数', () => {
+
+            it('正常情况', async () => {
+                const { container } = render(Page);
+
+                // 等待表格渲染两条数据
+                await waitFor(() => {
+                    expect(container.querySelectorAll('tbody tr').length).toBe(2);
                 });
-                
-                // 检查分页容器是否存在
-                const pageControlContainer = document.querySelector('.page-control-container');
-                expect(pageControlContainer).toBeInTheDocument();
-                
-                // 检查分页控制区域是否存在
-                const pageControl = document.querySelector('.page-control');
-                expect(pageControl).toBeInTheDocument();
-                
-                // 检查分页组件的容器结构
-                expect(pageControlContainer.tagName).toBe('DIV');
-                expect(pageControl.tagName).toBe('DIV');
+
+                // 验证“共2条”
+                expect(screen.getByText('共 2 条')).toBeInTheDocument();
+
+                // 验证“每页10条”
+                expect(screen.getByText('10条/页')).toBeInTheDocument();
+
+                // 验证“前往”
+                expect(screen.getByText('前往')).toBeInTheDocument();
+
+                // 验证输入框（值默认为1，用类选择器）
+                expect(container.querySelector('.el-input__inner'));
+
+                // 点击“10条/页”按钮，出现下拉框
+                fireEvent.click(screen.getByText('10条/页'));
+
+                // 验证下拉框的选项
+                await waitFor(() => {
+                    expect(screen.getByText('10条/页')).toBeInTheDocument();
+                    expect(screen.getByText('20条/页')).toBeInTheDocument();
+                });
+
+                // 点击“20条/页”按钮，下拉框消失
+                fireEvent.click(screen.getByText('20条/页'));
+
+                // 验证现在下拉框按钮内容为“20条/页”
+                expect(screen.getByText('20条/页')).toBeInTheDocument();
+
             });
 
-            it('应该正确显示分页组件的所有配置参数', () => {
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                waitFor(() => {
-                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
+            it('空列表', async () => {
+
+                // 临时mock数据
+                global.fetch.mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        status: 0,
+                        msg: "success",
+                        API: "/api/paper",
+                        method: "GET",
+                        data: null,
+                        rowCount: 0,
+                        pageCount: 0
+                    })
                 });
-                
-                // 检查分页组件是否正确接收了所有配置参数
-                const pageControl = document.querySelector('.page-control');
-                expect(pageControl).toBeInTheDocument();
-                
-                // 验证分页组件存在（具体内容由Pagination组件内部处理）
-                expect(pageControl.children.length).toBeGreaterThan(0);
-                
-                // 验证分页组件的配置参数：
-                // - total_items: 总条数（当前测试数据为3条）
-                // - current_page: 当前页码（从store获取）
-                // - page_size: 页面大小（从store获取）
-                // - page_size_options: 页面大小选项（[10, 20]）
-                // - 分页导航按钮配置
-                // 这些参数都通过props传递给Pagination组件，具体显示由组件内部处理
+
+                const { container } = render(Page);
+
+                // 等待表格渲染空列表
+                await waitFor(() => {
+                    expect(container.querySelectorAll('tbody tr').length).toBe(0);
+                });
+
+                // 验证“共0条”
+                expect(screen.getByText('共 0 条')).toBeInTheDocument();
+
+                // 临时mock数据
+                global.fetch.mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        status: 0,
+                        msg: "success",
+                        API: "/api/paper",
+                        method: "GET",
+                        data: null,
+                        rowCount: 0,
+                        pageCount: 0
+                    })
+                });
+
+                // 点击“10条/页”按钮，出现下拉框
+                fireEvent.click(screen.getByText('10条/页'));
+
+                // 验证下拉框的选项
+                await waitFor(() => {
+                    expect(screen.getByText('10条/页')).toBeInTheDocument();
+                });
+
+                // 点击“20条/页”按钮，下拉框消失
+                fireEvent.click(screen.getByText('20条/页'));
+
+                // 验证现在下拉框按钮内容为“20条/页”
+                await waitFor(() => {
+                    expect(screen.getByText('20条/页')).toBeInTheDocument();
+                });
+
+                // 验证空列表
+                await waitFor(() => {
+                    expect(container.querySelectorAll('tbody tr').length).toBe(0);
+                });
+            });
+
+        });
+
+        it('页面跳转', async () => {
+
+            // 临时mock数据
+            global.fetch.mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({
+                    status: 0,
+                    msg: "success",
+                    API: "/api/paper",
+                    method: "GET",
+                    data: [PAPER_ONE, PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE,
+                        PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE 
+                    ],// 共11条
+                    rowCount: 11,
+                    pageCount: 2
+                })
+            });
+
+            const { container } = render(Page);
+
+            // 等待表格渲染11条数据
+            await waitFor(() => {
+                expect(container.querySelectorAll('tbody tr').length).toBe(11);
+            });
+
+            // 验证“共11条”
+            expect(screen.getByText('共 11 条')).toBeInTheDocument();
+        });
+
+    });
+
+    describe('onMount生命周期', () => {
+
+        it('空列表', async () => {
+            // 临时mock数据
+            global.fetch.mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({
+                    status: 0,
+                    msg: "success",
+                    API: "/api/paper",
+                    method: "GET",
+                    data: null,
+                    rowCount: 0,
+                    pageCount: 0
+                })
+            });
+
+            const { container } = render(Page);
+
+            // 等待表格渲染空列表
+            await waitFor(() => {
+                expect(container.querySelectorAll('tbody tr').length).toBe(0);
+            });
+
+        });
+
+        it('失败情况1：请求失败', async () => {
+
+            // 临时mock数据
+            global.fetch.mockResolvedValueOnce({
+                ok: false,
+                status: 400
+            });
+
+            const { container } = render(Page);
+
+            // 验证toast提示
+            await waitFor(() => {
+                expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(4);
+            });
+
+            // 验证表格渲染空列表
+            await waitFor(() => {
+                expect(container.querySelectorAll('tbody tr').length).toBe(0);
             });
         });
 
-        describe('交互', () => {
-            it('分页组件的各种交互功能应该能正确工作', async () => {
-                // 定义分页交互功能配置
-                const paginationFeatures = [
-                    {
-                        name: '页面大小选择',
-                        description: '页面大小选择器配置正确传递',
-                        config: 'page_size_options = [10, 20]',
-                        details: '这些选项通过props传递给Pagination组件，具体交互由组件内部处理'
-                    },
-                    {
-                        name: '页面跳转',
-                        description: '页面跳转配置正确传递',
-                        config: 'on:pageChange={handlePageChange}',
-                        details: '页面跳转事件通过事件监听器传递给Pagination组件，具体交互由组件内部处理'
-                    },
-                    {
-                        name: '页面大小改变重置',
-                        description: '页面大小改变配置正确传递',
-                        config: 'on:pageSizeChange={handlePageSizeChange}',
-                        details: '页面大小改变事件通过事件监听器传递给Pagination组件，具体交互由组件内部处理'
-                    },
-                    {
-                        name: '数据变化响应',
-                        description: '分页组件的数据绑定配置正确传递',
-                        config: 'total_items={total_papers}, current_page={$PAPER_PAGE}, page_size={$PAPER_PAGE_SIZE}',
-                        details: '这些数据通过props传递给Pagination组件，具体响应由组件内部处理'
-                    }
-                ];
+        it('失败情况2：业务错误', async () => {
 
-                // 渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                await waitFor(() => {
-                    expect(screen.getByText('新建试卷')).toBeInTheDocument();
-                });
-                
-                // 检查分页组件是否存在
-                const pageControl = document.querySelector('.page-control');
-                expect(pageControl).toBeInTheDocument();
-                
-                // 验证分页组件可以正常交互
-                expect(pageControl.children.length).toBeGreaterThan(0);
-                
-                // 验证所有分页功能配置都正确传递
-                paginationFeatures.forEach(feature => {
-                    // 验证分页组件存在且可以交互
-                    expect(pageControl).toBeInTheDocument();
-                    expect(pageControl.children.length).toBeGreaterThan(0);
-                    
-                    // 验证功能配置说明
-                    expect(feature.name).toBeTruthy();
-                    expect(feature.description).toBeTruthy();
-                    expect(feature.config).toBeTruthy();
-                    expect(feature.details).toBeTruthy();
-                });
-                
-                // 验证分页组件的核心功能：
-                // 1. 页面大小选择器配置正确传递
-                // 2. 页面跳转事件绑定正确
-                // 3. 页面大小改变事件绑定正确
-                // 4. 数据绑定配置正确传递
-                // 这些功能通过props和事件监听器传递给Pagination组件，具体交互由组件内部处理
+            // 临时mock数据
+            global.fetch.mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({
+                    status: -1,
+                    msg: "业务错误"
+                })
             });
 
-            it('分页组件应该在数据为空时正确显示', async () => {
-                // 设置空数据响应
-                global.fetch = vi.fn().mockImplementation(() => 
-                    Promise.resolve({
-                        ok: true,
-                        status: 200,
-                        json: () => Promise.resolve({
-                            status: 0,
-                            msg: 'success',
-                            rowCount: 0,
-                            API: '/api/paper',
-                            method: 'GET',
-                            data: []
-                        })
-                    })
-                );
-                
-                // 重新渲染页面组件
-                render(Page);
-                
-                // 等待数据加载完成
-                await waitFor(() => {
-                    // 检查空数据提示是否存在
-                    const emptyComponent = screen.getByText('暂无试卷数据');
-                    expect(emptyComponent).toBeInTheDocument();
-                });
-                
-                // 检查分页组件在空数据时的状态
-                const pageControl = document.querySelector('.page-control');
-                expect(pageControl).toBeInTheDocument();
-                
-                // 验证分页组件可以正常显示（即使没有数据）
-                expect(pageControl.children.length).toBeGreaterThan(0);
-                
-                // 验证分页组件在空数据时仍然正确渲染
-                // 当total_items为0时，分页组件应该显示相应的状态
+            const { container } = render(Page);
+
+            // 验证toast提示
+            await waitFor(() => {
+                expect(screen.queryAllByText(`业务错误`).length).toBe(4);
             });
         });
     });
