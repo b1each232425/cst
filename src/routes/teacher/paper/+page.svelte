@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 15:21:42
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-14 17:17:04
+ * @LastEditTime: 2025-08-17 16:32:05
  * @FilePath: \exam\src\routes\teacher\paper\+page.svelte
  * @Description: 试卷列表页面
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -49,10 +49,13 @@
                 return response.json();
             })
             .then(data => {
-                if (data.status !== 0) toast.error(data.msg, 1000);
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
                 return data;
             })
             .catch(error => {
+                toast.error(error.message, 1000);
                 console.error('自定义组卷出错：', error);
                 return null;
             });
@@ -76,20 +79,23 @@
             credentials: "include",
             body: JSON.stringify(DATA)
         })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`请求失败，状态码：${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status !== 0) toast.error(data.msg, 1000);
-                return data;
-            })
-            .catch(error => {
-                console.error('删除试卷出错：', error);
-                return null;
-            });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`请求失败，状态码：${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status !== 0){
+                throw new Error(data.msg);  
+            }
+            return data;
+        })
+        .catch(error => {
+            toast.error(error.message, 1000);
+            console.error('删除试卷出错：', error);
+            return null;
+        });
     }
 
     // 获取试卷列表
@@ -112,17 +118,20 @@
             method: "GET",
             credentials: "include"
         })
-            .then(response => {
+        .then(response => {
                 if (!response.ok) {
                     throw new Error(`请求失败，状态码：${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
-                if (data.status !== 0) toast.error(data.msg, 1000);
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
                 return data;
             })
             .catch(error => {
+                toast.error(error.message, 1000);
                 console.error('获取试卷列表出错：', error);
                 return null;
             });
@@ -245,11 +254,9 @@
     // 自定义组卷
     function manual() {
         createEmptyPaper().then( result => {
-            if (result && result.data && result.data.paper && result.data.paper.ID) {
+            if (result && result.data && result.data.paper) {
                 CURRENT_PAPER_ID.set(result.data.paper.ID);
                 goto('/teacher/paper/manual');
-            } else {
-                console.error('创建试卷失败：返回数据无效');
             }
         });
     }
@@ -297,16 +304,18 @@
 
             onConfirm: () => {
                 deletePaper(SELECTED_IDS)
-                    .then(() => {
-                        toast.success("删除成功", 1000);
-                         SELECTED_PAPER_IDS.update(current => current.filter(id => !SELECTED_IDS.includes(id)));
-                        fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
-                            .then(result => {
-                                if (result) {
-                                    total_papers = result.rowCount;
-                                    paper_list = result.data || [];
-                                }
-                            })
+                    .then(result1 => {
+                        if (result1) {
+                            toast.success("删除成功", 1000);
+                            SELECTED_PAPER_IDS.update(current => current.filter(id => !SELECTED_IDS.includes(id)));
+                            fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
+                                .then(result2 => {
+                                    if (result2) {
+                                        total_papers = result2.rowCount;
+                                        paper_list = result2.data || [];
+                                    }
+                                })
+                        }
                     });
             }
         });
@@ -362,7 +371,7 @@
                 if (result) {
                     total_papers = result.rowCount;
                     paper_list = result.data || [];
-                    // console.log(result)
+                    console.log(result)
                 }
             });
     });
@@ -389,7 +398,7 @@
                         use:utf8MaxLength={50}
                     > 
                     <!-- svelte-ignore a11y_consider_explicit_label -->
-                    <button data-name="clear" class="{$SEARCH_PAPER_NAME===""?"hide-clear":""}" onclick={()=>{SEARCH_PAPER_NAME.set("")}}></button>
+                    <button data-name="clear" class="clear-name-btn {$SEARCH_PAPER_NAME===""?"hide-clear":""}" onclick={()=>{SEARCH_PAPER_NAME.set("")}}></button>
                 </div>
             </div>
 
@@ -405,7 +414,7 @@
                         use:utf8MaxLength={50}
                     >
                     <!-- svelte-ignore a11y_consider_explicit_label -->
-                    <button data-name="clear" class="{$SEARCH_PAPER_TAGS===""?"hide-clear":""}" onclick={()=>{SEARCH_PAPER_TAGS.set("")}}></button>
+                    <button data-name="clear" class="clear-tags-btn {$SEARCH_PAPER_TAGS===""?"hide-clear":""}" onclick={()=>{SEARCH_PAPER_TAGS.set("")}}></button>
                 </div>
             </div>
         </div>
