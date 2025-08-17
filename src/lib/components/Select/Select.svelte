@@ -2,7 +2,7 @@
  * @Author: 段春茂 2162105974@qq.com
  * @Date: 2025-07-28 18:20:00
  * @LastEditors: 段春茂 2162105974@qq.com
- * @LastEditTime: 2025-08-12 18:00:00
+ * @LastEditTime: 2025-08-17 2:00:00
  * @FilePath: src\lib\components\Select\Select.svelte
  * @Description: Tooltip-组件
  * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
@@ -31,20 +31,27 @@
   import { writable } from 'svelte/store';
   import { validateAndAssign } from '$lib/utils/validate';
 
-  // props
   let { value = $bindable(), placeholder = '请选择', direction = 'bottom', disabled = false, multiple = false, filterable = false, changeValue = () => {}, children } = $props();
 
   const DIRECTIONS = ['top', 'bottom'];
 
+  /**
+   *   /**
+   * 校验参数是否合法,以及做一些默认处理
+   */
   const propRules = {
     placeholder: { type: ['string'], default: '请选择' },
-    direction: { type: ['string'], default: 'bottom', check: (v) => DIRECTIONS.includes(v), message: `direction 只能是 ${DIRECTIONS.join('、')} 中的一个` },
+    direction: {
+      type: ['string'],
+      default: 'bottom',
+      check: (v) => DIRECTIONS.includes(v),
+      message: `direction 只能是 ${DIRECTIONS.join('、')} 中的一个`,
+    },
     disabled: { type: ['boolean'], default: false },
     multiple: { type: ['boolean'], default: false },
     filterable: { type: ['boolean'], default: false },
     changeValue: { type: ['function'], default: () => {} },
   };
-
   const propMap = {
     placeholder: { get: () => placeholder, set: (v) => (placeholder = v) },
     direction: { get: () => direction, set: (v) => (direction = v) },
@@ -53,7 +60,6 @@
     filterable: { get: () => filterable, set: (v) => (filterable = v) },
     changeValue: { get: () => changeValue, set: (v) => (changeValue = v) },
   };
-
   Object.keys(propMap).forEach((k) => {
     validateAndAssign('Tooltip', propMap[k].get, propMap[k].set, propRules[k], k);
   });
@@ -67,7 +73,7 @@
   let filterText = writable('');
   let selectedLabel = $state([]);
 
-  // 上下文通信
+  /** 上下文通信 */
   setContext('SELECT-OPTIONS', {
     filterable,
     filterText,
@@ -148,6 +154,7 @@
   let dropdownContainer;
   /** 点击外部关闭选择器 @type {function} */
   function handleClickOutside(event) {
+    if (!dropdownContainer) return;
     if (!dropdownContainer.contains(event.target)) closeSelect();
   }
 
@@ -157,7 +164,7 @@
    * @param {KeyboardEvent} event
    */
   function handleKeyInput(event) {
-    if (event.key === 'Enter') toggleSelect;
+    if (event.key === 'Enter') toggleSelect();
   }
 
   /** 处理输入框的事件 @type {function} */
@@ -186,29 +193,29 @@
 
 <svelte:window on:click={handleClickOutside} />
 
-<div class="select" bind:this={dropdownContainer}>
+<div class="select" bind:this={dropdownContainer} data-testid="select">
   {#if multiple}
     <div class="select__input" tabindex="-1" role="button" onclick={toggleSelect} onkeydown={handleKeyInput}>
       {#if selectedLabel.length > 0}
         <div class="tags">
           {#each selectedLabel as label, index (index)}
             <span class="tag-item">
-              <button aria-label="取消选择" onclick={() => handleConcelOption(index)}></button>
+              <button aria-label="取消选择" data-testid="select-tag-item-cancel" onclick={() => handleConcelOption(index)}></button>
               <span class="tag-label">{label}</span>
             </span>
           {/each}
         </div>
       {:else}
-        <span class="placeholder">{placeholder}</span>
+        <span class="placeholder" data-testid="select-placeholder">{placeholder}</span>
       {/if}
     </div>
   {:else}
-    <input class="select__input" value={selectedLabel.join(',')} readonly={!filterable} {placeholder} {disabled} oninput={onInputChange} onclick={toggleSelect} />
+    <input class="select__input" value={selectedLabel.join(',')} readonly={!filterable} {placeholder} {disabled} oninput={onInputChange} onclick={toggleSelect} data-testid="select-input" />
   {/if}
   <button class="select__icon" aria-label="Toggle dropdown" tabindex="-1" onclick={toggleSelect}>
     <img src="/dropdown/arrow_black.png" alt="Dropdown icon" style={isShow ? 'transform: rotate(180deg);' : ''} />
   </button>
-  <ul class="select__options {direction}" class:is-hidden={!isShow} role="listbox">
+  <ul class="select__options {direction}" class:is-hidden={!isShow} role="listbox" data-testid="select-options">
     <section>
       {@render children()}
       {#if OptionData.length <= 0}<div class="no-options"><li class="no-data">暂无数据</li></div>{/if}
