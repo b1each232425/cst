@@ -405,9 +405,15 @@
                     <td class="exam-name">{exam.name}</td>
                     <td class="exam-type">{exam.type === '00' ? '平时考试' : '资格证考试'}</td>
                     <td class="exam-sessions">
-                      {#each exam.sessions as session (session.exam_session_id)}
-                        <div class="session-item">{session.paper_name}</div>
-                      {/each}
+                      {#if exam.sessions && exam.sessions.length > 0}
+                        {#each exam.sessions as session (session.exam_session_id)}
+                          <div class="session-item">
+                            {session.paper_name || '-'}
+                          </div>
+                        {/each}
+                      {:else}
+                        -
+                      {/if}
                     </td>
                     <td class="exam-time">
                       {#if exam.sessions && exam.sessions.length > 0}
