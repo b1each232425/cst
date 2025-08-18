@@ -41,7 +41,7 @@ export function updateDuration(index,paper_configs) {
     paper_configs[index].maxDuration = Math.max(0, durationInMinutes);
   }
 
-export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, exam_method, paper_configs, exam_examinee = [], invigilators = [] }) {
+export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, exam_method, paper_configs, exam_examinee = [], invigilators = [],uploadedFileList }) {
     /* 1. 必填字段校验（保持原逻辑） */
     if (exam_name === '') {
       toast.warning('请输入考试名称');
@@ -180,8 +180,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
           Rules: exam_rules,
           Type: exam_type,
           Mode: exam_method,
-          Files:[]
-          // Files: fileArr,
+          Files: uploadedFileList
         },
         examSessions: examSessionsdata,
         examinee: exam_examinee.map((e) => e.id ), // 用户选中的考生 id 数组

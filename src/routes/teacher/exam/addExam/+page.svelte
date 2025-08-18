@@ -707,7 +707,8 @@ onMount(async () =>{
         exam_method, 
         paper_configs, 
         exam_examinee, 
-        invigilators 
+        invigilators,
+        uploadedFileList
       });
     }}>保存</button
       >
