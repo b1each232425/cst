@@ -1,7 +1,7 @@
 <script>
     import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
     import {goto} from "$app/navigation";
-    import { isValidPhoneNumber, parsePhoneNumberWithError } from 'libphonenumber-js';
+
 
     const DomainsMap = {
         "cst.school^superAdmin": "超级管理员",
