@@ -12,7 +12,7 @@
    * @typedef {Object} PracticeData
    * @property {number} practiceId - 练习ID
    * @property {string} name - 练习名称
-   * @property {number} totalScore - 总分
+   * @property {number} total_score - 总分
    * @property {number} averageScore - 平均分
    * @property {number} completedStudents - 作答人数
    * @property {number} passedStudents - 通过人数
@@ -34,7 +34,7 @@
    * @description 页面是否显示
    * @default false
    */
-  let isShow = $state(false);
+  let is_show = $state(false);
 
   // 设置上下文
   setContext('practice', {
@@ -55,7 +55,7 @@
     return {
       practiceId: rawData.id,
       name: rawData.name,
-      totalScore: rawData.total_score,
+      total_score: rawData.total_score,
       averageScore: rawData.average_score || 0,
       completedStudents: rawData.completed_students || 0,
       passedStudents: rawData.passed_students || 0,
@@ -113,22 +113,22 @@
     practiceData = await fetchPracticeData(practiceId);
 
     // 显示页面
-    isShow = true;
+    is_show = true;
   });
 </script>
 
-{#if isShow}
+{#if is_show}
   <div class="page-container">
     <div class="detail-container">
       <div class="first-row">
         <div class="card card1"><InfoCard type="practice" data={practiceData} /></div>
-        <div class="card card2"><GradeChart type="practice" resourceId={practiceId} papers={[]} /></div>
+        <div class="card card2"><GradeChart type="practice" resource_id={practiceId} papers={[]} /></div>
       </div>
       <div class="second-row">
-        <div class="card card3"><StudentGradeTable type="practice" resourceId={practiceId} papers={[]} /></div>
+        <div class="card card3"><StudentGradeTable type="practice" resource_id={practiceId} papers={[]} /></div>
       </div>
       <div class="third-row">
-        <!-- <div class="card card4"><AnalysisPanel type="practice" resourceId={practiceId} papers={[]} /></div> -->
+        <!-- <div class="card card4"><AnalysisPanel type="practice" resource_id={practiceId} papers={[]} /></div> -->
       </div>
     </div>
   </div>

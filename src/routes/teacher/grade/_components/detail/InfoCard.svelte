@@ -39,8 +39,8 @@
   function formatSingleExamTime(examData, index) {
     if (!examData.papers || !examData.papers[index]) return '--';
 
-    // 从 examTimeText 中提取对应试卷的时间信息
-    const timeText = examData.examTimeText || '';
+    // 从 exam_time_text 中提取对应试卷的时间信息
+    const timeText = examData.exam_time_text || '';
     const sessions = timeText.split('  '); // 原来用两个空格分隔
 
     if (sessions[index]) {
@@ -61,12 +61,12 @@
       <div class="info-grid practice-grid">
         <div class="info-item">
           <span class="label">练习总分</span>
-          <span class="value">{safeDisplayNumber(displayData.totalScore)}</span>
+          <span class="value">{safeDisplayNumber(displayData.total_score)}</span>
         </div>
 
         <div class="info-item">
           <span class="label">平均分</span>
-          <span class="value">{safeDisplayNumber(displayData.averageScore, 1)}</span>
+          <span class="value">{safeDisplayNumber(displayData.average_score, 1)}</span>
         </div>
 
         <div class="info-item">
@@ -130,7 +130,7 @@
                 </div>
               {/each}
             {:else}
-              <span class="value">{safeDisplayText(displayData.examTimeText)}</span>
+              <span class="value">{safeDisplayText(displayData.exam_time_text)}</span>
             {/if}
           </div>
         </div>
@@ -142,11 +142,11 @@
               {#each displayData.papers as paper, i}
                 <div class="exam-score-entry">
                   <span class="paper-label">试卷{i + 1}:</span>
-                  <span class="score-value">{safeDisplayNumber(paper.totalScore)}</span>
+                  <span class="score-value">{safeDisplayNumber(paper.total_score)}</span>
                 </div>
               {/each}
             {:else}
-              <span class="value">{safeDisplayNumber(displayData.totalScore)}</span>
+              <span class="value">{safeDisplayNumber(displayData.total_score)}</span>
             {/if}
           </div>
         </div>
@@ -158,11 +158,11 @@
               {#each displayData.papers as paper, i}
                 <div class="exam-examinees-entry">
                   <span class="paper-label">试卷{i + 1}:</span>
-                  <span class="examinees-value">{safeDisplayNumber(paper.actualExaminees)}</span>
+                  <span class="examinees-value">{safeDisplayNumber(paper.actual_examinees)}</span>
                 </div>
               {/each}
             {:else}
-              <span class="value">{safeDisplayNumber(displayData.totalExaminees)}</span>
+              <span class="value">{safeDisplayNumber(displayData.total_examinees)}</span>
             {/if}
           </div>
         </div>
@@ -174,11 +174,11 @@
               {#each displayData.papers as paper, i}
                 <div class="exam-average-entry">
                   <span class="paper-label">试卷{i + 1}:</span>
-                  <span class="average-value">{safeDisplayNumber(paper.averageScore, 1)}</span>
+                  <span class="average-value">{safeDisplayNumber(paper.average_score, 1)}</span>
                 </div>
               {/each}
             {:else}
-              <span class="value">{safeDisplayNumber(displayData.averageScore, 1)}</span>
+              <span class="value">{safeDisplayNumber(displayData.average_score, 1)}</span>
             {/if}
           </div>
         </div>
@@ -190,11 +190,11 @@
               {#each displayData.papers as paper, i}
                 <div class="exam-pass-entry">
                   <span class="paper-label">试卷{i + 1}:</span>
-                  <span class="pass-value">{safeDisplayNumber(paper.passExaminees)}</span>
+                  <span class="pass-value">{safeDisplayNumber(paper.pass_examinees)}</span>
                 </div>
               {/each}
             {:else}
-              <span class="value">{safeDisplayNumber(displayData.passExaminees)}</span>
+              <span class="value">{safeDisplayNumber(displayData.pass_examinees)}</span>
             {/if}
           </div>
         </div>
@@ -233,10 +233,10 @@
                   <tr>
                     <td>{safeDisplayText(paper.idText)}</td>
                     <td>{safeDisplayText(paper.name)}</td>
-                    <td>{safeDisplayText(paper.markMode)}</td>
-                    <td>{safeDisplayNumber(paper.actualExaminees)}</td>
-                    <td>{safeDisplayNumber(paper.totalScore)}</td>
-                    <td>{safeDisplayNumber(paper.averageScore, 1)}</td>
+                    <td>{safeDisplayText(paper.mark_mode)}</td>
+                    <td>{safeDisplayNumber(paper.actual_examinees)}</td>
+                    <td>{safeDisplayNumber(paper.total_score)}</td>
+                    <td>{safeDisplayNumber(paper.average_score, 1)}</td>
                   </tr>
                 {/each}
               </tbody>
