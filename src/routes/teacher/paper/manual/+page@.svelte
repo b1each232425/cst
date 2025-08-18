@@ -375,9 +375,11 @@
         to_edit_group.focus();
     }
 
+    let is_cancelling_edit_group_name = $state(false);
+
     // 确认编辑题组名称
     function confirmEditGroupName() {
-        if(event.key === "Enter" && to_edit_group_name.trim() !== "") {
+        if(!is_cancelling_edit_group_name && to_edit_group_name.trim() !== "") {
 
             to_edit_group.blur();
 
@@ -402,6 +404,14 @@
                         });
                 });
         }
+    }
+
+    // 取消编辑题组名称
+    function cancelEditGroupName() {
+        is_cancelling_edit_group_name = true;
+        to_edit_groupID = null;
+        to_edit_group_name = "";
+        is_cancelling_edit_group_name = false;
     }
 
     // 删除题目
@@ -470,6 +480,29 @@
                     clearGroupAverageScore(group);
                 }
             });
+        }
+        
+        // 自动展开新导入的题目和目标题组
+        if (updatedGroups && updatedGroups.length > 0) {
+            const NEW_GROUP_STATE = { ...get(GROUP_OPEN_STATE) };
+            const NEW_QUESTION_STATE = { ...get(QUESTION_OPEN_STATE) };
+            
+            // 找到目标题组（导入题目的题组）
+            const targetGroup = updatedGroups.find(group => group.id === to_import_group.id);
+            if (targetGroup) {
+                // 确保目标题组是展开状态
+                NEW_GROUP_STATE[targetGroup.id] = true;
+                
+                // 将目标题组中的所有题目设置为展开状态
+                // 这样可以确保新导入的题目和原有题目都展开
+                targetGroup.questions.forEach(question => {
+                    NEW_QUESTION_STATE[question.id] = true;
+                });
+            }
+            
+            // 更新展开状态
+            GROUP_OPEN_STATE.set(NEW_GROUP_STATE);
+            QUESTION_OPEN_STATE.set(NEW_QUESTION_STATE);
         }
         
         // 重置导入参数
@@ -881,12 +914,15 @@
                 action: "move_group",
                 payload: GROUP_IDS,
             },
-            {
+        ];
+        
+        if(QUESTION_IDS.length > 0) {
+            ACTIONS.push({
                 action: "move_question",
                 payload: QUESTION_IDS
-            }
-        ];
-
+            });
+        }
+        
         savePaper(paperID, ACTIONS)
             .then(() => fetchPaper(paperID))
             .then((result) => {
@@ -1244,10 +1280,10 @@
                                             ondrop={handleGroupDrop}
                                             ondragend={handleDragEnd}
                                             >
-                                            <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} bind:this={to_edit_group} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
+                                            <input bind:value={to_edit_group_name} onchange={()=>confirmEditGroupName()} onblur={()=>{if(to_edit_group_name.trim() === ""||to_edit_group_name.trim() === group.name){cancelEditGroupName()}}} bind:this={to_edit_group} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
                                             <div class="btn-box">
-                                                <!-- 删除按钮 -->
-                                                <button onclick={()=>{to_edit_groupID=null}} class="delete-group-btn" title="取消">✖</button>
+                                                <!-- 取消按钮 -->
+                                                <button onmousedown={()=>cancelEditGroupName()} class="delete-group-btn" title="取消">✖</button>
                                             </div>
                                         </div>
                                     {:else}
