@@ -7,24 +7,24 @@
   /**
    * @typedef {Object} Props
    * @property {'practice' | 'exam'} type - 类型
-   * @property {string|number} resourceId - 资源ID
+   * @property {string|number} resource_id - 资源ID
    * @property {Array} [papers] - 试卷选项（考试类型需要）
    */
 
   /**
    * @type {Props}
    */
-  let { type, resourceId, papers = [] } = $props();
+  let { type, resource_id, papers = [] } = $props();
 
   // 获取 Context 数据
-  let contextData = $state(null);
+  let context_data = $state(null);
   try {
     if (type === 'practice') {
       const context = getContext('practice');
-      contextData = context; // 直接使用 context，包含 practiceData
+      context_data = context; // 直接使用 context，包含 practiceData
     } else {
       const context = getContext('exam');
-      contextData = context; // 直接使用 context，包含 examData
+      context_data = context; // 直接使用 context，包含 examData
     }
   } catch {
     // Context 不存在时忽略
@@ -33,29 +33,29 @@
   // 状态变量
   let xAxis_data = $state(['0-19', '20-39', '40-59', '60-79', '80-100']);
   let series_data = $state([]);
-  let columnNum = $state(5); //直方图列数
-  let currentPaperId = $state('');
+  let column_num = $state(5); //直方图列数
+  let current_paper_id = $state('');
   let options = $state([]);
   let loading = $state(false);
   let error = $state(null);
 
   // 分布数据
-  let distributionData = $state(null);
+  let distribution_data = $state(null);
 
   /**
    * 根据总分划分区间段（从低到高）
-   * @param {number} totalScore - 当前试卷总分
-   * @param {number} columnCount - 划分列数
+   * @param {number} total_score - 当前试卷总分
+   * @param {number} column_count - 划分列数
    * @returns {string[]} 区间段数组（从低到高）
    */
-  function getScoreSegments(totalScore, columnCount) {
+  function getScoreSegments(total_score, column_count) {
     //切割总分
-    const step = Math.floor(totalScore / columnCount);
+    const step = Math.floor(total_score / column_count);
     const segments = [];
 
-    for (let i = 0; i < columnCount; i++) {
+    for (let i = 0; i < column_count; i++) {
       const start = i * step;
-      const end = i === columnCount - 1 ? totalScore : (i + 1) * step - 1;
+      const end = i === column_count - 1 ? total_score : (i + 1) * step - 1;
       segments.push(`${start}-${end}`);
     }
 
@@ -66,56 +66,53 @@
    * 获取考试成绩分布数据
    */
   function getExamDistributionData() {
-    if (!resourceId) {
-    error = '缺少资源ID';
-    return Promise.resolve();
-  }
+    if (!resource_id) {
+      error = '缺少资源ID';
+      return Promise.resolve();
+    }
 
     loading = true;
     error = null;
 
     const params = new URLSearchParams({
-      category: type, 
-      columnNum,
-      ...(type === 'practice' ? { practiceID: String(resourceId) }
-                            : { examID: String(resourceId) })
+      category: type,
+      columnNum:column_num,
+      ...(type === 'practice' ? { practiceID: String(resource_id) } : { examID: String(resource_id) }),
     });
 
     return fetch(`/api/grade/distribution?${params.toString()}`, {
-    method: 'GET',
-    credentials: 'include'
-  })
-    .then(res => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
+      method: 'GET',
+      credentials: 'include',
     })
-    .then(json => {
-      if (json.status !== 0) throw new Error(json.msg || '获取数据失败');
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((json) => {
+        if (json.status !== 0) throw new Error(json.msg || '获取数据失败');
 
-      /* 统一成前端需要的数据结构（兼容练习/考试） */
-      const src = json.data;               // 后端原始 data
-      const isPractice = type === 'practice';
+        /* 统一成前端需要的数据结构（兼容练习/考试） */
+        const src = json.data; // 后端原始 data
+        const isPractice = type === 'practice';
 
-      console.log('API 返回的原始数据:', { src, isPractice, type });
+        console.log('API 返回的原始数据:', { src, isPractice, type });
 
-      distributionData = {
-        // id / name 兼容两种场景
-        id          : isPractice ? src.practice_id  : src.exam_id,
-        name        : isPractice ? src.practice_name : src.exam_name,
+        distribution_data = {
+          // id / name 兼容两种场景
+          id: isPractice ? src.practice_id : src.exam_id,
+          name: isPractice ? src.practice_name : src.exam_name,
 
-        // 修正练习数据的解析逻辑
-        gradeDistribution: isPractice
-          ? (src.grade_distribution ?? [])  // 练习直接使用分布数据数组
-          : (src.grade_distribution ?? [])
-            .map(s => ({
-              exam_session_id : s.exam_session_id,
-              exam_paper_id   : s.exam_paper_id,
-              exam_paper_name : s.exam_paper_name,
-              total_score     : s.total_score,
-              score_distribution: s.score_distribution
-            }))
-      };
-
+          // 修正练习数据的解析逻辑
+          gradeDistribution: isPractice
+            ? (src.grade_distribution ?? []) // 练习直接使用分布数据数组
+            : (src.grade_distribution ?? []).map((s) => ({
+                exam_session_id: s.exam_session_id,
+                exam_paper_id: s.exam_paper_id,
+                exam_paper_name: s.exam_paper_name,
+                total_score: s.total_score,
+                score_distribution: s.score_distribution,
+              })),
+        };
       })
       .catch((err) => {
         console.error('获取成绩分布数据失败:', err);
@@ -142,63 +139,63 @@
    * 更新系列数据
    */
   function updateSeriesData() {
-    console.log('updateSeriesData调用:', { type, currentPaperId, distributionData, papers, contextData });
-    
+    // console.log('updateSeriesData调用:', { type, current_paper_id, distribution_data, papers, context_data });
+
     if (type === 'practice') {
-      if (distributionData && distributionData.gradeDistribution) {
+      if (distribution_data && distribution_data.gradeDistribution) {
         console.log('练习数据处理:', {
-          distributionData,
-          gradeDistribution: distributionData.gradeDistribution,
-          contextData: contextData?.practiceData,
-          totalScore: contextData?.practiceData?.totalScore
+          distribution_data,
+          gradeDistribution: distribution_data.gradeDistribution,
+          context_data: context_data?.practiceData,
+          total_score: context_data?.practiceData?.total_score,
         });
-        
-        series_data = distributionData.gradeDistribution.slice().reverse();
+
+        series_data = distribution_data.gradeDistribution.slice().reverse();
         // 使用 context 中的练习数据获取总分
-        const totalScore = contextData?.practiceData?.totalScore || 100;
-        xAxis_data = getScoreSegments(totalScore, columnNum);
-        
-        // console.log('练习图表数据设置:', { series_data, xAxis_data, totalScore });
+        const total_score = context_data?.practiceData?.total_score || 100;
+        xAxis_data = getScoreSegments(total_score, column_num);
+
+        // console.log('练习图表数据设置:', { series_data, xAxis_data, total_score });
       } else {
-        // console.warn('练习缺少分布数据:', { distributionData });
+        // console.warn('练习缺少分布数据:', { distribution_data });
         series_data = [];
         xAxis_data = [];
       }
     } else {
       // 考试类型
-      if (distributionData && distributionData.gradeDistribution) {
+      if (distribution_data && distribution_data.gradeDistribution) {
         console.log('考试数据处理:', {
-          currentPaperId,
-          gradeDistribution: distributionData.gradeDistribution,
+          current_paper_id,
+          gradeDistribution: distribution_data.gradeDistribution,
           papers,
-          'papers结构': papers.map(p => ({ id: p.id, name: p.name })),
-          '分布数据结构': distributionData.gradeDistribution.map(g => ({ 
-            exam_session_id: g.exam_session_id, 
+          papers结构: papers.map((p) => ({ id: p.id, name: p.name })),
+          分布数据结构: distribution_data.gradeDistribution.map((g) => ({
+            exam_session_id: g.exam_session_id,
             exam_paper_name: g.exam_paper_name,
-            score_distribution: g.score_distribution 
-          }))
+            score_distribution: g.score_distribution,
+          })),
         });
-        
+
         // 如果没有选择试卷ID，使用第一个试卷
-        const targetPaperId = currentPaperId || papers[0]?.id;
+        const targetPaperId = current_paper_id || papers[0]?.id;
         // console.log('目标试卷ID:', targetPaperId);
-        
+
         const selectedPaper = papers.find((paper) => paper.id == targetPaperId);
-        const selectedSession = distributionData.gradeDistribution.find(
+        const selectedSession = distribution_data.gradeDistribution.find(
           (session) => session.exam_session_id == selectedPaper?.id,
         );
-        
-        console.log('匹配过程:', {
-          targetPaperId,
-          selectedPaper,
-          selectedSession,
-          '匹配条件': selectedPaper ? `${selectedPaper.id} == session.exam_session_id` : '无选中试卷',
-          '所有session的exam_session_id': distributionData.gradeDistribution.map(s => s.exam_session_id)
-        });
+
+        // console.log('匹配过程:', {
+        //   targetPaperId,
+        //   selectedPaper,
+        //   selectedSession,
+        //   匹配条件: selectedPaper ? `${selectedPaper.id} == session.exam_session_id` : '无选中试卷',
+        //   所有session的exam_session_id: distribution_data.gradeDistribution.map((s) => s.exam_session_id),
+        // });
 
         if (selectedSession && selectedPaper) {
           series_data = selectedSession.score_distribution.slice().reverse();
-          xAxis_data = getScoreSegments(selectedPaper.totalScore || selectedSession.total_score || 100, columnNum);
+          xAxis_data = getScoreSegments(selectedPaper.total_score || selectedSession.total_score || 100, column_num);
           console.log('设置图表数据:', { series_data, xAxis_data });
         } else {
           console.warn('未找到匹配的试卷或会话');
@@ -211,7 +208,7 @@
         xAxis_data = [];
       }
     }
-    
+
     // console.log('最终图表数据:', { series_data, xAxis_data });
   }
 
@@ -219,21 +216,21 @@
    * 处理试卷选择变化
    */
   function handlePaperChange(event) {
-    currentPaperId = event.detail;
+    current_paper_id = event.detail;
     updateSeriesData();
   }
 
   // 初始化
   onMount(async () => {
-	console.log('初始化 GradeChart:', { type, resourceId, papers });
-    
+    console.log('初始化 GradeChart:', { type, resource_id, papers });
+
     // 先设置考试类型的选项和默认试卷ID
     if (type === 'exam' && papers && papers.length > 0) {
       options = examDataToOptions();
-      currentPaperId = options.length > 0 ? options[0].value : '';
-      console.log('设置默认试卷ID:', currentPaperId);
+      current_paper_id = options.length > 0 ? options[0].value : '';
+      console.log('设置默认试卷ID:', current_paper_id);
     }
-    
+
     await getExamDistributionData();
   });
 </script>
@@ -243,7 +240,7 @@
     <div class="title">成绩分析</div>
     {#if type === 'exam' && papers.length > 1}
       <div class="dropdown">
-        <Select value={currentPaperId} placeholder="选择试卷" on:change={handlePaperChange}>
+        <Select value={current_paper_id} placeholder="选择试卷" on:change={handlePaperChange}>
           {#each options as option}
             <Option value={option.value} label={option.label}>{option.label}</Option>
           {/each}
@@ -263,28 +260,13 @@
         {:else if series_data.length === 0}
           <div class="empty-state">
             暂无成绩分布数据
-            <div class="debug-info" style="font-size: 12px; color: #666; margin-top: 10px;">
-              <p>调试信息:</p>
-              <p>类型: {type}</p>
-              <p>资源ID: {resourceId}</p>
-              <p>分布数据: {distributionData ? '已加载' : '未加载'}</p>
-              {#if type === 'exam'}
-                <p>试卷数量: {papers?.length || 0}</p>
-                <p>当前试卷ID: {currentPaperId || '未选择'}</p>
-                <p>选项数量: {options?.length || 0}</p>
-                {#if distributionData}
-                  <p>分布数据内容: {JSON.stringify(distributionData, null, 2)}</p>
-                {/if}
-              {/if}
-              <button 
-                onclick={() => {
-                  // console.log('手动更新数据');
-                  updateSeriesData();
-                }}
-              >
-                重新更新数据
-              </button>
-            </div>
+            <button
+              onclick={() => {
+                updateSeriesData();
+              }}
+            >
+              重新加载数据
+            </button>
           </div>
         {:else}
           <div class="bar-chart">
@@ -294,7 +276,6 @@
               {@const maxValue = Math.max(...series_data)}
               <!-- 柱子高度 -->
               {@const height = maxValue > 0 ? (value / maxValue) * 200 : 0}
-
 
               <div class="bar-item">
                 <div class="bar-wrapper">
@@ -381,7 +362,6 @@
             color: #e74c3c;
             font-size: 14px;
           }
-
         }
 
         .bar-chart {
