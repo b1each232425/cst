@@ -905,11 +905,44 @@ describe('Sidebar 侧边栏组件测试', () => {
     localStorage.setItem('sidebar_fold_state', 'true');
     localStorage.setItem('is_auto_fold', 'false');
     localStorage.setItem('sidebar_is_folded', 'true');
-    localStorage.setItem('sidebar_is_folding', 'false');
     localStorage.setItem('sidebar_fold_str', '展开侧边栏');
 
     // 渲染组件（模拟页面刷新后加载）
-    let { sb } = render(Sidebar);
+    render(Sidebar);
+
+    // 等待组件完全挂载
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    fireEvent.transitionEnd(await screen.findByTitle('展开侧边栏'));
+
+    // 验证状态是否正确恢复
+    const sidebar = await screen.findByTestId('sidebar-content');
+    expect(sidebar).toHaveClass('folded');
+
+    // 验证折叠按钮状态
+    const toggleBtn = await screen.findByTitle('展开侧边栏');
+    expect(toggleBtn).toBeInTheDocument();
+
+    // 验证其相关状态
+    expect(localStorage.getItem('sidebar_fold_state')).toBe('true');
+  });
+
+  it('应正确处理自动折叠，刷新页面侧边栏状态', async () => {
+    // 直接预设localStorage状态（模拟刷新前保存的状态）
+    localStorage.setItem('sidebar_fold_state', 'true');
+    localStorage.setItem('is_auto_fold', 'true');
+    localStorage.setItem('sidebar_is_folded', 'true');
+    localStorage.setItem('sidebar_fold_str', '展开侧边栏');
+
+    // 渲染组件（模拟页面刷新后加载）
+    render(Sidebar);
+
+    // 等待组件完全挂载
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
 
     fireEvent.transitionEnd(await screen.findByTitle('展开侧边栏'));
 

@@ -20,63 +20,31 @@
     /\/teacher\/grade\/practice-grade\/detail\?id=\d+/,
   ];
 
-  let nav_map = $state();
-  let current_path = $derived(page.url.pathname);
-
+  let nav_map = $state(); // 导航数据
+  let current_path = $derived(page.url.pathname); // 当前路径
   let is_auto_fold = $state(false); // 侧边栏是否自动折叠
   let sidebar_fold_state = $state(false); // 侧边栏折叠状态
   let sidebar_is_folding = $state(false); // 侧边栏是否正在折叠中
   let sidebar_is_folded = $state(false); // 侧边栏是否已经折叠
   let side_float = $state(false); // 侧边栏是否悬浮
   let sidebar_fold_str = $state('收起侧边栏'); // 侧边栏折叠状态提示
-  let is_hydrated = $state(false);
+  let is_hydrated = $state(false); // 是否展示侧边栏
+  let current_active = $state('/'); // 当前选中的路由路径
+  let sidebar_container_element = $state(null); // 侧边栏导航项数据DOM
+  let sidebar_element = $state(); // 侧边栏组件DOM
+  let sidebar_toggle_btn = $state(); // 侧边栏折叠按钮DOM
+  let sidebar_mouse_enter_timeout = $state(null); // 侧边栏鼠标进入定时器
+  let sidebar_mouse_leave_timeout = $state(null); // 侧边栏鼠标离开定时器
 
-  /**
-   * 当前选中的路由路径
-   */
-  let current_active = $state('/');
-
-  /**
-   * 侧边栏导航项数据
-   * @type {HTMLDivElement}
-   */
-  let sidebar_container_element = $state(null);
-
-  /**
-   * 侧边栏组件
-   * @type {HTMLDivElement}
-   */
-  let sidebar_element = $state();
-
-  /**
-   * 侧边栏折叠按钮
-   * @type {HTMLButtonElement}
-   */
-  let sidebar_toggle_btn = $state();
-
-  /**
-   * 侧边栏鼠标进入定时器
-   * @type {number}
-   */
-  let sidebar_mouse_enter_timeout = $state(null);
-
-  /**
-   * 侧边栏鼠标离开定时器
-   * @type {number}
-   */
-  let sidebar_mouse_leave_timeout = $state(null);
-
+  // 保存侧边栏状态到本地(数据持久化)
   function saveSidebarState() {
     localStorage.setItem('is_auto_fold', is_auto_fold.toString());
     localStorage.setItem('sidebar_fold_state', sidebar_fold_state.toString());
-    localStorage.setItem('sidebar_is_folding', sidebar_is_folding.toString());
     localStorage.setItem('sidebar_is_folded', sidebar_is_folded.toString());
     localStorage.setItem('sidebar_fold_str', sidebar_fold_str);
   }
 
-  /**
-   * 切换侧边栏折叠状态
-   */
+  // 切换侧边栏折叠状态
   function toggleSidebar(foldState) {
     side_float = false;
     sidebar_fold_state = foldState != null ? foldState : !sidebar_fold_state;
@@ -98,9 +66,7 @@
     saveSidebarState();
   }
 
-  /**
-   * 侧边栏折叠动画结束事件处理函数
-   */
+  // 侧边栏折叠动画结束事件处理函数
   function sidebarTransitionendHandle() {
     if (!sidebar_is_folding) {
       return;
@@ -170,10 +136,7 @@
     }
   }
 
-  /**
-   * 处理侧边栏导航项点击事件
-   * @param { NavMapData } item 导航项数据
-   */
+  // 处理侧边栏导航项点击事件
   function handleSidebarItemClick(item) {
     if (item.children != null && item.children.length > 0 && item.children_is_parallel) {
       item.fold = !item.fold;
@@ -185,10 +148,7 @@
     goto(item.path);
   }
 
-  /**
-   * 检查导航项是否有子路由
-   * @param { NavMapData } item 导航项数据
-   */
+  // 检查导航项是否有子路由
   function checkItemHasChildren(item, childrenPath) {
     if (item.children == null || item.children.length <= 0) {
       return false;
@@ -224,9 +184,7 @@
       });
   }
 
-  /**
-   * 正则匹配路径
-   */
+  // 正则匹配路径
   function regexMatch(path, path_regex) {
     return new RegExp(`${path_regex}`).test(path);
   }
@@ -266,14 +224,12 @@
   function loadSidebarState() {
     const savedAutoFold = localStorage.getItem('is_auto_fold');
     const savedFoldState = localStorage.getItem('sidebar_fold_state');
-    const savedIsFolding = localStorage.getItem('sidebar_is_folding');
     const savedIsFolded = localStorage.getItem('sidebar_is_folded');
     const savedFoldStr = localStorage.getItem('sidebar_fold_str');
 
     // 只有存在值时才恢复状态
     if (savedAutoFold !== null) is_auto_fold = savedAutoFold === 'true';
     if (savedFoldState !== null) sidebar_fold_state = savedFoldState === 'true';
-    if (savedIsFolding !== null) sidebar_is_folding = savedIsFolding === 'true';
     if (savedIsFolded !== null) sidebar_is_folded = savedIsFolded === 'true';
     if (savedFoldStr !== null) sidebar_fold_str = savedFoldStr;
 
@@ -408,7 +364,6 @@
   .sidebar-container {
     position: relative;
     display: flex;
-    width: max-content;
     height: 100%;
     background-color: rgba(243, 243, 243, 0);
 

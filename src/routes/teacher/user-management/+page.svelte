@@ -285,6 +285,15 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     updateSelectAllState();
   }
 
+  // 处理行点击事件
+  function handleRowClick(event, userId) {
+    //防止事件继续传播
+    event.stopPropagation();
+    
+    // 调用现有的复选框切换逻辑
+    handleUserSelectChange(userId);
+  }
+
   //处理用户状态切换
   // function toggleStatus(id) {
   //   const user = users.find((s) => s.id === id);
@@ -535,8 +544,8 @@ o888o o888o   "888" o888o o888o o888o o888o
         </thead>
         <tbody>
           {#each users as user (user.id)}
-            <tr class="table-row" data-id={user.id}>
-              <td class="col-checkbox">
+            <tr class="table-row" data-id={user.id} onclick={(e) => handleRowClick(e, user.id)}>
+              <td class="col-checkbox" onclick={(e) => e.stopPropagation()}>
                 <input
                   type="checkbox"
                   class="checkbox-item"
@@ -907,9 +916,31 @@ o.  )88b   888 .    `888'     888  888    .o
       background-color: #ecf2fe;
     }
 
+    .table-row {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
     .col-checkbox {
       width: 3%;
     }
+
+    /* 复选框样式 */
+    .checkbox-all,
+    .checkbox-item {
+      width: 13px;
+      height: 13px;
+      cursor: pointer;
+      transform: scale(1.2);
+      accent-color: #1677ff; /* 设置复选框选中时的颜色 */
+    }
+
+    .checkbox-all:hover,
+    .checkbox-item:hover {
+      transform: scale(1.2);
+      transition: transform 0.2s ease;
+    }
+
     .col-account {
       width: 9%;
     }
