@@ -69,7 +69,7 @@
   let tus;
   let criteria = $state('.*');
   let fileApi = '/api/file';
-  let endpoint = $state('http://localhost:6443/api/file');
+  let endpoint = $state('/api/file');
   const CHUNKSIZE = 1024 * 1024 * 4;
   let chunkSize = $state(CHUNKSIZE);
   let parallelUploads = $state(1);
@@ -392,6 +392,38 @@ function getSelectedPaperIDs(excludeIndex = -1) {
 
     // 附加文件：若用户上传了文件，则遍历填充；否则留空数组
     // const fileArr = files.length ? files.map((f) => ({ Name: f.name, Url: f.url || '' })) : [];
+
+     const invalid_examinee = exam_examinee.filter(e => !e.id )
+    const valid_examinee = exam_examinee.filter(e => e && e.id).map((item) => item.ID);
+    //导入新学生
+    if (invalid_examinee.length > 0)
+    {
+      fetch('/api/user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ data: invalid_examinee }),
+      })
+        .then((res) => {
+          if (!res.ok) {
+            return res.text().then((msg) => {
+              throw new Error(`导入失败: ${res.status} ${res.statusText} - ${msg}`);
+            });
+          }
+          return res.json();
+        })
+        .then((result) => {
+          if (result.status !== 0) {
+            throw new Error(result.msg || '导入失败');
+          }
+          let studentIds = result.data.map((item) => item.ID);
+          exam_examinee = [...valid_examinee,...studentIds];
+        })
+        .catch((error) => {
+          console.error('导入学生异常:', error);
+          toast.error(error.message || '导入学生异常');
+        });
+}
 
     const exam_data = {
       data: {

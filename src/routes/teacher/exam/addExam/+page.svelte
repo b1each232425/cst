@@ -67,7 +67,7 @@
   let tus;
   let criteria = $state('.*');
   let fileApi = '/api/file';
-  let endpoint = $state('http://localhost:6443/api/file');
+  let endpoint = $state('/api/file');
   const CHUNKSIZE = 1024 * 1024 * 4;
   let chunkSize = $state(CHUNKSIZE);
   let parallelUploads = $state(1);
