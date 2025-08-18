@@ -21,10 +21,10 @@
   try {
     if (type === 'practice') {
       const context = getContext('practice');
-      contextData = context?.practiceData;
+      contextData = context; // 直接使用 context，包含 practiceData
     } else {
       const context = getContext('exam');
-      contextData = context?.examData;
+      contextData = context; // 直接使用 context，包含 examData
     }
   } catch {
     // Context 不存在时忽略
@@ -49,6 +49,7 @@
    * @returns {string[]} 区间段数组（从低到高）
    */
   function getScoreSegments(totalScore, columnCount) {
+    //切割总分
     const step = Math.floor(totalScore / columnCount);
     const segments = [];
 
@@ -95,14 +96,16 @@
       const src = json.data;               // 后端原始 data
       const isPractice = type === 'practice';
 
+      console.log('API 返回的原始数据:', { src, isPractice, type });
+
       distributionData = {
         // id / name 兼容两种场景
         id          : isPractice ? src.practice_id  : src.exam_id,
         name        : isPractice ? src.practice_name : src.exam_name,
 
-        // 练习时后端返回结构与考试一致，直接取第一条
+        // 修正练习数据的解析逻辑
         gradeDistribution: isPractice
-          ? (src.grade_distribution?.[0]?.score_distribution ?? [])
+          ? (src.grade_distribution ?? [])  // 练习直接使用分布数据数组
           : (src.grade_distribution ?? [])
             .map(s => ({
               exam_session_id : s.exam_session_id,
@@ -139,12 +142,27 @@
    * 更新系列数据
    */
   function updateSeriesData() {
-    console.log('updateSeriesData调用:', { type, currentPaperId, distributionData, papers });
+    console.log('updateSeriesData调用:', { type, currentPaperId, distributionData, papers, contextData });
     
     if (type === 'practice') {
       if (distributionData && distributionData.gradeDistribution) {
+        console.log('练习数据处理:', {
+          distributionData,
+          gradeDistribution: distributionData.gradeDistribution,
+          contextData: contextData?.practiceData,
+          totalScore: contextData?.practiceData?.totalScore
+        });
+        
         series_data = distributionData.gradeDistribution.slice().reverse();
-        xAxis_data = getScoreSegments(contextData?.totalScore || 100, columnNum);
+        // 使用 context 中的练习数据获取总分
+        const totalScore = contextData?.practiceData?.totalScore || 100;
+        xAxis_data = getScoreSegments(totalScore, columnNum);
+        
+        // console.log('练习图表数据设置:', { series_data, xAxis_data, totalScore });
+      } else {
+        // console.warn('练习缺少分布数据:', { distributionData });
+        series_data = [];
+        xAxis_data = [];
       }
     } else {
       // 考试类型
@@ -163,7 +181,7 @@
         
         // 如果没有选择试卷ID，使用第一个试卷
         const targetPaperId = currentPaperId || papers[0]?.id;
-        console.log('目标试卷ID:', targetPaperId);
+        // console.log('目标试卷ID:', targetPaperId);
         
         const selectedPaper = papers.find((paper) => paper.id == targetPaperId);
         const selectedSession = distributionData.gradeDistribution.find(
@@ -194,7 +212,7 @@
       }
     }
     
-    console.log('最终图表数据:', { series_data, xAxis_data });
+    // console.log('最终图表数据:', { series_data, xAxis_data });
   }
 
   /**
@@ -217,7 +235,6 @@
     }
     
     await getExamDistributionData();
-    // updateSeriesData() 已在 getExamDistributionData 的 finally 中调用
   });
 </script>
 
@@ -261,7 +278,7 @@
               {/if}
               <button 
                 onclick={() => {
-                  //onsole.log('手动更新数据');
+                  // console.log('手动更新数据');
                   updateSeriesData();
                 }}
               >
@@ -273,8 +290,11 @@
           <div class="bar-chart">
             {#each xAxis_data as category, index}
               {@const value = series_data[index] || 0}
+
               {@const maxValue = Math.max(...series_data)}
+              <!-- 柱子高度 -->
               {@const height = maxValue > 0 ? (value / maxValue) * 200 : 0}
+
 
               <div class="bar-item">
                 <div class="bar-wrapper">
@@ -294,9 +314,7 @@
 <style lang="scss" scoped>
   .chart-container {
     width: 100%;
-    height: 100%;
     min-width: 600px;
-    margin-bottom: 40px;
 
     .title {
       font-size: 22px;
