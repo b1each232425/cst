@@ -409,14 +409,12 @@
   // 用于处理之前已批改，但是之后被清除了分数（这时是不会保存批改的，因为没有不会保存未批改的题目的分数），这时需要在总览显示“未批阅”的状态
   // let has_unmarked = $state(-1);
 
-  // 练习，是否被批改过，防止过多的发送提交请求（练习时每次点击下一位就会提交）
-  let is_marked = $state(false);
-
   // 练习，记录同学是否批改完成
   let is_finished_correcting = $derived(
-    total_question === Array.isArray(marking_results)
-      ? marking_results.filter((mr) => mr.PracticeSubmissionID === current_student_info.PracticeSubmissionID).length
-      : 0,
+    total_question ===
+      (Array.isArray(marking_results)
+        ? marking_results.filter((mr) => mr.PracticeSubmissionID === current_student_info.PracticeSubmissionID).length
+        : 0),
   );
 
   function scrollToTop() {
@@ -463,7 +461,6 @@
       })
       .then((res) => {
         if (!res.status) {
-          is_marked = false;
           if (is_exam_mode) {
             toast.success('提交成功'); // 考试需要提示，练习是直接提交
             goBack();
@@ -616,7 +613,7 @@
     exam_session_id = Number(page.url.searchParams.get('exam_session_id'));
     practice_id = Number(page.url.searchParams.get('practice_id'));
 
-    // 都是空 || 都不是空
+    // 都是空 / NaN || 都不是空 / NaN
     if ((!exam_session_id && !practice_id) || (exam_session_id && practice_id)) {
       showDialog('danger'); // 报错，终止对改页面的操作
       return;
@@ -695,9 +692,6 @@
         });
     }
 
-    // 记录有批改过
-    is_marked = true;
-
     const temp_param = is_exam_mode
       ? { ExamineeID: current_student_info.ExamineeID, ExamSessionID: exam_session_id }
       : { PracticeSubmissionID: current_student_info.PracticeSubmissionID, PracticeID: practice_id };
@@ -739,6 +733,7 @@
           else marking_results.push(data);
 
           // 练习，批改好一个同学就直接提交
+          console.log(is_finished_correcting);
           if (!is_exam_mode && is_finished_correcting) submitCorrection();
         } else throw new Error(res.msg ?? '批改操作失败');
       })
