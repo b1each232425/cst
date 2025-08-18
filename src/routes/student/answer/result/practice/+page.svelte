@@ -340,7 +340,7 @@
       return;
     }
 
-    fetch(`/api/grade?category=practice&practiceID=${practice_id}`, {
+    fetch(`/api/grades?category=practice&practiceID=${practice_id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -369,8 +369,8 @@
         //    userID = data.data.student_id;
         //  if (!data.data.rank || !Array.isArray(data.data.rank) || data.data.rank.length === 0) throw new Error('rank 不能为空');
         //    rank = data.data.rank; // 排名信息
-        if (!data.data.exam_info) throw new Error('exam_info 不能为空'); // 考试信息
-        examInfo = data.data.exam_info;
+        if (!data.data.practiceInfo) throw new Error('practice_info 不能为空'); // 考试信息
+        examInfo = data.data.practiceInfo;
         //    if (!data.data.exam_session_info) throw new Error('exam_session_info 不能为空'); // 该场次的具体信息
         //     examSessionInfo = data.data.exam_session_info;
         //题目信息类
