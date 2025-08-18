@@ -31,10 +31,10 @@
    * 校验参数是否合法,以及做一些默认处理
    */
   const propsRules = {
-    type: { type: 'string', default: 'primary', check: (v) => TYPES.includes(v), message: `type必须是 ${TYPES.join(', ')} 之一` },
-    size: { type: 'string', default: 'middle', check: (v) => SIZES.includes(v), message: `size必须是 ${SIZES.join(', ')} 之一` },
-    them: { type: 'string', default: 'dark', check: (v) => THEMES.includes(v), message: `them必须是 ${THEMES.join(', ')} 之一` },
-    round: { type: 'boolean', default: false },
+    type: { type: ['string'], default: 'primary', check: (v) => TYPES.includes(v), message: `type必须是 ${TYPES.join(', ')} 之一` },
+    size: { type: ['string'], default: 'middle', check: (v) => SIZES.includes(v), message: `size必须是 ${SIZES.join(', ')} 之一` },
+    them: { type: ['string'], default: 'dark', check: (v) => THEMES.includes(v), message: `them必须是 ${THEMES.join(', ')} 之一` },
+    round: { type: ['boolean'], default: false },
   };
   const propMap = {
     type: { get: () => type, set: (v) => (type = v) },
