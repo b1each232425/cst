@@ -506,7 +506,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
             },
         body:JSON.stringify({data:
         {
-          exam_id: examID,
+          exam_id: Number(examID),
           name: file.name,
           size: file.size,
           checksum: file.checksum
@@ -685,7 +685,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
                 exam_type = examData.examInfo.Type;
                 exam_method = examData.examInfo.Mode;
                 examinee_ID = examData.examinee||[];
-                uploadedFileList = examData.examInfo.Files || [];
+                uploadedFileList = examData.files || [];
                 // invigilators = examData.invigilators.map(i => ({ id: i }));
                 paper_configs = examData.examSessions.map((s, idx) => {
                 
@@ -725,6 +725,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
           loading=false;
           checkShuffledMode();
           fetchSelectedStudents();
+          console.log("uploadfiles",uploadedFileList);
         })
     }
 
