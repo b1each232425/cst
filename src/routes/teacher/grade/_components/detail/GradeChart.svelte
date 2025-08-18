@@ -76,7 +76,7 @@
 
     const params = new URLSearchParams({
       category: type,
-      column_num,
+      columnNum:column_num,
       ...(type === 'practice' ? { practiceID: String(resource_id) } : { examID: String(resource_id) }),
     });
 
