@@ -128,9 +128,6 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     if (filter_status && filter_status !== 'all') params.status = filter_status;
     if (filter_create_time) {
       params.createTime = filter_create_time.getTime(); // 直接获取时间戳
-      // console.log('filter_create_time:', filter_create_time);
-      // console.log('filter_create_time.getTime():', filter_create_time.getTime());
-      // console.log('params.create_time:', params.create_time);
     }
     if (filter_role) {
       params.domain = filter_role;
@@ -288,6 +285,15 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     updateSelectAllState();
   }
 
+  // 处理行点击事件
+  function handleRowClick(event, userId) {
+    //防止事件继续传播
+    event.stopPropagation();
+    
+    // 调用现有的复选框切换逻辑
+    handleUserSelectChange(userId);
+  }
+
   //处理用户状态切换
   // function toggleStatus(id) {
   //   const user = users.find((s) => s.id === id);
@@ -362,10 +368,10 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   // }
 
   //处理移除按钮
-  function handleUnbind(id) {
-    const user = users.find((s) => s.id === id);
-    //TODO: 实现移除逻辑
-  }
+  // function handleUnbind(id) {
+  //   const user = users.find((s) => s.id === id);
+  //   //TODO: 实现移除逻辑
+  // }
 
   // //处理删除按钮
   // function handleDelete(id) {
@@ -533,13 +539,13 @@ o888o o888o   "888" o888o o888o o888o o888o
             <th class="col-role table-head">角色</th>
             <th class="col-creation table-head">创建时间</th>
             <th class="col-current-status table-head">当前状态</th>
-            <th class="col-actions table-head">操作</th>
+            <!-- <th class="col-actions table-head">操作</th> -->
           </tr>
         </thead>
         <tbody>
           {#each users as user (user.id)}
-            <tr class="table-row" data-id={user.id}>
-              <td class="col-checkbox">
+            <tr class="table-row" data-id={user.id} onclick={(e) => handleRowClick(e, user.id)}>
+              <td class="col-checkbox" onclick={(e) => e.stopPropagation()}>
                 <input
                   type="checkbox"
                   class="checkbox-item"
@@ -566,16 +572,16 @@ o888o o888o   "888" o888o o888o o888o o888o
                 </span>
               </td>
 
-              <td class="col-actions">
+              <!-- <td class="col-actions">
                 <div class="actions">
-                  <!-- <button class="btn-link btn-detail" onclick={() => handleDetail(user.id)}>详情</button>
+                  <button class="btn-link btn-detail" onclick={() => handleDetail(user.id)}>详情</button>
                   <button class="btn-link btn-edit" onclick={() => handleEdit(user.id)}>修改</button>
                   <button
                     class="btn-link {user.status === '02' ? 'btn-enable' : 'btn-disable'}"
                     onclick={() => toggleStatus(user.id)}
                   >
                     {user.status === '02' ? '启用' : '停用'}
-                  </button> -->
+                  </button>
                   <button
                     class="btn-link btn-unbind"
                     style="display: {user.has_relation ? 'inline-block' : 'none'}"
@@ -587,7 +593,7 @@ o888o o888o   "888" o888o o888o o888o o888o
                     onclick={() => handleDelete(user.id)}>删除</button
                   >
                 </div>
-              </td>
+              </td> -->
             </tr>
           {/each}
           <!-- 空页面 -->
@@ -910,9 +916,31 @@ o.  )88b   888 .    `888'     888  888    .o
       background-color: #ecf2fe;
     }
 
+    .table-row {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
     .col-checkbox {
       width: 3%;
     }
+
+    /* 复选框样式 */
+    .checkbox-all,
+    .checkbox-item {
+      width: 13px;
+      height: 13px;
+      cursor: pointer;
+      transform: scale(1.2);
+      accent-color: #1677ff; /* 设置复选框选中时的颜色 */
+    }
+
+    .checkbox-all:hover,
+    .checkbox-item:hover {
+      transform: scale(1.2);
+      transition: transform 0.2s ease;
+    }
+
     .col-account {
       width: 9%;
     }

@@ -41,11 +41,11 @@
    * @property {number} id - 考试ID
    * @property {string} title - 考试名称
    * @property {string} type - 考试类型
-   * @property {string} examTimeText - 多场考试时间汇总字符串
-   * @property {number} totalScore - 整场考试总分（可取首场试卷分值）
-   * @property {number} averageScore - 加权平均分
-   * @property {number} totalExaminees - 应考人数总和
-   * @property {number} passExaminees - 及格人数总和
+   * @property {string} exam_time_text - 多场考试时间汇总字符串
+   * @property {number} total_score - 整场考试总分（可取首场试卷分值）
+   * @property {number} average_score - 加权平均分
+   * @property {number} total_examinees - 应考人数总和
+   * @property {number} pass_examinees - 及格人数总和
    * @property {boolean} submitted - 是否提交
    * @property {PaperInfo[]} papers - 各试卷详情
    */
@@ -55,10 +55,11 @@
    * @property {number} id - 试卷ID(目前是考试场次ID)
    * @property {string} idText - 试卷编号文本，如 "试卷1"
    * @property {string} name - 试卷名称
-   * @property {number} actualExaminees - 实考人数
-   * @property {number} totalScore - 单张试卷总分
-   * @property {number} averageScore - 平均分
-   * @property {string} markMode - 批改模式
+   * @property {number} actual_examinees - 实考人数
+   * @property {number} total_score - 单张试卷总分
+   * @property {number} average_score - 平均分
+   * @property {number} pass_examinees - 通过人数
+   * @property {string} mark_mode - 批改模式
    */
 
   // 常量定义
@@ -93,7 +94,7 @@
    * @description 在获取到examId前不显示页面内容
    * @default false
    */
-  let isShow = $state(false);
+  let is_show = $state(false);
 
   // 设置上下文
   setContext('exam', {
@@ -154,41 +155,42 @@
     const sessions = raw.sessions || [];
 
     // 格式化考试时间文字
-    const examTimeText = formatExamTime(sessions);
+    const exam_time_text = formatExamTime(sessions);
 
     // 总应考人数
-    const totalExaminees = sessions.reduce((sum, s) => sum + (s.scheduled_examinees || 0), 0);
+    const total_examinees = sessions.reduce((sum, s) => sum + (s.scheduled_examinees || 0), 0);
 
-    const passExaminees = sessions.reduce((sum, s) => sum + (s.pass_examinees || 0), 0);
+    const pass_examinees = sessions.reduce((sum, s) => sum + (s.pass_examinees || 0), 0);
 
     // 总分，取每个试卷的分数之和
-    const totalScore = sessions.reduce((sum, s) => sum + (s.total_score || 0), 0);
+    const total_score = sessions.reduce((sum, s) => sum + (s.total_score || 0), 0);
 
     // 平均分：加权计算
     const totalActual = sessions.reduce((sum, s) => sum + (s.actual_examinees || 0), 0);
     const weightedTotalScore = sessions.reduce((sum, s) => sum + (s.average_score || 0) * (s.actual_examinees || 0), 0);
-    const averageScore = totalActual === 0 ? 0 : parseFloat((weightedTotalScore / totalActual).toFixed(1));
+    const average_score = totalActual === 0 ? 0 : parseFloat((weightedTotalScore / totalActual).toFixed(1));
 
     // 试卷详情
     const papers = sessions.map((s, i) => ({
       id: s.exam_session_id,
       idText: `试卷${i + 1}`,
       name: s.paper_name,
-      actualExaminees: s.actual_examinees || 0,
-      totalScore: s.total_score || 0,
-      averageScore: s.average_score || 0,
-      markMode: MARK_MODE_MAP[s.mark_mode] || s.mark_mode || '自动批改',
+      actual_examinees: s.actual_examinees || 0,
+      total_score: s.total_score || 0,
+      average_score: s.average_score || 0,
+      pass_examinees: s.pass_examinees || 0,
+      mark_mode: MARK_MODE_MAP[s.mark_mode] || s.mark_mode || '自动批改',
     }));
 
     return {
       id: raw.id,
       title: raw.name,
       type: EXAM_TYPE_MAP[raw.type] || raw.type || '其他考试',
-      examTimeText,
-      totalScore: totalScore,
-      averageScore,
-      totalExaminees,
-      passExaminees,
+      exam_time_text,
+      total_score,
+      average_score,
+      total_examinees,
+      pass_examinees,
       submitted: raw.submitted || false,
       papers,
     };
@@ -284,11 +286,11 @@
     // 获取考试数据
     examData = await fetchExamData(examId);
 
-    isShow = true;
+    is_show = true;
   });
 </script>
 
-{#if isShow}
+{#if is_show}
   <div class="page-container">
     <!-- 主要内容 -->
     <div class="detail-container">
@@ -299,13 +301,13 @@
         </section>
         <!-- 成绩分布图表 -->
         <section class="card chart-section">
-          <GradeChart type="exam" resourceId={examId} papers={examData?.papers || []} />
+          <GradeChart type="exam" resource_id={examId} papers={examData?.papers || []} />
         </section>
       </div>
       <div class="second-row">
         <!-- 学生成绩表格 -->
         <section class="card grade-section">
-          <StudentGradeTable type="exam" resourceId={examId} papers={examData?.papers || []} />
+          <StudentGradeTable type="exam" resource_id={examId} papers={examData?.papers || []} />
         </section>
       </div>
 
@@ -314,7 +316,7 @@
         <!-- <section class="card analysis-section">
 			<AnalysisPanel
 				type="exam"
-				resourceId={examId}
+				resource_id={examId}
 				papers={examData?.papers || []}
 			/>
 		</section> -->

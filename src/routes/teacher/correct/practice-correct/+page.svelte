@@ -350,6 +350,7 @@
               font-size: 0.9rem;
               text-align: center;
               vertical-align: middle;
+              padding: 0.5rem 0;
 
               &.manual {
                 color: green;

@@ -130,7 +130,10 @@ describe('QuestionGradingSection 组件测试', () => {
   });
 
   it('应将分数限制在最大可能值内', async () => {
-    const { getAllByPlaceholderText } = render(QuestionGradingSection, { props: BASE_PROPS });
+    const mockSave = vi.fn();
+    const { getAllByPlaceholderText } = render(QuestionGradingSection, {
+      props: { ...BASE_PROPS, onSaveMark: mockSave },
+    });
 
     const inputs = getAllByPlaceholderText('输入得分');
 
@@ -143,7 +146,10 @@ describe('QuestionGradingSection 组件测试', () => {
   });
 
   it('应阻止负分数输入', async () => {
-    const { getAllByPlaceholderText } = render(QuestionGradingSection, { props: BASE_PROPS });
+    const mockSave = vi.fn();
+    const { getAllByPlaceholderText } = render(QuestionGradingSection, {
+      props: { ...BASE_PROPS, onSaveMark: mockSave },
+    });
 
     const inputs = getAllByPlaceholderText('输入得分');
 

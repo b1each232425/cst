@@ -2,8 +2,8 @@
  /*
  * @Author: Mayux dbs45412@163.com
  * @Date: 2025-04-04 19:25:22
- * @LastEditors: myx dbs45412@163.com
- * @LastEditTime: 2025-04-08 17:30:52
+ * @LastEditors: 段春茂 2162105974@qq.com
+ * @LastEditTime:2025-08-17 2:28:07
  * @FilePath: src\lib\components\Tag\EditableTags.svelte
  * @Description: 可编辑的标签组件，用于对标签进行添加/删减
  * @Exported Methods: 
@@ -20,8 +20,11 @@
  */ 
  -->
 <script>
-  const DEFAULT_TAGS = ['默认标签'];
+  import { validateAndAssign } from '$lib/utils/validate';
 
+  /** 标签文字 @type {string[]} */
+  const DEFAULT_TAGS = ['默认标签'];
+  /** 标签颜色数组 @type {string[]} */
   const DEFAULT_COLORS = [
     '#40d5ff',
     '#59dcff',
@@ -67,12 +70,32 @@
     },
   } = $props();
 
-  //实际的标签数组
-  let tags = $state(original_tags);
-
   /**
-   * @type {string[]}
+   * 校验参数是否合法,以及做一些默认处理
    */
+  const propsRules = {
+    original_tags: { type: ['array'], default: DEFAULT_TAGS },
+    max_tags_num: { type: ['number'], default: 6, check: (num) => num > 0 },
+    max_tags_text_num: { type: ['number'], default: 20, check: (num) => num > 0 },
+    input_type: { type: ['string'], default: 'text' },
+    colors: { type: ['array'], default: DEFAULT_COLORS },
+    onInputChange: { type: ['function', 'asyncfunction'], default: () => {} },
+  };
+  const propMap = {
+    original_tags: { get: () => original_tags, set: (v) => (original_tags = v) },
+    max_tags_num: { get: () => max_tags_num, set: (v) => (max_tags_num = v) },
+    max_tags_text_num: { get: () => max_tags_text_num, set: (v) => (max_tags_text_num = v) },
+    input_type: { get: () => input_type, set: (v) => (input_type = v) },
+    colors: { get: () => colors, set: (v) => (colors = v) },
+    onInputChange: { get: () => onInputChange, set: (v) => (onInputChange = v) },
+  };
+  Object.keys(propMap).forEach((k) => {
+    validateAndAssign('EditableTags', propMap[k].get, propMap[k].set, propsRules[k], k);
+  });
+
+  /** 实际的标签数组 @type {string[]} */
+  let tags = $state(original_tags);
+  /** @type {string[]} */
   let value_tags = $state([]);
 
   //用于对标签数组进行处理后再显示
@@ -83,7 +106,7 @@
   let temp_tags = $derived(handleTagsArray(value_tags));
 
   /**
-   * Fisher-Yates 洗牌算法，打乱颜色数组
+   * @description Fisher-Yates 洗牌算法，打乱颜色数组
    * @param {string[]} array
    */
   function shuffleArray(array) {
@@ -98,7 +121,7 @@
   let shuffled_colors = shuffleArray(colors);
 
   /**
-   * 用于避免直接修改父组件传入的参数，将original_tags的副本作为将要显示的标签数组
+   * @description 用于避免直接修改父组件传入的参数，将original_tags的副本作为将要显示的标签数组
    * @param {string[]} tags_arr
    */
   function handleOriginalTagsArray(tags_arr) {
@@ -124,9 +147,6 @@
    */
   function handleTagsArray(tags_arr) {
     //拿到tags的值并清掉里面的空元素
-    if (tags_arr === null) {
-      return;
-    }
     let arr = tags_arr;
     arr = arr.filter((item) => item !== '' && item !== null && item !== undefined);
     let temporary_tags = arr;
@@ -151,8 +171,8 @@
     return arr;
   }
 
-  // 处理输入变化
   /**
+   * @description 处理输入变化
    * @param {number} index
    * @param {Event & { currentTarget: EventTarget & HTMLInputElement; }} event
    */
@@ -172,7 +192,7 @@
   }
 
   /**
-   * 删除标签
+   * @description 删除标签
    * @param {number} index
    */
   function removeTag(index) {
@@ -181,27 +201,16 @@
   }
 </script>
 
-{#snippet tagItem(/** @type {string} */ tag, /** @type {number} */ index)}
-  <div class="tag">
-    <span class="tag-square" style="background-color: {shuffled_colors[index % shuffled_colors.length]}"></span>
-    <input
-      type={input_type}
-      class="tag-input"
-      placeholder="+标签"
-      maxlength={max_tags_text_num}
-      bind:value={value_tags[index]}
-      oninput={(event) => handleInput(event, index)}
-    />
-    {#if tag.trim() !== ''}
-      <button class="delete-button" onclick={() => removeTag(index)}>×</button>
-    {/if}
-  </div>
-{/snippet}
-
 <div class="tags">
   {#if temp_tags}
     {#each temp_tags as tag, index}
-      {@render tagItem(tag, index)}
+      <div class="tag">
+        <span class="tag__square" style="background-color: {shuffled_colors[index % shuffled_colors.length]}"></span>
+        <input type={input_type} class="tag__input" placeholder="+标签" maxlength={max_tags_text_num} bind:value={value_tags[index]} oninput={(event) => handleInput(event, index)} />
+        {#if tag.trim() !== ''}
+          <button class="tag__clear" onclick={() => removeTag(index)}>×</button>
+        {/if}
+      </div>
     {/each}
   {/if}
 </div>
@@ -229,54 +238,53 @@
     display: flex;
     gap: $tags-gap;
     flex-wrap: $tags-flex-wrap;
-  }
 
-  .tag {
-    display: flex;
-    align-items: center;
-    background: white;
-    width: $tag-width;
-    height: $tag-height;
-  }
+    .tag {
+      display: flex;
+      align-items: center;
+      background: white;
+      width: $tag-width;
+      height: $tag-height;
 
-  .tag-square {
-    width: $tag-icon-width;
-    height: $tag-icon-height;
-    background-color: #38bdf8;
-    margin-right: 5px;
-  }
+      &__square {
+        width: $tag-icon-width;
+        height: $tag-icon-height;
+        background-color: #38bdf8;
+        margin-right: 5px;
+      }
 
-  .tag-input {
-    border: none;
-    outline: none;
-    font-size: 14px;
-    width: $tag-input-width;
-    background: transparent;
-    color: #797979;
-    transition:
-      color 0.3s,
-      border-bottom 0.3s; /* 添加过渡效果 */
-    border-bottom: 1px solid transparent; /* 默认状态下底部没有线 */
-    padding: 0 2px 0 2px;
-  }
+      &__input {
+        border: none;
+        outline: none;
+        font-size: 14px;
+        width: $tag-input-width;
+        background: transparent;
+        color: #797979;
+        transition:
+          color 0.3s,
+          border-bottom 0.3s; /* 添加过渡效果 */
+        border-bottom: 1px solid transparent; /* 默认状态下底部没有线 */
+        padding: 0 2px 0 2px;
 
-  .tag-input:hover {
-    color: #000000;
-    border-bottom: 1px solid #0336ff;
-  }
+        &:hover {
+          color: #000000;
+          border-bottom: 1px solid #0336ff;
+        }
+        &::placeholder {
+          color: #aaa;
+        }
+      }
 
-  .tag-input::placeholder {
-    color: #aaa;
-  }
-
-  .delete-button {
-    display: flex;
-    justify-content: center;
-    background: none;
-    border: none;
-    color: rgba($color: #797979, $alpha: 0.9);
-    font-size: 18px;
-    padding: 2px 0 0 0;
-    cursor: pointer;
+      &__clear {
+        display: flex;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: rgba($color: #797979, $alpha: 0.9);
+        font-size: 18px;
+        padding: 2px 0 0 0;
+        cursor: pointer;
+      }
+    }
   }
 </style>

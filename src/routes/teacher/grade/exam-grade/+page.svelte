@@ -405,9 +405,15 @@
                     <td class="exam-name">{exam.name}</td>
                     <td class="exam-type">{exam.type === '00' ? '平时考试' : '资格证考试'}</td>
                     <td class="exam-sessions">
-                      {#each exam.sessions as session (session.exam_session_id)}
-                        <div class="session-item">{session.paper_name}</div>
-                      {/each}
+                      {#if exam.sessions && exam.sessions.length > 0}
+                        {#each exam.sessions as session (session.exam_session_id)}
+                          <div class="session-item">
+                            {session.paper_name || '-'}
+                          </div>
+                        {/each}
+                      {:else}
+                        -
+                      {/if}
                     </td>
                     <td class="exam-time">
                       {#if exam.sessions && exam.sessions.length > 0}
@@ -424,35 +430,59 @@
                       {/if}
                     </td>
                     <td class="exam-total-score">
-                      {exam.sessions && exam.sessions.length > 0 && exam.sessions.every((s) => s.total_score != null)
-                        ? exam.sessions.reduce((acc, s) => acc + Number(s.total_score), 0)
-                        : '-'}
+                      {#if exam.sessions && exam.sessions.length > 0}
+                        {#each exam.sessions as session (session.exam_session_id)}
+                          <div class="session-item">
+                            {session.total_score != null ? session.total_score : '-'}
+                          </div>
+                        {/each}
+                      {:else}
+                        -
+                      {/if}
                     </td>
                     <td class="exam-average-score">
-                      {exam.sessions && exam.sessions.length > 0 && exam.sessions.every((s) => s.average_score != null)
-                        ? (
-                            exam.sessions.reduce((acc, s) => acc + Number(s.average_score), 0) / exam.sessions.length
-                          ).toFixed(1)
-                        : '-'}
+                      {#if exam.sessions && exam.sessions.length > 0}
+                        {#each exam.sessions as session (session.exam_session_id)}
+                          <div class="session-item">
+                            {session.average_score != null ? Number(session.average_score).toFixed(1) : '-'}
+                          </div>
+                        {/each}
+                      {:else}
+                        -
+                      {/if}
                     </td>
                     <td class="exam-scheduled-examinees">
-                      {exam.sessions &&
-                      exam.sessions.length > 0 &&
-                      exam.sessions.every((s) => s.scheduled_examinees != null)
-                        ? exam.sessions.reduce((acc, s) => acc + s.scheduled_examinees, 0)
-                        : '-'}
+                      {#if exam.sessions && exam.sessions.length > 0}
+                        {#each exam.sessions as session (session.exam_session_id)}
+                          <div class="session-item">
+                            {session.scheduled_examinees != null ? session.scheduled_examinees : '-'}
+                          </div>
+                        {/each}
+                      {:else}
+                        -
+                      {/if}
                     </td>
                     <td class="exam-actual-examinees">
-                      {exam.sessions &&
-                      exam.sessions.length > 0 &&
-                      exam.sessions.every((s) => s.actual_examinees != null)
-                        ? exam.sessions.reduce((acc, s) => acc + s.actual_examinees, 0)
-                        : '-'}
+                      {#if exam.sessions && exam.sessions.length > 0}
+                        {#each exam.sessions as session (session.exam_session_id)}
+                          <div class="session-item">
+                            {session.actual_examinees != null ? session.actual_examinees : '-'}
+                          </div>
+                        {/each}
+                      {:else}
+                        -
+                      {/if}
                     </td>
                     <td class="exam-pass-examinees">
-                      {exam.sessions && exam.sessions.length > 0 && exam.sessions.every((s) => s.pass_examinees != null)
-                        ? exam.sessions.reduce((acc, s) => acc + s.pass_examinees, 0)
-                        : '-'}
+                      {#if exam.sessions && exam.sessions.length > 0}
+                        {#each exam.sessions as session (session.exam_session_id)}
+                          <div class="session-item">
+                            {session.pass_examinees != null ? session.pass_examinees : '-'}
+                          </div>
+                        {/each}
+                      {:else}
+                        -
+                      {/if}
                     </td>
                     <td class="exam-submitted" class:submitted={exam.submitted} class:not-submitted={!exam.submitted}>
                       {exam.submitted === null || exam.submitted === undefined
@@ -768,6 +798,16 @@
     margin-bottom: 2px;
     font-size: 14px;
     line-height: 1.4;
+    padding: 1px 0;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    /* 当只有一个场次时不显示间距 */
+    &:only-child {
+      margin-bottom: 0;
+    }
   }
 
   /* 提交状态样式 */

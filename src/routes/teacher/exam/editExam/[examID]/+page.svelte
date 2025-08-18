@@ -1,3 +1,12 @@
+<!--
+ * @Author: yeweixuan t051521@163.com
+ * @Date: 2025-07-27 
+ * @LastEditors: yeweixuan t051521@163.com
+ * @LastEditTime: 2025-8-18 
+ * @FilePath: \exam\src\routes\teacher\exam\editExam\[examID]\+page@.svelte
+ * @Description: 继续编辑考试页面
+ * @Copyright (c) 2025 by yeweixuan t051521@163.com, All Rights Reserved. 
+-->
 <script>
   //@ts-nocheck
   import { goto } from '$app/navigation';
@@ -14,6 +23,8 @@
   import { page } from '$app/stores';
   import Loading from '$lib/components/Loading/Loading.svelte';
   import { onChooseStartTime, onChooseEndTime,updateDuration } from '../../_utils/createExam';
+  import { createXXHash64 } from 'hash-wasm';
+  import { filesize } from 'filesize';
   const TIP_TEXT = {
     final_exam: '当一门考试的考试性质为期末成绩考试时，它将决定学生在此课程的最终期末成绩',
     qualifying_exams: '当一门考试是资格证考试时，学生需要以真实身份进入考试',
@@ -64,7 +75,118 @@
     },
     menuBarExcludeKeys: ['attachment', 'audio', 'image', 'video'],
   };
+  let tus;
+  let criteria = $state('.*');
+  let fileApi = '/api/file';
+  let endpoint = $state('/api/file');
+  const CHUNKSIZE = 1024 * 1024 * 4;
+  let chunkSize = $state(CHUNKSIZE);
+  let parallelUploads = $state(1);
+  let jobs = $state(new Map());
+  let uploadedFiles = $state([]);
+  let selectedFiles = $state();
+	let clearSelectedFiles = () => {
+		selectedFiles = new DataTransfer().files;
+	};
+  let queryFiles = () => {
+		let v = encodeURIComponent(criteria);
+		fetch(fileApi + `/nonexistence?q=${v}`)
+			.then((v) => {
+				let size = v.headers.get('content-length');
+				if (!v || size === '0') {
+					return [];
+				}
 
+				return v.json();
+			})
+			.then((v) => {
+				if (!v || v.length == 0) {
+					console.log('empty file list');
+					return;
+				}
+
+				let d = [];
+				for (let i = 0; i < v.length; i++) {
+					let metadata = v[i].MetaData;
+
+					// metadata.full = v[i];
+					metadata.url = `${fileApi}/${v[i].ID}`;
+					if (!metadata.filename) {
+						metadata.filename = v[i].ID;
+					}
+
+					if (!metadata.filesize) {
+						metadata.filesize = v[i].Size;
+					}
+
+					if (!metadata.checksum) {
+						metadata.checksum = v[i].ID;
+					}
+
+					d.push(metadata);
+				}
+				uploadedFiles = d;
+			})
+			.catch((err) => {
+				console.log(err);
+			});
+	};
+  let fastdigest = (job) => {
+		return new Promise(async (resolve, reject) => {
+			if (!job || !job.file) {
+				reject('invalid/null job');
+				return;
+			}
+
+			let md = await createXXHash64();
+			md.init();
+
+			let fileReader = new FileReader();
+
+			let read = 0;
+			fileReader.onload = (e) => {
+				if (!e || !e.target || !e.target.result) {
+					let err = new Error('invalid event.target.result');
+					console.log(err);
+					jobs.delete(job.id);
+					reject(err);
+					return;
+				}
+
+				read += e.target.result.byteLength;
+				let buf = new Uint8Array(e.target.result);
+				md.update(buf);
+				seek();
+			};
+
+			let fileSize = job.file.size;
+			let start = 0,
+				end = 0;
+
+			let seek = () => {
+				let now = new Date();
+				job.sumPerformance =
+					(((read * 1.0) / (now.getTime() - beginTime.getTime())) * 1000) / (1024 * 1024);
+
+				job.sumProgress = (((read * 1.0) / fileSize) * 100).toFixed(2);
+				if (read >= fileSize) {
+					let hex = md.digest();
+					resolve(hex);
+					return;
+				}
+
+				end += CHUNKSIZE;
+				end = end < fileSize ? end : fileSize + 1;
+				let slice = job.file.slice(start, end);
+
+				fileReader.readAsArrayBuffer(slice);
+				start = end;
+			};
+
+			let beginTime = new Date();
+			seek();
+		});
+	};
   let examID=$state('');
   //考试名称
   let exam_name = $state('');
@@ -77,7 +199,7 @@
   let exam_examinee = $state([]);
   //考生数量
   let examineeNum = $derived(exam_examinee.length);
-  let files = $state([]); // 附件
+  let uploadedFileList = $state([]); // 附件
   let RichTextEditor; //富文本编辑器
   let exam_rooms = $state([]); //考试场地
   let invigilators = $state([]); //监考人员
@@ -280,6 +402,38 @@ function getSelectedPaperIDs(excludeIndex = -1) {
     // 附加文件：若用户上传了文件，则遍历填充；否则留空数组
     // const fileArr = files.length ? files.map((f) => ({ Name: f.name, Url: f.url || '' })) : [];
 
+     const invalid_examinee = exam_examinee.filter(e => !e.id )
+    const valid_examinee = exam_examinee.filter(e => e && e.id).map((item) => item.ID);
+    //导入新学生
+    if (invalid_examinee.length > 0)
+    {
+      fetch('/api/user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ data: invalid_examinee }),
+      })
+        .then((res) => {
+          if (!res.ok) {
+            return res.text().then((msg) => {
+              throw new Error(`导入失败: ${res.status} ${res.statusText} - ${msg}`);
+            });
+          }
+          return res.json();
+        })
+        .then((result) => {
+          if (result.status !== 0) {
+            throw new Error(result.msg || '导入失败');
+          }
+          let studentIds = result.data.map((item) => item.ID);
+          exam_examinee = [...valid_examinee,...studentIds];
+        })
+        .catch((error) => {
+          console.error('导入学生异常:', error);
+          toast.error(error.message || '导入学生异常');
+        });
+}
+
     const exam_data = {
       data: {
         examInfo: {
@@ -288,8 +442,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
           Rules: exam_rules,
           Type: exam_type,
           Mode: exam_method,
-          Files:[]
-          // Files: fileArr,
+          Files:uploadedFileList, // 附件列表
         },
         examSessions: examSessionsdata,
         examinee: exam_examinee.map((e) => e.id ?? e), // 用户选中的考生 id 数组
@@ -338,6 +491,181 @@ function getSelectedPaperIDs(excludeIndex = -1) {
     }
   }
 
+  function tusInit() {
+		if (!tus || !tus.isSupported) {
+			console.log('tus unsupported');
+			return;
+		}
+	}
+  async function deleteFiles(file) {
+    fetch(`/api/exam/file`,{
+      method:"DELETE",
+        credentials: "include",
+        headers: {
+                "Content-Type": "application/json",
+            },
+        body:JSON.stringify({data:
+        {
+          exam_id: examID,
+          name: file.name,
+          size: file.size,
+          checksum: file.checksum
+        }
+      })
+  })
+  .then((res) => res.json())
+  .then((result) => {
+    if (result.status === 0) {
+      toast.success("删除成功");
+      uploadedFileList = uploadedFileList.filter(f => f.checksum !== file.checksum);
+    } else {
+      toast.warning("删除失败：" + result.msg);
+    }
+  })
+  .catch((err) => {
+    console.error(err);
+    toast.error("删除失败，未知错误");
+  });
+  }
+
+  async function uploadFiles(files = selectedFiles){
+    let promises = [];
+    for (let i = 0; i < files.length; i++) {
+			const file = files[i];
+			if (!file) {
+				continue;
+			}
+
+			let id = `${file.name}#${file.size}#${file.lastModified}`;
+			let job = { id, file };
+			jobs.set(id, job);
+
+			const p = singles(job);
+			promises.push(p);
+		}
+		let results;
+		try {
+			// var results: [job]
+			// job:{ID,file,url}
+			results = await Promise.all(promises);
+			results.forEach((e) => {
+				console.log(`download: ${e.file.name}: ${e.url}`);
+			});
+		} catch (err) {
+			console.log(err);
+		}
+
+		
+		queryFiles();
+    console.log("result",results);
+    for (const r of results) {
+    await fetch('/api/exam/file', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        data: {
+          exam_id: Number(examID),
+          checksum: r.checksum,
+          name: r.file.name,
+          size: r.file.size
+        }
+      })
+    })
+    .then((response) => response.json())
+    .then((result) => {
+        if(result.status !== 0)
+        {
+          toast.warning('上传出错:',result.msg);
+        }
+        else{
+          uploadedFileList = [
+        ...uploadedFileList,
+        {
+          name: r.file.name,
+          size: r.file.size,
+          checksum: r.checksum,
+          // url: r.url || `${fileApi}/${r.checksum}` // 可选：下载地址
+        }
+      ];
+          console.log("uploadedFileList",uploadedFileList);
+          reset();
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error('未知错误');
+      });
+  }
+	}
+
+  function encodeMetadata(metadata) {
+    const encodedPairs = [];
+    for (const [key, value] of Object.entries(metadata)) {
+        const encodedValue = btoa(unescape(encodeURIComponent(String(value))));
+        encodedPairs.push(`${key} ${encodedValue}`);
+    }
+    return encodedPairs.join(',');
+}
+
+  async function singles(job) {
+		return new Promise(async (resolve, reject) => {
+			if (!job || !job.file) {
+				reject('invalid/null job');
+				return;
+			}
+
+			job.checksum = await fastdigest(job);
+			let metadata = {
+				filename: job.file.name,
+				filetype: job.file.type,
+				filesize: job.file.size,
+				lastModified: job.file.lastModified,
+				checksum: job.checksum,
+			};
+
+			const encodedMetadata = encodeMetadata(metadata);
+			let v = encodeURIComponent(encodedMetadata);
+			// console.log(v);
+			const tusOptions = {
+				endpoint: `${endpoint}?metadata=${v}`,
+				chunkSize,
+				retryDelays: [0, 1000, 3000, 5000],
+				parallelUploads,
+				metadata,
+				onUploadUrlAvailable() {
+					job.url = job.tus.url;
+				},
+				onError(error) {
+					console.log(error);
+					reject(error);
+				},
+				onProgress(bytesUploaded, bytesTotal) {
+					job.transmitPercentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+					job.bytesUploaded = bytesUploaded;
+					job.bytesTotal = bytesTotal;
+				},
+				onSuccess(resp) {
+					// let x = resp.lastResponse._xhr;
+					// let msg = `上传成功`;
+					// if (x.status === 208) {
+					// 	msg = '文件已经在服务器上了';
+					// }
+					// console.log(`${metadata.filename} ${msg}(${x.status}): ${job.url}`);
+
+					resolve(job);
+				},
+			};
+      console.log(tusOptions);
+			job.tus = new tus.Upload(job.file, tusOptions);
+			job.tus.start();
+		});
+	}
+
+	function reset() {
+		clearSelectedFiles();
+	}
+
   async function fetchExamInfo() {
         //const examSessionsdata
         fetch(`/api/exam?exam_id=${examID}`,{
@@ -357,6 +685,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
                 exam_type = examData.examInfo.Type;
                 exam_method = examData.examInfo.Mode;
                 examinee_ID = examData.examinee||[];
+                uploadedFileList = examData.examInfo.Files || [];
                 // invigilators = examData.invigilators.map(i => ({ id: i }));
                 paper_configs = examData.examSessions.map((s, idx) => {
                 
@@ -419,13 +748,14 @@ function getSelectedPaperIDs(excludeIndex = -1) {
            console.log(data);
         })
       }
-
+  
     onMount(async()=>{
-
         page.subscribe(value => {
         examID = value.params.examID;
     });
-         
+         tus= await import('tus-js-client');
+        tusInit();
+        queryFiles();
          await fetchExamInfo();
     })
 
@@ -574,6 +904,48 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         </div>
       </div>
     </div>
+
+    <div class = "file-container">
+      <RequiredLabel text="考试说明" colon={false} Asterisk={false} />
+      <div class = "file-button-container">
+
+        <label class="file-upload-label">
+          <Button
+            plain={true}
+            type="primary"
+            size="small"
+          >
+            上传文件
+          </Button>
+          <input
+            class="file-input-hidden"
+            type="file"
+            multiple
+            bind:files={selectedFiles}
+            onchange={() => uploadFiles()}
+          />
+      </label>
+
+      
+    </div>
+
+       </div>
+       
+       <div class="fileListContainer {uploadedFileList.length===0 ? 'hideButton' :' '}">
+      <RequiredLabel text="附件列表" Asterisk={false} colon = {false}></RequiredLabel>
+          <div class="file-list-wrapper">
+              <ul class="file-list">
+                {#each uploadedFileList as file, idx (file.checksum)}
+                  <li class="file-item">
+                    <div class="file-info">
+                      <span class="file-name" title={file.name}>{file.name}</span>
+                    </div>
+                    <Button plain={true}  type="danger" size="medium" onclick={() => deleteFiles(file)}>删除</Button>
+                  </li>
+                {/each}
+              </ul>
+          </div>
+      </div>
 
     <div class="bottom-action-panel-fixed">
       <button
@@ -981,7 +1353,9 @@ function getSelectedPaperIDs(excludeIndex = -1) {
       .exam-type-choose-container,
       .paper-configs-container,
       .total-duration-container,
-      .examinee-container {
+      .examinee-container,
+      .file-container,
+      .fileListContainer {
         display: grid;
         grid-template-columns: auto 1fr;
         // margin-left:15%;
@@ -1220,5 +1594,110 @@ function getSelectedPaperIDs(excludeIndex = -1) {
       background-color: #f5f5f5;
       color: #c0c4cc;
     }
+  }
+
+  .examinee-number-container {
+    font-size: 14px;
+    padding-top:4px;
+  }
+
+  .file-button{
+    color:var(--blue);
+  }
+
+  .file-upload-label {
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+}
+
+.file-input-hidden {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-list-wrapper {
+    margin-top: 8px;
+    max-width: 360px;
+  }
+
+  .file-empty-tip {
+    color: #999;
+    font-size: 14px;
+  }
+
+  .file-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--blue);
+    border-radius: 6px;
+    transition: background 0.2s;
+    max-width: 250px;
+  }
+
+  .file-item:hover {
+    background: var(--bg-primary);
+  }
+
+  .file-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .file-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .file-name {
+    font-size: 14px;
+    color: var(--blue);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-size {
+    font-size: 12px;
+    color: #656d76;
+  }
+
+  .file-del {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 2px;
+    line-height: 0;
+  }
+
+  .file-del img {
+    width: 14px;
+    height: 14px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+
+  .file-del:hover img {
+    opacity: 1;
   }
 </style>
