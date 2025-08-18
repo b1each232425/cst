@@ -520,15 +520,13 @@
       })
         .then((res) => {
           if (!res.ok) {
-            return res.text().then((msg) => {
-              throw new Error(`导入失败: ${res.status} ${res.statusText} - ${msg}`);
-            });
+            throw new Error('导入失败');
           }
           return res.json();
         })
         .then((result) => {
           if (result.status !== 0) {
-            throw new Error(result.msg || '导入失败');
+            throw new Error( '导入失败');
           }
           console.log('333333',selectedStudentIds)
           //获取新增之后的学生ID
@@ -955,6 +953,7 @@
     </div>
     <div class="pagination-container" data-testid="pagination-container">
       <Pagination
+      class="pagination-container"
         total_items={total_data_num}
         page_size={data_per_page}
         current_page={current_page_num}
@@ -1006,6 +1005,7 @@
 
   <!-- 学生选择面板 -->
   <StudentSelectionPanel
+ 
     show_panel={show_student_selectionPanel}
     ids={selectedStudentIds.map(item=>({
       ID : item.id,

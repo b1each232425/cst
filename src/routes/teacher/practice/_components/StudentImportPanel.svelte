@@ -118,7 +118,7 @@
               invalidUsers.forEach((user)=>{
                 if(item['姓名']=== user.OfficialName&&item['手机号']===user.MobilePhone&&item['身份证号']===user.IDCardNo){
                   item.errorType = user.ErrorMsg.toString()
-                  item.isOk=false
+                  item.isOk=false 
                 }
               })
             })
@@ -140,6 +140,7 @@
               mobilePhone: item['手机号'],
               idCardNo: item['身份证号'],
               serial_number: item['编号'],
+              IDCardType: '居民身份证',
               errorMsg: item.errorType,
               isOk: item.isOk,
               Domains: ['cst.school^student']

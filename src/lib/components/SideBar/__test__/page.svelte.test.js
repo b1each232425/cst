@@ -64,6 +64,12 @@ describe('Sidebar 侧边栏组件测试', () => {
     // 在每个测试前，清空所有的模拟
     vi.restoreAllMocks();
 
+    // 清除localStorage中的测试数据
+    localStorage.clear();
+
+    // 重置DOM
+    document.body.innerHTML = '';
+
     // 模拟API数据
     global.fetch = vi.fn();
     fetch.mockResolvedValueOnce({
@@ -598,6 +604,8 @@ describe('Sidebar 侧边栏组件测试', () => {
     // 获取DOM元素
     const sidebar = screen.getByTestId('sidebar-content');
     const container = screen.getByTestId('sidebar-container');
+
+    await screen.findByTitle('收起侧边栏');
     const toggleBtn = screen.getByTitle('收起侧边栏');
 
     // 初始折叠侧边栏
@@ -638,6 +646,7 @@ describe('Sidebar 侧边栏组件测试', () => {
     // 获取DOM元素
     const sidebar = screen.getByTestId('sidebar-content');
     const container = screen.getByTestId('sidebar-container');
+    await screen.findByTitle('收起侧边栏');
     const toggleBtn = screen.getByTitle('收起侧边栏');
 
     // 初始折叠侧边栏
@@ -732,6 +741,7 @@ describe('Sidebar 侧边栏组件测试', () => {
     // 获取DOM元素
     const sidebar = screen.getByTestId('sidebar-content');
     const container = screen.getByTestId('sidebar-container');
+    await screen.findByTitle('收起侧边栏');
     const toggleBtn = screen.getByTitle('收起侧边栏');
 
     // 初始折叠侧边栏
@@ -800,6 +810,7 @@ describe('Sidebar 侧边栏组件测试', () => {
     // 获取DOM元素
     const sidebar = screen.getByTestId('sidebar-content');
     const container = screen.getByTestId('sidebar-container');
+    await screen.findByTitle('收起侧边栏');
     const toggleBtn = screen.getByTitle('收起侧边栏');
 
     // 验证初始折叠状态
@@ -833,6 +844,7 @@ describe('Sidebar 侧边栏组件测试', () => {
   it('应处理跳转到特定页面侧边栏自动收起', async () => {
     render(Sidebar);
     await screen.findByText('题库管理');
+    await screen.findByTitle('收起侧边栏');
 
     // 模拟从理论题库管理页面跳转到编辑题库页面
     triggerBeforeNavigate('/teacher/question-bank/theory', '/teacher/question-bank/theory/editBank');
@@ -855,6 +867,62 @@ describe('Sidebar 侧边栏组件测试', () => {
     // 验证折叠状态
     expect(sidebar).not.toHaveClass('folded');
     expect(sidebar).not.toHaveClass('float');
+  });
+
+  it('当侧边栏展开过程中应正确处理鼠标进入事件', async () => {
+    render(Sidebar);
+    vi.useFakeTimers();
+
+    const sidebar = screen.getByTestId('sidebar-content');
+    const container = screen.getByTestId('sidebar-container');
+
+    // 折叠侧边栏
+    await screen.findByTitle('收起侧边栏');
+    fireEvent.click(screen.getByTitle('收起侧边栏'));
+    fireEvent.transitionEnd(sidebar);
+
+    // 确认已折叠
+    expect(sidebar).toHaveClass('folded');
+
+    // 鼠标进入侧边栏
+    fireEvent.mouseEnter(container);
+
+    // 展开侧边栏
+    fireEvent.click(screen.getByTitle('展开侧边栏'));
+
+    vi.advanceTimersByTime(600);
+
+    // 鼠标进入侧边栏
+    fireEvent.mouseEnter(container);
+
+    expect(sidebar).not.toHaveClass('float');
+
+    vi.useRealTimers();
+  });
+
+  it('应正确从localStorage恢复刷新后的状态', async () => {
+    // 直接预设localStorage状态（模拟刷新前保存的状态）
+    localStorage.setItem('sidebar_fold_state', 'true');
+    localStorage.setItem('is_auto_fold', 'false');
+    localStorage.setItem('sidebar_is_folded', 'true');
+    localStorage.setItem('sidebar_is_folding', 'false');
+    localStorage.setItem('sidebar_fold_str', '展开侧边栏');
+
+    // 渲染组件（模拟页面刷新后加载）
+    let { sb } = render(Sidebar);
+
+    fireEvent.transitionEnd(await screen.findByTitle('展开侧边栏'));
+
+    // 验证状态是否正确恢复
+    const sidebar = await screen.findByTestId('sidebar-content');
+    expect(sidebar).toHaveClass('folded');
+
+    // 验证折叠按钮状态
+    const toggleBtn = await screen.findByTitle('展开侧边栏');
+    expect(toggleBtn).toBeInTheDocument();
+
+    // 验证其相关状态
+    expect(localStorage.getItem('sidebar_fold_state')).toBe('true');
   });
 
   it('应处理获取用户信息失败的情况', async () => {
@@ -900,35 +968,5 @@ describe('Sidebar 侧边栏组件测试', () => {
     });
 
     expect(screen.queryByText('题库管理')).not.toBeInTheDocument();
-  });
-
-  it('当侧边栏展开过程中应正确处理鼠标进入事件', async () => {
-    render(Sidebar);
-    vi.useFakeTimers();
-
-    const sidebar = screen.getByTestId('sidebar-content');
-    const container = screen.getByTestId('sidebar-container');
-
-    // 折叠侧边栏
-    fireEvent.click(screen.getByTitle('收起侧边栏'));
-    fireEvent.transitionEnd(sidebar);
-
-    // 确认已折叠
-    expect(sidebar).toHaveClass('folded');
-
-    // 鼠标进入侧边栏
-    fireEvent.mouseEnter(container);
-
-    // 展开侧边栏
-    fireEvent.click(screen.getByTitle('展开侧边栏'));
-
-    vi.advanceTimersByTime(600);
-
-    // 鼠标进入侧边栏
-    fireEvent.mouseEnter(container);
-
-    expect(sidebar).not.toHaveClass('float');
-
-    vi.useRealTimers();
   });
 });

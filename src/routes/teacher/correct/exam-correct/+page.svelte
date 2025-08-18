@@ -594,6 +594,7 @@
               text-align: center;
               vertical-align: middle;
               padding: 5px 0;
+              padding: 0.5rem 0;
 
               .stack {
                 display: flex;
