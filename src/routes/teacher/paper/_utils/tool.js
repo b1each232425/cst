@@ -52,3 +52,37 @@ export const DIFFICULTY_TRANS = {
     "中等": "normal-level",
     "困难": "hard-level"
 };
+
+/**
+ * @description: 以UTF-8字符为单位限制输入字符长度
+ * @example: <input use:utf8MaxLength={10} bind:value />
+ */
+export function utf8MaxLength(node, maxBytes) {
+    function handleInput(e) {
+        const value = e.target.value;
+
+        if (new TextEncoder().encode(value).length > maxBytes) {
+        // 超出字节限制时，找到合法的子串
+        let valid = value;
+        while (new TextEncoder().encode(valid).length > maxBytes) {
+            valid = valid.slice(0, -1); // 从后删一个字符
+        }
+        e.target.value = valid;
+
+        // 触发 input 事件，保证绑定的值同步更新
+        node.dispatchEvent(new Event("input"));
+        }
+    }
+
+    node.addEventListener("input", handleInput);
+
+    return {
+        update(newMaxBytes) {
+        maxBytes = newMaxBytes;
+        },
+        destroy() {
+        node.removeEventListener("input", handleInput);
+        }
+    };
+}
+  
