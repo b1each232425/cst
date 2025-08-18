@@ -17,13 +17,13 @@
     import "$lib/components/Button/index.scss"
     import "$lib/components/Input/index.scss"
     import { goto } from "$app/navigation";
-    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS } from "../_utils/tool";
+    import { DIFFICULTY_TRANS, QUESTION_TYPE_TRANS, utf8MaxLength } from "../_utils/tool";
     import { onMount, tick } from "svelte";
     import { toast } from "$lib/components/Toast/Toast";
     import { get } from "svelte/store";
     import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, GROUP_AVERAGE_SCORE } from "../_stores/store";
     import { stopPropagation } from "svelte/legacy";
-  import { debounce } from "$lib/utils/optimize";
+    import { debounce } from "$lib/utils/optimize";
 
     /******************* API 区 ********************/
 
@@ -375,9 +375,11 @@
         to_edit_group.focus();
     }
 
+    let is_cancelling_edit_group_name = $state(false);
+
     // 确认编辑题组名称
     function confirmEditGroupName() {
-        if(event.key === "Enter" && to_edit_group_name.trim() !== "") {
+        if(!is_cancelling_edit_group_name && to_edit_group_name.trim() !== "") {
 
             to_edit_group.blur();
 
@@ -402,6 +404,14 @@
                         });
                 });
         }
+    }
+
+    // 取消编辑题组名称
+    function cancelEditGroupName() {
+        is_cancelling_edit_group_name = true;
+        to_edit_groupID = null;
+        to_edit_group_name = "";
+        is_cancelling_edit_group_name = false;
     }
 
     // 删除题目
@@ -470,6 +480,29 @@
                     clearGroupAverageScore(group);
                 }
             });
+        }
+        
+        // 自动展开新导入的题目和目标题组
+        if (updatedGroups && updatedGroups.length > 0) {
+            const NEW_GROUP_STATE = { ...get(GROUP_OPEN_STATE) };
+            const NEW_QUESTION_STATE = { ...get(QUESTION_OPEN_STATE) };
+            
+            // 找到目标题组（导入题目的题组）
+            const targetGroup = updatedGroups.find(group => group.id === to_import_group.id);
+            if (targetGroup) {
+                // 确保目标题组是展开状态
+                NEW_GROUP_STATE[targetGroup.id] = true;
+                
+                // 将目标题组中的所有题目设置为展开状态
+                // 这样可以确保新导入的题目和原有题目都展开
+                targetGroup.questions.forEach(question => {
+                    NEW_QUESTION_STATE[question.id] = true;
+                });
+            }
+            
+            // 更新展开状态
+            GROUP_OPEN_STATE.set(NEW_GROUP_STATE);
+            QUESTION_OPEN_STATE.set(NEW_QUESTION_STATE);
         }
         
         // 重置导入参数
@@ -881,12 +914,15 @@
                 action: "move_group",
                 payload: GROUP_IDS,
             },
-            {
+        ];
+        
+        if(QUESTION_IDS.length > 0) {
+            ACTIONS.push({
                 action: "move_question",
                 payload: QUESTION_IDS
-            }
-        ];
-
+            });
+        }
+        
         savePaper(paperID, ACTIONS)
             .then(() => fetchPaper(paperID))
             .then((result) => {
@@ -1091,7 +1127,13 @@
             </div>
 
             <!-- 试卷名称 -->
-            <input onchange={()=>{if(paper_name!=="")UpDatePaperInfo()}} class="paper-name-input {paper_name===""?"name-warn":""}" type="text" bind:value={paper_name} placeholder="试卷名称不能为空">
+            <input type="text" 
+                onchange={()=>{if(paper_name!=="")UpDatePaperInfo()}}
+                class="paper-name-input {paper_name===""?"name-warn":""}"
+                bind:value={paper_name}
+                placeholder="试卷名称不能为空"
+                use:utf8MaxLength={50}
+            >
             
             <!-- 操作区 -->
             <div class="operation">
@@ -1165,7 +1207,14 @@
                     <!-- 试卷说明 -->
                     <div class="paper-description">
                         <span class="info-label">试卷说明</span>
-                        <textarea onchange={()=>UpDatePaperInfo()} class="description-textarea" bind:value={description} placeholder="输入试卷说明"></textarea>
+                        <textarea
+                            onchange={()=>UpDatePaperInfo()}
+                            class="description-textarea"
+                            bind:value={description}
+                            placeholder="输入试卷说明"
+                            use:utf8MaxLength={500}
+                        >
+                        </textarea>
                     </div>
 
                     <!-- 试卷标签 -->
@@ -1176,7 +1225,12 @@
                             <div class="paper-tag" style="border: 1.5px dashed var(--border-medium);">
                                 <div class="color-block" style="background-color: {to_add_tag===""? "#40d5ff":TAG_COLOR_LIST[getColorIndex(to_add_tag)]};"></div>
                                 <div class="btn-box">
-                                    <input type="text" bind:value={to_add_tag} onchange={addTag} placeholder="+标签" maxlength="30"/>
+                                    <input type="text"
+                                        bind:value={to_add_tag}
+                                        onchange={addTag}
+                                        placeholder="+标签"
+                                        use:utf8MaxLength={30}
+                                    />
                                     <button onmousedown={clearToAddTagContent}>✕</button>
                                 </div>
                             </div>
@@ -1226,10 +1280,10 @@
                                             ondrop={handleGroupDrop}
                                             ondragend={handleDragEnd}
                                             >
-                                            <input bind:value={to_edit_group_name} onkeydown={()=>confirmEditGroupName()} bind:this={to_edit_group} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
+                                            <input bind:value={to_edit_group_name} onchange={()=>confirmEditGroupName()} onblur={()=>{if(to_edit_group_name.trim() === ""||to_edit_group_name.trim() === group.name){cancelEditGroupName()}}} bind:this={to_edit_group} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
                                             <div class="btn-box">
-                                                <!-- 删除按钮 -->
-                                                <button onclick={()=>{to_edit_groupID=null}} class="delete-group-btn" title="取消">✖</button>
+                                                <!-- 取消按钮 -->
+                                                <button onmousedown={()=>cancelEditGroupName()} class="delete-group-btn" title="取消">✖</button>
                                             </div>
                                         </div>
                                     {:else}
@@ -1480,10 +1534,22 @@
                 width: 30%;
                 margin-left: auto;
                 min-width: 108px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
 
                 &:focus {
                     outline: none;
-                    border-color: var(--primary-hover);
+                    border-color: var(--primary-color);
+                    color: var(--primary-color);
+                }
+
+                &:hover {
+                    white-space: normal;
+                    overflow: visible;
+                    width: 40%;
+                    border-color: var(--primary-color);
+                    color: var(--primary-color);
                 }
             }
             .name-warn {

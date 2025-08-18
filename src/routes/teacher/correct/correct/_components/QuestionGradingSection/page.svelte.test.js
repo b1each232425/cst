@@ -3,7 +3,6 @@ import { render, fireEvent } from '@testing-library/svelte';
 import QuestionGradingSection from './index.svelte';
 
 describe('QuestionGradingSection 组件测试', () => {
-  // 基础测试数据
   const BASE_PROPS = {
     question: {
       ID: 123,
@@ -73,6 +72,18 @@ describe('QuestionGradingSection 组件测试', () => {
     expect(inputs[1]).toHaveValue(1);
   });
 
+  it('应显示批改规则和答案', () => {
+    const { getByText, getAllByText } = render(QuestionGradingSection, { props: BASE_PROPS });
+
+    expect(getByText('【批改规则/提示词】')).toBeInTheDocument();
+    expect(getAllByText('4')).toHaveLength(2);
+    expect(getByText(/四/)).toBeInTheDocument();
+
+    expect(getByText('【答案】')).toBeInTheDocument();
+    expect(getByText('必须是准确的数字或汉字')).toBeInTheDocument();
+    expect(getByText('必须是准确的数字')).toBeInTheDocument();
+  });
+
   it('应正确处理分数变更事件', async () => {
     const mockSave = vi.fn();
 
@@ -119,7 +130,10 @@ describe('QuestionGradingSection 组件测试', () => {
   });
 
   it('应将分数限制在最大可能值内', async () => {
-    const { getAllByPlaceholderText } = render(QuestionGradingSection, { props: BASE_PROPS });
+    const mockSave = vi.fn();
+    const { getAllByPlaceholderText } = render(QuestionGradingSection, {
+      props: { ...BASE_PROPS, onSaveMark: mockSave },
+    });
 
     const inputs = getAllByPlaceholderText('输入得分');
 
@@ -131,24 +145,25 @@ describe('QuestionGradingSection 组件测试', () => {
     expect(inputs[1]).toHaveValue(3); // 第二部分最大3分
   });
 
-  it('应显示批改规则和答案', () => {
-    const { getByText, getAllByText } = render(QuestionGradingSection, { props: BASE_PROPS });
+  it('应阻止负分数输入', async () => {
+    const mockSave = vi.fn();
+    const { getAllByPlaceholderText } = render(QuestionGradingSection, {
+      props: { ...BASE_PROPS, onSaveMark: mockSave },
+    });
 
-    expect(getByText('【批改规则/提示词】')).toBeInTheDocument();
-    expect(getAllByText('4')).toHaveLength(2);
-    expect(getByText(/四/)).toBeInTheDocument();
+    const inputs = getAllByPlaceholderText('输入得分');
 
-    expect(getByText('【答案】')).toBeInTheDocument();
-    expect(getByText('必须是准确的数字或汉字')).toBeInTheDocument();
-    expect(getByText('必须是准确的数字')).toBeInTheDocument();
+    // 尝试输入负数
+    await fireEvent.input(inputs[0], { target: { value: '-1' } });
+    expect(inputs[0]).toHaveValue(null); // 应被清空
   });
 
-  it('应正确处理单选题', () => {
+  it('应正确处理单空问题', () => {
     const props = {
       ...BASE_PROPS,
       question: {
         ...BASE_PROPS.question,
-        Type: '00', // 单选题
+        Type: '06',
         Answers: [{ index: 1, score: 5, answer: 'A', grading_rule: '只有A是正确的' }],
       },
       answer_object: {
@@ -179,16 +194,6 @@ describe('QuestionGradingSection 组件测试', () => {
 
     // 验证保存事件未被触发
     expect(mockSave).not.toHaveBeenCalled();
-  });
-
-  it('应阻止负分数输入', async () => {
-    const { getAllByPlaceholderText } = render(QuestionGradingSection, { props: BASE_PROPS });
-
-    const inputs = getAllByPlaceholderText('输入得分');
-
-    // 尝试输入负数
-    await fireEvent.input(inputs[0], { target: { value: '-1' } });
-    expect(inputs[0]).toHaveValue(null); // 应被清空
   });
 
   it('应正确渲染不同题型', () => {

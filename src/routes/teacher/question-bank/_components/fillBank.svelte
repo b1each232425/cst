@@ -22,6 +22,7 @@
    
     import { questionLimit } from "../utils/questionConfig.js";
       import { getQuestionFilesPath } from "../utils/utils";;
+  import { toast } from "$lib/components/Toast/Toast";
 
     const editor_width = "calc(100% - 24px - 10px)";
     const editor_height = "100%";
@@ -34,6 +35,7 @@
     const editor_options = {
         editable: true,
         content: "这是一个编辑器",
+          extensions: [BlankItem, CustomTextStyle],
         table: {
             overflow: false,
         },
@@ -109,6 +111,10 @@
      */
     let title_editor = $state(null);
 
+      /**
+     * @type {PiptapEditor}
+     */
+    let piptap_editor = $derived.by(() => title_editor?.getEditor())
     /**
      * @description 题目题干
      */
@@ -202,13 +208,50 @@
      */
     let question_edit_container = $state();
 
-    /**
+
+      let editorInitialized = false;
+    let hasFocused = false;
+
+    $effect(() => {
+        if (title_editor && !editorInitialized) {
+            const controller = new AbortController();
+
+            const init = async () => {
+                console.log('effect init')
+                try {
+                    await title_editor.waitEditorReady();
+                    if (controller.signal.aborted) return;
+
+                    // 设置富文本编辑器内容
+                    title_editor?.setContentWithoutHistory(
+                        question_data?.content ? question_data.content : "",
+                    );
+
+                    addCustomButtonsToExistingToolbar();
+                    setupBlankRenumbering(piptap_editor.tiptapEditor);
+                    piptap_editor.tiptapEditor.commands.focus('end')
+                    editorInitialized = true;
+                    console.log("Editor initialized")
+                } catch (error) {
+                    console.error("Editor initialization failed", error);
+                }
+            };
+
+            init();
+
+            return () => {
+                controller.abort();
+            };
+        }
+    });
+     /**
      * @description 初始化面板
      */
-    export const initPanel = () => {
+    export const initPanel = async () => {
+
         //  难度
         question_difficulty = question_data?.difficulty
-            ? $state.snapshot(question_data?.difficulty)
+            ? $state.snapshot(question_data.difficulty)
             : 1;
 
         //  标签
@@ -221,25 +264,25 @@
             ? $state.snapshot(question_data.score)
             : 0;
 
-        // 选项答案
-        //@ts-ignore
-     question_answers =
+        //  选项答案
+        // @ts-ignore
+        question_answers =
             question_data?.answers &&
             Object.keys(question_data.answers).length > 0
                 ? $state.snapshot(question_data.answers)
                 : [
-                      {
-                          index: 1,
-                          answer: "",
-                          alternative_answers: [],
-                          score: 0,
-                          grading_rule: "",
-                      },
+                  
+                    //     index: 1,
+                    //     answer: "",
+                    //     alternative_answers: [],
+                    //     score: 0,
+                    //     grading_rule: "",
+                    // },
                 ];
 
         question_answers_editors_warning = new Array(
             question_answers.length,
-        ).fill([0, 0, 0, 0, 0, 0, 0, 0]);
+        ).fill([0, 0, 0, 0, 0, 0, 0, 0,0]);
 
         // 设置富文本编辑器内容
         title_editor?.setContentWithoutHistory(
@@ -249,17 +292,49 @@
             question_data?.analysis ? question_data.analysis : "",
         );
 
-        if (!is_new_question) {
-            expend_answer_area.forEach((item, index) => {
-                expend_answer_area[index] = false;
-            });
-        }
+        expend_answer_area.forEach((item, index) => {
+            expend_answer_area[index] = is_new_question ? true : false;
+        });
 
+        // 滚动到顶部
         if (question_edit_container) {
             question_edit_container.scrollTop = 0;
         }
 
         per_answer_score = "";
+
+
+        if (title_editor) {
+            const controller = new AbortController();
+
+            const init = async () => {
+                try {
+                    await title_editor.waitEditorReady();
+                    if (controller.signal.aborted) return;
+                    console.log('initpanel init')
+
+                    // 设置富文本编辑器内容
+                    title_editor?.setContentWithoutHistory(
+                        question_data?.content ? question_data.content : "",
+                    );
+
+                    addCustomButtonsToExistingToolbar();
+                    setupBlankRenumbering(piptap_editor.tiptapEditor);
+                    editorInitialized = true;
+                    piptap_editor.tiptapEditor.commands.focus('end')
+                    console.log("Editor initialized")
+                } catch (error) {
+                    console.error("Editor initialization failed", error);
+                }
+            };
+
+            init();
+
+            return () => {
+                controller.abort();
+            };
+        }
+
 
         initialized = true;
     };
@@ -286,6 +361,128 @@
      * @type {boolean[]}
      */
     let expend_answer_area = $state([true]);
+
+
+   /**
+     * 动态添加自定义按钮到现有工具栏
+     */
+    function addCustomButtonsToExistingToolbar() {
+        if (!title_editor) return;
+
+        const editor = title_editor.getEditor();
+        if (!editor || typeof editor === 'string') return;
+
+        // 等待一下确保工具栏已经渲染
+        setTimeout(() => {
+            // 查找现有的工具栏
+            const editorElement = title_editor.getElement();
+            if (!editorElement) return;
+
+            const menubar = editorElement.querySelector('.menubar') ||
+                editorElement.querySelector('[class*="menu"]') ||
+                editorElement.querySelector('[class*="toolbar"]');
+
+            if (!menubar) return;
+
+            // 检查是否已经添加过自定义按钮
+            if (menubar.querySelector('.custom-button-group')) {
+                console.log('已添加')
+                return
+            }
+
+            // 创建自定义按钮组
+            const customButtonGroup = document.createElement('div');
+            customButtonGroup.className = 'custom-button-group';
+            customButtonGroup.style.cssText = `
+                display: flex;
+                gap: 4px;
+                border-left: 0;
+                margin-left: 4px;
+                align-items: center;
+            `;
+
+            // 定义要添加的按钮
+            const buttons = [
+                {
+                    text: '[插入填空项]',
+                    fn: (/** @type {SmartEditor} */ editor) => {
+                        if (!hasFocused) {
+                         toast.warning("请先选择插入位置")
+                            return
+                        }
+
+                        // 获取map长度
+                        const blankNodeCount = blankNodes.size
+                        console.log(blankNodeCount)
+                        let index = blankNodeCount + 1
+                        editor.insertContent({
+                            type: 'blankItem',
+                            attrs: {
+                                id: 'blank_' + Date.now(),
+                                class: 'blank-item',
+                                blankNumber: index
+                            },
+                        })
+
+                        onAddAnswer()
+                    },
+                    title: '插入填空项'
+                }
+            ];
+
+            // 创建按钮
+            buttons.forEach(button => {
+                const btn = document.createElement('div');
+                btn.textContent = button.text;
+                btn.title = button.title;
+                btn.className = 'custom-toolbar-btn';
+                btn.style.cssText = `
+                    padding: 0;
+                    line-height: 25px;
+                    color: #000;
+                    height: 25px;
+                    border: 0;
+
+                    cursor: pointer;
+                    font-size: 10px;
+
+                    transition: all 0.2s ease;
+                `;
+
+                // 添加悬停效果
+                btn.addEventListener('mouseenter', () => {
+                    btn.style.backgroundColor = '#e9ecef';
+                    // btn.style.borderColor = '#adb5bd';
+                });
+
+                btn.addEventListener('mouseleave', () => {
+                    btn.style.backgroundColor = '#ffffff';
+                    // btn.style.borderColor = '#ced4da';
+                });
+
+                // 添加点击事件
+                btn.addEventListener('click', () => {
+                    handleCustomButtonClick(button.fn);
+                });
+
+                customButtonGroup.appendChild(btn);
+            });
+
+            // 将按钮组添加到工具栏
+            menubar.appendChild(customButtonGroup);
+        }, 200);
+    }
+
+    /**
+     * 自定义工具栏按钮点击处理函数
+     * @param {function} fn 要插入的内容
+     */
+    function handleCustomButtonClick(fn) {
+        if (title_editor) {
+            fn(title_editor)
+        }
+    }
+
 
     /**
      * @description 确认编辑
@@ -484,22 +681,7 @@
         onConfirm(data);
     };
 
-    /**
-     * @description 删除答案
-     * @param {Event} e
-     * @param {number} index
-     */
-    const onClickAnsewerDeleteBtn = (e, index) => {
-        e.stopPropagation();
-        if (question_answers.length <= 1) return;
-
-        for (let i = index; i < question_answers.length; i++) {
-            question_answers[i].index--;
-        }
-        question_answers.splice(index, 1);
-        expend_answer_area.splice(index, 1);
-        question_answers_editors_warning.splice(index, 1);
-    };
+  
 
 /**
      * @description 删除额外答案
@@ -569,6 +751,206 @@
         }
     };
 
+
+      let blankNodes = new Map()
+    let isRenumbering = false // 防止重复处理
+
+    function setupBlankRenumbering(editor) {
+        // 获取所有填空项并按位置排序
+        function getAllBlanks() {
+            const blanks = []
+            editor.state.doc.descendants((node, pos) => {
+                // console.log(node)
+                if (node.type.name === 'blankItem') {
+                    blanks.push({node, pos})
+                } else if (node.marks && node.marks.length > 0 && node.marks[0].attrs.class && node.marks[0].attrs.class === 'blank-item') {
+                    // 创建 BlankItem 节点
+                    const blankItemNode = editor.state.schema.nodes.blankItem.create({
+                        id: node.marks[0].attrs.id,
+                        blankNumber: node.marks[0].attrs.blankNumber,
+                        style: 'display: inline-block; color: #2196f3;',
+                        content: node.text
+                    });
+
+                    const tr = editor.state.tr
+
+                    // 替换原节点
+                    tr.replaceWith(pos, pos + node.nodeSize, blankItemNode);
+
+                    editor.view.dispatch(tr)
+
+                    // console.log(blankItemNode)
+                    blanks.push({node: blankItemNode, pos})
+                }
+
+
+            })
+            // 按文档位置排序
+            return blanks.sort((a, b) => a.pos - b.pos)
+        }
+
+        // 重新编号所有填空项
+        function renumberBlanks() {
+            if (isRenumbering) return // 防止递归调用
+
+            const blanks = getAllBlanks()
+            // console.log(blanks.length)
+            const tr = editor.state.tr
+            let hasChanges = false
+
+            blanks.forEach(({node, pos}, index) => {
+                const newNumber = index + 1
+                if (node.attrs.blankNumber !== newNumber) {
+                    tr.setNodeMarkup(pos, null, {
+                        ...node.attrs,
+                        blankNumber: newNumber
+                    })
+                    hasChanges = true
+                }
+            })
+
+            if (hasChanges) {
+                isRenumbering = true
+                tr.setMeta('preventUpdate', true)
+                editor.view.dispatch(tr)
+                isRenumbering = false
+            }
+        }
+
+        // 更新 blankNodes 映射
+        function updateBlankNodesMap() {
+            blankNodes.clear()
+            editor.state.doc.descendants((node, pos) => {
+                if (node.type.name === 'blankItem') {
+                    blankNodes.set(node.attrs.id, {pos, node})
+                }
+            })
+        }
+
+        // 处理删除填空项的回调函数（用户可以自定义）
+        function onBlanksRemoved(removedBlanks) {
+            // 默认处理逻辑，用户可以重写这个函数
+            // console.log('被删除的填空项:', removedBlanks)
+
+            // 在这里添加你的自定义逻辑
+            removedBlanks.forEach(blank => {
+                console.log(`删除了填空项 ID: ${blank.id}, 编号: ${blank.blankNumber}`)
+
+                onDeleteAnswer(blank.blankNumber - 1)
+                // 示例：你可以在这里执行其他逻辑
+                // 比如更新相关的数据结构、发送通知等
+            })
+        }
+
+        // 处理新增填空项的回调函数
+        function onBlanksAdded(addedBlanks) {
+            // 默认处理逻辑
+            // console.log('新增的填空项:', addedBlanks)
+
+            // addedBlanks.forEach(blank => {
+            //     console.log(`新增了填空项 ID: ${blank.id}, 编号: ${blank.blankNumber}`)
+            // })
+        }
+
+        // 检查是否需要重新编号，并返回变化信息
+        function checkForRenumbering(transaction) {
+            let needsRenumbering = false
+            let removedBlanks = []
+            let addedBlanks = []
+
+            // 检查是否有结构变化
+            if (transaction.docChanged) {
+                const oldBlanksMap = new Map()
+                const newBlanksMap = new Map()
+
+                // 获取旧文档中的填空项
+                transaction.before.descendants((node) => {
+                    if (node.type.name === 'blankItem') {
+                        oldBlanksMap.set(node.attrs.id, {
+                            id: node.attrs.id,
+                            blankNumber: node.attrs.blankNumber,
+                            node: node
+                        })
+                    }
+                })
+
+                // 获取新文档中的填空项
+                transaction.doc.descendants((node) => {
+                    if (node.type.name === 'blankItem') {
+                        newBlanksMap.set(node.attrs.id, {
+                            id: node.attrs.id,
+                            blankNumber: node.attrs.blankNumber,
+                            node: node
+                        })
+                    }
+                })
+
+                // 找出被删除的填空项
+                removedBlanks = [...oldBlanksMap.values()].filter(blank =>
+                    !newBlanksMap.has(blank.id)
+                )
+
+                // 找出新增的填空项
+                addedBlanks = [...newBlanksMap.values()].filter(blank =>
+                    !oldBlanksMap.has(blank.id)
+                )
+
+                if (removedBlanks.length > 0 || addedBlanks.length > 0) {
+                    needsRenumbering = true
+                }
+            }
+
+            return {
+                needsRenumbering,
+                removedBlanks,
+                addedBlanks
+            }
+        }
+
+        // 初始化：扫描现有的填空项
+        updateBlankNodesMap()
+
+        // 监听事务变化
+        editor.on('transaction', ({transaction}) => {
+            // 跳过我们自己的重新编号事务
+            if (transaction.getMeta('preventUpdate') || isRenumbering) {
+                return
+            }
+
+            // 检查是否需要重新编号
+            const changeInfo = checkForRenumbering(transaction)
+
+            if (changeInfo.needsRenumbering) {
+                // 处理被删除的填空项
+                if (changeInfo.removedBlanks.length > 0) {
+                    onBlanksRemoved(changeInfo.removedBlanks)
+                }
+
+                // 处理新增的填空项
+                if (changeInfo.addedBlanks.length > 0) {
+                    // onBlanksAdded(changeInfo.addedBlanks)
+                }
+
+                // 使用 setTimeout 确保在事务完成后执行
+                setTimeout(() => {
+                    renumberBlanks()
+                    updateBlankNodesMap()
+                }, 0)
+            }
+        })
+
+        // 初始编号检查
+        setTimeout(() => {
+            renumberBlanks()
+            updateBlankNodesMap()
+        }, 0)
+
+        // 返回清理函数
+        return () => {
+            blankNodes.clear()
+            // 如果需要的话，可以在这里移除事件监听器
+        }
+    }
     /**
      * @description 添加答案
      */
@@ -584,6 +966,22 @@
         question_answers_editors_warning.push([0, 0, 0, 0, 0, 0, 0, 0]);
     };
 
+
+       /**
+     * 删除答案
+     * @param {number} index
+     */
+
+    const onDeleteAnswer = (index) => {
+        if (question_answers.length <= 0) return;
+
+        for (let i = index; i < question_answers.length; i++) {
+            question_answers[i].index--;
+        }
+        question_answers.splice(index, 1);
+        expend_answer_area.splice(index, 1);
+        question_answers_editors_warning.splice(index, 1);
+    };
     /**
      * @description 分数变更
      * @param {Event} e
@@ -660,11 +1058,11 @@
                     <div class="content richTextEditor">
                         <div>
                             {#if initialized}
-                                <SmartEditor
-                                    bind:this={title_editor}
-                                    width={editor_width}
-                                    height={editor_height}
-                                    editor_options={{
+                                 <SmartEditor
+                  bind:this={title_editor}
+                  width={editor_width}
+                  height={editor_height}
+                  editor_options={{
                                         ...editor_options,
                                         content: question_data?.content,
                                         characterCount: {
@@ -673,7 +1071,7 @@
                                             enableCharacterCountLimit: false,
                                         },
                                         placeholder:
-                                              "请按照以下模版输入 “被称作“前四史”的史书是：(1)、(2)、(3) 、和(4)。”",
+                                            "请按照以下模版输入 “被称作“前四史”的史书是：(1)、(2)、(3) 、和(4)。”",
                                         onContentChange: (
                                             /**
                                              * @type {PiptapEditor}
@@ -684,8 +1082,13 @@
                                             question_title_content =
                                                 editor?.getPreviewHTML();
                                         },
+                                        onFocus: (
+                                        ) => {
+                                           console.log('onfocus')
+                                           hasFocused = true;
+                                        },
                                     }}
-                                ></SmartEditor>
+                ></SmartEditor>
                             {/if}
                             <div class="deleteOptionBtn"></div>
                         </div>
@@ -962,16 +1365,7 @@
                                         !expend_answer_area[index];
                                 }}
               >
-                <div         
-                                    class="deleteBinBtn"
-                                    onclick={(e) =>
-                                        onClickAnsewerDeleteBtn(e, index)}
-                                >
-                                    <img
-                                        src={ICON.delete_bin}
-                                        alt="delete_bin"
-                                    />
-                                </div>
+              
                 <img
                   class="arrow_down {expend_answer_area[index]
                                         ? 'arrow_turnUp'
@@ -1290,14 +1684,7 @@
       {/each}
 
       <div class="fillBlankAnswerControlContainer">
-        <div>
-                    <span class="fillBlankControlPlaceholder">({1})</span>
-                    <button
-                        class="addAnswerBtn"
-                        disabled={question_answers.length >= 8 ? true : false}
-                        onclick={onAddAnswer}>添加答案</button
-                    >
-                </div>
+      
                 
         {@render scoreInput()}
         <div>

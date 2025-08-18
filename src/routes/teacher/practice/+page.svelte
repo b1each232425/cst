@@ -520,15 +520,13 @@
       })
         .then((res) => {
           if (!res.ok) {
-            return res.text().then((msg) => {
-              throw new Error(`导入失败: ${res.status} ${res.statusText} - ${msg}`);
-            });
+            throw new Error('导入失败');
           }
           return res.json();
         })
         .then((result) => {
           if (result.status !== 0) {
-            throw new Error(result.msg || '导入失败');
+            throw new Error( '导入失败');
           }
           console.log('333333',selectedStudentIds)
           //获取新增之后的学生ID
@@ -541,7 +539,7 @@
           }));
          
           //检验是否有相同的ID，进行过滤
-           existStudentIds = selectedStudentIds.filter((item) => !existStudentIds.some((item2) => item2.id === item.id));
+           existStudentIds = existStudentIds.filter((item) => !selectedStudentIds.some((item2) => item2.id === item.id));
           //创建需要关联的学生ID
           selectedStudentIds = [...selectedStudentIds, ...studentIds, ...existStudentIds];
           // 导入成功后执行创建练习
@@ -553,12 +551,15 @@
         });
     } else {
       //获取已经有账号的学生的ID
-      let existStudentIds = selected.filter((item) => item.id).map((item) => ({
-            id: item.id
+      console.log("selecteds",selected)
+      let existStudentIds = selected.filter((item) => item.ID).map((item) => ({
+            id: item.ID
           }));
-      console.log('existStudentIds', existStudentIds);
+     
        //检验是否有相同的ID，进行过滤
-           existStudentIds = selectedStudentIds.filter((item) => !existStudentIds.some((item2) => item2.id === item.id));
+           existStudentIds = existStudentIds.filter((item) => !selectedStudentIds.some((item2) => item2.id === item.id));
+            console.log('existStudentIds', existStudentIds);
+            
       //创建需要关联的学生ID
       selectedStudentIds = [...selectedStudentIds, ...existStudentIds];
 
@@ -952,6 +953,7 @@
     </div>
     <div class="pagination-container" data-testid="pagination-container">
       <Pagination
+      class="pagination-container"
         total_items={total_data_num}
         page_size={data_per_page}
         current_page={current_page_num}
@@ -1003,8 +1005,12 @@
 
   <!-- 学生选择面板 -->
   <StudentSelectionPanel
+ 
     show_panel={show_student_selectionPanel}
-    ids={selectedStudentIds}
+    ids={selectedStudentIds.map(item=>({
+      ID : item.id,
+      ...item
+    }))}
     onCancel={() => {
       show_student_selectionPanel = false;
     }}

@@ -113,17 +113,6 @@
     show = false;
   }
 
-  // 重置筛选
-  function resetFilters() {
-    searchText = '';
-    tagSearchText = '';
-    selectedStructure = '全部';
-
-    fetchPaperList({
-      page: '1',
-    });
-    currentPage = 1;
-  }
 
   /**
    * 获取试卷列表
@@ -259,6 +248,7 @@
               type="text"
               placeholder="搜索试卷名称"
               bind:value={searchText}
+              onInput={searchPapers}
             />
           </div>
 
@@ -269,14 +259,12 @@
               type="text"
               placeholder="搜索试卷标签"
               bind:value={tagSearchText}
+              onInput={searchPapers}
             />
           </div>
         </div>
 
-        <div class="search-btns">
-          <Button onclick={searchPapers}>搜索</Button>
-          <Button onclick={resetFilters}>重置</Button>
-        </div>
+       
       </div>
 
       <div class="modal-body">
@@ -321,7 +309,11 @@
                     {test.TotalScore}
                   </div>
                   <div class="cell standard-cell">
+                    {#if test.tags.length > 0}
                     <UneditableHashTags tags={test.tags} />
+                    {:else}
+                    <span >--</span>
+                    {/if}
                   </div>
                   <div class="cell suggest-cell">{test.SuggestedDuration}</div>
                   <div class="cell diff-cell">

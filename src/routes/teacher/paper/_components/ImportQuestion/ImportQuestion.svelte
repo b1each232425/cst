@@ -220,7 +220,7 @@
         }
     }, 500, false);
 
-    // 清除筛选
+    // 重置所有条件
     function clearFilterSearch() {
         question_page = 1;
         question_page_size = 10;
@@ -335,7 +335,6 @@
                     });
             });
     }
-
 
     // 处理页面跳转
     function handlePageChange(event) {
@@ -455,6 +454,44 @@
         } else { question_list = []; }
     }
 
+    // 清空筛选条件
+    function clearCondition() {
+        question_tags = [];
+        question_types = [];
+        question_difficulties = [];
+        question_page = 1;
+        question_page_size = 10;
+
+        // 搜索题库内的题目
+        if(to_add_bankID !== "") {
+            fetchBankQuestionList(
+                to_add_bankID,
+                question_page,
+                question_page_size,
+                question_name,
+                question_tags,
+                question_types,
+                question_difficulties
+            ).then( result => {
+                question_list = result.data || [];
+                total_questions = result.rowCount;
+            });
+
+            fetchBankQuestionList(to_add_bankID,1,100,"","","","")
+                .then(result => {
+                    const TEMP_QUESTION_LIST = result.data || [];
+                    tag_list = [...new Set(TEMP_QUESTION_LIST.flatMap(question=>question.Tags ? question.Tags : []).filter(Boolean))];
+                })
+                .finally(() => {
+                    // console.log(question_list)
+                });
+
+        } else {
+            question_list = [];
+            tag_list = [];
+        }
+    }
+
     /******************** 题目列表 ********************/
 
     // 挂载区
@@ -496,6 +533,7 @@
                 <!-- 搜索 -->
                 <div class="search-box">
                     <div class="input">
+                        <div class="input"></div>
                         <input type="text"
                             oninput={()=>debouncedFetchQuestionBankList()}
                             onchange={()=>debouncedFetchQuestionBankList()}
@@ -586,7 +624,7 @@
 
                                 <!-- 清空条件 -->
                                 <div class="clear-condition">
-                                    <button>清空条件</button>
+                                    <button onclick={()=>clearCondition()}>清空条件</button>
                                 </div>
                             </div>
                         {/if}
@@ -633,7 +671,7 @@
                                                     toggleSelection(question.ID, e.target.checked);
                                                 }}>
                                         </td>
-                                        <td class="question-content">{@html question.Content}</td>
+                                        <td class="question-content"><div>{@html question.Content}</div></td>
                                         <td class="question-type">{QUESTION_TYPE_TRANS[question.Type]}</td>
                                         <td class="question-level"><span class={DIFFICULTY_TRANS[DIFFICULTY_TRANS[question.Difficulty]]}>{DIFFICULTY_TRANS[question.Difficulty]}</span></td>
                                         <td class="question-score">{question.Score}</td>
@@ -1045,6 +1083,7 @@
 
                                 th, td {
                                     padding: 6px 3px;
+
                                 }
 
                                 th {
@@ -1066,6 +1105,7 @@
 
                                 td {
                                     border-bottom: 1px solid var(--border-light);
+                                    height: 50px;
                                 }
 
                                 .checkbox {
@@ -1087,6 +1127,16 @@
                                     white-space: nowrap;      /* 不允许文本换行 */
                                     overflow: hidden;         /* 超出容器的文本被隐藏 */
                                     text-overflow: ellipsis;  /* 超出的文本用省略号显示 */
+
+                                    div {
+                                        &:hover {
+                                            white-space: normal;
+                                            overflow: visible;
+                                            background: white;
+                                            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                                        }
+                                    }
+
                                 }
                                 .question-type {
                                     font-size: 14px;
@@ -1110,7 +1160,7 @@
                                 .update-time {
                                     font-size: 14px;
                                     text-align: center;
-                                    min-width: 42px;
+                                    min-width: 80px;
                                 }
                                 .question-tags {
                                     font-size: 14px;
@@ -1133,7 +1183,7 @@
                                             height: max-content;
                     
                                             /* 颜色块 */
-                                            .tag-block{
+                                            .ta42block{
                                                 width: 12px;
                                                 height: 12px;
                                                 border-radius: 2px;

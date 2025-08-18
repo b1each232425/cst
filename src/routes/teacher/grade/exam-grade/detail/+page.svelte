@@ -58,6 +58,7 @@
    * @property {number} actualExaminees - 实考人数
    * @property {number} totalScore - 单张试卷总分
    * @property {number} averageScore - 平均分
+   * @property {number} passExaminees - 通过人数
    * @property {string} markMode - 批改模式
    */
 
@@ -177,6 +178,7 @@
       actualExaminees: s.actual_examinees || 0,
       totalScore: s.total_score || 0,
       averageScore: s.average_score || 0,
+      passExaminees: s.pass_examinees || 0,
       markMode: MARK_MODE_MAP[s.mark_mode] || s.mark_mode || '自动批改',
     }));
 
