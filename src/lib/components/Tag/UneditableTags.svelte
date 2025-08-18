@@ -79,15 +79,13 @@
   }
 
   let shuffled_colors = shuffleArray(colors);
-
-  let tag_colors = tags.map((_, i) => shuffled_colors[i % shuffled_colors.length]);
 </script>
 
 <div class="tags">
   {#each tags as tag, i (i)}
     <courseTag>
       <div class="tag">
-        <span class="tag__square" style="background-color: {tag_colors[i]};"></span>
+        <span class="tag__square" style="background-color: {shuffled_colors[i % shuffled_colors.length]};"></span>
         <span class="tag__text">{tag}</span>
       </div>
     </courseTag>
