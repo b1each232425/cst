@@ -1,3 +1,12 @@
+<!--
+ * @Author: yeweixuan t051521@163.com
+ * @Date: 2025-07-27 
+ * @LastEditors: yeweixuan t051521@163.com
+ * @LastEditTime: 2025-8-18 
+ * @FilePath: \exam\src\routes\teacher\exam\editExam\[examID]\+page@.svelte
+ * @Description: 继续编辑考试页面
+ * @Copyright (c) 2025 by yeweixuan t051521@163.com, All Rights Reserved. 
+-->
 <script>
   //@ts-nocheck
   import { goto } from '$app/navigation';
@@ -1614,7 +1623,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
 
 .file-list-wrapper {
     margin-top: 8px;
-    max-width: 420px;
+    max-width: 360px;
   }
 
   .file-empty-tip {
@@ -1636,14 +1645,15 @@ function getSelectedPaperIDs(excludeIndex = -1) {
     align-items: center;
     gap: 8px;
     padding: 6px 8px;
-    background: #f6f8fa;
-    border: 1px solid #d0d7de;
+    background: var(--bg-primary);
+    border: 1px solid var(--blue);
     border-radius: 6px;
     transition: background 0.2s;
+    max-width: 250px;
   }
 
   .file-item:hover {
-    background: #eef1f5;
+    background: var(--bg-primary);
   }
 
   .file-icon {
@@ -1661,7 +1671,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
 
   .file-name {
     font-size: 14px;
-    color: #24292f;
+    color: var(--blue);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

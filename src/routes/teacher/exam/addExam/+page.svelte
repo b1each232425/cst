@@ -476,7 +476,8 @@ function getSelectedPaperIDs(excludeIndex = -1) {
       .then((result) => {
         if(result.status != 0)
         {
-          toast.warning('用户没有创建考试的权限');
+          console.log("错误提示:",result.msg);
+          toast.warning(result.msg);
           goto('/teacher/exam');
         }
         else{
@@ -681,7 +682,7 @@ onMount(async () =>{
                     <div class="file-info">
                       <span class="file-name" title={file.name}>{file.name}</span>
                     </div>
-                    <Button plain={true}  type="danger" size="medium" onclick={() => deleteFiles(file)}>删除</Button>
+                    <span><Button plain={true}  type="danger" size="medium" onclick={() => deleteFiles(file)}>删除</Button></span>
                   </li>
                 {/each}
               </ul>
@@ -1385,7 +1386,7 @@ onMount(async () =>{
 
 .file-list-wrapper {
     margin-top: 8px;
-    max-width: 420px;
+    max-width: 360px;
   }
 
   .file-empty-tip {
@@ -1407,14 +1408,15 @@ onMount(async () =>{
     align-items: center;
     gap: 8px;
     padding: 6px 8px;
-    background: #f6f8fa;
-    border: 1px solid #d0d7de;
+    background: var(--bg-primary);
+    border: 1px solid var(--blue);
     border-radius: 6px;
     transition: background 0.2s;
+    max-width: 250px;
   }
 
   .file-item:hover {
-    background: #eef1f5;
+    background: var(--bg-primary);
   }
 
   .file-icon {
@@ -1432,7 +1434,7 @@ onMount(async () =>{
 
   .file-name {
     font-size: 14px;
-    color: #24292f;
+    color: var(--blue);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
