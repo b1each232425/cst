@@ -120,8 +120,16 @@
 
         const raw = json.data || [];
         if (type === 'practice') {
-          currentData = raw.map((stu) => ({
-            stuId: stu.student_id,
+          // 从 student_scores 中提取学生数据
+          const students = [];
+          raw.forEach((practice) => {
+            if (practice.student_scores && Array.isArray(practice.student_scores)) {
+              students.push(...practice.student_scores);
+            }
+          });
+          
+          currentData = students.map((stu) => ({
+            stuId: stu.stu_id, 
             phone: stu.phone || '-',
             name: stu.name || '-',
             nickname: stu.nickname || '-',

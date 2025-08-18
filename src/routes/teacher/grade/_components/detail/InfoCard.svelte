@@ -71,12 +71,12 @@
 
         <div class="info-item">
           <span class="label">作答人数</span>
-          <span class="value">{safeDisplayNumber(displayData.completedStudents)}</span>
+          <span class="value">{safeDisplayNumber(displayData.completed_students)}</span>
         </div>
 
         <div class="info-item">
           <span class="label">通过人数</span>
-          <span class="value">{safeDisplayNumber(displayData.passedStudents)}</span>
+          <span class="value">{safeDisplayNumber(displayData.passed_students)}</span>
         </div>
 
         <div class="info-item">

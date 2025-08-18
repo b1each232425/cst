@@ -13,9 +13,9 @@
    * @property {number} practiceId - 练习ID
    * @property {string} name - 练习名称
    * @property {number} total_score - 总分
-   * @property {number} averageScore - 平均分
-   * @property {number} completedStudents - 作答人数
-   * @property {number} passedStudents - 通过人数
+   * @property {number} average_score - 平均分
+   * @property {number} completed_students - 作答人数
+   * @property {number} passed_students - 通过人数
    */
 
   /**
@@ -56,9 +56,9 @@
       practiceId: rawData.id,
       name: rawData.name,
       total_score: rawData.total_score,
-      averageScore: rawData.average_score || 0,
-      completedStudents: rawData.completed_students || 0,
-      passedStudents: rawData.passed_students || 0,
+      average_score: rawData.average_score || 0,
+      completed_students: rawData.completed_students || 0,
+      passed_students: rawData.passed_students || 0,
     };
   }
 
@@ -103,6 +103,7 @@
   onMount(async () => {
     // 从 URL 参数获取练习 ID
     practiceId = $page.url.searchParams.get('id');
+    console.log('练习ID:', practiceId);
 
     if (!practiceId) {
       console.error('缺少练习ID参数');
