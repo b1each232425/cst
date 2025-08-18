@@ -116,8 +116,9 @@
       Gender: student.Gender,
       MobilePhone: student.MobilePhone || '',
       IDCardNo: student.idCardNo || '',
+      IDCardType: "居民身份证",
       Account: student.Account || '',
-       Domains: ['cst.school^student'],
+      Domains: ['cst.school^student'],
       serialNumber: selected_examinee.length + index + 1,
     }));
 

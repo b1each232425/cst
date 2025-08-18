@@ -130,7 +130,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
       MarkMethod: cfg.markMethod,
       NameVisibilityIn: !!cfg.nameVisibility,
       ReviewerIds:
-        cfg.markConfig && cfg.markConfig.teacher_mark_configs ? cfg.markConfig.teacher_mark_configs.map((t) => t.id) : [],
+      cfg.markConfig && cfg.markConfig.teacher_mark_configs ? cfg.markConfig.teacher_mark_configs.map((t) => t.id) : [],
       MarkMode: cfg.markMode,
       SessionNum: cfg.sessionNum,
     }));
@@ -138,9 +138,11 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
     // 附加文件：若用户上传了文件，则遍历填充；否则留空数组
     // const fileArr = files.length ? files.map((f) => ({ Name: f.name, Url: f.url || '' })) : [];
 
-    
+    console.log("examinee",exam_examinee);
     const invalid_examinee = exam_examinee.filter(e => !e.id )
-    const valid_examinee = exam_examinee.filter(e => e && e.id).map((item) => item.ID);
+    const valid_examinee = exam_examinee?.length
+  ? exam_examinee.filter(e => e && e.id).map(item => item.id)
+  : [];
     //导入新学生
     if (invalid_examinee.length > 0)
     {
@@ -163,7 +165,10 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
             throw new Error(result.msg || '导入失败');
           }
           let studentIds = result.data.map((item) => item.ID);
+          console.log("valid_examinee:",valid_examinee);
+          console.log("studentIds",studentIds);
           exam_examinee = [...valid_examinee,...studentIds];
+          console.log("exam_examinee:",exam_examinee);
         })
         .catch((error) => {
           console.error('导入学生异常:', error);
