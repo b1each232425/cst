@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-17 10:34:48
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-17 21:46:16
+ * @LastEditTime: 2025-08-18 10:21:03
  * @FilePath: \exam\src\routes\teacher\paper\_test_\page.svelte.test.js
  * @Description: 试卷管理页面测试
  * Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -54,7 +54,7 @@ describe('试卷管理页面测试', () => {
 
     });
 
-    describe('操作栏', () => {
+    describe('操作栏', () => {  
 
         describe('左侧区域', () => {
 
@@ -85,6 +85,64 @@ describe('试卷管理页面测试', () => {
                     });
                 });
 
+                describe('交互', () => {
+
+                    it('空列表', async () => {
+
+                        const { container } = render(Page);
+
+                        // 等待表格渲染2条数据
+                        await waitFor(() => {
+                            expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                        });
+
+                        // 临时mock数据
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                API: "/api/paper",
+                                data: null,
+                                method: "GET",
+                                msg: "success",
+                                rowCount: 0,
+                                status: 0
+                            })
+                        });
+
+                        // 输入试卷名称
+                        fireEvent.input(screen.getByPlaceholderText('搜索试卷名称'), { target: { value: '测试名称' } });
+
+                        // 等待防抖延迟（真的等了600ms）
+                        await new Promise(resolve => setTimeout(resolve, 600));
+
+                        // 验证被调用两次
+                        expect(global.fetch).toHaveBeenCalledTimes(3);
+
+                    });
+
+                    it('失败情况', async () => {
+
+                        const { container } = render(Page);
+
+                        // 等待表格渲染2条数据
+                        await waitFor(() => {
+                            expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                        });
+
+                        // 临时mock数据
+                        global.fetch.mockResolvedValueOnce({
+                            ok: false,
+                            status: 400
+                        });
+
+                        // 输入试卷名称
+                        fireEvent.input(screen.getByPlaceholderText('搜索试卷名称'), { target: { value: '测试名称' } });
+
+                        // 等待防抖延迟（真的等了600ms）
+                        await new Promise(resolve => setTimeout(resolve, 600));
+                    });
+
+                });
             });
 
         });
@@ -128,7 +186,7 @@ describe('试卷管理页面测试', () => {
                         await new Promise(resolve => setTimeout(resolve, 600));
 
                         // 验证被调用两次
-                        expect(global.fetch).toHaveBeenCalledTimes(3);
+                        expect(global.fetch).toHaveBeenCalledTimes(2);
 
                         // 点击重置
                         fireEvent.click(screen.getByText('重置'));
@@ -143,7 +201,7 @@ describe('试卷管理页面测试', () => {
                         await new Promise(resolve => setTimeout(resolve, 600));
 
                         // 验证被调用三次
-                        expect(global.fetch).toHaveBeenCalledTimes(4);
+                        expect(global.fetch).toHaveBeenCalledTimes(3);
                     });
 
                     it('返回空列表', async () => {
@@ -177,6 +235,28 @@ describe('试卷管理页面测试', () => {
                         });
                     });
 
+                    it('失败情况', async () => {
+
+                        const { container } = render(Page);
+
+                        // 等待表格渲染两条数据
+                        await waitFor(() => {
+                            expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                        });
+
+                        global.fetch.mockResolvedValueOnce({
+                            ok: false,
+                            status: 400
+                        });
+
+                        // 点击重置
+                        fireEvent.click(screen.getByText('重置'));
+
+                        // 验证toast提示
+                        await waitFor(() => {
+                            expect(screen.getByText(`请求失败，状态码：400`)).toBeInTheDocument();
+                        });
+                    });
                 });
 
                 describe('删除', () => {
@@ -297,7 +377,7 @@ describe('试卷管理页面测试', () => {
 
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.getByText(`请求失败，状态码：400`)).toBeInTheDocument();
+                            expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(2);
                         });
                     });
 
@@ -454,7 +534,7 @@ describe('试卷管理页面测试', () => {
 
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.getByText(`请求失败，状态码：400`)).toBeInTheDocument();
+                            expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(3);
                         });
                     });
 
@@ -684,43 +764,95 @@ describe('试卷管理页面测试', () => {
                 });
             });
 
-            it('删除', async () => {
-
-                const { container } = render(Page);
-
-                // 等待表格渲染两条数据
-                await waitFor(() => {
-                    expect(container.querySelectorAll('tbody tr').length).toBe(2);
+            describe('删除', () => {
+                
+                it('删除成功', async () => {
+    
+                    const { container } = render(Page);
+    
+                    // 等待表格渲染两条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                    });
+    
+                    // 点击第一条数据的删除按钮
+                    const firstRow = container.querySelectorAll('tbody tr')[0];
+                    fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(3)'));
+    
+                    // 验证弹窗
+                    expect(screen.getByText('删除确认')).toBeInTheDocument();
+                    expect(screen.getByText('请问是否要删除该试卷？')).toBeInTheDocument();
+    
+                    // 点击确认
+                    fireEvent.click(screen.getByText('确定'));
+    
+                    // mock 返回结果
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            status: 0,
+                            msg: "success",
+                            API: "/api/paper",
+                            method: "DELETE"
+                        })
+                    });
+    
+                    // 验证toast提示
+                    await waitFor(() => {
+                        expect(screen.queryAllByText(`删除成功`).length).toBe(2);
+                    });
+    
                 });
 
-                // 点击第一条数据的删除按钮
-                const firstRow = container.querySelectorAll('tbody tr')[0];
-                fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(3)'));
+                it('删除成功但获取数据失败', async () => {
+    
+                    const { container } = render(Page);
+    
+                    // 等待表格渲染两条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                    });
+    
+                    // 点击第一条数据的删除按钮
+                    const firstRow = container.querySelectorAll('tbody tr')[0];
+                    fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(3)'));
+    
+                    // 验证弹窗
+                    expect(screen.getByText('删除确认')).toBeInTheDocument();
+                    expect(screen.getByText('请问是否要删除该试卷？')).toBeInTheDocument();
+    
+                    // mock 返回结果
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            status: 0,
+                            msg: "success",
+                            API: "/api/paper",
+                            method: "DELETE"
+                        })
+                    });
+                    
+                    // 点击确认
+                    fireEvent.click(screen.getByText('确定'));
+    
+                    // 验证toast提示
+                    await waitFor(() => {
+                        expect(screen.queryAllByText(`删除成功`).length).toBe(3);
+                    });
 
-                // 验证弹窗
-                expect(screen.getByText('删除确认')).toBeInTheDocument();
-                expect(screen.getByText('请问是否要删除该试卷？')).toBeInTheDocument();
+                    // mock 400
+                    global.fetch.mockResolvedValueOnce({
+                        ok: false,
+                        status: 400
+                    });
 
-                // 点击确认
-                fireEvent.click(screen.getByText('确定'));
-
-                // mock 返回结果
-                global.fetch.mockResolvedValueOnce({
-                    ok: true,
-                    json: () => Promise.resolve({
-                        status: 0,
-                        msg: "success",
-                        API: "/api/paper",
-                        method: "DELETE"
-                    })
+                    // 验证toast提示
+                    await waitFor(() => {
+                        expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(3);
+                    });
                 });
-
-                // 验证toast提示（用queryAllByText）
-                await waitFor(() => {
-                    expect(screen.queryAllByText(`删除成功`).length).toBe(2);
-                });
-
             });
+
 
             describe('预览', () => {
 
@@ -873,7 +1005,7 @@ describe('试卷管理页面测试', () => {
 
                     // 验证toast提示
                     await waitFor(() => {
-                        expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(2);
+                        expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(4);
                     });
                 });
 
@@ -1011,35 +1143,119 @@ describe('试卷管理页面测试', () => {
                 });
             });
 
+            it('失败情况', async () => {
+               
+                const { container } = render(Page);
+
+                // 等待表格渲染2条数据
+                await waitFor(() => {
+                    expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                });
+
+                // 点击“10条/页”按钮，出现下拉框
+                fireEvent.click(screen.getByText('10条/页'));
+
+                // 临时mock数据
+                global.fetch.mockResolvedValueOnce({
+                    ok: false,
+                    status: 400
+                });
+
+                // 点击“20条/页”按钮，下拉框消失
+                fireEvent.click(screen.getByText('20条/页'));
+
+                // 验证现在下拉框按钮内容为“20条/页”
+                await waitFor(() => {
+                    expect(screen.getByText('20条/页')).toBeInTheDocument();
+                });
+
+                // 验证toast提示
+                await waitFor(() => {
+                    expect(screen.queryAllByText('请求失败，状态码：400').length).toBe(5);
+                });
+
+            });
+
         });
 
-        it('页面跳转', async () => {
+        describe('页面跳转', () => {
 
-            // 临时mock数据
-            global.fetch.mockResolvedValueOnce({
-                ok: true,
-                json: () => Promise.resolve({
-                    status: 0,
-                    msg: "success",
-                    API: "/api/paper",
-                    method: "GET",
-                    data: [PAPER_ONE, PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE,
-                        PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE 
-                    ],// 共11条
-                    rowCount: 11,
-                    pageCount: 2
-                })
+            it('正常情况', async () => {
+    
+                // 临时mock数据
+                global.fetch.mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        status: 0,
+                        msg: "success",
+                        API: "/api/paper",
+                        method: "GET",
+                        data: [PAPER_ONE, PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE,
+                            PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE 
+                        ],// 共11条
+                        rowCount: 11,
+                        pageCount: 2
+                    })
+                });
+    
+                const { container } = render(Page);
+    
+                // 等待表格渲染11条数据
+                await waitFor(() => {
+                    expect(container.querySelectorAll('tbody tr').length).toBe(11);
+                });
+    
+                // 验证“共11条”
+                expect(screen.getByText('共 11 条')).toBeInTheDocument();
             });
 
-            const { container } = render(Page);
+            it('失败情况', async () => {
 
-            // 等待表格渲染11条数据
-            await waitFor(() => {
-                expect(container.querySelectorAll('tbody tr').length).toBe(11);
+                // 临时mock数据（11条）
+                global.fetch.mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        status: 0,
+                        msg: "success",
+                        API: "/api/paper",
+                        method: "GET",
+                        data: [PAPER_ONE, PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE,
+                            PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE,PAPER_ONE 
+                        ],// 共11条
+                        rowCount: 11,
+                        pageCount: 2
+                    })
+                });
+
+                const { container } = render(Page);
+
+                // 等待表格渲染11条数据
+                await waitFor(() => {
+                    expect(container.querySelectorAll('tbody tr').length).toBe(11);
+                });
+
+                // 验证“共11条”
+                expect(screen.getByText('共 11 条')).toBeInTheDocument();
+
+                // 验证“10条/页”
+                expect(screen.getByText('10条/页')).toBeInTheDocument();
+
+                // 临时mock数据
+                global.fetch.mockResolvedValueOnce({
+                    ok: false,
+                    status: 400
+                });
+
+                // 点击page-control里内容为2的按钮（通过class选择）
+                fireEvent.click(container.querySelector('.page-control button:nth-child(2)'));
+
+                // 验证toast提示
+                await waitFor(() => {
+                    expect(screen.queryAllByText('请求失败，状态码：400').length).toBe(5);
+                });
+
             });
 
-            // 验证“共11条”
-            expect(screen.getByText('共 11 条')).toBeInTheDocument();
         });
 
     });
@@ -1082,7 +1298,7 @@ describe('试卷管理页面测试', () => {
 
             // 验证toast提示
             await waitFor(() => {
-                expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(4);
+                expect(screen.queryAllByText('请求失败，状态码：400').length).toBe(4);
             });
 
             // 验证表格渲染空列表
@@ -1106,7 +1322,54 @@ describe('试卷管理页面测试', () => {
 
             // 验证toast提示
             await waitFor(() => {
-                expect(screen.queryAllByText(`业务错误`).length).toBe(4);
+                expect(screen.queryAllByText('业务错误').length).toBe(1);
+            });
+        });
+    });
+
+    describe('补充测试', () => {
+
+        it('批量删除成功后但获取数据失败', async () => {
+
+            const { container } = render(Page);
+
+            // 等待表格渲染两条数据
+            await waitFor(() => {
+                expect(container.querySelectorAll('tbody tr').length).toBe(2);
+            });
+
+            // 临时mock数据（删除成功）
+            global.fetch.mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({
+                    status: 0,
+                    msg: "success",
+                })
+            });
+
+            // 选中第一条数据（checkbox）
+            const firstRow = container.querySelectorAll('tbody tr')[0];
+            fireEvent.click(firstRow.querySelector('input[type="checkbox"]'));
+
+            // 点击删除按钮
+            fireEvent.click(container.querySelector('.btn.btn--danger.is-plain'));
+
+            // 验证弹窗内容
+            expect(screen.getByText('删除确认')).toBeInTheDocument();
+            expect(screen.getByText('请问是否要批量删除这 1 张试卷？')).toBeInTheDocument();
+
+            // 点击确认
+            fireEvent.click(screen.getByText('确定'));
+
+            // 临时mock数据（获取数据失败）
+            global.fetch.mockResolvedValueOnce({
+                ok: false,
+                status: 400
+            });
+
+            // 验证toast提示
+            await waitFor(() => {
+                expect(screen.queryAllByText('请求失败，状态码：400').length).toBe(3);
             });
         });
     });
