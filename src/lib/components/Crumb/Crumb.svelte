@@ -4,59 +4,27 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { baseNavItems } from '$lib/stores/modules/permission.js';
-  import { toast } from '$lib/components/Toast/Toast.js';
   import { beforeNavigate } from '$app/navigation';
 
-  let display_name = $state(''); // 用户名称
+  let { display_name } = $props();
+
+  // 参数校验
+  (() => {
+    // 仅允许字符串
+    if (typeof display_name !== 'string') {
+      console.warn(`[Header] display_name 必须是字符串类型，当前为 ${typeof display_name}`);
+      display_name = ''; // 重置为空字符串
+    }
+  })();
+
   let nav_map = $baseNavItems; // 导航数据
-
-  // 初始面包屑数据
-  let current_nav_path_data = $state();
+  let current_nav_path_data = $state(); // 当前面包屑数据
   let app_name = '3min'; // app名称
+  let user_menu_open = $state(false); // 用户菜单是否打开
+  let avatar_btn_element = $state(null); // 用户头像按钮元素
+  let user_menu_element = $state(null); // 用户菜单元素
 
-  /**
-   * 用户菜单是否打开
-   * @type {boolean}
-   */
-  let user_menu_open = $state(false);
-
-  /**
-   * 用户头像按钮元素
-   * @type {HTMLElement}
-   */
-  let avatar_btn_element = $state(null);
-
-  /**
-   * 用户菜单元素
-   * @type {HTMLElement}
-   */
-  let user_menu_element = $state(null);
-
-  /**
-   * 获取用户正式名称
-   */
-  function getUserInfo() {
-    fetch('/api/user/me')
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.status !== 0) {
-          throw new Error('用户数据不存在');
-        } else {
-          // 获取用户名称
-          display_name = data.data.OfficialName;
-
-          // toast.success(`你好：${display_name}，欢迎登录本系统`);
-        }
-      })
-      .catch((error) => {
-        console.error('获取用户权限失败：', error);
-        toast.error('获取用户权限失败：', error);
-      });
-  }
-
-  /**
-   * 获取当前路由路径数据（保持完整层级结构）
-   */
+  // 获取当前路由路径数据
   function getNavData(path, nav_map) {
     let result = [];
 
@@ -123,9 +91,6 @@
   });
 
   onMount(async () => {
-    // 获取用户信息
-    await getUserInfo();
-
     // 初始化面包屑
     const current_url_path = page.url.pathname;
     current_nav_path_data = getNavData(current_url_path, nav_map);

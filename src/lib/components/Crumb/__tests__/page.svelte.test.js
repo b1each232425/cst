@@ -7,6 +7,7 @@ import { slide } from 'svelte/transition';
 import { goto } from '$app/navigation';
 import { page } from '$app/state';
 import { beforeNavigate } from '$app/navigation';
+import { toast } from '$lib/components/Toast/Toast.js';
 
 // 在测试文件中添加 Svelte 过渡模拟
 vi.mock('svelte/transition', () => ({
@@ -23,6 +24,8 @@ vi.mock('$app/state', () => ({
     url: new URL('http://localhost/teacher/question-bank/theory'),
   },
 }));
+
+vi.mock('$lib/components/Toast/Toast.js', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 function setPathname(path) {
   page.url = new URL(`http://localhost${path}`);
@@ -53,16 +56,6 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     // 在每个测试前，清空所有的模拟
     vi.restoreAllMocks();
 
-    // 模拟成功的API响应
-    global.fetch = vi.fn();
-    fetch.mockResolvedValueOnce({
-      json: () =>
-        Promise.resolve({
-          status: 0,
-          data: { OfficialName: '张三' }, // 模拟用户名称
-        }),
-    });
-
     // 初始化page返回路径
     setPathname('/teacher/question-bank/theory');
   });
@@ -71,11 +64,69 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     delete global.someCustomVar;
   });
 
-  it('应该正确渲染题库管理', async () => {
-    render(Breadcrumb);
+  // 参数校验测试代码
+  it('接受正常字符串值', async () => {
+    let consoleWarnSpy = vi.spyOn(console, 'warn');
+    const { getByText } = render(Breadcrumb, {
+      props: { display_name: '张三' },
+    });
 
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    expect(consoleWarnSpy).not.toHaveBeenCalled();
+    expect(getByText('你好，张三')).toBeInTheDocument();
+  });
+
+  it('接受空字符串值', async () => {
+    let consoleWarnSpy = vi.spyOn(console, 'warn');
+    const { queryByText } = render(Breadcrumb, {
+      props: { display_name: '' },
+    });
+
+    expect(consoleWarnSpy).not.toHaveBeenCalled();
+    expect(queryByText('你好，')).toBeInTheDocument();
+  });
+
+  it('未传入时使用默认空字符串', async () => {
+    let consoleWarnSpy = vi.spyOn(console, 'warn');
+    const { queryByText } = render(Breadcrumb);
+
+    expect(consoleWarnSpy).toHaveBeenCalled();
+    expect(queryByText('你好，')).toBeInTheDocument();
+  });
+
+  it('非字符串类型应警告并使用默认值', async () => {
+    let consoleWarnSpy = vi.spyOn(console, 'warn');
+    const { queryByText } = render(Breadcrumb, {
+      props: { display_name: 123 },
+    });
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[Header] display_name 必须是字符串类型，当前为 number');
+    expect(queryByText('你好，123')).toBeNull();
+    expect(queryByText('你好，')).toBeInTheDocument();
+  });
+
+  it('null 值应警告并使用默认值', async () => {
+    let consoleWarnSpy = vi.spyOn(console, 'warn');
+    const { queryByText } = render(Breadcrumb, {
+      props: { display_name: null },
+    });
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[Header] display_name 必须是字符串类型，当前为 object');
+    expect(queryByText('你好，null')).toBeNull();
+    expect(queryByText('你好，')).toBeInTheDocument();
+  });
+
+  it('undefined 值应使用默认值且不警告', async () => {
+    let consoleWarnSpy = vi.spyOn(console, 'warn');
+    const { queryByText } = render(Breadcrumb, {
+      props: { display_name: undefined },
+    });
+
+    expect(consoleWarnSpy).toHaveBeenCalled();
+    expect(queryByText('你好，')).toBeInTheDocument();
+  });
+
+  it('应该正确渲染题库管理', async () => {
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -91,10 +142,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
   it('应该正确渲染编辑题库', async () => {
     setPathname('/teacher/question-bank/theory/editBank');
 
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -110,7 +158,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
   it('点击面包屑回退到理论题库管理', async () => {
     setPathname('/teacher/question-bank/theory/editBank');
 
-    render(Breadcrumb);
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 验证初始面包屑内容
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -129,10 +177,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染试卷管理', async () => {
     setPathname('/teacher/paper');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -147,10 +192,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染练习管理', async () => {
     setPathname('/teacher/practice');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -165,10 +207,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染创建练习', async () => {
     setPathname('/teacher/practice/create');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -184,10 +223,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染编辑练习', async () => {
     setPathname('/teacher/practice/edit/1');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -204,10 +240,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
   it('点击面包屑回退到练习管理', async () => {
     setPathname('/teacher/practice/create');
 
-    render(Breadcrumb);
-
-    // 等待异步数据加载完成
-    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 使用 getByAltText 获取单个头像和通知图标
     expect(screen.getByAltText('头像')).toBeInTheDocument();
@@ -226,10 +259,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染考试管理', async () => {
     setPathname('/teacher/exam');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -244,10 +274,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染创建考试', async () => {
     setPathname('/teacher/exam/addExam');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -263,10 +290,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染编辑考试', async () => {
     setPathname('/teacher/exam/editExam/1');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -283,10 +307,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
   it('点击面包屑回退到考试管理', async () => {
     setPathname('/teacher/exam/editExam/1');
 
-    render(Breadcrumb);
-
-    // 等待异步数据加载完成
-    expect(await screen.findByText('你好，张三')).toBeInTheDocument();
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 使用 getByAltText 获取单个头像和通知图标
     expect(screen.getByAltText('头像')).toBeInTheDocument();
@@ -305,10 +326,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染考试批改', async () => {
     setPathname('/teacher/correct/exam-correct');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -323,10 +341,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染练习批改', async () => {
     setPathname('/teacher/correct/practice-correct');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -341,10 +356,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染考试成绩管理', async () => {
     setPathname('/teacher/grade/exam-grade');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -359,10 +371,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染考试成绩管理', async () => {
     setPathname('/teacher/grade/practice-grade');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -377,10 +386,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染学生管理', async () => {
     setPathname('/teacher/student-management');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -395,10 +401,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染创建学生', async () => {
     setPathname('/teacher/student-management/addStudent');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -415,7 +418,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
   it('点击面包屑回退到学生管理', async () => {
     setPathname('/teacher/student-management/addStudent');
 
-    render(Breadcrumb);
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -437,10 +440,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染用户管理', async () => {
     setPathname('/teacher/user-management');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -455,10 +455,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
   it('正确渲染添加用户', async () => {
     setPathname('/teacher/user-management/addUser');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -475,7 +472,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
   it('点击面包屑回退到用户管理', async () => {
     setPathname('/teacher/user-management/addUser');
 
-    render(Breadcrumb);
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -502,10 +499,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
       cancel: vi.fn(),
     }));
 
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -525,10 +519,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
   });
 
   it('应该正确渲染用户数据', async () => {
-    render(Breadcrumb);
-
-    // 验证fetch被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -541,10 +532,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
       cancel: vi.fn(),
     }));
 
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -585,10 +573,7 @@ describe('Crumb.svelte 面包屑组件测试', () => {
       cancel: vi.fn(),
     }));
 
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -611,24 +596,9 @@ describe('Crumb.svelte 面包屑组件测试', () => {
     triggerBeforeNavigate('/teacher/question-bank/theory', '/login');
   });
 
-  it('应该正确处理用户数据', async () => {
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
-
-    // 等待异步操作完成并验证用户名称是否正确渲染
-    await waitFor(() => {
-      expect(screen.getByText('你好，张三')).toBeInTheDocument();
-    });
-  });
-
   it('应该正确处理跳转到不在仓库里面的路径', async () => {
     setPathname('/teacher/practice');
-    render(Breadcrumb);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Breadcrumb, { props: { display_name: '张三' } });
 
     // 等待异步数据加载完成
     expect(await screen.findByText('你好，张三')).toBeInTheDocument();
@@ -642,69 +612,5 @@ describe('Crumb.svelte 面包屑组件测试', () => {
 
     // 模拟路径跳转到学生端
     triggerBeforeNavigate('/teacher/practice', '/student/answer/practice');
-  });
-
-  it('处理API请求失败', async () => {
-    // 模拟失败的API响应
-    fetch.mockRejectedValueOnce(new Error('API Error'));
-
-    render(Breadcrumb);
-
-    // 验证默认状态（显示空名称）
-    expect(await screen.findByText('你好，')).toBeInTheDocument();
-    expect(screen.queryByText('张三')).not.toBeInTheDocument();
-  });
-
-  it('应该处理当 status为负数时的错误', async () => {
-    // 设置 console.error 的 spy
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    // 模拟成功响应但缺少 APIs 数据
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          status: -1,
-          data: {},
-        }),
-    });
-
-    render(Breadcrumb);
-
-    await waitFor(() => {
-      expect(consoleErrorSpy.mock.calls[0][1].message).toMatch('用户数据不存在');
-    });
-  });
-
-  it('处理API请求失败（网络错误）', async () => {
-    // 设置 console.error 的 spy
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    // 模拟前端网络错误
-    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network Error'));
-
-    render(Breadcrumb);
-
-    await waitFor(() => {
-      expect(consoleErrorSpy.mock.calls[0][1].message).toBe('Network Error');
-    });
-  });
-
-  it('处理API请求失败', async () => {
-    // 设置 console.error 的 spy
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    // 模拟后端500错误
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-      json: () => Promise.resolve({ status: 500, data: null }),
-    });
-
-    render(Breadcrumb);
-
-    await waitFor(() => {
-      expect(consoleErrorSpy.mock.calls[0][1].message).toBe('用户数据不存在');
-    });
   });
 });
