@@ -16,6 +16,7 @@
   import { toast } from '$lib/components/Toast/Toast';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
   import { sget } from '$lib/utils/index.js';
+  import CountdownTimer from '../_component/CountdownTimer/CountdownTimer.svelte';
 
   /**
    * @typedef {Object} ExamineeSession
@@ -88,6 +89,8 @@
   let showExpandButton = $state(false); // 是否显示展开按钮
   let attachmentContainer = $state(null); // 附件容器引用
   let files = $state([]); // 附件列表
+  let examinee_id = 1555;  //暂时写死考生ID，没有找到API能够获取
+  let lastServerTs = $state(null);
   
   //文件下载类  
   async function downloadAttachment(file) { // 使用文件的save_path构建下载URL
@@ -259,6 +262,7 @@
           toast.error(`获取考试信息失败: ${data.msg || ''}`, 2000);
           throw new Error(data.Msg);
         } else {
+        
 
         if (!data.data.examInfo.Name) throw new Error('标题不能为空'); // 考试信息
           title = data.data.examInfo.Name;
@@ -279,16 +283,6 @@
         }));
 
         files = data.data.files || []; // 获取附件列表
-
-      /*    title = sget(data, "data.examInfo.Name", "无标题");
-          exam_notes = sget(data, "data.examInfo.Rules", "暂无规则说明");
-          exam_info = sget(data, "data.examInfo", {});
-          exam_sessions = sget(data, "data.examSessions", []).map(session => ({
-            ...session,
-            StartTimeTimestamp: new Date(sget(session, "StartTime", 0)).getTime(),
-            EndTimeTimestamp: new Date(sget(session, "EndTime", 0)).getTime()
-          }));
-          files = sget(data, "data.files", []); // 获取附件列表*/
         }
       })
       .catch(error => {
@@ -372,6 +366,37 @@
           <span class="icon"> ← </span>
           <span> 返回 </span>
         </button>
+        <div class="exam-header-right">
+          <div class="server-time-label">当前时间</div>
+          {#if examinee_id}
+            <!-- 使用 showServerTime 模式，组件会通过 ws 获取并显示服务器当前时刻（时:分:秒） -->
+            <CountdownTimer
+              ifPreview={false}
+              showServerTime={true}
+              {examinee_id}
+              on:serverTick={(e) => {
+                const ts = Number(e.detail.timestamp) || 0;
+                const session = exam_sessions[current_session];
+                if (!session) { lastServerTs = ts; return; }
+                if (lastServerTs == null) { // 首次收到服务器时间：若当前时间已经 >= 开始时间或 >= 结束时间，立即刷新状态
+                  if (ts >= session.StartTimeTimestamp || ts >= session.EndTimeTimestamp) {
+                    fetchExamStatus(session.ID);
+                  }
+                  lastServerTs = ts;
+                  return;
+                }
+                if (Number(lastServerTs) < session.StartTimeTimestamp && ts >= session.StartTimeTimestamp) { // 开始时间跨越检测：之前 < Start && 当前 >= Start（只在跨越时触发一次）
+                  fetchExamStatus(session.ID);
+                }
+                if (Number(lastServerTs) < session.EndTimeTimestamp && ts >= session.EndTimeTimestamp) { // 结束时间跨越检测：之前 < End && 当前 >= End（只在跨越时触发一次）
+                  fetchExamStatus(session.ID);
+                }
+
+                lastServerTs = ts;
+              }}
+            />
+          {/if}
+        </div>
       </div>
       <div class="nav-right"></div>
     </div>
@@ -514,6 +539,23 @@
     padding: 10px 20px;
     background-color: #fff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  .exam-header-right {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    right: 30px;
+    z-index: 1001; /* 确保在其他元素之上 */
+  }
+  .server-time-label {
+    margin-right: 8px;
+    font-size: 14px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    padding-right: 6px;
+    border-right: 1px solid rgba(0,0,0,0.08);
   }
 
   .nav-left,
