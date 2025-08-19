@@ -35,6 +35,11 @@
     min-width: 100%;
     max-width: 100%;
   }
+  .question-score-inline {
+      color: #ff7e08;
+      font-weight: bold;
+      font-size: 15px;
+    }
   //内容容器
   .question-content {
     display: flex;
