@@ -30,6 +30,16 @@
   // 使用 context 数据或 props 数据
   let displayData = $derived(contextData || data);
 
+  let sortedPapers = $derived.by(() => {
+  if (!displayData?.papers) return [];
+  return [...displayData.papers]
+    .sort((a, b) => Number(a.id) - Number(b.id))
+    .map((paper, index) => ({
+      ...paper,
+      idText: `试卷${index + 1}`
+    }));
+});
+
   /**
    * 格式化单个考试时间
    * @param {Object} examData - 考试数据
@@ -81,7 +91,7 @@
 
         <div class="info-item">
           <span class="label">批改方式</span>
-          <span class="value">自动批改</span>
+          <span class="value">{safeDisplayText(displayData.mark_mode)}</span>
         </div>
       </div>
     </div>
@@ -229,7 +239,7 @@
                 </tr>
               </thead>
               <tbody>
-                {#each displayData.papers || [] as paper}
+                {#each sortedPapers as paper}
                   <tr>
                     <td>{safeDisplayText(paper.idText)}</td>
                     <td>{safeDisplayText(paper.name)}</td>
@@ -258,19 +268,16 @@
           <span class="value">-</span>
         </div>
         <div class="info-item">
-          <span class="label">考试类型</span>
+          <span class="label">应考人数</span>
           <span class="value">-</span>
         </div>
+        
         <div class="info-item">
           <span class="label">考试平均分</span>
           <span class="value">-</span>
         </div>
         <div class="info-item">
-          <span class="label">知识点涉及</span>
-          <span class="value">-</span>
-        </div>
-        <div class="info-item">
-          <span class="label">应考人数</span>
+          <span class="label">通过人数</span>
           <span class="value">-</span>
         </div>
         <div class="info-item">
@@ -278,7 +285,7 @@
           <span class="value">-</span>
         </div>
         <div class="info-item">
-          <span class="label">通过人数</span>
+          <span class="label">考试类型</span>
           <span class="value">-</span>
         </div>
 

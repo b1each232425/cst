@@ -4,6 +4,7 @@
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import Loading from '$lib/components/Loading/Loading.svelte';
+  import {onMount} from 'svelte';
   import { goto } from '$app/navigation';
   import {
     handleApiError,
@@ -13,6 +14,8 @@
   } from '../_utils/errorHandler.js';
   import { formatPracticeData } from '../_utils/dataFormatter.js';
   import { debounce } from '../_utils/debounce.js';
+  import { safeDisplayNumber, safeDisplayText, safeDisplayBoolean } from '../_utils/dataFormatter.js';
+
 
   /**
    * @typedef {object} PracticeInfo
@@ -234,7 +237,7 @@
     goto(`/teacher/grade/practice-grade/detail?id=${practiceId}`);
   }
 
-  $effect(() => {
+  onMount(() => {
     fetchPractices();
   });
 </script>
@@ -332,7 +335,7 @@
                     </td>
                     <td class="practice-name">{practice.name ?? '-'}</td>
                     <td class="practice-total-score">{practice.total_score ?? '-'}</td>
-                    <td class="practice-avg-score">{practice.average_score ?? '-'}</td>
+                    <td class="practice-avg-score">{safeDisplayNumber(practice.average_score,1) ?? '-'}</td>
                     <td class="practice-completed">{practice.completed_students ?? '-'}</td>
                     <td class="practice-passed">{practice.passed_students ?? '-'}</td>
                     <td class="practice-operation">
