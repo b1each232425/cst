@@ -20,7 +20,92 @@
     /\/teacher\/grade\/practice-grade\/detail\?id=\d+/,
   ];
 
-  let nav_map = $state(); // 导航数据
+  let { nav_map = [] } = $props();
+
+  // 参数校验
+  (() => {
+    // 校验 nav_map 是否为数组
+    if (!Array.isArray(nav_map)) {
+      console.warn(`[SideBar] nav_map 必须是数组，当前为 ${typeof nav_map}`);
+      nav_map = [];
+      return;
+    }
+
+    // 校验每个导航项的结构
+    nav_map.forEach((item, index) => {
+      // 必需字段检查
+      const requiredFields = ['name', 'title', 'path'];
+      requiredFields.forEach((field) => {
+        if (!(field in item)) {
+          console.warn(`[SideBar] nav_map[${index}] 缺少必需字段: ${field}`);
+          nav_map = [];
+          return;
+        }
+      });
+
+      // 字段类型检查
+      if (typeof item.name !== 'string') {
+        console.warn(`[SideBar] nav_map[${index}].name 必须是字符串，当前为 ${typeof item.name}`);
+        nav_map = [];
+        return;
+      }
+
+      if (typeof item.title !== 'string') {
+        console.warn(`[SideBar] nav_map[${index}].title 必须是字符串，当前为 ${typeof item.title}`);
+        nav_map = [];
+        return;
+      }
+
+      if (typeof item.path !== 'string') {
+        console.warn(`[SideBar] nav_map[${index}].path 必须是字符串，当前为 ${typeof item.path}`);
+        nav_map = [];
+        return;
+      }
+
+      // 可选字段检查
+      if ('icon' in item && typeof item.icon !== 'string') {
+        console.warn(`[SideBar] nav_map[${index}].icon 必须是字符串，当前为 ${typeof item.icon}`);
+        nav_map = [];
+        return;
+      }
+
+      if ('children' in item) {
+        if (!Array.isArray(item.children)) {
+          console.warn(`[SideBar] nav_map[${index}].children 必须是数组，当前为 ${typeof item.children}`);
+          nav_map = [];
+          return;
+        }
+
+        // 递归校验子项
+        const validateChildren = (children, parentPath = '') => {
+          children.forEach((child, childIndex) => {
+            if (!child.name || !child.title || !child.path) {
+              console.warn(`[SideBar] nav_map${parentPath}[${childIndex}] 缺少必需字段`);
+              nav_map = [];
+              return;
+            }
+
+            if (child.children) {
+              validateChildren(child.children, `${parentPath}[${index}].children`);
+            }
+          });
+        };
+
+        validateChildren(item.children, `[${index}].children`);
+      }
+
+      // 布尔类型字段检查
+      const booleanFields = ['children_is_parallel', 'isFilter', 'force_hide'];
+      booleanFields.forEach((field) => {
+        if (field in item && typeof item[field] !== 'boolean') {
+          console.warn(`[SideBar] nav_map[${index}].${field} 必须是布尔值，当前为 ${typeof item[field]}`);
+          nav_map = [];
+          return;
+        }
+      });
+    });
+  })();
+
   let current_path = $derived(page.url.pathname); // 当前路径
   let is_auto_fold = $state(false); // 侧边栏是否自动折叠
   let sidebar_fold_state = $state(false); // 侧边栏折叠状态
@@ -163,27 +248,6 @@
     return false;
   }
 
-  // 获取用户权限并生成 nav_map
-  function getUserInfo() {
-    fetch('/api/user/me')
-      .then((response) => response.json())
-      .then(async (data) => {
-        if (!data?.data?.APIs) throw new Error('APIs 数据不存在');
-
-        const allowedPaths = await data.data.APIs.map((api) => api.APIExposePath);
-
-        // 过滤 baseNavItems，只保留匹配的父级菜单
-        nav_map = $baseNavItems.filter((item) => {
-          return allowedPaths.includes(item.path); // 只匹配一级菜单的 path
-        });
-      })
-      .catch((error) => {
-        nav_map = []; // 失败时设为空数组
-        console.error('获取用户权限失败:', error);
-        toast.error('获取用户权限失败：', error);
-      });
-  }
-
   // 正则匹配路径
   function regexMatch(path, path_regex) {
     return new RegExp(`${path_regex}`).test(path);
@@ -193,7 +257,6 @@
   beforeNavigate(({ from, to, cancel }) => {
     if (to) {
       const targetPath = to.url.pathname + to.url.search; // 包括路径和查询参数
-      console.log(targetPath);
 
       // 遍历 NEED_FOLD_NAV，检查是否匹配
       if (
@@ -242,21 +305,19 @@
         );
       }
     }, 0);
+
+    is_hydrated = true;
   }
 
   onMount(() => {
     // 加载保存的状态
     loadSidebarState();
-    is_hydrated = true;
 
     // 当窗口大小变化时，调用handleResize函数,当宽度太小自动收起侧边栏
     window.addEventListener('resize', handleResize);
 
     // 更新当前选中模块并高亮
     current_active = window.location.pathname;
-
-    // 获取用户信息
-    getUserInfo();
   });
 </script>
 

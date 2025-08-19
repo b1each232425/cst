@@ -2,7 +2,7 @@
  * @Author: 林炜佳 wj2144632819@qq.com
  * @Date: 2025-08-06 15:00:00
  * @LastEditors: 林炜佳 wj2144632819@qq.com
- * @LastEditTime: 2025-08-07 00:18:07
+ * @LastEditTime: 2025-08-19 12:00:07
  * @FilePath: \exam\src\routes\teacher\correct\correct\+page@.svelte
  * @Description: 教师端试卷批改页面
  * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
@@ -417,6 +417,16 @@
         : 0),
   );
 
+  // 一次计算所有题组的所有问题的 ID
+  let question_set_to_question_map = $derived(
+    Array.isArray(question_sets)
+      ? question_sets.reduce((acc, cur) => {
+          acc[cur.ID] = new Set(cur.Questions.map((q) => q.ID));
+          return acc;
+        }, {})
+      : {},
+  );
+
   function scrollToTop() {
     if (correction_content) correction_content.scrollTop = 0;
   }
@@ -462,7 +472,7 @@
       .then((res) => {
         if (!res.status) {
           if (is_exam_mode) {
-            toast.success('提交成功'); // 考试需要提示，练习是直接提交
+            toast.success('提交成功'); // 考试需要提示；练习不需要，直接提交即可
             goBack();
           } else {
             // 练习，全部练习批改完成，提示可以返回
@@ -505,14 +515,10 @@
 
   // 获取考生一道题组的分数
   function getStudentQuestionSetScore(student, question_set_id) {
-    // 1. 查找题组
-    const questionSet = question_sets.find((qs) => qs.ID === question_set_id);
-    if (!questionSet) return;
+    // 1. 根据题组 ID 获得题组中所有问题的 ID
+    const question_id_set = question_set_to_question_map[question_set_id];
 
-    // 2. 收集题组中所有问题的ID
-    const question_id_set = new Set(questionSet.Questions.map((q) => q.ID));
-
-    // 3. 计算总分
+    // 2. 计算总分
     return Array.isArray(marking_results)
       ? marking_results
           .filter((mr) => mr[student_id_key] === student?.[student_id_key] && question_id_set.has(mr.QuestionID))
@@ -551,6 +557,10 @@
       if (examinee_score === score) return 'right';
       if (examinee_score === 0) return 'incorrect';
       if (examinee_score > 0 && examinee_score < score) return 'partial';
+
+      const err_msg = `获取分数状态失败：question_id=${question_id}, score=${score}`;
+      toast.error(err_msg);
+      console.error(err_msg);
       return 'unknown';
     }
     return 'unreviewed';
@@ -603,11 +613,6 @@
     }
   }
 
-  // 已经有分数了，但是又被清空，需要将其显示在右侧的状态变为“未批改”
-  // function handleNoMark(question_id) {
-  //     has_unmarked = question_id;
-  // }
-
   // 检查参数，判断是考试还是练习，然后发起请求获取数据
   function checkQueriesAndGetData() {
     exam_session_id = Number(page.url.searchParams.get('exam_session_id'));
@@ -616,6 +621,7 @@
     // 都是空 / NaN || 都不是空 / NaN
     if ((!exam_session_id && !practice_id) || (exam_session_id && practice_id)) {
       showDialog('danger'); // 报错，终止对改页面的操作
+      console.log('路径参数错误');
       return;
     }
 
@@ -733,7 +739,6 @@
           else marking_results.push(data);
 
           // 练习，批改好一个同学就直接提交
-          console.log(is_finished_correcting);
           if (!is_exam_mode && is_finished_correcting) submitCorrection();
         } else throw new Error(res.msg ?? '批改操作失败');
       })

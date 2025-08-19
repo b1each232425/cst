@@ -797,6 +797,7 @@
         </div>
 
         <div class="previewArea">
+            {#if initialized}
             <QuestionPreviewPanel
                 closePanel={() => {}}
                 question={{
@@ -819,6 +820,7 @@
                 }}
                 displayClosePanelBtn={false}
             ></QuestionPreviewPanel>
+             {/if}
         </div>
     </div>
 </div>

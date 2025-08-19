@@ -2,17 +2,52 @@
   import SideBar from '$lib/components/SideBar/SideBar.svelte';
   import Crumb from '$lib/components/Crumb/Crumb.svelte';
   import Brand from '$lib/components/Brand/Brand.svelte';
+  import { toast } from '$lib/components/Toast/Toast.js';
+  import { baseNavItems } from '$lib/stores/modules/permission.js';
+  import { onMount } from 'svelte';
   let { children, data } = $props();
+
+  let nav_map = $state([]); // 导航数据
+  let display_name = $state(''); // 用户名称
+
+  // 获取用户权限并生成 nav_map
+  async function getUserInfo() {
+    fetch('/api/user/me')
+      .then((response) => response.json())
+      .then(async (data) => {
+        if (!data?.data?.APIs) throw new Error('APIs 数据不存在');
+
+        // 获取用户名
+        display_name = data.data.OfficialName;
+
+        // 获取当前用户可访问的路径
+        const allowedPaths = await data.data.APIs.map((api) => api.APIExposePath);
+
+        // 过滤 baseNavItems，只保留匹配的父级菜单
+        nav_map = $baseNavItems.filter((item) => {
+          return allowedPaths.includes(item.path); // 只匹配一级菜单的 path
+        });
+      })
+      .catch((error) => {
+        nav_map = []; // 失败时设为空数组
+        console.error('获取用户权限失败:', error);
+        toast.error('获取用户权限失败：', error);
+      });
+  }
+
+  onMount(async () => {
+    await getUserInfo();
+  });
 </script>
 
 <div class="app">
   <nav class="sidebar-container">
-    <SideBar />
+    <SideBar {nav_map} />
   </nav>
 
   <main>
     <header>
-      <Crumb />
+      <Crumb {display_name} />
     </header>
 
     <div class="content-wrapper">

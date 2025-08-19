@@ -120,70 +120,10 @@
     <th class="questionType">题型</th>
     <th class="questionTitle">题目</th>
     <th class="questionScore sortable">
-      <div>
-        <button
-          class="orderBtn"
-          onclick={() => {
-            sort_field = 'score';
-
-            if (sort_order === 'asc') {
-              sort_order = 'desc';
-            } else {
-              sort_order = 'asc';
-            }
-          }}
-        >
-          <span>分值</span>
-          <svg
-            viewBox="0 0 1024 1024"
-            version="1.1"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-            style="width: 20px;height:20px;"
-          >
-            <path
-              d="M480.32 865.536l-206.592-198.848a45.696 45.696 0 0 1 31.68-78.656h413.184a45.696 45.696 0 0 1 31.68 78.656l-206.592 198.848a45.696 45.696 0 0 1-63.36 0z"
-              fill={sort_field === 'score' ? (sort_order === 'asc' ? '#cdcdcd' : '#444') : '#cdcdcd'}
-            ></path>
-            <path
-              d="M480.32 222.528L273.728 421.376a45.696 45.696 0 0 0 31.68 78.656h413.184a45.696 45.696 0 0 0 31.68-78.72L543.68 222.592a45.696 45.696 0 0 0-63.36 0z"
-              fill={sort_field === 'score' ? (sort_order === 'asc' ? '#444' : '#cdcdcd') : '#cdcdcd'}
-            ></path>
-          </svg>
-        </button>
-      </div>
+          <span>分值</span> 
     </th>
     <th class="difficultyTag sortable">
-      <div>
-        <button
-          class="orderBtn"
-          onclick={() => {
-            sort_field = 'difficulty';
-
-            if (sort_order === 'asc') {
-              sort_order = 'desc';
-            } else {
-              sort_order = 'asc';
-            }
-          }}
-        >
           <span>难度</span>
-          <svg
-            viewBox="0 0 1024 1024"
-            version="1.1"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-            style="width: 20px;height:20px;"
-          >
-            <path
-              d="M480.32 865.536l-206.592-198.848a45.696 45.696 0 0 1 31.68-78.656h413.184a45.696 45.696 0 0 1 31.68 78.656l-206.592 198.848a45.696 45.696 0 0 1-63.36 0z"
-              fill={sort_field === 'difficulty' ? (sort_order === 'asc' ? '#cdcdcd' : '#444') : '#cdcdcd'}
-            ></path>
-            <path
-              d="M480.32 222.528L273.728 421.376a45.696 45.696 0 0 0 31.68 78.656h413.184a45.696 45.696 0 0 0 31.68-78.72L543.68 222.592a45.696 45.696 0 0 0-63.36 0z"
-              fill={sort_field === 'difficulty' ? (sort_order === 'asc' ? '#444' : '#cdcdcd') : '#cdcdcd'}
-            ></path>
-          </svg>
-        </button>
-      </div>
     </th>
     <th class="questionTags">标签</th>
     <th class="updateTime sortable">
@@ -450,14 +390,8 @@
           gap: 6px;
           justify-content: center;
           align-items: flex-start;
-
-          .tag {
-            background: #e9ecef;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.85em;
-            color: #495057;
-          }
+           overflow-x: height;
+        
         }
       }
 
@@ -514,7 +448,7 @@
   }
 
   .questionTags {
-    width: 10%;
+    width: 15%;
   }
 
   .updateTime {
