@@ -118,10 +118,10 @@
               invalidUsers.forEach((user) => {
                 if (
                   item['姓名'] === user.OfficialName &&
-                  item['手机号'] === user.MobilePhone &&
+                 ( item['手机号'] === user.MobilePhone||'+86'+item['手机号'].toString() === user.MobilePhone.toString()) &&
                   item['身份证号'] === user.IDCardNo
                 ) {
-                  item.errorType = user.ErrorMsg.toString();
+                  item.errorType = user.ErrorMsg
                   item.isOk = false;
                 }
               });
@@ -133,7 +133,7 @@
               existUsers.forEach((user) => {
                 if (
                   item['姓名'] === user.OfficialName &&
-                  item['手机号'] === user.MobilePhone &&
+                  ( item['手机号'] === user.MobilePhone||'+86'+item['手机号'].toString() === user.MobilePhone.toString()) &&
                   item['身份证号'] === user.IDCardNo
                 ) {
                   item.ID = user.ID;
@@ -277,7 +277,7 @@
             invalidUsers.forEach((user) => {
               if (
                 item.officialName === user.OfficialName &&
-                item.mobilePhone === user.MobilePhone &&
+               ( item.mobilePhone === user.MobilePhone||'+86'+item.mobilePhone.toString() === user.MobilePhone.toString()) &&
                 item.idCardNo === user.IDCardNo
               ) {
                 console.log('更新错误信息');
@@ -293,7 +293,7 @@
             existUsers.forEach((user) => {
               if (
                 item.officialName === user.OfficialName &&
-                item.mobilePhone === user.MobilePhone &&
+               ( item.mobilePhone === user.MobilePhone||'+86'+item.mobilePhone.toString() === user.MobilePhone.toString()) &&
                 item.idCardNo === user.IDCardNo
               ) {
                 item.errorMsg = '';
@@ -308,7 +308,7 @@
             validList.forEach((user) => {
               if (
                 item.officialName === user.OfficialName &&
-                item.mobilePhone === user.MobilePhone &&
+               ( item.mobilePhone === user.MobilePhone||'+86'+item.mobilePhone.toString() === user.MobilePhone.toString()) &&
                 item.idCardNo === user.IDCardNo
               ) {
                 console.log('更新用户信息');

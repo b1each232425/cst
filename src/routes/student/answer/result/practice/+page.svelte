@@ -168,6 +168,7 @@
   let badgeX = $state(74); // 固定像素位置
   let badgeY = $state(12); // 固定像素位置
   let practice_id = $state(''); // 测试ID
+  let practice_paper_info = $state({}); // 测试卷信息
 
   let show_wrong_questions = $state(false); // 是否只展示错题
   let filtered_questions = $state([]); // 错题集
@@ -290,7 +291,7 @@
     showBadge = false;
   }
   function goBack() { // 返回到考试列表
-    window.location.href = '/student/exam';
+    window.location.href = '/student/practice';
   }
   function filterWrongQuestions() { // 过滤错题
     show_wrong_questions = !show_wrong_questions;
@@ -343,7 +344,6 @@
           toast.error(`接口错误: ${data.msg}`, 2000);
           throw new Error(data.msg);
         }
-        console.log('获取题目成功:', data);
 
         //学生信息类
         if (!data.data.practiceInfo) throw new Error('practice_info 不能为空'); // 考试信息
@@ -353,6 +353,9 @@
           exam_questions_map = new Map(Object.entries(data.data.exam_question));
         if (!data.data.exam_paper_group || Object.keys(data.data.exam_paper_group).length === 0)  throw new Error('exam_paper_group 不能为空');
            question_groups_map = new Map(Object.entries(data.data.exam_paper_group));
+
+        if (!data.data.exam_paper)  throw new Error('exam_paper_info 不能为空');
+          practice_paper_info = data.data.exam_paper; // 试卷信息
 
         //加载题目
         total_score = 0; // 重置总分
@@ -410,7 +413,7 @@
           <span> 返回 </span>
         </button>
       </div>
-      <div class="exam-title">{examInfo.Name}</div>
+      <div class="exam-title">{practice_paper_info.Name}</div>
     </div>
     <!-- 考试主体布局 -->
     <div class="exam-content">
@@ -453,7 +456,7 @@
             <img class="icon" src="/student_exam_practice/answerNum.png" alt="答题数量" />
             <label for="答题数量">答题数量：</label>
             <label for="具体数值" class="blodFont">{examInfo.AnswerNum}题</label>
-            <label for="具体数值"> /{examInfo.QuestionNum}题</label>
+            <label for="具体数值"> /{practice_paper_info.QuestionCount}题</label>
           </div>
         </div>
         <!-- 考试作答形式选择区域 -->

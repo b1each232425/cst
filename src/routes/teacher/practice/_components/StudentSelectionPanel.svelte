@@ -19,14 +19,16 @@
     onCancel = (/** @type {boolean} */ load_new_file) => {
       console.log('取消选择');
     },
-    onConfirm = (/** @type {any} */ newStudents,selected_ids) => {
-      console.log(selected_ids);
+    onConfirm = (/** @type {any} */ newStudents, selected_ids,is_delete_all) => {
+      console.log('123131', selected_ids);
     },
+    
   } = $props();
 
   //新增的学生
   let newStudents = $state([]);
-
+  //表示是否全选删除学生
+  let is_delete_all = $state(false);
 
   let page_size = $state(10);
 
@@ -39,6 +41,10 @@
     page: 1,
     pageSize: 10,
   });
+  /**
+   * @type {any[]}
+   */
+  let student_list = $state([]);
 
   /**
    * @type {any[]}
@@ -66,7 +72,7 @@
         (student) =>
           (student.officialName &&
             student.officialName.toLowerCase().includes(selected_search_params.name.toLowerCase())) ||
-          (student.phone && student.phone.includes(selected_search_params.name)) ||
+          (student.mobilePhone && student.mobilePhone.includes(selected_search_params.name)) ||
           (student.idCardNo && student.idCardNo.includes(selected_search_params.name)),
       );
     }
@@ -132,11 +138,19 @@
    * @type {import("./StudentImportPanel.svelte").default & { triggerFileInput: () => void } | null}
    */
   let student_import_panel = $state(null);
+  // 判断是否全选
+  function isAllSelected() {
+    if (selected_ids !== null) {
+      return selected_ids.every((student) => student.selected);
+    } else {
+      return false;
+    }
+  }
 
   // 获取当前最大的serial_number
   function getMaxSerialNumber() {
-    if (selected_ids.length === 0) return 0;
-    return Math.max(...selected_ids.map((item) => item.serial_number || 0));
+    if (student_list.length === 0) return 0;
+    return Math.max(...student_list.map((item) => item.serial_number || 0));
   }
 
   /**
@@ -215,7 +229,8 @@
           totals = 0;
           search_params.page = current_page;
           toast.error(error);
-        } else if (selected_ids.length > 0 && selected_ids.length != result.data.length) {
+        } else if (selected_ids.length > 0 && selected_ids.length != result.data.length|| is_delete_all) {
+          
         } else {
           selected_ids =
             result.data === null
@@ -225,9 +240,8 @@
                   officialName: item.official_name,
                   idCardNo: item.id_card_no,
                   mobilePhone: item.phone,
-                  ID: item.id
+                  ID: item.id,
                 }));
-              
         }
       })
       .catch((error) => {
@@ -247,12 +261,54 @@
       //每次打开时将外部选中的id赋值给当前面板记录的已选中的id 在搜索前执行是为了能正常显示每个列表项的选中效果
       selected_ids = ids;
       filtered_selected_ids = ids;
+      is_all_selected = false;
+      
       if (practice_id) {
+        console.log("practice_id", practice_id);
         // 获取已选学生的信息
         getStudentInfo(practice_id);
       }
     }
   });
+  function deleteStudent() {
+    if (!student_list || student_list.length == 0) {
+      toast.error('请选择要删除的学生');
+      return;
+    }
+    //把这个学生从selected_ids中删除
+    if(is_all_selected){
+      is_delete_all = true;
+    }
+
+    selected_ids = selected_ids.filter((student) => {
+      return !student_list.some((item) => {
+        return (
+          student.officialName === item.officialName &&
+          student.mobilePhone === item.mobilePhone &&
+          student.idCardNo === item.idCardNo
+        );
+      });
+    });
+
+    //假设这个学生是要新增的学生，把new_student的数据删除
+    newStudents = newStudents.filter((student) => {
+      return !student_list.some((item) => {
+        return (
+          student.officialName === item.officialName &&
+          student.mobilePhone === item.mobilePhone &&
+          student.idCardNo === item.idCardNo
+        );
+      });
+    });
+
+    // 清空 student_list
+    student_list = [];
+    console.log('删除的学号：', selected_ids);
+
+    // 重新计算序号
+    recalculateSerialNumbers();
+   is_all_selected = false;
+  }
 
   //下载模板函数
   // 下载模板
@@ -273,13 +329,13 @@
     }
   }
 
-  function handleImportSuccess(is_all_ok, import_data,exist_students) {
+  function handleImportSuccess(is_all_ok, import_data, exist_students) {
     if (is_all_ok && import_data) {
       // importedData 包含了所有导入的学生信息
       console.log('导入的学生数据:', import_data);
 
       // 处理导入的学生数据，例如添加到学生列表
-       newStudents = import_data.map((student, index) => ({
+      newStudents = import_data.map((student, index) => ({
         serial_number: selected_ids.length + index + 1,
         // 可以添加其他需要的字段
         officialName: student.officialName,
@@ -287,19 +343,68 @@
         gender: student.Gender,
         idCardNo: student.idCardNo,
         account: student.Account,
-        ...student
+        ...student,
       }));
-       // 过滤掉已经在 selected_ids 中存在的学生（避免重复）
-     exist_students = exist_students.filter(exist_student => {
-      return !selected_ids.some(selected_student => selected_student.ID === exist_student.ID);
-    });
-    console.log('exist_students',exist_students)
+      // 过滤掉已经在 selected_ids 中存在的学生（避免重复）
+      exist_students = exist_students.filter((exist_student) => {
+        return !selected_ids.some((selected_student) => selected_student.ID === exist_student.ID);
+      });
+      console.log('exist_students', exist_students);
       // 更新选中学生列表
-      selected_ids = [...selected_ids, ...newStudents,...exist_students];
-      console.log('selected',selected_ids);
+      selected_ids = [...selected_ids, ...newStudents, ...exist_students];
+      console.log('selected', selected_ids);
       recalculateSerialNumbers();
     }
     show_import_panel = false;
+  }
+  // 切换全选状态
+  function toggleSelectAll() {
+    is_all_selected = !is_all_selected; // 切换全选状态
+    selected_ids.forEach((/** @type {{ selected: boolean; }} */ student) => {
+      student.selected = is_all_selected; // 更新所有行的选中状态
+    });
+
+    //根据全选状态调整已选择的数组
+    if (is_all_selected) {
+      selected_ids.forEach((student) => {
+        const exists = student_list.find(
+          (item) =>
+            student.officialName === item.officialName &&
+            student.mobilePhone === item.mobilePhone &&
+            student.idCardNo === item.idCardNo,
+        );
+        if (!exists) {
+          student_list.push({
+            ID: student.ID,
+            officialName: student.officialName,
+            gender: student.gender,
+            account: student.account,
+            mobilePhone: student.mobilePhone,
+            idCardNo: student.idCardNo,
+            serial_number: selected_ids.length + 1,
+          });
+        }
+      });
+    } else {
+      selected_ids.forEach(
+        /** @param {{ id: string }} student */
+        (student) => {
+          const index = student_list.findIndex(
+            (item) =>
+              student.officialName === item.officialName &&
+              student.mobilePhone === item.mobilePhone &&
+              student.idCardNo === item.idCardNo,
+          );
+          if (index !== -1) {
+            student_list.splice(index, 1);
+          }
+        },
+      );
+
+      // 只在取消全选时检查是否需要重新计算序号
+      recalculateSerialNumbers();
+    }
+    is_all_selected = isAllSelected();
   }
 </script>
 
@@ -325,6 +430,7 @@
             ></InputBox>
           </div>
           <div class="button-group">
+            <Button onclick={deleteStudent} type="danger">删除</Button>
             <Button onclick={downloadTemplate}>下载模板</Button>
             <Button
               onclick={() => {
@@ -339,6 +445,9 @@
           <table class="table">
             <thead class="student-table-head">
               <tr class="table-head-row">
+                <th class="table-head" style="width: 30px;">
+                  <input type="checkbox" class="custom-checkbox" onchange={toggleSelectAll} checked={is_all_selected} />
+                </th>
                 <th class="table-head">姓名</th>
                 <th class="table-head">性别</th>
                 <th class="table-head">手机号</th>
@@ -348,6 +457,52 @@
             <tbody>
               {#each current_page_selected_ids as student}
                 <tr class="examinee">
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="custom-checkbox"
+                      checked={student.selected}
+                      onchange={/** @param {Event} event */
+                      (event) => {
+                        const target = /** @type {HTMLInputElement} */ (event.target);
+                        if (target && target.checked) {
+                          if (
+                            !student_list.find(
+                              (item) =>
+                                student.officialName === item.officialName &&
+                                student.mobilePhone === item.mobilePhone &&
+                                student.idCardNo === item.idCardNo,
+                            )
+                          ) {
+                            const currentMaxSerial = getMaxSerialNumber();
+                            student_list.push({
+                              ID: student.ID,
+                              officialName: student.officialName,
+                              account: student.account,
+                              gender: student.gender,
+                              mobilePhone: student.mobilePhone,
+                              idCardNo: student.idCardNo,
+                              serial_number: currentMaxSerial + 1,
+                            });
+                          }
+                          student.selected = true;
+                          is_all_selected = isAllSelected();
+                        } else {
+                          const index = student_list.findIndex(
+                            (item) =>
+                              student.officialName === item.officialName &&
+                              student.mobilePhone === item.mobilePhone &&
+                              student.idCardNo === item.idCardNo,
+                          );
+                          if (index !== -1) {
+                            student_list.splice(index, 1);
+                          }
+                          student.selected = false;
+                          is_all_selected = isAllSelected();
+                        }
+                      }}
+                    />
+                  </td>
                   <td>{student.officialName || '--'}</td>
                   <td>{student.gender || '--'}</td>
                   <td>{student.mobilePhone || '--'}</td>
@@ -390,7 +545,7 @@
         onclick={() => {
           show_panel = false;
           search_params.page = 1;
-          onConfirm(newStudents,selected_ids);
+          onConfirm(newStudents, selected_ids,is_delete_all);
         }}>确定</Button
       >
     </div>
@@ -414,6 +569,19 @@
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
+    text-align: left;
+     thead {
+        background-color: #ffffff;
+        font-size: 14px;
+        font-weight: normal;
+        color: rgb(0, 0, 0, 0.3);
+        border: none;
+        padding: 8px;
+        text-align: center;
+        position: sticky; /* 添加这行 */
+        top: 0; /* 添加这行 */
+        z-index: 1; /* 确保它在其他内容之上 */
+      }
 
     th,
     td {
@@ -437,10 +605,15 @@
     th {
       color: rgba(0, 0, 0, 0.3);
       background: #fafafa;
+      position: sticky;
     }
 
     // 表格行样式
     tbody {
+      
+      overflow-y: auto; /* 添加垂直滚动条 */
+      flex: 1; /* 占据剩余空间 */
+      
       tr {
         &:hover {
           background-color: #e0f0ff;
@@ -464,6 +637,11 @@
     align-items: center;
     margin: 16px 0;
     padding: 0 16px;
+     flex-shrink: 0; /* 防止分页器被压缩 */
+    position: sticky;
+    bottom: 0;
+    background: white;
+    z-index: 10;
   }
 
   .examinee-panel-container {
@@ -558,12 +736,15 @@
   }
 
   .examinee-selection-table-container {
-    margin: 20px 0px 0 0px;
-    flex: 1;
-    min-height: 440px;
-    position: relative;
-    display: flex;
-    flex-direction: column;
+   margin: 20px 0px 0 0px;
+        flex: 1;
+        max-height:  calc(70vh - 150px);;
+        min-height: calc(70vh - 150px);;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+
     overflow-y: auto;
   }
   .download-template-button {
@@ -575,6 +756,20 @@
     color: #165dff;
     font-size: 14px;
     cursor: pointer;
+  }
+
+  // 自定义复选框
+  .custom-checkbox {
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgb(0, 0, 0, 0.3);
+    cursor: pointer;
+    accent-color: #0052d9;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   }
 
   .upload-file-button {
@@ -678,6 +873,7 @@
     padding: 8px;
     text-align: center;
     .table-head-row {
+      
       height: 40px;
       .table-head {
         font-weight: normal;

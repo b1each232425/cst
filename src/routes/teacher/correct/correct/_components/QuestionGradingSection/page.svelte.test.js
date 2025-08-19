@@ -166,10 +166,23 @@ describe('QuestionGradingSection 组件测试', () => {
     expect(inputs[1]).toHaveValue(11); // 第二部分最大11分
   });
 
-  it('应阻止负分数输入', async () => {
+  it('应阻止负分数输入（有批改记录）', async () => {
     const mockSave = vi.fn();
     const { getAllByPlaceholderText } = render(QuestionGradingSection, {
       props: { ...BASE_PROPS, onSaveMark: mockSave },
+    });
+
+    const inputs = getAllByPlaceholderText('输入得分');
+
+    // 尝试输入负数
+    await fireEvent.input(inputs[0], { target: { value: '-1' } });
+    expect(inputs[0]).toHaveValue(null); // 应被清空
+  });
+
+  it('应阻止负分数输入（无批改记录）', async () => {
+    const mockSave = vi.fn();
+    const { getAllByPlaceholderText } = render(QuestionGradingSection, {
+      props: { ...BASE_PROPS, old_mark_result: [], onSaveMark: mockSave },
     });
 
     const inputs = getAllByPlaceholderText('输入得分');

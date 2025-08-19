@@ -22,6 +22,7 @@
   import { toast } from '$lib/components/Toast/Toast';
   import { CURRENT_PAPER_ID } from './_stores/previewStore';
   import Empty from '$lib/components/Table/Empty.svelte';
+  import ExcelJS from 'exceljs';
   //import SessionSelection from './_components/SessionSelection.svelte';
   let exam_list = $state([]);
   let name_search_time = null;
@@ -357,36 +358,38 @@
           toast.warning("本场考试还未导入考生");
           return;
         }
-          // 生成 CSV 内容
-        const headers = ["序号",  "姓名", "账号", "身份证号"];
-        const csvRows = [
-          headers.join(","),
-          ...examinees.map(e =>
-            [
-              e.serial_number,
-              e.official_name,
-              e.account,
-              e.id_card_no || ""
-            ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")
-          )
-        ];
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('考生名单');
 
-        const csvContent = csvRows.join("\n");
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      sheet.columns = [
+        { header: '序号', key: 'serial_number', width: 10 },
+        { header: '姓名', key: 'official_name', width: 16 },
+        { header: '账号', key: 'account', width: 20 },
+        { header: '身份证号', key: 'id_card_no', width: 22 }
+      ];
 
-        // 创建下载链接
-        const link = document.createElement("a");
+      sheet.addRows(examinees);               
+      sheet.getRow(1).font = { bold: true };  // 表头加粗
+      
+       return workbook.xlsx.writeBuffer()            //  生成 xlsx 
+      .then(buffer => {
+        const blob = new Blob([buffer], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
         const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `${exam_list[index].name}考生名单`);
-        link.style.visibility = "hidden";
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${exam_list[index].name}考生名单.xlsx`; // 2. 改后缀
+        link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-            }
-            else{
-              throw new Error(result.msg);
+      });
+
+      }
+        else{
+             throw new Error(result.msg);
             }
         })
       .catch((error)=>{
