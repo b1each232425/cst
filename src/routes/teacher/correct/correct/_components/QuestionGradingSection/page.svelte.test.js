@@ -20,7 +20,7 @@ describe('QuestionGradingSection 组件测试', () => {
         },
         {
           index: 2,
-          score: 3,
+          score: 11,
           answer: '4',
           alternative_answer: null,
           grading_rule: '必须是准确的数字',
@@ -52,7 +52,7 @@ describe('QuestionGradingSection 组件测试', () => {
     const inputs = getAllByPlaceholderText('输入得分');
     expect(inputs).toHaveLength(2);
     expect(getByText(/(2分)/)).toBeInTheDocument();
-    expect(getByText(/(3分)/)).toBeInTheDocument();
+    expect(getByText(/(11分)/)).toBeInTheDocument();
   });
 
   it('应正确显示学生答案', () => {
@@ -84,6 +84,23 @@ describe('QuestionGradingSection 组件测试', () => {
     expect(getByText('必须是准确的数字')).toBeInTheDocument();
   });
 
+  it('输入分数过快应该可以防抖', async () => {
+    const mockSave = vi.fn();
+    const { getAllByPlaceholderText } = render(QuestionGradingSection, {
+      props: { ...BASE_PROPS, onSaveMark: mockSave },
+    });
+
+    const inputs = getAllByPlaceholderText('输入得分');
+
+    await fireEvent.input(inputs[0], { target: { value: '1' } });
+    await fireEvent.input(inputs[0], { target: { value: '10' } });
+
+    // 等待防抖时间
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    expect(mockSave).toHaveBeenCalledTimes(1);
+  });
+
   it('应正确处理分数变更事件', async () => {
     const mockSave = vi.fn();
 
@@ -96,6 +113,8 @@ describe('QuestionGradingSection 组件测试', () => {
     // 修改第一个输入框
     await fireEvent.input(inputs[0], { target: { value: '1' } });
     expect(inputs[0]).toHaveValue(1);
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
 
     // 验证保存事件被触发
     expect(mockSave).toHaveBeenCalledTimes(1);
@@ -139,10 +158,12 @@ describe('QuestionGradingSection 组件测试', () => {
 
     // 尝试输入超过最大值的分数
     await fireEvent.input(inputs[0], { target: { value: '5' } });
+    await new Promise((resolve) => setTimeout(resolve, 600));
     expect(inputs[0]).toHaveValue(2); // 第一部分最大2分
 
-    await fireEvent.input(inputs[1], { target: { value: '5' } });
-    expect(inputs[1]).toHaveValue(3); // 第二部分最大3分
+    await fireEvent.input(inputs[1], { target: { value: '15' } });
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(inputs[1]).toHaveValue(11); // 第二部分最大11分
   });
 
   it('应阻止负分数输入', async () => {
