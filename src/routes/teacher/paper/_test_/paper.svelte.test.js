@@ -2,14 +2,21 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-17 10:34:48
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-18 10:21:03
- * @FilePath: \exam\src\routes\teacher\paper\_test_\page.svelte.test.js
+ * @LastEditTime: 2025-08-19 16:15:37
+ * @FilePath: \exam\src\routes\teacher\paper\_test_\paper.svelte.test.js
  * @Description: 试卷管理页面测试
  * Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
  */
 
 vi.mock('$app/navigation', () => ({
     goto: vi.fn()
+}));
+
+vi.mock('$lib/components/Toast/Toast', () => ({
+    toast: {
+        success: vi.fn(),
+        error: vi.fn()
+    }
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,6 +26,7 @@ import { goto } from '$app/navigation';
 
 import Paper from '../+page.svelte';
 import { PAPER_ONE, PAPER_TWO, PAPER_THREE } from './utils';
+import { toast } from "$lib/components/Toast/Toast";
 
 describe('试卷管理页面测试', () => {
     beforeEach(() => {
@@ -254,7 +262,7 @@ describe('试卷管理页面测试', () => {
 
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.getByText(`请求失败，状态码：400`)).toBeInTheDocument();
+                            expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                         });
                     });
                 });
@@ -285,7 +293,7 @@ describe('试卷管理页面测试', () => {
                         
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.getByText('删除成功')).toBeInTheDocument();
+                            expect(toast.success).toHaveBeenCalledWith('删除成功', 1000);
                         });
                     });
 
@@ -297,7 +305,7 @@ describe('试卷管理页面测试', () => {
 
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.getByText('请先选择试卷')).toBeInTheDocument();
+                            expect(toast.error).toHaveBeenCalledWith('请先选择试卷', 1000);
                         });
                     });
 
@@ -325,12 +333,7 @@ describe('试卷管理页面测试', () => {
                         // 点击确认
                         fireEvent.click(screen.getByText('确定'));
                         
-                        // 验证toast提示
-                        await waitFor(() => {
-                            expect(screen.getByText('删除成功')).toBeInTheDocument();
-                        });
-
-                        global.fetch = vi.fn().mockResolvedValue({
+                        global.fetch.mockResolvedValueOnce({
                             ok: true,
                             json: () => Promise.resolve({
                                 API: "/api/paper",
@@ -340,6 +343,11 @@ describe('试卷管理页面测试', () => {
                                 rowCount: 0,
                                 status: 0
                             })
+                        });
+                        
+                        // 验证toast提示
+                        await waitFor(() => {
+                            expect(toast.success).toHaveBeenCalledWith('删除成功', 1000);
                         });
 
                         // 等待表格渲染空列表
@@ -377,7 +385,7 @@ describe('试卷管理页面测试', () => {
 
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(2);
+                            expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                         });
                     });
 
@@ -413,7 +421,7 @@ describe('试卷管理页面测试', () => {
                         
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.getByText(`业务错误`)).toBeInTheDocument();
+                            expect(toast.error).toHaveBeenCalledWith(`业务错误`, 1000);
                         });
 
                         
@@ -534,7 +542,7 @@ describe('试卷管理页面测试', () => {
 
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(3);
+                            expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                         });
                     });
 
@@ -554,7 +562,7 @@ describe('试卷管理页面测试', () => {
 
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.getByText(`业务错误`)).toBeInTheDocument();
+                            expect(toast.error).toHaveBeenCalledWith(`业务错误`, 1000);
                         });
                     });
                 });
@@ -799,7 +807,7 @@ describe('试卷管理页面测试', () => {
     
                     // 验证toast提示
                     await waitFor(() => {
-                        expect(screen.queryAllByText(`删除成功`).length).toBe(2);
+                        expect(toast.success).toHaveBeenCalledWith('删除成功', 1000);
                     });
     
                 });
@@ -835,20 +843,16 @@ describe('试卷管理页面测试', () => {
                     // 点击确认
                     fireEvent.click(screen.getByText('确定'));
     
-                    // 验证toast提示
-                    await waitFor(() => {
-                        expect(screen.queryAllByText(`删除成功`).length).toBe(3);
-                    });
-
                     // mock 400
                     global.fetch.mockResolvedValueOnce({
                         ok: false,
                         status: 400
                     });
-
+                    
                     // 验证toast提示
                     await waitFor(() => {
-                        expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(3);
+                        expect(toast.success).toHaveBeenCalledWith('删除成功', 1000);
+                        expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                     });
                 });
             });
@@ -1005,7 +1009,7 @@ describe('试卷管理页面测试', () => {
 
                     // 验证toast提示
                     await waitFor(() => {
-                        expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(4);
+                        expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                     });
                 });
 
@@ -1032,7 +1036,7 @@ describe('试卷管理页面测试', () => {
 
                     // 验证toast提示
                     await waitFor(() => {
-                        expect(screen.queryAllByText(`业务错误`).length).toBe(2);
+                        expect(toast.error).toHaveBeenCalledWith(`业务错误`, 1000);
                     });
                 });
             });
@@ -1171,7 +1175,7 @@ describe('试卷管理页面测试', () => {
 
                 // 验证toast提示
                 await waitFor(() => {
-                    expect(screen.queryAllByText('请求失败，状态码：400').length).toBe(5);
+                    expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                 });
 
             });
@@ -1251,7 +1255,7 @@ describe('试卷管理页面测试', () => {
 
                 // 验证toast提示
                 await waitFor(() => {
-                    expect(screen.queryAllByText('请求失败，状态码：400').length).toBe(5);
+                    expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                 });
 
             });
@@ -1298,7 +1302,7 @@ describe('试卷管理页面测试', () => {
 
             // 验证toast提示
             await waitFor(() => {
-                expect(screen.queryAllByText('请求失败，状态码：400').length).toBe(4);
+                expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
             });
 
             // 验证表格渲染空列表
@@ -1322,7 +1326,7 @@ describe('试卷管理页面测试', () => {
 
             // 验证toast提示
             await waitFor(() => {
-                expect(screen.queryAllByText('业务错误').length).toBe(1);
+                expect(toast.error).toHaveBeenCalledWith(`业务错误`, 1000);
             });
         });
     });
@@ -1369,7 +1373,7 @@ describe('试卷管理页面测试', () => {
 
             // 验证toast提示
             await waitFor(() => {
-                expect(screen.queryAllByText('请求失败，状态码：400').length).toBe(3);
+                expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
             });
         });
 

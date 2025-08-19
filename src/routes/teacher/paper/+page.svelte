@@ -52,6 +52,7 @@
                 if (data.status !== 0){
                     throw new Error(data.msg);  
                 }
+                console.log(data);
                 return data;
             })
             .catch(error => {

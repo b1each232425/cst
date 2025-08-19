@@ -164,6 +164,8 @@
             ).then( result => {
                 question_list = result.data || [];
                 total_questions = result.rowCount;
+
+                console.log(result);
             });
 
             // 获取题库的标签
@@ -362,6 +364,7 @@
                 question_list = result.data || [];
                 total_questions = result.rowCount;
                 checkAllSelected();
+                console.log(result)
             });
         } else { question_list = []; }
     }
@@ -507,8 +510,8 @@
                 paper_groups = result.data.GroupsData;
 
                 existing_question_ids = paper_groups.flatMap(group => 
-                    group.questions.map(question => question.bank_question_id)
-                ).filter(Boolean);
+                group.questions.map(question => question.bank_question_id)
+            ).filter(Boolean);
         });
     })
 
