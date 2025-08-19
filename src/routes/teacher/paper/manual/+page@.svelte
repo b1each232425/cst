@@ -169,6 +169,11 @@
                 return response.json();
             })
             .then(result => {
+
+                if (result.status !== 0){
+                    throw new Error(result.msg);  
+                }
+
                 const PREVIEW_QUESTIONS = result.data;
                 
                 if (category === "00") {
@@ -186,7 +191,8 @@
                 }
             })
             .catch(error => {
-                console.error('获取试卷详情出错：', error);
+                toast.error(error.message, 1000);
+                console.error('预览试卷出错：', error);
                 return null;
             });
     }
