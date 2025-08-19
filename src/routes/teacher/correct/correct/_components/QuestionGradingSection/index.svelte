@@ -2,15 +2,14 @@
  * @Author: 林炜佳 wj2144632819@qq.com
  * @Date: 2025-08-06 16:00:00
  * @LastEditors: 林炜佳 wj2144632819@qq.com
- * @LastEditTime: 2025-08-17 00:18:07
+ * @LastEditTime: 2025-08-18 00:18:07
  * @FilePath: \exam\src\routes\teacher\correct\correct\_components\QuestionGradingSection\index.svelte
  * @Description: 教师端试卷批改页面题组题目组件
  * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
 -->
 
 <script>
-  // TODO 属性检查，比如批改，是否真的存在
-
+  import { debounce } from '$lib/utils/optimize';
   // 做到，本地保存批改的分数的同时（修改外部的old_mark_result，这样逐题模式和全卷模式的分数不一致问题就可以解决），发送更新批改的请求即可；下一次接收响应就能获取新的分数
 
   // 一道题目的输入框全部输入，失焦后自动保存（把数据传出去，外部保存）
@@ -35,12 +34,14 @@
     }, {}),
   );
 
+  const debounceSaveMark = debounce(onSaveMark, 400);
+
   // 注意，一个空没有批改，就算做"未批改"
   // 以一道题目为单位
   // 记录一道题目所有的 input 的值（index_score_map）
   function handleScoreChange(event, index, answer_score, answer_total_length) {
-    let score_str = event.target.value;
-    if (score_str === '') return; // Number('') === 0
+    const score_str = event.target.value;
+    if (score_str === '') return; // Number('') === 0，删除，并不是想让分数为 0
 
     // 输入分数的判断
     let score = Number(score_str);
@@ -60,7 +61,7 @@
       const total_score = new_mark_result.reduce((acc, cur) => acc + cur.Score, 0);
 
       // 触发保存事件
-      onSaveMark({
+      debounceSaveMark({
         question_id: question.ID,
         new_mark_result,
         total_score,
