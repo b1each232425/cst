@@ -10,7 +10,7 @@
   import Title from '$lib/components/Title/Title.svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
   import InputBox from '$lib/components/Input/InputBox.svelte';
-  import { onChooseStartTime, onChooseEndTime,updateDuration,handleSubmit } from '../_utils/createExam';
+  import { onChooseStartTime, onChooseEndTime,updateDuration,handleSubmit,tusInit,encodeMetadata } from '../_utils/createExam';
   import {onMount} from 'svelte'
   import { createXXHash64 } from 'hash-wasm';
   import { filesize } from 'filesize';
@@ -282,12 +282,7 @@
     }
   }
   
-  function tusInit() {
-		if (!tus || !tus.isSupported) {
-			console.log('tus unsupported');
-			return;
-		}
-	}
+  
 
   async function deleteFiles(file) {
     fetch(`/api/exam/file`,{
@@ -308,7 +303,6 @@
   .then((res) => res.json())
   .then((result) => {
     if (result.status === 0) {
-      toast.success("删除成功");
       uploadedFileList = uploadedFileList.filter(f => f.checksum !== file.checksum);
     } else {
       toast.warning("删除失败：" + result.msg);
@@ -348,7 +342,6 @@
 
 		
 		queryFiles();
-    console.log("result",results);
     for (const r of results) {
     await fetch('/api/exam/file', {
       method: 'POST',
@@ -390,14 +383,7 @@
   }
 	}
 
-  function encodeMetadata(metadata) {
-    const encodedPairs = [];
-    for (const [key, value] of Object.entries(metadata)) {
-        const encodedValue = btoa(unescape(encodeURIComponent(String(value))));
-        encodedPairs.push(`${key} ${encodedValue}`);
-    }
-    return encodedPairs.join(',');
-}
+  
 
   async function singles(job) {
 		return new Promise(async (resolve, reject) => {
@@ -447,7 +433,6 @@
 					resolve(job);
 				},
 			};
-      console.log(tusOptions);
 			job.tus = new tus.Upload(job.file, tusOptions);
 			job.tus.start();
 		});
@@ -492,12 +477,16 @@ function getSelectedPaperIDs(excludeIndex = -1) {
 onMount(async () =>{
     await fetchExamID();
     tus= await import('tus-js-client');
-    tusInit();
+    tusInit(tus);
     queryFiles();
 })
   
 
-  
+  // ===== 仅测试环境导出 =====
+if (import.meta.env.MODE === 'test') {
+  window.__singles = singles;
+}
+export { singles };
 </script>
 
 <Title title="创建考试" line={true} />
@@ -638,16 +627,7 @@ onMount(async () =>{
     <div class = "file-container">
       <RequiredLabel text="考试说明" colon={false} Asterisk={false} />
       <div class = "file-button-container">
-        <!-- <Button
-        plain={true}
-        type="primary"
-        size="small"
-        onclick={() => {
-          uploadFiles(selectedFiles);
-        }}
-      >
-        上传文件
-      </Button> -->
+
 
         <label class="file-upload-label">
           <Button
@@ -1072,7 +1052,6 @@ onMount(async () =>{
         //确认后将选择的考生取出
         show_examinee_panel = false;
         exam_examinee = selected;
-        console.log(exam_examinee);
       }}
       onCancel={(/** @type {boolean} */ load_new_file) => {
         show_examinee_panel = false;

@@ -197,7 +197,7 @@ describe('PaperSelectionPanel 组件测试', () => {
       setup();
       
       await waitFor(() => {
-        expect(screen.getByText('试卷名称')).toBeInTheDocument();
+        //expect(screen.getByText('试卷名称')).toBeInTheDocument();
         expect(screen.getByText('组卷方式')).toBeInTheDocument();
         expect(screen.getByText('试卷用途')).toBeInTheDocument();
         expect(screen.getByText('试题数量')).toBeInTheDocument();

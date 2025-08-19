@@ -423,39 +423,7 @@ function handleSelectAll(event) {
   }
 }
 
-function previewPaper(ID, category) {
-        const PARAMS = new URLSearchParams();
 
-        PARAMS.append("paper_id", ID);
-        PARAMS.append("mode", "preview");
-
-        fetch(`/api/paper/manual?${PARAMS.toString()}`, {
-            method: "GET",
-            credentials: "include"
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`请求失败，状态码：${response.status}`);
-                }
-                return response.json();
-            })
-            .then(result => {
-                const PREVIEW_QUESTIONS = result.data;
-
-                
-                if (category === "00") {
-                    localStorage.setItem(
-                        "examQuestions",
-                        JSON.stringify(PREVIEW_QUESTIONS),
-                    );
-                    window.location.href = "/student/answer/exam";
-                } 
-            })
-            .catch(error => {
-                console.error('获取试卷详情出错：', error);
-                return null;
-            });
-    }
 
   onMount(() => {
     searchExam();

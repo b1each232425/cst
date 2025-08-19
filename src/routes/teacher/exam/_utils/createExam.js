@@ -223,3 +223,20 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
         toast.error('未知错误');
       });
   }
+
+export function tusInit(tus) {
+		if (!tus || !tus.isSupported) {
+			console.log('tus unsupported');
+			return;
+		}
+	}
+
+export function encodeMetadata(metadata) {
+    const encodedPairs = [];
+    for (const [key, value] of Object.entries(metadata)) {
+        const encodedValue = btoa(unescape(encodeURIComponent(String(value))));
+        encodedPairs.push(`${key} ${encodedValue}`);
+    }
+    return encodedPairs.join(',');
+}
+
