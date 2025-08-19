@@ -173,8 +173,7 @@
   let clone_exam_paper = $state([]); // 备份试卷
 
   //题目信息类
-  function getQuestionGroups() {
-    // 获取题目分组信息，用于生成答题卡
+  function getQuestionGroups() { // 获取题目分组信息，用于生成答题卡
     const groups = [];
 
     const sortedGroups = Array.from(question_groups_map.values()).sort((a, b) => a.order - b.order); //升序排序出一个数组
@@ -202,8 +201,8 @@
     });
     return groups;
   }
-  function flattenExamQuestions() {
-    //将题组扁平化拆开成一个题目数组 用来生成题目
+  function flattenExamQuestions() { //将题组扁平化拆开成一个题目数组 用来生成题目
+    
     const result = [];
     const sortedGroups = Array.from(question_groups_map.values()).sort((a, b) => a.order - b.order); //升序排序数组
 
@@ -226,21 +225,18 @@
     });
     return result;
   }
-  function resetQuestionGroup() {
-    // 重置题目题组
+  function resetQuestionGroup() {  // 重置题目题组
     exam_paper.length = 0;
     exam_paper.push(...flattenExamQuestions());
     questionGroups.length = 0;
     questionGroups.push(...getQuestionGroups());
   }
-  function computePaperTotalScoce() {
-    // 计算本张卷子的总分
+  function computePaperTotalScoce() { // 计算本张卷子的总分
     exam_paper.forEach((question) => {
       total_score += question.Score;
     });
   }
-  function getStudentRankInfo() {
-    // 获取当前学生的排名信息
+  function getStudentRankInfo() { // 获取当前学生的排名信息
     rank.forEach((rank) => {
       if (rank.student_id === userID) {
         userRank = rank;
@@ -249,8 +245,7 @@
   }
 
   //按钮控制类
-  function ShowOtherSessionDetails(index) {
-    // 切换考试场次
+  function ShowOtherSessionDetails(index) { // 切换考试场次
     if (nowSessionIndex + index < 0 || nowSessionIndex + index > examSessionInfoLenght) {
       console.error('操作失败，数组索引失效');
       toast.error('操作失败，数组索引失效', 2000);
@@ -290,8 +285,8 @@
         rank = data.data.rank; // 排名信息
         if (!data.data.examInfo) throw new Error('exam_info 不能为空'); // 考试信息
         examInfo = data.data.examInfo;
-        // if (!data.data.examSessionInfo) throw new Error('exam_session_info 不能为空'); // 该场次的具体信息
-        // examSessionInfo = data.data.examSessionInfo;
+        if (!data.data.examSessionInfo) throw new Error('exam_session_info 不能为空'); // 该场次的具体信息
+         examSessionInfo = data.data.examSessionInfo[queryIndex];
         //题目信息类
         if (!data.data.exam_question || Object.keys(data.data.exam_question).length === 0)
           throw new Error('exam_question 不能为空');
@@ -327,280 +322,20 @@
 
         return;
       });
-
-    /* userID = 1675;
-
-rank = [
-  {
-    student_id: 1675,
-    official_name: "林子馨",
-    total_score: 13,
-    rank: 1
-  },
-  {
-    student_id: 1676,
-    official_name: "吴圳",
-    total_score: 0,
-    rank: 2
-  },
-  {
-    student_id: 1677,
-    official_name: "科比",
-    total_score: 0,
-    rank: 2
   }
-];
-
-examInfo = {
-  AnswerNum: 6,
-  Name: "2025年期末考试",
-  QuestionNum: 6,
-  StudentScore: 13,
-  AnswerTime: 45
-};
-
-question_groups_map = new Map([
-  [322, {
-    ID: 322,
-    ExamPaperID: null,
-    Name: "一、单选题",
-    Order: 1,
-    Creator: 1674,
-    CreateTime: null,
-    UpdatedBy: null,
-    UpdateTime: null,
-    Addi: null,
-    Status: "00"
-  }],
-  [323, {
-    ID: 323,
-    ExamPaperID: null,
-    Name: "二、多选题",
-    Order: 2,
-    Creator: 1674,
-    CreateTime: null,
-    UpdatedBy: null,
-    UpdateTime: null,
-    Addi: null,
-    Status: "00"
-  }],
-
-]);
-
-// 预置题目数据
-exam_questions_map = new Map([
-  ["322", [
-    {
-      ID: 4160,
-      Score: 2,
-      Type: "00",
-      Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">为了提高模块的独立性，模块内部最好是()</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span></p>",
-      Options: [
-        { label: "A", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">逻辑内聚</span></p>" },
-        { label: "B", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">功能内聚</span></p>" },
-        { label: "C", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">时间内聚</span></p>" },
-        { label: "D", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">通信内聚</span></p>" }
-      ],
-      Answers: ["B"],
-      Analysis: null,
-      Title: null,
-      Input: null,
-      Output: null,
-      Example: null,
-      Repo: null,
-      Creator: null,
-      CreateTime: null,
-      UpdatedBy: null,
-      UpdateTime: null,
-      Status: "04",
-      Order: 1,
-      GroupID: 322,
-      AnswerNum: 0,
-      StudentAnswer: { answer: ["A"] },
-      StudentScore: 0
-    },
-    {
-      ID: 4161,
-      Score: 2,
-      Type: "00",
-      Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">具有风险分析的软件生命周期模型是()</span></p>",
-      Options: [
-        { label: "A", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">瀑布模型</span></p>" },
-        { label: "B", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">喷泉模型</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span></p>" },
-        { label: "C", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">增量模型</span></p>" },
-        { label: "D", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">螺旋模型</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span></p>" }
-      ],
-      Answers: ["D"],
-      Analysis: null,
-      Title: null,
-      Input: null,
-      Output: null,
-      Example: null,
-      Repo: null,
-      Creator: null,
-      CreateTime: null,
-      UpdatedBy: null,
-      UpdateTime: null,
-      Status: "00",
-      Order: 2,
-      GroupID: 322,
-      AnswerNum: 0,
-      StudentAnswer: { answer: ["D"] },
-      StudentScore: 2
-    }
-  ]],
-  ["323", [
-    {
-      ID: 4162,
-      Score: 3,
-      Type: "02",
-      Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">软件开发的结构化生命周期方法将软件生命周期划分成（）</span></p>",
-      Options: [
-        { label: "A", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">计划阶段</span></p>" },
-        { label: "B", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">详细设计</span></p>" },
-        { label: "C", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">开发阶段</span></p>" },
-        { label: "D", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">运行阶段</span></p>" }
-      ],
-      Answers: ["A", "C", "D"],
-      Analysis: null,
-      Title: null,
-      Input: null,
-      Output: null,
-      Example: null,
-      Repo: null,
-      Creator: null,
-      CreateTime: null,
-      UpdatedBy: null,
-      UpdateTime: null,
-      Status: "00",
-      Order: 1,
-      GroupID: 323,
-      AnswerNum: 0,
-      StudentAnswer: { answer: ["A", "D", "C"] },
-      StudentScore: 3
-    },
-    {
-      ID: 4163,
-      Score: 3,
-      Type: "02",
-      Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">下面哪些测试方法属于白盒测试（</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span><span style=\"font-family: 宋体; font-size: 10.5pt\">）</span></p>",
-      Options: [
-        { label: "A", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">基本路径测试</span></p>" },
-        { label: "B", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">等价类划分</span></p>" },
-        { label: "C", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">边界值分析</span></p>" },
-        { label: "D", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">错误推测</span></p>" },
-        { label: "E", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">逻辑覆盖测试</span></p>" }
-      ],
-      Answers: ["A", "E"],
-      Analysis: null,
-      Title: null,
-      Input: null,
-      Output: null,
-      Example: null,
-      Repo: null,
-      Creator: null,
-      CreateTime: null,
-      UpdatedBy: null,
-      UpdateTime: null,
-      Status: "00",
-      Order: 2,
-      GroupID: 323,
-      AnswerNum: 0,
-      StudentAnswer: { answer: ["A", "E"] },
-      StudentScore: 3
-    }
-  ]],
-  ["324", [
-    {
-      ID: 4164,
-      Score: 5,
-      Type: "04",
-      Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">软件测试可以发现软件中的所有错误，并且证明软件没有错误()</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span></p>",
-      Options: [
-        { label: "A", value: "对" },
-        { label: "B", value: "错" }
-      ],
-      Answers: ["A"],
-      Analysis: null,
-      Title: null,
-      Input: null,
-      Output: null,
-      Example: null,
-      Repo: null,
-      Creator: null,
-      CreateTime: null,
-      UpdatedBy: null,
-      UpdateTime: null,
-      Status: "04",
-      Order: 1,
-      GroupID: 324,
-      AnswerNum: 0,
-      StudentAnswer: { answer: ["B"] },
-      StudentScore: 0
-    },
-    {
-      ID: 4165,
-      Score: 5,
-      Type: "04",
-      Content: "<p><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span><span style=\"font-family: 宋体; font-size: 10.5pt\">技术评审是以提高软件质量为目的的技术活动</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;()</span></p>",
-      Options: [
-        { label: "A", value: "对" },
-        { label: "B", value: "错" }
-      ],
-      Answers: ["A"],
-      Analysis: null,
-      Title: null,
-      Input: null,
-      Output: null,
-      Example: null,
-      Repo: null,
-      Creator: null,
-      CreateTime: null,
-      UpdatedBy: null,
-      UpdateTime: null,
-      Status: "00",
-      Order: 2,
-      GroupID: 324,
-      AnswerNum: 0,
-      StudentAnswer: { answer: ["A"] },
-      StudentScore: 5
-    }
-  ]]
-]);
-
-examSessionInfo = {
-  ExamTime: 120,
-  ExamineeID: 33,
-  ID: 73,
-  PaperID: 83,
-  SessionNum: 79
-};
-
-    // 这里的问题也要重新获取
-    total_score = 0; // 重置总分
-    resetQuestionGroup();
-    computePaperTotalScoce();
-    getStudentRankInfo();
-    nowSessionIndex = queryIndex;
-    showScore();
-    toast.success("切换成功", 2000);*/
-  }
-  function nextQuestion() {
-    // 切换到下一题
+  function nextQuestion() { // 切换到下一题
     if (currentQuestionIndex < exam_paper.length - 1) {
       currentQuestionIndex++;
       currentQuestion = exam_paper[currentQuestionIndex];
     }
   }
-  function prevQuestion() {
-    // 切换到上一题
+  function prevQuestion() { // 切换到上一题
     if (currentQuestionIndex > 0) {
       currentQuestionIndex--;
       currentQuestion = exam_paper[currentQuestionIndex];
     }
   }
-  function goToQuestion(index) {
-    // 跳转到指定题目
+  function goToQuestion(index) { // 跳转到指定题目
     currentQuestionIndex = index;
 
     // 如果是全卷模式，滚动到对应题目位置
@@ -626,30 +361,25 @@ examSessionInfo = {
       }, 0);
     }
   }
-  function locationBack() {
-    // 提交考试后返回到考试列表
+  function locationBack() { // 提交考试后返回到考试列表
     window.location.href = '/student/exam';
   }
-  function showScore() {
-    // 显示分数徽章
+  function showScore() { // 显示分数徽章
     showBadge = true;
   }
-  function onBadgeHide() {
-    // 隐藏分数徽章
+  function onBadgeHide() { // 隐藏分数徽章
+    
     showBadge = false;
   }
-  function goBack() {
-    // 返回到考试列表
+  function goBack() { // 返回到考试列表
     window.location.href = '/student/exam';
   }
-
-  // 过滤错题
-  function filterWrongQuestions() {
+  function filterWrongQuestions() { // 过滤错题
     show_wrong_questions = !show_wrong_questions;
 
     // 根据 show_wrong_questions 过滤题目
     filtered_questions = show_wrong_questions
-      ? exam_paper.filter((question) => question.Type === '00') // 仅显示错题
+      ? exam_paper.filter((question) => question.StudentScore === 0 && question.Score > 0) // 仅显示错题
       : exam_paper; // 显示所有题目
 
     if (show_wrong_questions) {
@@ -702,6 +432,7 @@ examSessionInfo = {
           toast.error(`接口错误: ${data.msg}`, 2000);
           throw new Error(data.msg);
         }
+        console.log('获取题目成功:', data);
 
         //学生信息类
         if (!data?.data?.student_id) throw new Error('student_id 不能为空'); // 学生ID
@@ -711,16 +442,18 @@ examSessionInfo = {
         rank = data.data.rank; // 排名信息
         if (!data.data.examInfo) throw new Error('exam_info 不能为空'); // 考试信息
         examInfo = data.data.examInfo;
-        // if (!data.data.examSessionInfo) throw new Error('exam_session_info 不能为空'); // 该场次的具体信息
-        // examSessionInfo = data.data.examSessionInfo;
+        if (!data.data.examSessionInfo) throw new Error('exam_session_info 不能为空'); // 该场次的具体信息
+         examSessionInfo = data.data.examSessionInfo[0];
         //题目信息类
         if (!data.data.exam_question || Object.keys(data.data.exam_question).length === 0)
           throw new Error('exam_question 不能为空');
         exam_questions_map = new Map(Object.entries(data.data.exam_question));
-        if (!data.data.exam_paper_group || Object.keys(data.data.exam_paper_group).length === 0)
+        if (!data.data.exam_paper_group || Object.keys(data.data.exam_paper_group).length === 0) 
           throw new Error('exam_paper_group 不能为空');
         question_groups_map = new Map(Object.entries(data.data.exam_paper_group));
 
+        console.log(exam_questions_map);
+        console.log(question_groups_map);
         //加载题目
         examSessionInfoLenght = exam_session_id_arr.length;
         total_score = 0; // 重置总分
@@ -749,273 +482,6 @@ examSessionInfo = {
         return;
       });
 
-    /*    userID = 1675;
-
-    rank = [
-      {
-        student_id: 1675,
-        official_name: "林子馨",
-        total_score: 13,
-        rank: 1
-      },
-      {
-        student_id: 1676,
-        official_name: "吴圳",
-        total_score: 0,
-        rank: 2
-      },
-      {
-        student_id: 1677,
-        official_name: "科比",
-        total_score: 0,
-        rank: 2
-      }
-    ];
-
-    examInfo = {
-      AnswerNum: 6,
-      Name: "2025年期末考试",
-      QuestionNum: 6,
-      StudentScore: 13,
-      AnswerTime: 45
-    };
-
-    question_groups_map = new Map([
-      [322, {
-        ID: 322,
-        ExamPaperID: null,
-        Name: "一、单选题",
-        Order: 1,
-        Creator: 1674,
-        CreateTime: null,
-        UpdatedBy: null,
-        UpdateTime: null,
-        Addi: null,
-        Status: "00"
-      }],
-      [323, {
-        ID: 323,
-        ExamPaperID: null,
-        Name: "二、多选题",
-        Order: 2,
-        Creator: 1674,
-        CreateTime: null,
-        UpdatedBy: null,
-        UpdateTime: null,
-        Addi: null,
-        Status: "00"
-      }],
-      [324, {
-        ID: 324,
-        ExamPaperID: null,
-        Name: "三、判断题",
-        Order: 3,
-        Creator: 1674,
-        CreateTime: null,
-        UpdatedBy: null,
-        UpdateTime: null,
-        Addi: null,
-        Status: "00"
-      }]
-    ]);
-
-    // 预置题目数据
-    exam_questions_map = new Map([
-      ["322", [
-        {
-          ID: 4160,
-          Score: 2,
-          Type: "00",
-          Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">为了提高模块的独立性，模块内部最好是()</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span></p>",
-          Options: [
-            { label: "A", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">逻辑内聚</span></p>" },
-            { label: "B", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">功能内聚</span></p>" },
-            { label: "C", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">时间内聚</span></p>" },
-            { label: "D", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">通信内聚</span></p>" }
-          ],
-          Answers: ["B"],
-          Analysis: null,
-          Title: null,
-          Input: null,
-          Output: null,
-          Example: null,
-          Repo: null,
-          Creator: null,
-          CreateTime: null,
-          UpdatedBy: null,
-          UpdateTime: null,
-          Status: "04",
-          Order: 1,
-          GroupID: 322,
-          AnswerNum: 0,
-          StudentAnswer: { answer: ["A"] },
-          StudentScore: 0
-        },
-        {
-          ID: 4161,
-          Score: 2,
-          Type: "00",
-          Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">具有风险分析的软件生命周期模型是()</span></p>",
-          Options: [
-            { label: "A", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">瀑布模型</span></p>" },
-            { label: "B", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">喷泉模型</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span></p>" },
-            { label: "C", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">增量模型</span></p>" },
-            { label: "D", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">螺旋模型</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span></p>" }
-          ],
-          Answers: ["D"],
-          Analysis: null,
-          Title: null,
-          Input: null,
-          Output: null,
-          Example: null,
-          Repo: null,
-          Creator: null,
-          CreateTime: null,
-          UpdatedBy: null,
-          UpdateTime: null,
-          Status: "00",
-          Order: 2,
-          GroupID: 322,
-          AnswerNum: 0,
-          StudentAnswer: { answer: ["D"] },
-          StudentScore: 2
-        }
-      ]],
-      ["323", [
-        {
-          ID: 4162,
-          Score: 3,
-          Type: "02",
-          Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">软件开发的结构化生命周期方法将软件生命周期划分成（）</span></p>",
-          Options: [
-            { label: "A", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">计划阶段</span></p>" },
-            { label: "B", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">详细设计</span></p>" },
-            { label: "C", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">开发阶段</span></p>" },
-            { label: "D", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">运行阶段</span></p>" }
-          ],
-          Answers: ["A", "C", "D"],
-          Analysis: null,
-          Title: null,
-          Input: null,
-          Output: null,
-          Example: null,
-          Repo: null,
-          Creator: null,
-          CreateTime: null,
-          UpdatedBy: null,
-          UpdateTime: null,
-          Status: "00",
-          Order: 1,
-          GroupID: 323,
-          AnswerNum: 0,
-          StudentAnswer: { answer: ["A", "D", "C"] },
-          StudentScore: 3
-        },
-        {
-          ID: 4163,
-          Score: 3,
-          Type: "02",
-          Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">下面哪些测试方法属于白盒测试（</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span><span style=\"font-family: 宋体; font-size: 10.5pt\">）</span></p>",
-          Options: [
-            { label: "A", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">基本路径测试</span></p>" },
-            { label: "B", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">等价类划分</span></p>" },
-            { label: "C", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">边界值分析</span></p>" },
-            { label: "D", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">错误推测</span></p>" },
-            { label: "E", value: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">逻辑覆盖测试</span></p>" }
-          ],
-          Answers: ["A", "E"],
-          Analysis: null,
-          Title: null,
-          Input: null,
-          Output: null,
-          Example: null,
-          Repo: null,
-          Creator: null,
-          CreateTime: null,
-          UpdatedBy: null,
-          UpdateTime: null,
-          Status: "00",
-          Order: 2,
-          GroupID: 323,
-          AnswerNum: 0,
-          StudentAnswer: { answer: ["A", "E"] },
-          StudentScore: 3
-        }
-      ]],
-      ["324", [
-        {
-          ID: 4164,
-          Score: 5,
-          Type: "04",
-          Content: "<p><span style=\"font-family: 宋体; font-size: 10.5pt\">软件测试可以发现软件中的所有错误，并且证明软件没有错误()</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span></p>",
-          Options: [
-            { label: "A", value: "对" },
-            { label: "B", value: "错" }
-          ],
-          Answers: ["A"],
-          Analysis: null,
-          Title: null,
-          Input: null,
-          Output: null,
-          Example: null,
-          Repo: null,
-          Creator: null,
-          CreateTime: null,
-          UpdatedBy: null,
-          UpdateTime: null,
-          Status: "04",
-          Order: 1,
-          GroupID: 324,
-          AnswerNum: 0,
-          StudentAnswer: { answer: ["B"] },
-          StudentScore: 0
-        },
-        {
-          ID: 4165,
-          Score: 5,
-          Type: "04",
-          Content: "<p><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;</span><span style=\"font-family: 宋体; font-size: 10.5pt\">技术评审是以提高软件质量为目的的技术活动</span><span style=\"font-family: Aptos; font-size: 10.5pt\">&nbsp;()</span></p>",
-          Options: [
-            { label: "A", value: "对" },
-            { label: "B", value: "错" }
-          ],
-          Answers: ["A"],
-          Analysis: null,
-          Title: null,
-          Input: null,
-          Output: null,
-          Example: null,
-          Repo: null,
-          Creator: null,
-          CreateTime: null,
-          UpdatedBy: null,
-          UpdateTime: null,
-          Status: "00",
-          Order: 2,
-          GroupID: 324,
-          AnswerNum: 0,
-          StudentAnswer: { answer: ["A"] },
-          StudentScore: 5
-        }
-      ]]
-    ]);
-
-    examSessionInfo = {
-      ExamTime: 120,
-      ExamineeID: 33,
-      ID: 73,
-      PaperID: 83,
-      SessionNum: 79
-    };
-
-    examSessionInfoLenght = exam_session_id_arr.length;
-    total_score = 0; // 重置总分
-    resetQuestionGroup();
-    computePaperTotalScoce();
-    getStudentRankInfo();
-    showScore();
-    currentQuestion = exam_paper[currentQuestionIndex]; // 初始化当前题目
-    load_success = true;*/
   });
 </script>
 
@@ -1103,7 +569,7 @@ examSessionInfo = {
             <img class="icon" src="/student_exam_practice/time.png" alt="答题用时" />
             <label for="答题用时">答题用时：</label>
             <label for="具体数值" class="blodFont">{examInfo.AnswerTime}分钟</label>
-            <label for="具体数值"> /{examSessionInfo.ExamTime}分钟</label>
+            <label for="具体数值"> /{examSessionInfo.DurationTime}分钟</label>
           </div>
           <div class="exam-into-deatil">
             <img class="icon" src="/student_exam_practice/answerNum.png" alt="答题数量" />
@@ -1248,9 +714,9 @@ examSessionInfo = {
                       <button
                         class="question-btn"
                         onclick={() => goToQuestion(question.index)}
-                        class:question-btn-right={question.question.Status === '00'}
-                        class:question-btn-half-right={question.question.Status === '02'}
-                        class:question-btn-wrong={question.question.Status === '04'}
+                        class:question-btn-right={question.question.StudentScore === question.question.Score}
+                        class:question-btn-half-right={question.question.StudentScore < question.question.Score && question.question.StudentScore > 0}
+                        class:question-btn-wrong={question.question.StudentScore === 0 && question.question.Score > 0}
                       >
                         {question.index + 1}
                       </button>

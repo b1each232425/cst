@@ -87,42 +87,43 @@
   let isAttachmentExpanded = $state(false); // 附件区域是否展开
   let showExpandButton = $state(false); // 是否显示展开按钮
   let attachmentContainer = $state(null); // 附件容器引用
+  let files = $state([]); // 附件列表
   
   //文件下载类  
   async function downloadAttachment(file) { // 使用文件的save_path构建下载URL
     try {
-      const downloadUrl = `/api/files/${file.save_path}`;
+      const downloadUrl = `/api/file/${file.checksum}`;
       const a = document.createElement("a"); // 创建一个a标签来触发下载
       a.href = downloadUrl;
-      a.download = file.file_name; // 使用原始文件名
+      a.download = file.name; // 使用原始文件名
       a.target = "_blank"; //防止跳转到新窗口
       document.body.appendChild(a); // 添加到DOM并触发点击
       a.click();
       setTimeout(() => { // 清理DOM
         document.body.removeChild(a);
       }, 100);
-      toast.success(`正在下载: ${file.file_name}`); // 显示下载成功提示
+      toast.success(`正在下载: ${file.name}`); // 显示下载成功提示
     } catch (error) {
       console.error("下载文件失败:", error);
       toast.error(`下载文件失败！${error.message || ''}`);
     }
   }
   async function downloadAllAttachments() { // 下载所有附件
-    if (!exam_info?.Files || exam_info.Files.length === 0) {
+    if (!files || files.length === 0) {
       toast.error("没有可下载的附件");
       return;
     }
-    for (const file of exam_info.Files) { // 遍历所有文件并下载
+    for (const file of files) { // 遍历所有文件并下载
       await downloadAttachment(file);
       await new Promise((resolve) => setTimeout(resolve, 300)); // 添加小延迟，避免浏览器同时触发太多下载
     }
   }
   function downloadFile(file) { //下载文件
-    const url = `/api/files/${file.save_path}`; // 拼接文件 URL
+    const url = `/api/file/${file.checksum}`; // 拼接文件 URL
 
     const a = document.createElement("a"); // 创建 a 标签触发下载
     a.href = url;
-    a.download = file.file_name || "downloaded_file";
+    a.download = file.name || "downloaded_file";
     document.body.appendChild(a);
     a.click();
 
@@ -258,7 +259,28 @@
           toast.error(`获取考试信息失败: ${data.msg || ''}`, 2000);
           throw new Error(data.Msg);
         } else {
-          title = sget(data, "data.examInfo.Name", "无标题");
+
+        if (!data.data.examInfo.Name) throw new Error('标题不能为空'); // 考试信息
+          title = data.data.examInfo.Name;
+
+        if (!data.data.examInfo.Rules) throw new Error('考生须知不能为空'); // 考生须知
+          exam_notes = data.data.examInfo.Rules;
+        
+        if (!data.data.examInfo)   throw new Error('考试信息不能为空');
+         exam_info = data.data.examInfo;
+
+        if (!data.data.examSessions || data.data.examSessions.length === 0) {
+          throw new Error('没有可用的考试场次');
+        }
+        exam_sessions = data.data.examSessions.map(session => ({
+          ...session,
+          StartTimeTimestamp: new Date(session.StartTime).getTime(),
+          EndTimeTimestamp: new Date(session.EndTime).getTime()
+        }));
+
+        files = data.data.files || []; // 获取附件列表
+
+      /*    title = sget(data, "data.examInfo.Name", "无标题");
           exam_notes = sget(data, "data.examInfo.Rules", "暂无规则说明");
           exam_info = sget(data, "data.examInfo", {});
           exam_sessions = sget(data, "data.examSessions", []).map(session => ({
@@ -266,6 +288,7 @@
             StartTimeTimestamp: new Date(sget(session, "StartTime", 0)).getTime(),
             EndTimeTimestamp: new Date(sget(session, "EndTime", 0)).getTime()
           }));
+          files = sget(data, "data.files", []); // 获取附件列表*/
         }
       })
       .catch(error => {
@@ -367,7 +390,7 @@
         </div>
       </div>
     </div>
-    {#if exam_info?.Files && exam_info.Files.length > 0}
+    {#if files && files.length > 0}
       <div
         class="attachment-section {isAttachmentExpanded
           ? 'expanded-attachments'
@@ -380,14 +403,14 @@
             bind:this={attachmentContainer}
           >
             <!-- 显示已上传的文件列表 -->
-            {#each exam_info?.Files as file, index}
+            {#each files as file, index}
               <div class="file-list">
                 <div class="file-item">
                   <button
                     class="file-name-button"
                     onclick={() => {
                       downloadFile(file);
-                    }}>{file.file_name}</button
+                    }}>{file.name}</button
                   >
                 </div>
               </div>
