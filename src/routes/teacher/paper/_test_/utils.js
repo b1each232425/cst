@@ -1,3 +1,12 @@
+/*
+ * @Author: WangKaidun 1597225095@qq.com
+ * @Date: 2025-08-17 10:44:10
+ * @LastEditors: WangKaidun 1597225095@qq.com
+ * @LastEditTime: 2025-08-18 19:15:49
+ * @FilePath: \exam\src\routes\teacher\paper\_test_\utils.js
+ * @Description: 试卷管理页面的测试工具
+ * Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
+ */
 export const PAPER_ONE = {
     ID: 259,                    // 试卷ID
     Name: "测试试卷1",           // 试卷名称

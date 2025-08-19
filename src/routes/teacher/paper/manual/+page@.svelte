@@ -46,10 +46,14 @@
                 return response.json();
             })
             .then(data => {
-                if (data.status !== 0) toast.error(data.msg, 1000);
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
+                // console.log(data);
                 return data;
             })
             .catch(error => {
+                toast.error(error.message, 1000);
                 console.error('获取试卷详情出错：', error);
                 return null;
             });
@@ -80,18 +84,21 @@
             credentials: "include",
             body: JSON.stringify(DATA)
         })
-            .then(response => {
+        .then(response => {
                 if (!response.ok) {
                     throw new Error(`请求失败，状态码：${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
                 // console.log(data);
-                if (data.status !== 0) toast.error(data.msg, 1000);
                 return data;
             })
             .catch(error => {
+                toast.error(error.message, 1000);
                 console.error('保存试卷出错：', error);
                 return null;
             });
@@ -1072,38 +1079,44 @@
         }
         fetchPaper(paperID)
             .then(result => {
-                paper_info = result.data;
-                paper_groups = result.data.GroupsData;
-
-                paper_name = paper_info.Name;
-                category = paper_info.Category;
-                level = paper_info.Level;
-                suggested_duration = paper_info.SuggestedDuration;
-                total_score = paper_info.TotalScore;
-                question_count = paper_info.QuestionCount;
-                description = paper_info.Description;
-                tags = paper_info.Tags;
-            })
-            .finally(() => {
-                page_is_ready = true;
-                
-                // 页面加载完成后自动展开所有题组和题目
-                if (paper_groups && paper_groups.length > 0) {
-                    expandAll();
+                if (result) {
+                    paper_info = result.data;
+                    paper_groups = result.data.GroupsData;
+    
+                    paper_name = paper_info.Name;
+                    category = paper_info.Category;
+                    level = paper_info.Level;
+                    suggested_duration = paper_info.SuggestedDuration;
+                    total_score = paper_info.TotalScore;
+                    question_count = paper_info.QuestionCount;
+                    description = paper_info.Description;
+                    tags = paper_info.Tags;
+    
+                    page_is_ready = true;
                     
-                    // 检查每个题组的分数一致性，如果不一致则清空每题分值输入框
-                    paper_groups.forEach(group => {
-                        if (!checkGroupScoreConsistency(group)) {
-                            clearGroupAverageScore(group);
-                        }
-                    });
+                    // 页面加载完成后自动展开所有题组和题目
+                    if (paper_groups && paper_groups.length > 0) {
+                        expandAll();
+                        
+                        // 检查每个题组的分数一致性，如果不一致则清空每题分值输入框
+                        paper_groups.forEach(group => {
+                            if (!checkGroupScoreConsistency(group)) {
+                                clearGroupAverageScore(group);
+                            }
+                        });
+                    }
+    
+                    // console.log(result)
+                    
+                } else {
+                    // 3秒后跳转
+                    toast.warning("3秒后跳转回试卷列表", 3000);
+                    setTimeout(() => {
+                        goto("/teacher/paper");
+                    }, 3000);
                 }
             });
     })
-
-    function test() {
-    }
-
 </script>
 
 {#if import_modal_is_open}
@@ -1213,8 +1226,7 @@
                             bind:value={description}
                             placeholder="输入试卷说明"
                             use:utf8MaxLength={500}
-                        >
-                        </textarea>
+                        ></textarea>
                     </div>
 
                     <!-- 试卷标签 -->
@@ -1271,14 +1283,7 @@
                                     {#if to_edit_groupID === group.id}
                                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                                         <div class="single-group
-                                            {(drag_over_group === group && drag_over_group_position === 'top' && dragged_type === 'group') ? 'drag-over-top' : ''}
-                                            {(drag_over_group === group && drag_over_group_position === 'bottom' && dragged_type === 'group') ? 'drag-over-bottom' : ''}
                                             {dragged_group === group ? "dragging":""}"
-                                            draggable="true"
-                                            ondragstart={(event)=>handleGroupDragStart(event,group)}
-                                            ondragover={(event)=>handleGroupDragOver(event,group)}
-                                            ondrop={handleGroupDrop}
-                                            ondragend={handleDragEnd}
                                             >
                                             <input bind:value={to_edit_group_name} onchange={()=>confirmEditGroupName()} onblur={()=>{if(to_edit_group_name.trim() === ""||to_edit_group_name.trim() === group.name){cancelEditGroupName()}}} bind:this={to_edit_group} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
                                             <div class="btn-box">
@@ -1388,7 +1393,7 @@
                                                     {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'top' && dragged_type === 'question') ? 'drag-over-top' : ''}
                                                     {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'bottom' && dragged_type === 'question') ? 'drag-over-bottom' : ''}
                                                     {dragged_question_item.question?.id === question.id ? "dragging":""}"
-                                                    draggable="true"
+                                                    draggable={!question.isEditingScore && !question.isEditingSubScore}
                                                     ondragstart={(event)=>handleQuestionDragStart(event,question,group)}
                                                     ondragover={(event)=>handleQuestionDragOver(event,question,group)}
                                                     ondrop={handleQuestionDrop}
@@ -1417,6 +1422,8 @@
                                                                 min={(question.type==="06" || question.type==="08")?question.answers.length/2:0.5}
                                                                 step={0.5}
                                                                 onchange={()=>updateQuestionScore(question)}
+                                                                onfocus={()=>question.isEditingScore = true}
+                                                                onblur={()=>question.isEditingScore = false}
                                                             >
                                                             <button onclick={()=>moveQuestion(group,question,"up")} class="move-btn" title="上移">↑</button>
                                                             <button onclick={()=>moveQuestion(group,question,"down")} class="move-btn" title="下移">↓</button>

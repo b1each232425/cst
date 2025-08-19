@@ -4,7 +4,7 @@
  * @LastEditors: WangKaidun 1597225095@qq.com
  * @LastEditTime: 2025-08-07 11:35:22
  * @FilePath: \exam\src\routes\teacher\paper\_utils\tool.js
- * @Description: 对后端返回参数的映射
+ * @Description: 一些工具函数
  * Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
  */
 // @ts-nocheck
@@ -77,9 +77,10 @@ export function utf8MaxLength(node, maxBytes) {
     node.addEventListener("input", handleInput);
 
     return {
-        update(newMaxBytes) {
-        maxBytes = newMaxBytes;
-        },
+        // 动态更新maxBytes（暂不需要）
+        // update(newMaxBytes) {
+        // maxBytes = newMaxBytes;
+        // },
         destroy() {
         node.removeEventListener("input", handleInput);
         }
