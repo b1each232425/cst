@@ -12,68 +12,109 @@ describe('DatePicker 组件测试', () => {
     window.HTMLElement.prototype.scrollIntoView = vi.fn();
   });
 
-  it('initial_start_date 应该是 Date 类型', () => {
+  it('当传入正确的 Date 类型(initial_start_date)时，不显示警告', () => {
     const spy = vi.spyOn(console, 'warn');
+    const testDate = new Date();
+    render(DatePicker, { props: { initial_start_date: testDate } });
 
-    // 测试传入错误的类型
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('当传入非 Date 类型(initial_start_date)时，显示警告并使用默认值 null', () => {
+    const spy = vi.spyOn(console, 'warn');
     render(DatePicker, { props: { initial_start_date: '2025-01-01' } });
 
     expect(spy).toHaveBeenCalledWith('[DatePicker] initial_start_date 应该是 Date 类型，当前为 string');
-    expect(screen.queryByText('2025-01-01')).toBeNull(); // 校验 UI 没有错误的日期
+    expect(screen.queryByText('2025-01-01')).toBeNull();
   });
 
-  it('initial_end_date 应该是 Date 类型', () => {
+  it('当传入正确的 Date 类型(initial_end_date)时，不显示警告', () => {
     const spy = vi.spyOn(console, 'warn');
+    const testDate = new Date();
+    render(DatePicker, { props: { initial_end_date: testDate } });
 
-    // 测试传入错误的类型
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('当传入非 Date 类型(initial_end_date)时，显示警告并使用默认值 null', () => {
+    const spy = vi.spyOn(console, 'warn');
     render(DatePicker, { props: { initial_end_date: '2025-01-01' } });
 
     expect(spy).toHaveBeenCalledWith('[DatePicker] initial_end_date 应该是 Date 类型，当前为 string');
-    expect(screen.queryByText('2025-01-01')).toBeNull(); // 校验 UI 没有错误的日期
+    expect(screen.queryByText('2025-01-01')).toBeNull();
   });
 
-  it('is_single_date_selection 应该是 boolean 类型', () => {
+  it('当传入正确的is_single_date_selection boolean 类型时，不显示警告', () => {
     const spy = vi.spyOn(console, 'warn');
+    render(DatePicker, { props: { is_single_date_selection: false } });
 
-    // 测试传入错误的类型
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('当传入is_single_date_selection非 boolean 类型时，显示警告并使用默认值 true', () => {
+    const spy = vi.spyOn(console, 'warn');
     render(DatePicker, { props: { is_single_date_selection: 'true' } });
 
     expect(spy).toHaveBeenCalledWith('[DatePicker] is_single_date_selection 应该是 boolean，当前为 string');
   });
 
-  it('is_time_selection 应该是 boolean 类型', () => {
+  it('当传入正确的is_time_selection boolean 类型时，不显示警告', () => {
     const spy = vi.spyOn(console, 'warn');
+    render(DatePicker, { props: { is_time_selection: true } });
 
-    // 测试传入错误的类型
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('当传入is_time_selection非 boolean 类型时，显示警告并使用默认值 false', () => {
+    const spy = vi.spyOn(console, 'warn');
     render(DatePicker, { props: { is_time_selection: 'false' } });
 
     expect(spy).toHaveBeenCalledWith('[DatePicker] is_time_selection 应该是 boolean，当前为 string');
   });
 
-  it('input_width 应该是字符串类型', () => {
+  it('当传入正确的input_width字符串类型时，不显示警告', () => {
     const spy = vi.spyOn(console, 'warn');
+    render(DatePicker, { props: { input_width: '200px' } });
 
-    // 测试传入错误的类型
+    expect(spy).not.toHaveBeenCalled();
+    const inputElement = screen.getByRole('textbox');
+    expect(inputElement.style.getPropertyValue('--date-picker-width')).toBe('200px');
+  });
+
+  it('当传入input_width非字符串类型时，显示警告并使用默认值 140px', () => {
+    const spy = vi.spyOn(console, 'warn');
     render(DatePicker, { props: { input_width: 150 } });
 
     expect(spy).toHaveBeenCalledWith('[DatePicker] input_width 应该是字符串，当前为 number');
     const inputElement = screen.getByRole('textbox');
-    expect(inputElement.style.getPropertyValue('--date-picker-width')).toBe('140px'); // 校验默认宽度
+    expect(inputElement.style.getPropertyValue('--date-picker-width')).toBe('140px');
   });
 
-  it('onDateReset 应该是函数类型', () => {
+  it('当传入正确的onDateReset函数类型时，不显示警告', () => {
     const spy = vi.spyOn(console, 'warn');
+    const mockFn = vi.fn();
+    render(DatePicker, { props: { onDateReset: mockFn } });
 
-    // 测试传入错误的类型
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('当传入onDateReset非函数类型时，显示警告并使用默认空函数', () => {
+    const spy = vi.spyOn(console, 'warn');
     render(DatePicker, { props: { onDateReset: 'not-a-function' } });
 
     expect(spy).toHaveBeenCalledWith('[DatePicker] onDateReset 应该是函数，当前为 string');
   });
 
-  it('onDateConfirm 应该是函数类型', () => {
+  it('当传入正确onDateConfirm的函数类型时，不显示警告', () => {
     const spy = vi.spyOn(console, 'warn');
+    const mockFn = vi.fn();
+    render(DatePicker, { props: { onDateConfirm: mockFn } });
 
-    // 测试传入错误的类型
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('当传入onDateConfirm非函数类型时，显示警告并使用默认空函数', () => {
+    const spy = vi.spyOn(console, 'warn');
     render(DatePicker, { props: { onDateConfirm: 'not-a-function' } });
 
     expect(spy).toHaveBeenCalledWith('[DatePicker] onDateConfirm 应该是函数，当前为 string');
