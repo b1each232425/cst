@@ -39,7 +39,7 @@
   let error = $state('');
   let {
     show = $bindable(false), // 是否显示弹窗
-    onImport = (isAllOk, importData,existStudents) => {},
+    onImport = (isAllOk, importData, existStudents) => {},
   } = $props();
 
   let file_input = $state(null); // 文件输入框
@@ -76,9 +76,9 @@
       if (result.data.length <= 0) {
         return;
       }
-      let response = result.data.map((item)=>({
+      let response = result.data.map((item) => ({
         ...item,
-        ID :''
+        ID: '',
       }));
       //给后端进行校验
       await fetch('/api/user/validate', {
@@ -96,9 +96,9 @@
             IDCardType: '居民身份证',
             serial_number: item['编号'],
             Domains: ['cst.school^student'],
-            Email: null
+            Email: null,
           })),
-        }), 
+        }),
         credentials: 'include', // 添加凭证以处理跨域Cookie
       })
         .then((data) => {
@@ -111,29 +111,37 @@
         .then((result) => {
           if (result.status === 0) {
             //获取数据不合法的用户信息
-            console.log("触发");
-            const invalidUsers =result.data.invalidUsers
+            console.log('触发');
+            const invalidUsers = result.data.invalidUsers;
             //更新不合法用户的错误信息
-            response.forEach((item)=>{
-              invalidUsers.forEach((user)=>{
-                if(item['姓名']=== user.OfficialName&&item['手机号']===user.MobilePhone&&item['身份证号']===user.IDCardNo){
-                  item.errorType = user.ErrorMsg.toString()
-                  item.isOk=false 
+            response.forEach((item) => {
+              invalidUsers.forEach((user) => {
+                if (
+                  item['姓名'] === user.OfficialName &&
+                 ( item['手机号'] === user.MobilePhone||'+86'+item['手机号'].toString() === user.MobilePhone.toString()) &&
+                  item['身份证号'] === user.IDCardNo
+                ) {
+                  item.errorType = user.ErrorMsg
+                  item.isOk = false;
                 }
-              })
-            })
+              });
+            });
             //获取已经存在的用户信息
-            const existUsers =result.data.existingUsers
+            const existUsers = result.data.existingUsers;
             //获取其中已存在的ID
-              response.forEach((item)=>{
-              existUsers.forEach((user)=>{
-                if(item['姓名']=== user.OfficialName&&item['手机号']===user.MobilePhone&&item['身份证号']===user.IDCardNo){
-                  item.ID= user.ID
-                  item.errorType=''
-                  item.isOk=true
+            response.forEach((item) => {
+              existUsers.forEach((user) => {
+                if (
+                  item['姓名'] === user.OfficialName &&
+                  ( item['手机号'] === user.MobilePhone||'+86'+item['手机号'].toString() === user.MobilePhone.toString()) &&
+                  item['身份证号'] === user.IDCardNo
+                ) {
+                  item.ID = user.ID;
+                  item.errorType = '';
+                  item.isOk = true;
                 }
-              })
-            })
+              });
+            });
             const convertedData = response.map((item) => ({
               ID: item.ID,
               officialName: item['姓名'],
@@ -143,11 +151,11 @@
               IDCardType: '居民身份证',
               errorMsg: item.errorType,
               isOk: item.isOk,
-              Domains: ['cst.school^student']
+              Domains: ['cst.school^student'],
             }));
             failure_student_list = convertedData;
           } else {
-           throw new Error('校验角色失败');
+            throw new Error('校验角色失败');
           }
           show = true;
           if (file_input) {
@@ -262,44 +270,56 @@
       })
       .then((result) => {
         if (result.status === 0) {
-         //获取数据不合法的用户信息
-            const invalidUsers =result.data.invalidUsers
-            //更新不合法用户的错误信息
-            tempList.forEach((item)=>{
-              invalidUsers.forEach((user)=>{
-                if(item.officialName=== user.OfficialName&&item.mobilePhone===user.MobilePhone&&item.idCardNo===user.IDCardNo){
-                  console.log('更新错误信息')
-                  item.errorMsg = user.ErrorMsg
-                  item.isOk=false
-                }
-              })
-            })
-            //获取已经存在的用户信息
-            const existUsers =result.data.existingUsers
-            //获取其中已存在的ID
-              tempList.forEach((item)=>{
-              existUsers.forEach((user)=>{
-                if(item.officialName=== user.OfficialName&&item.mobilePhone===user.MobilePhone&&item.idCardNo===user.IDCardNo){
-                  item.errorMsg=''
-                  item.ID= user.ID
-                  item.isOk=true
-                }
-              })
-            })
-            //给更新的用户进行更新信息
-            const validList = result.data.validUsers;
-              tempList.forEach((item)=>{
-              validList.forEach((user)=>{
-                if(item.officialName=== user.OfficialName&&item.mobilePhone===user.MobilePhone&&item.idCardNo===user.IDCardNo){
-                  console.log('更新用户信息')
-                  item.errorMsg=''
-                  item.isOk=true
-                  item.ID=''
-                }
-              })
-            })
+          //获取数据不合法的用户信息
+          const invalidUsers = result.data.invalidUsers;
+          //更新不合法用户的错误信息
+          tempList.forEach((item) => {
+            invalidUsers.forEach((user) => {
+              if (
+                item.officialName === user.OfficialName &&
+               ( item.mobilePhone === user.MobilePhone||'+86'+item.mobilePhone.toString() === user.MobilePhone.toString()) &&
+                item.idCardNo === user.IDCardNo
+              ) {
+                console.log('更新错误信息');
+                item.errorMsg = user.ErrorMsg;
+                item.isOk = false;
+              }
+            });
+          });
+          //获取已经存在的用户信息
+          const existUsers = result.data.existingUsers;
+          //获取其中已存在的ID
+          tempList.forEach((item) => {
+            existUsers.forEach((user) => {
+              if (
+                item.officialName === user.OfficialName &&
+               ( item.mobilePhone === user.MobilePhone||'+86'+item.mobilePhone.toString() === user.MobilePhone.toString()) &&
+                item.idCardNo === user.IDCardNo
+              ) {
+                item.errorMsg = '';
+                item.ID = user.ID;
+                item.isOk = true;
+              }
+            });
+          });
+          //给更新的用户进行更新信息
+          const validList = result.data.validUsers;
+          tempList.forEach((item) => {
+            validList.forEach((user) => {
+              if (
+                item.officialName === user.OfficialName &&
+               ( item.mobilePhone === user.MobilePhone||'+86'+item.mobilePhone.toString() === user.MobilePhone.toString()) &&
+                item.idCardNo === user.IDCardNo
+              ) {
+                console.log('更新用户信息');
+                item.errorMsg = '';
+                item.isOk = true;
+                item.ID = '';
+              }
+            });
+          });
         } else {
-         throw new Error(result.message);
+          throw new Error(result.message);
         }
         show = true;
         if (file_input) {
@@ -309,9 +329,9 @@
       .catch((error) => {
         toast.error(error.message);
       });
-      console.log("123131",tempList);
-      failure_student_list = tempList;
-        editing_index = -1;
+    console.log('123131', tempList);
+    failure_student_list = tempList;
+    editing_index = -1;
     editing_serial_number = null;
     editing_row = {
       officialName: '',
@@ -320,7 +340,6 @@
       serial_number: null,
       errorMsg: '',
     };
-  
   }
 
   //取消编辑按钮
@@ -349,11 +368,11 @@
 
   // 确认导入按钮
   function handleImport() {
-    const validStudents = failure_student_list.filter((s) => s.isOk&&s.ID==='');
-    console.log('validStudents',validStudents);
+    const validStudents = failure_student_list.filter((s) => s.isOk && s.ID === '');
+    console.log('validStudents', validStudents);
     //获取已经存在的用户的信息
-    const existStudentIDs = failure_student_list.filter((s) => s.isOk&&s.ID!=='');
-    if (validStudents.length === 0&&existStudentIDs.length===0) {
+    const existStudentIDs = failure_student_list.filter((s) => s.isOk && s.ID !== '');
+    if (validStudents.length === 0 && existStudentIDs.length === 0) {
       toast.warning('没有可导入的学生，请先修正错误数据');
       return;
     }
@@ -396,7 +415,7 @@
       ),
     )
       .then((payloads) => {
-        onImport(true, payloads,existStudentIDs);
+        onImport(true, payloads, existStudentIDs);
       })
       .catch((err) => {
         toast.error(err.message || '导入失败，请稍后重试');
@@ -408,12 +427,12 @@
 
   // 页码选择处理
   function handlePageChange(event) {
-    current_page = event.detail.page;
+    current_page = event.detail;
   }
 
   // 每页大小变更处理
   function handlePageSizeChange(event) {
-    page_size = event.detail.page_size;
+    page_size = event.detail;
     current_page = 1; // 重置到第一页
   }
 </script>
@@ -456,6 +475,7 @@
         />
       </div>
       <div class="student-table-container">
+        <div class="table-container">
         <table class="student-table">
           <thead class="student-table-head">
             <tr class="table-head-row">
@@ -509,16 +529,18 @@
             </tr>
           </tbody>
         </table>
-        <div class="pagination-container {total_items > 0 ? '' : 'hide'}">
-          <Pagination
-            {total_items}
-            currentPage={current_page}
-            pageSize={page_size}
-            on:pageChange={handlePageChange}
-            on:pageSizeChange={handlePageSizeChange}
-          />
-        </div>
       </div>
+       </div>
+          <div class="pagination-container {total_items > 0 ? '' : 'hide'}">
+        <Pagination
+          {total_items}
+          {current_page}
+          {page_size}
+          on:pageChange={handlePageChange}
+          on:pageSizeChange={handlePageSizeChange}
+        />
+      </div>
+      
     </div>
     <div class="panel-footer">
       <Button type="primary" plain onclick={handleCancel}>取消</Button>
@@ -547,6 +569,7 @@
   .student-panel {
     width: 1000px;
     min-width: 800px;
+    min-height: 90vh;
     max-height: 90vh;
     overflow-y: auto;
     background-color: white;
@@ -555,6 +578,9 @@
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     z-index: 1001;
+  }
+  .table-container{
+    width: 100%;
   }
 
   .panel-header {
@@ -662,12 +688,13 @@
   }
 
   .student-table-container {
-    margin: 20px 0px 0 0px;
-    flex: 1;
-    min-height: 527px;
-    position: relative;
-    display: flex;
-    flex-direction: column;
+    margin: 20px 0 0 0;
+  flex: 1;
+  max-height: calc(90vh - 200px);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
   }
 
   .student-table {
@@ -676,7 +703,9 @@
     text-align: left;
     table-layout: fixed;
     background: #fff;
-    height: 40px;
+    overflow: visible;
+   
+    
 
     thead {
       background-color: #ffffff;
@@ -703,9 +732,9 @@
       border-left: none;
       border-right: none;
       height: 40px;
-      min-height: 40px;
-      max-height: 40px;
-      line-height: 40px;
+      min-height: 30px;
+      max-height: 30px;
+      line-height: 30px;
       box-sizing: border-box;
     }
 
@@ -723,6 +752,8 @@
     }
 
     tbody {
+     
+      overflow-y: auto; /* 添加这行 */
       tr {
         &:hover {
           background-color: #e0f0ff;
@@ -804,15 +835,12 @@
   }
 
   .pagination-container {
-    display: flex;
+       display: flex;
     justify-content: flex-end;
     align-items: center;
     width: 100%;
-    background: white;
-    padding: 8px 0px;
-    position: absolute;
-    bottom: 10px; /* 距离底部距离，避免与页脚重叠 */
-    right: 10px;
+    position: relative; /* 改为相对定位 */
+    right: 0px;
     z-index: 10;
   }
 </style>

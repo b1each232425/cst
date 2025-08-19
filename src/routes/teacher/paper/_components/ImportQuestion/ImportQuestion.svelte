@@ -20,6 +20,7 @@
     import { get } from "svelte/store";
     import { CURRENT_PAPER_ID } from "../../_stores/store";
     import { formatTimestamp } from "$lib/utils/time_utils";
+    import Tag from "$lib/components/Tag/Tag.svelte";
 
     /******************* API 区 *******************/
 
@@ -120,9 +121,10 @@
 
     /********************* 信息区 *********************/
 
-    let paperID = $state(0);
-    let paper_info = $state(null);
-    let paper_groups = $state([]); 
+    let paperID = $state(0); // 试卷ID
+    let paper_info = $state(null); // 试卷信息
+    let paper_groups = $state([]); // 题组列表
+    let existing_question_ids = $state([]); // 已选题目ID列表
 
     /********************* 信息区 *********************/
 
@@ -143,7 +145,7 @@
     }, 500, false);
 
     // 单选题库功能
-    function toggleBank(id) {
+    function toggleBank(id, index) {
         to_add_bankID = to_add_bankID === id ? "" : id;
 
         // 每次切换或取消选中题库的时候先重置搜索参数
@@ -162,20 +164,20 @@
             ).then( result => {
                 question_list = result.data || [];
                 total_questions = result.rowCount;
+
+                // console.log(result);
             });
 
-            fetchBankQuestionList(to_add_bankID,1,100,"","","","")
-                .then(result => {
-                    const TEMP_QUESTION_LIST = result.data || [];
-                    tag_list = [...new Set(TEMP_QUESTION_LIST.flatMap(question=>question.Tags ? question.Tags : []).filter(Boolean))];
-                })
-                .finally(() => {
-                    // console.log(question_list)
-                });
+            // 获取题库的标签
+            tag_list = bank_list[index].QuestionTags;
+            difficulty_list = bank_list[index].QuestionDifficulties;
+            type_list = bank_list[index].QuestionTypes;
 
         } else {
             question_list = [];
             tag_list = [];
+            difficulty_list = [];
+            type_list = [];
         }
     }
 
@@ -194,6 +196,8 @@
     let total_questions = $state(0);            // 题目数量
     let question_list = $state([]);             // 题目列表
     let tag_list = $state([]);                  // 标签列表
+    let difficulty_list = $state([]);            // 难度列表
+    let type_list = $state([]);                  // 题型列表
 
     let selected_questions = $state([]);   // 已选题目数组
     let all_question_selected = $state(false);  // 是否为全选状态
@@ -213,10 +217,16 @@
             ).then( result => {
                 question_list = result.data || [];
                 total_questions = result.rowCount;
+
+                tag_list = bank_list[index].QuestionTags;
+                difficulty_list = bank_list[index].QuestionDifficulties;
+                type_list = bank_list[index].QuestionTypes;
             });
         } else {
             question_list = [];
             tag_list = [];
+            difficulty_list = [];
+            type_list = [];
         }
     }, 500, false);
 
@@ -247,7 +257,8 @@
     // 检查全选
     function checkAllSelected() {
         const CURRENT_PAGE_IDS = question_list.map(item => item.ID);
-        const SELECTED_IDS = selected_questions.map(question => question.ID);
+        // 已选题目ID列表（不包含已导入的）
+        const SELECTED_IDS = selected_questions.map(question => question.ID).concat(existing_question_ids);
         all_question_selected = (
             question_list.length !== 0 &&
             CURRENT_PAGE_IDS.every(id => SELECTED_IDS.includes(id))
@@ -257,8 +268,8 @@
     // 全选
     function selectAllQuestions(checked) {
         if (checked) {
-            // 只追加未存在的
-            const EXISTING_IDS = selected_questions.map(question => question.ID);
+            // 只追加未存在的（不选中已导入的）
+            const EXISTING_IDS = selected_questions.map(question => question.ID).concat(existing_question_ids);
             const TO_ADD_QUESTIONS = question_list.filter(question => !EXISTING_IDS.includes(question.ID));
             selected_questions = [...selected_questions, ...TO_ADD_QUESTIONS];
         } else {
@@ -353,6 +364,7 @@
                 question_list = result.data || [];
                 total_questions = result.rowCount;
                 checkAllSelected();
+                // console.log(result)
             });
         } else { question_list = []; }
     }
@@ -477,18 +489,8 @@
                 total_questions = result.rowCount;
             });
 
-            fetchBankQuestionList(to_add_bankID,1,100,"","","","")
-                .then(result => {
-                    const TEMP_QUESTION_LIST = result.data || [];
-                    tag_list = [...new Set(TEMP_QUESTION_LIST.flatMap(question=>question.Tags ? question.Tags : []).filter(Boolean))];
-                })
-                .finally(() => {
-                    // console.log(question_list)
-                });
-
         } else {
             question_list = [];
-            tag_list = [];
         }
     }
 
@@ -506,6 +508,10 @@
             .then(result => {
                 paper_info = result.data;
                 paper_groups = result.data.GroupsData;
+
+                existing_question_ids = paper_groups.flatMap(group => 
+                group.questions.map(question => question.bank_question_id)
+            ).filter(Boolean);
         });
     })
 
@@ -551,11 +557,11 @@
                 <!-- 题库列表 -->
                 <div class="question-bank-list">
                     {#if bank_list.length !== 0}
-                        {#each bank_list as bank}
+                        {#each bank_list as bank, index}
                             <!-- svelte-ignore a11y_click_events_have_key_events -->
                             <!-- svelte-ignore a11y_no_static_element_interactions -->
-                            <div class="single-bank" onclick={()=>toggleBank(bank.ID)}>
-                                <input type="checkbox" checked={to_add_bankID === bank.ID} onclick={(e) => {e.stopPropagation(); toggleBank(bank.ID);}}>
+                            <div class="single-bank" onclick={()=>toggleBank(bank.ID, index)}>
+                                <input type="checkbox" checked={to_add_bankID === bank.ID} onclick={(e) => {e.stopPropagation(); toggleBank(bank.ID, index);}}>
                                 <span class="bank-name">{bank.Name}</span>
                                 <span class="questions-number">{bank.QuestionCount}</span>
                             </div>
@@ -594,19 +600,17 @@
                                 <!-- 题型 -->
                                 <div class="type">
                                     <span class="prompt">题型：</span>
-                                    <button onclick={()=>selectQuestionType("00")} class={question_types.includes("00")?"selected":""}>单选题</button>
-                                    <button onclick={()=>selectQuestionType("02")} class={question_types.includes("02")?"selected":""}>多选题</button>
-                                    <button onclick={()=>selectQuestionType("04")} class={question_types.includes("04")?"selected":""}>判断题</button>
-                                    <button onclick={()=>selectQuestionType("06")} class={question_types.includes("06")?"selected":""}>填空题</button>
-                                    <button onclick={()=>selectQuestionType("08")} class={question_types.includes("08")?"selected":""}>简答题</button>
+                                    {#each type_list as type}
+                                        <button onclick={()=>selectQuestionType(type)} class={question_types.includes(type)?"selected":""}>{QUESTION_TYPE_TRANS[type]}</button>
+                                    {/each}
                                 </div>
 
                                 <!-- 难度 -->
                                 <div class="level">
                                     <span class="prompt">难度：</span>
-                                    <button onclick={()=>{selectQuestionDifficulty(1)}} class={question_difficulties.includes(1)?"selected":""}>简单</button>
-                                    <button onclick={()=>{selectQuestionDifficulty(2)}} class={question_difficulties.includes(2)?"selected":""}>中等</button>
-                                    <button onclick={()=>{selectQuestionDifficulty(3)}} class={question_difficulties.includes(3)?"selected":""}>困难</button>
+                                    {#each difficulty_list as difficulty}
+                                        <button onclick={()=>{selectQuestionDifficulty(difficulty)}} class={question_difficulties.includes(difficulty)?"selected":""}>{DIFFICULTY_TRANS[difficulty]}</button>
+                                    {/each}
                                 </div>
 
                                 <!-- 标签 -->
@@ -641,13 +645,17 @@
                     <div class="questions-table-container">
                         <table>
                             <thead>
-                                <tr>
+                                <tr class:disabled-row={question_list.length > 0 && question_list.every(question => existing_question_ids.includes(question.ID))}>
                                     <th>
-                                        <input
-                                            type="checkbox"
-                                            bind:checked={all_question_selected}
-                                            onchange={(e) => selectAllQuestions(e.target.checked)}
-                                        >
+                                        {#if question_list.length > 0 && question_list.every(question => existing_question_ids.includes(question.ID))}
+                                            <Tag type="info" size="small">已导入</Tag>
+                                        {:else}
+                                            <input
+                                                type="checkbox"
+                                                bind:checked={all_question_selected}
+                                                onchange={(e) => selectAllQuestions(e.target.checked)}
+                                            >
+                                        {/if}
                                     </th>
                                     <th>题目内容</th>
                                     <th>题目类型</th>
@@ -662,14 +670,23 @@
                                 {#if question_list && question_list.length !== 0}
                                     {#each question_list as question}
                                         <tr class:selected={selected_questions.map(question => question.ID).includes(question.ID)}
-                                            onclick={() => toggleSelection(question.ID, !selected_questions.map(question => question.ID).includes(question.ID))}>
+                                            class:disabled-row={existing_question_ids.includes(question.ID)}
+                                            onclick={() => {
+                                                if(!existing_question_ids.includes(question.ID)) {
+                                                    toggleSelection(question.ID, !selected_questions.map(question => question.ID).includes(question.ID))
+                                                }
+                                            }}>
                                         <td class="checkbox">
+                                            {#if existing_question_ids.includes(question.ID)}
+                                                <Tag type="info" size="small">已导入</Tag>
+                                            {:else}
                                             <input type="checkbox"
                                                 checked={selected_questions.map(question => question.ID).includes(question.ID)}
                                                 onclick={(e) => {
                                                     e.stopPropagation();
                                                     toggleSelection(question.ID, e.target.checked);
                                                 }}>
+                                            {/if}
                                         </td>
                                         <td class="question-content"><div>{@html question.Content}</div></td>
                                         <td class="question-type">{QUESTION_TYPE_TRANS[question.Type]}</td>
@@ -1065,6 +1082,12 @@
                             table {
                                 border-collapse: collapse;
 
+                                /* 禁用行 */
+                                .disabled-row {
+                                    opacity: 0.6;
+                                    cursor: not-allowed;
+                                }
+
                                 .selected {
                                     background-color: rgb(208, 232, 255);
 
@@ -1121,8 +1144,8 @@
                                 }
                                 .question-content {
                                     padding: 6px 10px;
-                                    max-width: calc(85vw - 800px);
-                                    min-width: 300px;
+                                    max-width: calc(85vw - 820px);
+                                    min-width: 270px;
                                     text-align: center;
                                     white-space: nowrap;      /* 不允许文本换行 */
                                     overflow: hidden;         /* 超出容器的文本被隐藏 */
@@ -1166,6 +1189,7 @@
                                     font-size: 14px;
                                     text-align: center;
                                     min-width: 140px;
+                                    max-width: 140px;
 
                                     /* 试卷标签 */
                                     .tag-container {
@@ -1176,21 +1200,6 @@
                                         flex-wrap: wrap;
                                         max-height: 65px;
 
-                                        .per-tag {
-                                            display: flex;
-                                            align-items: center;
-                                            width: max-content;
-                                            height: max-content;
-                    
-                                            /* 颜色块 */
-                                            .ta42block{
-                                                width: 12px;
-                                                height: 12px;
-                                                border-radius: 2px;
-                                                margin-right: 9px;
-                                                margin-top: 4px;
-                                            }
-                                        }
                                     }
                                 }
                             }

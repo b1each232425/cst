@@ -20,63 +20,116 @@
     /\/teacher\/grade\/practice-grade\/detail\?id=\d+/,
   ];
 
-  let nav_map = $state();
-  let current_path = $derived(page.url.pathname);
+  let { nav_map = [] } = $props();
 
+  // 参数校验
+  (() => {
+    // 校验 nav_map 是否为数组
+    if (!Array.isArray(nav_map)) {
+      console.warn(`[SideBar] nav_map 必须是数组，当前为 ${typeof nav_map}`);
+      nav_map = [];
+      return;
+    }
+
+    // 校验每个导航项的结构
+    nav_map.forEach((item, index) => {
+      // 必需字段检查
+      const requiredFields = ['name', 'title', 'path'];
+      requiredFields.forEach((field) => {
+        if (!(field in item)) {
+          console.warn(`[SideBar] nav_map[${index}] 缺少必需字段: ${field}`);
+          nav_map = [];
+          return;
+        }
+      });
+
+      // 字段类型检查
+      if (typeof item.name !== 'string') {
+        console.warn(`[SideBar] nav_map[${index}].name 必须是字符串，当前为 ${typeof item.name}`);
+        nav_map = [];
+        return;
+      }
+
+      if (typeof item.title !== 'string') {
+        console.warn(`[SideBar] nav_map[${index}].title 必须是字符串，当前为 ${typeof item.title}`);
+        nav_map = [];
+        return;
+      }
+
+      if (typeof item.path !== 'string') {
+        console.warn(`[SideBar] nav_map[${index}].path 必须是字符串，当前为 ${typeof item.path}`);
+        nav_map = [];
+        return;
+      }
+
+      // 可选字段检查
+      if ('icon' in item && typeof item.icon !== 'string') {
+        console.warn(`[SideBar] nav_map[${index}].icon 必须是字符串，当前为 ${typeof item.icon}`);
+        nav_map = [];
+        return;
+      }
+
+      if ('children' in item) {
+        if (!Array.isArray(item.children)) {
+          console.warn(`[SideBar] nav_map[${index}].children 必须是数组，当前为 ${typeof item.children}`);
+          nav_map = [];
+          return;
+        }
+
+        // 递归校验子项
+        const validateChildren = (children, parentPath = '') => {
+          children.forEach((child, childIndex) => {
+            if (!child.name || !child.title || !child.path) {
+              console.warn(`[SideBar] nav_map${parentPath}[${childIndex}] 缺少必需字段`);
+              nav_map = [];
+              return;
+            }
+
+            if (child.children) {
+              validateChildren(child.children, `${parentPath}[${index}].children`);
+            }
+          });
+        };
+
+        validateChildren(item.children, `[${index}].children`);
+      }
+
+      // 布尔类型字段检查
+      const booleanFields = ['children_is_parallel', 'isFilter', 'force_hide'];
+      booleanFields.forEach((field) => {
+        if (field in item && typeof item[field] !== 'boolean') {
+          console.warn(`[SideBar] nav_map[${index}].${field} 必须是布尔值，当前为 ${typeof item[field]}`);
+          nav_map = [];
+          return;
+        }
+      });
+    });
+  })();
+
+  let current_path = $derived(page.url.pathname); // 当前路径
   let is_auto_fold = $state(false); // 侧边栏是否自动折叠
   let sidebar_fold_state = $state(false); // 侧边栏折叠状态
   let sidebar_is_folding = $state(false); // 侧边栏是否正在折叠中
   let sidebar_is_folded = $state(false); // 侧边栏是否已经折叠
   let side_float = $state(false); // 侧边栏是否悬浮
   let sidebar_fold_str = $state('收起侧边栏'); // 侧边栏折叠状态提示
-  let is_hydrated = $state(false);
+  let is_hydrated = $state(false); // 是否展示侧边栏
+  let current_active = $state('/'); // 当前选中的路由路径
+  let sidebar_container_element = $state(null); // 侧边栏导航项数据DOM
+  let sidebar_element = $state(); // 侧边栏组件DOM
+  let sidebar_toggle_btn = $state(); // 侧边栏折叠按钮DOM
+  let sidebar_mouse_enter_timeout = $state(null); // 侧边栏鼠标进入定时器
+  let sidebar_mouse_leave_timeout = $state(null); // 侧边栏鼠标离开定时器
 
-  /**
-   * 当前选中的路由路径
-   */
-  let current_active = $state('/');
-
-  /**
-   * 侧边栏导航项数据
-   * @type {HTMLDivElement}
-   */
-  let sidebar_container_element = $state(null);
-
-  /**
-   * 侧边栏组件
-   * @type {HTMLDivElement}
-   */
-  let sidebar_element = $state();
-
-  /**
-   * 侧边栏折叠按钮
-   * @type {HTMLButtonElement}
-   */
-  let sidebar_toggle_btn = $state();
-
-  /**
-   * 侧边栏鼠标进入定时器
-   * @type {number}
-   */
-  let sidebar_mouse_enter_timeout = $state(null);
-
-  /**
-   * 侧边栏鼠标离开定时器
-   * @type {number}
-   */
-  let sidebar_mouse_leave_timeout = $state(null);
-
+  // 保存侧边栏状态到本地(数据持久化)
   function saveSidebarState() {
     localStorage.setItem('is_auto_fold', is_auto_fold.toString());
     localStorage.setItem('sidebar_fold_state', sidebar_fold_state.toString());
-    localStorage.setItem('sidebar_is_folding', sidebar_is_folding.toString());
     localStorage.setItem('sidebar_is_folded', sidebar_is_folded.toString());
     localStorage.setItem('sidebar_fold_str', sidebar_fold_str);
   }
 
-  /**
-   * 切换侧边栏折叠状态
-   */
+  // 切换侧边栏折叠状态
   function toggleSidebar(foldState) {
     side_float = false;
     sidebar_fold_state = foldState != null ? foldState : !sidebar_fold_state;
@@ -98,9 +151,7 @@
     saveSidebarState();
   }
 
-  /**
-   * 侧边栏折叠动画结束事件处理函数
-   */
+  // 侧边栏折叠动画结束事件处理函数
   function sidebarTransitionendHandle() {
     if (!sidebar_is_folding) {
       return;
@@ -170,10 +221,7 @@
     }
   }
 
-  /**
-   * 处理侧边栏导航项点击事件
-   * @param { NavMapData } item 导航项数据
-   */
+  // 处理侧边栏导航项点击事件
   function handleSidebarItemClick(item) {
     if (item.children != null && item.children.length > 0 && item.children_is_parallel) {
       item.fold = !item.fold;
@@ -185,10 +233,7 @@
     goto(item.path);
   }
 
-  /**
-   * 检查导航项是否有子路由
-   * @param { NavMapData } item 导航项数据
-   */
+  // 检查导航项是否有子路由
   function checkItemHasChildren(item, childrenPath) {
     if (item.children == null || item.children.length <= 0) {
       return false;
@@ -203,30 +248,7 @@
     return false;
   }
 
-  // 获取用户权限并生成 nav_map
-  function getUserInfo() {
-    fetch('/api/user/me')
-      .then((response) => response.json())
-      .then(async (data) => {
-        if (!data?.data?.APIs) throw new Error('APIs 数据不存在');
-
-        const allowedPaths = await data.data.APIs.map((api) => api.APIExposePath);
-
-        // 过滤 baseNavItems，只保留匹配的父级菜单
-        nav_map = $baseNavItems.filter((item) => {
-          return allowedPaths.includes(item.path); // 只匹配一级菜单的 path
-        });
-      })
-      .catch((error) => {
-        nav_map = []; // 失败时设为空数组
-        console.error('获取用户权限失败:', error);
-        toast.error('获取用户权限失败：', error);
-      });
-  }
-
-  /**
-   * 正则匹配路径
-   */
+  // 正则匹配路径
   function regexMatch(path, path_regex) {
     return new RegExp(`${path_regex}`).test(path);
   }
@@ -235,7 +257,6 @@
   beforeNavigate(({ from, to, cancel }) => {
     if (to) {
       const targetPath = to.url.pathname + to.url.search; // 包括路径和查询参数
-      console.log(targetPath);
 
       // 遍历 NEED_FOLD_NAV，检查是否匹配
       if (
@@ -266,14 +287,12 @@
   function loadSidebarState() {
     const savedAutoFold = localStorage.getItem('is_auto_fold');
     const savedFoldState = localStorage.getItem('sidebar_fold_state');
-    const savedIsFolding = localStorage.getItem('sidebar_is_folding');
     const savedIsFolded = localStorage.getItem('sidebar_is_folded');
     const savedFoldStr = localStorage.getItem('sidebar_fold_str');
 
     // 只有存在值时才恢复状态
     if (savedAutoFold !== null) is_auto_fold = savedAutoFold === 'true';
     if (savedFoldState !== null) sidebar_fold_state = savedFoldState === 'true';
-    if (savedIsFolding !== null) sidebar_is_folding = savedIsFolding === 'true';
     if (savedIsFolded !== null) sidebar_is_folded = savedIsFolded === 'true';
     if (savedFoldStr !== null) sidebar_fold_str = savedFoldStr;
 
@@ -286,21 +305,19 @@
         );
       }
     }, 0);
+
+    is_hydrated = true;
   }
 
   onMount(() => {
     // 加载保存的状态
     loadSidebarState();
-    is_hydrated = true;
 
     // 当窗口大小变化时，调用handleResize函数,当宽度太小自动收起侧边栏
     window.addEventListener('resize', handleResize);
 
     // 更新当前选中模块并高亮
     current_active = window.location.pathname;
-
-    // 获取用户信息
-    getUserInfo();
   });
 </script>
 
@@ -408,7 +425,6 @@
   .sidebar-container {
     position: relative;
     display: flex;
-    width: max-content;
     height: 100%;
     background-color: rgba(243, 243, 243, 0);
 

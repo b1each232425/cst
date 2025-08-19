@@ -21,286 +21,173 @@
   import '$lib/components/Button/index.scss';
   import '$lib/components/Input/index.scss';
 
-  // const mockPractice = [
+  // const mockPractices = [
+  //   // 1. 全新未开始练习
   //   {
   //     ID: 1,
-  //     Name: '练习一：基础语法',
+  //     Name: '基础语法练习',
   //     Type: '00',
   //     AttemptCount: 0,
   //     Difficulty: '00',
-  //     AllowedAttempts: 10,
+  //     AllowedAttempts: 3,
   //     QuestionCount: 10,
-  //     WrongCount: 15,
-  //     TotalScore: 75,
-  //     HighestScore: 90,
+  //     WrongCount: 0,
+  //     TotalScore: 0,
+  //     HighestScore: 0,
   //     PaperTotalScore: 100,
   //     PaperID: 'paper_001',
   //     LatestUnsubmittedID: 0,
-  //     LatestSubmittedID: 'attempt_008',
-  //     Action: '00',
+  //     LatestSubmittedID: 0,
+  //     PendingMarkID: 0,
+  //     Action: '00', // 预期: ["进入练习"]
   //   },
+
+  //   // 2. 有未提交记录(首次练习)
   //   {
   //     ID: 2,
-  //     Name: '练习二：数据类型',
+  //     Name: '数据结构入门',
   //     Type: '00',
-  //     AttemptCount: 2,
+  //     AttemptCount: 1,
   //     Difficulty: '02',
   //     AllowedAttempts: 5,
   //     QuestionCount: 8,
   //     WrongCount: 0,
   //     TotalScore: 0,
-  //     HighestScore: 95,
+  //     HighestScore: 0,
   //     PaperTotalScore: 100,
   //     PaperID: 'paper_002',
   //     LatestUnsubmittedID: 21,
-  //     LatestSubmittedID: 'attempt_015',
-  //     Action: '04',
+  //     LatestSubmittedID: 0,
+  //     PendingMarkID: 0,
+  //     Action: '10', // 预期: ["继续作答"]
   //   },
+
+  //   // 3. 有未提交记录(非首次练习)
   //   {
   //     ID: 3,
-  //     Name: '练习三：指针进阶',
+  //     Name: '指针进阶训练',
   //     Type: '00',
-  //     AttemptCount: 5,
-  //     Difficulty: '00',
+  //     AttemptCount: 3,
+  //     Difficulty: '04',
   //     AllowedAttempts: 5,
-  //     QuestionCount: 5,
-  //     WrongCount: 2,
-  //     TotalScore: 51,
-  //     HighestScore: 54,
+  //     QuestionCount: 15,
+  //     WrongCount: 5,
+  //     TotalScore: 75,
+  //     HighestScore: 80,
   //     PaperTotalScore: 100,
   //     PaperID: 'paper_003',
-  //     LatestUnsubmittedID: 0,
-  //     LatestSubmittedID: 66,
-  //     Action: '08',
+  //     LatestUnsubmittedID: 32,
+  //     LatestSubmittedID: 31,
+  //     PendingMarkID: 0,
+  //     Action: '04', // 预期: ["继续作答", "查看上次作答"]
   //   },
+
+  //   // 4. 已完成但可重新作答
   //   {
   //     ID: 4,
-  //     Name: '练习四：操作系统模拟题',
+  //     Name: '操作系统模拟',
   //     Type: '00',
-  //     AttemptCount: 1,
-  //     Difficulty: '04',
-  //     AllowedAttempts: 3,
-  //     QuestionCount: 15,
-  //     WrongCount: 5,
-  //     TotalScore: null,
-  //     HighestScore: 92,
+  //     AttemptCount: 2,
+  //     Difficulty: '02',
+  //     AllowedAttempts: 5,
+  //     QuestionCount: 20,
+  //     WrongCount: 8,
+  //     TotalScore: 85,
+  //     HighestScore: 85,
   //     PaperTotalScore: 100,
   //     PaperID: 'paper_004',
-  //     LatestUnsubmittedID: '',
-  //     LatestSubmittedID: 'attempt_005',
-  //     Action: '06',
+  //     LatestUnsubmittedID: 0,
+  //     LatestSubmittedID: 42,
+  //     PendingMarkID: 0,
+  //     Action: '02', // 预期: ["重新作答", "查看上次作答"]
   //   },
+
+  //   // 5. 已达最大尝试次数
   //   {
   //     ID: 5,
-  //     Name: '练习五：基础语法',
+  //     Name: '算法综合测试',
   //     Type: '00',
   //     AttemptCount: 5,
-  //     Difficulty: '00',
+  //     Difficulty: '04',
   //     AllowedAttempts: 5,
   //     QuestionCount: 10,
-  //     WrongCount: 15,
-  //     TotalScore: 75,
-  //     HighestScore: 90,
+  //     WrongCount: 3,
+  //     TotalScore: 92,
+  //     HighestScore: 95,
   //     PaperTotalScore: 100,
-  //     PaperID: 'paper_001',
-  //     LatestUnsubmittedID: 'attempt_009',
-  //     LatestSubmittedID: 'attempt_008',
-  //     Action: '10',
+  //     PaperID: 'paper_005',
+  //     LatestUnsubmittedID: 0,
+  //     LatestSubmittedID: 53,
+  //     PendingMarkID: 0,
+  //     Action: '08', // 预期: ["查看上次作答"]
   //   },
+
+  //   // 6. 等待批改中
   //   {
   //     ID: 6,
-  //     Name: '练习六：数据结构综合',
+  //     Name: '网络协议练习',
   //     Type: '00',
-  //     AttemptCount: 2,
+  //     AttemptCount: 1,
   //     Difficulty: '02',
   //     AllowedAttempts: 3,
-  //     QuestionCount: 20,
-  //     WrongCount: 10,
-  //     TotalScore: 85,
+  //     QuestionCount: 12,
+  //     WrongCount: 0,
+  //     TotalScore: null,
   //     HighestScore: 88,
   //     PaperTotalScore: 100,
-  //     PaperID: 'paper_002',
-  //     LatestUnsubmittedID: 25,
-  //     LatestSubmittedID: 'attempt_003',
-  //     Action: '04',
+  //     PaperID: 'paper_006',
+  //     LatestUnsubmittedID: 0,
+  //     LatestSubmittedID: 61,
+  //     PendingMarkID: 612,
+  //     Action: '06', // 预期: ["等待批改完成"]
   //   },
+
+  //   // 7. 异常状态
   //   {
-  //     ID: 177,
-  //     Name: '练习一：基础语法',
+  //     ID: 7,
+  //     Name: '异常状态测试',
   //     Type: '00',
-  //     AttemptCount: 0,
+  //     AttemptCount: 1,
   //     Difficulty: '00',
-  //     AllowedAttempts: 10,
-  //     QuestionCount: 10,
-  //     WrongCount: 15,
-  //     TotalScore: 75,
-  //     HighestScore: 90,
-  //     PaperTotalScore: 100,
-  //     PaperID: 'paper_001',
-  //     LatestUnsubmittedID: '',
-  //     LatestSubmittedID: 'attempt_008',
-  //     Action: '00',
-  //   },
-  //   {
-  //     ID: 27,
-  //     Name: '练习二：数据类型',
-  //     Type: '00',
-  //     AttemptCount: 2,
-  //     Difficulty: '02',
-  //     AllowedAttempts: 5,
-  //     QuestionCount: 8,
-  //     WrongCount: 0,
-  //     TotalScore: 0,
-  //     HighestScore: 0,
-  //     PaperTotalScore: 100,
-  //     PaperID: 'paper_002',
-  //     LatestUnsubmittedID: '',
-  //     LatestSubmittedID: 'attempt_015',
-  //     Action: '06',
-  //   },
-  //   {
-  //     ID: 37,
-  //     Name: '练习三：指针进阶',
-  //     Type: '00',
-  //     AttemptCount: 0,
-  //     Difficulty: '00',
-  //     AllowedAttempts: 5,
-  //     QuestionCount: 5,
-  //     WrongCount: 0,
-  //     TotalScore: 0,
-  //     HighestScore: 96,
-  //     PaperTotalScore: 100,
-  //     PaperID: 'paper_003',
-  //     LatestUnsubmittedID: '',
-  //     LatestSubmittedID: '',
-  //     Action: '00',
-  //   },
-  //   {
-  //     ID: 45,
-  //     Name: '练习四：操作系统模拟题',
-  //     Type: '00',
-  //     AttemptCount: 14,
-  //     Difficulty: '04',
   //     AllowedAttempts: 3,
-  //     QuestionCount: 15,
-  //     WrongCount: 5,
-  //     TotalScore: 92,
-  //     HighestScore: 92,
-  //     PaperTotalScore: 100,
-  //     PaperID: 'paper_004',
-  //     LatestUnsubmittedID: '',
-  //     LatestSubmittedID: 'attempt_005',
-  //     Action: '02',
-  //   },
-  //   {
-  //     ID: 577,
-  //     Name: '练习一：基础语法',
-  //     Type: '00',
-  //     AttemptCount: 5,
-  //     Difficulty: '00',
-  //     AllowedAttempts: 10,
-  //     QuestionCount: 10,
-  //     WrongCount: 15,
-  //     TotalScore: 75,
-  //     HighestScore: 90,
-  //     PaperTotalScore: 100,
-  //     PaperID: 'paper_001',
-  //     LatestUnsubmittedID: 'attempt_009',
-  //     LatestSubmittedID: 'attempt_008',
-  //     Action: '10',
-  //   },
-  //   {
-  //     ID: 644,
-  //     Name: '练习二：数据结构综合',
-  //     Type: '00',
-  //     AttemptCount: 2,
-  //     Difficulty: '02',
-  //     AllowedAttempts: 3,
-  //     QuestionCount: 20,
-  //     WrongCount: 10,
-  //     TotalScore: 85,
-  //     HighestScore: 88,
-  //     PaperTotalScore: 100,
-  //     PaperID: 'paper_002',
-  //     LatestUnsubmittedID: '',
-  //     LatestSubmittedID: 'attempt_003',
-  //     Action: '04',
-  //   },
-  //   {
-  //     ID: 744,
-  //     Name: '练习三：指针进阶',
-  //     Type: '00',
-  //     AttemptCount: 0,
-  //     Difficulty: '00',
-  //     AllowedAttempts: 5,
   //     QuestionCount: 5,
   //     WrongCount: 0,
   //     TotalScore: 0,
   //     HighestScore: 0,
   //     PaperTotalScore: 100,
-  //     PaperID: 'paper_003',
-  //     LatestUnsubmittedID: '',
-  //     LatestSubmittedID: '',
-  //     Action: '00',
+  //     PaperID: 'paper_007',
+  //     LatestUnsubmittedID: 71,
+  //     LatestSubmittedID: 72,
+  //     PendingMarkID: 0,
+  //     Action: '12', // 预期: ["操作异常"]
   //   },
+
+  //   // 8. 无限次尝试
   //   {
-  //     ID: 87,
-  //     Name: '练习四：操作系统模拟题',
+  //     ID: 8,
+  //     Name: '无限练习模式',
   //     Type: '00',
-  //     AttemptCount: 1,
-  //     Difficulty: '04',
-  //     AllowedAttempts: 3,
-  //     QuestionCount: 15,
-  //     WrongCount: 5,
-  //     TotalScore: 92,
-  //     HighestScore: 92,
-  //     PaperTotalScore: 100,
-  //     PaperID: 'paper_004',
-  //     LatestUnsubmittedID: '',
-  //     LatestSubmittedID: 'attempt_005',
-  //     Action: '02',
-  //   },
-  //   {
-  //     ID: 94,
-  //     Name: '练习四：操作系统模拟题',
-  //     Type: '00',
-  //     AttemptCount: 1,
-  //     Difficulty: '04',
-  //     AllowedAttempts: 3,
-  //     QuestionCount: 15,
-  //     WrongCount: 5,
-  //     TotalScore: 92,
-  //     HighestScore: 92,
-  //     PaperTotalScore: 100,
-  //     PaperID: 'paper_004',
-  //     LatestUnsubmittedID: '',
-  //     LatestSubmittedID: 'attempt_005',
-  //     Action: '02',
-  //   },
-  //   {
-  //     ID: 121,
-  //     Name: '练习四：操作系统模拟题',
-  //     Type: '00',
-  //     AttemptCount: 1,
-  //     Difficulty: '04',
+  //     AttemptCount: 10,
+  //     Difficulty: '02',
   //     AllowedAttempts: 0,
   //     QuestionCount: 15,
   //     WrongCount: 5,
-  //     TotalScore: 92,
-  //     HighestScore: 92,
+  //     TotalScore: 90,
+  //     HighestScore: 95,
   //     PaperTotalScore: 100,
-  //     PaperID: 'paper_004',
-  //     LatestUnsubmittedID: '',
-  //     LatestSubmittedID: 'attempt_005',
-  //     Action: '02',
+  //     PaperID: 'paper_008',
+  //     LatestUnsubmittedID: 0,
+  //     LatestSubmittedID: 82,
+  //     PendingMarkID: 0,
+  //     Action: '02', // 预期: ["重新作答", "查看上次作答"]
   //   },
   // ];
 
   // 练习类型映射表
   const TYPE_MAP = {
     '00': '经典巩固',
-    '02': '常练常新',
-    '04': '智能提升',
+    // '02': '常练常新',
+    // '04': '智能提升',
   };
 
   // 难度映射表
@@ -333,6 +220,7 @@
     '06': ['等待批改完成'],
     '08': ['查看上次作答'],
     '10': ['继续作答'],
+    '12': ['操作异常'],
   };
 
   // 操作码对应的事件
@@ -343,6 +231,7 @@
     '06': () => {},
     '08': (index, id) => gotoPracticeResult(id),
     '10': (index, id) => gotoPracticeDetail(id),
+    '12': () => {},
   };
 
   // 处理对应操作
@@ -365,30 +254,34 @@
 
   // 判断练习的操作
   function getPracticeAction(practice) {
-    const { LatestUnsubmittedID, TotalScore, AttemptCount, AllowedAttempts } = practice;
+    const { LatestSubmittedID, LatestUnsubmittedID, TotalScore, AttemptCount, AllowedAttempts, PendingMarkID } =
+      practice;
 
     // 没有作答过
-    if (!LatestUnsubmittedID && !AttemptCount) return '00';
+    if (LatestSubmittedID === 0 && LatestUnsubmittedID === 0 && PendingMarkID === 0) return '00';
 
     // 存在未提交记录
-    if (LatestUnsubmittedID) {
-      if (TotalScore !== null && TotalScore !== undefined) return '04'; // 不是第一次答题
+    if (LatestUnsubmittedID !== 0 && PendingMarkID === 0) {
+      if (LatestSubmittedID !== 0) return '04'; // 不是第一次答题
       return '10'; // 第一次答题
     }
 
-    // 已提交但未批改（本次作答未批改，不能进行下一次作答）（这里并不能确定是不是第一次作答）
-    if (TotalScore === null && TotalScore !== 0) return '06';
+    // 作答且提交，等待批改
+    if (LatestUnsubmittedID === 0 && PendingMarkID !== 0) return '06';
 
     // 达到最大尝试次数（AllowedAttempts <= 0 表示可以无限作答）
     if (AllowedAttempts > 0 && AttemptCount >= AllowedAttempts) return '08';
 
     // 正常可重新作答
-    return '02';
+    if (LatestSubmittedID !== 0 && LatestUnsubmittedID === 0 && PendingMarkID === 0) return '02';
+
+    // 未知情况
+    return '12';
   }
 
   // 是否有上次的作答记录
   function hasLastRecord(action) {
-    return action != '00' && action != '04' && action != '06' && action != '10';
+    return action == '02' || action === '08';
   }
 
   function handleReset() {
@@ -415,7 +308,11 @@
           total_count = res.data?.total ?? 0;
 
           // 计算每个练习 action
-          if (Array.isArray(practice_list)) practice_list.forEach((p) => (p.Action = getPracticeAction(p)));
+          if (Array.isArray(practice_list))
+            practice_list.forEach((p) => {
+              p.Action = getPracticeAction(p);
+              if (p.Action === '12') toast.error('练习列表存在操作异常');
+            });
           else {
             practice_list = [];
             throw new Error('practice_list 数据类型错误');
@@ -424,6 +321,7 @@
       })
       .catch((err) => {
         toast.error(err.message);
+        console.error(err);
       });
   }
 
@@ -555,7 +453,11 @@
                 >{#each ACTION_MAP[practice.Action] as action, index}
                   <button
                     class="option"
-                    class:can-click={practice.Action && ACTION_MAP[practice.Action] && practice.Action !== '06'}
+                    class:can-click={practice.Action &&
+                      ACTION_MAP[practice.Action] &&
+                      practice.Action !== '06' &&
+                      practice.Action !== '12'}
+                    class:error={practice.Action === '12'}
                     onclick={() => handleAction(practice.Action, index, practice.ID)}>{action}</button
                   >
                 {/each}</td
@@ -694,6 +596,10 @@
                 &.can-click:hover {
                   cursor: pointer;
                   font-weight: bold;
+                }
+
+                &.error {
+                  color: red;
                 }
               }
             }

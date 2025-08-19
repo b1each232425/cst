@@ -6,6 +6,278 @@ import { slide } from 'svelte/transition';
 import { page } from '$app/state';
 import { beforeNavigate } from '$app/navigation';
 
+// 导航栏数据
+const nav_map = [
+  {
+    name: 'login',
+    title: '登录',
+    path: '/login',
+  },
+  // {
+  //   name: 'courseManagement',
+  //   title: '课程管理',
+  //   path: '/teacher/courseManagement',
+  //   icon: '/sidebar/nav_icon/course.svg',
+  // },
+  {
+    name: 'questionBankManagement',
+    title: '题库管理',
+    path: '/teacher/question-bank',
+    icon: '/sidebar/nav_icon/question_bank.svg',
+    children_is_parallel: true,
+    isFilter: true,
+    children: [
+      // {
+      //   name: 'programmingQuestionBank',
+      //   title: '编程题库管理',
+      //   path: '/teacher/questionBank/programming',
+      // },
+      {
+        name: 'theoryQuestionBank',
+        title: '理论题库管理',
+        path: '/teacher/question-bank/theory',
+        children: [
+          {
+            name: 'editTheoryQuestionBank',
+            title: '编辑题库',
+            path: '/teacher/question-bank/theory/editBank',
+          },
+          {
+            name: 'addTheoryQuestionBank',
+            title: '新增题库',
+            path: '/teacher/question-bank/theory/newBank',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'paperManagement',
+    title: '试卷管理',
+    path: '/teacher/paper',
+    icon: '/sidebar/nav_icon/paper.svg',
+  },
+  {
+    name: 'practiceManagement',
+    title: '练习管理',
+    path: '/teacher/practice',
+    icon: '/sidebar/nav_icon/practice.svg',
+    children: [
+      {
+        name: 'create',
+        title: '创建练习',
+        path: '/teacher/practice/create',
+        force_hide: true,
+      },
+      {
+        name: 'edit',
+        title: '编辑练习',
+        path: '/teacher/practice/edit/\\d+$',
+        force_hide: true,
+      },
+    ],
+  },
+  {
+    name: 'examManagement',
+    title: '考试管理',
+    path: '/teacher/exam',
+    icon: '/sidebar/nav_icon/examination.svg',
+    children: [
+      {
+        name: 'createExam',
+        title: '创建考试',
+        path: '/teacher/exam/addExam',
+        force_hide: true,
+      },
+      {
+        name: 'editExam',
+        title: '编辑考试',
+        path: '/teacher/exam/editExam/\\d+$',
+        force_hide: true,
+      },
+      // {
+      //   name: 'invigilation',
+      //   title: '监考管理',
+      //   path: '/teacher/exam/invigilation/\\d+$',
+      //   force_hide: true,
+      // },
+      {
+        name: 'previewExam',
+        title: '预览试卷',
+        path: '/teacher/exam/previewExam',
+        force_hide: true,
+      },
+    ],
+  },
+  {
+    name: 'correctManagement',
+    title: '试卷批改',
+    path: '/teacher/correct',
+    icon: '/sidebar/nav_icon/correct.svg',
+    children_is_parallel: true,
+    isFilter: true,
+    children: [
+      {
+        name: 'exam-correct',
+        title: '考试批改',
+        path: '/teacher/correct/exam-correct',
+      },
+      {
+        name: 'practice-correct',
+        title: '练习批改',
+        path: '/teacher/correct/practice-correct',
+      },
+    ],
+  },
+
+  {
+    name: 'gradeManagement',
+    title: '成绩管理',
+    path: '/teacher/grade',
+    icon: '/sidebar/nav_icon/grade.svg',
+    children_is_parallel: true,
+    isFilter: true,
+    children: [
+      {
+        name: 'examGradeManagement',
+        title: '考试成绩管理',
+        path: '/teacher/grade/exam-grade',
+        children: [
+          {
+            name: 'examGradeDetail',
+            title: '考试成绩详情',
+            path: '/teacher/grade/exam-grade/detail',
+          },
+        ],
+      },
+      {
+        name: 'practiceGradeManagement',
+        title: '练习成绩管理',
+        path: '/teacher/grade/practice-grade',
+        children: [
+          {
+            name: 'practiceGradeDetail',
+            title: '练习成绩详情',
+            path: '/teacher/grade/practice-grade/detail',
+          },
+        ],
+      },
+      // {
+      //   name: 'courseGradeManagement',
+      //   title: '课程成绩管理',
+      //   path: '/teacher/gradeManagement/course',
+      // },
+    ],
+  },
+  // {
+  //   name: 'questionnaireManagement',
+  //   title: '问卷管理',
+  //   path: '/teacher/questionnaireManagement',
+  //   icon: '/sidebar/nav_icon/questionnaire.svg',
+  // },
+  // {
+  //   name: 'announcementManagement',
+  //   title: '公告管理',
+  //   path: '/teacher/announcementManagement',
+  //   icon: '/sidebar/nav_icon/announcement.svg',
+  // },
+  // {
+  //   name: 'examSiteManagement',
+  //   title: '考点管理',
+  //   path: '/teacher/examSiteManagement',
+  //   icon: '/sidebar/nav_icon/exam_site.svg',
+  //   children: [
+  //     {
+  //       name: 'editExamSite',
+  //       title: '编辑考点',
+  //       path: '/teacher/examSiteManagement/edit/\\d+$',
+  //       force_hide: true,
+  //     },
+  //     {
+  //       name: 'examSiteDetails',
+  //       title: '考点详情',
+  //       path: '/teacher/examSiteManagement/details/\\d+$',
+  //       force_hide: true,
+  //       children: [
+  //         {
+  //           name: 'examRoomExamList',
+  //           title: '考场考试列表',
+  //           path: '/teacher/examSiteManagement/room/\\d+$',
+  //           force_hide: true,
+  //         },
+  //       ],
+  //     },
+  //   ],
+  // },
+  // {
+  //   name: 'invigilationList',
+  //   title: '监考列表',
+  //   path: '/teacher/invigilationList',
+  //   icon: '/sidebar/nav_icon/invigilate.svg',
+  //   children: [
+  //     {
+  //       name: 'invigilation',
+  //       title: '监考详情',
+  //       path: '/teacher/invigilationList/invigilation',
+  //       force_hide: true,
+  //     },
+  //   ],
+  // },
+  {
+    name: 'studentManagement',
+    title: '学生管理',
+    path: '/teacher/student-management',
+    icon: '/sidebar/nav_icon/student.svg',
+    children: [
+      {
+        name: 'addStudent',
+        title: '创建学生',
+        path: '/teacher/student-management/addStudent',
+        force_hide: true,
+      },
+      // {
+      //   name: 'editStudent',
+      //   title: '编辑学生',
+      //   path: '/teacher/studentManagement/edit/\\d+$',
+      //   force_hide: true,
+      // },
+      // {
+      //   name: 'detailsStudent',
+      //   title: '学生详情',
+      //   path: '/teacher/studentManagement/details/\\d+$',
+      //   force_hide: true,
+      // },
+    ],
+  },
+  {
+    name: 'userManagement',
+    title: '用户管理',
+    path: '/teacher/user-management',
+    icon: '/sidebar/nav_icon/user.svg',
+    children_is_parallel: false,
+    children: [
+      {
+        name: 'addUser',
+        title: '创建用户',
+        path: '/teacher/user-management/addUser',
+        force_hide: true,
+      },
+      // {
+      //   name: 'userDetail',
+      //   title: '用户详情',
+      //   path: '/teacher/userManagement/userDetail',
+      //   force_hide: true,
+      // },
+      // {
+      //   name: 'editUser',
+      //   title: '修改用户信息',
+      //   path: '/teacher/userManagement/editUser',
+      //   force_hide: true,
+      // },
+    ],
+  },
+];
+
 // Mock $app/navigation 模块
 vi.mock('$app/navigation', async () => {
   const actual = await vi.importActual('$app/navigation');
@@ -35,6 +307,7 @@ vi.mock('$app/state', () => ({
   },
 }));
 
+// 设置当前路径
 function setPathname(path) {
   page.url = new URL(`http://localhost${path}`);
 }
@@ -59,6 +332,223 @@ function triggerBeforeNavigate(fromPath, toPath) {
   }
 }
 
+describe('SideBar 组件 nav_map 参数校验', () => {
+  let consoleWarnSpy;
+
+  beforeEach(() => {
+    consoleWarnSpy = vi.spyOn(console, 'warn');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  // 正确情况测试
+  it('接受包含所有可选字段的有效导航数据', async () => {
+    const fullFeaturedNavMap = [
+      {
+        name: 'full',
+        title: '完整导航',
+        path: '/full',
+        icon: '/icons/full.svg',
+        children_is_parallel: true,
+        isFilter: false,
+        force_hide: true,
+        children: [
+          {
+            name: 'child',
+            title: '子导航',
+            path: '/full/child',
+            force_hide: false,
+          },
+        ],
+      },
+    ];
+
+    render(Sidebar, { props: { nav_map: fullFeaturedNavMap } });
+    expect(consoleWarnSpy).not.toHaveBeenCalled();
+  });
+
+  it('接受空数组', async () => {
+    render(Sidebar, { props: { nav_map: [] } });
+    expect(consoleWarnSpy).not.toHaveBeenCalled();
+  });
+
+  it('接受多层级复杂结构', async () => {
+    const complexNavMap = [
+      {
+        name: 'level1',
+        title: '一级',
+        path: '/level1',
+        children: [
+          {
+            name: 'level2',
+            title: '二级',
+            path: '/level1/level2',
+            children: [
+              {
+                name: 'level3',
+                title: '三级',
+                path: '/level1/level2/level3',
+                children: [
+                  {
+                    name: 'level4',
+                    title: '四级',
+                    path: '/level1/level2/level3/level4',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    render(Sidebar, { props: { nav_map: complexNavMap } });
+    expect(consoleWarnSpy).not.toHaveBeenCalled();
+  });
+
+  // 错误情况测试 - 基本结构
+  it('null 值应警告并使用默认值', async () => {
+    render(Sidebar, { props: { nav_map: null } });
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map 必须是数组，当前为 object');
+  });
+
+  it('undefined 值应使用默认空数组且不警告', async () => {
+    render(Sidebar, { props: { nav_map: undefined } });
+    expect(consoleWarnSpy).not.toHaveBeenCalled();
+  });
+
+  it('数字类型应警告并使用默认值', async () => {
+    render(Sidebar, { props: { nav_map: 123 } });
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map 必须是数组，当前为 number');
+  });
+
+  it('对象类型应警告并使用默认值', async () => {
+    render(Sidebar, { props: { nav_map: {} } });
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map 必须是数组，当前为 object');
+  });
+
+  // 错误情况测试 - 字段类型
+  it('name 为数字时应警告', async () => {
+    const invalidNavMap = [{ name: 123, title: '标题', path: '/path' }];
+    render(Sidebar, { props: { nav_map: invalidNavMap } });
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].name 必须是字符串，当前为 number');
+  });
+
+  it('title 为布尔值时应警告', async () => {
+    const invalidNavMap = [{ name: 'name', title: true, path: '/path' }];
+    render(Sidebar, { props: { nav_map: invalidNavMap } });
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].title 必须是字符串，当前为 boolean');
+  });
+
+  it('path 为数组时应警告', async () => {
+    const invalidNavMap = [{ name: 'name', title: 'title', path: ['/path'] }];
+    render(Sidebar, { props: { nav_map: invalidNavMap } });
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].path 必须是字符串，当前为 object');
+  });
+
+  it('icon 为数字时应警告', async () => {
+    const invalidNavMap = [{ name: 'name', title: 'title', path: '/path', icon: 123 }];
+    render(Sidebar, { props: { nav_map: invalidNavMap } });
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].icon 必须是字符串，当前为 number');
+  });
+
+  // 错误情况测试 - 子项校验
+  it('子项缺少 name 字段时应警告', async () => {
+    const invalidNavMap = [
+      {
+        name: 'parent',
+        title: '父项',
+        path: '/parent',
+        children: [{ title: '子项', path: '/child' }],
+      },
+    ];
+    render(Sidebar, { props: { nav_map: invalidNavMap } });
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].children[0] 缺少必需字段');
+  });
+
+  it('子项 children 为对象时应警告', async () => {
+    const invalidNavMap = [
+      {
+        name: 'parent',
+        title: '父项',
+        path: '/parent',
+        children: {},
+      },
+    ];
+    render(Sidebar, { props: { nav_map: invalidNavMap } });
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].children 必须是数组，当前为 object');
+  });
+
+  // 错误情况测试 - 布尔字段
+  it('children_is_parallel 为字符串时应警告', async () => {
+    const invalidNavMap = [
+      {
+        name: 'item',
+        title: '项',
+        path: '/item',
+        children_is_parallel: 'true',
+      },
+    ];
+    render(Sidebar, { props: { nav_map: invalidNavMap } });
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      '[SideBar] nav_map[0].children_is_parallel 必须是布尔值，当前为 string',
+    );
+  });
+
+  it('isFilter 为数字时应警告', async () => {
+    const invalidNavMap = [
+      {
+        name: 'item',
+        title: '项',
+        path: '/item',
+        isFilter: 1,
+      },
+    ];
+    render(Sidebar, { props: { nav_map: invalidNavMap } });
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].isFilter 必须是布尔值，当前为 number');
+  });
+
+  it('force_hide 为对象时应警告', async () => {
+    const invalidNavMap = [
+      {
+        name: 'item',
+        title: '项',
+        path: '/item',
+        force_hide: {},
+      },
+    ];
+    render(Sidebar, { props: { nav_map: invalidNavMap } });
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].force_hide 必须是布尔值，当前为 object');
+  });
+
+  // 混合错误测试
+  it('多个错误同时存在时应报告所有错误', async () => {
+    const invalidNavMap = [
+      {
+        title: '缺少name', // 缺少name
+        path: 123, // path类型错误
+        children: 'invalid', // children类型错误
+      },
+      {
+        name: 'item2',
+        title: '项2',
+        path: '/item2',
+        isFilter: 'false', // 布尔字段错误
+      },
+    ];
+
+    render(Sidebar, { props: { nav_map: invalidNavMap } });
+
+    // 因为第一个对象缺少name会直接重置nav_map并返回，所以只检查这些警告
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0] 缺少必需字段: name');
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].name 必须是字符串，当前为 undefined');
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[1].isFilter 必须是布尔值，当前为 string');
+    expect(consoleWarnSpy).toHaveBeenCalledTimes(3);
+  });
+});
+
 describe('Sidebar 侧边栏组件测试', () => {
   beforeEach(() => {
     // 在每个测试前，清空所有的模拟
@@ -70,59 +560,13 @@ describe('Sidebar 侧边栏组件测试', () => {
     // 重置DOM
     document.body.innerHTML = '';
 
-    // 模拟API数据
-    global.fetch = vi.fn();
-    fetch.mockResolvedValueOnce({
-      json: () =>
-        Promise.resolve({
-          status: 0,
-          data: {
-            APIs: [
-              { APIExposePath: '/teacher/question-bank' },
-              { APIExposePath: '/teacher/paper' },
-              { APIExposePath: '/teacher/practice' },
-              { APIExposePath: '/teacher/exam' },
-              { APIExposePath: '/teacher/correct' },
-              { APIExposePath: '/teacher/grade' },
-              { APIExposePath: '/teacher/student-management' },
-              { APIExposePath: '/teacher/user-management' },
-            ],
-          },
-        }),
-    });
-
     // 初始化page返回路径
     setPathname('/teacher/question-bank/theory');
   });
 
-  it('正确获渲染超级管理员权限下的基本元素', async () => {
-    // 模拟API数据
-    global.fetch = vi.fn();
-    fetch.mockResolvedValueOnce({
-      json: () =>
-        Promise.resolve({
-          status: 0,
-          data: {
-            Domains: ['cst.school^superAdmin'],
-            APIs: [
-              { APIExposePath: '/teacher/question-bank' },
-              { APIExposePath: '/teacher/paper' },
-              { APIExposePath: '/teacher/practice' },
-              { APIExposePath: '/teacher/exam' },
-              { APIExposePath: '/teacher/correct' },
-              { APIExposePath: '/teacher/grade' },
-              { APIExposePath: '/teacher/student-management' },
-              { APIExposePath: '/teacher/user-management' },
-            ],
-          },
-        }),
-    });
-
+  it('正确获渲染基本元素', async () => {
     // 渲染组件并传递nav_map
-    render(Sidebar);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
+    render(Sidebar, { props: { nav_map: nav_map } });
 
     // 等待侧边栏项渲染完毕
     await screen.findByText('题库管理');
@@ -141,148 +585,6 @@ describe('Sidebar 侧边栏组件测试', () => {
     expect(screen.getByText('练习成绩管理')).toBeInTheDocument();
     expect(screen.getByText('学生管理')).toBeInTheDocument();
     expect(screen.getByText('用户管理')).toBeInTheDocument();
-  });
-
-  it('正确获渲染管理员权限下的基本元素', async () => {
-    // 模拟API数据
-    global.fetch = vi.fn();
-    fetch.mockResolvedValueOnce({
-      json: () =>
-        Promise.resolve({
-          status: 0,
-          data: {
-            Domains: ['cst.school^admin'],
-            APIs: [
-              { APIExposePath: '/teacher/question-bank' },
-              { APIExposePath: '/teacher/paper' },
-              { APIExposePath: '/teacher/practice' },
-              { APIExposePath: '/teacher/exam' },
-              { APIExposePath: '/teacher/correct' },
-              { APIExposePath: '/teacher/grade' },
-              { APIExposePath: '/teacher/student-management' },
-              { APIExposePath: '/teacher/user-management' },
-            ],
-          },
-        }),
-    });
-
-    // 渲染组件并传递nav_map
-    render(Sidebar);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
-
-    // 等待侧边栏项渲染完毕
-    await screen.findByText('题库管理');
-
-    // 验证理论题库管理是否渲染
-    expect(screen.getByText('题库管理')).toBeInTheDocument();
-    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
-    expect(screen.getByText('试卷管理')).toBeInTheDocument();
-    expect(screen.getByText('练习管理')).toBeInTheDocument();
-    expect(screen.getByText('考试管理')).toBeInTheDocument();
-    expect(screen.getByText('试卷批改')).toBeInTheDocument();
-    expect(screen.getByText('考试批改')).toBeInTheDocument();
-    expect(screen.getByText('练习批改')).toBeInTheDocument();
-    expect(screen.getByText('成绩管理')).toBeInTheDocument();
-    expect(screen.getByText('考试成绩管理')).toBeInTheDocument();
-    expect(screen.getByText('练习成绩管理')).toBeInTheDocument();
-    expect(screen.getByText('学生管理')).toBeInTheDocument();
-    expect(screen.getByText('用户管理')).toBeInTheDocument();
-  });
-
-  it('正确获渲染教务员权限下的基本元素', async () => {
-    // 模拟API数据
-    global.fetch = vi.fn();
-    fetch.mockResolvedValueOnce({
-      json: () =>
-        Promise.resolve({
-          status: 0,
-          data: {
-            Domains: ['cst.school.academicAffair^admin'],
-            APIs: [
-              { APIExposePath: '/teacher/question-bank' },
-              { APIExposePath: '/teacher/paper' },
-              { APIExposePath: '/teacher/practice' },
-              { APIExposePath: '/teacher/exam' },
-              { APIExposePath: '/teacher/correct' },
-              { APIExposePath: '/teacher/grade' },
-              { APIExposePath: '/teacher/student-management' },
-            ],
-          },
-        }),
-    });
-
-    // 渲染组件并传递nav_map
-    render(Sidebar);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
-
-    // 等待侧边栏项渲染完毕
-    await screen.findByText('题库管理');
-
-    // 验证理论题库管理是否渲染
-    expect(screen.getByText('题库管理')).toBeInTheDocument();
-    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
-    expect(screen.getByText('试卷管理')).toBeInTheDocument();
-    expect(screen.getByText('练习管理')).toBeInTheDocument();
-    expect(screen.getByText('考试管理')).toBeInTheDocument();
-    expect(screen.getByText('试卷批改')).toBeInTheDocument();
-    expect(screen.getByText('考试批改')).toBeInTheDocument();
-    expect(screen.getByText('练习批改')).toBeInTheDocument();
-    expect(screen.getByText('成绩管理')).toBeInTheDocument();
-    expect(screen.getByText('考试成绩管理')).toBeInTheDocument();
-    expect(screen.getByText('练习成绩管理')).toBeInTheDocument();
-    expect(screen.getByText('学生管理')).toBeInTheDocument();
-    expect(screen.queryByText('用户管理')).not.toBeInTheDocument();
-  });
-
-  it('正确获渲染教师权限下的基本元素', async () => {
-    // 模拟API数据
-    global.fetch = vi.fn();
-    fetch.mockResolvedValueOnce({
-      json: () =>
-        Promise.resolve({
-          status: 0,
-          data: {
-            Domains: ['cst.school^teacher'],
-            APIs: [
-              { APIExposePath: '/teacher/question-bank' },
-              { APIExposePath: '/teacher/paper' },
-              { APIExposePath: '/teacher/practice' },
-              { APIExposePath: '/teacher/exam' },
-              { APIExposePath: '/teacher/correct' },
-              { APIExposePath: '/teacher/grade' },
-              { APIExposePath: '/teacher/student-management' },
-            ],
-          },
-        }),
-    });
-
-    // 渲染组件并传递nav_map
-    render(Sidebar);
-
-    // 验证 fetch 被调用
-    expect(fetch).toHaveBeenCalledWith('/api/user/me');
-
-    // 等待侧边栏项渲染完毕
-    await screen.findByText('题库管理');
-
-    // 验证理论题库管理是否渲染
-    expect(screen.getByText('题库管理')).toBeInTheDocument();
-    expect(screen.getByText('理论题库管理')).toBeInTheDocument();
-    expect(screen.getByText('试卷管理')).toBeInTheDocument();
-    expect(screen.getByText('练习管理')).toBeInTheDocument();
-    expect(screen.getByText('考试管理')).toBeInTheDocument();
-    expect(screen.getByText('试卷批改')).toBeInTheDocument();
-    expect(screen.getByText('考试批改')).toBeInTheDocument();
-    expect(screen.getByText('练习批改')).toBeInTheDocument();
-    expect(screen.getByText('成绩管理')).toBeInTheDocument();
-    expect(screen.getByText('考试成绩管理')).toBeInTheDocument();
-    expect(screen.getByText('练习成绩管理')).toBeInTheDocument();
-    expect(screen.getByText('学生管理')).toBeInTheDocument();
-    expect(screen.queryByText('用户管理')).not.toBeInTheDocument();
   });
 
   it('应该正确切换折叠状态', async () => {
@@ -341,7 +643,9 @@ describe('Sidebar 侧边栏组件测试', () => {
   });
 
   it('应正确处理侧边栏导航项点击事件', async () => {
-    render(Sidebar);
+    // 渲染组件并传递nav_map
+    render(Sidebar, { props: { nav_map: nav_map } });
+
     await screen.findByText('题库管理');
 
     // 模拟点击导航项跳转到试卷管理
@@ -400,7 +704,9 @@ describe('Sidebar 侧边栏组件测试', () => {
   });
 
   it('应正确处理侧边栏高亮', async () => {
-    render(Sidebar);
+    // 渲染组件并传递nav_map
+    render(Sidebar, { props: { nav_map: nav_map } });
+
     await screen.findByText('试卷管理');
 
     // 模拟点击导航项跳转到试卷管理
@@ -564,7 +870,9 @@ describe('Sidebar 侧边栏组件测试', () => {
       cancel: vi.fn(),
     }));
 
-    render(Sidebar);
+    // 渲染组件并传递nav_map
+    render(Sidebar, { props: { nav_map: nav_map } });
+
     // 等待数据加载
     await screen.findByText('题库管理');
 
@@ -640,8 +948,8 @@ describe('Sidebar 侧边栏组件测试', () => {
   });
 
   it('应处正确理侧边栏悬浮状态下导航项点击事件', async () => {
-    // 渲染组件
-    render(Sidebar);
+    // 渲染组件并传递nav_map
+    render(Sidebar, { props: { nav_map: nav_map } });
 
     // 获取DOM元素
     const sidebar = screen.getByTestId('sidebar-content');
@@ -735,8 +1043,8 @@ describe('Sidebar 侧边栏组件测试', () => {
   });
 
   it('应处理侧边栏悬浮状态下子菜单的展开和折叠', async () => {
-    // 渲染组件
-    render(Sidebar);
+    // 渲染组件并传递nav_map
+    render(Sidebar, { props: { nav_map: nav_map } });
 
     // 获取DOM元素
     const sidebar = screen.getByTestId('sidebar-content');
@@ -842,7 +1150,9 @@ describe('Sidebar 侧边栏组件测试', () => {
   });
 
   it('应处理跳转到特定页面侧边栏自动收起', async () => {
-    render(Sidebar);
+    // 渲染组件并传递nav_map
+    render(Sidebar, { props: { nav_map: nav_map } });
+
     await screen.findByText('题库管理');
     await screen.findByTitle('收起侧边栏');
 
@@ -905,11 +1215,15 @@ describe('Sidebar 侧边栏组件测试', () => {
     localStorage.setItem('sidebar_fold_state', 'true');
     localStorage.setItem('is_auto_fold', 'false');
     localStorage.setItem('sidebar_is_folded', 'true');
-    localStorage.setItem('sidebar_is_folding', 'false');
     localStorage.setItem('sidebar_fold_str', '展开侧边栏');
 
     // 渲染组件（模拟页面刷新后加载）
-    let { sb } = render(Sidebar);
+    render(Sidebar);
+
+    // 等待组件完全挂载
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
 
     fireEvent.transitionEnd(await screen.findByTitle('展开侧边栏'));
 
@@ -925,48 +1239,61 @@ describe('Sidebar 侧边栏组件测试', () => {
     expect(localStorage.getItem('sidebar_fold_state')).toBe('true');
   });
 
-  it('应处理获取用户信息失败的情况', async () => {
-    // 设置 console.error 的 spy
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('应正确处理自动折叠，刷新页面侧边栏状态', async () => {
+    // 直接预设localStorage状态（模拟刷新前保存的状态）
+    localStorage.setItem('sidebar_fold_state', 'true');
+    localStorage.setItem('is_auto_fold', 'true');
+    localStorage.setItem('sidebar_is_folded', 'true');
+    localStorage.setItem('sidebar_fold_str', '展开侧边栏');
 
-    // 模拟 API 失败
-    global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
-
-    // 渲染组件
+    // 渲染组件（模拟页面刷新后加载）
     render(Sidebar);
 
-    // 验证错误处理
-    await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith('获取用户权限失败:', expect.any(Error));
+    // 等待组件完全挂载
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    // 验证导航项为空
-    expect(screen.queryByText('题库管理')).not.toBeInTheDocument();
+    fireEvent.transitionEnd(await screen.findByTitle('展开侧边栏'));
 
-    // 清理 spy
-    consoleErrorSpy.mockRestore();
+    // 验证状态是否正确恢复
+    const sidebar = await screen.findByTestId('sidebar-content');
+    expect(sidebar).toHaveClass('folded');
+
+    // 验证折叠按钮状态
+    const toggleBtn = await screen.findByTitle('展开侧边栏');
+    expect(toggleBtn).toBeInTheDocument();
+
+    // 验证其相关状态
+    expect(localStorage.getItem('sidebar_fold_state')).toBe('true');
   });
 
-  it('应处理获取用户信息失败的情况 - APIs 数据不存在', async () => {
-    // 设置 console.error 的 spy
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('应正确处理初始状态为展开的情况', async () => {
+    // 直接预设localStorage状态（模拟刷新前保存的状态）
+    localStorage.setItem('sidebar_fold_state', 'false');
+    localStorage.setItem('is_auto_fold', 'false');
+    localStorage.setItem('sidebar_is_folded', 'false');
+    localStorage.setItem('sidebar_fold_str', '收起侧边栏');
 
-    // 模拟成功响应但缺少 APIs 数据
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          data: {}, // 缺少 APIs 字段
-        }),
-    });
-
+    // 渲染组件（模拟页面刷新后加载）
     render(Sidebar);
 
-    await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith('获取用户权限失败:', expect.any(Error));
-      expect(consoleErrorSpy.mock.calls[0][1].message).toMatch('APIs 数据不存在');
+    // 等待组件完全挂载
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(screen.queryByText('题库管理')).not.toBeInTheDocument();
+    fireEvent.transitionEnd(await screen.findByTitle('收起侧边栏'));
+
+    // 验证状态是否正确恢复
+    const sidebar = await screen.findByTestId('sidebar-content');
+    expect(sidebar).not.toHaveClass('folded');
+
+    // 验证折叠按钮状态
+    const toggleBtn = await screen.findByTitle('收起侧边栏');
+    expect(toggleBtn).toBeInTheDocument();
+
+    // 验证其相关状态
+    expect(localStorage.getItem('sidebar_fold_state')).toBe('false');
   });
 });

@@ -133,7 +133,7 @@ const setup = (props = {}) => {
     // 面板控制
     getPanel: () => screen.queryByText('选择试卷'),
     getCancelButton: () => screen.queryByText('取消'),
-    getConfirmButton: () => screen.queryByText('确定'),
+    getConfirmButton: () => screen.getByText('确定'),
     
     // 筛选控件
     getPaperTypeSelect: () => screen.queryByDisplayValue('04'), // 默认"全部"
@@ -148,10 +148,12 @@ const setup = (props = {}) => {
     
     // 工具函数
     selectPaper: async (paperId) => {
-      const radios = screen.queryAllByRole('radio');
+      const radios = screen.getAllByRole('radio');
       const targetRadio = radios.find(radio => radio.value === paperId.toString());
       if (targetRadio) {
+       
         await fireEvent.click(targetRadio);
+         console.log('1',targetRadio)
       }
       return targetRadio;
     },
@@ -677,6 +679,7 @@ describe('补充覆盖遗漏的方法', () => {
   await utils.selectPaper(1);
   // 再点击确定
   await fireEvent.click(utils.getConfirmButton());
+  
    console.log('onConfirmFunc called with:', onConfirmFunc.mock.calls);
   // 断言回调被调用
  expect(onConfirmFunc).toHaveBeenCalledWith(1, '数学期末考试试卷', '00');

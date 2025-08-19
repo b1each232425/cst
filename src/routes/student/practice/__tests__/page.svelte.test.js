@@ -8,113 +8,166 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/components/Toast/Toast.js', () => ({ toast: { error: vi.fn() } }));
 
 const MOCK_PRACTICES = [
-  // 00: 没有作答过 → 进入练习
+  // 1. 全新未开始练习
   {
     ID: 1,
-    Name: '练习一',
+    Name: '基础语法练习',
     Type: '00',
     AttemptCount: 0,
     Difficulty: '00',
-    AllowedAttempts: 5,
+    AllowedAttempts: 3,
     QuestionCount: 10,
     WrongCount: 0,
-    TotalScore: null,
-    HighestScore: null,
+    TotalScore: 0,
+    HighestScore: 0,
     PaperTotalScore: 100,
-    PaperID: 101,
+    PaperID: 'paper_001',
     LatestUnsubmittedID: 0,
-    LatestSubmittedID: null,
-    Action: '00', // 进入练习
+    LatestSubmittedID: 0,
+    PendingMarkID: 0,
+    Action: '00', // 预期: ["进入练习"]
   },
-  // 02: 正常可重新作答 → 重新作答、查看上次作答
+
+  // 2. 有未提交记录(首次练习)
   {
     ID: 2,
-    Name: '练习二',
+    Name: '数据结构入门',
     Type: '00',
-    AttemptCount: 2,
-    Difficulty: '00',
+    AttemptCount: 1,
+    Difficulty: '02',
     AllowedAttempts: 5,
     QuestionCount: 8,
-    WrongCount: 1,
-    TotalScore: 80,
-    HighestScore: 90,
+    WrongCount: 0,
+    TotalScore: 0,
+    HighestScore: 0,
     PaperTotalScore: 100,
-    PaperID: 102,
-    LatestUnsubmittedID: 0,
-    LatestSubmittedID: 12,
-    Action: '02', // 重新作答、查看上次作答
+    PaperID: 'paper_002',
+    LatestUnsubmittedID: 21,
+    LatestSubmittedID: 0,
+    PendingMarkID: 0,
+    Action: '10', // 预期: ["继续作答"]
   },
-  // 04: 存在未提交记录且不是第一次答题 → 继续作答、查看上次作答
+
+  // 3. 有未提交记录(非首次练习)
   {
     ID: 3,
-    Name: '练习三',
+    Name: '指针进阶训练',
     Type: '00',
-    AttemptCount: 2,
-    Difficulty: '05',
-    AllowedAttempts: 5,
-    QuestionCount: 12,
-    WrongCount: 2,
-    TotalScore: 70,
-    HighestScore: 85,
-    PaperTotalScore: 100,
-    PaperID: 103,
-    LatestUnsubmittedID: 33,
-    LatestSubmittedID: 22,
-    Action: '04', // 继续作答、查看上次作答
-  },
-  // 06: 已提交但未批改（本次作答未批改，不能进行下一次作答）→ 等待批改完成
-  {
-    ID: 4,
-    Name: '练习四',
-    Type: '00',
-    AttemptCount: 1,
-    Difficulty: '02',
+    AttemptCount: 3,
+    Difficulty: '04',
     AllowedAttempts: 5,
     QuestionCount: 15,
-    WrongCount: 3,
-    TotalScore: null,
-    HighestScore: 92,
-    PaperTotalScore: 100,
-    PaperID: 104,
-    LatestUnsubmittedID: 0,
-    LatestSubmittedID: 44,
-    Action: '06', // 等待批改完成
-  },
-  // 08: 达到最大尝试次数 → 查看上次作答
-  {
-    ID: 5,
-    Name: '练习五',
-    Type: '00',
-    AttemptCount: 5,
-    Difficulty: '02',
-    AllowedAttempts: 5,
-    QuestionCount: 10,
     WrongCount: 5,
     TotalScore: 75,
-    HighestScore: 90,
+    HighestScore: 80,
     PaperTotalScore: 100,
-    PaperID: 105,
-    LatestUnsubmittedID: 0,
-    LatestSubmittedID: 55,
-    Action: '08', // 查看上次作答
+    PaperID: 'paper_003',
+    LatestUnsubmittedID: 32,
+    LatestSubmittedID: 31,
+    PendingMarkID: 0,
+    Action: '04', // 预期: ["继续作答", "查看上次作答"]
   },
-  // 10: 存在未提交记录且是第一次答题 → 继续作答
+
+  // 4. 已完成但可重新作答
+  {
+    ID: 4,
+    Name: '操作系统模拟',
+    Type: '00',
+    AttemptCount: 2,
+    Difficulty: '02',
+    AllowedAttempts: 5,
+    QuestionCount: 20,
+    WrongCount: 8,
+    TotalScore: 85,
+    HighestScore: 85,
+    PaperTotalScore: 100,
+    PaperID: 'paper_004',
+    LatestUnsubmittedID: 0,
+    LatestSubmittedID: 42,
+    PendingMarkID: 0,
+    Action: '02', // 预期: ["重新作答", "查看上次作答"]
+  },
+
+  // 5. 已达最大尝试次数
+  {
+    ID: 5,
+    Name: '算法综合测试',
+    Type: '00',
+    AttemptCount: 5,
+    Difficulty: '04',
+    AllowedAttempts: 5,
+    QuestionCount: 10,
+    WrongCount: 3,
+    TotalScore: 92,
+    HighestScore: 95,
+    PaperTotalScore: 100,
+    PaperID: 'paper_005',
+    LatestUnsubmittedID: 0,
+    LatestSubmittedID: 53,
+    PendingMarkID: 0,
+    Action: '08', // 预期: ["查看上次作答"]
+  },
+
+  // 6. 等待批改中
   {
     ID: 6,
-    Name: '练习六',
+    Name: '网络协议练习',
     Type: '00',
     AttemptCount: 1,
-    Difficulty: '04',
-    AllowedAttempts: 0,
-    QuestionCount: 20,
-    WrongCount: 10,
+    Difficulty: '06',
+    AllowedAttempts: 3,
+    QuestionCount: 12,
+    WrongCount: 0,
     TotalScore: null,
     HighestScore: 88,
     PaperTotalScore: 100,
-    PaperID: 106,
-    LatestUnsubmittedID: 66,
-    LatestSubmittedID: null,
-    Action: '10', // 继续作答
+    PaperID: 'paper_006',
+    LatestUnsubmittedID: 0,
+    LatestSubmittedID: 61,
+    PendingMarkID: 612,
+    Action: '06', // 预期: ["等待批改完成"]
+  },
+
+  // 7. 异常状态
+  {
+    ID: 7,
+    Name: '异常状态测试',
+    Type: '00',
+    AttemptCount: 1,
+    Difficulty: '00',
+    AllowedAttempts: 3,
+    QuestionCount: 5,
+    WrongCount: 0,
+    TotalScore: 0,
+    HighestScore: 0,
+    PaperTotalScore: 100,
+    PaperID: 'paper_007',
+    LatestUnsubmittedID: 71, // 同时存在未提交记录
+    LatestSubmittedID: 72, // 和已提交记录
+    PendingMarkID: 1, // 但又有待批改记录
+    // 这种组合状态在正常业务中不应该存在
+    // 会触发getPracticeAction的默认返回'12'
+    Action: '12', // 预期: ["操作异常"]
+  },
+
+  // 8. 无限次尝试
+  {
+    ID: 8,
+    Name: '无限练习模式',
+    Type: '00',
+    AttemptCount: 10,
+    Difficulty: '02',
+    AllowedAttempts: 0,
+    QuestionCount: 15,
+    WrongCount: 5,
+    TotalScore: 90,
+    HighestScore: 95,
+    PaperTotalScore: 100,
+    PaperID: 'paper_008',
+    LatestUnsubmittedID: 0,
+    LatestSubmittedID: 82,
+    PendingMarkID: 0,
+    Action: '02', // 预期: ["重新作答", "查看上次作答"]
   },
 ];
 
@@ -297,11 +350,63 @@ describe('练习列表组件测试', () => {
     });
   });
 
-  describe('操作按钮', () => {
-    beforeEach(async () => {
+  describe('表格内容', () => {
+    beforeEach(() => {
       render(PracticeList);
+    });
+
+    it('正确显示所有练习的基本信息', () => {
+      // 检查表格行数是否正确（包括表头）
+      const rows = screen.getAllByRole('row');
+      expect(rows.length).toBe(MOCK_PRACTICES.length + 1);
+
+      // 检查第一个练习（全新未开始）
+      const row1 = screen.getByText('基础语法练习').closest('tr');
+      expect(within(row1).getByText('0')).toBeInTheDocument(); // AttemptCount
+      expect(within(row1).getByText('简单')).toBeInTheDocument(); // Difficulty
+      expect(within(row1).getByText('3')).toBeInTheDocument(); // AllowedAttempts
+      expect(within(row1).getByText('10')).toBeInTheDocument(); // QuestionCount
+      expect(within(row1).getAllByText('--')).toHaveLength(3); // 未作答练习的WrongCount/TotalScore/HighestScore
+
+      // 检查第四个练习（已完成可重新作答）
+      const row4 = screen.getByText('操作系统模拟').closest('tr');
+      expect(within(row4).getByText('2')).toBeInTheDocument(); // AttemptCount
+      expect(within(row4).getByText('中等')).toBeInTheDocument(); // Difficulty
+      expect(within(row4).getByText('8')).toBeInTheDocument(); // WrongCount
+      expect(within(row4).getAllByText('85')).toHaveLength(2); // TotalScore、HighestScore
+    });
+
+    it('正确显示不同状态的分数信息', () => {
+      // 未作答练习显示"--"
+      const row1 = screen.getByText('基础语法练习').closest('tr');
+      expect(within(row1).getAllByText('--')).toHaveLength(3);
+
+      // 已作答练习显示实际分数
+      const row3 = screen.getByText('指针进阶训练').closest('tr');
+      expect(within(row3).getByText('75')).toBeInTheDocument();
+
+      // 等待批改的练习显示"--"
+      const row6 = screen.getByText('网络协议练习').closest('tr');
+      expect(within(row6).getAllByText('--')).toHaveLength(2);
+    });
+
+    it('正确显示无限次尝试的文本', () => {
+      const row8 = screen.getByText('无限练习模式').closest('tr');
+      expect(within(row8).getByText('不限次数')).toBeInTheDocument();
+    });
+  });
+
+  describe('操作按钮', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      render(PracticeList);
+    });
+
+    it('操作异常提示“练习列表存在操作异常”，并且异常的练习操作爆红', async () => {
+      expect(screen.getByRole('button', { name: '操作异常' })).toHaveClass('error');
+
       await waitFor(() => {
-        expect(screen.getByText('练习一')).toBeInTheDocument();
+        expect(toast.error).toHaveBeenCalledWith('练习列表存在操作异常');
       });
     });
 
@@ -312,22 +417,17 @@ describe('练习列表组件测试', () => {
       expect(goto).toHaveBeenCalledWith('/student/answer/practice?practice-id=1');
     });
 
-    it('可重新作答练习显示"重新作答"和"查看上次作答"按钮', async () => {
-      const retryBtn = screen.getByRole('button', { name: '重新作答' });
-      const viewBtn = screen.getAllByRole('button', { name: '查看上次作答' })[0];
-      expect(retryBtn).toBeInTheDocument();
-      expect(viewBtn).toBeInTheDocument();
+    it('第一次作答未完成显示"继续作答"按钮', async () => {
+      const continueBtn = screen.getAllByRole('button', { name: '继续作答' })[0];
+      expect(continueBtn).toBeInTheDocument();
 
-      await fireEvent.click(retryBtn);
+      await fireEvent.click(continueBtn);
       expect(goto).toHaveBeenCalledWith('/student/answer/practice?practice-id=2');
-
-      await fireEvent.click(viewBtn);
-      expect(goto).toHaveBeenCalledWith('/student/answer/result/practice?practice-id=2');
     });
 
     it('有未完成作答显示"继续作答"和"查看上次作答"按钮', async () => {
-      const continueBtn = screen.getAllByRole('button', { name: '继续作答' })[0];
-      const viewBtn = screen.getAllByRole('button', { name: '查看上次作答' })[1];
+      const continueBtn = screen.getAllByRole('button', { name: '继续作答' })[1];
+      const viewBtn = screen.getAllByRole('button', { name: '查看上次作答' })[0];
       expect(continueBtn).toBeInTheDocument();
       expect(viewBtn).toBeInTheDocument();
 
@@ -336,6 +436,19 @@ describe('练习列表组件测试', () => {
 
       await fireEvent.click(viewBtn);
       expect(goto).toHaveBeenCalledWith('/student/answer/result/practice?practice-id=3');
+    });
+
+    it('可重新作答练习显示"重新作答"和"查看上次作答"按钮', async () => {
+      const retryBtn = screen.getAllByRole('button', { name: '重新作答' })[0];
+      const viewBtn = screen.getAllByRole('button', { name: '查看上次作答' })[1];
+      expect(retryBtn).toBeInTheDocument();
+      expect(viewBtn).toBeInTheDocument();
+
+      await fireEvent.click(retryBtn);
+      expect(goto).toHaveBeenCalledWith('/student/answer/practice?practice-id=4');
+
+      await fireEvent.click(viewBtn);
+      expect(goto).toHaveBeenCalledWith('/student/answer/result/practice?practice-id=4');
     });
 
     it('等待批改练习显示"等待批改完成"按钮且不可点击', async () => {
@@ -352,42 +465,6 @@ describe('练习列表组件测试', () => {
 
       await fireEvent.click(viewBtn);
       expect(goto).toHaveBeenCalledWith('/student/answer/result/practice?practice-id=5');
-    });
-
-    it('第一次作答未完成显示"继续作答"按钮', async () => {
-      const continueBtn = screen.getAllByRole('button', { name: '继续作答' })[1];
-      expect(continueBtn).toBeInTheDocument();
-
-      await fireEvent.click(continueBtn);
-      expect(goto).toHaveBeenCalledWith('/student/answer/practice?practice-id=6');
-    });
-  });
-
-  describe('表格内容', () => {
-    beforeEach(async () => {
-      render(PracticeList);
-      await waitFor(() => {
-        expect(screen.getByText('练习一')).toBeInTheDocument();
-      });
-    });
-
-    it('正确显示练习基本信息', () => {
-      const row = screen.getByText('练习一').closest('tr');
-      expect(within(row).getByText('0')).toBeInTheDocument(); // AttemptCount
-      expect(within(row).getByText('简单')).toBeInTheDocument(); // Difficulty
-      expect(within(row).getByText('5')).toBeInTheDocument(); // AllowedAttempts
-    });
-
-    it('未作答练习显示"--"或空值', () => {
-      const row = screen.getByText('练习一').closest('tr');
-      expect(within(row).getAllByText('--')).toHaveLength(3); // WrongCount TotalScore HighestScore
-    });
-
-    it('已作答练习显示实际数据', () => {
-      const row = screen.getByText('练习二').closest('tr');
-      expect(within(row).getByText('1')).toBeInTheDocument(); // WrongCount
-      expect(within(row).getByText('80')).toBeInTheDocument(); // TotalScore
-      expect(within(row).getByText('90')).toBeInTheDocument(); // HighestScore
     });
   });
 
