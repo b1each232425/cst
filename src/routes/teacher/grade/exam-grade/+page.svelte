@@ -277,9 +277,9 @@
 
   // 批量操作相关事件处理
   
-  // function handleBatchExport() {
-  //   handleFeatureNotImplemented('批量导出');
-  // }
+  function handleBatchExport() {
+    handleFeatureNotImplemented('批量导出');
+  }
 
   /** 处理批量提交操作 */
   function handleBatchSubmit() {
@@ -305,9 +305,9 @@
     }
   }
 
-  // function handleShowLogs() {
-  //   handleFeatureNotImplemented('查看日志');
-  // }
+  function handleShowLogs() {
+    handleFeatureNotImplemented('查看日志');
+  }
 
   /**
    * 查看考试详情：跳转到考试详情页面
