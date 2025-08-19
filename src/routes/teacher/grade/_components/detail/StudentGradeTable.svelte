@@ -298,11 +298,11 @@
                       </td>
                     {/each}
                   {/if}
-                  <td class="note-cell">{student.remark || '-'}</td>
+                  <td class="note-cell">{student.remark != null ? student.remark : '-'}</td>
                 </tr>
               {:else}
                 <tr>
-                  <td colspan="7" class="empty-row"
+                  <td colspan="8" class="empty-row"
                     ><div class="empty-container">
                       <Empty text="暂无数据" />
                     </div></td
