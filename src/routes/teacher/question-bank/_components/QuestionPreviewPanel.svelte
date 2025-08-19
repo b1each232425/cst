@@ -19,10 +19,7 @@
 
     $effect(()=>{
         if (question?.content) {
-            question_content = replaceSpansWithLines(question.content);
-        }
-        else{
-            question_content="";
+            question_content = replaceSpansWithLines(question.content)
         }
     })
 
@@ -74,7 +71,6 @@
     let closePanelBtn;
 
     function replaceSpansWithLines(htmlString) {
-        if(htmlString===null || htmlString===undefined||htmlString=="") return "";
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlString, 'text/html');
         const spans = doc.querySelectorAll('span.blank-item');
@@ -354,8 +350,6 @@
 <!--填空题-->
 {#snippet fillBlank(/** @type {TheoryQuestion} */ question)}
     <div class="question-content">
-
-        
         <div class="piptap-content">
             {@html question_content}
         </div>
