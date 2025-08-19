@@ -1,5 +1,7 @@
 <script>
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, createEventDispatcher } from "svelte";
+
+  const dispatch = createEventDispatcher();
 
   let {
     onComplete,
@@ -11,6 +13,7 @@
     elapsed_seconds = 0, //练习模式中正着数开始的秒数
     countUp = false, //标记是正着数还是倒数
     start_timestamp = Date.now(), //正着数需要的开始时间戳，用于和后端对时
+    showServerTime = false, // 新增：是否以服务器当前时间显示（时:分:秒）
   } = $props();
 
 
@@ -23,6 +26,7 @@
     countUp ? elapsed_seconds : init_total_seconds || 0
   );
   let time_display = $state("00:00:00");
+  let server_ts = $state(null); // 保存服务器时间戳（毫秒）
 
   /**
    * @type {ReturnType<typeof setInterval> | undefined}
@@ -47,10 +51,28 @@
     ].join(":");
   }
 
+  function formatServerTime(ts) {
+    if (!ts) return "00:00:00";
+    const d = new Date(Number(ts));
+    const hh = d.getHours().toString().padStart(2, "0");
+    const mm = d.getMinutes().toString().padStart(2, "0");
+    const ss = d.getSeconds().toString().padStart(2, "0");
+    return `${hh}:${mm}:${ss}`;
+  }
+
   function startTimer() {
     if (interval_id) return;
 
     interval_id = setInterval(() => {
+      if (showServerTime) {
+        // 以服务器时间递增显示（server_ts 单位：毫秒）
+        if (server_ts === null) return;
+        server_ts = server_ts + 1000;
+        time_display = formatServerTime(server_ts);
+         try { dispatch('serverTick', { timestamp: server_ts }); } catch (e) {}
+        return;
+      }
+
       if (countUp) {
         current_seconds += 1;
       } else {
@@ -86,6 +108,13 @@
 
     ws.onopen = () => {
    //   console.log("WebSocket opened");
+   //   console.log("CountdownTimer: WebSocket opened", url);
+    };
+    ws.onerror = (err) => {
+//      console.error("CountdownTimer: WebSocket error", err);
+    };
+    ws.onclose = (ev) => {
+  //    console.log("CountdownTimer: WebSocket closed", ev);
     };
     
 
@@ -94,9 +123,14 @@
 
       switch (data.msg_type) {
         case 1: // 服务器时间戳消息
-          const now_ts = data.timestamp;
-   //       console.log("服务器时间戳:", now_ts);
-          if (countUp) {
+          const now_ts = data.timestamp; // 毫秒
+          if (showServerTime) {
+            // 直接采用服务器时间戳并显示
+            server_ts = Number(now_ts);
+            time_display = formatServerTime(server_ts);
+            // 收到服务器时间时也派发事件（首次同步）
+            try { dispatch('serverTick', { timestamp: server_ts }); } catch (e) {}
+          } else if (countUp) {
             current_seconds =
               Math.floor((now_ts - start_timestamp) / 1000) + elapsed_seconds;
           } else {
@@ -133,8 +167,13 @@
   });
 
   $effect(() => {
-    time_display = formatTime(current_seconds);
-    is_less_than_5minutes = !countUp && current_seconds <= 300;
+    if (!showServerTime) {
+      time_display = formatTime(current_seconds);
+      is_less_than_5minutes = !countUp && current_seconds <= 300;
+    } else {
+      // showServerTime 模式下由 server_ts 驱动 time_display，is_less_than_5minutes 不适用
+      is_less_than_5minutes = false;
+    }
   });
 
   onDestroy(() => {
