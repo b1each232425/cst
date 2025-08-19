@@ -19,13 +19,16 @@
     onCancel = (/** @type {boolean} */ load_new_file) => {
       console.log('取消选择');
     },
-    onConfirm = (/** @type {any} */ newStudents, selected_ids) => {
+    onConfirm = (/** @type {any} */ newStudents, selected_ids,is_delete_all) => {
       console.log('123131', selected_ids);
     },
+    
   } = $props();
 
   //新增的学生
   let newStudents = $state([]);
+  //表示是否全选删除学生
+  let is_delete_all = $state(false);
 
   let page_size = $state(10);
 
@@ -226,7 +229,8 @@
           totals = 0;
           search_params.page = current_page;
           toast.error(error);
-        } else if (selected_ids.length > 0 && selected_ids.length != result.data.length) {
+        } else if (selected_ids.length > 0 && selected_ids.length != result.data.length|| is_delete_all) {
+          
         } else {
           selected_ids =
             result.data === null
@@ -257,6 +261,8 @@
       //每次打开时将外部选中的id赋值给当前面板记录的已选中的id 在搜索前执行是为了能正常显示每个列表项的选中效果
       selected_ids = ids;
       filtered_selected_ids = ids;
+      is_all_selected = false;
+      
       if (practice_id) {
         console.log("practice_id", practice_id);
         // 获取已选学生的信息
@@ -270,6 +276,9 @@
       return;
     }
     //把这个学生从selected_ids中删除
+    if(is_all_selected){
+      is_delete_all = true;
+    }
 
     selected_ids = selected_ids.filter((student) => {
       return !student_list.some((item) => {
@@ -298,7 +307,7 @@
 
     // 重新计算序号
     recalculateSerialNumbers();
-    is_all_selected = false;
+   is_all_selected = false;
   }
 
   //下载模板函数
@@ -536,7 +545,7 @@
         onclick={() => {
           show_panel = false;
           search_params.page = 1;
-          onConfirm(newStudents, selected_ids);
+          onConfirm(newStudents, selected_ids,is_delete_all);
         }}>确定</Button
       >
     </div>
