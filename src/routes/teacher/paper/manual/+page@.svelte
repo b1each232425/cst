@@ -1106,7 +1106,7 @@
                         });
                     }
     
-                    console.log(result)
+                    // console.log(result)
                     
                 } else {
                     // 3秒后跳转

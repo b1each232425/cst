@@ -165,7 +165,7 @@
                 question_list = result.data || [];
                 total_questions = result.rowCount;
 
-                console.log(result);
+                // console.log(result);
             });
 
             // 获取题库的标签
@@ -364,7 +364,7 @@
                 question_list = result.data || [];
                 total_questions = result.rowCount;
                 checkAllSelected();
-                console.log(result)
+                // console.log(result)
             });
         } else { question_list = []; }
     }
