@@ -466,15 +466,15 @@
    * 学生选择确认回调
    * @param {Array<{id: string, serial_number: number}>} selected - 选中的学生
    */
-  async function handleStudentSelectionConfirm(newStudents, selected) {
+  async function handleStudentSelectionConfirm(newStudents, selected,is_deleted_all) {
     if (!currentPractice) return;
     const UPDATE_STUDENTS = () => {
       // 调用API更新练习的学生
       const requestBody = {
-        Action: 'POST',
+        Action: is_deleted_all?'clear':'POST',
         Data: {
           practice_id: currentPractice.ID,
-          student: selectedStudentIds.map((s) => s.id), // 发送学生 ID 数组
+          student: is_deleted_all?[]:selectedStudentIds.map((s) => s.id), // 发送学生 ID 数组
         },
       };
 
@@ -1020,18 +1020,18 @@
       show_student_selectionPanel = false;
     }}
     practice_id={practiceID}
-    onConfirm={(newStudents, selected) => {
+    onConfirm={(newStudents, selected,is_deleted_all) => {
       newStudents = newStudents.map((item) => ({
         ...item,
         Domains: ['cst.school^student'],
       }));
       console.log('123131231', selected);
       console.log('newStudents', newStudents);
-      handleStudentSelectionConfirm(newStudents, selected);
+      handleStudentSelectionConfirm(newStudents, selected,is_deleted_all);
       show_student_selectionPanel = false;
       setTimeout(() => {
         window.location.reload();
-      }, 100000);
+      }, 1000);
     }}
   />
 </div>
