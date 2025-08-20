@@ -24,86 +24,53 @@
 
   // 参数校验
   (() => {
-    // 校验 nav_map 是否为数组
+    const validateItem = (item, path = '') => {
+      const requiredFields = ['name', 'title', 'path'];
+      for (const field of requiredFields) {
+        if (!(field in item)) {
+          console.warn(`[SideBar] ${path} 缺少必需字段: ${field}`);
+          return false;
+        }
+        if (typeof item[field] !== 'string') {
+          console.warn(`[SideBar] ${path}.${field} 必须是字符串，当前为 ${typeof item[field]}`);
+          return false;
+        }
+      }
+
+      if ('icon' in item && typeof item.icon !== 'string') {
+        console.warn(`[SideBar] ${path}.icon 必须是字符串，当前为 ${typeof item.icon}`);
+        return false;
+      }
+
+      const booleanFields = ['children_is_parallel', 'isFilter'];
+      for (const field of booleanFields) {
+        if (field in item && typeof item[field] !== 'boolean') {
+          console.warn(`[SideBar] ${path}.${field} 必须是布尔值，当前为 ${typeof item[field]}`);
+          return false;
+        }
+      }
+
+      if ('children' in item) {
+        if (!Array.isArray(item.children)) {
+          console.warn(`[SideBar] ${path}.children 必须是数组，当前为 ${typeof item.children}`);
+          return false;
+        }
+        return item.children.every((child, i) => validateItem(child, `${path}.children[${i}]`));
+      }
+
+      return true;
+    };
+
     if (!Array.isArray(nav_map)) {
       console.warn(`[SideBar] nav_map 必须是数组，当前为 ${typeof nav_map}`);
       nav_map = [];
       return;
     }
 
-    // 校验每个导航项的结构
-    nav_map.forEach((item, index) => {
-      // 必需字段检查
-      const requiredFields = ['name', 'title', 'path'];
-      requiredFields.forEach((field) => {
-        if (!(field in item)) {
-          console.warn(`[SideBar] nav_map[${index}] 缺少必需字段: ${field}`);
-          nav_map = [];
-          return;
-        }
-      });
-
-      // 字段类型检查
-      if (typeof item.name !== 'string') {
-        console.warn(`[SideBar] nav_map[${index}].name 必须是字符串，当前为 ${typeof item.name}`);
-        nav_map = [];
-        return;
-      }
-
-      if (typeof item.title !== 'string') {
-        console.warn(`[SideBar] nav_map[${index}].title 必须是字符串，当前为 ${typeof item.title}`);
-        nav_map = [];
-        return;
-      }
-
-      if (typeof item.path !== 'string') {
-        console.warn(`[SideBar] nav_map[${index}].path 必须是字符串，当前为 ${typeof item.path}`);
-        nav_map = [];
-        return;
-      }
-
-      // 可选字段检查
-      if ('icon' in item && typeof item.icon !== 'string') {
-        console.warn(`[SideBar] nav_map[${index}].icon 必须是字符串，当前为 ${typeof item.icon}`);
-        nav_map = [];
-        return;
-      }
-
-      if ('children' in item) {
-        if (!Array.isArray(item.children)) {
-          console.warn(`[SideBar] nav_map[${index}].children 必须是数组，当前为 ${typeof item.children}`);
-          nav_map = [];
-          return;
-        }
-
-        // 递归校验子项
-        const validateChildren = (children, parentPath = '') => {
-          children.forEach((child, childIndex) => {
-            if (!child.name || !child.title || !child.path) {
-              console.warn(`[SideBar] nav_map${parentPath}[${childIndex}] 缺少必需字段`);
-              nav_map = [];
-              return;
-            }
-
-            if (child.children) {
-              validateChildren(child.children, `${parentPath}[${index}].children`);
-            }
-          });
-        };
-
-        validateChildren(item.children, `[${index}].children`);
-      }
-
-      // 布尔类型字段检查
-      const booleanFields = ['children_is_parallel', 'isFilter', 'force_hide'];
-      booleanFields.forEach((field) => {
-        if (field in item && typeof item[field] !== 'boolean') {
-          console.warn(`[SideBar] nav_map[${index}].${field} 必须是布尔值，当前为 ${typeof item[field]}`);
-          nav_map = [];
-          return;
-        }
-      });
-    });
+    const isValid = nav_map.every((item, i) => validateItem(item, `nav_map[${i}]`));
+    if (!isValid) {
+      nav_map = [];
+    }
   })();
 
   let current_path = $derived(page.url.pathname); // 当前路径
@@ -349,52 +316,50 @@
         <ul class="sidebar-content-main">
           {#each navMapData as item}
             {#snippet Item(it, level)}
-              {#if !it.force_hide}
-                {#snippet ItemContent(i, level)}
-                  <div class="sidebar-item-content" style={`--level: ${level}`}>
-                    {#if i.icon}
-                      <img class="sidebar-item-icon" src={i.icon} alt={i.title} />
-                    {:else}
-                      <span class="sidebar-item-icon"></span>
-                    {/if}
-                    <span class="sidebar-item-text">{i.title}</span>
-                  </div>
-                {/snippet}
-
-                <li
-                  class="sidebar-item"
-                  class:active={(!it.children_is_parallel && regexMatch(current_active, it.path)) ||
-                    (checkItemHasChildren(it, current_active) && (it.fold || !it.children_is_parallel)) ||
-                    current_active == it.path}
-                  title={it.title}
-                >
-                  {#if it.children != null && it.children.length > 0 && it.children_is_parallel}
-                    <img
-                      class="sidebar-subitem-icon"
-                      src={it.fold ? '/sidebar/nav_icon/unfold.svg' : '/sidebar/nav_icon/fold.svg'}
-                      alt={it.fold ? '展开' : '折叠'}
-                    />
+              {#snippet ItemContent(i, level)}
+                <div class="sidebar-item-content" style={`--level: ${level}`}>
+                  {#if i.icon}
+                    <img class="sidebar-item-icon" src={i.icon} alt={i.title} />
+                  {:else}
+                    <span class="sidebar-item-icon"></span>
                   {/if}
+                  <span class="sidebar-item-text">{i.title}</span>
+                </div>
+              {/snippet}
 
-                  {@render ItemContent(it, level)}
-
-                  <button
-                    class="sidebar-item-btn"
-                    class:active={current_active == it.name}
-                    onclick={() => {
-                      handleSidebarItemClick(it);
-                    }}
-                    aria-label={it.title}
-                  ></button>
-                </li>
-
-                {#if !it.fold && it.children_is_parallel}
-                  <ul class="sidebar-item-child" transition:slide>
-                    {#each it.children as child}
-                      {@render Item(child, level + 1)}
-                    {/each}
-                  </ul>
+              <li
+                class="sidebar-item"
+                class:active={(!it.children_is_parallel && regexMatch(current_active, it.path)) ||
+                  (checkItemHasChildren(it, current_active) && (it.fold || !it.children_is_parallel)) ||
+                  current_active == it.path}
+                title={it.title}
+              >
+                {#if it.children != null && it.children.length > 0 && it.children_is_parallel}
+                  <img
+                    class="sidebar-subitem-icon"
+                    src={it.fold ? '/sidebar/nav_icon/unfold.svg' : '/sidebar/nav_icon/fold.svg'}
+                    alt={it.fold ? '展开' : '折叠'}
+                  />
                 {/if}
+
+                {@render ItemContent(it, level)}
+
+                <button
+                  class="sidebar-item-btn"
+                  class:active={current_active == it.name}
+                  onclick={() => {
+                    handleSidebarItemClick(it);
+                  }}
+                  aria-label={it.title}
+                ></button>
+              </li>
+
+              {#if !it.fold && it.children_is_parallel}
+                <ul class="sidebar-item-child" transition:slide>
+                  {#each it.children as child}
+                    {@render Item(child, level + 1)}
+                  {/each}
+                </ul>
               {/if}
             {/snippet}
 
