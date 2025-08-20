@@ -15,7 +15,7 @@
   // 组件属性
   let {
     PracticeId = null,
-    onSubmitFunc = (/** @type {Object} */ practiceData,newStudents,selectStudents) => {},
+    onSubmitFunc = (/** @type {Object} */ practiceData,newStudents,selectStudents,is_deleted_all) => {},
     practiceData = null, // 添加练习数据属性，用于编辑功能
     onCancelFunc = () => {}, // 添加取消函数属性
   } = $props();
@@ -48,6 +48,8 @@
   // 学生数据
   /** @type {Array<{id: number, name: string}>} */
   let selectedStudents = $state([]);
+  //确定是否全选删除
+  let is_deleted_all = $state(false);
   //要新增的学生
   let newStudents = $state([]);
   let practice_type = $state('');
@@ -286,7 +288,7 @@
       };
       console.log('准备提交数据', practiceData);
       // 调用父组件传入的提交函数
-      onSubmitFunc(practiceData,newStudents,selectedStudents);
+      onSubmitFunc(practiceData,newStudents,selectedStudents,is_deleted_all);
     }
   }
 
@@ -454,7 +456,8 @@
 <StudentSelectionPanel
   show_panel={show_student_modal}
   practice_id={PracticeId}
-  onConfirm={(newStudent,selected) => {
+  onConfirm={(newStudent,selected,is_delete_all) => {
+    is_deleted_all=is_delete_all;
     //确认后将选择的考生取出
     show_student_modal = false;
     selectedStudents = selected.map((item) => ({

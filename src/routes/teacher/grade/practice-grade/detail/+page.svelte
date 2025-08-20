@@ -16,7 +16,16 @@
    * @property {number} average_score - 平均分
    * @property {number} completed_students - 作答人数
    * @property {number} passed_students - 通过人数
+   * @property {string} mark_mode - 批改模式
    */
+
+
+     // 常量定义
+  const MARK_MODE_MAP = {
+    '00': '自动批改',
+    '10': '人工批改',
+  };
+
 
   /**
    * @type {string|null}
@@ -59,6 +68,7 @@
       average_score: rawData.average_score || 0,
       completed_students: rawData.completed_students || 0,
       passed_students: rawData.passed_students || 0,
+      mark_mode: MARK_MODE_MAP[rawData.mark_mode] || rawData.mark_mode || '自动批改',
     };
   }
 

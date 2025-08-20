@@ -2,7 +2,7 @@
  * @Author: 林炜佳 wj2144632819@qq.com
  * @Date: 2025-08-06 15:00:00
  * @LastEditors: 林炜佳 wj2144632819@qq.com
- * @LastEditTime: 2025-08-07 00:18:07
+ * @LastEditTime: 2025-08-19 12:00:07
  * @FilePath: \exam\src\routes\teacher\correct\correct\+page@.svelte
  * @Description: 教师端试卷批改页面
  * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
@@ -557,6 +557,10 @@
       if (examinee_score === score) return 'right';
       if (examinee_score === 0) return 'incorrect';
       if (examinee_score > 0 && examinee_score < score) return 'partial';
+
+      const err_msg = `获取分数状态失败：question_id=${question_id}, score=${score}`;
+      toast.error(err_msg);
+      console.error(err_msg);
       return 'unknown';
     }
     return 'unreviewed';

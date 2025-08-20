@@ -115,6 +115,15 @@ $font-size-list: (
     border-color: $hover-border;
     transform: scale(0.99);
   }
+  // 如果 disabled，再覆盖 hover/active
+  &.is-disabled {
+    &:hover,
+    &:active {
+      background-color: $base;
+      color: $text;
+      border: 1px solid $border;
+    }
+  }
 
   @include when(plain) {
     background-color: transparent;
@@ -132,6 +141,15 @@ $font-size-list: (
       color: $text;
       border-color: $base;
     }
+
+    &.is-disabled {
+      &:hover,
+      &:active {
+        background-color: transparent;
+        color: $border;
+        border-color: $border;
+      }
+    }
   }
 
   @include when(text) {
@@ -147,6 +165,19 @@ $font-size-list: (
     &:active {
       transform: scale(1);
       background-color: #e2e5e9;
+    }
+
+    &.is-disabled {
+      background-color: #f5f7fa;
+      border: none;
+      color: $base;
+      cursor: not-allowed;
+
+      &:hover,
+      &:active {
+        background-color: #f5f7fa;
+        color: $base;
+      }
     }
 
     @include when(plain) {
@@ -177,6 +208,33 @@ $font-size-list: (
     &:active {
       transform: scale(0.98);
       color: $hover-base;
+    }
+
+    &.is-disabled {
+      background-color: transparent;
+      border: none;
+      color: $base;
+      cursor: not-allowed;
+
+      &:hover,
+      &:active {
+        text-decoration: none;
+        color: $base;
+      }
+    }
+
+    @include when(plain) {
+      background-color: transparent;
+      border: none;
+      color: $base;
+
+      &:hover {
+        text-decoration: underline;
+      }
+      &:active {
+        transform: scale(0.98);
+        color: $hover-base;
+      }
     }
   }
 }

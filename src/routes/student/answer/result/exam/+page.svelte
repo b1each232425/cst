@@ -167,6 +167,7 @@
   let showBadge = $state(false);
   let badgeX = $state(74); // 固定像素位置
   let badgeY = $state(12); // 固定像素位置
+  let exam_paper_info = $state({});
 
   let show_wrong_questions = $state(false); // 是否只展示错题
   let filtered_questions = $state([]); // 错题集
@@ -303,7 +304,7 @@
         nowSessionIndex = queryIndex;
         showScore();
         load_success = true;
-        //   toast.success("切换成功", 2000);
+        toast.success("切换成功", 2000);
       })
       .catch((error) => {
         console.error('请求失败:', error);
@@ -398,7 +399,7 @@
   }
 
   onMount(async () => {
-    let exam_session_id_arr = page.url.searchParams.get('exam-session-id-arr');
+    exam_session_id_arr = page.url.searchParams.get('exam-session-id-arr');
 
     if (exam_session_id_arr) {
       // 移除方括号并拆分
@@ -432,28 +433,30 @@
           toast.error(`接口错误: ${data.msg}`, 2000);
           throw new Error(data.msg);
         }
-        console.log('获取题目成功:', data);
 
         //学生信息类
         if (!data?.data?.student_id) throw new Error('student_id 不能为空'); // 学生ID
         userID = data.data.student_id;
-        if (!data.data.rank || !Array.isArray(data.data.rank) || data.data.rank.length === 0)
-          throw new Error('rank 不能为空');
+
+        if (!data.data.rank || !Array.isArray(data.data.rank) || data.data.rank.length === 0)    throw new Error('rank 不能为空');
         rank = data.data.rank; // 排名信息
+
         if (!data.data.examInfo) throw new Error('exam_info 不能为空'); // 考试信息
         examInfo = data.data.examInfo;
+
         if (!data.data.examSessionInfo) throw new Error('exam_session_info 不能为空'); // 该场次的具体信息
          examSessionInfo = data.data.examSessionInfo[0];
+
         //题目信息类
-        if (!data.data.exam_question || Object.keys(data.data.exam_question).length === 0)
-          throw new Error('exam_question 不能为空');
+        if (!data.data.exam_question || Object.keys(data.data.exam_question).length === 0)  throw new Error('exam_question 不能为空');
         exam_questions_map = new Map(Object.entries(data.data.exam_question));
-        if (!data.data.exam_paper_group || Object.keys(data.data.exam_paper_group).length === 0) 
-          throw new Error('exam_paper_group 不能为空');
+
+        if (!data.data.exam_paper_group || Object.keys(data.data.exam_paper_group).length === 0)   throw new Error('exam_paper_group 不能为空');
         question_groups_map = new Map(Object.entries(data.data.exam_paper_group));
 
-        console.log(exam_questions_map);
-        console.log(question_groups_map);
+        if (!data.data.exam_paper)  throw new Error('exam_paper_info 不能为空');
+          exam_paper_info = data.data.exam_paper; // 试卷信息
+
         //加载题目
         examSessionInfoLenght = exam_session_id_arr.length;
         total_score = 0; // 重置总分
@@ -508,7 +511,7 @@
       <div class="exam-header-left">
         <button class="back-btn" onclick={goBack}> &lt; 返回 </button>
       </div>
-      <div class="exam-title">{examInfo.Name}</div>
+      <div class="exam-title">{exam_paper_info.Name}</div>
       {#if examSessionInfoLenght >= 2}
         <div class="exam-header-right">
           <button
@@ -569,13 +572,13 @@
             <img class="icon" src="/student_exam_practice/time.png" alt="答题用时" />
             <label for="答题用时">答题用时：</label>
             <label for="具体数值" class="blodFont">{examInfo.AnswerTime}分钟</label>
-            <label for="具体数值"> /{examSessionInfo.DurationTime}分钟</label>
+            <label for="具体数值"> /{examSessionInfo.ExamTime}分钟</label>
           </div>
           <div class="exam-into-deatil">
             <img class="icon" src="/student_exam_practice/answerNum.png" alt="答题数量" />
             <label for="答题数量">答题数量：</label>
             <label for="具体数值" class="blodFont">{examInfo.AnswerNum}题</label>
-            <label for="具体数值"> /{examInfo.QuestionNum}题</label>
+            <label for="具体数值"> /{exam_paper_info.QuestionCount}题</label>
           </div>
         </div>
         <!-- 考试作答形式选择区域 -->

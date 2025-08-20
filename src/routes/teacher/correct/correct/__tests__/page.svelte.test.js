@@ -847,78 +847,206 @@ describe('批改页面测试', () => {
     });
   });
 
-  describe('考生切换功能测试', () => {
-    beforeEach(() => {
-      setExamCorrect();
-    });
-
-    it('应正确切换到下一位考生', async () => {
+  describe('页面数据错误会显示错误', () => {
+    it('学生分数为负数时右侧总览对应位置应显示错误', async () => {
+      mockFetch({
+        status: 0,
+        data: {
+          question_sets: [
+            {
+              ID: 101,
+              Order: 1,
+              Score: 30,
+              Name: '基础题组',
+              Questions: [
+                {
+                  ID: 1001,
+                  Order: 1,
+                  Score: 5,
+                  Type: '00', // 单选题
+                  Answers: [{ index: 1, score: 5, answer: 'B', grading_rule: 'exact', alternative_answer: 'b' }],
+                  GroupID: 101,
+                  Content: '下面哪个是 JavaScript 的关键字？',
+                },
+                {
+                  ID: 1002,
+                  Order: 2,
+                  Score: 10,
+                  Type: '02', // 多选题
+                  Answers: [
+                    { index: 1, score: 5, answer: 'A', grading_rule: 'exact', alternative_answer: 'a' },
+                    { index: 2, score: 5, answer: 'C', grading_rule: 'exact', alternative_answer: 'c' },
+                  ],
+                  GroupID: 101,
+                  Content: '以下哪些是 JavaScript 数据类型？',
+                },
+                {
+                  ID: 1003,
+                  Order: 3,
+                  Score: 5,
+                  Type: '04', // 判断题
+                  Answers: [{ index: 1, score: 5, answer: 'true', grading_rule: 'exact', alternative_answer: null }],
+                  GroupID: 101,
+                  Content: 'JavaScript 是一门静态类型语言。对吗？',
+                },
+              ],
+            },
+            {
+              ID: 102,
+              Order: 2,
+              Score: 40,
+              Name: '进阶题组',
+              Questions: [
+                {
+                  ID: 2001,
+                  Order: 1,
+                  Score: 10,
+                  Type: '06', // 填空题
+                  Answers: [
+                    { index: 1, score: 5, answer: 'function', grading_rule: 'exact', alternative_answer: null },
+                    { index: 2, score: 5, answer: 'const', grading_rule: 'exact', alternative_answer: null },
+                  ],
+                  GroupID: 102,
+                  Content: '请填空：______ 用于定义函数，______ 用于定义常量。',
+                },
+                {
+                  ID: 2002,
+                  Order: 2,
+                  Score: 10,
+                  Type: '08', // 简答题
+                  Answers: [
+                    {
+                      index: 1,
+                      score: 10,
+                      answer: '事件循环是JavaScript处理异步操作的机制。',
+                      grading_rule: 'keywords',
+                      alternative_answer: '事件循环机制',
+                    },
+                  ],
+                  GroupID: 102,
+                  Content: '简述 JavaScript 的事件循环机制。',
+                },
+                {
+                  ID: 2003,
+                  Order: 3,
+                  Score: 20,
+                  Type: '10', // 编程题
+                  Answers: [
+                    {
+                      index: 1,
+                      score: 20,
+                      answer: 'function add(a, b) { return a + b; }',
+                      grading_rule: 'exact',
+                      alternative_answer: null,
+                    },
+                  ],
+                  GroupID: 102,
+                  Content: '编写一个函数，实现两个数相加。',
+                },
+              ],
+            },
+          ],
+          student_answers: [
+            // 学生 1
+            { QuestionID: 1001, ExamineeID: 5001, PracticeSubmissionID: 7001, Answer: { answer: ['B'] } },
+            { QuestionID: 1002, ExamineeID: 5001, PracticeSubmissionID: 7001, Answer: { answer: ['A', 'C'] } },
+            { QuestionID: 1003, ExamineeID: 5001, PracticeSubmissionID: 7001, Answer: { answer: ['false'] } },
+            {
+              QuestionID: 2001,
+              ExamineeID: 5001,
+              PracticeSubmissionID: 7001,
+              Answer: { answer: ['function', 'const'] },
+            },
+            {
+              QuestionID: 2002,
+              ExamineeID: 5001,
+              PracticeSubmissionID: 7001,
+              Answer: { answer: ['事件循环是JavaScript处理异步操作的机制。'] },
+            },
+            {
+              QuestionID: 2003,
+              ExamineeID: 5001,
+              PracticeSubmissionID: 7001,
+              Answer: { answer: ['function add(a, b) { return a + b; }'] },
+            },
+          ],
+          student_infos: [{ ExamineeID: 5001, OfficialName: '李四', SerialNumber: 1, PracticeSubmissionID: 7001 }],
+          marking_results: [
+            // 学生 1 批改结果
+            {
+              TeacherID: 9001,
+              ExamineeID: 5001,
+              ExamSessionID: 8001,
+              PracticeID: 9001,
+              PracticeSubmissionID: 7001,
+              QuestionID: 1001,
+              MarkDetails: [{ Index: 1, Score: -5 }],
+              Score: -5,
+            },
+            {
+              TeacherID: 9001,
+              ExamineeID: 5001,
+              ExamSessionID: 8001,
+              PracticeID: 9001,
+              PracticeSubmissionID: 7001,
+              QuestionID: 1002,
+              MarkDetails: [
+                { Index: 1, Score: 5 },
+                { Index: 2, Score: 5 },
+              ],
+              Score: 10,
+            },
+            {
+              TeacherID: 9001,
+              ExamineeID: 5001,
+              ExamSessionID: 8001,
+              PracticeID: 9001,
+              PracticeSubmissionID: 7001,
+              QuestionID: 1003,
+              MarkDetails: [{ Index: 1, Score: 0 }],
+              Score: 0,
+            },
+            {
+              TeacherID: 9001,
+              ExamineeID: 5001,
+              ExamSessionID: 8001,
+              PracticeID: 9001,
+              PracticeSubmissionID: 7001,
+              QuestionID: 2001,
+              MarkDetails: [
+                { Index: 1, Score: 5 },
+                { Index: 2, Score: 5 },
+              ],
+              Score: 10,
+            },
+            {
+              TeacherID: 9001,
+              ExamineeID: 5001,
+              ExamSessionID: 8001,
+              PracticeID: 9001,
+              PracticeSubmissionID: 7001,
+              QuestionID: 2002,
+              MarkDetails: [{ Index: 1, Score: 10 }],
+              Score: 10,
+            },
+            {
+              TeacherID: 9001,
+              ExamineeID: 5001,
+              ExamSessionID: 8001,
+              PracticeID: 9001,
+              PracticeSubmissionID: 7001,
+              QuestionID: 2003,
+              MarkDetails: [{ Index: 1, Score: 20 }],
+              Score: 20,
+            },
+          ],
+        },
+      });
       render(CorrectPage);
 
       await waitFor(() => {
-        expect(screen.getByText('李四')).toBeInTheDocument();
-      });
-
-      const nextButton = screen.getByText('下一位');
-      await fireEvent.click(nextButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('王五')).toBeInTheDocument();
-      });
-    });
-
-    it('应正确切换到上一位考生', async () => {
-      render(CorrectPage);
-
-      // 先切换到下一位
-      await fireEvent.click(screen.getByText('下一位'));
-      await waitFor(() => {
-        expect(screen.getByText('王五')).toBeInTheDocument();
-      });
-
-      // 再切换回上一位
-      const prevButton = screen.getByText('上一位');
-      await fireEvent.click(prevButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('李四')).toBeInTheDocument();
-      });
-    });
-
-    it('第一位考生时上一位按钮应禁用', async () => {
-      render(CorrectPage);
-
-      const prevButton = screen.getByText('上一位');
-      expect(prevButton).toHaveClass('is-disabled');
-    });
-
-    it('最后一位考生时下一位按钮应变为提交按钮(考试模式)', async () => {
-      render(CorrectPage);
-
-      // 切换到下一位
-      await fireEvent.click(screen.getByText('下一位'));
-      await fireEvent.click(screen.getByText('下一位'));
-
-      await waitFor(() => {
-        expect(screen.getByText('上一位')).toBeInTheDocument();
-        expect(screen.getByText(/提交/)).toBeInTheDocument();
-        expect(screen.queryByText('下一位')).not.toBeInTheDocument();
-      });
-    });
-
-    it('最后一位考生时下一位按钮应为禁用(练习模式)', async () => {
-      setPracticeCorrect();
-
-      render(CorrectPage);
-
-      // 切换到下一位
-      await fireEvent.click(screen.getByText('下一位'));
-      await fireEvent.click(screen.getByText('下一位'));
-
-      await waitFor(() => {
-        expect(screen.getByText('上一位')).toBeInTheDocument();
-        expect(screen.queryByText(/提交/)).not.toBeInTheDocument();
-        expect(screen.getByText('下一位')).toBeInTheDocument();
+        expect(screen.getAllByRole('button', { name: '1' })[0]).toHaveClass('unknown');
+        expect(toast.error).toHaveBeenCalled('获取分数状态失败：question_id=1001, score=-5');
       });
     });
   });
@@ -967,6 +1095,123 @@ describe('批改页面测试', () => {
       await fireEvent.click(screen.getByText('上一题'));
       await waitFor(() => {
         expect(screen.getByText(/单选题/)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('考生切换功能测试', () => {
+    beforeEach(() => {
+      setExamCorrect();
+    });
+
+    it('应正确切换到下一位考生（全卷模式）', async () => {
+      render(CorrectPage);
+
+      await waitFor(() => {
+        expect(screen.getByText('李四')).toBeInTheDocument();
+      });
+
+      const nextButton = screen.getByText('下一位');
+      await fireEvent.click(nextButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('王五')).toBeInTheDocument();
+      });
+    });
+
+    it('应正确切换到上一位考生（全卷模式）', async () => {
+      render(CorrectPage);
+
+      // 先切换到下一位
+      await fireEvent.click(screen.getByText('下一位'));
+      await waitFor(() => {
+        expect(screen.getByText('王五')).toBeInTheDocument();
+      });
+
+      // 再切换回上一位
+      const prevButton = screen.getByText('上一位');
+      await fireEvent.click(prevButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('李四')).toBeInTheDocument();
+      });
+    });
+
+    it('应正确切换到下一位考生（逐题模式）', async () => {
+      render(CorrectPage);
+
+      await waitFor(() => {
+        expect(screen.getByText('李四')).toBeInTheDocument();
+      });
+
+      // 切换到逐题模式
+      const switchBtn = within(screen.getByTestId('switch')).getByRole('button');
+      await fireEvent.click(switchBtn);
+
+      const nextButton = screen.getByText('下一位');
+      await fireEvent.click(nextButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('王五')).toBeInTheDocument();
+      });
+    });
+
+    it('应正确切换到上一位考生（逐题模式）', async () => {
+      render(CorrectPage);
+
+      // 先切换到下一位
+      await fireEvent.click(screen.getByText('下一位'));
+      await waitFor(() => {
+        expect(screen.getByText('王五')).toBeInTheDocument();
+      });
+
+      // 切换到逐题模式
+      const switchBtn = within(screen.getByTestId('switch')).getByRole('button');
+      await fireEvent.click(switchBtn);
+
+      // 再切换回上一位
+      const prevButton = screen.getByText('上一位');
+      await fireEvent.click(prevButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('李四')).toBeInTheDocument();
+      });
+    });
+
+    it('第一位考生时上一位按钮应禁用', async () => {
+      render(CorrectPage);
+
+      const prevButton = screen.getByText('上一位');
+      expect(prevButton).toHaveClass('is-disabled');
+    });
+
+    it('最后一位考生时下一位按钮应变为提交按钮（考试模式）', async () => {
+      render(CorrectPage);
+
+      // 切换到下一位
+      await fireEvent.click(screen.getByText('下一位'));
+      await fireEvent.click(screen.getByText('下一位'));
+
+      await waitFor(() => {
+        expect(screen.getByText('上一位')).toBeInTheDocument();
+        expect(screen.getByText(/提交/)).toBeInTheDocument();
+        expect(screen.queryByText('下一位')).not.toBeInTheDocument();
+      });
+    });
+
+    it('最后一位考生时下一位按钮应为禁用（练习模式）', async () => {
+      setPracticeCorrect();
+
+      render(CorrectPage);
+
+      // 切换到下一位
+      await fireEvent.click(screen.getByText('下一位'));
+      await fireEvent.click(screen.getByText('下一位'));
+
+      await waitFor(() => {
+        expect(screen.getByText('上一位')).toBeInTheDocument();
+        expect(screen.queryByText(/提交/)).not.toBeInTheDocument();
+        expect(screen.getByText('下一位')).toBeInTheDocument();
       });
     });
   });
@@ -1185,8 +1430,34 @@ describe('批改页面测试', () => {
       vi.clearAllMocks();
     });
 
-    it('成功保存批改分数', async () => {
+    it('成功保存批改分数（全卷模式）', async () => {
       mockFetch({ status: 0 });
+
+      await waitFor(() => {
+        const input = screen.getAllByPlaceholderText('输入得分')[0];
+        fireEvent.input(input, { target: { value: 1 } });
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      await expect(global.fetch).toBeCalledTimes(1);
+      await expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/mark/marking-results'),
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }),
+      );
+    });
+
+    it('成功保存批改分数（逐题模式）', async () => {
+      mockFetch({ status: 0 });
+
+      // 切换到逐题模式
+      const switchBtn = within(screen.getByTestId('switch')).getByRole('button');
+      await fireEvent.click(switchBtn);
 
       await waitFor(() => {
         const input = screen.getAllByPlaceholderText('输入得分')[0];
