@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-18 20:02:57
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-19 22:14:45
+ * @LastEditTime: 2025-08-20 12:14:08
  * @FilePath: \exam\src\routes\teacher\paper\manual\_test_\manual.svelte.test.js
  * @Description: 自定义组卷页面测试
  * Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -645,13 +645,248 @@ describe('自定义组卷页面', () => {
                 // 验证标题“题组列表”
                 expect(screen.getByText('题组列表')).toBeInTheDocument();
 
-                // 验证共有1个题组
-                expect(screen.getByText(/共有 \d+ 个题组/)).toBeInTheDocument();
+                // 验证group-count类的存在
+                expect(container.querySelector('.group-count')).toBeInTheDocument();
 
                 // 验证“添加题组”按钮
                 expect(screen.getByText('添加题组')).toBeInTheDocument();
             });
 
+            describe('交互', () => {
+                describe('试卷标签', () => {
+                    it('创建标签', async () => {
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            // 泛型匹配（有两个）
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+
+                        // 获取第一个标签，用placeholder为“+标签”的input
+                        const input = screen.getAllByPlaceholderText('+标签')[0];
+
+                        // 验证当前输入框为空
+                        expect(input).toHaveValue('');
+
+                        // 获取第一个color-block类元素(container.querySelector)
+                        const colorBlock = container.querySelectorAll('.color-block')[0];
+
+                        // 验证color-block含有style:background-color: #40d5ff
+                        expect(colorBlock).toHaveStyle('background-color: #40d5ff');
+
+                        // 输入“测试标签”
+                        fireEvent.input(input, { target: { value: '测试标签' } });
+
+                        // 验证color-block不含有style:background-color: #40d5ff
+                        await waitFor(() => {
+                            expect(colorBlock).not.toHaveStyle('background-color: #40d5ff');
+                        });
+
+                        // 触发change事件来调用addTag函数
+                        fireEvent.change(input, { target: { value: '测试标签' } });
+
+                        // 验证第一个标签内容清空
+                        await waitFor(() => {
+                            expect(input).toHaveValue('');
+                        });
+
+                        // 验证标签有5个（用placeholder为“+标签”的input有5个）
+                        await waitFor(() => {
+                            expect(screen.getAllByPlaceholderText('+标签')).toHaveLength(5);
+                        });
+                    });
+
+                    it('取消创建标签', async () => {
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            // 泛型匹配（有两个）
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+
+                        // 获取第一个标签，用placeholder为“+标签”的input
+                        const input = screen.getAllByPlaceholderText('+标签')[0];
+
+                        // 验证当前输入框为空
+                        expect(input).toHaveValue('');
+                        
+                        // 输入测试内容
+                        fireEvent.input(input, { target: { value: '测试内容' } });
+
+                        // 点击"✕"按钮
+                        const cancelButton = screen.getAllByTitle('取消')[0];
+                        fireEvent.mouseDown(cancelButton);
+
+                        // 验证输入框为空
+                        await waitFor(() => {
+                            expect(input).toHaveValue('');
+                        });
+                    });
+
+                    it('删除标签', async () => {
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            // 泛型匹配（有两个）
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+
+                        // 获取第二个标签，用placeholder为“+标签”的input
+                        const input = screen.getAllByPlaceholderText('+标签')[1];
+
+                        // 验证当前输入框为“测试”
+                        expect(input).toHaveValue('测试');
+
+                        // 验证第二个标签的color-block不含有style:background-color: #40d5ff
+                        await waitFor(() => {
+                            expect(container.querySelectorAll('.color-block')[1]).not.toHaveStyle('background-color: #40d5ff');
+                        });
+
+                        // 清空input
+                        fireEvent.input(input, { target: { value: '' } });
+
+                        // 验证第二个标签的color-block含有style:background-color: #40d5ff
+                        await waitFor(() => {
+                            expect(container.querySelectorAll('.color-block')[1]).toHaveStyle('background-color: #40d5ff');
+                        });
+
+                        // 回车
+                        fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+
+                        // blur
+                        fireEvent.blur(input);
+
+                        // 验证标签有3个（用placeholder为“+标签”的input有3个）
+                        await waitFor(() => {
+                            expect(screen.getAllByPlaceholderText('+标签')).toHaveLength(3);
+                        });
+                    });
+
+                    it('修改标签', async () => {
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            // 泛型匹配（有两个）
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+
+                        // 获取第二个标签，用placeholder为“+标签”的input
+                        const input = screen.getAllByPlaceholderText('+标签')[1];
+
+                        // 验证当前输入框为“测试”
+                        expect(input).toHaveValue('测试');
+
+                        // 输入“测试标签”
+                        fireEvent.input(input, { target: { value: '测试标签' } });
+
+                        // blur
+                        fireEvent.blur(input);
+
+                        // 验证第二个标签内容为“测试标签”
+                        await waitFor(() => {
+                            expect(input).toHaveValue('测试标签');
+                        });
+                    });
+                });
+
+                describe('题组列表', () => {
+                    it('添加题组 & 取消添加', async () => {
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            // 泛型匹配（有两个）
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+
+                        // 点击“添加题组”按钮
+                        const addGroupButton = screen.getByText('添加题组');
+                        fireEvent.click(addGroupButton);
+                        
+                        // 验证add-group类的存在
+                        await waitFor(() => {
+                            expect(container.querySelector('.add-group')).toBeInTheDocument();
+                        });
+
+                        // 获取input
+                        const input = container.querySelector('.add-group-input');
+
+                        // 清空input
+                        fireEvent.change(input, { target: { value: '' } });
+
+                        // blur
+                        fireEvent.blur(input);
+
+                        // 验证add-group类不存在
+                        await waitFor(() => {
+                            expect(container.querySelector('.add-group')).not.toBeInTheDocument();
+                        });
+                    });
+
+                    it('确认添加题组', async () => {
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            // 泛型匹配（有两个）
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+
+                        // 点击“添加题组”按钮
+                        const addGroupButton = screen.getByText('添加题组');
+                        fireEvent.click(addGroupButton);
+
+                        // 验证add-group类的存在
+                        await waitFor(() => {
+                            expect(container.querySelector('.add-group')).toBeInTheDocument();
+                        });
+
+                        // 输入“新增测试题组”
+                        const input = container.querySelector('.add-group-input');
+                        fireEvent.input(input, { target: { value: '新增测试题组' } });
+                        fireEvent.change(input, { target: { value: '新增测试题组' } });
+
+                        // 验证toast.success
+                        await waitFor(() => {
+                            expect(toast.success).toHaveBeenCalledWith('添加成功', 1000);
+                        });
+                    });
+
+                    it('删除题组', async () => {
+                        global.fetch.mockResolvedValue({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                status: 0,
+                                msg: "success",
+                                API: "/api/paper/manual",
+                                method: "GET",
+                                data: PAPER_INFO,
+                            })
+                        });
+
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            // 泛型匹配（有两个）
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+
+                        // 点击“删除”按钮（用class为delete-group-btn的button）
+                        const deleteButton = container.querySelector('.delete-group-btn');
+                        fireEvent.click(deleteButton);
+
+                        // 验证最后一个题组不能被删除
+                        await waitFor(() => {
+                            expect(toast.error).toHaveBeenCalledWith('至少保留一个题组', 1000);
+                        });
+                    });
+                });
+            });
         });
 
         describe('内容区', () => {

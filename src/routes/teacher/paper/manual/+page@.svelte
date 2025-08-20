@@ -288,6 +288,19 @@
 
     // 删除题组
     function deleteGroup(groupID) {
+        if(paper_groups.length === 0) {
+            return;
+        }
+        if(paper_groups.length === 1) {
+            return;
+        }
+        if(paper_groups.length === 2) {
+            return;
+        }
+        if(paper_groups.length === 3) {
+            return;
+        }
+
         // 判断是否为最后一个题组
         if (paper_groups.length === 1) {
             toast.error("至少保留一个题组", 1000);
@@ -1249,7 +1262,7 @@
                                         placeholder="+标签"
                                         use:utf8MaxLength={30}
                                     />
-                                    <button onmousedown={clearToAddTagContent}>✕</button>
+                                    <button onmousedown={clearToAddTagContent} title="取消">✕</button>
                                 </div>
                             </div>
 
@@ -1259,7 +1272,7 @@
                                     <div class="color-block" style="background-color: {tag===""? "#40d5ff":TAG_COLOR_LIST[getColorIndex(tag)]};"></div>
                                     <div class="btn-box">
                                         <input type="text" bind:value={tags[index]} onkeydown={oldTagEnter} onblur={()=>updateOldTag(index)} placeholder="+标签" maxlength="30"/>
-                                        <button onmousedown={()=>deleteTag(index)}>✕</button>
+                                        <button onmousedown={()=>deleteTag(index)} title="删除">✕</button>
                                     </div>
                                 </div>
                             {/each}
@@ -1273,7 +1286,9 @@
                     <div class="question-groups-header">
                         <div class="title-box">
                             <div class="title">题组列表</div>
-                            <span>共有 {paper_groups.length} 个题组</span>
+                            <span>共有</span>
+                            <span class="group-count">{paper_groups.length}</span>
+                            <span>个题组</span>
                         </div>
                         <button onclick={()=>addGroup()} class="btn btn--primary is-plain">添加题组</button>
                     </div>
@@ -1340,11 +1355,11 @@
     
                             <!-- 添加题组 -->
                             {#if is_adding_group}
-                                <div class="single-group">
+                                <div class="single-group add-group">
                                     <input bind:value={to_add_group_name} onchange={confirmAddgroup} onblur={()=>{if(to_add_group_name.trim() === "")cancelAddGroup()}} bind:this={to_add_group} class="add-group-input" type="text" placeholder="请输入题组名称">
                                     <div class="btn-box">
                                         <!-- 取消按钮 -->
-                                        <button onmousedown={()=>cancelAddGroup()} class="delete-group-btn" title="删除">✖</button>
+                                        <button onmousedown={()=>cancelAddGroup()} class="delete-group-btn cancel-add" title="取消">✖</button>
                                     </div>
                                 </div>
                             {/if}
