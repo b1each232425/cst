@@ -629,8 +629,8 @@
       </div>
 
       <div class="calendar-footer">
-        <button class="cancel-btn" onclick={dateConfirm} data-testid="clear-btn">取消</button>
-        <button class="clear-btn" onclick={reset} data-testid="clear-btn">清除</button>
+        <button class="cancel-btn" onclick={dateConfirm}>取消</button>
+        <button class="clear-btn" onclick={reset}>清除</button>
         <button class="confirm-btn" onclick={dateConfirm}>确定</button>
       </div>
     </div>

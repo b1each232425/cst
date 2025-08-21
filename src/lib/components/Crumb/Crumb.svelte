@@ -5,6 +5,7 @@
   import { page } from '$app/state';
   import { baseNavItems } from '$lib/stores/modules/permission.js';
   import { beforeNavigate } from '$app/navigation';
+  import { toast } from '$lib/components/Toast/Toast.js';
 
   let { display_name } = $props();
 
@@ -68,11 +69,22 @@
 
   // 处理退出登录点击事件
   async function handleLogout() {
-    // 清除 qNearSessions
-    document.cookie = 'qNearSessions=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    fetch('/api/user/logout')
+      .then((response) => response.json())
+      .then(async (data) => {
+        if (data.status !== 0) throw new Error('退出登录失败');
 
-    // 跳转到登录页
-    goto('/login');
+        // 清除 qNearSessions
+        document.cookie = 'qNearSessions=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+        // 跳转到登录页
+        goto('/login');
+      })
+      .catch((error) => {
+        nav_map = []; // 失败时设为空数组
+        console.error('退出登录失败:', error);
+        toast.error('退出登录失败：', error);
+      });
   }
 
   // 监听导航事件，跳转前执行逻辑
