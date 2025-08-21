@@ -118,7 +118,15 @@
   // 处理外部传入value
   $effect(() => {
     initLabelvalue();
-    if (value === '') changeValue(value);
+    if (value === '') {
+      // 如果有OptionData中value为空的选项，则selectedLabel为对应的值，否则为placeholder
+      if (OptionData.some((item) => item.selectValue === '')) {
+        selectedLabel = OptionData.filter((item) => item.selectValue === '').map((item) => item.selectLabel);
+      } else {
+        selectedLabel = [placeholder];
+      }
+      changeValue(value);
+    }
     if (value === undefined || value === null) changeValue(value);
   });
 
