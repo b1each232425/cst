@@ -572,6 +572,7 @@
               font-size: 0.9rem;
               text-align: center;
               vertical-align: middle;
+              padding: 0.5rem;
 
               $difficulty-color: (
                 'easy': #52c41a,

@@ -419,3 +419,69 @@ describe('什么都不输入直接点确定',(()=>{
     fireEvent.click(createBtn[0]);
   }))
 }))
+describe('补充测试用例覆盖率', () => {
+  it('fetch 抛出异常', async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error('network error'));
+    render(PracticeForm, { data: mockPractice });
+    const paperBtn = screen.getByText('选择试卷');
+    fireEvent.click(paperBtn);
+    await waitFor(() => {
+      expect(toast.error).toBeCalledWith('获取数据失败');
+    });
+  });
+
+  it('json 解析异常', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => { throw new Error('invalid json'); }
+    });
+    render(PracticeForm, { data: mockPractice });
+    const paperBtn = screen.getByText('选择试卷');
+    fireEvent.click(paperBtn);
+    await waitFor(() => {
+      expect(toast.error).toBeCalledWith('获取数据失败');
+    });
+  });
+
+  it('输入空名称点击保存', () => {
+    render(PracticeForm, { data: mockPractice });
+    const nameInput = screen.getByPlaceholderText('请输入练习名称');
+    fireEvent.input(nameInput, { target: { value: '' } });
+    const saveBtn = screen.getAllByText('保存');
+    fireEvent.click(saveBtn[0]);
+    expect(toast.error).toBeCalled();
+  });
+
+  it('输入超长名称', () => {
+    render(PracticeForm, { data: mockPractice });
+    const nameInput = screen.getByPlaceholderText('请输入练习名称');
+    fireEvent.input(nameInput, { target: { value: 'a'.repeat(300) } });
+    const saveBtn = screen.getAllByText('保存');
+    fireEvent.click(saveBtn[0]);
+  });
+
+  it('学生选择后确认但未选择任何学生', () => {
+    render(PracticeForm, { data: mockPractice });
+    const studentBtn = screen.getAllByText('选择学生');
+    fireEvent.click(studentBtn[0]);
+    const confirm = screen.getAllByText('确定');
+    fireEvent.click(confirm[0]);
+  });
+
+  it('点击取消按钮后关闭弹窗', () => {
+    render(PracticeForm, { data: mockPractice });
+    const cancelBtn = screen.getAllByText('取消');
+    fireEvent.click(cancelBtn[0]);
+    const cancelModalBtn = screen.getAllByText('取消');
+    fireEvent.click(cancelModalBtn[1]);
+  });
+
+  it('限制次数输入覆盖', () => {
+    render(PracticeForm, { data: mockPractice });
+    const radio = screen.getByText('限制次数');
+    fireEvent.click(radio);
+    const attemptInput = screen.getByPlaceholderText('请输入次数');
+    fireEvent.input(attemptInput, { target: { value: '5' } });
+    expect(attemptInput.value).toBe('5');
+  });
+});
