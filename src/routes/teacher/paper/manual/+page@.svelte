@@ -288,18 +288,6 @@
 
     // 删除题组
     function deleteGroup(groupID) {
-        if(paper_groups.length === 0) {
-            return;
-        }
-        if(paper_groups.length === 1) {
-            return;
-        }
-        if(paper_groups.length === 2) {
-            return;
-        }
-        if(paper_groups.length === 3) {
-            return;
-        }
 
         // 判断是否为最后一个题组
         if (paper_groups.length === 1) {
@@ -1303,9 +1291,7 @@
                                     <!-- 编辑题组状态 -->
                                     {#if to_edit_groupID === group.id}
                                         <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                        <div class="single-group
-                                            {dragged_group === group ? "dragging":""}"
-                                            >
+                                        <div class="single-group edit-group">
                                             <input bind:value={to_edit_group_name} onchange={()=>confirmEditGroupName()} onblur={()=>{if(to_edit_group_name.trim() === ""||to_edit_group_name.trim() === group.name){cancelEditGroupName()}}} bind:this={to_edit_group} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
                                             <div class="btn-box">
                                                 <!-- 取消按钮 -->
