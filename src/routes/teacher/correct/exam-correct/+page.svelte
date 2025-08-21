@@ -229,7 +229,7 @@
   let exam_list = $state([]);
   let total_count = $state(0);
 
-  const debounceSearch = debounce(handleSearch, 500);
+  const debounceSearch = debounce(handleSearch, 200);
 
   // 是否为正常的状态
   function isNormal(mark_mode, status, mark_status) {
@@ -260,8 +260,10 @@
   // 能否查看日志
   // function canCheckLogs() {}
 
-  function gotoCorrect(exam_session_name, exam_session_id) {
-    goto(`/teacher/correct/correct?name=${exam_session_name}&exam_session_id=${exam_session_id}`);
+  function gotoCorrect(exam_name, exam_session_name, exam_session_id) {
+    goto(
+      `/teacher/correct/correct?name=${exam_name}&exam_session_name=${exam_session_name}&exam_session_id=${exam_session_id}`,
+    );
   }
 
   // function gotoDetail() {}
@@ -487,7 +489,7 @@
                         respondent_count <= 0}
                       disabled={!canCorrected(mark_mode, status, mark_status, respondent_count) ||
                         respondent_count <= 0}
-                      onclick={() => gotoCorrect(name, id)}>进入批改</button
+                      onclick={() => gotoCorrect(exam.name, name, id)}>进入批改</button
                     >
                     <!-- <button
                       class:disabled={!canCheckDetail(status, mark_status) || respondent_count <= 0}
@@ -570,14 +572,12 @@
           position: sticky;
           top: 0;
           font-size: 14px;
-          color: rgba(0, 0, 0, 0.3);
+          color: var(--gray);
           background-color: white;
         }
 
         tr {
-          height: 3rem;
-          color: rgb(102, 102, 102);
-          border-bottom: 1px lightgray solid;
+          height: 3.5rem;
 
           th {
             font-weight: lighter;
@@ -588,13 +588,15 @@
 
         tbody {
           tr {
-            color: black;
+            border-bottom: 1px rgb(221, 221, 221) solid;
+            color: #333333;
 
             td {
               font-size: 0.9rem;
               text-align: center;
               vertical-align: middle;
               padding: 5px 0;
+              padding: 0.5rem 0;
 
               .stack {
                 display: flex;
@@ -609,13 +611,13 @@
                 span {
                   $status-color: (
                     'unpublished': #999999,
-                    'incoming': #ff8100,
-                    'underway': #39bb4c,
-                    'ended': #787d81,
+                    'incoming': var(--orange),
+                    'underway': var(--green),
+                    'ended': var(--gray),
                     'marking': #c6690b,
                     'marked': #027213,
                     'submitted': #0052d9,
-                    'deleted': red,
+                    'deleted': var(--red),
                   );
 
                   &.status {
@@ -632,7 +634,7 @@
                     'paper': #fa541c,
                     'group': #13c2c2,
                     'question': #722ed1,
-                    'single': #2f54eb,
+                    'single': black,
                   );
 
                   &.mark-mode {
@@ -644,9 +646,9 @@
                   }
 
                   $mark-status-color: (
-                    'normal': #2bcbba,
-                    'done': #52c41a,
-                    'deleted': #999999,
+                    'normal': var(--green),
+                    'done': var(--gray),
+                    'deleted': var(--red),
                   );
 
                   &.mark-status {
@@ -662,15 +664,21 @@
               .options {
                 display: flex;
                 justify-content: center;
+                color: #2f54eb;
 
                 button {
                   &.disabled {
                     color: #ccc;
                     cursor: not-allowed;
+                    border: 0;
                   }
 
                   &:not(.disabled):hover {
                     font-weight: bold;
+                  }
+
+                  &:not(.disabled) {
+                    border-bottom: 1px solid #2f54eb;
                   }
                 }
               }

@@ -20,6 +20,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
                                                       -->
 
 <script>
+  import '$lib/components/Input/index.scss';
   import BankCard from '../_components/bankCard.svelte';
   import { onMount } from 'svelte';
   import { formatTimestamp } from '$lib/utils/time_utils';
@@ -27,7 +28,9 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { toast } from '$lib/components/Toast/Toast.js';
   import { selection} from '../store';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
-  import '$lib/components/Button/index.scss';
+  	import Title from '$lib/components/Title/Title.svelte';
+import '$lib/components/Input/index.scss';
+  import { Value } from 'sass';
   /**
    * @typedef BankCardItemData
    * @property {number}           ID              - 题库ID
@@ -38,6 +41,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   
    */
 
+  
   /**
    * 题库搜索输入框的值
    * @type {string}
@@ -97,11 +101,11 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   let selected_bank_list = $state([]);
 
 
-  function getBankList({ keyword = '', page = '', pageSize = '' } = {}) {
+  function getBankList({  page = '', pageSize = '' } = {}) {
   bank_list=[];
   origin_bank_list=[];
     const queryParams = new URLSearchParams({
-      keyword,
+      keyword:search_input,
       page,
       pageSize,
       
@@ -509,27 +513,18 @@ oooo            .                     oooo
 o888o o888o   "888" o888o o888o o888o o888o                                                     
 -->
 
-
+<!--标题-->
+<div>
+    <Title title="题库列表" />
+  </div>
 
 <div class="question-bank-container">
   <!-- 顶部栏 -->
- 
   <div class="top-bar">
-    <div class="search-input-container">
-      <input class="search-input" type="text" placeholder="请输入题库名/标签" bind:value={search_input} />
-      {#if search_input.length > 0}
-        <button
-          class="search-input-clear-btn"
-          onclick={() => {
-            search_input = '';
-          }}
-        >
-          <span>⨉</span>
-        </button>
-      {/if}
-    </div>
-
-       
+  <div class="input">
+    <input  bind:value={search_input} placeholder="请输入题库名/标签"     oninput={()=>{getBankList();}}/>
+  </div>
+           
     <div class="operation-btns">
       <button class="button-delete" onclick={()=>{
         deleteMessageBox()
@@ -550,6 +545,7 @@ o888o o888o   "888" o888o o888o o888o o888o
 
     </div>
   </div>
+
 
   <!-- 题库列表 -->
   <div class="bank-container">
@@ -624,6 +620,7 @@ o.  )88b   888 .    `888'     888  888    .o
  
 
   .question-bank-container {
+  
     position: relative;
     display: block;
     width: 100%;
@@ -635,11 +632,10 @@ o.  )88b   888 .    `888'     888  888    .o
     display: flex;
     position: absolute;
     top: 0;
-    left: 0;
+    left: 5px;
     width: 100%;
     height: 50px;
     padding: 2px;
-    padding-left: 25px;
     box-sizing: border-box;
     justify-content: flex-start;
     align-items: center;
@@ -657,58 +653,7 @@ o.  )88b   888 .    `888'     888  888    .o
       white-space: nowrap;
     }
 
-    .search-input-container {
-      display: flex;
-      position: relative;
-      justify-content: flex-start;
-      align-items: center;
-      width: 45%;
-      min-width: 250px;
-      max-width: 400px;
-      height: max-content;
-      box-sizing: border-box;
-      margin-right: 20px;
-
-      .search-input {
-        width: 100%;
-        height: 30px;
-        border: none;
-        padding: 2px 2px 2px 2px;
-        border-left: 2px solid #dddddd;
-        background-color: rgb(240, 240, 240);
-        box-sizing: border-box;
-        font-family: 'PingFangSC-Regular', 'PingFang SC', sans-serif;
-        color: #999999;
-        text-align: left;
-
-        &:focus {
-          outline: none;
-          border-left: 2px solid #87adec;
-          color: #333333;
-        }
-
-        &:hover {
-          border-left: 2px solid #87adec;
-        }
-      }
-
-      .search-input-clear-btn {
-        position: absolute;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 20px;
-        height: 20px;
-        right: 1%;
-        border: none;
-        border-radius: 3px;
-        background-color: transparent;
-        cursor: pointer;
-        &:hover {
-          background-color: #45454524;
-        }
-      }
-    }
+ 
 
     .operation-btns {
       display: flex;
@@ -757,16 +702,11 @@ o.  )88b   888 .    `888'     888  888    .o
 
   .bank-container {
     position: absolute;
-    top: 50px;
     left: 0;
     right: 0;
     bottom: 0;
-    overflow-y: auto;
-    box-sizing: border-box;
-    padding: 10px 15px 10px 15px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;;
+    top: 50px;
 
     .bank-list {
       display: flex;

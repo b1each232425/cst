@@ -50,8 +50,6 @@
   /** @type {Array<{id: string, serial_number: number}>} */
   let selectedStudentIds = $state([]);
 
-  
-
   //练习复选框状态
   let is_all_selected = $state(false);
 
@@ -468,15 +466,15 @@
    * 学生选择确认回调
    * @param {Array<{id: string, serial_number: number}>} selected - 选中的学生
    */
-  async function handleStudentSelectionConfirm(newStudents, selected) {
+  async function handleStudentSelectionConfirm(newStudents, selected,is_deleted_all) {
     if (!currentPractice) return;
     const UPDATE_STUDENTS = () => {
       // 调用API更新练习的学生
       const requestBody = {
-        Action: 'POST',
+        Action: is_deleted_all?'clear':'POST',
         Data: {
           practice_id: currentPractice.ID,
-          student: selectedStudentIds.map((s) => s.id), // 发送学生 ID 数组
+          student: is_deleted_all?[]:selectedStudentIds.map((s) => s.id), // 发送学生 ID 数组
         },
       };
 
@@ -520,28 +518,28 @@
       })
         .then((res) => {
           if (!res.ok) {
-            return res.text().then((msg) => {
-              throw new Error(`导入失败: ${res.status} ${res.statusText} - ${msg}`);
-            });
+            throw new Error('导入失败');
           }
           return res.json();
         })
         .then((result) => {
           if (result.status !== 0) {
-            throw new Error(result.msg || '导入失败');
+            throw new Error('导入失败');
           }
-          console.log('333333',selectedStudentIds)
+          console.log('333333', selectedStudentIds);
           //获取新增之后的学生ID
           let studentIds = result.data.map((item) => ({
-            id: item.ID
+            id: item.ID,
           }));
           //获取已经有账号的学生的ID
-          let existStudentIds = selected.filter((item) => item.id).map((item) => ({
-            id: item.id
-          }));
-         
+          let existStudentIds = selected
+            .filter((item) => item.id)
+            .map((item) => ({
+              id: item.id,
+            }));
+
           //检验是否有相同的ID，进行过滤
-           existStudentIds = existStudentIds.filter((item) => !selectedStudentIds.some((item2) => item2.id === item.id));
+          existStudentIds = existStudentIds.filter((item) => !selectedStudentIds.some((item2) => item2.id === item.id));
           //创建需要关联的学生ID
           selectedStudentIds = [...selectedStudentIds, ...studentIds, ...existStudentIds];
           // 导入成功后执行创建练习
@@ -553,17 +551,23 @@
         });
     } else {
       //获取已经有账号的学生的ID
-      console.log("selecteds",selected)
-      let existStudentIds = selected.filter((item) => item.ID).map((item) => ({
-            id: item.ID
-          }));
+      console.log('selecteds', selected);
+      let existStudentIds = selected
+        .filter((item) => item.ID)
+        .map((item) => ({
+          id: item.ID,
+        }));
+
      
-       //检验是否有相同的ID，进行过滤
-           existStudentIds = existStudentIds.filter((item) => !selectedStudentIds.some((item2) => item2.id === item.id));
-            console.log('existStudentIds', existStudentIds);
-            
+      console.log('existStudentIds', existStudentIds);
+
       //创建需要关联的学生ID
-      selectedStudentIds = [...selectedStudentIds, ...existStudentIds];
+      selectedStudentIds = existStudentIds.map((item) => ({
+        ...item,
+        id: item.id,
+}));
+      console.log('selectedStudentIds', selectedStudentIds);
+
 
       UPDATE_STUDENTS().catch((error) => {
         console.error('编辑练习请求异常:', error);
@@ -955,6 +959,7 @@
     </div>
     <div class="pagination-container" data-testid="pagination-container">
       <Pagination
+        class="pagination-container"
         total_items={total_data_num}
         page_size={data_per_page}
         current_page={current_page_num}
@@ -1007,23 +1012,24 @@
   <!-- 学生选择面板 -->
   <StudentSelectionPanel
     show_panel={show_student_selectionPanel}
-    ids={selectedStudentIds.map(item=>({
-      ID : item.id,
-      ...item
+    ids={selectedStudentIds.map((item) => ({
+      ID: item.id,
+      ...item,
     }))}
     onCancel={() => {
       show_student_selectionPanel = false;
     }}
     practice_id={practiceID}
-    onConfirm={(newStudents, selected) => {
-      newStudents = newStudents.map((item)=>({
+    onConfirm={(newStudents, selected,is_deleted_all) => {
+      newStudents = newStudents.map((item) => ({
         ...item,
-        Domains:['cst.school^student']
-      }))
-      handleStudentSelectionConfirm(newStudents, selected);
+        Domains: ['cst.school^student'],
+      }));
+      console.log('123131231', selected);
+      console.log('newStudents', newStudents);
+      handleStudentSelectionConfirm(newStudents, selected,is_deleted_all);
       show_student_selectionPanel = false;
       setTimeout(() => {
-       
         window.location.reload();
       }, 1000);
     }}
@@ -1260,6 +1266,11 @@
           background-color: white;
           &:hover {
             opacity: 0.9;
+          }
+          /* 添加禁用状态样式 */
+          &:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
           }
         }
       }

@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 15:21:42
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-14 17:17:04
+ * @LastEditTime: 2025-08-17 21:31:39
  * @FilePath: \exam\src\routes\teacher\paper\+page.svelte
  * @Description: 试卷列表页面
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -18,7 +18,7 @@
     import UneditableTag from "$lib/components/Tag/UneditableTag.svelte";
     import "$lib/components/Button/index.scss"
     import "$lib/components/Input/index.scss"
-    import { LEVEL_TRANS, CATEGORY_TRANS, ASSEMBLY_TYPE_TRANS } from "./_utils/tool";
+    import { LEVEL_TRANS, CATEGORY_TRANS, ASSEMBLY_TYPE_TRANS, utf8MaxLength } from "./_utils/tool";
     import { goto } from "$app/navigation";
     import { debounce } from "$lib/utils/optimize";
     import { onMount } from "svelte";
@@ -49,10 +49,14 @@
                 return response.json();
             })
             .then(data => {
-                if (data.status !== 0) toast.error(data.msg, 1000);
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
+                // console.log(data);
                 return data;
             })
             .catch(error => {
+                toast.error(error.message, 1000);
                 console.error('自定义组卷出错：', error);
                 return null;
             });
@@ -76,20 +80,24 @@
             credentials: "include",
             body: JSON.stringify(DATA)
         })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`请求失败，状态码：${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status !== 0) toast.error(data.msg, 1000);
-                return data;
-            })
-            .catch(error => {
-                console.error('删除试卷出错：', error);
-                return null;
-            });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`请求失败，状态码：${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status !== 0){
+                throw new Error(data.msg);  
+            }
+            // console.log(data);
+            return data;
+        })
+        .catch(error => {
+            toast.error(error.message, 1000);
+            console.error('删除试卷出错：', error);
+            return null;
+        });
     }
 
     // 获取试卷列表
@@ -106,23 +114,26 @@
         if (paperTags) PARAMS.append("tags", paperTags);
         PARAMS.append("page", paperPage);
         PARAMS.append("pageSize", paperPageSize);
-        if (paperCategory) PARAMS.append("category", paperCategory);
+        PARAMS.append("category", paperCategory);
 
         return fetch(`/api/paper?${PARAMS.toString()}`, {
             method: "GET",
             credentials: "include"
         })
-            .then(response => {
+        .then(response => {
                 if (!response.ok) {
                     throw new Error(`请求失败，状态码：${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
-                if (data.status !== 0) toast.error(data.msg, 1000);
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
                 return data;
             })
             .catch(error => {
+                toast.error(error.message, 1000);
                 console.error('获取试卷列表出错：', error);
                 return null;
             });
@@ -143,10 +154,7 @@
         SELECTED_PAPER_IDS.update(current => {
             if (checked) {
                 // 添加 ID（防止重复）
-                if (!current.includes(ID)) {
-                    return [...current, ID];
-                }
-                return current;
+                return [...current, ID];
             } else {
                 // 移除 ID
                 return current.filter(item => item !== ID);
@@ -190,11 +198,14 @@
         SELECTED_PAPER_IDS.set([]);
         
         fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
-        .then(result => {
-            if (result) {
-                total_papers = result.rowCount;
-                paper_list = result.data || [];
-            }
+            .then(result => {
+                if (result) {
+                    total_papers = result.rowCount;
+                    paper_list = result.data || [];
+                } else {
+                    total_papers = 0;
+                    paper_list = [];
+                }
         });
     }
 
@@ -205,8 +216,11 @@
             .then(result => {
                 if (result) {
                     total_papers = result.rowCount;
-                    paper_list = result.data || [];
+                    paper_list = result.data;
                     checkAllSelected();
+                } else {
+                    total_papers = 0;
+                    paper_list = [];
                 }
             });
     }
@@ -221,6 +235,9 @@
                     total_papers = result.rowCount;
                     paper_list = result.data || [];
                     checkAllSelected();
+                } else {
+                    total_papers = 0;
+                    paper_list = [];
                 }
             });
     }
@@ -228,11 +245,14 @@
     // 防抖搜索试卷
     const debouncedFetchPaperList = debounce(() => {
         fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
-        .then(result => {
-            if (result) {
-                total_papers = result.rowCount;
-                paper_list = result.data || [];
-            }
+            .then(result => {
+                if (result) {
+                    total_papers = result.rowCount;
+                    paper_list = result.data || [];
+                } else {
+                    total_papers = 0;
+                    paper_list = [];
+                }
         });
     }, 500, false);
 
@@ -245,16 +265,14 @@
     // 自定义组卷
     function manual() {
         createEmptyPaper().then( result => {
-            if (result && result.data && result.data.paper && result.data.paper.ID) {
+            if (result && result.data && result.data.paper) {
                 CURRENT_PAPER_ID.set(result.data.paper.ID);
                 goto('/teacher/paper/manual');
-            } else {
-                console.error('创建试卷失败：返回数据无效');
             }
         });
     }
 
-    // 编辑试卷
+    // 修改试卷
     function editPaper(ID) {
         CURRENT_PAPER_ID.set(ID);
         goto('/teacher/paper/manual');
@@ -276,6 +294,10 @@
                                 if (result) {
                                     total_papers = result.rowCount;
                                     paper_list = result.data || [];
+                                    SELECTED_PAPER_IDS.update(current => current.filter(id => id !== ID));
+                                } else {
+                                    total_papers = 0;
+                                    paper_list = [];
                                 }
                             })
                     });
@@ -297,16 +319,22 @@
 
             onConfirm: () => {
                 deletePaper(SELECTED_IDS)
-                    .then(() => {
-                        toast.success("删除成功", 1000);
-                         SELECTED_PAPER_IDS.update(current => current.filter(id => !SELECTED_IDS.includes(id)));
-                        fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
-                            .then(result => {
-                                if (result) {
-                                    total_papers = result.rowCount;
-                                    paper_list = result.data || [];
-                                }
-                            })
+                    .then(result1 => {
+                        if (result1) {
+                            toast.success("删除成功", 1000);
+                            SELECTED_PAPER_IDS.update(current => current.filter(id => !SELECTED_IDS.includes(id)));
+                            fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
+                                .then(result2 => {
+                                    if (result2) {
+                                        total_papers = result2.rowCount;
+                                        paper_list = result2.data || [];
+                                        SELECTED_PAPER_IDS.update(current => current.filter(id => !SELECTED_IDS.includes(id)));
+                                    } else {
+                                        total_papers = 0;
+                                        paper_list = [];
+                                    }
+                                })
+                        }
                     });
             }
         });
@@ -330,8 +358,12 @@
                 return response.json();
             })
             .then(result => {
-                const PREVIEW_QUESTIONS = result.data;
 
+                if (result.status !== 0){
+                    throw new Error(result.msg);  
+                }
+
+                const PREVIEW_QUESTIONS = result.data;
                 
                 if (category === "00") {
                     localStorage.setItem(
@@ -348,7 +380,8 @@
                 }
             })
             .catch(error => {
-                console.error('获取试卷详情出错：', error);
+                toast.error(error.message, 1000);
+                console.error('预览试卷出错：', error);
                 return null;
             });
     }
@@ -362,7 +395,9 @@
                 if (result) {
                     total_papers = result.rowCount;
                     paper_list = result.data || [];
-                    // console.log(result)
+                } else {
+                    total_papers = 0;
+                    paper_list = [];
                 }
             });
     });
@@ -386,9 +421,10 @@
                         bind:value={$SEARCH_PAPER_NAME}
                         oninput={()=>debouncedFetchPaperList()}
                         onchange={()=>debouncedFetchPaperList()}
+                        use:utf8MaxLength={50}
                     > 
                     <!-- svelte-ignore a11y_consider_explicit_label -->
-                    <button data-name="clear" class="{$SEARCH_PAPER_NAME===""?"hide-clear":""}" onclick={()=>{SEARCH_PAPER_NAME.set("")}}></button>
+                    <button data-name="clear" class="clear-name-btn {$SEARCH_PAPER_NAME===""?"hide-clear":""}" onclick={()=>{SEARCH_PAPER_NAME.set("")}}></button>
                 </div>
             </div>
 
@@ -401,9 +437,10 @@
                         bind:value={$SEARCH_PAPER_TAGS}
                         oninput={()=>debouncedFetchPaperList()}
                         onchange={()=>debouncedFetchPaperList()}
+                        use:utf8MaxLength={50}
                     >
                     <!-- svelte-ignore a11y_consider_explicit_label -->
-                    <button data-name="clear" class="{$SEARCH_PAPER_TAGS===""?"hide-clear":""}" onclick={()=>{SEARCH_PAPER_TAGS.set("")}}></button>
+                    <button data-name="clear" class="clear-tags-btn {$SEARCH_PAPER_TAGS===""?"hide-clear":""}" onclick={()=>{SEARCH_PAPER_TAGS.set("")}}></button>
                 </div>
             </div>
         </div>

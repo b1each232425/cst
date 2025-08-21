@@ -22,6 +22,8 @@
   import { toast } from '$lib/components/Toast/Toast';
   import { CURRENT_PAPER_ID } from './_stores/previewStore';
   import Empty from '$lib/components/Table/Empty.svelte';
+  import ExcelJS from 'exceljs';
+  //import SessionSelection from './_components/SessionSelection.svelte';
   let exam_list = $state([]);
   let name_search_time = null;
   let loading = $state(false);
@@ -38,6 +40,9 @@
   let examID_to_cancel = $state(false);
   let cancel_exam_dialog = $state(false);
   let preview_id = $state([]);
+  let acquire_id = $state(false);
+  let show_session_panel = $state(false);
+
   // 映射关系
   const TypeMap = {
     '00': '平时考试',
@@ -336,6 +341,64 @@
       })
   }
 
+
+  async function acquireExaminee(index) {
+     fetch(`/api/exam/examinee?exam_id=${acquire_id}`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      .then((response)=>response.json())
+      .then((result)=>{
+        if(result.status===0){
+        const examinees = result.data;
+        console.log("examinee",examinees);
+        if(examinees===null)
+        {
+          toast.warning("本场考试还未导入考生");
+          return;
+        }
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('考生名单');
+
+      sheet.columns = [
+        { header: '序号', key: 'serial_number', width: 10 },
+        { header: '姓名', key: 'official_name', width: 16 },
+        { header: '账号', key: 'account', width: 20 },
+        { header: '身份证号', key: 'id_card_no', width: 22 }
+      ];
+
+      sheet.addRows(examinees);               
+      sheet.getRow(1).font = { bold: true };  // 表头加粗
+      
+       return workbook.xlsx.writeBuffer()            //  生成 xlsx 
+      .then(buffer => {
+        const blob = new Blob([buffer], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${exam_list[index].name}考生名单.xlsx`; // 2. 改后缀
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      });
+
+      }
+        else{
+             throw new Error(result.msg);
+            }
+        })
+      .catch((error)=>{
+          console.log("错误提示:",error);
+          const msg = error.message;
+          toast.error(msg);
+      })
+  }
+
   function handleCheckBoxChange(data,event){
      const examID = data.id;
      const is_selected = selected_exam_ids.includes(examID);
@@ -360,6 +423,39 @@ function handleSelectAll(event) {
   }
 }
 
+function previewPaper(ID, category) {
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("paper_id", ID);
+        PARAMS.append("mode", "preview");
+
+        fetch(`/api/paper/manual?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                const PREVIEW_QUESTIONS = result.data;
+
+                
+                if (category === "00") {
+                    localStorage.setItem(
+                        "examQuestions",
+                        JSON.stringify(PREVIEW_QUESTIONS),
+                    );
+                    window.location.href = "/student/answer/exam";
+                } 
+            })
+            .catch(error => {
+                console.error('获取试卷详情出错：', error);
+                return null;
+            });
+    }
 
   onMount(() => {
     searchExam();
@@ -403,7 +499,7 @@ function handleSelectAll(event) {
       发布考试</button
     >
 
-    <span class="{status == '00'||status == '02'|| status == '04' ? 'hideButton' : 'EmptyData'} "> -- </span>
+    <span class="{status == '00'||status == '02'|| status == '04' || status == '06' ? 'hideButton' : 'EmptyData'} "> -- </span>
 
     <button class="delete-exam-button action-button {status !== '00' ? 'hideButton' : ''}"
     onclick={(event)=>{
@@ -417,16 +513,31 @@ function handleSelectAll(event) {
     onclick={()=>{
             preview_id = exam_list[index].exam_sessions.map(session => session.paper_id);
             CURRENT_PAPER_ID.set(preview_id);
-            console.log(preview_id);
             goto(`/teacher/exam/previewExam/${preview_id[0]}`)
             
         }}>预览试卷</button>
+        <!-- <button class="preview-exam-button action-button {status!='00'&&status!='02'&&status!='04' ?'hideButton' : ''}"
+         onclick={()=>{
+          event.stopPropagation();
+          preview_id = exam_list[index].exam_sessions.map(session => session.paper_id);
+          // CURRENT_PAPER_ID.set(preview_id);
+          // previewPaper(preview_id[0],"00")
+          show_session_panel=true;
+         }
+        }>预览试卷</button> -->
     <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}"
     onclick={(event)=>{
             event.stopPropagation(); // 阻止冒泡
             examID_to_cancel=exam_list[index].id
             cancel_exam_dialog=true;
         }}>考试作废</button>
+    
+    <button class="acquire-examinee-button action-button {status === '16' || status === '10' ||status === '00' ? 'hideButton' : ''} "
+    onclick={(event)=>{
+            event.stopPropagation(); // 阻止冒泡
+            acquire_id=exam_list[index].id;
+            acquireExaminee(index);
+        }}>获取考生名单</button>
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">监考管理</button> -->
     <!-- <button class="more-action-button action-button {status !== '04' ? 'hideButton' : ''}">操作日志</button> -->
     <!-- <button class="unpublished-more-action-button action-button {status !== '00' ? 'hideButton' : ''}"
@@ -610,6 +721,10 @@ function handleSelectAll(event) {
       page_size_options={[10, 20, 30, 40, 50]}
     />
   </div>
+  
+
+
+
 </div>
 
 <style lang="scss" scoped>
@@ -875,5 +990,30 @@ function handleSelectAll(event) {
   .deleteCheck{
    transform: scale(1.4);
    outline:none;
+  }
+
+  .sessionPanelContainer{
+    position: fixed;
+    top: 0%;
+    left: 0%;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.25); /* 半透明遮罩层 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    .sessionPanel{
+    width: 1000px;
+    min-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    z-index: 1001;
+    }
   }
 </style>

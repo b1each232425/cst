@@ -4,7 +4,7 @@
  * @LastEditors: WangKaidun 1597225095@qq.com
  * @LastEditTime: 2025-08-07 11:35:22
  * @FilePath: \exam\src\routes\teacher\paper\_utils\tool.js
- * @Description: 对后端返回参数的映射
+ * @Description: 一些工具函数
  * Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
  */
 // @ts-nocheck
@@ -52,3 +52,38 @@ export const DIFFICULTY_TRANS = {
     "中等": "normal-level",
     "困难": "hard-level"
 };
+
+/**
+ * @description: 以UTF-8字符为单位限制输入字符长度
+ * @example: <input use:utf8MaxLength={10} bind:value />
+ */
+export function utf8MaxLength(node, maxBytes) {
+    function handleInput(e) {
+        const value = e.target.value;
+
+        if (new TextEncoder().encode(value).length > maxBytes) {
+        // 超出字节限制时，找到合法的子串
+        let valid = value;
+        while (new TextEncoder().encode(valid).length > maxBytes) {
+            valid = valid.slice(0, -1); // 从后删一个字符
+        }
+        e.target.value = valid;
+
+        // 触发 input 事件，保证绑定的值同步更新
+        node.dispatchEvent(new Event("input"));
+        }
+    }
+
+    node.addEventListener("input", handleInput);
+
+    return {
+        // 动态更新maxBytes（暂不需要）
+        // update(newMaxBytes) {
+        // maxBytes = newMaxBytes;
+        // },
+        destroy() {
+        node.removeEventListener("input", handleInput);
+        }
+    };
+}
+  

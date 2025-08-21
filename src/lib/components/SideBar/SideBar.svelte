@@ -7,9 +7,6 @@
   import { toast } from '$lib/components/Toast/Toast.js';
   import { beforeNavigate } from '$app/navigation';
 
-  let nav_map = $state();
-  let current_path = $derived(page.url.pathname);
-  let is_auto_fold = false;
   // 需要自动折叠的路径
   const NEED_FOLD_NAV = [
     '/teacher/question-bank/theory/editBank',
@@ -23,69 +20,83 @@
     /\/teacher\/grade\/practice-grade\/detail\?id=\d+/,
   ];
 
-  /**
-   * 侧边栏折叠状态
-   */
-  let sidebar_fold_state = $state(false);
+  let { nav_map = [] } = $props();
 
-  /**
-   * 侧边栏是否正在折叠中
-   */
-  let sidebar_is_folding = $state(false);
+  // 参数校验
+  (() => {
+    const validateItem = (item, path = '') => {
+      const requiredFields = ['name', 'title', 'path'];
+      for (const field of requiredFields) {
+        if (!(field in item)) {
+          console.warn(`[SideBar] ${path} 缺少必需字段: ${field}`);
+          return false;
+        }
+        if (typeof item[field] !== 'string') {
+          console.warn(`[SideBar] ${path}.${field} 必须是字符串，当前为 ${typeof item[field]}`);
+          return false;
+        }
+      }
 
-  /**
-   * 侧边栏是否已经折叠
-   */
-  let sidebar_is_folded = $state(false);
+      if ('icon' in item && typeof item.icon !== 'string') {
+        console.warn(`[SideBar] ${path}.icon 必须是字符串，当前为 ${typeof item.icon}`);
+        return false;
+      }
 
-  /**
-   * 侧边栏是否悬浮
-   */
-  let side_float = $state(false);
+      const booleanFields = ['children_is_parallel', 'isFilter'];
+      for (const field of booleanFields) {
+        if (field in item && typeof item[field] !== 'boolean') {
+          console.warn(`[SideBar] ${path}.${field} 必须是布尔值，当前为 ${typeof item[field]}`);
+          return false;
+        }
+      }
 
-  /**
-   * 侧边栏折叠状态提示
-   */
-  let sidebar_fold_str = $state('收起侧边栏');
+      if ('children' in item) {
+        if (!Array.isArray(item.children)) {
+          console.warn(`[SideBar] ${path}.children 必须是数组，当前为 ${typeof item.children}`);
+          return false;
+        }
+        return item.children.every((child, i) => validateItem(child, `${path}.children[${i}]`));
+      }
 
-  /**
-   * 当前选中的路由路径
-   */
-  let current_active = $state('/');
+      return true;
+    };
 
-  /**
-   * 侧边栏导航项数据
-   * @type {HTMLDivElement}
-   */
-  let sidebar_container_element = $state(null);
+    if (!Array.isArray(nav_map)) {
+      console.warn(`[SideBar] nav_map 必须是数组，当前为 ${typeof nav_map}`);
+      nav_map = [];
+      return;
+    }
 
-  /**
-   * 侧边栏组件
-   * @type {HTMLDivElement}
-   */
-  let sidebar_element = $state();
+    const isValid = nav_map.every((item, i) => validateItem(item, `nav_map[${i}]`));
+    if (!isValid) {
+      nav_map = [];
+    }
+  })();
 
-  /**
-   * 侧边栏折叠按钮
-   * @type {HTMLButtonElement}
-   */
-  let sidebar_toggle_btn = $state();
+  let current_path = $derived(page.url.pathname); // 当前路径
+  let is_auto_fold = $state(false); // 侧边栏是否自动折叠
+  let sidebar_fold_state = $state(false); // 侧边栏折叠状态
+  let sidebar_is_folding = $state(false); // 侧边栏是否正在折叠中
+  let sidebar_is_folded = $state(false); // 侧边栏是否已经折叠
+  let side_float = $state(false); // 侧边栏是否悬浮
+  let sidebar_fold_str = $state('收起侧边栏'); // 侧边栏折叠状态提示
+  let is_hydrated = $state(false); // 是否展示侧边栏
+  let current_active = $state('/'); // 当前选中的路由路径
+  let sidebar_container_element = $state(null); // 侧边栏导航项数据DOM
+  let sidebar_element = $state(); // 侧边栏组件DOM
+  let sidebar_toggle_btn = $state(); // 侧边栏折叠按钮DOM
+  let sidebar_mouse_enter_timeout = $state(null); // 侧边栏鼠标进入定时器
+  let sidebar_mouse_leave_timeout = $state(null); // 侧边栏鼠标离开定时器
 
-  /**
-   * 侧边栏鼠标进入定时器
-   * @type {number}
-   */
-  let sidebar_mouse_enter_timeout = $state(null);
+  // 保存侧边栏状态到本地(数据持久化)
+  function saveSidebarState() {
+    localStorage.setItem('is_auto_fold', is_auto_fold.toString());
+    localStorage.setItem('sidebar_fold_state', sidebar_fold_state.toString());
+    localStorage.setItem('sidebar_is_folded', sidebar_is_folded.toString());
+    localStorage.setItem('sidebar_fold_str', sidebar_fold_str);
+  }
 
-  /**
-   * 侧边栏鼠标离开定时器
-   * @type {number}
-   */
-  let sidebar_mouse_leave_timeout = $state(null);
-
-  /**
-   * 切换侧边栏折叠状态
-   */
+  // 切换侧边栏折叠状态
   function toggleSidebar(foldState) {
     side_float = false;
     sidebar_fold_state = foldState != null ? foldState : !sidebar_fold_state;
@@ -104,11 +115,10 @@
     );
 
     is_auto_fold = false;
+    saveSidebarState();
   }
 
-  /**
-   * 侧边栏折叠动画结束事件处理函数
-   */
+  // 侧边栏折叠动画结束事件处理函数
   function sidebarTransitionendHandle() {
     if (!sidebar_is_folding) {
       return;
@@ -116,6 +126,7 @@
 
     sidebar_is_folding = false;
     sidebar_is_folded = true;
+    saveSidebarState();
   }
 
   /**
@@ -141,6 +152,7 @@
 
       sidebar_element.style.setProperty('--sidebar-min-width', '0px');
     }, 500);
+    saveSidebarState();
   }
 
   /**
@@ -161,6 +173,7 @@
 
       side_float = false;
     }, 500);
+    saveSidebarState();
   }
 
   /**
@@ -175,10 +188,7 @@
     }
   }
 
-  /**
-   * 处理侧边栏导航项点击事件
-   * @param { NavMapData } item 导航项数据
-   */
+  // 处理侧边栏导航项点击事件
   function handleSidebarItemClick(item) {
     if (item.children != null && item.children.length > 0 && item.children_is_parallel) {
       item.fold = !item.fold;
@@ -190,10 +200,7 @@
     goto(item.path);
   }
 
-  /**
-   * 检查导航项是否有子路由
-   * @param { NavMapData } item 导航项数据
-   */
+  // 检查导航项是否有子路由
   function checkItemHasChildren(item, childrenPath) {
     if (item.children == null || item.children.length <= 0) {
       return false;
@@ -208,30 +215,7 @@
     return false;
   }
 
-  // 获取用户权限并生成 nav_map
-  function getUserInfo() {
-    fetch('/api/user/me')
-      .then((response) => response.json())
-      .then(async (data) => {
-        if (!data?.data?.APIs) throw new Error('APIs 数据不存在');
-
-        const allowedPaths = await data.data.APIs.map((api) => api.APIExposePath);
-
-        // 过滤 baseNavItems，只保留匹配的父级菜单
-        nav_map = $baseNavItems.filter((item) => {
-          return allowedPaths.includes(item.path); // 只匹配一级菜单的 path
-        });
-      })
-      .catch((error) => {
-        nav_map = []; // 失败时设为空数组
-        console.error('获取用户权限失败:', error);
-        toast.error('获取用户权限失败：', error);
-      });
-  }
-
-  /**
-   * 正则匹配路径
-   */
+  // 正则匹配路径
   function regexMatch(path, path_regex) {
     return new RegExp(`${path_regex}`).test(path);
   }
@@ -240,7 +224,6 @@
   beforeNavigate(({ from, to, cancel }) => {
     if (to) {
       const targetPath = to.url.pathname + to.url.search; // 包括路径和查询参数
-      console.log(targetPath);
 
       // 遍历 NEED_FOLD_NAV，检查是否匹配
       if (
@@ -263,49 +246,76 @@
         }
         is_auto_fold = false; // 路径变化后取消自动折叠
       }
+      saveSidebarState();
     }
   });
 
+  // 从localStorage加载侧边栏状态
+  function loadSidebarState() {
+    const savedAutoFold = localStorage.getItem('is_auto_fold');
+    const savedFoldState = localStorage.getItem('sidebar_fold_state');
+    const savedIsFolded = localStorage.getItem('sidebar_is_folded');
+    const savedFoldStr = localStorage.getItem('sidebar_fold_str');
+
+    // 只有存在值时才恢复状态
+    if (savedAutoFold !== null) is_auto_fold = savedAutoFold === 'true';
+    if (savedFoldState !== null) sidebar_fold_state = savedFoldState === 'true';
+    if (savedIsFolded !== null) sidebar_is_folded = savedIsFolded === 'true';
+    if (savedFoldStr !== null) sidebar_fold_str = savedFoldStr;
+
+    // 确保DOM更新后应用折叠状态
+    setTimeout(() => {
+      if (sidebar_toggle_btn) {
+        sidebar_toggle_btn.style.setProperty(
+          '--sidebar-toggle-btn-translate-x',
+          `${sidebar_fold_state ? sidebar_toggle_btn.offsetWidth : 0}px`,
+        );
+      }
+    }, 0);
+
+    is_hydrated = true;
+  }
+
   onMount(() => {
+    // 加载保存的状态
+    loadSidebarState();
+
     // 当窗口大小变化时，调用handleResize函数,当宽度太小自动收起侧边栏
     window.addEventListener('resize', handleResize);
 
     // 更新当前选中模块并高亮
     current_active = window.location.pathname;
-
-    // 获取用户信息
-    getUserInfo();
   });
 </script>
 
-<div
-  class="sidebar-container"
-  bind:this={sidebar_container_element}
-  role="region"
-  onmouseenter={() => sidebarMouseEnter()}
-  onmouseleave={() => sidebarMouseLeave()}
-  data-testid="sidebar-container"
->
-  <!-- 侧边栏内容 -->
+{#if is_hydrated}
   <div
-    class="sidebar-content"
-    class:folding={sidebar_is_folding}
-    class:folded={sidebar_is_folded}
-    class:float={side_float}
-    bind:this={sidebar_element}
-    ontransitionend={() => sidebarTransitionendHandle()}
-    data-testid="sidebar-content"
+    class="sidebar-container"
+    bind:this={sidebar_container_element}
+    role="region"
+    onmouseenter={() => sidebarMouseEnter()}
+    onmouseleave={() => sidebarMouseLeave()}
+    data-testid="sidebar-container"
   >
-    <button class="logo">
-      <div class="logo-svg">3min</div>
-    </button>
+    <!-- 侧边栏内容 -->
+    <div
+      class="sidebar-content"
+      class:folding={sidebar_is_folding}
+      class:folded={sidebar_is_folded}
+      class:float={side_float}
+      bind:this={sidebar_element}
+      ontransitionend={() => sidebarTransitionendHandle()}
+      data-testid="sidebar-content"
+    >
+      <button class="logo">
+        <div class="logo-svg">3min</div>
+      </button>
 
-    <!-- 导航项内容 -->
-    {#snippet Sidebar(navMapData)}
-      <ul class="sidebar-content-main">
-        {#each navMapData as item}
-          {#snippet Item(it, level)}
-            {#if !it.force_hide}
+      <!-- 导航项内容 -->
+      {#snippet Sidebar(navMapData)}
+        <ul class="sidebar-content-main">
+          {#each navMapData as item}
+            {#snippet Item(it, level)}
               {#snippet ItemContent(i, level)}
                 <div class="sidebar-item-content" style={`--level: ${level}`}>
                   {#if i.icon}
@@ -351,36 +361,35 @@
                   {/each}
                 </ul>
               {/if}
-            {/if}
-          {/snippet}
+            {/snippet}
 
-          {@render Item(item, 0)}
-        {/each}
-      </ul>
-    {/snippet}
+            {@render Item(item, 0)}
+          {/each}
+        </ul>
+      {/snippet}
 
-    {@render Sidebar(nav_map)}
+      {@render Sidebar(nav_map)}
+    </div>
+
+    <button
+      class="sidebar-toggle-btn"
+      bind:this={sidebar_toggle_btn}
+      title={sidebar_fold_str}
+      onclick={() => toggleSidebar()}
+    >
+      {#if sidebar_fold_state}
+        <img src="/sidebar/unfold.svg" alt="展开侧边栏" />
+      {:else}
+        <img src="/sidebar/fold.svg" alt="收起侧边栏" />
+      {/if}
+    </button>
   </div>
-
-  <button
-    class="sidebar-toggle-btn"
-    bind:this={sidebar_toggle_btn}
-    title={sidebar_fold_str}
-    onclick={() => toggleSidebar()}
-  >
-    {#if sidebar_fold_state}
-      <img src="/sidebar/unfold.svg" alt="展开侧边栏" />
-    {:else}
-      <img src="/sidebar/fold.svg" alt="收起侧边栏" />
-    {/if}
-  </button>
-</div>
+{/if}
 
 <style lang="scss" scoped>
   .sidebar-container {
     position: relative;
     display: flex;
-    width: max-content;
     height: 100%;
     background-color: rgba(243, 243, 243, 0);
 

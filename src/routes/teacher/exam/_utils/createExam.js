@@ -39,9 +39,17 @@ export function updateDuration(index,paper_configs) {
 
     paper_configs[index].duration = Math.max(0, durationInMinutes);
     paper_configs[index].maxDuration = Math.max(0, durationInMinutes);
+    // 新增：自动调整提前交卷时间和迟到进入时间
+    if (paper_configs[index].earlySubmissionTime > durationInMinutes) {
+        paper_configs[index].earlySubmissionTime = durationInMinutes;
+    }
+    
+    if (paper_configs[index].lateEntryTime > durationInMinutes) {
+        paper_configs[index].lateEntryTime = Math.min(durationInMinutes, 1); // 确保最小为1分钟
+    }
   }
 
-export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, exam_method, paper_configs, exam_examinee = [], invigilators = [] }) {
+export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, exam_method, paper_configs, exam_examinee = [], invigilators = [],uploadedFileList }) {
     /* 1. 必填字段校验（保持原逻辑） */
     if (exam_name === '') {
       toast.warning('请输入考试名称');
@@ -130,7 +138,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
       MarkMethod: cfg.markMethod,
       NameVisibilityIn: !!cfg.nameVisibility,
       ReviewerIds:
-        cfg.markConfig && cfg.markConfig.teacher_mark_configs ? cfg.markConfig.teacher_mark_configs.map((t) => t.id) : [],
+      cfg.markConfig && cfg.markConfig.teacher_mark_configs ? cfg.markConfig.teacher_mark_configs.map((t) => t.id) : [],
       MarkMode: cfg.markMode,
       SessionNum: cfg.sessionNum,
     }));
@@ -138,9 +146,11 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
     // 附加文件：若用户上传了文件，则遍历填充；否则留空数组
     // const fileArr = files.length ? files.map((f) => ({ Name: f.name, Url: f.url || '' })) : [];
 
-    
+    console.log("examinee",exam_examinee);
     const invalid_examinee = exam_examinee.filter(e => !e.id )
-    const valid_examinee = exam_examinee.filter(e => e && e.id).map((item) => item.ID);
+    const valid_examinee = exam_examinee?.length
+  ? exam_examinee.filter(e => e && e.id).map(item => item.id)
+  : [];
     //导入新学生
     if (invalid_examinee.length > 0)
     {
@@ -163,7 +173,10 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
             throw new Error(result.msg || '导入失败');
           }
           let studentIds = result.data.map((item) => item.ID);
+          console.log("valid_examinee:",valid_examinee);
+          console.log("studentIds",studentIds);
           exam_examinee = [...valid_examinee,...studentIds];
+          console.log("exam_examinee:",exam_examinee);
         })
         .catch((error) => {
           console.error('导入学生异常:', error);
@@ -180,8 +193,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
           Rules: exam_rules,
           Type: exam_type,
           Mode: exam_method,
-          Files:[]
-          // Files: fileArr,
+          Files: uploadedFileList
         },
         examSessions: examSessionsdata,
         examinee: exam_examinee.map((e) => e.id ), // 用户选中的考生 id 数组
@@ -203,7 +215,8 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
         if (result.status === 0) {   
           goto('/teacher/exam');
         } else {
-          toast.warning('用户没有创建考试的权限');
+          console.log("错误提示:",result.msg);
+          toast.warning(result.msg);
         }
       })
       .catch((error) => {

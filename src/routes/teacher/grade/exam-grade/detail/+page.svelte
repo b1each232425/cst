@@ -17,6 +17,7 @@
    * @property {string} paper_name - 考卷名称
    * @property {string} start_time - 考试开始时间（ISO格式）
    * @property {string} end_time - 考试结束时间（ISO格式）
+   * @property {string} status - 考试状态
    * @property {number} total_score - 试卷总分
    * @property {number} average_score - 平均分
    * @property {number} scheduled_examinees - 应考人数
@@ -41,12 +42,13 @@
    * @property {number} id - 考试ID
    * @property {string} title - 考试名称
    * @property {string} type - 考试类型
-   * @property {string} examTimeText - 多场考试时间汇总字符串
-   * @property {number} totalScore - 整场考试总分（可取首场试卷分值）
-   * @property {number} averageScore - 加权平均分
-   * @property {number} totalExaminees - 应考人数总和
-   * @property {number} passExaminees - 及格人数总和
+   * @property {string} exam_time_text - 多场考试时间汇总字符串
+   * @property {number} total_score - 整场考试总分（可取首场试卷分值）
+   * @property {number} average_score - 加权平均分
+   * @property {number} total_examinees - 应考人数总和
+   * @property {number} pass_examinees - 及格人数总和
    * @property {boolean} submitted - 是否提交
+   * @property {boolean} canSubmit - 是否可以提交（所有session状态都为'10'）
    * @property {PaperInfo[]} papers - 各试卷详情
    */
 
@@ -55,10 +57,12 @@
    * @property {number} id - 试卷ID(目前是考试场次ID)
    * @property {string} idText - 试卷编号文本，如 "试卷1"
    * @property {string} name - 试卷名称
-   * @property {number} actualExaminees - 实考人数
-   * @property {number} totalScore - 单张试卷总分
-   * @property {number} averageScore - 平均分
-   * @property {string} markMode - 批改模式
+   * @property {number} actual_examinees - 实考人数
+   * @property {number} total_score - 单张试卷总分
+   * @property {number} average_score - 平均分
+   * @property {number} pass_examinees - 通过人数
+   * @property {string} mark_mode - 批改模式
+   * @property {string} status - 考试状态
    */
 
   // 常量定义
@@ -93,7 +97,7 @@
    * @description 在获取到examId前不显示页面内容
    * @default false
    */
-  let isShow = $state(false);
+  let is_show = $state(false);
 
   // 设置上下文
   setContext('exam', {
@@ -109,41 +113,38 @@
    * 格式化考试时间
    */
   function formatExamTime(sessions) {
-    if (!Array.isArray(sessions) || sessions.length === 0) return '--';
+  if (!Array.isArray(sessions) || sessions.length === 0) return '--';
 
-    try {
-      // 格式化考试时间文字，如：试卷1:2025-01-22 09:00-10:00
-      return sessions
-        .map((session, i) => {
-          if (!session.start_time) return `试卷${i + 1}:--`;
+  try {
+    const pad = (n) => n.toString().padStart(2, '0');
 
-          const start = new Date(session.start_time);
-          const end = session.end_time ? new Date(session.end_time) : null;
+    const fmt = (date) => {
+      const y = date.getFullYear();
+      const m = pad(date.getMonth() + 1);
+      const d = pad(date.getDate());
+      const h = pad(date.getHours());
+      const min = pad(date.getMinutes());
+      const s = pad(date.getSeconds());
+      return `${y}-${m}-${d} ${h}:${min}:${s}`;
+    };
 
-          const startStr = start.toLocaleString('zh-CN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-          });
+    return sessions
+      .map((s, i) => {
+        if (!s.start_time) return `试卷${i + 1}:--`;
 
-          if (end) {
-            const endStr = end.toLocaleString('zh-CN', {
-              hour: '2-digit',
-              minute: '2-digit',
-            });
-            const [startDay, startTime] = startStr.split(' ');
-            return `试卷${i + 1}:${startDay} ${startTime}-${endStr}`;
-          }
+        const start = new Date(s.start_time);
+        const end   = s.end_time ? new Date(s.end_time) : null;
 
-          return `试卷${i + 1}:${startStr}`;
-        })
-        .join('  ');
-    } catch (error) {
-      return '--';
-    }
+        const startStr = fmt(start);
+        const endStr   = end ? fmt(end) : '--';
+
+        return `试卷${i + 1}:${startStr} - ${endStr}`;
+      })
+      .join('  ');
+  } catch {
+    return '--';
   }
+}
 
   /**
    * 将原始考试数据转换为更适合展示的结构
@@ -154,43 +155,50 @@
     const sessions = raw.sessions || [];
 
     // 格式化考试时间文字
-    const examTimeText = formatExamTime(sessions);
+    const exam_time_text = formatExamTime(sessions);
 
     // 总应考人数
-    const totalExaminees = sessions.reduce((sum, s) => sum + (s.scheduled_examinees || 0), 0);
+    const total_examinees = sessions.reduce((sum, s) => sum + (s.scheduled_examinees || 0), 0);
 
-    const passExaminees = sessions.reduce((sum, s) => sum + (s.pass_examinees || 0), 0);
+    const pass_examinees = sessions.reduce((sum, s) => sum + (s.pass_examinees || 0), 0);
 
     // 总分，取每个试卷的分数之和
-    const totalScore = sessions.reduce((sum, s) => sum + (s.total_score || 0), 0);
+    const total_score = sessions.reduce((sum, s) => sum + (s.total_score || 0), 0);
 
     // 平均分：加权计算
     const totalActual = sessions.reduce((sum, s) => sum + (s.actual_examinees || 0), 0);
     const weightedTotalScore = sessions.reduce((sum, s) => sum + (s.average_score || 0) * (s.actual_examinees || 0), 0);
-    const averageScore = totalActual === 0 ? 0 : parseFloat((weightedTotalScore / totalActual).toFixed(1));
+    const average_score = totalActual === 0 ? 0 : parseFloat((weightedTotalScore / totalActual).toFixed(1));
 
     // 试卷详情
     const papers = sessions.map((s, i) => ({
       id: s.exam_session_id,
       idText: `试卷${i + 1}`,
       name: s.paper_name,
-      actualExaminees: s.actual_examinees || 0,
-      totalScore: s.total_score || 0,
-      averageScore: s.average_score || 0,
-      markMode: MARK_MODE_MAP[s.mark_mode] || s.mark_mode || '自动批改',
+      actual_examinees: s.actual_examinees || 0,
+      total_score: s.total_score || 0,
+      average_score: s.average_score || 0,
+      pass_examinees: s.pass_examinees || 0,
+      mark_mode: MARK_MODE_MAP[s.mark_mode] || s.mark_mode || '自动批改',
+      status: s.status, // 添加状态字段
     }));
+
+    // 检查所有session的状态是否都为'10'
+    const canSubmit = sessions.every(s => s.status === '10');
+
 
     return {
       id: raw.id,
       title: raw.name,
       type: EXAM_TYPE_MAP[raw.type] || raw.type || '其他考试',
-      examTimeText,
-      totalScore: totalScore,
-      averageScore,
-      totalExaminees,
-      passExaminees,
+      exam_time_text,
+      total_score,
+      average_score,
+      total_examinees,
+      pass_examinees,
       submitted: raw.submitted || false,
       papers,
+      canSubmit, // 添加是否可以提交的标志
     };
   }
 
@@ -284,11 +292,11 @@
     // 获取考试数据
     examData = await fetchExamData(examId);
 
-    isShow = true;
+    is_show = true;
   });
 </script>
 
-{#if isShow}
+{#if is_show}
   <div class="page-container">
     <!-- 主要内容 -->
     <div class="detail-container">
@@ -299,13 +307,13 @@
         </section>
         <!-- 成绩分布图表 -->
         <section class="card chart-section">
-          <GradeChart type="exam" resourceId={examId} papers={examData?.papers || []} />
+          <GradeChart type="exam" resource_id={examId} papers={examData?.papers || []} />
         </section>
       </div>
       <div class="second-row">
         <!-- 学生成绩表格 -->
         <section class="card grade-section">
-          <StudentGradeTable type="exam" resourceId={examId} papers={examData?.papers || []} />
+          <StudentGradeTable type="exam" resource_id={examId} papers={examData?.papers || []} />
         </section>
       </div>
 
@@ -314,7 +322,7 @@
         <!-- <section class="card analysis-section">
 			<AnalysisPanel
 				type="exam"
-				resourceId={examId}
+				resource_id={examId}
 				papers={examData?.papers || []}
 			/>
 		</section> -->
@@ -324,7 +332,8 @@
         <button
           class="submit-button"
           onclick={() => handleExamSubmitted([Number(examId)])}
-          disabled={examData?.submitted}
+          disabled={examData?.submitted || !examData?.canSubmit}
+          title={examData?.submitted ? '成绩已提交' : (!examData?.canSubmit ? '所有试卷状态必须为已批改才能提交' : '点击提交成绩')}
         >
           提交成绩
         </button>
@@ -335,20 +344,15 @@
 
 <style lang="scss" scoped>
   .page-container {
-    position: absolute;
-    top: 0px;
-    left: -16px;
-    right: -16px;
-    bottom: -50px; // 覆盖 Footer 的 50px 高度
-    z-index: 10; // 高于 Footer
     background-color: var(--bg-primary);
-    padding: 16px;
-    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    
 
     .detail-container {
       display: flex;
       flex-direction: column;
-      height: 100%;
+      height: 98%;
       gap: 20px;
       overflow: auto;
       padding: 10px;
@@ -359,6 +363,7 @@
         border-radius: 4px;
         padding: 10px;
       }
+      
       .first-row {
         display: flex;
         gap: 10px;

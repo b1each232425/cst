@@ -133,7 +133,7 @@ const setup = (props = {}) => {
     // 面板控制
     getPanel: () => screen.queryByText('选择试卷'),
     getCancelButton: () => screen.queryByText('取消'),
-    getConfirmButton: () => screen.queryByText('确定'),
+    getConfirmButton: () => screen.getByText('确定'),
     
     // 筛选控件
     getPaperTypeSelect: () => screen.queryByDisplayValue('04'), // 默认"全部"
@@ -148,10 +148,12 @@ const setup = (props = {}) => {
     
     // 工具函数
     selectPaper: async (paperId) => {
-      const radios = screen.queryAllByRole('radio');
+      const radios = screen.getAllByRole('radio');
       const targetRadio = radios.find(radio => radio.value === paperId.toString());
       if (targetRadio) {
+       
         await fireEvent.click(targetRadio);
+         console.log('1',targetRadio)
       }
       return targetRadio;
     },
@@ -659,19 +661,61 @@ describe('PaperSelectionPanel 边界情况测试', () => {
   });
 });
 
-describe('点击重置按钮',(()=>{
-  it('点击重置按钮',(()=>{
-    setup();
-    const resetButton = screen.getByText('重置');
-    fireEvent.click(resetButton);
-  }))
+describe('补充覆盖遗漏的方法', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFetchSuccess();
+  });
 
-}))
-describe('点击搜索按钮',(()=>{
-  it('点击搜索按钮',(()=>{
-    setup();
-    const resetButton = screen.getByText('搜索');
-    fireEvent.click(resetButton);
-  }))
+  it('选择试卷后点击确定时调用 onTestSelectFunc', async () => {
+  const onConfirmFunc = vi.fn();
+  const utils = setup({ onConfirmFunc });
 
-}))
+  await waitFor(() => {
+    expect(screen.getByText('数学期末考试试卷')).toBeInTheDocument();
+  });
+
+  // 先选中试卷
+  await utils.selectPaper(1);
+  // 再点击确定
+  await fireEvent.click(utils.getConfirmButton());
+  
+   console.log('onConfirmFunc called with:', onConfirmFunc.mock.calls);
+  // 断言回调被调用
+ expect(onConfirmFunc).toHaveBeenCalledWith(1, '数学期末考试试卷', '00');
+});
+ 
+
+  it('网络请求失败时显示空表格并提示错误', async () => {
+    mockFetchNetworkError();
+    setup();
+    await waitFor(() => {
+      const rows = screen.queryAllByRole('row');
+      expect(rows).toHaveLength(1);
+      expect(toast.error).toHaveBeenCalledWith('Network error');
+    });
+  });
+
+  it('页码变化时重新请求数据', async () => {
+    setup();
+    const event = new CustomEvent('pageChange', { detail: 2 });
+    document.querySelector('.pagination-container').dispatchEvent(event);
+
+    await waitFor(() => {
+      const lastCall = fetch.mock.calls[fetch.mock.calls.length - 1][0];
+      expect(lastCall).toContain('page=2');
+    });
+  });
+
+  it('修改 pageSize 时重置到第一页', async () => {
+    setup();
+    const event = new CustomEvent('pageSizeChange', { detail: 20 });
+    document.querySelector('.pagination-container').dispatchEvent(event);
+
+    await waitFor(() => {
+      const lastCall = fetch.mock.calls[fetch.mock.calls.length - 1][0];
+      expect(lastCall).toContain('page=1');
+      expect(lastCall).toContain('pageSize=20');
+    });
+  });
+});

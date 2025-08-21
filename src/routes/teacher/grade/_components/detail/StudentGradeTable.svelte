@@ -8,24 +8,24 @@
   /**
    * @typedef {Object} Props
    * @property {'practice' | 'exam'} type - 类型
-   * @property {number} resourceId - 资源ID
+   * @property {number} resource_id - 资源ID
    * @property {Array} [papers] - 试卷信息（考试类型需要）
    */
 
   /**
    * @type {Props}
    */
-  let { type, resourceId, papers = [] } = $props();
+  let { type, resource_id, papers = [] } = $props();
 
   // 获取 Context 数据
-  let contextData = $state(null);
+  let context_data = $state(null);
   try {
     if (type === 'practice') {
       const context = getContext('practice');
-      contextData = context?.practiceData;
+      context_data = context?.practiceData;
     } else {
       const context = getContext('exam');
-      contextData = context?.examData;
+      context_data = context?.examData;
     }
   } catch {
     // Context 不存在时忽略
@@ -102,8 +102,8 @@
       page: String(current_page),
       pageSize: String(page_size),
       ...(type === 'exam'
-        ? { examID: resourceId }
-        : { practiceID: resourceId }),
+        ? { examID: resource_id }
+        : { practiceID: resource_id }),
       keyword: searchKeyword.trim()
     });
 
@@ -120,8 +120,16 @@
 
         const raw = json.data || [];
         if (type === 'practice') {
-          currentData = raw.map((stu) => ({
-            stuId: stu.student_id,
+          // 从 student_scores 中提取学生数据
+          const students = [];
+          raw.forEach((practice) => {
+            if (practice.student_scores && Array.isArray(practice.student_scores)) {
+              students.push(...practice.student_scores);
+            }
+          });
+          
+          currentData = students.map((stu) => ({
+            stuId: stu.stu_id, 
             phone: stu.phone || '-',
             name: stu.name || '-',
             nickname: stu.nickname || '-',
@@ -134,7 +142,7 @@
           const merged = [];
           raw.forEach((item) => {
             item.student_scores.forEach((stu) => {
-              const totalScore = stu.exam_sessions.reduce((sum, s) => sum + (s.score ?? 0), 0);
+              const total_score = stu.exam_sessions.reduce((sum, s) => sum + (s.score ?? 0), 0);
               merged.push({
                 stu_id: stu.student_id,
                 phone: stu.phone || '-',
@@ -144,15 +152,15 @@
                   exam_session_id: s.exam_session_id,
                   score: s.score ?? 0
                 })),
-                total_score: totalScore,
+                total_score: total_score,
                 remark: stu.remark || '-'
               });
             });
           });
           currentData = merged;
 
-          // 后端 rowCount 是人次数，前端按学生人数算
-          total_items = Math.ceil((json.rowCount || 0) / (papers.length || 1));
+          
+          total_items = json.rowCount || 0;
         }
         
         loading = false;
@@ -193,8 +201,8 @@
   /**
    * 分数颜色判断
    */
-  function getScoreClass(score, totalScore) {
-    if (score < totalScore * 0.6) {
+  function getScoreClass(score, total_score) {
+    if (score < total_score * 0.6) {
       return 'red';
     } else {
       return 'green';
@@ -223,7 +231,7 @@
       <div class="search-section">
         <InputBox 
           show_label={false} 
-          placeholder="请输入学生电话/昵称/姓名" 
+          placeholder="请输入学生电话/账号/姓名" 
           bind:value={searchKeyword} 
           onInput={debouncedSearch}
         />
@@ -240,16 +248,16 @@
               <tr>
                 <th>序号</th>
                 <th>电话</th>
-                <th>昵称</th>
+                <th>账号</th>
                 <th>姓名</th>
                 {#if type === 'practice'}
                   <th>最高得分</th>
                   <th>作答次数</th>
-                {:else if contextData?.papers?.length === 1}
+                {:else if context_data?.papers?.length === 1}
                   <th>得分</th>
                 {:else}
                   <th>总得分</th>
-                  {#each contextData?.papers || [] as paper, index}
+                  {#each context_data?.papers || [] as paper, index}
                     <th>试卷{index + 1}</th>
                   {/each}
                 {/if}
@@ -265,36 +273,36 @@
                   <td>{student.name || '-'}</td>
                   {#if type === 'practice'}
                     <td class="score-cell">
-                      <span class={getScoreClass(student.highestScore, contextData?.totalScore || 100)}>
+                      <span class={getScoreClass(student.highestScore, context_data?.total_score || 100)}>
                         {student.highestScore != null ? student.highestScore : '-'}
                       </span>
                     </td>
                     <td>{student.submitCount}</td>
-                  {:else if contextData?.papers?.length === 1}
+                  {:else if context_data?.papers?.length === 1}
                     <td class="score-cell">
-                      <span class={getScoreClass(student.total_score, contextData?.totalScore || 100)}>
+                      <span class={getScoreClass(student.total_score, context_data?.total_score || 100)}>
                         {student.total_score != null ? student.total_score : '-'}
                       </span>
                     </td>
                   {:else}
                     <td class="score-cell">
-                      <span class={getScoreClass(student.total_score, contextData?.totalScore || 100)}>
+                      <span class={getScoreClass(student.total_score, context_data?.total_score || 100)}>
                         {student.total_score != null ? student.total_score : '-'}
                       </span>
                     </td>
                     {#each student.scores || [] as score, index}
                       <td class="score-cell">
-                        <span class={getScoreClass(score.score, contextData?.papers?.[index]?.totalScore || 100)}>
+                        <span class={getScoreClass(score.score, context_data?.papers?.[index]?.total_score || 100)}>
                           {score.score != null ? score.score : '-'}
                         </span>
                       </td>
                     {/each}
                   {/if}
-                  <td class="note-cell">{student.remark || '-'}</td>
+                  <td class="note-cell">{student.remark != null ? student.remark : '-'}</td>
                 </tr>
               {:else}
                 <tr>
-                  <td colspan="7" class="empty-row"
+                  <td colspan="8" class="empty-row"
                     ><div class="empty-container">
                       <Empty text="暂无数据" />
                     </div></td
@@ -325,7 +333,6 @@
   .student-scores-card {
     width: 100%;
     height: 100%;
-    margin-bottom: 40px;
 
     .card-header {
       display: flex;

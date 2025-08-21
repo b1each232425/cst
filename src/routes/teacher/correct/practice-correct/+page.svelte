@@ -190,7 +190,7 @@
       });
   }
 
-  const debounceSearch = debounce(handleSearch, 500);
+  const debounceSearch = debounce(handleSearch, 200);
 
   // 处理页号改变
   function handlePageChange(event) {
@@ -325,14 +325,12 @@
           position: sticky;
           top: 0;
           font-size: 14px;
-          color: rgba(0, 0, 0, 0.3);
+          color: var(--gray);
           background-color: white;
         }
 
         tr {
-          height: 3rem;
-          color: rgb(102, 102, 102);
-          border-bottom: 1px lightgray solid;
+          height: 3.5rem;
 
           th {
             font-weight: lighter;
@@ -342,13 +340,17 @@
         }
 
         tbody {
+          color: #333333;
+
           tr {
             color: black;
+            border-bottom: 1px rgb(221, 221, 221) solid;
 
             td {
               font-size: 0.9rem;
               text-align: center;
               vertical-align: middle;
+              padding: 0.5rem 0;
 
               &.manual {
                 color: green;
@@ -361,15 +363,21 @@
               .options {
                 display: flex;
                 justify-content: center;
+                color: #2f54eb;
 
                 button {
                   &.disabled {
                     color: #ccc;
                     cursor: not-allowed;
+                    border: 0;
                   }
 
                   &:not(.disabled):hover {
                     font-weight: bold;
+                  }
+
+                  &:not(.disabled) {
+                    border-bottom: 1px solid #2f54eb;
                   }
                 }
               }

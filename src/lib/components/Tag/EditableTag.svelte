@@ -1,27 +1,16 @@
 <!--
  * @Author: Zpekii 3156752796@qq.com
  * @Date: 2025-04-07 15:25:05
- * @LastEditors: Zpekii 3156752796@qq.com
- * @LastEditTime: 2025-04-08 21:57:22
+ * @LastEditors: 段春茂 2162105974@qq.com
+ * @LastEditTime: 2025-08-17 2:28:07
  * @FilePath: src\lib\components\Tag\EditableTag.svelte
  * @Description: 可编辑tag
  * @Copyright (c) 2025 by Zpekii, All Rights Reserved. 
 -->
-
-<!--                         o8o                 .   
-                             `"'               .o8   
- .oooo.o  .ooooo.  oooo d8b oooo  oo.ooooo.  .o888oo 
-d88(  "8 d88' `"Y8 `888""8P `888   888' `88b   888   
-`"Y88b.  888        888      888   888   888   888   
-o.  )88b 888   .o8  888      888   888   888   888 . 
-8""888P' `Y8bod8P' d888b    o888o  888bod8P'   "888" 
-                                   888               
-                                  o888o              
-                                                      -->
 <script>
-  /**
-   * @type {Array<string>} 颜色列表
-   */
+  import { validateAndAssign } from '$lib/utils/validate';
+
+  /** 颜色列表 @tye {string[]} */
   const COLOR_LIST = [
     // 浅蓝色系列
     '#40d5ff', // 浅蓝色
@@ -85,45 +74,34 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    */
   let { content = $bindable(''), handle_funcs, colors = COLOR_LIST, constraints } = $props();
 
-  let focused = $state(false);
-
-  let show_clear_btn = $state(false);
-
   /**
-   * @type {string} 原始内容
+   * 校验参数是否合法,以及做一些默认处理
    */
+  const propsRules = {
+    colors: { type: ['array'], default: COLOR_LIST },
+    content: { type: ['string'], default: '' },
+  };
+  const propMap = {
+    colors: { get: () => colors, set: (v) => (colors = v) },
+    content: { get: () => content, set: (v) => (content = v) },
+  };
+  Object.keys(propMap).forEach((k) => {
+    validateAndAssign('Tag', propMap[k].get, propMap[k].set, propsRules[k], k);
+  });
+
+  /** 是否显示清除按钮 @type {boolean} */
+  let show_clear_btn = $state(false);
+  /** @type {string} 原始内容 */
   let old_content = $state(content);
 </script>
 
-<!-- 
-    .                                          oooo                .             
-  .o8                                          `888              .o8             
-.o888oo  .ooooo.  ooo. .oo.  .oo.   oo.ooooo.   888   .oooo.   .o888oo  .ooooo.  
-  888   d88' `88b `888P"Y88bP"Y88b   888' `88b  888  `P  )88b    888   d88' `88b 
-  888   888ooo888  888   888   888   888   888  888   .oP"888    888   888ooo888 
-  888 . 888    .o  888   888   888   888   888  888  d8(  888    888 . 888    .o 
-  "888" `Y8bod8P' o888o o888o o888o  888bod8P' o888o `Y888""8o   "888" `Y8bod8P' 
-                                     888                                         
-                                    o888o                                        
-                                                                                 
--->
-<div class="tag-container">
-  <div class="tag-color" style="background-color: {COLOR_LIST[content.charAt(0).charCodeAt(0) % colors.length]}"></div>
-
+<div class="tag">
+  <div class="tag__color" style="background-color: {COLOR_LIST[content.charAt(0).charCodeAt(0) % colors.length]}"></div>
   <div
-    class="tag-content"
+    class="tag__content"
     role="textbox"
     tabindex="0"
     onfocus={() => {}}
-    onblur={() => {
-      focused = false;
-    }}
-    onfocusin={() => {
-      focused = true;
-    }}
-    onfocusout={() => {
-      focused = false;
-    }}
     onmouseover={() => {
       show_clear_btn = true;
     }}
@@ -132,7 +110,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     }}
   >
     <input
-      class="tag-text-input"
+      class="tag__input"
       bind:value={content}
       placeholder="+标签"
       title={content}
@@ -148,14 +126,13 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       oninput={() => {
         handle_funcs?.input_change?.(content);
       }}
-      minlength={constraints?.min_length ? constraints?.min_length : 0}
-      maxlength={constraints?.max_length ? constraints?.max_length : 30}
-      pattern={constraints?.pattern ? constraints?.pattern : ''}
+      minlength={constraints?.min_length ?? 0}
+      maxlength={constraints?.max_length ?? 30}
+      pattern={constraints?.pattern ?? ''}
     />
-
     {#if show_clear_btn}
       <button
-        class="tag-text-input-clear-btn"
+        class="tag__clear-btn"
         onmousedown={(e) => {
           e.preventDefault();
         }}
@@ -169,20 +146,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   </div>
 </div>
 
-<!-- 
-             .               oooo            
-           .o8               `888            
- .oooo.o .o888oo oooo    ooo  888   .ooooo.  
-d88(  "8   888    `88.  .8'   888  d88' `88b 
-`"Y88b.    888     `88..8'    888  888ooo888 
-o.  )88b   888 .    `888'     888  888    .o 
-8""888P'   "888"     .8'     o888o `Y8bod8P' 
-                 .o..P'                      
-                 `Y8P'                       
-                                             
--->
 <style lang="scss" scoped>
-  .tag-container {
+  .tag {
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -191,7 +156,18 @@ o.  )88b   888 .    `888'     888  888    .o
     max-width: 150px;
     height: 15px;
 
-    .tag-content {
+    &__color {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 12px;
+      height: 12px;
+      border-radius: 1px;
+      background-color: #40d5ff;
+      margin: 2px;
+    }
+
+    &__content {
       position: relative;
       display: flex;
       width: max-content;
@@ -199,24 +175,7 @@ o.  )88b   888 .    `888'     888  888    .o
       justify-content: center;
       align-items: center;
 
-      .tag-text-input-clear-btn {
-        position: absolute;
-        right: 2%;
-        border: none;
-        background-color: transparent;
-        color: #3f3f3f;
-        font-size: 12px;
-        font-weight: 650;
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-
-        &:hover {
-          color: #0336ff;
-        }
-      }
-
-      .tag-text-input {
+      .tag__input {
         display: block;
         justify-content: center;
         align-items: center;
@@ -239,17 +198,23 @@ o.  )88b   888 .    `888'     888  888    .o
           border-bottom: 1px solid #7792ff;
         }
       }
-    }
 
-    .tag-color {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 12px;
-      height: 12px;
-      border-radius: 1px;
-      background-color: #40d5ff;
-      margin: 2px;
+      .tag__clear-btn {
+        position: absolute;
+        right: 2%;
+        border: none;
+        background-color: transparent;
+        color: #3f3f3f;
+        font-size: 12px;
+        font-weight: 650;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+
+        &:hover {
+          color: #0336ff;
+        }
+      }
     }
   }
 </style>

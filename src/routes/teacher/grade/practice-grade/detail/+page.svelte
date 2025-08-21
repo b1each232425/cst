@@ -12,11 +12,20 @@
    * @typedef {Object} PracticeData
    * @property {number} practiceId - 练习ID
    * @property {string} name - 练习名称
-   * @property {number} totalScore - 总分
-   * @property {number} averageScore - 平均分
-   * @property {number} completedStudents - 作答人数
-   * @property {number} passedStudents - 通过人数
+   * @property {number} total_score - 总分
+   * @property {number} average_score - 平均分
+   * @property {number} completed_students - 作答人数
+   * @property {number} passed_students - 通过人数
+   * @property {string} mark_mode - 批改模式
    */
+
+
+     // 常量定义
+  const MARK_MODE_MAP = {
+    '00': '自动批改',
+    '10': '人工批改',
+  };
+
 
   /**
    * @type {string|null}
@@ -34,7 +43,7 @@
    * @description 页面是否显示
    * @default false
    */
-  let isShow = $state(false);
+  let is_show = $state(false);
 
   // 设置上下文
   setContext('practice', {
@@ -55,10 +64,11 @@
     return {
       practiceId: rawData.id,
       name: rawData.name,
-      totalScore: rawData.total_score,
-      averageScore: rawData.average_score || 0,
-      completedStudents: rawData.completed_students || 0,
-      passedStudents: rawData.passed_students || 0,
+      total_score: rawData.total_score,
+      average_score: rawData.average_score || 0,
+      completed_students: rawData.completed_students || 0,
+      passed_students: rawData.passed_students || 0,
+      mark_mode: MARK_MODE_MAP[rawData.mark_mode] || rawData.mark_mode || '自动批改',
     };
   }
 
@@ -103,6 +113,7 @@
   onMount(async () => {
     // 从 URL 参数获取练习 ID
     practiceId = $page.url.searchParams.get('id');
+    console.log('练习ID:', practiceId);
 
     if (!practiceId) {
       console.error('缺少练习ID参数');
@@ -113,22 +124,22 @@
     practiceData = await fetchPracticeData(practiceId);
 
     // 显示页面
-    isShow = true;
+    is_show = true;
   });
 </script>
 
-{#if isShow}
+{#if is_show}
   <div class="page-container">
     <div class="detail-container">
       <div class="first-row">
         <div class="card card1"><InfoCard type="practice" data={practiceData} /></div>
-        <div class="card card2"><GradeChart type="practice" resourceId={practiceId} papers={[]} /></div>
+        <div class="card card2"><GradeChart type="practice" resource_id={practiceId} papers={[]} /></div>
       </div>
       <div class="second-row">
-        <div class="card card3"><StudentGradeTable type="practice" resourceId={practiceId} papers={[]} /></div>
+        <div class="card card3"><StudentGradeTable type="practice" resource_id={practiceId} papers={[]} /></div>
       </div>
       <div class="third-row">
-        <!-- <div class="card card4"><AnalysisPanel type="practice" resourceId={practiceId} papers={[]} /></div> -->
+        <!-- <div class="card card4"><AnalysisPanel type="practice" resource_id={practiceId} papers={[]} /></div> -->
       </div>
     </div>
   </div>
@@ -136,20 +147,14 @@
 
 <style lang="scss" scoped>
   .page-container {
-    position: absolute;
-    top: 0px;
-    left: -16px;
-    right: -16px;
-    bottom: -50px; // 覆盖 Footer 的 50px 高度
-    z-index: 10; // 高于 Footer
     background-color: var(--bg-primary);
-    padding: 16px;
-    overflow: hidden;
+    height: 100%;
+    width: 100%;
 
     .detail-container {
       display: flex;
       flex-direction: column;
-      height: 100%;
+      height: 98%;
       gap: 20px;
       overflow: auto;
       padding: 10px;
@@ -183,6 +188,7 @@
         .card4 {
           min-width: 1480px;
         }
+
       }
     }
   }
