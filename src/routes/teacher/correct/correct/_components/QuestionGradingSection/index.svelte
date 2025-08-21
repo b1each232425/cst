@@ -10,6 +10,7 @@
 
 <script>
   import { debounce } from '$lib/utils/optimize';
+  import { replaceSpansWithLines } from '$lib/utils/blank_changer';
   // 做到，本地保存批改的分数的同时（修改外部的old_mark_result，这样逐题模式和全卷模式的分数不一致问题就可以解决），发送更新批改的请求即可；下一次接收响应就能获取新的分数
 
   // 题型映射
@@ -79,7 +80,7 @@
       <span>{QUESTION_TYPE_MAP[question.Type]}</span>
       <span>({question.Score}分)</span>
     </div>
-    <div>{@html question.Content}</div>
+    <div>{@html replaceSpansWithLines(question.Content)}</div>
   </div>
 
   <!-- 学生的答案 -->

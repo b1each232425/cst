@@ -572,7 +572,7 @@
               font-size: 0.9rem;
               text-align: center;
               vertical-align: middle;
-              padding: 5px 0;
+              padding: 0.5rem;
 
               .stack {
                 display: flex;
