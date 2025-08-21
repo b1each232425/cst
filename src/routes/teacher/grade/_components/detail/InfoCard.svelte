@@ -352,10 +352,11 @@
 
         .label {
           font-size: 14px;
-          font-weight: 300;
+          font-weight: 400;
           min-width: 80px;
           text-align: right;
           flex-shrink: 0;
+          color: var(--text-primary);
         }
 
         .value {
@@ -389,13 +390,13 @@
 
               .paper-label {
                 font-weight: 500;
-                color: var(--text-secondary);
+                color: var(--text-primary); 
                 min-width: 50px;
                 flex-shrink: 0;
               }
 
               .time-value {
-                font-weight: 400;
+                font-weight: 500;
                 color: var(--text-primary);
               }
             }
@@ -420,13 +421,13 @@
 
               .paper-label {
                 font-weight: 500;
-                color: var(--text-secondary);
+                color: var(--text-primary);
                 min-width: 50px;
                 flex-shrink: 0;
               }
 
               .score-value {
-                font-weight: 400;
+                font-weight: 500;
                 color: var(--text-primary);
               }
             }
@@ -451,13 +452,13 @@
 
               .paper-label {
                 font-weight: 500;
-                color: var(--text-secondary);
+                color: var(--text-primary);
                 min-width: 50px;
                 flex-shrink: 0;
               }
 
               .examinees-value {
-                font-weight: 400;
+                font-weight: 500;
                 color: var(--text-primary);
               }
             }
@@ -482,13 +483,13 @@
 
               .paper-label {
                 font-weight: 500;
-                color: var(--text-secondary);
+                color: var(--text-primary);
                 min-width: 50px;
                 flex-shrink: 0;
               }
 
               .average-value {
-                font-weight: 400;
+                font-weight: 500;
                 color: var(--text-primary);
               }
             }
@@ -513,13 +514,13 @@
 
               .paper-label {
                 font-weight: 500;
-                color: var(--text-secondary);
+                color: var(--text-primary);
                 min-width: 50px;
                 flex-shrink: 0;
               }
 
               .pass-value {
-                font-weight: 400;
+                font-weight: 500;
                 color: var(--text-primary);
               }
             }
@@ -534,7 +535,7 @@
 
       .label {
         font-size: 14px;
-        color: #6b7280;
+        color: var(--text-primary);
         font-weight: 400;
         min-width: 80px;
         text-align: right;
@@ -578,11 +579,14 @@
           th {
             font-weight: 300;
             border-bottom: 1px solid #e5e7eb;
+            color:var(--text-primary);
           }
 
           td {
             font-weight: 500;
             border-bottom: 1px solid #f3f4f6;
+            color:var(--text-primary);
+
           }
         }
       }
