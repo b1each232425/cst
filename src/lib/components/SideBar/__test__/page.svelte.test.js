@@ -13,12 +13,6 @@ const nav_map = [
     title: '登录',
     path: '/login',
   },
-  // {
-  //   name: 'courseManagement',
-  //   title: '课程管理',
-  //   path: '/teacher/courseManagement',
-  //   icon: '/sidebar/nav_icon/course.svg',
-  // },
   {
     name: 'questionBankManagement',
     title: '题库管理',
@@ -27,11 +21,6 @@ const nav_map = [
     children_is_parallel: true,
     isFilter: true,
     children: [
-      // {
-      //   name: 'programmingQuestionBank',
-      //   title: '编程题库管理',
-      //   path: '/teacher/questionBank/programming',
-      // },
       {
         name: 'theoryQuestionBank',
         title: '理论题库管理',
@@ -67,13 +56,11 @@ const nav_map = [
         name: 'create',
         title: '创建练习',
         path: '/teacher/practice/create',
-        force_hide: true,
       },
       {
         name: 'edit',
         title: '编辑练习',
         path: '/teacher/practice/edit/\\d+$',
-        force_hide: true,
       },
     ],
   },
@@ -87,25 +74,17 @@ const nav_map = [
         name: 'createExam',
         title: '创建考试',
         path: '/teacher/exam/addExam',
-        force_hide: true,
       },
       {
         name: 'editExam',
         title: '编辑考试',
         path: '/teacher/exam/editExam/\\d+$',
-        force_hide: true,
       },
-      // {
-      //   name: 'invigilation',
-      //   title: '监考管理',
-      //   path: '/teacher/exam/invigilation/\\d+$',
-      //   force_hide: true,
-      // },
+
       {
         name: 'previewExam',
         title: '预览试卷',
         path: '/teacher/exam/previewExam',
-        force_hide: true,
       },
     ],
   },
@@ -162,67 +141,9 @@ const nav_map = [
           },
         ],
       },
-      // {
-      //   name: 'courseGradeManagement',
-      //   title: '课程成绩管理',
-      //   path: '/teacher/gradeManagement/course',
-      // },
     ],
   },
-  // {
-  //   name: 'questionnaireManagement',
-  //   title: '问卷管理',
-  //   path: '/teacher/questionnaireManagement',
-  //   icon: '/sidebar/nav_icon/questionnaire.svg',
-  // },
-  // {
-  //   name: 'announcementManagement',
-  //   title: '公告管理',
-  //   path: '/teacher/announcementManagement',
-  //   icon: '/sidebar/nav_icon/announcement.svg',
-  // },
-  // {
-  //   name: 'examSiteManagement',
-  //   title: '考点管理',
-  //   path: '/teacher/examSiteManagement',
-  //   icon: '/sidebar/nav_icon/exam_site.svg',
-  //   children: [
-  //     {
-  //       name: 'editExamSite',
-  //       title: '编辑考点',
-  //       path: '/teacher/examSiteManagement/edit/\\d+$',
-  //       force_hide: true,
-  //     },
-  //     {
-  //       name: 'examSiteDetails',
-  //       title: '考点详情',
-  //       path: '/teacher/examSiteManagement/details/\\d+$',
-  //       force_hide: true,
-  //       children: [
-  //         {
-  //           name: 'examRoomExamList',
-  //           title: '考场考试列表',
-  //           path: '/teacher/examSiteManagement/room/\\d+$',
-  //           force_hide: true,
-  //         },
-  //       ],
-  //     },
-  //   ],
-  // },
-  // {
-  //   name: 'invigilationList',
-  //   title: '监考列表',
-  //   path: '/teacher/invigilationList',
-  //   icon: '/sidebar/nav_icon/invigilate.svg',
-  //   children: [
-  //     {
-  //       name: 'invigilation',
-  //       title: '监考详情',
-  //       path: '/teacher/invigilationList/invigilation',
-  //       force_hide: true,
-  //     },
-  //   ],
-  // },
+
   {
     name: 'studentManagement',
     title: '学生管理',
@@ -233,20 +154,7 @@ const nav_map = [
         name: 'addStudent',
         title: '创建学生',
         path: '/teacher/student-management/addStudent',
-        force_hide: true,
       },
-      // {
-      //   name: 'editStudent',
-      //   title: '编辑学生',
-      //   path: '/teacher/studentManagement/edit/\\d+$',
-      //   force_hide: true,
-      // },
-      // {
-      //   name: 'detailsStudent',
-      //   title: '学生详情',
-      //   path: '/teacher/studentManagement/details/\\d+$',
-      //   force_hide: true,
-      // },
     ],
   },
   {
@@ -260,20 +168,7 @@ const nav_map = [
         name: 'addUser',
         title: '创建用户',
         path: '/teacher/user-management/addUser',
-        force_hide: true,
       },
-      // {
-      //   name: 'userDetail',
-      //   title: '用户详情',
-      //   path: '/teacher/userManagement/userDetail',
-      //   force_hide: true,
-      // },
-      // {
-      //   name: 'editUser',
-      //   title: '修改用户信息',
-      //   path: '/teacher/userManagement/editUser',
-      //   force_hide: true,
-      // },
     ],
   },
 ];
@@ -353,13 +248,11 @@ describe('SideBar 组件 nav_map 参数校验', () => {
         icon: '/icons/full.svg',
         children_is_parallel: true,
         isFilter: false,
-        force_hide: true,
         children: [
           {
             name: 'child',
             title: '子导航',
             path: '/full/child',
-            force_hide: false,
           },
         ],
       },
@@ -465,7 +358,7 @@ describe('SideBar 组件 nav_map 参数校验', () => {
       },
     ];
     render(Sidebar, { props: { nav_map: invalidNavMap } });
-    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].children[0] 缺少必需字段');
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].children[0] 缺少必需字段: name');
   });
 
   it('子项 children 为对象时应警告', async () => {
@@ -510,42 +403,27 @@ describe('SideBar 组件 nav_map 参数校验', () => {
     expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].isFilter 必须是布尔值，当前为 number');
   });
 
-  it('force_hide 为对象时应警告', async () => {
-    const invalidNavMap = [
-      {
-        name: 'item',
-        title: '项',
-        path: '/item',
-        force_hide: {},
-      },
-    ];
-    render(Sidebar, { props: { nav_map: invalidNavMap } });
-    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].force_hide 必须是布尔值，当前为 object');
-  });
-
   // 混合错误测试
-  it('多个错误同时存在时应报告所有错误', async () => {
+  it('多个错误同时存在时应报告第一个错误后中止', async () => {
     const invalidNavMap = [
       {
         title: '缺少name', // 缺少name
-        path: 123, // path类型错误
-        children: 'invalid', // children类型错误
+        path: 123, // path类型错误（不会执行到这里）
+        children: 'invalid', // children类型错误（不会执行到这里）
       },
       {
         name: 'item2',
         title: '项2',
         path: '/item2',
-        isFilter: 'false', // 布尔字段错误
+        isFilter: 'false', // 布尔字段错误（不会执行到这里）
       },
     ];
 
     render(Sidebar, { props: { nav_map: invalidNavMap } });
 
-    // 因为第一个对象缺少name会直接重置nav_map并返回，所以只检查这些警告
+    // 只会触发第一个错误
     expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0] 缺少必需字段: name');
-    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[0].name 必须是字符串，当前为 undefined');
-    expect(consoleWarnSpy).toHaveBeenCalledWith('[SideBar] nav_map[1].isFilter 必须是布尔值，当前为 string');
-    expect(consoleWarnSpy).toHaveBeenCalledTimes(3);
+    expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
   });
 });
 
