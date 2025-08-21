@@ -270,13 +270,19 @@
                 const myDomains = data.data.Domains;
                 availableRoles = myDomains;
 
-                // 如果只有一个角色，则直接以该角色登录
-                if (myDomains.length === 1) {
-                    confirmRoleSelection(myDomains[0]);
-                } else {
-                    // 多个角色时弹出选择框
-                    selectedRole = myDomains[0]; // 默认选择第一个角色
-                    roleSelectVisible = true;
+                switch (myDomains.length) {
+                    case 0:
+                        showMessage('提示', '您没有可用的登录角色，请联系管理员');
+                        return;
+                    case 1:
+                        // 如果只有一个角色，直接确认选择
+                        confirmRoleSelection(myDomains[0]);
+                        return;
+                    default:
+                        // 多个角色时弹出选择框
+                        selectedRole = myDomains[0]; // 默认选择第一个角色
+                        roleSelectVisible = true;
+                        break;
                 }
             })
             .catch((e) => {
