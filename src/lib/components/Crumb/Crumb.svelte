@@ -183,7 +183,7 @@
       height: 100%;
       background-color: transparent;
       box-sizing: border-box;
-      padding: 2px 2px 2px 2px;
+      padding: 2px 2px 2px 8px;
 
       .breadcrumbs-item {
         text-decoration: none;
