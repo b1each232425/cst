@@ -20,7 +20,7 @@
     import { formatTimestamp } from "$lib/utils/time_utils";
     import QuestionPreviewPanel from "./QuestionPreviewPanel.svelte";
     import { questionLimit } from "../utils/questionConfig.js";
-    import { getQuestionFilesPath } from "../utils/utils";
+
 
     const editor_width = "calc(100% - 24px - 10px)";
     const editor_height = "100%";
@@ -418,7 +418,7 @@
             }
         }
 
-        data.question_attachments_path = getQuestionFilesPath(data);
+ 
 
         onConfirm(data);
         // resetPanel();
@@ -1062,9 +1062,10 @@
             flex: 1;
             height: calc(100% - 65px);
             box-sizing: border-box;
-
+           
             min-width: 1000px;
             .editArea {
+                padding-top: 1%;
                 flex: 1;
                 max-width: 55%;
                 overflow-y: auto;
@@ -1111,7 +1112,7 @@
             .previewArea {
                 flex: 1;
                 max-width: 45%;
-
+                     
                 box-sizing: border-box;
                 border-top: 1px solid rgba($color: #7b7b7b, $alpha: 0.5);
             }

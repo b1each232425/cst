@@ -660,22 +660,21 @@
         .questionBasic {
             display: flex;
             width: 100%;
-
             justify-content: space-between;
 
             .type,
             .difficulty,
             .score {
-                font-size: 12px;
+                font-size: 15px;
                 color: #333;
             }
 
             .type {
-                margin-left: 5%;
+               
             }
 
             .score {
-                margin-right: 5%;
+               
             }
         }
     }
