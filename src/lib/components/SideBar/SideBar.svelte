@@ -1,287 +1,639 @@
 <script>
-  // @ts-nocheck
-  import { goto } from "$app/navigation";
-  import { page } from "$app/state";
-  import {
-    sidebarFoldingState,
-    sidebarWidth,
-    navMap,
-  } from "$lib/stores/modules/layoutStore";
+  import { onMount } from 'svelte';
+  import { slide } from 'svelte/transition';
+  import { goto } from '$app/navigation';
+  import { baseNavItems } from '$lib/stores/modules/permission.js';
+  import { page } from '$app/state';
+  import { toast } from '$lib/components/Toast/Toast.js';
+  import { beforeNavigate } from '$app/navigation';
 
-  let currentPath = $state(""); // 当前页面路径
+  // 需要自动折叠的路径
+  const NEED_FOLD_NAV = [
+    '/teacher/question-bank/theory/editBank',
+    '/teacher/practice/create',
+    '/teacher/exam/addExam',
+    '/teacher/student-management/addStudent',
+    '/teacher/user-management/addUser',
+    /\/teacher\/practice\/edit\/\d+/,
+    /\/teacher\/exam\/editExam\/\d+/,
+    /\/teacher\/grade\/exam-grade\/detail\?id=\d+/,
+    /\/teacher\/grade\/practice-grade\/detail\?id=\d+/,
+  ];
 
-  $effect(() => {
-    currentPath = page.url.pathname;
+  let { nav_map = [] } = $props();
+
+  // 参数校验
+  (() => {
+    const validateItem = (item, path = '') => {
+      const requiredFields = ['name', 'title', 'path'];
+      for (const field of requiredFields) {
+        if (!(field in item)) {
+          console.warn(`[SideBar] ${path} 缺少必需字段: ${field}`);
+          return false;
+        }
+        if (typeof item[field] !== 'string') {
+          console.warn(`[SideBar] ${path}.${field} 必须是字符串，当前为 ${typeof item[field]}`);
+          return false;
+        }
+      }
+
+      if ('icon' in item && typeof item.icon !== 'string') {
+        console.warn(`[SideBar] ${path}.icon 必须是字符串，当前为 ${typeof item.icon}`);
+        return false;
+      }
+
+      const booleanFields = ['children_is_parallel', 'isFilter'];
+      for (const field of booleanFields) {
+        if (field in item && typeof item[field] !== 'boolean') {
+          console.warn(`[SideBar] ${path}.${field} 必须是布尔值，当前为 ${typeof item[field]}`);
+          return false;
+        }
+      }
+
+      if ('children' in item) {
+        if (!Array.isArray(item.children)) {
+          console.warn(`[SideBar] ${path}.children 必须是数组，当前为 ${typeof item.children}`);
+          return false;
+        }
+        return item.children.every((child, i) => validateItem(child, `${path}.children[${i}]`));
+      }
+
+      return true;
+    };
+
+    if (!Array.isArray(nav_map)) {
+      console.warn(`[SideBar] nav_map 必须是数组，当前为 ${typeof nav_map}`);
+      nav_map = [];
+      return;
+    }
+
+    const isValid = nav_map.every((item, i) => validateItem(item, `nav_map[${i}]`));
+    if (!isValid) {
+      nav_map = [];
+    }
+  })();
+
+  let current_path = $derived(page.url.pathname); // 当前路径
+  let is_auto_fold = $state(false); // 侧边栏是否自动折叠
+  let sidebar_fold_state = $state(false); // 侧边栏折叠状态
+  let sidebar_is_folding = $state(false); // 侧边栏是否正在折叠中
+  let sidebar_is_folded = $state(false); // 侧边栏是否已经折叠
+  let side_float = $state(false); // 侧边栏是否悬浮
+  let sidebar_fold_str = $state('收起侧边栏'); // 侧边栏折叠状态提示
+  let is_hydrated = $state(false); // 是否展示侧边栏
+  let current_active = $state('/'); // 当前选中的路由路径
+  let sidebar_container_element = $state(null); // 侧边栏导航项数据DOM
+  let sidebar_element = $state(); // 侧边栏组件DOM
+  let sidebar_toggle_btn = $state(); // 侧边栏折叠按钮DOM
+  let sidebar_mouse_enter_timeout = $state(null); // 侧边栏鼠标进入定时器
+  let sidebar_mouse_leave_timeout = $state(null); // 侧边栏鼠标离开定时器
+
+  // 保存侧边栏状态到本地(数据持久化)
+  function saveSidebarState() {
+    localStorage.setItem('is_auto_fold', is_auto_fold.toString());
+    localStorage.setItem('sidebar_fold_state', sidebar_fold_state.toString());
+    localStorage.setItem('sidebar_is_folded', sidebar_is_folded.toString());
+    localStorage.setItem('sidebar_fold_str', sidebar_fold_str);
+  }
+
+  // 切换侧边栏折叠状态
+  function toggleSidebar(foldState) {
+    side_float = false;
+    sidebar_fold_state = foldState != null ? foldState : !sidebar_fold_state;
+    sidebar_is_folding = sidebar_fold_state;
+    sidebar_is_folded = false;
+
+    sidebar_element.style.setProperty('--sidebar-min-width', '0px');
+
+    // 更新折叠按钮提示
+    sidebar_fold_str = sidebar_fold_state ? '展开侧边栏' : '收起侧边栏';
+
+    // 控制折叠按钮的水平位移
+    sidebar_toggle_btn.style.setProperty(
+      '--sidebar-toggle-btn-translate-x',
+      `${sidebar_fold_state ? sidebar_toggle_btn.offsetWidth : 0}px`,
+    );
+
+    is_auto_fold = false;
+    saveSidebarState();
+  }
+
+  // 侧边栏折叠动画结束事件处理函数
+  function sidebarTransitionendHandle() {
+    if (!sidebar_is_folding) {
+      return;
+    }
+
+    sidebar_is_folding = false;
+    sidebar_is_folded = true;
+    saveSidebarState();
+  }
+
+  /**
+   * 鼠标进入侧边栏事件处理函数
+   * 执行后会将侧边栏滚动到当前选中的导航项
+   * 如果侧边栏正在折叠中或者侧边栏已经折叠则不执行任何操作
+   */
+  function sidebarMouseEnter() {
+    if (sidebar_is_folding || !sidebar_is_folded) {
+      return;
+    }
+
+    clearTimeout(sidebar_mouse_leave_timeout);
+
+    sidebar_mouse_enter_timeout = setTimeout(() => {
+      clearTimeout(sidebar_mouse_enter_timeout);
+
+      if (sidebar_is_folding || !sidebar_is_folded) {
+        return;
+      }
+
+      side_float = true;
+
+      sidebar_element.style.setProperty('--sidebar-min-width', '0px');
+    }, 500);
+    saveSidebarState();
+  }
+
+  /**
+   * 鼠标离开侧边栏事件处理函数
+   * 执行后会将侧边栏滚动到当前选中的导航项
+   * 如果侧边栏正在折叠中或者侧边栏已经折叠则不执行任何操作
+   * 如果鼠标在500ms内再次进入侧边栏则不执行任何操作
+   */
+  function sidebarMouseLeave() {
+    if (sidebar_is_folding || !sidebar_is_folded) {
+      return;
+    }
+
+    clearTimeout(sidebar_mouse_enter_timeout);
+
+    sidebar_mouse_leave_timeout = setTimeout(() => {
+      clearTimeout(sidebar_mouse_leave_timeout);
+
+      side_float = false;
+    }, 500);
+    saveSidebarState();
+  }
+
+  /**
+   * 侧边栏媒体查询事件处理函数
+   * 如果侧边栏宽度小于等于768px则将侧边栏折叠
+   */
+  function handleResize() {
+    if (!sidebar_element) return;
+
+    if (window.innerWidth <= 768) {
+      toggleSidebar(true);
+    }
+  }
+
+  // 处理侧边栏导航项点击事件
+  function handleSidebarItemClick(item) {
+    if (item.children != null && item.children.length > 0 && item.children_is_parallel) {
+      item.fold = !item.fold;
+      return;
+    }
+
+    current_active = item.path;
+
+    goto(item.path);
+  }
+
+  // 检查导航项是否有子路由
+  function checkItemHasChildren(item, childrenPath) {
+    if (item.children == null || item.children.length <= 0) {
+      return false;
+    }
+
+    for (let i = 0; i < item.children.length; i++) {
+      if (item.children[i].path == childrenPath) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // 正则匹配路径
+  function regexMatch(path, path_regex) {
+    return new RegExp(`${path_regex}`).test(path);
+  }
+
+  // 监听导航事件，跳转前执行逻辑
+  beforeNavigate(({ from, to, cancel }) => {
+    if (to) {
+      const targetPath = to.url.pathname + to.url.search; // 包括路径和查询参数
+
+      // 遍历 NEED_FOLD_NAV，检查是否匹配
+      if (
+        NEED_FOLD_NAV.some((path) => (typeof path === 'string' ? targetPath.includes(path) : path.test(targetPath))) &&
+        !is_auto_fold &&
+        !sidebar_is_folded
+      ) {
+        // 折叠侧边栏
+        toggleSidebar(true);
+
+        // 自动折叠时才触发
+        is_auto_fold = true;
+      } else if (
+        !NEED_FOLD_NAV.some((path) => (typeof path === 'string' ? targetPath.includes(path) : path.test(targetPath))) &&
+        is_auto_fold
+      ) {
+        // 如果路径变化并且是自动折叠，展开侧边栏
+        if (sidebar_is_folded) {
+          toggleSidebar(false); // 展开侧边栏
+        }
+        is_auto_fold = false; // 路径变化后取消自动折叠
+      }
+      saveSidebarState();
+    }
   });
 
-  // 折叠、展开侧边栏
-  const toggleSidebar = () => {
-    $sidebarFoldingState = !$sidebarFoldingState;
-    $sidebarWidth = $sidebarFoldingState ? "0px" : "235px";
-  };
+  // 从localStorage加载侧边栏状态
+  function loadSidebarState() {
+    const savedAutoFold = localStorage.getItem('is_auto_fold');
+    const savedFoldState = localStorage.getItem('sidebar_fold_state');
+    const savedIsFolded = localStorage.getItem('sidebar_is_folded');
+    const savedFoldStr = localStorage.getItem('sidebar_fold_str');
 
-  // 处理侧边栏点击事件
-  const handleItemButtonClick = (item) => {
-    if (!item.children) {
-      item.isOpen = !item.isOpen;
-      navMap.update((map) => [...map]);
-      goto(item.path);
-    } else {
-      item.isOpen = !item.isOpen;
-      navMap.update((map) => [...map]);
-    }
-  };
+    // 只有存在值时才恢复状态
+    if (savedAutoFold !== null) is_auto_fold = savedAutoFold === 'true';
+    if (savedFoldState !== null) sidebar_fold_state = savedFoldState === 'true';
+    if (savedIsFolded !== null) sidebar_is_folded = savedIsFolded === 'true';
+    if (savedFoldStr !== null) sidebar_fold_str = savedFoldStr;
+
+    // 确保DOM更新后应用折叠状态
+    setTimeout(() => {
+      if (sidebar_toggle_btn) {
+        sidebar_toggle_btn.style.setProperty(
+          '--sidebar-toggle-btn-translate-x',
+          `${sidebar_fold_state ? sidebar_toggle_btn.offsetWidth : 0}px`,
+        );
+      }
+    }, 0);
+
+    is_hydrated = true;
+  }
+
+  onMount(() => {
+    // 加载保存的状态
+    loadSidebarState();
+
+    // 当窗口大小变化时，调用handleResize函数,当宽度太小自动收起侧边栏
+    window.addEventListener('resize', handleResize);
+
+    // 更新当前选中模块并高亮
+    current_active = window.location.pathname;
+  });
 </script>
 
-<div class="sidebar-container" style="width: {$sidebarWidth};">
-  <!-- 折叠按钮 -->
-  <div class="sidebar-header">
-    <button
-      class="sidebar-toggle-btn {!$sidebarFoldingState ? '' : 'hide'}"
-      onclick={() => toggleSidebar()}
+{#if is_hydrated}
+  <div
+    class="sidebar-container"
+    bind:this={sidebar_container_element}
+    role="region"
+    onmouseenter={() => sidebarMouseEnter()}
+    onmouseleave={() => sidebarMouseLeave()}
+    data-testid="sidebar-container"
+  >
+    <!-- 侧边栏内容 -->
+    <div
+      class="sidebar-content"
+      class:folding={sidebar_is_folding}
+      class:folded={sidebar_is_folded}
+      class:float={side_float}
+      bind:this={sidebar_element}
+      ontransitionend={() => sidebarTransitionendHandle()}
+      data-testid="sidebar-content"
     >
-      <img src="/sidebar/fold.svg" alt="收起侧边栏" style="width:30px" />
-    </button>
-  </div>
+      <button class="logo">
+        <div class="logo-svg">3min</div>
+      </button>
 
-  <!-- logo -->
-  <div class="logo {!$sidebarFoldingState ? '' : 'hide'}">3min</div>
+      <!-- 导航项内容 -->
+      {#snippet Sidebar(navMapData)}
+        <ul class="sidebar-content-main">
+          {#each navMapData as item}
+            {#snippet Item(it, level)}
+              {#snippet ItemContent(i, level)}
+                <div class="sidebar-item-content" style={`--level: ${level}`}>
+                  {#if i.icon}
+                    <img class="sidebar-item-icon" src={i.icon} alt={i.title} />
+                  {:else}
+                    <span class="sidebar-item-icon"></span>
+                  {/if}
+                  <span class="sidebar-item-text">{i.title}</span>
+                </div>
+              {/snippet}
 
-  <!-- 侧边栏主要导航区域 -->
-  <div class="sidebar-content {!$sidebarFoldingState ? '' : 'hide'}">
-    <div class="sidebar-content-main">
-      <!-- 遍历路由 -->
-      {#each $navMap as item}
-        <div
-          class="sidebar-item"
-          class:active={item.path === currentPath}
-          style="opacity: {$sidebarFoldingState ? 0 : 1};"
-        >
-          <!-- 有子路由 -->
-          {#if item.children}
-            <button
-              class="sidebar-item-btn"
-              onclick={() => handleItemButtonClick(item)}
-            >
-              <div class="sidebar-item-content">
-                <img
-                  class="sidebar-item-icon"
-                  src={item.icon}
-                  alt={item.title}
-                />
-                <span class="sidebar-item-text">{item.title}</span>
-                {#if item.isOpen}
+              <li
+                class="sidebar-item"
+                class:active={(!it.children_is_parallel && regexMatch(current_active, it.path)) ||
+                  (checkItemHasChildren(it, current_active) && (it.fold || !it.children_is_parallel)) ||
+                  current_active == it.path}
+                title={it.title}
+              >
+                {#if it.children != null && it.children.length > 0 && it.children_is_parallel}
                   <img
-                    class="img-flod"
-                    src="/sidebar/nav_icon/fold.svg"
-                    alt=""
-                  />
-                {:else}
-                  <img
-                    class="img-unflod"
-                    src="/sidebar/nav_icon/unfold.svg"
-                    alt=""
+                    class="sidebar-subitem-icon"
+                    src={it.fold ? '/sidebar/nav_icon/unfold.svg' : '/sidebar/nav_icon/fold.svg'}
+                    alt={it.fold ? '展开' : '折叠'}
                   />
                 {/if}
-              </div>
-            </button>
-            <!-- 无子路由 -->
-          {:else}
-            <button
-              class="sidebar-item-btn"
-              onclick={() => handleItemButtonClick(item)}
-            >
-              <div class="sidebar-item-content">
-                <img
-                  class="sidebar-item-icon"
-                  src={item.icon}
-                  alt={item.title}
-                />
-                <span class="sidebar-item-text">{item.title}</span>
-              </div>
-            </button>
-          {/if}
-        </div>
-        <!-- 处理子路由 -->
-        {#if item.isOpen && item.children}
-          {#each item.children as child}
-            <div
-              class="sidebar-subitem"
-              class:active={child.path === currentPath}
-              style="opacity: {$sidebarFoldingState ? 0 : 1};"
-            >
-              <button
-                class="sidebar-subitem-btn"
-                onclick={() => handleItemButtonClick(child)}
-              >
-                {child.title}
-              </button>
-            </div>
+
+                {@render ItemContent(it, level)}
+
+                <button
+                  class="sidebar-item-btn"
+                  class:active={current_active == it.name}
+                  onclick={() => {
+                    handleSidebarItemClick(it);
+                  }}
+                  aria-label={it.title}
+                ></button>
+              </li>
+
+              {#if !it.fold && it.children_is_parallel}
+                <ul class="sidebar-item-child" transition:slide>
+                  {#each it.children as child}
+                    {@render Item(child, level + 1)}
+                  {/each}
+                </ul>
+              {/if}
+            {/snippet}
+
+            {@render Item(item, 0)}
           {/each}
-        {/if}
-      {/each}
+        </ul>
+      {/snippet}
+
+      {@render Sidebar(nav_map)}
     </div>
+
+    <button
+      class="sidebar-toggle-btn"
+      bind:this={sidebar_toggle_btn}
+      title={sidebar_fold_str}
+      onclick={() => toggleSidebar()}
+    >
+      {#if sidebar_fold_state}
+        <img src="/sidebar/unfold.svg" alt="展开侧边栏" />
+      {:else}
+        <img src="/sidebar/fold.svg" alt="收起侧边栏" />
+      {/if}
+    </button>
   </div>
-</div>
+{/if}
 
 <style lang="scss" scoped>
-  /* 修改后的样式 */
   .sidebar-container {
     position: relative;
-    display: block;
+    display: flex;
     height: 100%;
     background-color: rgba(243, 243, 243, 0);
-
-    .sidebar-header {
-      display: flex;
-      justify-content: flex-end;
-
-      .sidebar-toggle-btn {
-        width: 50px;
-        height: 50px;
-        margin-top: 3px;
-        background-color: rgba(255, 255, 255, 0);
-        border: none;
-        margin-left: auto;
-        visibility: visible;
-
-        &.hide {
-          visibility: hidden;
-        }
-
-        &:hover {
-          background-color: #d1d1d1;
-          border: 6px;
-          border-radius: 3px;
-        }
-      }
-    }
-
-    .logo {
-      height: auto;
-      margin-top: 20px;
-      margin-bottom: 10px;
-      border-radius: 3px;
-      background-color: rgba(255, 255, 255, 0);
-      box-sizing: border-box;
-      font-family: "ComicSansMS-Bold", "Comic Sans MS Bold", "Comic Sans MS",
-        sans-serif;
-      font-weight: 700;
-      font-size: 36px;
-      color: #0336ff;
-      text-align: center;
-      line-height: 25px;
-      white-space: nowrap;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
-      transition:
-        opacity 0.5s ease,
-        transform 0.5s ease; /* 添加opacity过渡 */
-      opacity: 1; /* 默认显示 */
-
-      &.hide {
-        opacity: 0; /* 收起时，透明度为0 */
-        transform: scaleX(0); /* 缩放效果 */
-      }
-    }
 
     .sidebar-content {
       position: relative;
       display: flex;
       flex-direction: column;
+      left: 0;
+      width: var(--sidebar-width, 235px);
+      min-width: var(--sidebar-min-width, 220px);
+      max-width: var(--sidebar-max-width, 250px);
       height: var(--sidebar-height, 100%);
+      background-color: var(--bg-thirdary);
+      transition: width 0.3s ease;
       box-sizing: border-box;
       overflow: hidden;
-      transition:
-        opacity 0.5s ease,
-        transform 0.5s ease; /* 添加过渡效果 */
+      &.folding {
+        width: 0;
+        min-width: 0;
+        max-width: var(--sidebar-max-width, 250px);
+        overflow: hidden;
+      }
 
-      &.hide {
-        opacity: 0; /* 隐藏内容 */
-        transform: scaleX(0); /* 收起时，缩小至0 */
+      &.folded {
+        width: 0;
+        min-width: 0;
+        max-width: var(--sidebar-max-width, 250px);
+        position: absolute;
+        top: 50px;
+        height: 85vh;
+        border-radius: 3px;
+        box-shadow: 0px 2px 10px 0px rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+
+        .logo,
+        .sidebar-content-main {
+          top: 5%;
+        }
+      }
+
+      &.float {
+        width: var(--sidebar-width, 235px);
+        min-width: var(--sidebar-min-width, 220px);
+        max-width: var(--sidebar-max-width, 250px);
+        position: absolute;
+        top: 50px;
+        height: 85vh;
+        border-radius: 3px;
+        box-shadow: 0px 2px 10px 0px rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+
+        .logo,
+        .sidebar-content-main {
+          top: 5%;
+        }
+      }
+
+      .logo {
+        display: flex;
+        flex-direction: column;
+        width: 235px;
+        position: sticky;
+        background-color: rgba(255, 255, 255, 0);
+        left: 0;
+        top: 50px;
+        border: none;
+        padding: 0px;
+        margin-bottom: 5%;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        box-sizing: border-box;
+        white-space: nowrap;
+        z-index: 10;
+        text-decoration: none;
+
+        .logo-svg {
+          width: fit-content;
+          height: auto;
+          margin-top: 10px;
+          margin-bottom: 10px;
+          border-radius: 3px;
+          background-color: rgba(255, 255, 255, 0);
+          box-sizing: border-box;
+          font-family: 'ComicSansMS-Bold', 'Comic Sans MS Bold', 'Comic Sans MS', sans-serif;
+          font-weight: 700;
+          font-size: 36px;
+          color: #0336ff;
+          text-align: center;
+          line-height: 25px;
+          padding: 0;
+          white-space: nowrap;
+        }
       }
 
       .sidebar-content-main {
         display: inline;
         flex-direction: column;
         position: relative;
-        top: 20px;
+        top: 60px;
         height: 80%;
         width: 100%;
-        opacity: 1; /* 默认显示 */
+        justify-content: flex-start;
+        align-items: center;
+        box-sizing: border-box;
+        overflow-x: hidden;
+        overflow-y: auto;
+        text-overflow: ellipsis;
+        padding: 0;
+        margin: 0;
+        scrollbar-width: thin;
 
         .sidebar-item {
           display: flex;
-          width: 100%;
+          position: relative;
+          min-width: max-content;
           height: 40px;
           background-color: rgba(255, 255, 255, 0);
-          transition: opacity 0.5s ease; /* 添加过渡效果 */
-          font-size: 18px;
+          border: none;
+          box-sizing: border-box;
+          justify-content: flex-start;
+          align-items: center;
+          transition: all 0.3s ease;
+          font-family: 'PingFangSC-Regular', 'PingFang SC', sans-serif;
+          font-size: 16px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          padding: 0px;
           border-radius: 3px;
           color: rgba(0, 0, 0, 0.6);
-          opacity: 0; /* 初始透明度为0 */
-
           &:hover {
             background-color: #d1d1d1;
           }
 
           &.active {
-            background-color: #d1d1d1;
-            border-left: 4px solid blue;
-          }
-
-          .sidebar-item-content {
-            padding-left: 2rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-          }
-
-          .sidebar-item-icon {
-            width: 16px;
-          }
-
-          .sidebar-item-text {
-            font-size: 18px;
-          }
-
-          .img-unflod,
-          .img-flod {
-            width: 20px;
-            margin-left: 3.5rem;
-          }
-        }
-
-        .sidebar-subitem {
-          transition: opacity 0.5s ease; /* 添加透明度过渡 */
-          opacity: 0;
-
-          &:hover {
-            background-color: #d1d1d1;
-          }
-
-          &.active {
-            background-color: #d1d1d1;
-            border-left: 4px solid blue;
+            background-color: #e0e0e0;
+            &::before {
+              content: '';
+              position: absolute;
+              top: 10%;
+              left: 10px;
+              width: 4px;
+              height: 80%;
+              background-color: #0336ff;
+              border-radius: 10px;
+            }
           }
         }
 
         .sidebar-item-btn {
-          all: unset;
+          position: absolute;
+          top: 0;
+          left: 0%;
           width: 235px;
           height: 40px;
-          color: rgba(0, 0, 0, 0.6);
+          border: none;
+          cursor: pointer;
+          padding: 0px;
+          background-color: rgba(255, 255, 255, 0);
         }
 
-        .sidebar-subitem-btn {
-          all: unset;
-          width: 100%;
-          height: 40px;
-          font-size: 17px;
-          color: rgba(0, 0, 0, 0.6);
-          padding-left: 4rem;
+        .sidebar-item-content {
+          display: flex;
+          flex-direction: row;
+          position: absolute;
+          justify-content: flex-start;
+          align-items: center;
+          margin: 0;
+          transition: all 0.3s ease;
+
+          /* 基础变量 */
+          --left-base: 25px;
+          --level-offset: 10px;
+          --width-base: 100%;
+          --width-reduction: 5%;
+
+          /* 动态计算 */
+          left: calc(var(--left-base) + calc(var(--level, 0) * var(--level-offset)));
+          width: max(0%, calc(var(--width-base) - calc(var(--level, 0) * var(--width-reduction))));
         }
+
+        .sidebar-item-icon {
+          position: relative;
+          width: 15px;
+          margin: 5px;
+        }
+
+        .sidebar-subitem-icon {
+          position: absolute;
+          right: 10%;
+        }
+
+        .sidebar-item-text {
+          display: block;
+          position: relative;
+          max-width: 60%;
+          justify-content: start;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          overflow: hidden;
+        }
+
+        .sidebar-item-child {
+          display: block;
+          flex-direction: column;
+          position: relative;
+          justify-content: flex-end;
+          align-items: center;
+          min-width: max-content;
+          height: max-content;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          transition: all 0.3s ease;
+          padding: 0px;
+        }
+      }
+    }
+
+    .sidebar-toggle-btn {
+      display: flex;
+      position: absolute;
+      top: 13px;
+      right: 0px;
+      width: 30px;
+      height: 30px;
+      background-color: rgba(255, 255, 255, 0);
+      border: none;
+      cursor: pointer;
+      z-index: 10;
+      transition: transform 0.3s ease;
+      transform: translateX(var(--sidebar-toggle-btn-translate-x));
+      box-sizing: border-box;
+      justify-content: center;
+      align-items: center;
+
+      &:hover {
+        background-color: #ababab;
+        border: 6px;
+        border-radius: 3px;
+      }
+
+      img {
+        width: 30px;
       }
     }
   }

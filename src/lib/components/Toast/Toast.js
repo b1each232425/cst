@@ -1,0 +1,68 @@
+/**
+ * @Author: 段春茂 2162105974@qq.com
+ * @Date: 2025-07-24 9:35:00
+ * @LastEditors: 段春茂 2162105974@qq.com
+ * @LastEditTime: 2025-08-10  21:28:07
+ * @FilePath: src\lib\components\Toast\Toast.js
+ * @Description: toast-信息提示函数式调用
+ * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved.
+ */
+import Toast from './Toast.svelte';
+import { mount } from 'svelte';
+
+let toastContainer;
+
+/**
+ * 如果没有父级容器,创建一个父级容器管理子容器toast信息提示，同时挂载到body
+ * @type {function}
+ */
+function ensureContainer() {
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
+  }
+}
+
+// 挂载toast.svelte组件的函数式
+function showToast(message, type = 'success', duration = 3000, showClose = true) {
+  ensureContainer();
+  const container = document.createElement('div');
+  toastContainer.appendChild(container);
+  mount(Toast, {
+    target: container,
+    props: {
+      message,
+      type,
+      duration,
+      showClose,
+    },
+  });
+  setTimeout(() => {
+    container.remove();
+    // 如果toastContainer没有子元素了，移除
+    if (toastContainer && toastContainer.childElementCount === 0) {
+      toastContainer.remove();
+      toastContainer = null;
+    }
+  }, duration + 500);
+}
+
+/**
+ * toast 提示组件
+ * @params
+ * @param {string} [message='']   - 提示内容
+ * @param {'success' | 'error' | 'warning'} [type='success']   - 提示类型
+ * @param {number} [duration=3000]   - 自动关闭时间，单位毫秒
+ * @param {boolean} [showClose=true]   - 是否显示关闭按钮
+ *
+ * @example
+ * toast.success('操作成功');
+ * toast.error('请求失败', 5000);
+ * toast.warning('请填写完整信息',3000,false);
+ */
+export const toast = {
+  success: (msg, duration = 3000, showClose = true) => showToast(msg, 'success', duration, showClose),
+  error: (msg, duration = 3000, showClose = true) => showToast(msg, 'error', duration, showClose),
+  warning: (msg, duration = 3000, showClose = true) => showToast(msg, 'warning', duration, showClose),
+};
