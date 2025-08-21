@@ -127,69 +127,8 @@ export function validateTheoryQuestion(question) {
     return null;
 }
 
-/**
- * @description 获取题目中附件的路径集合
- * @param {Partial<TheoryQuestion>} question 
- */
-export function getQuestionFilesPath(question) {
-    let htmlString = "";
-    switch (question.type) {
-        case "00":
-        case "02":
-            if (question.options)
-                htmlString += question.options.map(o => o.value).join('');
-        case "04":
-        case "06":
-        case "08":
-            if (question.content)
-                htmlString += question.content;
-            if (question.analysis)
-                htmlString += question.analysis;
-            break;
-    }
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlString, 'text/html');
-
-    /** @type {string[]} */
-    const result = [];
-
-    /**
-     * 标准化路径格式并移除 origin
-     * @param {string} url 
-     */
-    const normalizePath = url => {
-        try {
-            const normalized = url.replace(/\\/g, '/')
-                .replace(/^\/+/, '/');
-
-            const { pathname, search, hash } = new URL(normalized, window.location.origin);
-            return pathname + search + hash;
-        } catch {
-            return url.replace(/\\/g, '/');
-        }
-    };
 
 
-
-    // 处理图片和媒体资源
-    doc.querySelectorAll('img, source').forEach(el => {
-        const value = el.getAttribute("src");
-        if (value && !value.startsWith('data:')) {
-            result.push(normalizePath(value));
-        }
-    });
-
-    // 处理附件链接
-    doc.querySelectorAll('a.piptap-attachment').forEach(a => {
-        const value = a.getAttribute("href");
-        if (value && !value.startsWith('data:')) {
-            result.push(normalizePath(value));
-        }
-    })
-
-    return [...new Set(result)];
-}
 
 /**
  * @description 题目比对
