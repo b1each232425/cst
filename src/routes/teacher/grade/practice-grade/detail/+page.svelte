@@ -147,20 +147,14 @@
 
 <style lang="scss" scoped>
   .page-container {
-    position: absolute;
-    top: 0px;
-    left: -16px;
-    right: -16px;
-    bottom: -50px; // 覆盖 Footer 的 50px 高度
-    z-index: 10; // 高于 Footer
     background-color: var(--bg-primary);
-    padding: 16px;
-    overflow: hidden;
+    height: 100%;
+    width: 100%;
 
     .detail-container {
       display: flex;
       flex-direction: column;
-      height: 100%;
+      height: 98%;
       gap: 20px;
       overflow: auto;
       padding: 10px;
@@ -194,6 +188,7 @@
         .card4 {
           min-width: 1480px;
         }
+
       }
     }
   }
