@@ -19,9 +19,7 @@
   import { TheoryQuestion } from '../theory/type';
   import { formatTimestamp } from '$lib/utils/time_utils';
   import QuestionPreviewPanel from './QuestionPreviewPanel.svelte';
-
   import { questionLimit } from '../utils/questionConfig.js';
-  import { getQuestionFilesPath } from '../utils/utils';
   import { toast } from '$lib/components/Toast/Toast';
 
   const editor_width = 'calc(100% - 24px - 10px)';
@@ -204,31 +202,30 @@
   let question_edit_container = $state();
 
   let editorInitialized = false;
+
   let hasFocused = false;
+
+
+    
+
 
   $effect(() => {
     if (title_editor && !editorInitialized) {
       const controller = new AbortController();
-
-      const init = async () => {
+       const init = async () => {
         console.log('effect init');
         try {
           await title_editor.waitEditorReady();
           if (controller.signal.aborted) return;
-
-          // 设置富文本编辑器内容
-          title_editor?.setContentWithoutHistory(question_data?.content ? question_data.content : '');
-
-          addCustomButtonsToExistingToolbar();
+          editorInitialized = true;
+              addCustomButtonsToExistingToolbar();
           setupBlankRenumbering(piptap_editor.tiptapEditor);
           piptap_editor.tiptapEditor.commands.focus('end');
-          editorInitialized = true;
           console.log('Editor initialized');
         } catch (error) {
           console.error('Editor initialization failed', error);
         }
       };
-
       init();
 
       return () => {
@@ -265,13 +262,42 @@
 
     question_answers_editors_warning = new Array(question_answers.length).fill([0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
-    // 设置富文本编辑器内容
-    title_editor?.setContentWithoutHistory(question_data?.content ? question_data.content : '');
-    analysis_editor?.setContentWithoutHistory(question_data?.analysis ? question_data.analysis : '');
+      if (title_editor) {
+            const controller = new AbortController();
 
-    expend_answer_area.forEach((item, index) => {
-      expend_answer_area[index] = is_new_question ? true : false;
-    });
+            const init = async () => {
+                try {
+                    await title_editor.waitEditorReady();
+                    if (controller.signal.aborted) return;
+                    console.log('initpanel init')
+
+                    // 设置富文本编辑器内容
+                    title_editor?.setContentWithoutHistory(
+                        question_data?.content ? question_data.content : "",
+                    );
+
+                    addCustomButtonsToExistingToolbar();
+                    setupBlankRenumbering(piptap_editor.tiptapEditor);
+                    editorInitialized = true;
+                    piptap_editor.tiptapEditor.commands.focus('end')
+                    console.log("Editor initialized")
+                } catch (error) {
+                    console.error("Editor initialization failed", error);
+                }
+            };
+
+            init();
+
+            return () => {
+                controller.abort();
+            };
+        }
+    analysis_editor?.setContentWithoutHistory(question_data?.analysis ? question_data.analysis : '');
+   for(let i= 0; i < question_answers.length; i++) {
+    expend_answer_area[i]=true;
+    }
+
+  
 
     // 滚动到顶部
     if (question_edit_container) {
@@ -280,34 +306,7 @@
 
     per_answer_score = '';
 
-    if (title_editor) {
-      const controller = new AbortController();
-
-      const init = async () => {
-        try {
-          await title_editor.waitEditorReady();
-          if (controller.signal.aborted) return;
-          console.log('initpanel init');
-
-          // 设置富文本编辑器内容
-          title_editor?.setContentWithoutHistory(question_data?.content ? question_data.content : '');
-
-          addCustomButtonsToExistingToolbar();
-          setupBlankRenumbering(piptap_editor.tiptapEditor);
-          editorInitialized = true;
-          piptap_editor.tiptapEditor.commands.focus('end');
-          console.log('Editor initialized');
-        } catch (error) {
-          console.error('Editor initialization failed', error);
-        }
-      };
-
-      init();
-
-      return () => {
-        controller.abort();
-      };
-    }
+  
 
     initialized = true;
   };
@@ -605,7 +604,7 @@
       }
     }
 
-    data.question_attachments_path = getQuestionFilesPath(data);
+ 
     data.options = [];
     onConfirm(data);
   };
@@ -668,43 +667,48 @@
 
   let blankNodes = new Map();
   let isRenumbering = false; // 防止重复处理
-
+ 
   function setupBlankRenumbering(editor) {
     // 获取所有填空项并按位置排序
     function getAllBlanks() {
-      const blanks = [];
-      editor.state.doc.descendants((node, pos) => {
-        // console.log(node)
+    const blanks = [];
+    const blank_nodes = [];
+    
+    
+    editor.state.doc.descendants((node, pos) => {
         if (node.type.name === 'blankItem') {
-          blanks.push({ node, pos });
-        } else if (
-          node.marks &&
-          node.marks.length > 0 &&
-          node.marks[0].attrs.class &&
-          node.marks[0].attrs.class === 'blank-item'
-        ) {
-          // 创建 BlankItem 节点
-          const blankItemNode = editor.state.schema.nodes.blankItem.create({
-            id: node.marks[0].attrs.id,
-            blankNumber: node.marks[0].attrs.blankNumber,
-            style: 'display: inline-block; color: #2196f3;',
-            content: node.text,
-          });
-
-          const tr = editor.state.tr;
-
-          // 替换原节点
-          tr.replaceWith(pos, pos + node.nodeSize, blankItemNode);
-
-          editor.view.dispatch(tr);
-
-          // console.log(blankItemNode)
-          blanks.push({ node: blankItemNode, pos });
+            blanks.push({ node, pos });
+        } else if (node.marks?.some(mark => mark.attrs.class === 'blank-item')) {
+            const mark = node.marks.find(m => m.attrs.class === 'blank-item');
+            const blankItemNode = editor.state.schema.nodes.blankItem.create({
+                id: mark.attrs.id,
+                blankNumber: mark.attrs.blankNumber,
+                style: 'display: inline-block; color: #2196f3;',
+                content: node.text,
+            });
+            blank_nodes.push({ originalNode: node, originalPos: pos, newNode: blankItemNode });
+            blanks.push({ node: blankItemNode, pos }); 
         }
-      });
-      // 按文档位置排序
-      return blanks.sort((a, b) => a.pos - b.pos);
+    });
+ 
+   
+    if (blank_nodes.length > 0) {
+        let tr = editor.state.tr;
+        for (let i = blank_nodes.length - 1; i >= 0; i--) {
+            const { originalNode, originalPos, newNode } = blank_nodes[i];
+            // 计算原始节点的结束位置
+            const endPos = originalPos + originalNode.nodeSize;
+            // 替换节点
+            tr = tr.replaceWith(originalPos, endPos, newNode);
+        }
+        // 一次性 dispatch 所有修改
+        editor.view.dispatch(tr);
     }
+ 
+    
+    return blanks.sort((a, b) => a.pos - b.pos);
+}
+
 
     // 重新编号所有填空项
     function renumberBlanks() {
@@ -914,8 +918,9 @@
 
 <div class="editorContainer {show ? '' : 'hide'}">
   <div class="topBar">
-  
+ 
     <span>{is_new_question ? `新增` : `编辑`}填空题</span>
+    
 
     <div class="topBarControlBtns">
       <button
@@ -1496,6 +1501,7 @@
       min-width: 1000px;
 
       .editArea {
+         padding-top: 1%;
         flex: 1;
         max-width: 55%;
         overflow-y: auto;
