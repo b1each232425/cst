@@ -20,7 +20,7 @@
     import { formatTimestamp } from "$lib/utils/time_utils";
     import QuestionPreviewPanel from "./QuestionPreviewPanel.svelte";
     import { questionLimit } from "../utils/questionConfig.js";
-    import { getQuestionFilesPath } from "../utils/utils.js";
+
    
 
     const editor_width = "calc(100% - 24px - 10px)";
@@ -419,7 +419,6 @@
             }
         }
 
-        data.question_attachments_path = getQuestionFilesPath(data);
 
         onConfirm(data);
     };
@@ -976,6 +975,7 @@
 
             min-width: 1000px;
             .editArea {
+                 padding-top: 1%;
                 flex: 1;
                 max-width: 55%;
                 overflow-y: auto;

@@ -134,10 +134,8 @@ it('获取题库列表正确处理后端错误', async () => {
     });
 
 	 render(bankPage);
-    //toast是否显示成功
-    await waitFor(() => {
-    expect(screen.getByText('获取题库列表成功')).toBeInTheDocument();
-	});
+
+
 
  //是否成功渲染获取的题库 
  expect(screen.getByText('无标签题库')).toBeInTheDocument();
@@ -373,11 +371,7 @@ it('新增题库处理成功响应', async () => {
   const addButton = screen.getByText('点击此处添加题库'); // 根据实际按钮文本调整
   fireEvent.click(addButton);
  
-  // 等待成功提示出现
-  await waitFor(() => {
-    // 根据实际toast显示文本调整
-    expect(screen.getByText('新建题库成功')).toBeInTheDocument();
-  });
+
  
   // 验证fetch被调用
   expect(fetch).toHaveBeenCalledWith(

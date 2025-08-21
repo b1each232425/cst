@@ -44,6 +44,15 @@
       trigger: 'axis', //坐标轴触发，主要在柱状图，折线图等会使用类目轴的图表中使用
       axisPointer: {// 坐标轴指示器，坐标轴触发有效
         type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
+      },
+      formatter: function (params) {
+        if (params && params.length > 0) {
+          const dataIndex = params[0].dataIndex;
+          const scoreRange = params[0].name; // 分数段
+          const count = params[0].value; // 人数
+          return `分数段：${scoreRange}<br/>人数：${count}人`;
+        }
+        return '';
       }
     },
 
@@ -55,7 +64,7 @@
     },
     xAxis: {
       type: 'category',
-      data: ['100分', '90-99分', '80-89分', '70-70分', '60-69分', '60分以下'],
+      data: ['100分', '90-99分', '80-89分', '70-79分', '60-69分', '60分以下'],
       name: '分数段',
       nameLocation: 'middle',
       nameGap: 30,
