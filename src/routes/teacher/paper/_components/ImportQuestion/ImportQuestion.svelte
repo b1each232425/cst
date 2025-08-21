@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 21:09:59
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-15 20:58:51
+ * @LastEditTime: 2025-08-21 21:52:14
  * @FilePath: \exam\src\routes\teacher\paper\_components\ImportQuestion\ImportQuestion.svelte
  * @Description: 从题库导入题目组件
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -774,7 +774,6 @@
     .modal-overlay {
         font-family: 'Noto Sans SC', sans-serif;
         color: var(--text-primary);
-
         position: fixed;
         top: 0;
         left: 0;
@@ -785,19 +784,18 @@
         justify-content: center;
         align-items: center;
         z-index: 1000;
+        overflow: auto;
 
         /* 弹窗 */
         .modal-container {
-            height: 90vh;
-            max-height: 90vh;
-            width: 85vw;
-            max-width: 85vw;
-            min-width: 1100px;
             background-color: #fff;
             border-radius: var(--border-radius-md);
             display: flex;
             flex-direction: column;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            width: 1450px;
+            height: 850px;
+            overflow: auto;
 
             /* 头部 */
             .container-header {
@@ -832,7 +830,6 @@
                 display: flex;
                 flex-grow: 1;
                 /* background-color: var(--bg-primary); */
-                max-height: calc(90vh - 162px);
                 gap: 16px;
 
                 /* 左侧区域 */
@@ -1066,18 +1063,18 @@
 
                     /* 下半区 */
                     .bottom-area {
-                        flex-grow: 1;
                         display: flex;
                         flex-direction: column;
+                        flex: 1;
 
                         /* 表格区域 */
                         .questions-table-container {
                             padding: 0 16px;
                             flex-grow: 1;
-                            max-height: calc(90vh - 320px);
                             overflow: auto;
                             display: flex;
                             flex-direction: column;
+                            max-height: 510px;
 
                             table {
                                 border-collapse: collapse;
@@ -1117,7 +1114,9 @@
                                     top: 0;
                                     background-color: var(--bg-primary);
                                     padding-top: 14px;
+                                    z-index: 1;
 
+                                    
                                     input {
                                         width: 16px;
                                         height: 16px;
@@ -1210,6 +1209,8 @@
                             display: flex;
                             justify-content: right;
                             padding: 0 16px;
+
+                            min-width: max-content;
                         }
 
                     }
