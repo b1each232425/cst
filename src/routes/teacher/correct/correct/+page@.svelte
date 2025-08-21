@@ -397,6 +397,11 @@
       : 0,
   );
 
+  // 试卷主观题总分
+  let total_score = $derived(
+    Array.isArray(question_sets) ? question_sets.reduce((acc, cur) => acc + cur?.Score ?? 0, 0) : 0,
+  );
+
   let current_question_set = $derived(question_sets[current_question_set_index]);
   let current_question = $derived(current_question_set?.Questions[current_question_index] ?? []);
   let current_student_info = $derived(Array.isArray(student_infos) ? student_infos[current_student_info_index] : {});
@@ -404,7 +409,8 @@
   // 绑定批改区域，用于切换考生的时候滚动条滚动到最顶部（逐题模式切换题目不需要，因为切换题目会销毁整个题目组件）
   let correction_content = null;
 
-  let current_paper_name = $state('');
+  let current_name = $state('');
+  let current_exam_session_name = $state('');
 
   // 用于处理之前已批改，但是之后被清除了分数（这时是不会保存批改的，因为没有不会保存未批改的题目的分数），这时需要在总览显示“未批阅”的状态
   // let has_unmarked = $state(-1);
@@ -664,7 +670,8 @@
               qs.Questions.sort((a, b) => a.Order - b.Order);
             });
 
-          current_paper_name = page.url.searchParams.get('name');
+          current_name = page.url.searchParams.get('name');
+          current_exam_session_name = page.url.searchParams.get('exam_session_name');
         } else throw new Error(res.msg ?? '获取批改信息失败');
       })
       .catch((err) => {
@@ -770,9 +777,13 @@
   <div class="header">
     <div class="left-header">
       <button class="btn is-text btn--large btn--primary is-plain" onclick={goBack}>返回</button>
-      <div class="name">{current_paper_name}</div>
+      <div class="name">{current_name}</div>
+      {#if current_exam_session_name}
+        <div class="info"><span>考试场次：</span><span class="data"> {current_exam_session_name}</span></div>
+      {/if}
       <div class="info"><span>总人数：</span><span class="data"> {student_infos.length}</span></div>
       <div class="info"><span>未批改人数：</span><span class="data"> {getUnmarkedExamineeCount()}</span></div>
+      <div class="info"><span>主观题总分：</span><span class="data"> {total_score}</span></div>
       <div class="info"><span>总未批改题数：</span><span class="data"> {getAllUnMarkedQuestionCount()}</span></div>
     </div>
     <div class="hobby" data-testid="switch">
@@ -891,7 +902,7 @@
 
     <!-- 右侧总览 -->
     <div class="card overview">
-      <div class="overview-header">作答总览</div>
+      <div class="overview-header">批改总览</div>
       <div class="question-status">
         <span class="unreviewed">• 未批阅</span>
         <span class="right">• 正确</span>
@@ -956,6 +967,7 @@
     .header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       padding: 1rem 2rem;
       flex-wrap: wrap;
       background-color: white;
@@ -963,11 +975,13 @@
       .left-header {
         @include flex-center;
         gap: 1rem;
+        flex-wrap: wrap;
 
         .name {
           @include flex-center;
           font-weight: 400;
           font-size: 1.2rem;
+          white-space: nowrap;
         }
       }
 
@@ -1039,10 +1053,14 @@
         background-color: white;
         width: 20%;
 
-        $color-unreviewed: #c2c2c2; // lighten(#919191, 20%)
-        $color-right: #66ff99; // lighten(#00e343, 20%)
-        $color-incorrect: #ff4d4d; // lighten(#ff0000, 20%)
-        $color-partial: #ffc266; // lighten(#ff9500, 20%)
+        // $color-unreviewed: #c2c2c2; // lighten(#919191, 20%)
+        // $color-right: #66ff99; // lighten(#00e343, 20%)
+        // $color-incorrect: #ff4d4d; // lighten(#ff0000, 20%)
+        // $color-partial: #ffc266; // lighten(#ff9500, 20%)
+        $color-unreviewed: ver(--gray);
+        $color-right: var(--green);
+        $color-incorrect: var(--red);
+        $color-partial: var(--orange);
 
         .overview-header {
           padding: 1rem;
@@ -1121,19 +1139,23 @@
               }
 
               &.right {
-                background-color: $color-right;
+                background-color: #e8ffea;
+                color: $color-right;
               }
 
               &.incorrect {
-                background-color: $color-incorrect;
+                background-color: #f8d2d8;
+                color: $color-incorrect;
               }
 
               &.partial {
-                background-color: $color-partial;
+                background-color: #ffe8abfe;
+                color: $color-partial;
               }
 
               &.unknown {
                 background-color: red;
+                color: white;
               }
             }
           }

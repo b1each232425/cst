@@ -325,7 +325,7 @@
           position: sticky;
           top: 0;
           font-size: 14px;
-          color: rgb(178, 178, 178);
+          color: var(--gray);
           background-color: white;
         }
 
@@ -363,15 +363,21 @@
               .options {
                 display: flex;
                 justify-content: center;
+                color: #2f54eb;
 
                 button {
                   &.disabled {
                     color: #ccc;
                     cursor: not-allowed;
+                    border: 0;
                   }
 
                   &:not(.disabled):hover {
                     font-weight: bold;
+                  }
+
+                  &:not(.disabled) {
+                    border-bottom: 1px solid #2f54eb;
                   }
                 }
               }
