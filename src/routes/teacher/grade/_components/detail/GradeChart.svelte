@@ -351,12 +351,12 @@
     .title {
       font-size: 22px;
       font-weight: bold;
-      margin-top: 8px;
-      margin-bottom: 15px;
+      margin-top:5px;
+      margin-bottom: 10px;
     }
 
     .dropdown {
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
 
     .chart {
@@ -384,10 +384,6 @@
           
         }
 
-        .loading-state{
-          position: relative;
-        }
-
         .empty-state {
           display: flex;
           align-items: center;
@@ -398,12 +394,11 @@
         }
 
         .loading-state {
+          position: relative;
           display: flex;
           align-items: center;
           justify-content: center;
           height: 100%;
-          color: #666;
-          font-size: 14px;
         }
 
         .error-state {
@@ -423,7 +418,7 @@
         .echarts-wrapper {
           height: 100%;
           width: 100%;
-          min-height: 300px;
+          min-height: 280px;
         }
       }
     }

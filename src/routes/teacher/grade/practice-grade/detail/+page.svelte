@@ -194,6 +194,8 @@
         .card4 {
           min-width: 1480px;
         }
+        margin-bottom: 30px;
+
       }
     }
   }

@@ -66,7 +66,7 @@
   <!-- 练习信息卡片 -->
   {#if displayData}
     <div class="exam-card">
-      <h1 class="title">{safeDisplayText(displayData.name)}</h1>
+      <div class="title-container">{safeDisplayText(displayData.name)}</div>
 
       <div class="info-grid practice-grid">
         <div class="info-item">
@@ -97,7 +97,7 @@
     </div>
   {:else}
     <div class="exam-card">
-      <h1 class="title">---</h1>
+      <div class="title-container">---</div>
       <div class="info-grid practice-grid">
         <div class="info-item">
           <span class="label">练习总分</span>
@@ -126,17 +126,17 @@
   <!-- 考试信息卡片 -->
   {#if displayData}
     <div class="exam-card">
-      <h1 class="title">{safeDisplayText(displayData.title || displayData.name)}</h1>
+      <div class="title-container">{safeDisplayText(displayData.title || displayData.name)}</div>
 
       <div class="info-grid">
         <div class="info-item exam-time-item">
           <span class="label">考试时间</span>
           <div class="exam-time-list">
-            {#if displayData.papers && displayData.papers.length > 0}
-              {#each displayData.papers as paper, i}
+            {#if sortedPapers && sortedPapers.length > 0}
+              {#each sortedPapers as paper, i}
                 <div class="exam-time-entry">
-                  <span class="paper-label">试卷{i + 1}:</span>
-                  <span class="time-value">{formatSingleExamTime(displayData, i)}</span>
+                  <span class="paper-label">{paper.idText}:</span>
+                  <span class="time-value">{formatSingleExamTime(displayData, displayData.papers.findIndex(p => p.id === paper.id))}</span>
                 </div>
               {/each}
             {:else}
@@ -148,10 +148,10 @@
         <div class="info-item exam-score-item">
           <span class="label">考试总分</span>
           <div class="exam-score-list">
-            {#if displayData.papers && displayData.papers.length > 1}
-              {#each displayData.papers as paper, i}
+            {#if sortedPapers && sortedPapers.length > 1}
+              {#each sortedPapers as paper}
                 <div class="exam-score-entry">
-                  <span class="paper-label">试卷{i + 1}:</span>
+                  <span class="paper-label">{paper.idText}:</span>
                   <span class="score-value">{safeDisplayNumber(paper.total_score)}</span>
                 </div>
               {/each}
@@ -164,10 +164,10 @@
         <div class="info-item exam-examinees-item">
           <span class="label">应考人数</span>
           <div class="exam-examinees-list">
-            {#if displayData.papers && displayData.papers.length > 1}
-              {#each displayData.papers as paper, i}
+            {#if sortedPapers && sortedPapers.length > 1}
+              {#each sortedPapers as paper}
                 <div class="exam-examinees-entry">
-                  <span class="paper-label">试卷{i + 1}:</span>
+                  <span class="paper-label">{paper.idText}:</span>
                   <span class="examinees-value">{safeDisplayNumber(paper.actual_examinees)}</span>
                 </div>
               {/each}
@@ -180,10 +180,10 @@
         <div class="info-item exam-average-item">
           <span class="label">考试平均分</span>
           <div class="exam-average-list">
-            {#if displayData.papers && displayData.papers.length > 1}
-              {#each displayData.papers as paper, i}
+            {#if sortedPapers && sortedPapers.length > 1}
+              {#each sortedPapers as paper}
                 <div class="exam-average-entry">
-                  <span class="paper-label">试卷{i + 1}:</span>
+                  <span class="paper-label">{paper.idText}:</span>
                   <span class="average-value">{safeDisplayNumber(paper.average_score, 1)}</span>
                 </div>
               {/each}
@@ -196,10 +196,10 @@
         <div class="info-item exam-pass-item">
           <span class="label">通过人数</span>
           <div class="exam-pass-list">
-            {#if displayData.papers && displayData.papers.length > 1}
-              {#each displayData.papers as paper, i}
+            {#if sortedPapers && sortedPapers.length > 1}
+              {#each sortedPapers as paper}
                 <div class="exam-pass-entry">
-                  <span class="paper-label">试卷{i + 1}:</span>
+                  <span class="paper-label">{paper.idText}:</span>
                   <span class="pass-value">{safeDisplayNumber(paper.pass_examinees)}</span>
                 </div>
               {/each}
@@ -257,7 +257,7 @@
     </div>
   {:else}
     <div class="exam-card">
-      <h1 class="title">---</h1>
+      <div class="title-container">---</div>
       <div class="info-grid">
         <div class="info-item">
           <span class="label">考试时间</span>
@@ -328,10 +328,12 @@
     height: 100%;
     margin-bottom: 40px;
 
-    .title {
+    .title-container {
       font-size: 22px;
       font-weight: bold;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
+      margin-top:5px;
+      margin-left:24px;
     }
 
     .info-grid {
