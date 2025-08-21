@@ -54,11 +54,10 @@
       <div class="content-container">
         {@render children()}
       </div>
-
-      <footer>
-        <Brand content={'广州近邻信息有限公司 Copyright © 2024-2034 w2w.me. All Rights Reserved.'} />
-      </footer>
     </div>
+    <footer>
+      <Brand content={'广州近邻信息有限公司 Copyright © 2024-2034 w2w.me. All Rights Reserved.'} />
+    </footer>
   </main>
 </div>
 
@@ -91,10 +90,9 @@
     overflow: hidden;
 
     header {
-      flex: 0 0 auto;
       position: relative;
       width: 100%;
-      height: max-content;
+      height: 50px;
       z-index: 1000;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
@@ -102,20 +100,18 @@
     .content-wrapper {
       display: flex;
       flex-direction: column;
-      flex: 1 1 auto;
-      height: calc(100% - 50px);
+      flex: 1;
       position: relative;
 
       .content-container {
         flex: 1;
         overflow-y: auto;
-        padding: 16px;
+        padding: 0px 15px 0px 15px;
         background-color: var(--bg-primary);
       }
     }
 
     footer {
-      flex: 0 0 auto;
       width: 100%;
       height: 50px;
       display: flex;
