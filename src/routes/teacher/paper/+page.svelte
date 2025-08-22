@@ -561,6 +561,7 @@
         flex-direction: column;
         overflow: hidden;
         height: 100%;
+        /* background-color: red; */
         
         /* 操作栏区域 */
         .header {
@@ -618,7 +619,7 @@
         /* 表格区域 */
         .table-container {
             overflow: auto;
-            height: 100%;
+            height: calc(100vh - 300px);
 
             /* 表格内容 */
             table {
@@ -680,12 +681,9 @@
                                 background: none;
                                 transition: all 0.2s;
                                 white-space: nowrap;  /* 文本内容不换行 */
-                                border-radius: var(--btn-border-radius);
-                                border: 1px solid var(--border-medium);
 
                                 &:hover {
                                     font-weight: bold;
-                                    border: 1px solid var(--border-dark)
                                 }
                             }
 
@@ -693,7 +691,6 @@
                                 color: var(--blue);
         
                                 &:hover {
-                                    background-color: #e6f7ff;
                                     color: var(--primary-hover);
                                 }
                             }
@@ -702,7 +699,6 @@
                                 color: var(--red);
         
                                 &:hover {
-                                    background-color: #fff2f0;
                                     color: var(--red);
                                 }
                             }

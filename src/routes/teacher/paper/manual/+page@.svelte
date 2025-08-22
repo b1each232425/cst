@@ -264,6 +264,28 @@
         return CHARCODE % TAG_COLOR_LIST.length;
     }
 
+    // 计算文本宽度的函数
+    function getTextWidth(text, font = '12px sans-serif') {
+        // 创建一个临时的canvas元素来计算文本宽度
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        context.font = font;
+        const metrics = context.measureText(text);
+        return metrics.width;
+    }
+
+    // 获取标签input的宽度
+    function getTagInputWidth(text) {
+        if (!text || text.trim() === '') {
+            return 35; // 默认最小宽度
+        }
+        const textWidth = getTextWidth(text, '12px sans-serif');
+        const minWidth = 35; // 最小宽度
+        const padding = 8; // 左右padding的总和
+        const calculatedWidth = Math.max(textWidth + padding, minWidth);
+        return Math.min(calculatedWidth, 200); // 最大宽度限制
+    }
+
     let to_add_tag = $state("");
     let is_clearing_tag = $state(false);
 
@@ -340,9 +362,15 @@
             confirm_button_type: "danger",
 
             onConfirm: () => {
-                // 删除后重新排序
-                let groupIDs = paper_groups.map(group => group.id);
-                groupIDs = groupIDs.filter(id => id !== groupID)
+                const NEW_PAPER_GROUPS = [ ...paper_groups ];
+                const GROUP_INDEX = NEW_PAPER_GROUPS.findIndex(g => g.id === groupID);
+                NEW_PAPER_GROUPS.splice(GROUP_INDEX, 1);
+                const GROUP_IDS = NEW_PAPER_GROUPS.map(group => group.id);
+
+                // 获取所有题目的ID数组
+                const QUESTION_IDS = NEW_PAPER_GROUPS.flatMap(group =>
+                    group.questions.map(question => question.id)
+                );
 
                 const ACTIONS = [
                     {
@@ -351,7 +379,11 @@
                     },
                     {
                         action: "move_group",
-                        payload: groupIDs
+                        payload: GROUP_IDS
+                    },
+                    {
+                        action: "move_question",
+                        payload: QUESTION_IDS
                     }
                 ];
 
@@ -605,6 +637,52 @@
         }
     }
 
+    // 移动题组
+    function moveGroup(group, direction) {
+        // 判断是否是第一个题组
+        if(group.id === paper_groups[0].id && direction === "up") {
+            toast.error("已经是第一个题组", 1000);
+            return;
+        }
+        // 判断是否是最后一个题组
+        if(group.id === paper_groups[paper_groups.length - 1].id && direction === "down") {
+            toast.error("已经是最后一个题组", 1000);
+            return;
+        }
+
+        // 交换题组
+        const NEW_PAPER_GROUPS = [ ...paper_groups ];
+        const GROUP_INDEX = NEW_PAPER_GROUPS.findIndex(g => g.id === group.id);
+        const TARGET_GROUP_INDEX = GROUP_INDEX + (direction === "up" ? -1 : 1);
+        [NEW_PAPER_GROUPS[GROUP_INDEX], NEW_PAPER_GROUPS[TARGET_GROUP_INDEX]] = [NEW_PAPER_GROUPS[TARGET_GROUP_INDEX], NEW_PAPER_GROUPS[GROUP_INDEX]];
+        const GROUP_IDS = NEW_PAPER_GROUPS.map(group => group.id);
+
+        // 获取所有题目的ID数组
+        const QUESTION_IDS = NEW_PAPER_GROUPS.flatMap(group =>
+            group.questions.map(question => question.id)
+        );
+
+        const ACTIONS = [
+            {
+                action: "move_group",
+                payload: GROUP_IDS,
+            },
+            {
+                action: "move_question",
+                payload: QUESTION_IDS
+            }
+        ];
+        
+        savePaper(paperID, ACTIONS)
+            .then(() => fetchPaper(paperID))
+            .then((result) => {
+                paper_groups = result.data.GroupsData;
+                paper_info = result.data;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+            });
+    }
+
     // 移动题目
     function moveQuestion(group, question, direction) {
         // 获取题目 ID 数组
@@ -617,12 +695,12 @@
 
         // 边界：最上面的题再往上 or 最下面的题再往下，直接 return
         if (INDEX === 0 && direction === 'up') {
-            toast.error("已经是第一题", 1000);
+            toast.error("已经是第一道题", 1000);
             return;
         }
 
         if (INDEX === FULL_QUESTION_IDS.length - 1 && direction === 'down') {
-            toast.error("已经是最后一题", 1000);
+            toast.error("已经是最后一道题", 1000);
             return;
         }
 
@@ -1300,6 +1378,7 @@
                                         onchange={addTag}
                                         placeholder="+标签"
                                         use:utf8MaxLength={30}
+                                        style="width: {getTagInputWidth(to_add_tag)}px;"
                                     />
                                     <button onmousedown={clearToAddTagContent} title="取消">✕</button>
                                 </div>
@@ -1316,6 +1395,7 @@
                                             onblur={()=>updateOldTag(index)}
                                             placeholder="+标签"
                                             use:utf8MaxLength={30}
+                                            style="width: {getTagInputWidth(tags[index])}px;"
                                         />
                                         <button onmousedown={()=>deleteTag(index)} title="删除">✕</button>
                                     </div>
@@ -1456,7 +1536,10 @@
                                                 title=""
                                                 onchange={()=>updateAverageQuestionScore(group)}
                                             >
-                                        <button onclick={(e)=>{e.stopPropagation();importQuestions(group)}} class="btn btn--primary" title="">导入题目</button>
+                                        <button onclick={(e)=>{e.stopPropagation();importQuestions(group)}} class="btn btn--primary import-btn">导入题目</button>
+                                        <button onclick={(e)=>{e.stopPropagation();moveGroup(group,"up")}} class="move-btn" title="上移">↑</button>
+                                        <button onclick={(e)=>{e.stopPropagation();moveGroup(group,"down")}} class="move-btn" title="下移">↓</button>
+                                        <button onclick={(e)=>{e.stopPropagation();deleteGroup(group.id)}} class="delete-group-btn" title="删除">✕</button>
                                     </div>
                                 </div>
     
@@ -1564,7 +1647,6 @@
                     {/if}
                 </div>
             </div>
-
         </div>
     </div>
 {/if}
@@ -1680,17 +1762,18 @@
             /* 侧边栏 */
             .side-bar {
                 /* background-color: aliceblue; */
-                width: 372px;
-                min-width: 372px;
+                width: 400px;
+                min-width: 400px;
                 transition: all 0.3s ease;
+                white-space: nowrap;
 
                 &.collapsed {
                     width: 0;
                     min-width: 0;
                     overflow: hidden;
-                    transform: translateX(-100%);
-                    opacity: 0;
-                    visibility: hidden;
+                    /* transform: translateX(-100%); */
+                    /* opacity: 0; */
+                    /* visibility: hidden; */
                 }
 
                 /* 试卷信息 */
@@ -1772,7 +1855,8 @@
                         .tags-container {
                             /* background-color: violet; */
                             display: flex;
-                            width: 300px;
+                            width: 280px;
+                            min-width: 280px;
                             height: 48px;
                             gap: 10px 16px;
                             overflow-y: auto;
@@ -1782,7 +1866,7 @@
                             .paper-tag {
                                 /* background-color: red; */
                                 display: flex;
-                                height: 16px;
+                                height: 18px;
                                 border: 1.5px solid transparent;
 
                                 /* 颜色块 */
@@ -1811,13 +1895,14 @@
                                         font-weight: 500;
                                         height: 16px;
                                         padding: 0;
-                                        width: 42px;
+                                        min-width: 35px;
                                         border: none;
                                         font-size: 12px;
                                         outline: none;
                                         margin-left: 2px;
-                                        margin-right: 4px;
                                         color: var(--text-primary);
+                                        transition: width 0.2s ease;
+                                        background: none
                                     }
 
                                     button {
@@ -2103,17 +2188,55 @@
                             display: flex;
                             align-items: center;
 
+                            /* 每题分值 */
                             input {
                                 width: 75px;
-                                margin-right: 36px;
+                                margin-right: 12px;
                                 padding-left: 12px;
                             }
-
                             span {
                                 font-size: 14px;
                                 color: var(--text-secondary);
                                 margin-right: 1vw;
                             }
+
+                            /* 导入题目按钮 */
+                            .import-btn {
+                                margin-right: 36px;
+                            }
+                            
+                            .move-btn, .delete-group-btn {
+                                width: 30px;
+                                height: 30px;
+                                margin-left: 6px;
+                                border-radius: var(--btn-border-radius);
+                                border: 1px solid var(--border-light);
+                                background-color: var(--bg-primary);
+                                cursor: pointer;
+                            }
+
+                            /* 移动按钮 */
+                            .move-btn {
+                                font-size: 16px;
+
+                                &:hover {
+                                    color: var(--primary-color);
+                                    border-color: var(--primary-color);
+                                    transition: all 0.3s;
+                                }
+                            }
+
+                            /* 删除按钮 */
+                            .delete-group-btn {
+                                font-weight: bold;
+
+                                &:hover {
+                                    color: var(--red);
+                                    border-color: var(--red);
+                                    transition: all 0.3s;
+                                }
+                            }
+                            
                         }
                     }
                     
