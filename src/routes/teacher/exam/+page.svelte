@@ -31,7 +31,7 @@
   let message = $state('');
   let publish_exam_dialog = $state(false);
   let examID_to_publish = $state(false);
-  let examID_to_delete = $state(false);
+  let examID_to_delete = $state([]);
   let total_items = $state(); //总数据条数
   let delete_exam_dialog = $state(false); //删除考试的确认框
   let is_delete_mode = $state(false); //是否是删除模式
@@ -301,6 +301,7 @@
         searchExam();
         loading=false;
         selected_exam_ids=[];
+        delete_exam_dialog = false;
       })
   }
 
@@ -443,7 +444,7 @@ function handleSelectAll(event) {
     <th>考试类型</th>
     <th>考试方式</th>
     <th>考试时间</th>
-    <th>考试时长</th>
+    <th>考试时长(分钟)</th>
     <th>考试状态</th>
     <th>考生人数</th>
     <th>操作</th>
@@ -473,7 +474,7 @@ function handleSelectAll(event) {
     onclick={(event)=>{
         event.stopPropagation(); // 阻止冒泡
         delete_exam_dialog=true;
-        examID_to_delete =exam_list[index].id
+        examID_to_delete = [exam_list[index].id]
     }}>
     删除考试</button>
 
@@ -531,7 +532,7 @@ function handleSelectAll(event) {
       {#each data.exam_sessions as session}
         <div style="display: flex; flex-wrap: no-wrap; gap: 8px;">
           <span>
-            {formatDateTime(session.start_time)} -- {formatDateTime(session.end_time)}
+            {formatDateTime(session.start_time)} ~ {formatDateTime(session.end_time)}
           </span>
         </div>
       {/each}
@@ -599,7 +600,7 @@ function handleSelectAll(event) {
     </div>
     <div class="buttonPart">
       <!-- {#if !is_delete_mode}
-      <Button plain={true}  type="danger" size="medium" onclick={() => { is_delete_mode = true; }}>批量删除</Button>
+      
       <Button plain={true}  type="primary" size="medium" onclick={() => goto('/teacher/exam/addExam')}>新增考试</Button>
       {:else}
       <Button plain={true} type="default" size="medium" onclick={() => {is_delete_mode=false;}}>取消</Button>
@@ -607,6 +608,7 @@ function handleSelectAll(event) {
           删除选中 ({selected_exam_ids.length})
         </Button>
       {/if} -->
+      <Button plain={true}  type="danger" size="medium" onclick={() => { deleteExam(selected_exam_ids) }}>批量删除</Button>
       <Button plain={true}  type="primary" size="medium" onclick={() => goto('/teacher/exam/addExam')}>新增考试</Button>
     </div>
   </div>
@@ -656,10 +658,10 @@ function handleSelectAll(event) {
       delete_exam_dialog = false;
     }}
     onConfirm={() => {
-      if (!selected_exam_ids.includes(examID_to_delete)) {
-      selected_exam_ids = [...selected_exam_ids, examID_to_delete];
-    }
-      deleteExam(selected_exam_ids)
+    //   if (!selected_exam_ids.includes(examID_to_delete)) {
+    //   selected_exam_ids = [...selected_exam_ids, examID_to_delete];
+    // }
+      deleteExam(examID_to_delete)
       }}
     />
 

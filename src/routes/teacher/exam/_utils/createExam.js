@@ -1,5 +1,6 @@
 import { toast } from '$lib/components/Toast/Toast.js';
 import {goto } from '$app/navigation';
+
 export function onChooseStartTime(index, paper_configs, updateDuration) {
   return function (event) {
     const startDate = event.detail.date;

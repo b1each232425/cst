@@ -193,6 +193,7 @@
   let RichTextEditor; //富文本编辑器
   let exam_rooms = $state([]); //考试场地
   let invigilators = $state([]); //监考人员
+  let date_picker = $state(); //日期选择器
   //考试场次数组
   let paper_configs = $state([
     {
@@ -233,6 +234,8 @@
   let show_paper_selection_panel = $state(false);
   let show_examinee_panel = $state(false);
   let files = $state([]);
+
+
   function addNewPaper() {
     let default_paper_config = {
       paperID: 0, //试卷ID
@@ -265,8 +268,24 @@
       lateEntryTime: 1,
       earlySubmissionTime: 0,
     };
-    paper_configs = [...paper_configs, default_paper_config];
 
+    //保证在没有选择时间的情况下也能新增试卷
+    if(paper_configs.length>=1&&paper_configs[paper_configs.length-1].startTime!=''&&paper_configs[paper_configs.length-1].endTime!='')
+    {
+      const prev = paper_configs.length-1;
+      const prevEnd = new Date(paper_configs[prev].endTime);
+      const nextStart = new Date(prevEnd);
+      nextStart.setHours(prevEnd.getHours() + 1);
+
+      const nextEnd = new Date(nextStart);
+      nextEnd.setMinutes(nextStart.getMinutes() + 120); // 默认 120 分钟
+
+      default_paper_config.startTime = nextStart.toISOString();
+      default_paper_config.endTime   = nextEnd.toISOString();
+     
+    }
+    paper_configs = [...paper_configs, default_paper_config];
+    if(paper_configs.length>=1) {updateDuration(paper_configs.length-1,paper_configs);}
     // 清空考场选择
     // exam_rooms = [];
     // invigilators = [];
@@ -313,6 +332,7 @@
     toast.error("删除失败，未知错误");
   });
   }
+  
   async function uploadFiles(files = selectedFiles){
     let promises = [];
     for (let i = 0; i < files.length; i++) {
@@ -474,19 +494,14 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         toast.error('未知错误');
       });
   }
-onMount(async () =>{
-    await fetchExamID();
-    tus= await import('tus-js-client');
-    tusInit(tus);
-    queryFiles();
-})
-  
 
-  // ===== 仅测试环境导出 =====
-if (import.meta.env.MODE === 'test') {
-  window.__singles = singles;
-}
-export { singles };
+  onMount(async () =>{
+      await fetchExamID();
+      tus= await import('tus-js-client');
+      tusInit(tus);
+      queryFiles();
+  })
+
 </script>
 
 <Title title="创建考试" line={true} />
@@ -652,7 +667,7 @@ export { singles };
        </div>
        
        <div class="fileListContainer {uploadedFileList.length===0 ? 'hideButton' :' '}">
-      <RequiredLabel text="附件列表" Asterisk={false} colon = {false}></RequiredLabel>
+      <RequiredLabel text="附件列表" Asterisk={false} colon = {true}></RequiredLabel>
           <div class="file-list-wrapper">
             {#if uploadedFileList.length === 0}
             {:else}
@@ -702,7 +717,7 @@ export { singles };
     <div class="paper-config-head">
       <span class="paper-num">试卷{paperConfigIndex + 1}</span>
       <button
-        class={paperConfigIndex != 0 ? 'delete-paper-button' : 'hide'}
+        class='delete-paper-button {paper_configs.length > 1? ' ' : 'hideButton'}'
         onclick={() => {
           paper_configs.splice(paperConfigIndex, 1);
           // 清空考场选择
@@ -810,11 +825,14 @@ export { singles };
         <RequiredLabel text="考试时段" />
         <div class="config-row-content">
           <DatePicker
+            bind:this={date_picker}
             is_time_selection={true}
             input_width={'350px'}
             is_single_date_selection={false}
             on:start_date_selected={onChooseStartTime(paperConfigIndex,paper_configs,updateDuration)}
             on:end_date_selected={onChooseEndTime(paperConfigIndex,paper_configs,updateDuration)}
+            initial_start_date={paper_configs[paperConfigIndex].startTime ? new Date(paper_configs[paperConfigIndex].startTime) : null}
+            initial_end_date={paper_configs[paperConfigIndex].endTime ? new Date(paper_configs[paperConfigIndex].endTime) : null}
             onDateConfirm={()=>[
               updateDuration(paperConfigIndex,paper_configs)
             ]}
@@ -941,7 +959,7 @@ export { singles };
       </div>
 
       <div class="show-name-container {paper_configs[paperConfigIndex].markMethod !== '00' ? 'hide' : 'config-row'}">
-        <RequiredLabel text="批改时是否显示考生姓名：" Asterisk={false} colon={false} />
+        <RequiredLabel text="显示考生姓名" Asterisk={false}  />
 
         <div class="config-row-content">
           <label class="label">
@@ -999,11 +1017,19 @@ export { singles };
         <RequiredLabel text="批改模式" />
 
         <div class="config-row-content" style="display: flex;flex-direction:column">
-          <span class="grading-config-row-text">单人阅卷</span>
+          <label class="label" style="color: #757575;">
+            <input
+              type="radio"
+              bind:group={paper_configs[paperConfigIndex].markMode}
+              value={'10'}
+              class="choice-radio-input"
+            />
+            单人批改
+          </label>
         </div>
       </div>
 
-      <div
+      <!-- <div
         class="grading-mode-button-container {paper_configs[paperConfigIndex].markMethod !== '00'
           ? 'hide'
           : ' config-row'}"
@@ -1020,7 +1046,7 @@ export { singles };
             单人批改
           </label>
         </div>
-      </div>
+      </div> -->
     </div>
 
     <PaperSelectionPanel
@@ -1093,20 +1119,32 @@ export { singles };
       .examRuleInputContainer,
       .examTypeChooseContainer,
       .exam-type-choose-container,
-      .paper-configs-container,
       .total-duration-container,
       .examinee-container,
-      .file-container,
-      .fileListContainer {
+      .file-container{
         display: grid;
         grid-template-columns: auto 1fr;
-        // margin-left:15%;
         gap: 20px;
-        // align-items: center;
+        
       }
     }
   }
   
+  .paper-configs-container{
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 20px;
+    align-items: start;
+    margin-bottom: 10px;
+  }
+
+   .fileListContainer{
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 20px;
+    align-items: start;
+   }
+   
   .exam-name-input {
     //max-width:60%;
     min-height: 32px;
@@ -1153,7 +1191,7 @@ export { singles };
       background-color: #f2f2f2;
       padding-top: 10px;
       padding-left: 5%; //配置试卷区域的左边距
-
+      padding-bottom: 20px;
       .paper-button-container {
         display: flex;
         flex-direction: row;
@@ -1234,6 +1272,7 @@ export { singles };
     margin-top: 10px;
     padding-bottom: 10px;
     gap: 10px;
+    
     .duration-input {
       height: 20px;
       width: 60px;
@@ -1253,6 +1292,7 @@ export { singles };
 
   .config-row-content {
     font-size: 14px;
+    margin-top: 5px;
   }
   .bottom-action-panel-fixed {
     display: flex;
@@ -1267,7 +1307,7 @@ export { singles };
     padding: 15px 20px;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     border-top: 1px solid #eee;
-    z-index: 100;
+    z-index: 1010;
     .cancel-action-button {
       width: 100px;
       height: 32px;
@@ -1364,7 +1404,6 @@ export { singles };
 }
 
 .file-list-wrapper {
-    margin-top: 8px;
     max-width: 360px;
   }
 
@@ -1442,4 +1481,9 @@ export { singles };
   .file-del:hover img {
     opacity: 1;
   }
+  
+  .choice-radio-input {
+  vertical-align: middle;   /*垂直居中 */
+  margin-bottom: 6px;
+}
 </style>

@@ -6,6 +6,7 @@ import { goto } from '$app/navigation';
 import SmartEditor from '@3min/smart-edit';
 import { resetTime } from '../addExam/+page.svelte';
 import { onChooseStartTime, onChooseEndTime,updateDuration,handleSubmit,tusInit,encodeMetadata } from '../_utils/createExam';
+
 // Mock dependencies
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/components/Toast/Toast.js', () => ({ 
@@ -1988,4 +1989,28 @@ describe('encodeMetadata 纯函数测试', () => {
   });
 });
 
-/* ===================== 页面内部 singles 函数单元测试 ===================== */
+/* ===================== DOM 触发 uploadFiles 函数端到端测试 ===================== */
+describe('uploadFiles 纯 mock 单元测试', () => {
+  const mockFile = new File(['hello'], 'a.pdf', { type: 'application/pdf' });
+
+  it('空文件列表返回空数组', async () => {
+    const res = await uploadFiles([], 'mock-id', '/api/file', 1, 1, {});
+    expect(res).toEqual([]);
+  });
+
+  it('单文件上传成功', async () => {
+    const tus = {
+      Upload: vi.fn().mockImplementation((file, opts) => ({
+        start: () => opts.onSuccess(),
+      })),
+    };
+    global.fetch = vi.fn(() =>
+      Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 0 }) })
+    );
+
+    const res = await uploadFiles([mockFile], 'mock-id', '/api/file', 1, 1, tus);
+    expect(res).toHaveLength(1);
+    expect(res[0].file.name).toBe('a.pdf');
+    expect(global.fetch).toHaveBeenCalled();
+  });
+});
