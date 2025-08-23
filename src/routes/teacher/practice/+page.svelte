@@ -50,8 +50,6 @@
   /** @type {Array<{id: string, serial_number: number}>} */
   let selectedStudentIds = $state([]);
 
-  
-
   //练习复选框状态
   let is_all_selected = $state(false);
 
@@ -272,6 +270,16 @@
   function confirm_publish() {
     // 实现发布练习的逻辑
     console.log('练习信息:', currentPractice);
+       let publishPractice = currentPractice.find((item) => {
+      // 判断是否有练习不处于可删除状态
+      return  item.Status === '已作废';
+    });
+    console.log('publishPractice:', publishPractice);
+    if (publishPractice) {
+      toast.error('已作废的练习无法发布');
+      publishDialogOpen = false;
+      return; // 直接返回，不执行删除操作
+    }
     const queryParams = new URLSearchParams();
     queryParams.append(
       'id',
@@ -468,15 +476,15 @@
    * 学生选择确认回调
    * @param {Array<{id: string, serial_number: number}>} selected - 选中的学生
    */
-  async function handleStudentSelectionConfirm(newStudents, selected) {
+  async function handleStudentSelectionConfirm(newStudents, selected,is_deleted_all) {
     if (!currentPractice) return;
     const UPDATE_STUDENTS = () => {
       // 调用API更新练习的学生
       const requestBody = {
-        Action: 'POST',
+        Action: is_deleted_all?'clear':'POST',
         Data: {
           practice_id: currentPractice.ID,
-          student: selectedStudentIds.map((s) => s.id), // 发送学生 ID 数组
+          student: is_deleted_all?[]:selectedStudentIds.map((s) => s.id), // 发送学生 ID 数组
         },
       };
 
@@ -526,20 +534,22 @@
         })
         .then((result) => {
           if (result.status !== 0) {
-            throw new Error( '导入失败');
+            throw new Error('导入失败');
           }
-          console.log('333333',selectedStudentIds)
+          console.log('333333', selectedStudentIds);
           //获取新增之后的学生ID
           let studentIds = result.data.map((item) => ({
-            id: item.ID
+            id: item.ID,
           }));
           //获取已经有账号的学生的ID
-          let existStudentIds = selected.filter((item) => item.id).map((item) => ({
-            id: item.id
-          }));
-         
+          let existStudentIds = selected
+            .filter((item) => item.id)
+            .map((item) => ({
+              id: item.id,
+            }));
+
           //检验是否有相同的ID，进行过滤
-           existStudentIds = existStudentIds.filter((item) => !selectedStudentIds.some((item2) => item2.id === item.id));
+          existStudentIds = existStudentIds.filter((item) => !selectedStudentIds.some((item2) => item2.id === item.id));
           //创建需要关联的学生ID
           selectedStudentIds = [...selectedStudentIds, ...studentIds, ...existStudentIds];
           // 导入成功后执行创建练习
@@ -551,17 +561,23 @@
         });
     } else {
       //获取已经有账号的学生的ID
-      console.log("selecteds",selected)
-      let existStudentIds = selected.filter((item) => item.ID).map((item) => ({
-            id: item.ID
-          }));
+      console.log('selecteds', selected);
+      let existStudentIds = selected
+        .filter((item) => item.ID)
+        .map((item) => ({
+          id: item.ID,
+        }));
+
      
-       //检验是否有相同的ID，进行过滤
-           existStudentIds = existStudentIds.filter((item) => !selectedStudentIds.some((item2) => item2.id === item.id));
-            console.log('existStudentIds', existStudentIds);
-            
+      console.log('existStudentIds', existStudentIds);
+
       //创建需要关联的学生ID
-      selectedStudentIds = [...selectedStudentIds, ...existStudentIds];
+      selectedStudentIds = existStudentIds.map((item) => ({
+        ...item,
+        id: item.id,
+}));
+      console.log('selectedStudentIds', selectedStudentIds);
+
 
       UPDATE_STUDENTS().catch((error) => {
         console.error('编辑练习请求异常:', error);
@@ -609,7 +625,8 @@
     });
     console.log('publishPractice:', publishPractice);
     if (publishPractice) {
-      toast.error('存在练习无法删除');
+      toast.error('已发布和已作废的练习无法删除');
+      deleteDialogOpen = false;
       return; // 直接返回，不执行删除操作
     }
 
@@ -675,7 +692,7 @@
     if (is_all_selected) {
       displayed_practice_list.forEach((practice) => {
         const exist = currentPractice.find((item) => {
-          practice.id === item.id;
+         return practice.ID === item.ID;
         });
         if (!exist) {
           currentPractice.push(practice);
@@ -684,7 +701,7 @@
     } else {
       displayed_practice_list.forEach((practice) => {
         const index = currentPractice.findIndex((item) => {
-          return practice.id === item.id;
+          return practice.ID === item.ID;
         });
         if (index !== -1) {
           currentPractice.splice(index, 1);
@@ -692,6 +709,7 @@
       });
     }
     is_all_selected = isAllSelected();
+    console.log("curr",currentPractice);
   }
 
   /**
@@ -839,6 +857,8 @@
       <div>
         <button class="new-practice-btn" onclick={create_new_practice}> 新增 </button>
         <button class="delete-practice-btn" onclick={() => delete_practice(currentPractice)}> 删除 </button>
+        <button class="publish-practice-btn" onclick={() => publish_practice(currentPractice)}>发布</button>
+        <button class="invalidated-btn" onclick={() => invalidated(currentPractice)}>作废</button>
       </div>
     </div>
 
@@ -878,15 +898,18 @@
                         }
                         practice.selected = true;
                         is_all_selected = isAllSelected();
+                        
                       } else {
                         const index = currentPractice.findIndex((g) => {
-                          g.ID === practice.ID;
+                         return g.ID === practice.ID;
                         });
+                        
                         if (index !== -1) {
                           currentPractice.splice(index, 1);
                         }
                         practice.selected = false;
                         is_all_selected = isAllSelected();
+                       
                       }
                     }}
                   />
@@ -953,7 +976,7 @@
     </div>
     <div class="pagination-container" data-testid="pagination-container">
       <Pagination
-      class="pagination-container"
+        class="pagination-container"
         total_items={total_data_num}
         page_size={data_per_page}
         current_page={current_page_num}
@@ -1005,25 +1028,25 @@
 
   <!-- 学生选择面板 -->
   <StudentSelectionPanel
- 
     show_panel={show_student_selectionPanel}
-    ids={selectedStudentIds.map(item=>({
-      ID : item.id,
-      ...item
+    ids={selectedStudentIds.map((item) => ({
+      ID: item.id,
+      ...item,
     }))}
     onCancel={() => {
       show_student_selectionPanel = false;
     }}
     practice_id={practiceID}
-    onConfirm={(newStudents, selected) => {
-      newStudents = newStudents.map((item)=>({
+    onConfirm={(newStudents, selected,is_deleted_all) => {
+      newStudents = newStudents.map((item) => ({
         ...item,
-        Domains:['cst.school^student']
-      }))
-      handleStudentSelectionConfirm(newStudents, selected);
+        Domains: ['cst.school^student'],
+      }));
+      console.log('123131231', selected);
+      console.log('newStudents', newStudents);
+      handleStudentSelectionConfirm(newStudents, selected,is_deleted_all);
       show_student_selectionPanel = false;
       setTimeout(() => {
-       
         window.location.reload();
       }, 1000);
     }}
@@ -1103,7 +1126,7 @@
         background-color: #35c908;
       }
     }
-    .unpublish-practice-btn {
+    .invalidated-btn {
       background-color: #e68c06;
       color: white;
       border: none;
@@ -1260,6 +1283,11 @@
           background-color: white;
           &:hover {
             opacity: 0.9;
+          }
+          /* 添加禁用状态样式 */
+          &:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
           }
         }
       }

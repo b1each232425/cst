@@ -21,7 +21,7 @@
   import QuestionPreviewPanel from './QuestionPreviewPanel.svelte';
 
   import { questionLimit } from '../utils/questionConfig.js';
-  import { getQuestionFilesPath } from '../utils/utils';
+  
 
   const editor_width = 'calc(100% - 24px - 10px)';
   const editor_height = '100%';
@@ -231,10 +231,8 @@
     title_editor?.setContentWithoutHistory(question_data?.content ? question_data.content : '');
     analysis_editor?.setContentWithoutHistory(question_data?.analysis ? question_data.analysis : '');
 
-    if (!is_new_question) {
-      expend_answer_area.forEach((item, index) => {
-        expend_answer_area[index] = true;
-      });
+    for(let i= 0; i < question_answers.length; i++) {
+    expend_answer_area[i]=true;
     }
 
     if (question_edit_container) {
@@ -423,7 +421,7 @@
       }
     }
 
-    data.question_attachments_path = getQuestionFilesPath(data);
+ 
     data.options = [];
     onConfirm(data);
   };
@@ -1025,6 +1023,7 @@
 
       min-width: 1000px;
       .editArea {
+         padding-top: 1%;
         flex: 1;
         max-width: 55%;
         overflow-y: auto;

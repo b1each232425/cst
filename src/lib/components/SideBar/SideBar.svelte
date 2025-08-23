@@ -20,7 +20,59 @@
     /\/teacher\/grade\/practice-grade\/detail\?id=\d+/,
   ];
 
-  let nav_map = $state(); // 导航数据
+  let { nav_map = [] } = $props();
+
+  // 参数校验
+  (() => {
+    const validateItem = (item, path = '') => {
+      const requiredFields = ['name', 'title', 'path'];
+      for (const field of requiredFields) {
+        if (!(field in item)) {
+          console.warn(`[SideBar] ${path} 缺少必需字段: ${field}`);
+          return false;
+        }
+        if (typeof item[field] !== 'string') {
+          console.warn(`[SideBar] ${path}.${field} 必须是字符串，当前为 ${typeof item[field]}`);
+          return false;
+        }
+      }
+
+      if ('icon' in item && typeof item.icon !== 'string') {
+        console.warn(`[SideBar] ${path}.icon 必须是字符串，当前为 ${typeof item.icon}`);
+        return false;
+      }
+
+      const booleanFields = ['children_is_parallel', 'isFilter'];
+      for (const field of booleanFields) {
+        if (field in item && typeof item[field] !== 'boolean') {
+          console.warn(`[SideBar] ${path}.${field} 必须是布尔值，当前为 ${typeof item[field]}`);
+          return false;
+        }
+      }
+
+      if ('children' in item) {
+        if (!Array.isArray(item.children)) {
+          console.warn(`[SideBar] ${path}.children 必须是数组，当前为 ${typeof item.children}`);
+          return false;
+        }
+        return item.children.every((child, i) => validateItem(child, `${path}.children[${i}]`));
+      }
+
+      return true;
+    };
+
+    if (!Array.isArray(nav_map)) {
+      console.warn(`[SideBar] nav_map 必须是数组，当前为 ${typeof nav_map}`);
+      nav_map = [];
+      return;
+    }
+
+    const isValid = nav_map.every((item, i) => validateItem(item, `nav_map[${i}]`));
+    if (!isValid) {
+      nav_map = [];
+    }
+  })();
+
   let current_path = $derived(page.url.pathname); // 当前路径
   let is_auto_fold = $state(false); // 侧边栏是否自动折叠
   let sidebar_fold_state = $state(false); // 侧边栏折叠状态
@@ -163,27 +215,6 @@
     return false;
   }
 
-  // 获取用户权限并生成 nav_map
-  function getUserInfo() {
-    fetch('/api/user/me')
-      .then((response) => response.json())
-      .then(async (data) => {
-        if (!data?.data?.APIs) throw new Error('APIs 数据不存在');
-
-        const allowedPaths = await data.data.APIs.map((api) => api.APIExposePath);
-
-        // 过滤 baseNavItems，只保留匹配的父级菜单
-        nav_map = $baseNavItems.filter((item) => {
-          return allowedPaths.includes(item.path); // 只匹配一级菜单的 path
-        });
-      })
-      .catch((error) => {
-        nav_map = []; // 失败时设为空数组
-        console.error('获取用户权限失败:', error);
-        toast.error('获取用户权限失败：', error);
-      });
-  }
-
   // 正则匹配路径
   function regexMatch(path, path_regex) {
     return new RegExp(`${path_regex}`).test(path);
@@ -193,7 +224,6 @@
   beforeNavigate(({ from, to, cancel }) => {
     if (to) {
       const targetPath = to.url.pathname + to.url.search; // 包括路径和查询参数
-      console.log(targetPath);
 
       // 遍历 NEED_FOLD_NAV，检查是否匹配
       if (
@@ -242,21 +272,19 @@
         );
       }
     }, 0);
+
+    is_hydrated = true;
   }
 
   onMount(() => {
     // 加载保存的状态
     loadSidebarState();
-    is_hydrated = true;
 
     // 当窗口大小变化时，调用handleResize函数,当宽度太小自动收起侧边栏
     window.addEventListener('resize', handleResize);
 
     // 更新当前选中模块并高亮
     current_active = window.location.pathname;
-
-    // 获取用户信息
-    getUserInfo();
   });
 </script>
 
@@ -288,52 +316,50 @@
         <ul class="sidebar-content-main">
           {#each navMapData as item}
             {#snippet Item(it, level)}
-              {#if !it.force_hide}
-                {#snippet ItemContent(i, level)}
-                  <div class="sidebar-item-content" style={`--level: ${level}`}>
-                    {#if i.icon}
-                      <img class="sidebar-item-icon" src={i.icon} alt={i.title} />
-                    {:else}
-                      <span class="sidebar-item-icon"></span>
-                    {/if}
-                    <span class="sidebar-item-text">{i.title}</span>
-                  </div>
-                {/snippet}
-
-                <li
-                  class="sidebar-item"
-                  class:active={(!it.children_is_parallel && regexMatch(current_active, it.path)) ||
-                    (checkItemHasChildren(it, current_active) && (it.fold || !it.children_is_parallel)) ||
-                    current_active == it.path}
-                  title={it.title}
-                >
-                  {#if it.children != null && it.children.length > 0 && it.children_is_parallel}
-                    <img
-                      class="sidebar-subitem-icon"
-                      src={it.fold ? '/sidebar/nav_icon/unfold.svg' : '/sidebar/nav_icon/fold.svg'}
-                      alt={it.fold ? '展开' : '折叠'}
-                    />
+              {#snippet ItemContent(i, level)}
+                <div class="sidebar-item-content" style={`--level: ${level}`}>
+                  {#if i.icon}
+                    <img class="sidebar-item-icon" src={i.icon} alt={i.title} />
+                  {:else}
+                    <span class="sidebar-item-icon"></span>
                   {/if}
+                  <span class="sidebar-item-text">{i.title}</span>
+                </div>
+              {/snippet}
 
-                  {@render ItemContent(it, level)}
-
-                  <button
-                    class="sidebar-item-btn"
-                    class:active={current_active == it.name}
-                    onclick={() => {
-                      handleSidebarItemClick(it);
-                    }}
-                    aria-label={it.title}
-                  ></button>
-                </li>
-
-                {#if !it.fold && it.children_is_parallel}
-                  <ul class="sidebar-item-child" transition:slide>
-                    {#each it.children as child}
-                      {@render Item(child, level + 1)}
-                    {/each}
-                  </ul>
+              <li
+                class="sidebar-item"
+                class:active={(!it.children_is_parallel && regexMatch(current_active, it.path)) ||
+                  (checkItemHasChildren(it, current_active) && (it.fold || !it.children_is_parallel)) ||
+                  current_active == it.path}
+                title={it.title}
+              >
+                {#if it.children != null && it.children.length > 0 && it.children_is_parallel}
+                  <img
+                    class="sidebar-subitem-icon"
+                    src={it.fold ? '/sidebar/nav_icon/unfold.svg' : '/sidebar/nav_icon/fold.svg'}
+                    alt={it.fold ? '展开' : '折叠'}
+                  />
                 {/if}
+
+                {@render ItemContent(it, level)}
+
+                <button
+                  class="sidebar-item-btn"
+                  class:active={current_active == it.name}
+                  onclick={() => {
+                    handleSidebarItemClick(it);
+                  }}
+                  aria-label={it.title}
+                ></button>
+              </li>
+
+              {#if !it.fold && it.children_is_parallel}
+                <ul class="sidebar-item-child" transition:slide>
+                  {#each it.children as child}
+                    {@render Item(child, level + 1)}
+                  {/each}
+                </ul>
               {/if}
             {/snippet}
 

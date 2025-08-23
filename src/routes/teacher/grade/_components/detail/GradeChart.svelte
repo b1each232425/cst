@@ -2,7 +2,11 @@
   import { onMount, getContext } from 'svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
+  import Empty from '$lib/components/Table/Empty.svelte';
+  import BarChart from './charts/BarChart.svelte';
   import '$lib/components/Button/index.scss';
+  import Loading from '$lib/components/Loading/Loading.svelte';
+
 
   /**
    * @typedef {Object} Props
@@ -21,10 +25,10 @@
   try {
     if (type === 'practice') {
       const context = getContext('practice');
-      context_data = context; // 直接使用 context，包含 practiceData
+      context_data = context;
     } else {
       const context = getContext('exam');
-      context_data = context; // 直接使用 context，包含 examData
+      context_data = context;
     }
   } catch {
     // Context 不存在时忽略
@@ -33,7 +37,7 @@
   // 状态变量
   let xAxis_data = $state(['0-19', '20-39', '40-59', '60-79', '80-100']);
   let series_data = $state([]);
-  let column_num = $state(5); //直方图列数
+  let column_num = $state(5); //直方图列数（动态计算）
   let current_paper_id = $state('');
   let options = $state([]);
   let loading = $state(false);
@@ -43,6 +47,32 @@
   let distribution_data = $state(null);
 
   /**
+   * 根据总分计算合适的列数
+   * @param {number} total_score - 试卷总分
+   * @returns {number} 合适的列数
+   */
+  function calculateOptimalColumnNum(total_score) {
+    if (!total_score || total_score <= 0) return 5;
+
+    const idealIntervalSize = 10; // 设置理想的区间大小
+    let optimalColumns = Math.round(total_score / idealIntervalSize);
+
+    // 根据分数范围调整列数
+    if (total_score < 5) {
+      optimalColumns = total_score;
+    } else if (total_score <= 10) {
+      optimalColumns = 4;
+    }  else if (total_score <= 50) {
+      optimalColumns = 5;
+    } else if (total_score <= 100) {
+      optimalColumns = Math.max(5, Math.min(8, optimalColumns));
+    } else {
+      optimalColumns = Math.max(6, Math.min(10, optimalColumns));
+    }
+    return optimalColumns;
+  }
+
+  /**
    * 根据总分划分区间段（从低到高）
    * @param {number} total_score - 当前试卷总分
    * @param {number} column_count - 划分列数
@@ -50,7 +80,7 @@
    */
   function getScoreSegments(total_score, column_count) {
     //切割总分
-    const step = Math.floor(total_score / column_count);
+    const step = Math.ceil(total_score / column_count);
     const segments = [];
 
     for (let i = 0; i < column_count; i++) {
@@ -74,9 +104,14 @@
     loading = true;
     error = null;
 
+    // 动态计算合适的列数
+    const total_score = getCurrentTotalScore();
+    column_num = calculateOptimalColumnNum(total_score);
+    // console.log(`根据总分 ${total_score} 最佳列数: ${column_num}`);
+
     const params = new URLSearchParams({
       category: type,
-      columnNum:column_num,
+      columnNum: column_num,
       ...(type === 'practice' ? { practiceID: String(resource_id) } : { examID: String(resource_id) }),
     });
 
@@ -91,7 +126,6 @@
       .then((json) => {
         if (json.status !== 0) throw new Error(json.msg || '获取数据失败');
 
-        /* 统一成前端需要的数据结构（兼容练习/考试） */
         const src = json.data; // 后端原始 data
         const isPractice = type === 'practice';
 
@@ -129,10 +163,13 @@
    * 将试卷数据转换为下拉选项
    */
   function examDataToOptions() {
-    return papers.map((session) => ({
-      value: session.id,
-      label: session.name,
-    }));
+    // 先按照exam_session_id（即session.id）排序，然后转换为选项
+    return [...papers]
+      .sort((a, b) => Number(a.id) - Number(b.id))
+      .map((session) => ({
+        value: session.id,
+        label: session.name,
+      }));
   }
 
   /**
@@ -215,9 +252,36 @@
   /**
    * 处理试卷选择变化
    */
-  function handlePaperChange(event) {
-    current_paper_id = event.detail;
-    updateSeriesData();
+  function handlePaperChange(value) {
+    current_paper_id = value;
+
+    // 切换试卷时重新获取数据（这会重新计算列数）
+    getExamDistributionData();
+  }
+
+  /**
+   * 获取当前的总分
+   * @returns {number} 当前试卷的总分
+   */
+  function getCurrentTotalScore() {
+    if (type === 'practice' && context_data?.practiceData?.total_score) {
+      return context_data.practiceData.total_score;
+    } else if (type === 'exam') {
+      // 对于考试，使用当前选中试卷的总分
+      const selectedPaper = papers.find((p) => p.id == current_paper_id) || papers[0];
+      if (selectedPaper?.total_score) {
+        return selectedPaper.total_score;
+      }
+      // 如果从 papers 中找不到，尝试从 context 中获取
+      if (context_data?.examData?.papers) {
+        const contextPaper =
+          context_data.examData.papers.find((p) => p.id == current_paper_id) || context_data.examData.papers[0];
+        if (contextPaper?.total_score) {
+          return contextPaper.total_score;
+        }
+      }
+    }
+    return 100; // 默认值
   }
 
   // 初始化
@@ -240,7 +304,7 @@
     <div class="title">成绩分析</div>
     {#if type === 'exam' && papers.length > 1}
       <div class="dropdown">
-        <Select value={current_paper_id} placeholder="选择试卷" on:change={handlePaperChange}>
+        <Select value={current_paper_id} placeholder="选择试卷" changeValue={handlePaperChange}>
           {#each options as option}
             <Option value={option.value} label={option.label}>{option.label}</Option>
           {/each}
@@ -251,7 +315,9 @@
       <div class="chart-content">
         <div class="chart-title">成绩分布图</div>
         {#if loading}
-          <div class="loading-state">加载中...</div>
+        <div class="loading-state">
+          <Loading bind:value={loading} loading_text="正在加载" is_fullscreen={false}></Loading>
+</div>
         {:else if error}
           <div class="error-state">
             <div class="error-message">暂无数据</div>
@@ -259,32 +325,17 @@
           </div>
         {:else if series_data.length === 0}
           <div class="empty-state">
-            暂无成绩分布数据
-            <button
-              onclick={() => {
-                updateSeriesData();
-              }}
-            >
-              重新加载数据
-            </button>
+            <Empty text="暂无该试卷数据" />
           </div>
         {:else}
-          <div class="bar-chart">
-            {#each xAxis_data as category, index}
-              {@const value = series_data[index] || 0}
-
-              {@const maxValue = Math.max(...series_data)}
-              <!-- 柱子高度 -->
-              {@const height = maxValue > 0 ? (value / maxValue) * 200 : 0}
-
-              <div class="bar-item">
-                <div class="bar-wrapper">
-                  <div class="bar" style="height: {height}px" title="{category}: {value}人"></div>
-                  <div class="bar-value">{value}</div>
-                </div>
-                <div class="bar-label">{category}</div>
-              </div>
-            {/each}
+          <div class="echarts-wrapper">
+            <BarChart 
+              title_text="成绩分布图"
+              xAxis_data={xAxis_data}
+              series_data={series_data}
+              loading={loading}
+              show_title={false}
+            />
           </div>
         {/if}
       </div>
@@ -300,21 +351,21 @@
     .title {
       font-size: 22px;
       font-weight: bold;
-      margin-top: 8px;
-      margin-bottom: 15px;
+      margin-top:5px;
+      margin-bottom: 10px;
     }
 
     .dropdown {
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
 
     .chart {
       width: 100%;
-      height: 80%;
+      height: 400px;
       border: 1px solid #e5e7eb;
 
       &.small {
-        height: 60%;
+        height: 350px;
       }
 
       .chart-content {
@@ -330,6 +381,7 @@
           font-weight: normal;
           color: #333;
           margin-bottom: 5px;
+          
         }
 
         .empty-state {
@@ -337,17 +389,16 @@
           align-items: center;
           justify-content: center;
           height: 100%;
-          color: #666;
-          font-size: 14px;
+          margin-top: 45px;
+          margin-bottom: 60px;
         }
 
         .loading-state {
+          position: relative;
           display: flex;
           align-items: center;
           justify-content: center;
           height: 100%;
-          color: #666;
-          font-size: 14px;
         }
 
         .error-state {
@@ -364,56 +415,10 @@
           }
         }
 
-        .bar-chart {
-          display: flex;
-          align-items: flex-end;
-          justify-content: center;
-          gap: 20px;
+        .echarts-wrapper {
           height: 100%;
-          padding-bottom: 20px;
-
-          .bar-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 60px;
-
-            .bar-wrapper {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              height: 220px;
-              justify-content: flex-end;
-              margin-bottom: 8px;
-
-              .bar {
-                width: 35px;
-                background-color: #5c7bd9;
-                border-radius: 0;
-                transition: all 0.3s ease;
-                cursor: pointer;
-                min-height: 2px;
-
-                &:hover {
-                  opacity: 0.8;
-                }
-              }
-
-              .bar-value {
-                margin-top: 4px;
-                font-size: 12px;
-                color: #333;
-                font-weight: normal;
-              }
-            }
-
-            .bar-label {
-              font-size: 12px;
-              color: #333;
-              text-align: center;
-              white-space: nowrap;
-            }
-          }
+          width: 100%;
+          min-height: 280px;
         }
       }
     }

@@ -159,8 +159,8 @@
           });
           currentData = merged;
 
-          // 后端 rowCount 是人次数，前端按学生人数算
-          total_items = Math.ceil((json.rowCount || 0) / (papers.length || 1));
+          
+          total_items = json.rowCount || 0;
         }
         
         loading = false;
@@ -231,7 +231,7 @@
       <div class="search-section">
         <InputBox 
           show_label={false} 
-          placeholder="请输入学生电话/昵称/姓名" 
+          placeholder="请输入学生电话/账号/姓名" 
           bind:value={searchKeyword} 
           onInput={debouncedSearch}
         />
@@ -248,7 +248,7 @@
               <tr>
                 <th>序号</th>
                 <th>电话</th>
-                <th>昵称</th>
+                <th>账号</th>
                 <th>姓名</th>
                 {#if type === 'practice'}
                   <th>最高得分</th>
@@ -298,11 +298,11 @@
                       </td>
                     {/each}
                   {/if}
-                  <td class="note-cell">{student.remark || '-'}</td>
+                  <td class="note-cell">{student.remark != null ? student.remark : '-'}</td>
                 </tr>
               {:else}
                 <tr>
-                  <td colspan="7" class="empty-row"
+                  <td colspan="8" class="empty-row"
                     ><div class="empty-container">
                       <Empty text="暂无数据" />
                     </div></td
@@ -333,7 +333,6 @@
   .student-scores-card {
     width: 100%;
     height: 100%;
-    margin-bottom: 40px;
 
     .card-header {
       display: flex;

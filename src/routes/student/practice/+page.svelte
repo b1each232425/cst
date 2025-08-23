@@ -186,8 +186,8 @@
   // 练习类型映射表
   const TYPE_MAP = {
     '00': '经典巩固',
-    '02': '常练常新',
-    '04': '智能提升',
+    // '02': '常练常新',
+    // '04': '智能提升',
   };
 
   // 难度映射表
@@ -572,6 +572,7 @@
               font-size: 0.9rem;
               text-align: center;
               vertical-align: middle;
+              padding: 0.5rem;
 
               $difficulty-color: (
                 'easy': #52c41a,

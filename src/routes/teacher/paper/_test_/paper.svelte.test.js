@@ -2,8 +2,8 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-17 10:34:48
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-18 10:21:03
- * @FilePath: \exam\src\routes\teacher\paper\_test_\page.svelte.test.js
+ * @LastEditTime: 2025-08-19 16:15:37
+ * @FilePath: \exam\src\routes\teacher\paper\_test_\paper.svelte.test.js
  * @Description: 试卷管理页面测试
  * Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
  */
@@ -12,13 +12,21 @@ vi.mock('$app/navigation', () => ({
     goto: vi.fn()
 }));
 
+vi.mock('$lib/components/Toast/Toast', () => ({
+    toast: {
+        success: vi.fn(),
+        error: vi.fn()
+    }
+}));
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/svelte';
 
 import { goto } from '$app/navigation';
 
-import Page from '../+page.svelte';
+import Paper from '../+page.svelte';
 import { PAPER_ONE, PAPER_TWO, PAPER_THREE } from './utils';
+import { toast } from "$lib/components/Toast/Toast";
 
 describe('试卷管理页面测试', () => {
     beforeEach(() => {
@@ -47,7 +55,7 @@ describe('试卷管理页面测试', () => {
 
         it('标题应该正确显示', async () => {
 
-            render(Page);
+            render(Paper);
 
             expect(screen.getByText('试卷管理')).toBeInTheDocument();
         });
@@ -61,7 +69,7 @@ describe('试卷管理页面测试', () => {
             describe('输入框', () => {
 
                 it('渲染', async () => {
-                    const { container } = render(Page);
+                    const { container } = render(Paper);
 
                     // 提示词
                     expect(container.querySelectorAll('.prompt').length).toBe(2);
@@ -89,7 +97,7 @@ describe('试卷管理页面测试', () => {
 
                     it('空列表', async () => {
 
-                        const { container } = render(Page);
+                        const { container } = render(Paper);
 
                         // 等待表格渲染2条数据
                         await waitFor(() => {
@@ -122,7 +130,7 @@ describe('试卷管理页面测试', () => {
 
                     it('失败情况', async () => {
 
-                        const { container } = render(Page);
+                        const { container } = render(Paper);
 
                         // 等待表格渲染2条数据
                         await waitFor(() => {
@@ -151,7 +159,7 @@ describe('试卷管理页面测试', () => {
                 
             it('渲染', async () => {
 
-                const { container } = render(Page);
+                const { container } = render(Paper);
 
                 // 验证三个按钮
                 expect(screen.getByText('重置')).toBeInTheDocument();
@@ -166,7 +174,7 @@ describe('试卷管理页面测试', () => {
 
                     it('正常数据', async () => {
 
-                        const { container } = render(Page);
+                        const { container } = render(Paper);
 
                         // 验证被调用一次
                         expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -206,7 +214,7 @@ describe('试卷管理页面测试', () => {
 
                     it('返回空列表', async () => {
 
-                        const { container } = render(Page);
+                        const { container } = render(Paper);
 
                         // 等待表格渲染两条数据
                         await waitFor(() => {
@@ -237,7 +245,7 @@ describe('试卷管理页面测试', () => {
 
                     it('失败情况', async () => {
 
-                        const { container } = render(Page);
+                        const { container } = render(Paper);
 
                         // 等待表格渲染两条数据
                         await waitFor(() => {
@@ -254,7 +262,7 @@ describe('试卷管理页面测试', () => {
 
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.getByText(`请求失败，状态码：400`)).toBeInTheDocument();
+                            expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                         });
                     });
                 });
@@ -262,7 +270,7 @@ describe('试卷管理页面测试', () => {
                 describe('删除', () => {
 
                     it('正常情况', async () => {
-                        const { container } = render(Page);
+                        const { container } = render(Paper);
 
                         // 等待表格渲染两条数据
                         await waitFor(() => {
@@ -285,24 +293,24 @@ describe('试卷管理页面测试', () => {
                         
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.getByText('删除成功')).toBeInTheDocument();
+                            expect(toast.success).toHaveBeenCalledWith('删除成功', 1000);
                         });
                     });
 
                     it('没有选中数据', async () => {
-                        const { container } = render(Page);
+                        const { container } = render(Paper);
 
                         // 点击删除（通过class选择）
                         fireEvent.click(container.querySelector('.btn.btn--danger.is-plain'));
 
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.getByText('请先选择试卷')).toBeInTheDocument();
+                            expect(toast.error).toHaveBeenCalledWith('请先选择试卷', 1000);
                         });
                     });
 
                     it('返回空列表', async () => {
-                        const { container } = render(Page);
+                        const { container } = render(Paper);
 
                         // 等待表格渲染两条数据
                         await waitFor(() => {
@@ -325,12 +333,7 @@ describe('试卷管理页面测试', () => {
                         // 点击确认
                         fireEvent.click(screen.getByText('确定'));
                         
-                        // 验证toast提示
-                        await waitFor(() => {
-                            expect(screen.getByText('删除成功')).toBeInTheDocument();
-                        });
-
-                        global.fetch = vi.fn().mockResolvedValue({
+                        global.fetch.mockResolvedValueOnce({
                             ok: true,
                             json: () => Promise.resolve({
                                 API: "/api/paper",
@@ -341,6 +344,11 @@ describe('试卷管理页面测试', () => {
                                 status: 0
                             })
                         });
+                        
+                        // 验证toast提示
+                        await waitFor(() => {
+                            expect(toast.success).toHaveBeenCalledWith('删除成功', 1000);
+                        });
 
                         // 等待表格渲染空列表
                         await waitFor(() => {
@@ -349,7 +357,7 @@ describe('试卷管理页面测试', () => {
                     });
 
                     it('失败情况1：请求失败', async () => {
-                        const { container } = render(Page);
+                        const { container } = render(Paper);
 
                         // 等待表格渲染两条数据
                         await waitFor(() => {
@@ -377,12 +385,12 @@ describe('试卷管理页面测试', () => {
 
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(2);
+                            expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                         });
                     });
 
                     it('失败情况2：业务错误', async () => {
-                        const { container } = render(Page);
+                        const { container } = render(Paper);
 
                         // 等待表格渲染两条数据
                         await waitFor(() => {
@@ -413,7 +421,7 @@ describe('试卷管理页面测试', () => {
                         
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.getByText(`业务错误`)).toBeInTheDocument();
+                            expect(toast.error).toHaveBeenCalledWith(`业务错误`, 1000);
                         });
 
                         
@@ -425,7 +433,7 @@ describe('试卷管理页面测试', () => {
 
                     it('成功情况', async () => {;
                     
-                        const { container } = render(Page);
+                        const { container } = render(Paper);
 
                         global.fetch.mockResolvedValueOnce({
                             ok: true,
@@ -522,7 +530,7 @@ describe('试卷管理页面测试', () => {
                     });
 
                     it('失败情况1：请求失败', async () => {
-                        const { container } = render(Page);
+                        const { container } = render(Paper);
                         
                         global.fetch.mockResolvedValueOnce({
                             ok: false,
@@ -534,12 +542,12 @@ describe('试卷管理页面测试', () => {
 
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(3);
+                            expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                         });
                     });
 
                     it('失败情况2：业务错误', async () => {
-                        const { container } = render(Page);
+                        const { container } = render(Paper);
 
                         global.fetch.mockResolvedValueOnce({
                             ok: true,
@@ -554,7 +562,7 @@ describe('试卷管理页面测试', () => {
 
                         // 验证toast提示
                         await waitFor(() => {
-                            expect(screen.getByText(`业务错误`)).toBeInTheDocument();
+                            expect(toast.error).toHaveBeenCalledWith(`业务错误`, 1000);
                         });
                     });
                 });
@@ -582,7 +590,7 @@ describe('试卷管理页面测试', () => {
                 })
             });
             
-            const { container } = render(Page);
+            const { container } = render(Paper);
           
             // 等待表格渲染三条数据
             await waitFor(() => {
@@ -673,7 +681,7 @@ describe('试卷管理页面测试', () => {
                     })
                 });
 
-                const { container } = render(Page);
+                const { container } = render(Paper);
 
                 // 等待表格渲染三条数据
                 await waitFor(() => {
@@ -747,7 +755,7 @@ describe('试卷管理页面测试', () => {
 
             it('修改', async () => {
 
-                const { container } = render(Page);
+                const { container } = render(Paper);
 
                 // 等待表格渲染两条数据
                 await waitFor(() => {
@@ -768,7 +776,7 @@ describe('试卷管理页面测试', () => {
                 
                 it('删除成功', async () => {
     
-                    const { container } = render(Page);
+                    const { container } = render(Paper);
     
                     // 等待表格渲染两条数据
                     await waitFor(() => {
@@ -799,14 +807,14 @@ describe('试卷管理页面测试', () => {
     
                     // 验证toast提示
                     await waitFor(() => {
-                        expect(screen.queryAllByText(`删除成功`).length).toBe(2);
+                        expect(toast.success).toHaveBeenCalledWith('删除成功', 1000);
                     });
     
                 });
 
                 it('删除成功但获取数据失败', async () => {
     
-                    const { container } = render(Page);
+                    const { container } = render(Paper);
     
                     // 等待表格渲染两条数据
                     await waitFor(() => {
@@ -835,20 +843,16 @@ describe('试卷管理页面测试', () => {
                     // 点击确认
                     fireEvent.click(screen.getByText('确定'));
     
-                    // 验证toast提示
-                    await waitFor(() => {
-                        expect(screen.queryAllByText(`删除成功`).length).toBe(3);
-                    });
-
                     // mock 400
                     global.fetch.mockResolvedValueOnce({
                         ok: false,
                         status: 400
                     });
-
+                    
                     // 验证toast提示
                     await waitFor(() => {
-                        expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(3);
+                        expect(toast.success).toHaveBeenCalledWith('删除成功', 1000);
+                        expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                     });
                 });
             });
@@ -858,7 +862,7 @@ describe('试卷管理页面测试', () => {
 
                 it('正常情况', async () => {
 
-                    const { container } = render(Page);
+                    const { container } = render(Paper);
 
                     // 等待表格渲染两条数据
                     await waitFor(() => {
@@ -986,7 +990,7 @@ describe('试卷管理页面测试', () => {
                 });
 
                 it('失败情况1：请求失败', async () => {
-                    const { container } = render(Page);
+                    const { container } = render(Paper);
 
                     // 等待表格渲染两条数据
                     await waitFor(() => {
@@ -1005,12 +1009,12 @@ describe('试卷管理页面测试', () => {
 
                     // 验证toast提示
                     await waitFor(() => {
-                        expect(screen.queryAllByText(`请求失败，状态码：400`).length).toBe(4);
+                        expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                     });
                 });
 
                 it('失败情况2：业务错误', async () => {
-                    const { container } = render(Page);
+                    const { container } = render(Paper);
 
                     // 等待表格渲染两条数据
                     await waitFor(() => {
@@ -1032,7 +1036,7 @@ describe('试卷管理页面测试', () => {
 
                     // 验证toast提示
                     await waitFor(() => {
-                        expect(screen.queryAllByText(`业务错误`).length).toBe(2);
+                        expect(toast.error).toHaveBeenCalledWith(`业务错误`, 1000);
                     });
                 });
             });
@@ -1045,7 +1049,7 @@ describe('试卷管理页面测试', () => {
         describe('每页条数', () => {
 
             it('正常情况', async () => {
-                const { container } = render(Page);
+                const { container } = render(Paper);
 
                 // 等待表格渲染两条数据
                 await waitFor(() => {
@@ -1097,7 +1101,7 @@ describe('试卷管理页面测试', () => {
                     })
                 });
 
-                const { container } = render(Page);
+                const { container } = render(Paper);
 
                 // 等待表格渲染空列表
                 await waitFor(() => {
@@ -1145,7 +1149,7 @@ describe('试卷管理页面测试', () => {
 
             it('失败情况', async () => {
                
-                const { container } = render(Page);
+                const { container } = render(Paper);
 
                 // 等待表格渲染2条数据
                 await waitFor(() => {
@@ -1171,7 +1175,7 @@ describe('试卷管理页面测试', () => {
 
                 // 验证toast提示
                 await waitFor(() => {
-                    expect(screen.queryAllByText('请求失败，状态码：400').length).toBe(5);
+                    expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                 });
 
             });
@@ -1198,7 +1202,7 @@ describe('试卷管理页面测试', () => {
                     })
                 });
     
-                const { container } = render(Page);
+                const { container } = render(Paper);
     
                 // 等待表格渲染11条数据
                 await waitFor(() => {
@@ -1227,7 +1231,7 @@ describe('试卷管理页面测试', () => {
                     })
                 });
 
-                const { container } = render(Page);
+                const { container } = render(Paper);
 
                 // 等待表格渲染11条数据
                 await waitFor(() => {
@@ -1251,7 +1255,7 @@ describe('试卷管理页面测试', () => {
 
                 // 验证toast提示
                 await waitFor(() => {
-                    expect(screen.queryAllByText('请求失败，状态码：400').length).toBe(5);
+                    expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
                 });
 
             });
@@ -1277,7 +1281,7 @@ describe('试卷管理页面测试', () => {
                 })
             });
 
-            const { container } = render(Page);
+            const { container } = render(Paper);
 
             // 等待表格渲染空列表
             await waitFor(() => {
@@ -1294,11 +1298,11 @@ describe('试卷管理页面测试', () => {
                 status: 400
             });
 
-            const { container } = render(Page);
+            const { container } = render(Paper);
 
             // 验证toast提示
             await waitFor(() => {
-                expect(screen.queryAllByText('请求失败，状态码：400').length).toBe(4);
+                expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
             });
 
             // 验证表格渲染空列表
@@ -1318,11 +1322,11 @@ describe('试卷管理页面测试', () => {
                 })
             });
 
-            const { container } = render(Page);
+            const { container } = render(Paper);
 
             // 验证toast提示
             await waitFor(() => {
-                expect(screen.queryAllByText('业务错误').length).toBe(1);
+                expect(toast.error).toHaveBeenCalledWith(`业务错误`, 1000);
             });
         });
     });
@@ -1331,7 +1335,7 @@ describe('试卷管理页面测试', () => {
 
         it('批量删除成功后但获取数据失败', async () => {
 
-            const { container } = render(Page);
+            const { container } = render(Paper);
 
             // 等待表格渲染两条数据
             await waitFor(() => {
@@ -1369,8 +1373,33 @@ describe('试卷管理页面测试', () => {
 
             // 验证toast提示
             await waitFor(() => {
-                expect(screen.queryAllByText('请求失败，状态码：400').length).toBe(3);
+                expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
             });
+        });
+
+        it('utf8MaxLength', async () => {
+
+            const { container } = render(Paper);
+
+            // 往输入框输入内容（用placeholder选择）
+            fireEvent.input(screen.getByPlaceholderText('搜索试卷名称'),
+                {
+                    target: { value: '12345678901234567890123456789012345678901234567890' }
+                }
+            );
+
+            // 验证输入框内容（未超出50个字符）
+            expect(screen.getByPlaceholderText('搜索试卷名称').value).toBe('12345678901234567890123456789012345678901234567890');
+
+            // 往输入框输入内容（55个字符）
+            fireEvent.input(screen.getByPlaceholderText('搜索试卷名称'),
+                {
+                    target: { value: '1234567890123456789012345678901234567890123456789012345' }
+                }
+            );
+
+            // 验证输入框内容（超出50个字符，但被截断）
+            expect(screen.getByPlaceholderText('搜索试卷名称').value).toBe('12345678901234567890123456789012345678901234567890');
         });
     });
 });

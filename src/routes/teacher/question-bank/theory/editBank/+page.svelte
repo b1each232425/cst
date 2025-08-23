@@ -23,7 +23,6 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import QuestionList from '../../_components/questionList.svelte';
   import FilterBar from '../../_components/FilterBarForQuestionBank.svelte';
   import BankTag from '$lib/components/Tag/EditableTag.svelte';
-  import Dropdown from '../../_components/DropDownForQuesitonBank.svelte';
   import SingleSelectEditPanel from '../../_components/singlePage.svelte';
   import MultipleSelectEditPanel from '../../_components/multiplePage.svelte';
   import JudgeSelectEditPanel from '../../_components/judgePage.svelte';
@@ -34,8 +33,10 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { compareBankMsg } from '../../utils/utils.js';
   import { formatTimestamp } from '$lib/utils/time_utils';
   import { TheoryQuestion } from '../type';
+  	import Select from '$lib/components/Select/Select.svelte';
+	import Option from '$lib/components/Select/Option.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
-
+import '$lib/components/Input/index.scss';
 
   /**
    * @description ICON集合
@@ -141,10 +142,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    
   ]);
 
-  /**
-   * @description 请求锁
-   */
-  let request_lock = $state(false);
+
   /**
    * @description 打开添加新题目面板
    * @param {string} value
@@ -153,6 +151,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
    * @description 新建题目类型
    * @type {"00"|"02"|"04"|"06"|"08"|""}
    */
+  let new_question_type = $state('');
+  let question_type_select = $state("");
   /**
    * @description 待编辑题目内容
    * @type {TheoryQuestion | null}
@@ -223,7 +223,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     let short_answer_edit_panel_componet;
 
   let modifying_question = $state(null);
-  let new_question_type = $state('');
+ 
   /**
    * @description 题目类型筛选条件
    * @type {Array<string>}
@@ -358,10 +358,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   };
 
   const onAddNewQuestion = (value) => {
-    if (request_lock) {
-      toast.warning('请等待当前操作完成后再进行其他操作');
-      return;
-    }
+    question_type_select = '';
+ 
     if (value !== '00' && value !== '02' && value !== '04' && value !== '06' && value !== '08') {
       return;
     }
@@ -373,6 +371,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       case '00':
         single_select_edit_panel_componet.initPanel();
         show_single_select_edit_panel = true;
+      
         break;
       case '02':
         mutiple_select_edit_panel_componet.initPanel();
@@ -426,8 +425,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
          origin_bank_data.bank_name=data.data[0].Name;
         origin_bank_data.bank_tags=data.data[0].Tags;
         all_question_tags=data.data[0].QuestionTags;
-        bank_update_time=formatTimestamp(data.data[0].UpdateTime);
-        bank_create_time=formatTimestamp(data.data[0].CreateTime);
+        bank_update_time=data.data[0].UpdateTime;
+        bank_create_time=data.data[0].CreateTime;
        question_count=data.data[0].QuestionCount;
        getQuestionList();
       })
@@ -517,21 +516,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     }
   };
 
-  /**
-   * @description 输入题目搜索关键字
-   * @param {Event} e
-   */
-  const onSearchQuestionKeyInput = (e) => {
-    if (e.target && 'value' in e.target && typeof e.target.value === 'string') {
-      const value = e.target.value;
-   
-      // 抖动
-     
-        search_question_content = value;
-        list_table_component.updateFilteredQuestion(filter_conditions, value);
-      
-    }
-  };
+
   /**
    * @description 题库数据校验
    */
@@ -572,7 +557,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
         // 更新题库原始数据
         origin_bank_data.name = bank_name;
         origin_bank_data.tags = bank_tags;
-        bank_update_time = formatTimestamp(new Date().getTime());
+        bank_update_time = new Date(new Date().getTime()).toLocaleString;
 
         // 隐藏保存按钮
         if (bank_data_save_btn && bank_data_not_save_btn) {
@@ -600,6 +585,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     const queryParams = new URLSearchParams({
       bankID: bank_id,
       page: current_page,
+      content: search_question_content,
       pageSize: page_size,
     });
   
@@ -665,6 +651,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
           throw new Error(`${data.msg}`);
         }
         question_count--;
+        toast.success("删除题目成功");
            getQuestionList();
        
       })
@@ -688,10 +675,9 @@ o.  )88b 888   .o8  888      888   888   888   888 .
       return ;
     }
     // 拉取题目列表
-    request_lock = true;
     const response = await getBankWithQuestions();
     const data = response.data || null;
-    request_lock = false;
+  
     if(data==null){
      if(current_page!=1){
       current_page--;
@@ -768,7 +754,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     show_short_answer_edit_panel=false;
     show_fill_bank_edit_panel=false;
     modifying_question = null;
-    new_question_type = '';
+    new_question_type="";
     is_dirty = false;
   };
 
@@ -952,8 +938,8 @@ o888o o888o   "888" o888o o888o o888o o888o
         </div>
 
         <div class="bankTimeContainer">
-          <span class="timeText">更新时间：{bank_update_time}</span>
-          <span class="timeText">创建时间：{bank_create_time}</span>
+          <span class="timeText">更新时间：{new Date(bank_update_time).toLocaleString()}</span>
+          <span class="timeText">创建时间：{new Date(bank_create_time).toLocaleString()}</span>
         </div>
       </div>
       <div class="rightContent">
@@ -1028,21 +1014,22 @@ o888o o888o   "888" o888o o888o o888o o888o
       </div>
       <div class="questionListControlBar">
         <div class="questionListSearch">
-          <span>搜索</span>
-          <input
-            type="text"
-            class="questionListSearchInput"
-            placeholder="请输入题目名称"
-            oninput={onSearchQuestionKeyInput}
-          />
+              <div class="input">
+    <input  bind:value={search_question_content} placeholder="请输入题目名称"       oninput={()=>{getQuestionList();}}/>
+  </div>
         </div>
+    
         <div class="questionListControlBtnContainer">
-          <button class="questionListControlBtn normalBtn">
-            <span>粘贴题目</span>
-          </button>
+         
 
-          <Dropdown options={question_types} placeholder="添加题目" selectOptionFunc={onAddNewQuestion}></Dropdown>
-
+ 
+  <Select placeholder="添加题目" bind:value={question_type_select} changeValue={onAddNewQuestion}>
+       	<Option value="00" label="单选"></Option>
+				<Option value="02" label="多选"></Option>
+				<Option value="04" label="判断"></Option>
+				<Option value="06" label="填空"></Option>
+				<Option value="08" label="简答"></Option>
+        </Select>
           
         </div>
       </div>

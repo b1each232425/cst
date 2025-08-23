@@ -28,11 +28,11 @@
   /**
    * @param {{ practice_name: any; grading_method: any; test: { id: any;suggest_duration?:number }; students: any[];allowed_attempts:any}} practiceData
    */
-  async function handleSubmit(practiceData, newStudents,selectedStudents) {
+  async function handleSubmit(practiceData, newStudents,selectedStudents,is_deleted_all) {
     const EDIT_PRACTICE = () => {
       // 准备请求数据
       const requestData = {
-        Action: 'POST',
+        Action: is_deleted_all?'clear':'POST',
         Data: {
           practice: {
             ID: practice.data.practice.ID,
@@ -43,7 +43,7 @@
             AllowedAttempts: practiceData.allowed_attempts,
             duration: practiceData.test.suggest_duration,
           },
-          student: practiceStudentIds,
+          student: is_deleted_all?[]: practiceStudentIds,
         },
       };
 
@@ -143,94 +143,7 @@
       });
     }
   }
-  /**
-   * @param {{ practice_name: any; grading_method: any; test: { id: any;suggest_duration?:number }; students: any[];allowed_attempts:any}} practiceData
-   */
-  async function updateStudents(practiceData,newStudents ,selectedStudents) {
-    const UPDATE_STUDENTS = () => {
-      // 准备请求数据
-      const requestData = {
-        data: {
-          id: practice.data.id,
-          students: practiceStudentIds,
-        },
-      };
-      // 发送请求
-      return fetch('/api/practices/students', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-        credentials: 'include', // 添加凭证以处理跨域Cookie
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`更新失败:${response.text()}  `);
-          }
-          return response.json();
-        })
-        .then((result) => {
-          console.log('update result:', result);
-          if (result.status === 0) {
-            toast.success('更新成功', 1000);
-            // 延迟跳转，让用户能看到提示
-            setTimeout(() => {
-              // 跳转回列表页
-              goto('/teacher/practice');
-            }, 1000);
-          } else {
-            throw new Error(`更新失败:${result.msg}  `);
-          }
-        });
-    };
-    if (newStudents && newStudents.length > 0) {
-      // 先执行导入操作
-      fetch('/api/user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ data: newStudents }),
-      })
-        .then((res) => {
-          if (!res.ok) {
-            return res.text().then((msg) => {
-              throw new Error(`导入失败: ${res.status} ${res.statusText} - ${msg}`);
-            });
-          }
-          return res.json();
-        })
-        .then((result) => {
-          if (result.status !== 0) {
-            throw new Error(result.msg || '导入失败');
-          }
-          //获取新增之后的学生ID
-          let studentIds = result.data.map((item) => item.ID);
-          //获取已经有账号的学生的ID
-         let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
-         
-          //创建需要关联的学生ID
-          practiceStudentIds = [...practiceStudentIds,...studentIds,...existStudentIds]
-          // 导入成功后执行创建练习
-          return UPDATE_STUDENTS();
-        })
-        .catch((error) => {
-          console.error('编辑练习请求异常:', error);
-          toast.error('编辑练习请求异常', 1000);
-        });
-    } else {
-      // 直接执行创建练习
-      //获取已经有账号的学生的ID
-          let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
-          //创建需要关联的学生ID
-          practiceStudentIds = [...practiceStudentIds,...existStudentIds]
-      UPDATE_STUDENTS().catch((error) => {
-        console.error('编辑练习请求异常:', error);
-        toast.error('编辑练习请求异常', 1000);
-      });
-    }
-  }
-
+  
   // 处理取消
   function handleCancel() {
     isDialogOpen = true;
@@ -311,7 +224,7 @@
   {#if practice}
     <PracticeForm
       PracticeId={practiceId}
-      onSubmitFunc={practice.data.practice.Status === '02' ? updateStudents : handleSubmit}
+      onSubmitFunc={practice.data.practice.Status === '02' ? handleSubmit : handleSubmit}
       practiceData={practice}
       onCancelFunc={handleCancel}
     />

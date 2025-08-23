@@ -381,6 +381,8 @@
                             min={1}
                             bind:value={sub_score[index]}
                             oninput={debounce(()=>update(sub_score),500,false)}
+                            onfocus={()=>question.isEditingSubScore = true}
+                            onblur={()=>question.isEditingSubScore = false}
                         >
                         <br />
                     {/if}
@@ -494,6 +496,8 @@
                             min={1}
                             bind:value={sub_score[index]}
                             oninput={debounce(()=>update(sub_score),500,false)}
+                            onfocus={()=>question.isEditingSubScore = true}
+                            onblur={()=>question.isEditingSubScore = false}
                         >
                         <br />
                     {/if}
@@ -656,22 +660,21 @@
         .questionBasic {
             display: flex;
             width: 100%;
-
             justify-content: space-between;
 
             .type,
             .difficulty,
             .score {
-                font-size: 12px;
+                font-size: 15px;
                 color: #333;
             }
 
             .type {
-                margin-left: 5%;
+               
             }
 
             .score {
-                margin-right: 5%;
+               
             }
         }
     }

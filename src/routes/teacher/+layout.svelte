@@ -2,28 +2,62 @@
   import SideBar from '$lib/components/SideBar/SideBar.svelte';
   import Crumb from '$lib/components/Crumb/Crumb.svelte';
   import Brand from '$lib/components/Brand/Brand.svelte';
+  import { toast } from '$lib/components/Toast/Toast.js';
+  import { baseNavItems } from '$lib/stores/modules/permission.js';
+  import { onMount } from 'svelte';
   let { children, data } = $props();
+
+  let nav_map = $state([]); // 导航数据
+  let display_name = $state(''); // 用户名称
+
+  // 获取用户权限并生成 nav_map
+  async function getUserInfo() {
+    fetch('/api/user/me')
+      .then((response) => response.json())
+      .then(async (data) => {
+        if (!data?.data?.APIs) throw new Error('APIs 数据不存在');
+
+        // 获取用户名
+        display_name = data.data.OfficialName;
+
+        // 获取当前用户可访问的路径
+        const allowedPaths = await data.data.APIs.map((api) => api.APIExposePath);
+
+        // 过滤 baseNavItems，只保留匹配的父级菜单
+        nav_map = $baseNavItems.filter((item) => {
+          return allowedPaths.includes(item.path); // 只匹配一级菜单的 path
+        });
+      })
+      .catch((error) => {
+        nav_map = []; // 失败时设为空数组
+        console.error('获取用户权限失败:', error);
+        toast.error('获取用户权限失败：', error);
+      });
+  }
+
+  onMount(async () => {
+    await getUserInfo();
+  });
 </script>
 
 <div class="app">
   <nav class="sidebar-container">
-    <SideBar />
+    <SideBar {nav_map} />
   </nav>
 
   <main>
     <header>
-      <Crumb />
+      <Crumb {display_name} />
     </header>
 
     <div class="content-wrapper">
       <div class="content-container">
         {@render children()}
       </div>
-
-      <footer>
-        <Brand content={'广州近邻信息有限公司 Copyright © 2024-2034 w2w.me. All Rights Reserved.'} />
-      </footer>
     </div>
+    <footer>
+      <Brand content={'广州近邻信息有限公司 Copyright © 2024-2034 w2w.me. All Rights Reserved.'} />
+    </footer>
   </main>
 </div>
 
@@ -56,10 +90,9 @@
     overflow: hidden;
 
     header {
-      flex: 0 0 auto;
       position: relative;
       width: 100%;
-      height: max-content;
+      height: 50px;
       z-index: 1000;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
@@ -67,20 +100,18 @@
     .content-wrapper {
       display: flex;
       flex-direction: column;
-      flex: 1 1 auto;
-      height: calc(100% - 50px);
+      flex: 1;
       position: relative;
 
       .content-container {
         flex: 1;
         overflow-y: auto;
-        padding: 16px;
+        padding: 0px 15px 0px 15px;
         background-color: var(--bg-primary);
       }
     }
 
     footer {
-      flex: 0 0 auto;
       width: 100%;
       height: 50px;
       display: flex;

@@ -285,7 +285,9 @@
           <div class="table-body">
             {#if currentPageTests.length > 0}
               {#each currentPageTests as test (test.ID)}
-                <div class="table-row">
+                <button class="table-row"
+                 onclick={() => selectTest(test.ID)}
+                  class:selected={selectedTestId === test.ID}>
                   <div class="cell select-cell">
                     <label class="custom-radio">
                       <input
@@ -334,7 +336,7 @@
                   <div class="cell create-cell">
                     {test.create_time}
                   </div>
-                </div>
+                </button>
               {/each}
             {:else}
               <div style="height: 200px; padding: 0;">
@@ -537,6 +539,15 @@
 
     .table-row {
       display: flex;
+      cursor: pointer;
+      margin: 0;
+  background: none;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  text-align: left;
+  padding: 0; /* 添加这行以重置默认padding */
+  
 
       &:nth-child(even) {
         background-color: #f9f9f9;

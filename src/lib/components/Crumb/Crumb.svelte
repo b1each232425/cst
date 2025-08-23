@@ -4,91 +4,79 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { baseNavItems } from '$lib/stores/modules/permission.js';
-  import { toast } from '$lib/components/Toast/Toast.js';
   import { beforeNavigate } from '$app/navigation';
+  import { toast } from '$lib/components/Toast/Toast.js';
 
-  let display_name = $state(''); // 用户名称
+  let { display_name } = $props();
+
+  // 参数校验
+  (() => {
+    // 仅允许字符串
+    if (typeof display_name !== 'string') {
+      console.warn(`[Header] display_name 必须是字符串类型，当前为 ${typeof display_name}`);
+      display_name = ''; // 重置为空字符串
+    }
+  })();
+
   let nav_map = $baseNavItems; // 导航数据
-
-  // 初始面包屑数据
-  let current_nav_path_data = $state();
+  let current_nav_path_data = $state(); // 当前面包屑数据
   let app_name = '3min'; // app名称
+  let user_menu_open = $state(false); // 用户菜单是否打开
+  let avatar_btn_element = $state(null); // 用户头像按钮元素
+  let user_menu_element = $state(null); // 用户菜单元素
 
-  /**
-   * 用户菜单是否打开
-   * @type {boolean}
-   */
-  let user_menu_open = $state(false);
+  // 将带正则的 pattern “物化”为真实路径（用子路径的实际段来替换 \d+ / .+ / [^/]+ 等）
+  // 这里只做通用处理：识别是否包含常见正则元字符就用实际段替换
+  function materializePath(pattern, actualFullPath) {
+    // 去掉末尾的 $，避免分段干扰
+    const cleaned = pattern.replace(/\$$/, '');
+    const pSegs = cleaned.split('/').filter(Boolean);
+    const aSegs = actualFullPath.split('/').filter(Boolean);
 
-  /**
-   * 用户头像按钮元素
-   * @type {HTMLElement}
-   */
-  let avatar_btn_element = $state(null);
+    // 有这些字符就认为是“动态段”
+    const isRegexLike = (seg) => /[\\\[\]\(\)\+\*\?\{\}\|\.]/.test(seg);
 
-  /**
-   * 用户菜单元素
-   * @type {HTMLElement}
-   */
-  let user_menu_element = $state(null);
+    const segs = pSegs.map((seg, i) => {
+      return isRegexLike(seg) ? (aSegs[i] ?? seg) : seg;
+    });
 
-  /**
-   * 获取用户正式名称
-   */
-  function getUserInfo() {
-    fetch('/api/user/me')
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.status !== 0) {
-          throw new Error('用户数据不存在');
-        } else {
-          // 获取用户名称
-          display_name = data.data.OfficialName;
-
-          // toast.success(`你好：${display_name}，欢迎登录本系统`);
-        }
-      })
-      .catch((error) => {
-        console.error('获取用户权限失败：', error);
-        toast.error('获取用户权限失败：', error);
-      });
+    return '/' + segs.join('/');
   }
 
-  /**
-   * 获取当前路由路径数据（保持完整层级结构）
-   */
+  // 获取当前路由路径数据（修复：为父节点也赋真实 path）
   function getNavData(path, nav_map) {
     let result = [];
 
     for (let navData of nav_map) {
       let path_reg = new RegExp(`^${navData.path}$`);
 
+      // 命中当前节点
       if (path_reg.test(path)) {
-        // 如果该项标记为isFilter，则跳过不加入结果
         if (!navData.isFilter) {
           result.push({
             ...navData,
-            actual_path: path,
+            // 将最终节点的 path 直接设为真实路径
+            path: path,
           });
         }
         break;
       }
 
-      if (navData.children == null) {
-        continue;
-      }
+      if (!navData.children) continue;
 
-      // 递归
-      let childNavData = getNavData(path, navData.children);
+      // 递归子节点
+      const childNavData = getNavData(path, navData.children);
+      if (childNavData.length <= 0) continue;
 
-      if (childNavData.length <= 0) {
-        continue;
-      }
+      // 子链路最后一个节点的真实路径（一定是实际地址）
+      const deepestActualPath = childNavData[childNavData.length - 1].path || path;
 
-      // 如果当前项标记为isFilter，则不加入结果
       if (!navData.isFilter) {
+        // 关键：把父节点的正则 pattern 用真实路径“物化”为可点击地址
+        const parentRealPath = materializePath(navData.path, deepestActualPath);
         result.push({
           ...navData,
+          path: parentRealPath,
         });
       }
 
@@ -100,11 +88,22 @@
 
   // 处理退出登录点击事件
   async function handleLogout() {
-    // 清除 qNearSessions
-    document.cookie = 'qNearSessions=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    fetch('/api/user/logout')
+      .then((response) => response.json())
+      .then(async (data) => {
+        if (data.status !== 0) throw new Error('退出登录失败');
 
-    // 跳转到登录页
-    goto('/login');
+        // 清除 qNearSessions
+        document.cookie = 'qNearSessions=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+        // 跳转到登录页
+        goto('/login');
+      })
+      .catch((error) => {
+        nav_map = []; // 失败时设为空数组
+        console.error('退出登录失败:', error);
+        toast.error('退出登录失败：', error);
+      });
   }
 
   // 监听导航事件，跳转前执行逻辑
@@ -123,9 +122,6 @@
   });
 
   onMount(async () => {
-    // 获取用户信息
-    await getUserInfo();
-
     // 初始化面包屑
     const current_url_path = page.url.pathname;
     current_nav_path_data = getNavData(current_url_path, nav_map);
@@ -218,7 +214,7 @@
       height: 100%;
       background-color: transparent;
       box-sizing: border-box;
-      padding: 2px 2px 2px 2px;
+      padding: 2px 2px 2px 8px;
 
       .breadcrumbs-item {
         text-decoration: none;

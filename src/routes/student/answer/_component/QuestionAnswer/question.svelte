@@ -84,35 +84,38 @@
     }
   }
 
+
   function replaceSpansWithLines(htmlString) {
+    if (htmlString === null || htmlString === undefined || htmlString === "") return "";
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
+    const spans = doc.querySelectorAll('span.blank-item');
 
-    // 找到所有的括号 ( )
-    const matches = doc.body.innerHTML.match(/\(\)/g); // 匹配所有括号
+    spans.forEach(span => {
+      const blankNumber = span.getAttribute('blanknumber') || '';
+      const id = span.id || '';
 
-    if (matches) {
-      // 根据括号的数量动态替换成 input
-      matches.forEach(() => {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'blank-item-input';
-        input.maxLength = max_input_len;
-        input.style.width = '80px'; // 初始宽度
-        input.style.minWidth = '80px'; // 最小宽度
-        input.style.textAlign = 'center';
-        input.style.border = 'none';
-        input.style.borderBottom = '1px solid black';
-        input.style.outline = 'none';
-        input.style.boxSizing = 'content-box';
-        input.style.padding = '0px 0px 0px 0px';
-        input.style.margin = '0px 0px 0px 0px';
-        input.style.fontSize = '16px';
+      const input = doc.createElement('input');
+      input.type = 'text';
+      input.className = 'blank-item-input';
+      input.maxLength = typeof max_input_len === 'number' ? max_input_len : 100;
+      if (id) input.id = id;
+      if (blankNumber) input.setAttribute('data-blank-number', blankNumber);
+      input.placeholder = span.textContent || '';
+      // 基本样式（与之前创建 input 的样式一致）
+      input.style.width = '80px';
+      input.style.minWidth = '80px';
+      input.style.textAlign = 'center';
+      input.style.border = 'none';
+      input.style.borderBottom = '1px solid black';
+      input.style.outline = 'none';
+      input.style.boxSizing = 'content-box';
+      input.style.padding = '0';
+      input.style.margin = '0';
+      input.style.fontSize = '16px';
 
-        // 替换括号为输入框
-        doc.body.innerHTML = doc.body.innerHTML.replace('()', input.outerHTML);
-      });
-    }
+      span.replaceWith(input);
+    });
 
     return doc.body.innerHTML;
   }

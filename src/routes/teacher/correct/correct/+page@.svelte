@@ -2,7 +2,7 @@
  * @Author: 林炜佳 wj2144632819@qq.com
  * @Date: 2025-08-06 15:00:00
  * @LastEditors: 林炜佳 wj2144632819@qq.com
- * @LastEditTime: 2025-08-07 00:18:07
+ * @LastEditTime: 2025-08-19 12:00:07
  * @FilePath: \exam\src\routes\teacher\correct\correct\+page@.svelte
  * @Description: 教师端试卷批改页面
  * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
@@ -390,11 +390,21 @@
   let student_infos = $state([]); // 考生信息
   let marking_results = $state([]); // 历史批改结果
 
+  // let question_sets = $state([...mockData.question_sets]); // 题组
+  // let student_answers = $state([...mockData.student_answers]); // 学生信息
+  // let student_infos = $state([...mockData.student_infos]); // 考生信息
+  // let marking_results = $state([...mockData.marking_results]); // 历史批改结果
+
   // 总问题数
   let total_question = $derived(
     Array.isArray(question_sets)
       ? question_sets.reduce((acc, cur) => acc + (Array.isArray(cur?.Questions) ? cur.Questions.length : 0), 0)
       : 0,
+  );
+
+  // 试卷主观题总分
+  let total_score = $derived(
+    Array.isArray(question_sets) ? question_sets.reduce((acc, cur) => acc + cur?.Score ?? 0, 0) : 0,
   );
 
   let current_question_set = $derived(question_sets[current_question_set_index]);
@@ -404,7 +414,8 @@
   // 绑定批改区域，用于切换考生的时候滚动条滚动到最顶部（逐题模式切换题目不需要，因为切换题目会销毁整个题目组件）
   let correction_content = null;
 
-  let current_paper_name = $state('');
+  let current_name = $state('');
+  let current_exam_session_name = $state('');
 
   // 用于处理之前已批改，但是之后被清除了分数（这时是不会保存批改的，因为没有不会保存未批改的题目的分数），这时需要在总览显示“未批阅”的状态
   // let has_unmarked = $state(-1);
@@ -471,13 +482,8 @@
       })
       .then((res) => {
         if (!res.status) {
-          if (is_exam_mode) {
-            toast.success('提交成功'); // 考试需要提示；练习不需要，直接提交即可
-            goBack();
-          } else {
-            // 练习，全部练习批改完成，提示可以返回
-            if (getUnmarkedExamineeCount() === 0) toast.success('当前所有的学生已批改且提交成功，可以返回列表');
-          }
+          toast.success('提交成功'); // 考试需要提示；练习不需要，直接提交即可
+          if (is_exam_mode) goBack();
         } else throw new Error(res.msg ?? '提交失败');
       })
       .catch((err) => {
@@ -557,6 +563,10 @@
       if (examinee_score === score) return 'right';
       if (examinee_score === 0) return 'incorrect';
       if (examinee_score > 0 && examinee_score < score) return 'partial';
+
+      const err_msg = `获取分数状态失败：question_id=${question_id}, score=${score}`;
+      toast.error(err_msg);
+      console.error(err_msg);
       return 'unknown';
     }
     return 'unreviewed';
@@ -660,7 +670,8 @@
               qs.Questions.sort((a, b) => a.Order - b.Order);
             });
 
-          current_paper_name = page.url.searchParams.get('name');
+          current_name = page.url.searchParams.get('name');
+          current_exam_session_name = page.url.searchParams.get('exam_session_name');
         } else throw new Error(res.msg ?? '获取批改信息失败');
       })
       .catch((err) => {
@@ -733,9 +744,6 @@
               ...data,
             };
           else marking_results.push(data);
-
-          // 练习，批改好一个同学就直接提交
-          if (!is_exam_mode && is_finished_correcting) submitCorrection();
         } else throw new Error(res.msg ?? '批改操作失败');
       })
       .catch((err) => {
@@ -766,13 +774,17 @@
   <div class="header">
     <div class="left-header">
       <button class="btn is-text btn--large btn--primary is-plain" onclick={goBack}>返回</button>
-      <div class="name">{current_paper_name}</div>
+      <div class="name">{current_name}</div>
+      {#if current_exam_session_name}
+        <div class="info"><span>考试场次：</span><span class="data"> {current_exam_session_name}</span></div>
+      {/if}
+      <div class="info"><span>主观题总分：</span><span class="data"> {total_score}</span></div>
       <div class="info"><span>总人数：</span><span class="data"> {student_infos.length}</span></div>
       <div class="info"><span>未批改人数：</span><span class="data"> {getUnmarkedExamineeCount()}</span></div>
       <div class="info"><span>总未批改题数：</span><span class="data"> {getAllUnMarkedQuestionCount()}</span></div>
     </div>
     <div class="hobby" data-testid="switch">
-      全卷模式
+      逐题模式
       <Switch
         is_checked={correct_item_by_item}
         ball_color="white"
@@ -783,7 +795,6 @@
         width="50px"
         clickSwitchButton={handleClickSwitchButton}
       />
-      逐题模式
     </div>
   </div>
 
@@ -803,8 +814,15 @@
             <span>当前得分：</span><span class="data"> {getStudentTotalScore(current_student_info)}</span>
           </div>
         </div>
-        <!-- 练习：上一位，下一位；考试：上一位，下一位/提交 -->
+        <!-- 练习：提交，上一位，下一位；考试：上一位，下一位/提交 -->
         <div class="options">
+          {#if !is_exam_mode}
+            <button
+              class="btn is-plain btn--success"
+              class:is-disabled={!is_finished_correcting}
+              onclick={() => submitCorrection()}>&nbsp;&nbsp;提交&nbsp;&nbsp;</button
+            >
+          {/if}
           <button
             class="btn btn--info is-plain"
             class:is-disabled={current_student_info_index === 0}
@@ -887,33 +905,37 @@
 
     <!-- 右侧总览 -->
     <div class="card overview">
-      <div class="overview-header">作答总览</div>
+      <div class="overview-header">批改总览</div>
       <div class="question-status">
         <span class="unreviewed">• 未批阅</span>
         <span class="right">• 正确</span>
         <span class="incorrect">• 错误</span>
         <span class="partial">• 含错</span>
       </div>
-      {#each question_sets as question_set, i}
-        <div class="question-scores">
-          <div class="scores-header">
-            {question_set.Name} (<span class="data"
-              >{getStudentQuestionSetScore(current_student_info, question_set.ID)}</span
-            >分/{question_set.Score}分)
+      <div class="question-score-list">
+        {#each question_sets as question_set, i}
+          <div class="question-scores">
+            <div class="scores-header">
+              {question_set.Name} (<span class="data"
+                >{getStudentQuestionSetScore(current_student_info, question_set.ID)}</span
+              >分/{question_set.Score}分)
+            </div>
+            <div class="scores">
+              {#each question_set.Questions as question, j}
+                <button
+                  class={`scores-item ${getStudentQuestionScoreStatus(current_student_info, question.ID)}`}
+                  class:active={correct_item_by_item &&
+                    current_question_set_index === i &&
+                    current_question_index === j}
+                  onclick={() => scrollToQuestion(question.ID, i, j)}
+                >
+                  {question.Order}
+                </button>
+              {/each}
+            </div>
           </div>
-          <div class="scores">
-            {#each question_set.Questions as question, j}
-              <button
-                class={`scores-item ${getStudentQuestionScoreStatus(current_student_info, question.ID)}`}
-                class:active={correct_item_by_item && current_question_set_index === i && current_question_index === j}
-                onclick={() => scrollToQuestion(question.ID, i, j)}
-              >
-                {question.Order}
-              </button>
-            {/each}
-          </div>
-        </div>
-      {/each}
+        {/each}
+      </div>
     </div>
   </div>
 </div>
@@ -938,9 +960,7 @@
       &.data {
         color: black;
         font-size: 1.1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        @include flex-center;
       }
     }
   }
@@ -952,6 +972,7 @@
     .header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       padding: 1rem 2rem;
       flex-wrap: wrap;
       background-color: white;
@@ -959,11 +980,13 @@
       .left-header {
         @include flex-center;
         gap: 1rem;
+        flex-wrap: wrap;
 
         .name {
           @include flex-center;
           font-weight: 400;
           font-size: 1.2rem;
+          white-space: nowrap;
         }
       }
 
@@ -1024,8 +1047,12 @@
 
           .item-by-item {
             .options {
-              @include flex-center;
-              gap: 2rem;
+              display: flex;
+              justify-content: end;
+              gap: 1rem;
+              position: sticky;
+              bottom: 0;
+              z-index: 10;
             }
           }
         }
@@ -1035,10 +1062,14 @@
         background-color: white;
         width: 20%;
 
-        $color-unreviewed: #c2c2c2; // lighten(#919191, 20%)
-        $color-right: #66ff99; // lighten(#00e343, 20%)
-        $color-incorrect: #ff4d4d; // lighten(#ff0000, 20%)
-        $color-partial: #ffc266; // lighten(#ff9500, 20%)
+        // $color-unreviewed: #c2c2c2; // lighten(#919191, 20%)
+        // $color-right: #66ff99; // lighten(#00e343, 20%)
+        // $color-incorrect: #ff4d4d; // lighten(#ff0000, 20%)
+        // $color-partial: #ffc266; // lighten(#ff9500, 20%)
+        $color-unreviewed: ver(--gray);
+        $color-right: var(--green);
+        $color-incorrect: var(--red);
+        $color-partial: var(--orange);
 
         .overview-header {
           padding: 1rem;
@@ -1070,66 +1101,77 @@
           }
         }
 
-        .question-scores {
-          padding: 0.8rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-          margin-top: 1rem;
+        .question-score-list {
+          height: 78vh;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: #ccc transparent;
 
-          .scores-header {
-            color: rgba(0, 0, 0, 0.8);
-
-            .data {
-              color: #3399ff;
-            }
-          }
-
-          .scores {
+          .question-scores {
+            padding: 0.8rem;
             display: flex;
-            justify-content: left;
-            flex-wrap: wrap;
-            gap: 1rem;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
 
-            .scores-item {
-              @include flex-center;
-              border: 1px solid #ccc;
-              width: 2rem;
-              height: 2rem;
-              border-radius: 5px;
+            .scores-header {
+              color: rgba(0, 0, 0, 0.8);
 
-              @mixin outline-style {
-                outline: 2px solid gray;
-                outline-offset: 2px;
+              .data {
+                color: #3399ff;
               }
+            }
 
-              &:hover {
-                cursor: pointer;
-                @include outline-style;
-              }
+            .scores {
+              display: flex;
+              justify-content: left;
+              flex-wrap: wrap;
+              gap: 1rem;
 
-              &.active {
-                @include outline-style;
-              }
+              .scores-item {
+                @include flex-center;
+                border: 1px solid #ccc;
+                width: 2rem;
+                height: 2rem;
+                border-radius: 5px;
 
-              &.unreviewed {
-                background-color: $color-unreviewed;
-              }
+                @mixin outline-style {
+                  outline: 2px solid gray;
+                  outline-offset: 2px;
+                }
 
-              &.right {
-                background-color: $color-right;
-              }
+                &:hover {
+                  cursor: pointer;
+                  @include outline-style;
+                }
 
-              &.incorrect {
-                background-color: $color-incorrect;
-              }
+                &.active {
+                  @include outline-style;
+                }
 
-              &.partial {
-                background-color: $color-partial;
-              }
+                &.unreviewed {
+                  background-color: $color-unreviewed;
+                }
 
-              &.unknown {
-                background-color: red;
+                &.right {
+                  background-color: #e8ffea;
+                  color: $color-right;
+                }
+
+                &.incorrect {
+                  background-color: #f8d2d8;
+                  color: $color-incorrect;
+                }
+
+                &.partial {
+                  background-color: #ffe8abfe;
+                  color: $color-partial;
+                }
+
+                &.unknown {
+                  background-color: red;
+                  color: white;
+                }
               }
             }
           }

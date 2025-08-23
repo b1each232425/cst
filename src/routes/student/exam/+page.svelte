@@ -17,7 +17,6 @@
   import Empty from '$lib/components/Table/Empty.svelte';
   import DatePicker from '$lib/components/DatePicker/DatePicker.svelte';
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
-  import Dialog from '../answer/_component/Dialog.svelte';
   import { formatTimestamp } from '$lib/utils/time_utils';
   import '$lib/components/Button/index.scss';
   import '$lib/components/Input/index.scss';
@@ -572,7 +571,7 @@
               font-size: 0.9rem;
               text-align: center;
               vertical-align: middle;
-              padding: 5px 0;
+              padding: 0.5rem;
 
               .stack {
                 display: flex;

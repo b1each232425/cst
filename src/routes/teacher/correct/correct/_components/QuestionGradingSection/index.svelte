@@ -10,9 +10,8 @@
 
 <script>
   import { debounce } from '$lib/utils/optimize';
+  import { replaceSpansWithLines } from '$lib/utils/blank_changer';
   // 做到，本地保存批改的分数的同时（修改外部的old_mark_result，这样逐题模式和全卷模式的分数不一致问题就可以解决），发送更新批改的请求即可；下一次接收响应就能获取新的分数
-
-  // 一道题目的输入框全部输入，失焦后自动保存（把数据传出去，外部保存）
 
   // 题型映射
   const QUESTION_TYPE_MAP = {
@@ -47,7 +46,10 @@
     let score = Number(score_str);
     if (score > answer_score)
       event.target.value = answer_score; // 同步更新 input 的值
-    else if (score < 0) event.target.value = '';
+    else if (score < 0) {
+      event.target.value = ''; // 输入负数，置空，不保存批改
+      return;
+    }
 
     index_score_map[index] = Number(event.target.value);
 
@@ -78,7 +80,7 @@
       <span>{QUESTION_TYPE_MAP[question.Type]}</span>
       <span>({question.Score}分)</span>
     </div>
-    <div>{@html question.Content}</div>
+    <div>{@html replaceSpansWithLines(question.Content)}</div>
   </div>
 
   <!-- 学生的答案 -->
@@ -166,7 +168,6 @@
 
     .student-answer,
     .correction {
-      background-color: rgb(247, 248, 251);
       padding: 0.5rem 1rem;
       display: flex;
       flex-direction: column;
@@ -174,21 +175,20 @@
 
     .student-answer {
       @include flex-column;
+      background-color: rgb(245, 248, 255); /* 非常淡 */
 
       .answers {
         @include flex-column;
 
         .answer-item {
           padding-left: 1rem;
-
-          // .answer-content {
-          //   color: #3399ff;
-          // }
         }
       }
     }
 
     .correction {
+      background-color: rgb(247, 248, 251);
+
       .scores,
       details {
         padding: 0.5rem;

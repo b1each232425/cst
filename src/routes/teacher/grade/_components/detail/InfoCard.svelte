@@ -30,6 +30,16 @@
   // 使用 context 数据或 props 数据
   let displayData = $derived(contextData || data);
 
+  let sortedPapers = $derived.by(() => {
+  if (!displayData?.papers) return [];
+  return [...displayData.papers]
+    .sort((a, b) => Number(a.id) - Number(b.id))
+    .map((paper, index) => ({
+      ...paper,
+      idText: `试卷${index + 1}`
+    }));
+});
+
   /**
    * 格式化单个考试时间
    * @param {Object} examData - 考试数据
@@ -56,7 +66,7 @@
   <!-- 练习信息卡片 -->
   {#if displayData}
     <div class="exam-card">
-      <h1 class="title">{safeDisplayText(displayData.name)}</h1>
+      <div class="title-container">{safeDisplayText(displayData.name)}</div>
 
       <div class="info-grid practice-grid">
         <div class="info-item">
@@ -81,13 +91,13 @@
 
         <div class="info-item">
           <span class="label">批改方式</span>
-          <span class="value">自动批改</span>
+          <span class="value">{safeDisplayText(displayData.mark_mode)}</span>
         </div>
       </div>
     </div>
   {:else}
     <div class="exam-card">
-      <h1 class="title">---</h1>
+      <div class="title-container">---</div>
       <div class="info-grid practice-grid">
         <div class="info-item">
           <span class="label">练习总分</span>
@@ -116,17 +126,17 @@
   <!-- 考试信息卡片 -->
   {#if displayData}
     <div class="exam-card">
-      <h1 class="title">{safeDisplayText(displayData.title || displayData.name)}</h1>
+      <div class="title-container">{safeDisplayText(displayData.title || displayData.name)}</div>
 
       <div class="info-grid">
         <div class="info-item exam-time-item">
           <span class="label">考试时间</span>
           <div class="exam-time-list">
-            {#if displayData.papers && displayData.papers.length > 0}
-              {#each displayData.papers as paper, i}
+            {#if sortedPapers && sortedPapers.length > 0}
+              {#each sortedPapers as paper, i}
                 <div class="exam-time-entry">
-                  <span class="paper-label">试卷{i + 1}:</span>
-                  <span class="time-value">{formatSingleExamTime(displayData, i)}</span>
+                  <span class="paper-label">{paper.idText}:</span>
+                  <span class="time-value">{formatSingleExamTime(displayData, displayData.papers.findIndex(p => p.id === paper.id))}</span>
                 </div>
               {/each}
             {:else}
@@ -138,10 +148,10 @@
         <div class="info-item exam-score-item">
           <span class="label">考试总分</span>
           <div class="exam-score-list">
-            {#if displayData.papers && displayData.papers.length > 1}
-              {#each displayData.papers as paper, i}
+            {#if sortedPapers && sortedPapers.length > 1}
+              {#each sortedPapers as paper}
                 <div class="exam-score-entry">
-                  <span class="paper-label">试卷{i + 1}:</span>
+                  <span class="paper-label">{paper.idText}:</span>
                   <span class="score-value">{safeDisplayNumber(paper.total_score)}</span>
                 </div>
               {/each}
@@ -154,10 +164,10 @@
         <div class="info-item exam-examinees-item">
           <span class="label">应考人数</span>
           <div class="exam-examinees-list">
-            {#if displayData.papers && displayData.papers.length > 1}
-              {#each displayData.papers as paper, i}
+            {#if sortedPapers && sortedPapers.length > 1}
+              {#each sortedPapers as paper}
                 <div class="exam-examinees-entry">
-                  <span class="paper-label">试卷{i + 1}:</span>
+                  <span class="paper-label">{paper.idText}:</span>
                   <span class="examinees-value">{safeDisplayNumber(paper.actual_examinees)}</span>
                 </div>
               {/each}
@@ -170,10 +180,10 @@
         <div class="info-item exam-average-item">
           <span class="label">考试平均分</span>
           <div class="exam-average-list">
-            {#if displayData.papers && displayData.papers.length > 1}
-              {#each displayData.papers as paper, i}
+            {#if sortedPapers && sortedPapers.length > 1}
+              {#each sortedPapers as paper}
                 <div class="exam-average-entry">
-                  <span class="paper-label">试卷{i + 1}:</span>
+                  <span class="paper-label">{paper.idText}:</span>
                   <span class="average-value">{safeDisplayNumber(paper.average_score, 1)}</span>
                 </div>
               {/each}
@@ -186,10 +196,10 @@
         <div class="info-item exam-pass-item">
           <span class="label">通过人数</span>
           <div class="exam-pass-list">
-            {#if displayData.papers && displayData.papers.length > 1}
-              {#each displayData.papers as paper, i}
+            {#if sortedPapers && sortedPapers.length > 1}
+              {#each sortedPapers as paper}
                 <div class="exam-pass-entry">
-                  <span class="paper-label">试卷{i + 1}:</span>
+                  <span class="paper-label">{paper.idText}:</span>
                   <span class="pass-value">{safeDisplayNumber(paper.pass_examinees)}</span>
                 </div>
               {/each}
@@ -229,7 +239,7 @@
                 </tr>
               </thead>
               <tbody>
-                {#each displayData.papers || [] as paper}
+                {#each sortedPapers as paper}
                   <tr>
                     <td>{safeDisplayText(paper.idText)}</td>
                     <td>{safeDisplayText(paper.name)}</td>
@@ -247,7 +257,7 @@
     </div>
   {:else}
     <div class="exam-card">
-      <h1 class="title">---</h1>
+      <div class="title-container">---</div>
       <div class="info-grid">
         <div class="info-item">
           <span class="label">考试时间</span>
@@ -258,19 +268,16 @@
           <span class="value">-</span>
         </div>
         <div class="info-item">
-          <span class="label">考试类型</span>
+          <span class="label">应考人数</span>
           <span class="value">-</span>
         </div>
+        
         <div class="info-item">
           <span class="label">考试平均分</span>
           <span class="value">-</span>
         </div>
         <div class="info-item">
-          <span class="label">知识点涉及</span>
-          <span class="value">-</span>
-        </div>
-        <div class="info-item">
-          <span class="label">应考人数</span>
+          <span class="label">通过人数</span>
           <span class="value">-</span>
         </div>
         <div class="info-item">
@@ -278,7 +285,7 @@
           <span class="value">-</span>
         </div>
         <div class="info-item">
-          <span class="label">通过人数</span>
+          <span class="label">考试类型</span>
           <span class="value">-</span>
         </div>
 
@@ -321,10 +328,12 @@
     height: 100%;
     margin-bottom: 40px;
 
-    .title {
+    .title-container {
       font-size: 22px;
       font-weight: bold;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
+      margin-top:5px;
+      margin-left:24px;
     }
 
     .info-grid {
@@ -343,10 +352,11 @@
 
         .label {
           font-size: 14px;
-          font-weight: 300;
+          font-weight: 400;
           min-width: 80px;
           text-align: right;
           flex-shrink: 0;
+          color: var(--text-primary);
         }
 
         .value {
@@ -380,13 +390,13 @@
 
               .paper-label {
                 font-weight: 500;
-                color: var(--text-secondary);
+                color: var(--text-primary); 
                 min-width: 50px;
                 flex-shrink: 0;
               }
 
               .time-value {
-                font-weight: 400;
+                font-weight: 500;
                 color: var(--text-primary);
               }
             }
@@ -411,13 +421,13 @@
 
               .paper-label {
                 font-weight: 500;
-                color: var(--text-secondary);
+                color: var(--text-primary);
                 min-width: 50px;
                 flex-shrink: 0;
               }
 
               .score-value {
-                font-weight: 400;
+                font-weight: 500;
                 color: var(--text-primary);
               }
             }
@@ -442,13 +452,13 @@
 
               .paper-label {
                 font-weight: 500;
-                color: var(--text-secondary);
+                color: var(--text-primary);
                 min-width: 50px;
                 flex-shrink: 0;
               }
 
               .examinees-value {
-                font-weight: 400;
+                font-weight: 500;
                 color: var(--text-primary);
               }
             }
@@ -473,13 +483,13 @@
 
               .paper-label {
                 font-weight: 500;
-                color: var(--text-secondary);
+                color: var(--text-primary);
                 min-width: 50px;
                 flex-shrink: 0;
               }
 
               .average-value {
-                font-weight: 400;
+                font-weight: 500;
                 color: var(--text-primary);
               }
             }
@@ -504,13 +514,13 @@
 
               .paper-label {
                 font-weight: 500;
-                color: var(--text-secondary);
+                color: var(--text-primary);
                 min-width: 50px;
                 flex-shrink: 0;
               }
 
               .pass-value {
-                font-weight: 400;
+                font-weight: 500;
                 color: var(--text-primary);
               }
             }
@@ -525,7 +535,7 @@
 
       .label {
         font-size: 14px;
-        color: #6b7280;
+        color: var(--text-primary);
         font-weight: 400;
         min-width: 80px;
         text-align: right;
@@ -569,11 +579,14 @@
           th {
             font-weight: 300;
             border-bottom: 1px solid #e5e7eb;
+            color:var(--text-primary);
           }
 
           td {
             font-weight: 500;
             border-bottom: 1px solid #f3f4f6;
+            color:var(--text-primary);
+
           }
         }
       }

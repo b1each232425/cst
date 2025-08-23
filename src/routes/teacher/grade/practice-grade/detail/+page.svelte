@@ -16,7 +16,16 @@
    * @property {number} average_score - 平均分
    * @property {number} completed_students - 作答人数
    * @property {number} passed_students - 通过人数
+   * @property {string} mark_mode - 批改模式
    */
+
+
+     // 常量定义
+  const MARK_MODE_MAP = {
+    '00': '自动批改',
+    '10': '人工批改',
+  };
+
 
   /**
    * @type {string|null}
@@ -59,6 +68,7 @@
       average_score: rawData.average_score || 0,
       completed_students: rawData.completed_students || 0,
       passed_students: rawData.passed_students || 0,
+      mark_mode: MARK_MODE_MAP[rawData.mark_mode] || rawData.mark_mode || '自动批改',
     };
   }
 
@@ -137,20 +147,14 @@
 
 <style lang="scss" scoped>
   .page-container {
-    position: absolute;
-    top: 0px;
-    left: -16px;
-    right: -16px;
-    bottom: -50px; // 覆盖 Footer 的 50px 高度
-    z-index: 10; // 高于 Footer
     background-color: var(--bg-primary);
-    padding: 16px;
-    overflow: hidden;
+    height: 100%;
+    width: 100%;
 
     .detail-container {
       display: flex;
       flex-direction: column;
-      height: 100%;
+      height: 98%;
       gap: 20px;
       overflow: auto;
       padding: 10px;
@@ -184,6 +188,7 @@
         .card4 {
           min-width: 1480px;
         }
+
       }
     }
   }

@@ -6,12 +6,6 @@ export const baseNavItems = writable([
     title: '登录',
     path: '/login',
   },
-  // {
-  //   name: 'courseManagement',
-  //   title: '课程管理',
-  //   path: '/teacher/courseManagement',
-  //   icon: '/sidebar/nav_icon/course.svg',
-  // },
   {
     name: 'questionBankManagement',
     title: '题库管理',
@@ -20,11 +14,6 @@ export const baseNavItems = writable([
     children_is_parallel: true,
     isFilter: true,
     children: [
-      // {
-      //   name: 'programmingQuestionBank',
-      //   title: '编程题库管理',
-      //   path: '/teacher/questionBank/programming',
-      // },
       {
         name: 'theoryQuestionBank',
         title: '理论题库管理',
@@ -60,13 +49,11 @@ export const baseNavItems = writable([
         name: 'create',
         title: '创建练习',
         path: '/teacher/practice/create',
-        force_hide: true,
       },
       {
         name: 'edit',
         title: '编辑练习',
         path: '/teacher/practice/edit/\\d+$',
-        force_hide: true,
       },
     ],
   },
@@ -80,25 +67,17 @@ export const baseNavItems = writable([
         name: 'createExam',
         title: '创建考试',
         path: '/teacher/exam/addExam',
-        force_hide: true,
       },
       {
         name: 'editExam',
         title: '编辑考试',
         path: '/teacher/exam/editExam/\\d+$',
-        force_hide: true,
       },
-      // {
-      //   name: 'invigilation',
-      //   title: '监考管理',
-      //   path: '/teacher/exam/invigilation/\\d+$',
-      //   force_hide: true,
-      // },
+
       {
         name: 'previewExam',
         title: '预览试卷',
         path: '/teacher/exam/previewExam',
-        force_hide: true,
       },
     ],
   },
@@ -155,67 +134,9 @@ export const baseNavItems = writable([
           },
         ],
       },
-      // {
-      //   name: 'courseGradeManagement',
-      //   title: '课程成绩管理',
-      //   path: '/teacher/gradeManagement/course',
-      // },
     ],
   },
-  // {
-  //   name: 'questionnaireManagement',
-  //   title: '问卷管理',
-  //   path: '/teacher/questionnaireManagement',
-  //   icon: '/sidebar/nav_icon/questionnaire.svg',
-  // },
-  // {
-  //   name: 'announcementManagement',
-  //   title: '公告管理',
-  //   path: '/teacher/announcementManagement',
-  //   icon: '/sidebar/nav_icon/announcement.svg',
-  // },
-  // {
-  //   name: 'examSiteManagement',
-  //   title: '考点管理',
-  //   path: '/teacher/examSiteManagement',
-  //   icon: '/sidebar/nav_icon/exam_site.svg',
-  //   children: [
-  //     {
-  //       name: 'editExamSite',
-  //       title: '编辑考点',
-  //       path: '/teacher/examSiteManagement/edit/\\d+$',
-  //       force_hide: true,
-  //     },
-  //     {
-  //       name: 'examSiteDetails',
-  //       title: '考点详情',
-  //       path: '/teacher/examSiteManagement/details/\\d+$',
-  //       force_hide: true,
-  //       children: [
-  //         {
-  //           name: 'examRoomExamList',
-  //           title: '考场考试列表',
-  //           path: '/teacher/examSiteManagement/room/\\d+$',
-  //           force_hide: true,
-  //         },
-  //       ],
-  //     },
-  //   ],
-  // },
-  // {
-  //   name: 'invigilationList',
-  //   title: '监考列表',
-  //   path: '/teacher/invigilationList',
-  //   icon: '/sidebar/nav_icon/invigilate.svg',
-  //   children: [
-  //     {
-  //       name: 'invigilation',
-  //       title: '监考详情',
-  //       path: '/teacher/invigilationList/invigilation',
-  //       force_hide: true,
-  //     },
-  //   ],
-  // },
+
   {
     name: 'studentManagement',
     title: '学生管理',
@@ -226,20 +147,7 @@ export const baseNavItems = writable([
         name: 'addStudent',
         title: '创建学生',
         path: '/teacher/student-management/addStudent',
-        force_hide: true,
       },
-      // {
-      //   name: 'editStudent',
-      //   title: '编辑学生',
-      //   path: '/teacher/studentManagement/edit/\\d+$',
-      //   force_hide: true,
-      // },
-      // {
-      //   name: 'detailsStudent',
-      //   title: '学生详情',
-      //   path: '/teacher/studentManagement/details/\\d+$',
-      //   force_hide: true,
-      // },
     ],
   },
   {
@@ -253,20 +161,38 @@ export const baseNavItems = writable([
         name: 'addUser',
         title: '创建用户',
         path: '/teacher/user-management/addUser',
-        force_hide: true,
       },
-      // {
-      //   name: 'userDetail',
-      //   title: '用户详情',
-      //   path: '/teacher/userManagement/userDetail',
-      //   force_hide: true,
-      // },
-      // {
-      //   name: 'editUser',
-      //   title: '修改用户信息',
-      //   path: '/teacher/userManagement/editUser',
-      //   force_hide: true,
-      // },
+    ],
+  },
+  {
+    name: 'enroll',
+    title: '报名管理',
+    path: '/teacher/enroll',
+    icon: '/enroll/enroll.svg',
+    children_is_parallel: false,
+    children: [
+      {
+        name: 'add-enroll',
+        title: '创建报名计划',
+        path: '/teacher/enroll/add-enroll',
+      },
+      {
+        name: 'edit-enroll',
+        title: '编辑报名计划',
+        path: '/teacher/enroll/edit-enroll/\\d+$',
+      },
+      {
+        name: 'see-enroll',
+        title: '查看报名人员',
+        path: '/teacher/enroll/see-enroll/\\d+$',
+        children: [
+          {
+            name: 'person-detail',
+            title: '报名信息详情',
+            path: '/teacher/enroll/see-enroll/\\d+/person-detail/\\d+$',
+          },
+        ],
+      },
     ],
   },
 ]);
