@@ -129,7 +129,7 @@
           });
           
           currentData = students.map((stu) => ({
-            stuId: stu.stu_id, 
+            stu_id: stu.stu_id, 
             phone: stu.phone || '-',
             name: stu.name || '-',
             nickname: stu.nickname || '-',
@@ -209,6 +209,29 @@
     }
   }
 
+  /**
+   * 处理查看详情点击事件
+   */
+  function handleViewDetail(student) {
+    if (type === 'exam') {
+      // 获取当前考试中的所有 exam_session_id
+      const examSessionIds = student.scores?.map(score => score.exam_session_id) || [];
+      
+      if (examSessionIds.length > 0) {
+        console.log('当前考试中的exam_session_id:', examSessionIds);
+        
+        const examSessionIdStr = examSessionIds.join(',');
+        window.location.href = `/student/answer/result/exam?exam-session-id-arr=[${examSessionIdStr}]`;
+        
+      } else {
+        console.log('未找到exam_session_id');
+      }
+    } else {
+      console.log('练习类型，无exam_session_id');
+    }
+    
+  }
+
   // 初始化
   onMount(async () => {
     await fetchGradesData();
@@ -261,6 +284,7 @@
                     <th>试卷{index + 1}</th>
                   {/each}
                 {/if}
+                <th>学生作答详情</th>
                 <th>备注</th>
               </tr>
             </thead>
@@ -298,6 +322,11 @@
                       </td>
                     {/each}
                   {/if}
+                  <td class="detail-cell">
+                    <button class="detail-btn" onclick={() => handleViewDetail(student)}>
+                      查看详情
+                    </button>
+                  </td>
                   <td class="note-cell">{student.remark != null ? student.remark : '-'}</td>
                 </tr>
               {:else}
@@ -424,6 +453,20 @@
           .note-cell {
             color: var(--gray);
             font-size: 12px;
+          }
+
+          .detail-btn {
+            background: none;
+            border: none;
+            color: #0052d9;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+            padding: 0;
+            
+            &:hover {
+              color: #0040a7;
+            }
           }
 
           .empty-row {

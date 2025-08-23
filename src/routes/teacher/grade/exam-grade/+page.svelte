@@ -197,6 +197,9 @@
    */
   function setFilters(newFilters) {
     state.filters = { ...state.filters, ...newFilters };
+    // 筛选条件改变时清空选中状态
+    state.selected = {};
+    state.selectAll = false;
     debouncedSearch(); // 使用防抖搜索
   }
 
@@ -372,7 +375,20 @@
         <div class="filter-group">
           <span class="filter-hint">考试类别</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={state.filters.type}>
+            <Select
+              value={state.filters.type}
+              placeholder="全部"
+              changeValue={(value) => {
+                if (value !== state.filters.type) {
+                  state.filters.type = value;
+                  state.pagination.page = 1;
+                  // 筛选条件改变时清除选中状态
+                  state.selected = {};
+                  state.selectAll = false;
+                  fetchExams();
+                }
+              }}
+            >
               <Option value="" label="全部" />
               <Option value="00" label="平时考试" />
               <Option value="02" label="资格证考试" />
@@ -383,7 +399,20 @@
         <div class="filter-group">
           <span class="filter-hint">提交状态</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={state.filters.submitted}>
+            <Select
+              value={state.filters.submitted}
+              placeholder="全部"
+              changeValue={(value) => {
+                if (value !== state.filters.submitted) {
+                  state.filters.submitted = value;
+                  state.pagination.page = 1;
+                  // 筛选条件改变时清除选中状态
+                  state.selected = {};
+                  state.selectAll = false;
+                  fetchExams();
+                }
+              }}
+            >
               <Option value={-1} label="全部" />
               <Option value={1} label="已提交" />
               <Option value={0} label="未提交" />
@@ -621,7 +650,7 @@
     flex-direction: column;
     min-height: 600px;
     overflow: hidden;
-    height: 84vh; 
+    height: 85vh; 
     position: relative;
   }
 
@@ -654,7 +683,7 @@
   .pagination-wrapper {
     flex-shrink: 0; /* 分页器不收缩 */
     position: absolute;
-    bottom: 10px;
+    bottom: 0px;
     right: 20px;
   }
 

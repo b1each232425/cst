@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { 
-    handleApiError, 
-    handleValidationError, 
-    handleSuccess, 
-    handleFeatureNotImplemented, 
-    handleSelectionError 
+import {
+    handleApiError,
+    handleValidationError,
+    handleSuccess,
+    handleFeatureNotImplemented,
+    handleSelectionError
 } from '../errorHandler.js';
 
 // 模拟 Toast 组件
@@ -30,7 +30,7 @@ describe('错误处理工具', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
         mockToast = (await import('$lib/components/Toast/Toast.js')).toast;
-        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(console, 'error').mockImplementation(() => { });
     });
 
     afterEach(() => {
@@ -104,6 +104,21 @@ describe('错误处理工具', () => {
             expect(console.error).not.toHaveBeenCalled();
             expect(result).toBe('测试操作失败：Test error');
         });
+        it('should handle generic HTTP errors with "HTTP error" message', () => {
+            const error = new Error('HTTP error! unknown error');
+            const result = handleApiError(error, '请求数据');
+
+            expect(mockToast.error).toHaveBeenCalledWith('请求数据失败：网络请求异常');
+            expect(result).toBe('请求数据失败：网络请求异常');
+        });
+
+        it('should handle NetworkError', () => {
+            const error = new Error('NetworkError when attempting to fetch resource');
+            const result = handleApiError(error, '加载数据');
+
+            expect(mockToast.error).toHaveBeenCalledWith('加载数据失败：网络错误，请检查网络连接');
+            expect(result).toBe('加载数据失败：网络错误，请检查网络连接');
+        });
     });
 
     describe('handleValidationError', () => {
@@ -166,9 +181,9 @@ describe('错误处理工具', () => {
         it('should log errors in development environment', () => {
             import.meta.env.DEV = true;
             const error = new Error('Dev error');
-            
+
             handleApiError(error, '开发测试');
-            
+
             expect(console.error).toHaveBeenCalledWith('开发测试失败:', error);
         });
 

@@ -366,7 +366,7 @@
     flex-direction: column;
     min-height: 600px;
     overflow: hidden;
-    height: 84vh;
+    height: 85vh;
     position: relative;
   }
 
@@ -396,7 +396,7 @@
   .pagination-wrapper {
     flex-shrink: 0;
     position: absolute;
-    bottom: 10px;
+    bottom: 0px;
     right: 20px;
   }
 

@@ -13,22 +13,19 @@
    */
   let { type, data } = $props();
 
-  // 获取 Context 数据
-  let contextData = null;
-  try {
+  // 获取 Context 数据，使用更简洁的方式
+  const contextData = $derived(() => {
     if (type === 'practice') {
       const context = getContext('practice');
-      contextData = context?.practiceData;
+      return context?.practiceData;
     } else {
       const context = getContext('exam');
-      contextData = context?.examData;
+      return context?.examData;
     }
-  } catch {
-    // Context 不存在时使用 props 数据
-  }
+  });
 
   // 使用 context 数据或 props 数据
-  let displayData = $derived(contextData || data);
+  let displayData = $derived(contextData() || data);
 
   let sortedPapers = $derived.by(() => {
   if (!displayData?.papers) return [];

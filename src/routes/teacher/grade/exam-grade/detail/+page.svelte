@@ -341,7 +341,12 @@
     </div>
   </div>
 {/if}
-
+<!-- <div class="bottom-action-panel-fixed">
+      <button class="import-button">导出学生</button
+      >
+      <button class="submit-button">提交成绩</button
+      >
+    </div> -->
 <style lang="scss" scoped>
   .page-container {
     background-color: var(--bg-primary);
@@ -396,6 +401,7 @@
       right: 24px;
       z-index: 1000;
       gap: 20px;
+      
       .submit-button {
         padding: 10px 20px;
         font-size: 14px;
@@ -418,4 +424,62 @@
       }
     }
   }
+
+  // .bottom-action-panel-fixed {
+  //   display: flex;
+  //   position: fixed;
+  //   gap: 20%;
+  //   bottom: 0;
+  //   left: 0;
+  //   right: 0;
+  //   display: flex;
+  //   justify-content: center;
+  //   background-color: #fff;
+  //   padding: 15px 20px;
+  //   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  //   border-top: 1px solid #eee;
+  //   z-index: 100;
+
+  //   .import-button {
+  //       padding: 10px 20px;
+  //       font-size: 14px;
+  //       color: white;
+  //       background-color: var(--blue);
+  //       border: none;
+  //       border-radius: var(--btn-border-radius);
+  //       cursor: pointer;
+  //       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  //       transition: background-color 0.3s;
+
+  //       &:hover {
+  //         opacity: 0.8;
+  //       }
+  //       &:disabled {
+  //         background-color: var(--gray);
+  //         cursor: not-allowed;
+  //         opacity: 0.6;
+  //       }
+  //     }
+
+  //   .submit-button {
+  //       padding: 10px 20px;
+  //       font-size: 14px;
+  //       color: white;
+  //       background-color: var(--green);
+  //       border: none;
+  //       border-radius: var(--btn-border-radius);
+  //       cursor: pointer;
+  //       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  //       transition: background-color 0.3s;
+
+  //       &:hover {
+  //         opacity: 0.8;
+  //       }
+  //       &:disabled {
+  //         background-color: var(--gray);
+  //         cursor: not-allowed;
+  //         opacity: 0.6;
+  //       }
+  //     }
+  //  }
 </style>
