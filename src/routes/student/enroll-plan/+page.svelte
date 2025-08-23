@@ -3,6 +3,8 @@
   import Option from '$lib/components/Select/Option.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
+  import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
+  import { goto } from '$app/navigation';
 
   // 考试科目映射
   const SUBJECT_MAP = {
@@ -15,9 +17,12 @@
   const STATUS_MAP = {
     '': '全部',
     registering: '报名中',
-    approved: '审核通过待考试',
-    rejected: '审核不通过',
     pending: '待审核',
+    not_registered: '未报名',
+    rejected: '审核不通过',
+    not_started: '报名未开始',
+    ended: '报名已结束',
+    approved: '审核通过待考试',
   };
 
   // 筛选条件
@@ -32,8 +37,8 @@
     {
       id: 1,
       name: '2025年上半年技能提升计划',
-      start: '2025-03-01',
-      end: '2025-05-01',
+      start: '2025-03-01 00:00:00',
+      end: '2025-05-01 00:00:00',
       people: 50,
       subject: '理论',
       type: '统一考试',
@@ -42,8 +47,8 @@
     {
       id: 2,
       name: '2025年电工实操考核',
-      start: '2025-04-15',
-      end: '2025-06-01',
+      start: '2025-04-15 00:00:00',
+      end: '2025-06-01 00:00:00',
       people: 30,
       subject: '实操',
       type: '统一考试',
@@ -52,14 +57,60 @@
     {
       id: 3,
       name: '安全法规理论培训',
-      start: '2025-02-01',
-      end: '2025-02-28',
+      start: '2025-02-01 00:00:00',
+      end: '2025-02-28 00:00:00',
       people: 80,
       subject: '理论',
       type: '培训考核',
       status: '待审核',
     },
+    {
+      id: 4,
+      name: '2025年高压电工进阶班',
+      start: '2025-01-10 00:00:00',
+      end: '2025-03-10 00:00:00',
+      people: 40,
+      subject: '实操',
+      type: '统一考试',
+      status: '未报名',
+    },
+    {
+      id: 5,
+      name: '2025年安全生产考核',
+      start: '2025-07-01 00:00:00',
+      end: '2025-08-01 00:00:00',
+      people: 100,
+      subject: '理论',
+      type: '统一考试',
+      status: '审核不通过',
+    },
+    {
+      id: 6,
+      name: '2025年机械操作培训',
+      start: '2025-09-01 00:00:00',
+      end: '2025-10-01 00:00:00',
+      people: 60,
+      subject: '实操',
+      type: '培训考核',
+      status: '报名未开始',
+    },
+    {
+      id: 7,
+      name: '2025年特种设备安全考核',
+      start: '2025-03-01 00:00:00',
+      end: '2025-03-15 00:00:00',
+      people: 25,
+      subject: '理论',
+      type: '统一考试',
+      status: '报名已结束',
+    },
   ];
+
+  // 审核不通过理由
+  let rejected_reason = $state('身份证模糊');
+
+  // 是否展示提示框
+  let is_show_message_box = $state(false);
 
   // 总数据数
   let total_count = signup_list.length;
@@ -70,6 +121,20 @@
   }
   function handlePageSizeChange(e) {
     page_size = e.detail;
+  }
+
+  // 处理报名按钮点击事件
+  function handleEnroll() {
+    goto('/student/enroll-plan/enroll-message');
+  }
+
+  // 处理查看原因按钮点击事件
+  function handleSeeReason() {
+    is_show_message_box = true;
+  }
+
+  function handleComfirmMessageBox() {
+    is_show_message_box = false;
   }
 </script>
 
@@ -127,10 +192,37 @@
               <td>{item.people}</td>
               <td>{item.subject}</td>
               <td>{item.type}</td>
-              <td>{item.status}</td>
+
+              <!-- 报名状态样式 -->
               <td>
-                <button class="option can-click">查看详情</button>
-                <button class="option can-click">取消报名</button>
+                <span
+                  class:status-gray={item.status === '未报名' || item.status === '报名已结束'}
+                  class:status-blue={item.status === '报名中' ||
+                    item.status === '待审核' ||
+                    item.status === '报名未开始'}
+                  class:status-green={item.status === '审核通过待考试'}
+                  class:status-red={item.status === '审核不通过'}
+                >
+                  {item.status}
+                </span>
+              </td>
+
+              <!-- 操作按钮 -->
+              <td>
+                {#if item.status === '未报名'}
+                  <button class="option blue" onclick={handleEnroll}>开始报名</button>
+                {:else if item.status === '报名中'}
+                  <button class="option blue" onclick={handleEnroll}>继续报名</button>
+                {:else if item.status === '待审核'}
+                  <button class="option blue" onclick={handleEnroll}>查看报名信息</button>
+                {:else if item.status === '审核通过待考试'}
+                  <button class="option blue">请到达考试列表等待考试开始</button>
+                {:else if item.status === '审核不通过'}
+                  <button class="option blue" onclick={handleEnroll}>重新提交</button>
+                  <button class="option red" onclick={handleSeeReason}>查看原因</button>
+                {:else if item.status === '报名未开始' || item.status === '报名已结束'}
+                  <span class="option gray">----</span>
+                {/if}
               </td>
             </tr>
           {/each}
@@ -149,6 +241,17 @@
 <div class="pagination">
   <Pagination total_items={total_count} on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} />
 </div>
+
+<!-- 消息提示框 -->
+<MessageBox
+  visible={is_show_message_box}
+  title={'不通过原因'}
+  content={rejected_reason}
+  show_cancel_button={false}
+  show_cancel_icon={false}
+  confirm_text="确定"
+  onConfirm={handleComfirmMessageBox}
+></MessageBox>
 
 <style lang="scss">
   .signup-body {
@@ -224,18 +327,45 @@
               vertical-align: middle;
               padding: 0.5rem;
 
+              /* 报名状态颜色 */
+              .status-gray {
+                color: gray;
+              }
+              .status-blue {
+                color: blue;
+              }
+              .status-green {
+                color: green;
+              }
+              .status-red {
+                color: red;
+              }
+
+              /* 操作按钮样式 */
               .option {
                 all: unset;
-                color: blue;
                 padding: 0 0.3rem;
 
-                &.can-click:hover {
+                &.blue {
+                  color: blue;
                   cursor: pointer;
-                  font-weight: bold;
+
+                  &:hover {
+                    font-weight: bold;
+                  }
                 }
 
-                &.error {
+                &.red {
                   color: red;
+                  cursor: pointer;
+
+                  &:hover {
+                    font-weight: bold;
+                  }
+                }
+
+                &.gray {
+                  color: gray;
                 }
               }
             }
