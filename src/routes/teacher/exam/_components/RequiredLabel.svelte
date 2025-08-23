@@ -21,7 +21,7 @@
         display: flex;
         align-items: center;
         font-size: 14px;
-        width: 120px;
+        width: 170px;
     }
 
     .labelText {

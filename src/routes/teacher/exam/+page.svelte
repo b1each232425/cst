@@ -31,7 +31,7 @@
   let message = $state('');
   let publish_exam_dialog = $state(false);
   let examID_to_publish = $state(false);
-  let examID_to_delete = $state(false);
+  let examID_to_delete = $state([]);
   let total_items = $state(); //总数据条数
   let delete_exam_dialog = $state(false); //删除考试的确认框
   let is_delete_mode = $state(false); //是否是删除模式
@@ -301,6 +301,7 @@
         searchExam();
         loading=false;
         selected_exam_ids=[];
+        delete_exam_dialog = false;
       })
   }
 
@@ -423,39 +424,7 @@ function handleSelectAll(event) {
   }
 }
 
-function previewPaper(ID, category) {
-        const PARAMS = new URLSearchParams();
 
-        PARAMS.append("paper_id", ID);
-        PARAMS.append("mode", "preview");
-
-        fetch(`/api/paper/manual?${PARAMS.toString()}`, {
-            method: "GET",
-            credentials: "include"
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`请求失败，状态码：${response.status}`);
-                }
-                return response.json();
-            })
-            .then(result => {
-                const PREVIEW_QUESTIONS = result.data;
-
-                
-                if (category === "00") {
-                    localStorage.setItem(
-                        "examQuestions",
-                        JSON.stringify(PREVIEW_QUESTIONS),
-                    );
-                    window.location.href = "/student/answer/exam";
-                } 
-            })
-            .catch(error => {
-                console.error('获取试卷详情出错：', error);
-                return null;
-            });
-    }
 
   onMount(() => {
     searchExam();
@@ -475,7 +444,7 @@ function previewPaper(ID, category) {
     <th>考试类型</th>
     <th>考试方式</th>
     <th>考试时间</th>
-    <th>考试时长</th>
+    <th>考试时长(分钟)</th>
     <th>考试状态</th>
     <th>考生人数</th>
     <th>操作</th>
@@ -505,7 +474,7 @@ function previewPaper(ID, category) {
     onclick={(event)=>{
         event.stopPropagation(); // 阻止冒泡
         delete_exam_dialog=true;
-        examID_to_delete =exam_list[index].id
+        examID_to_delete = [exam_list[index].id]
     }}>
     删除考试</button>
 
@@ -563,7 +532,7 @@ function previewPaper(ID, category) {
       {#each data.exam_sessions as session}
         <div style="display: flex; flex-wrap: no-wrap; gap: 8px;">
           <span>
-            {formatDateTime(session.start_time)} -- {formatDateTime(session.end_time)}
+            {formatDateTime(session.start_time)} ~ {formatDateTime(session.end_time)}
           </span>
         </div>
       {/each}
@@ -631,7 +600,7 @@ function previewPaper(ID, category) {
     </div>
     <div class="buttonPart">
       <!-- {#if !is_delete_mode}
-      <Button plain={true}  type="danger" size="medium" onclick={() => { is_delete_mode = true; }}>批量删除</Button>
+      
       <Button plain={true}  type="primary" size="medium" onclick={() => goto('/teacher/exam/addExam')}>新增考试</Button>
       {:else}
       <Button plain={true} type="default" size="medium" onclick={() => {is_delete_mode=false;}}>取消</Button>
@@ -639,6 +608,7 @@ function previewPaper(ID, category) {
           删除选中 ({selected_exam_ids.length})
         </Button>
       {/if} -->
+      <Button plain={true}  type="danger" size="medium" onclick={() => { deleteExam(selected_exam_ids) }}>批量删除</Button>
       <Button plain={true}  type="primary" size="medium" onclick={() => goto('/teacher/exam/addExam')}>新增考试</Button>
     </div>
   </div>
@@ -688,10 +658,10 @@ function previewPaper(ID, category) {
       delete_exam_dialog = false;
     }}
     onConfirm={() => {
-      if (!selected_exam_ids.includes(examID_to_delete)) {
-      selected_exam_ids = [...selected_exam_ids, examID_to_delete];
-    }
-      deleteExam(selected_exam_ids)
+    //   if (!selected_exam_ids.includes(examID_to_delete)) {
+    //   selected_exam_ids = [...selected_exam_ids, examID_to_delete];
+    // }
+      deleteExam(examID_to_delete)
       }}
     />
 
