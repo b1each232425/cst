@@ -49,6 +49,7 @@
     on_close_by_click_outside = true,
     onCancel = () => {},
     onConfirm = () => {},
+    children,
   } = $props();
 
   /**
@@ -162,6 +163,7 @@
         </div>
         <div class="MessageBox__text">
           {content}
+          {@render children?.()}
         </div>
         <div class="MessageBox__buttons" class:MessageBox__buttons--center={center} data-testid="messagebox_buttons">
           {#if show_cancel_button && cancel_text}

@@ -25,39 +25,58 @@
   let avatar_btn_element = $state(null); // 用户头像按钮元素
   let user_menu_element = $state(null); // 用户菜单元素
 
-  // 获取当前路由路径数据
+  // 将带正则的 pattern “物化”为真实路径（用子路径的实际段来替换 \d+ / .+ / [^/]+ 等）
+  // 这里只做通用处理：识别是否包含常见正则元字符就用实际段替换
+  function materializePath(pattern, actualFullPath) {
+    // 去掉末尾的 $，避免分段干扰
+    const cleaned = pattern.replace(/\$$/, '');
+    const pSegs = cleaned.split('/').filter(Boolean);
+    const aSegs = actualFullPath.split('/').filter(Boolean);
+
+    // 有这些字符就认为是“动态段”
+    const isRegexLike = (seg) => /[\\\[\]\(\)\+\*\?\{\}\|\.]/.test(seg);
+
+    const segs = pSegs.map((seg, i) => {
+      return isRegexLike(seg) ? (aSegs[i] ?? seg) : seg;
+    });
+
+    return '/' + segs.join('/');
+  }
+
+  // 获取当前路由路径数据（修复：为父节点也赋真实 path）
   function getNavData(path, nav_map) {
     let result = [];
 
     for (let navData of nav_map) {
       let path_reg = new RegExp(`^${navData.path}$`);
 
+      // 命中当前节点
       if (path_reg.test(path)) {
-        // 如果该项标记为isFilter，则跳过不加入结果
         if (!navData.isFilter) {
           result.push({
             ...navData,
-            actual_path: path,
+            // 将最终节点的 path 直接设为真实路径
+            path: path,
           });
         }
         break;
       }
 
-      if (navData.children == null) {
-        continue;
-      }
+      if (!navData.children) continue;
 
-      // 递归
-      let childNavData = getNavData(path, navData.children);
+      // 递归子节点
+      const childNavData = getNavData(path, navData.children);
+      if (childNavData.length <= 0) continue;
 
-      if (childNavData.length <= 0) {
-        continue;
-      }
+      // 子链路最后一个节点的真实路径（一定是实际地址）
+      const deepestActualPath = childNavData[childNavData.length - 1].path || path;
 
-      // 如果当前项标记为isFilter，则不加入结果
       if (!navData.isFilter) {
+        // 关键：把父节点的正则 pattern 用真实路径“物化”为可点击地址
+        const parentRealPath = materializePath(navData.path, deepestActualPath);
         result.push({
           ...navData,
+          path: parentRealPath,
         });
       }
 
