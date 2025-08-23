@@ -218,9 +218,19 @@
       {/if}
     </div>
   {:else}
-    <input class="select__input" value={selectedLabel.join(',')} readonly={!filterable} {placeholder} {disabled} oninput={onInputChange} onclick={toggleSelect} data-testid="select-input" />
+    <input
+      class="select__input"
+      class:is-disabled={disabled}
+      value={selectedLabel.join(',')}
+      readonly={!filterable}
+      {placeholder}
+      {disabled}
+      oninput={onInputChange}
+      onclick={toggleSelect}
+      data-testid="select-input"
+    />
   {/if}
-  <button class="select__icon" aria-label="Toggle dropdown" tabindex="-1" onclick={toggleSelect}>
+  <button class="select__icon" class:is-disabled={disabled} aria-label="Toggle dropdown" tabindex="-1" onclick={toggleSelect}>
     <img src="/dropdown/arrow_black.png" alt="Dropdown icon" style={isShow ? 'transform: rotate(180deg);' : ''} />
   </button>
   <ul class="select__options {direction}" class:is-hidden={!isShow} role="listbox" data-testid="select-options">
@@ -378,6 +388,17 @@
           font-weight: 400;
         }
       }
+    }
+  }
+
+  .is-disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    &:hover {
+      border-color: #f5f5f5;
+    }
+    &:focus {
+      border-color: #f5f5f5;
     }
   }
 </style>
