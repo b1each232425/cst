@@ -10,8 +10,16 @@
   import Title from '$lib/components/Title/Title.svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
   import InputBox from '$lib/components/Input/InputBox.svelte';
-  import { onChooseStartTime, onChooseEndTime,updateDuration,handleSubmit } from '../_utils/createExam';
-  import {onMount} from 'svelte'
+  import ExaminationRoomSelectionPanel from '../_components/ExaminationRoomSelectionPanel.svelte';
+  import {
+    onChooseStartTime,
+    onChooseEndTime,
+    updateDuration,
+    handleSubmit,
+    tusInit,
+    encodeMetadata,
+  } from '../_utils/createExam';
+  import { onMount } from 'svelte';
   import { createXXHash64 } from 'hash-wasm';
   import { filesize } from 'filesize';
   const TIP_TEXT = {
@@ -74,108 +82,107 @@
   let jobs = $state(new Map());
   let uploadedFiles = $state([]);
   let selectedFiles = $state();
-	let clearSelectedFiles = () => {
-		selectedFiles = new DataTransfer().files;
-	};
+  let clearSelectedFiles = () => {
+    selectedFiles = new DataTransfer().files;
+  };
   let queryFiles = () => {
-		let v = encodeURIComponent(criteria);
-		fetch(fileApi + `/nonexistence?q=${v}`)
-			.then((v) => {
-				let size = v.headers.get('content-length');
-				if (!v || size === '0') {
-					return [];
-				}
+    let v = encodeURIComponent(criteria);
+    fetch(fileApi + `/nonexistence?q=${v}`)
+      .then((v) => {
+        let size = v.headers.get('content-length');
+        if (!v || size === '0') {
+          return [];
+        }
 
-				return v.json();
-			})
-			.then((v) => {
-				if (!v || v.length == 0) {
-					console.log('empty file list');
-					return;
-				}
+        return v.json();
+      })
+      .then((v) => {
+        if (!v || v.length == 0) {
+          console.log('empty file list');
+          return;
+        }
 
-				let d = [];
-				for (let i = 0; i < v.length; i++) {
-					let metadata = v[i].MetaData;
+        let d = [];
+        for (let i = 0; i < v.length; i++) {
+          let metadata = v[i].MetaData;
 
-					// metadata.full = v[i];
-					metadata.url = `${fileApi}/${v[i].ID}`;
-					if (!metadata.filename) {
-						metadata.filename = v[i].ID;
-					}
+          // metadata.full = v[i];
+          metadata.url = `${fileApi}/${v[i].ID}`;
+          if (!metadata.filename) {
+            metadata.filename = v[i].ID;
+          }
 
-					if (!metadata.filesize) {
-						metadata.filesize = v[i].Size;
-					}
+          if (!metadata.filesize) {
+            metadata.filesize = v[i].Size;
+          }
 
-					if (!metadata.checksum) {
-						metadata.checksum = v[i].ID;
-					}
+          if (!metadata.checksum) {
+            metadata.checksum = v[i].ID;
+          }
 
-					d.push(metadata);
-				}
-				uploadedFiles = d;
-			})
-			.catch((err) => {
-				console.log(err);
-			});
-	};
+          d.push(metadata);
+        }
+        uploadedFiles = d;
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
   let fastdigest = (job) => {
-		return new Promise(async (resolve, reject) => {
-			if (!job || !job.file) {
-				reject('invalid/null job');
-				return;
-			}
+    return new Promise(async (resolve, reject) => {
+      if (!job || !job.file) {
+        reject('invalid/null job');
+        return;
+      }
 
-			let md = await createXXHash64();
-			md.init();
+      let md = await createXXHash64();
+      md.init();
 
-			let fileReader = new FileReader();
+      let fileReader = new FileReader();
 
-			let read = 0;
-			fileReader.onload = (e) => {
-				if (!e || !e.target || !e.target.result) {
-					let err = new Error('invalid event.target.result');
-					console.log(err);
-					jobs.delete(job.id);
-					reject(err);
-					return;
-				}
+      let read = 0;
+      fileReader.onload = (e) => {
+        if (!e || !e.target || !e.target.result) {
+          let err = new Error('invalid event.target.result');
+          console.log(err);
+          jobs.delete(job.id);
+          reject(err);
+          return;
+        }
 
-				read += e.target.result.byteLength;
-				let buf = new Uint8Array(e.target.result);
-				md.update(buf);
-				seek();
-			};
+        read += e.target.result.byteLength;
+        let buf = new Uint8Array(e.target.result);
+        md.update(buf);
+        seek();
+      };
 
-			let fileSize = job.file.size;
-			let start = 0,
-				end = 0;
+      let fileSize = job.file.size;
+      let start = 0,
+        end = 0;
 
-			let seek = () => {
-				let now = new Date();
-				job.sumPerformance =
-					(((read * 1.0) / (now.getTime() - beginTime.getTime())) * 1000) / (1024 * 1024);
+      let seek = () => {
+        let now = new Date();
+        job.sumPerformance = (((read * 1.0) / (now.getTime() - beginTime.getTime())) * 1000) / (1024 * 1024);
 
-				job.sumProgress = (((read * 1.0) / fileSize) * 100).toFixed(2);
-				if (read >= fileSize) {
-					let hex = md.digest();
-					resolve(hex);
-					return;
-				}
+        job.sumProgress = (((read * 1.0) / fileSize) * 100).toFixed(2);
+        if (read >= fileSize) {
+          let hex = md.digest();
+          resolve(hex);
+          return;
+        }
 
-				end += CHUNKSIZE;
-				end = end < fileSize ? end : fileSize + 1;
-				let slice = job.file.slice(start, end);
+        end += CHUNKSIZE;
+        end = end < fileSize ? end : fileSize + 1;
+        let slice = job.file.slice(start, end);
 
-				fileReader.readAsArrayBuffer(slice);
-				start = end;
-			};
+        fileReader.readAsArrayBuffer(slice);
+        start = end;
+      };
 
-			let beginTime = new Date();
-			seek();
-		});
-	};
+      let beginTime = new Date();
+      seek();
+    });
+  };
 
   let examID = $state();
   //考试名称
@@ -193,6 +200,7 @@
   let RichTextEditor; //富文本编辑器
   let exam_rooms = $state([]); //考试场地
   let invigilators = $state([]); //监考人员
+  let date_picker = $state(); //日期选择器
   //考试场次数组
   let paper_configs = $state([
     {
@@ -214,7 +222,7 @@
       isHide: false,
       sessionNum: 1,
       markConfig: {
-      teacher_mark_configs: [
+        teacher_mark_configs: [
           // {
           //     id: 0,
           //     name: "",
@@ -232,7 +240,19 @@
   let total_duration = $derived(paper_configs.reduce((sum, p) => sum + p.duration, 0));
   let show_paper_selection_panel = $state(false);
   let show_examinee_panel = $state(false);
+  let show_rooms_panel = $state(false);
   let files = $state([]);
+  let start_time = $derived(paper_configs.length > 0 
+        ? new Date(Math.min(...paper_configs.map(config => new Date(config.start_time).getTime())))
+        : new Date());
+
+  let end_time = $derived(paper_configs.length > 0
+        ? new Date(Math.max(...paper_configs.map(config => new Date(config.end_time).getTime())))
+        : new Date());
+  
+  
+  // 计算所有考场容量的总和
+  let total_capacity = $derived(exam_rooms.reduce((sum, room) => sum + (room.capacity || 0), 0));
   function addNewPaper() {
     let default_paper_config = {
       paperID: 0, //试卷ID
@@ -265,223 +285,217 @@
       lateEntryTime: 1,
       earlySubmissionTime: 0,
     };
-    paper_configs = [...paper_configs, default_paper_config];
 
-    // 清空考场选择
-    // exam_rooms = [];
-    // invigilators = [];
+    //保证在没有选择时间的情况下也能新增试卷
+    if (
+      paper_configs.length >= 1 &&
+      paper_configs[paper_configs.length - 1].startTime != '' &&
+      paper_configs[paper_configs.length - 1].endTime != ''
+    ) {
+      const prev = paper_configs.length - 1;
+      const prevEnd = new Date(paper_configs[prev].endTime);
+      const nextStart = new Date(prevEnd);
+      nextStart.setHours(prevEnd.getHours() + 1);
+
+      const nextEnd = new Date(nextStart);
+      nextEnd.setMinutes(nextStart.getMinutes() + 120); // 默认 120 分钟
+
+      default_paper_config.startTime = nextStart.toISOString();
+      default_paper_config.endTime = nextEnd.toISOString();
+    }
+    paper_configs = [...paper_configs, default_paper_config];
+    if (paper_configs.length >= 1) {
+      updateDuration(paper_configs.length - 1, paper_configs);
+    }
+    //清空考场选择
+    exam_rooms = [];
+    invigilators = [];
   }
 
   function resetTime(index) {
-    if(paper_configs[index].periodMode==='02')
-    {
+    if (paper_configs[index].periodMode === '02') {
       paper_configs[index].duration = 0;
-    }
-    else{
-      updateDuration(index,paper_configs);
+    } else {
+      updateDuration(index, paper_configs);
     }
   }
-  
-  function tusInit() {
-		if (!tus || !tus.isSupported) {
-			console.log('tus unsupported');
-			return;
-		}
-	}
 
   async function deleteFiles(file) {
-    fetch(`/api/exam/file`,{
-      method:"DELETE",
-        credentials: "include",
-        headers: {
-                "Content-Type": "application/json",
-            },
-        body:JSON.stringify({data:
-        {
-          exam_id: examID,
-          name: file.name,
-          size: file.size,
-          checksum: file.checksum
-        }
-      })
-  })
-  .then((res) => res.json())
-  .then((result) => {
-    if (result.status === 0) {
-      toast.success("删除成功");
-      uploadedFileList = uploadedFileList.filter(f => f.checksum !== file.checksum);
-    } else {
-      toast.warning("删除失败：" + result.msg);
-    }
-  })
-  .catch((err) => {
-    console.error(err);
-    toast.error("删除失败，未知错误");
-  });
-  }
-  async function uploadFiles(files = selectedFiles){
-    let promises = [];
-    for (let i = 0; i < files.length; i++) {
-			const file = files[i];
-			if (!file) {
-				continue;
-			}
-
-			let id = `${file.name}#${file.size}#${file.lastModified}`;
-			let job = { id, file };
-			jobs.set(id, job);
-
-			const p = singles(job);
-			promises.push(p);
-		}
-		let results;
-		try {
-			// var results: [job]
-			// job:{ID,file,url}
-			results = await Promise.all(promises);
-			results.forEach((e) => {
-				console.log(`download: ${e.file.name}: ${e.url}`);
-			});
-		} catch (err) {
-			console.log(err);
-		}
-
-		
-		queryFiles();
-    console.log("result",results);
-    for (const r of results) {
-    await fetch('/api/exam/file', {
-      method: 'POST',
+    fetch(`/api/exam/file`, {
+      method: 'DELETE',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         data: {
           exam_id: examID,
-          checksum: r.checksum,
-          name: r.file.name,
-          size: r.file.size
-        }
-      })
+          name: file.name,
+          size: file.size,
+          checksum: file.checksum,
+        },
+      }),
     })
-    .then((response) => response.json())
-    .then((result) => {
-        if(result.status !== 0)
-        {
-          toast.warning('上传出错:',result.msg);
-        }
-        else{
-          uploadedFileList = [
-        ...uploadedFileList,
-        {
-          name: r.file.name,
-          size: r.file.size,
-          checksum: r.checksum,
-          // url: r.url || `${fileApi}/${r.checksum}` // 可选：下载地址
-        }
-      ];
-          console.log("uploadedFileList",uploadedFileList);
-          reset();
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.status === 0) {
+          uploadedFileList = uploadedFileList.filter((f) => f.checksum !== file.checksum);
+        } else {
+          toast.warning('删除失败：' + result.msg);
         }
       })
-      .catch((error) => {
-        console.log(error);
-        toast.error('未知错误');
+      .catch((err) => {
+        console.error(err);
+        toast.error('删除失败，未知错误');
       });
   }
-	}
 
-  function encodeMetadata(metadata) {
-    const encodedPairs = [];
-    for (const [key, value] of Object.entries(metadata)) {
-        const encodedValue = btoa(unescape(encodeURIComponent(String(value))));
-        encodedPairs.push(`${key} ${encodedValue}`);
+  async function uploadFiles(files = selectedFiles) {
+    let promises = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file) {
+        continue;
+      }
+
+      let id = `${file.name}#${file.size}#${file.lastModified}`;
+      let job = { id, file };
+      jobs.set(id, job);
+
+      const p = singles(job);
+      promises.push(p);
     }
-    return encodedPairs.join(',');
-}
+    let results;
+    try {
+      // var results: [job]
+      // job:{ID,file,url}
+      results = await Promise.all(promises);
+      results.forEach((e) => {
+        console.log(`download: ${e.file.name}: ${e.url}`);
+      });
+    } catch (err) {
+      console.log(err);
+    }
+
+    queryFiles();
+    for (const r of results) {
+      await fetch('/api/exam/file', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: {
+            exam_id: examID,
+            checksum: r.checksum,
+            name: r.file.name,
+            size: r.file.size,
+          },
+        }),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.status !== 0) {
+            toast.warning('上传出错:', result.msg);
+          } else {
+            uploadedFileList = [
+              ...uploadedFileList,
+              {
+                name: r.file.name,
+                size: r.file.size,
+                checksum: r.checksum,
+                // url: r.url || `${fileApi}/${r.checksum}` // 可选：下载地址
+              },
+            ];
+            console.log('uploadedFileList', uploadedFileList);
+            reset();
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+          toast.error('未知错误');
+        });
+    }
+  }
 
   async function singles(job) {
-		return new Promise(async (resolve, reject) => {
-			if (!job || !job.file) {
-				reject('invalid/null job');
-				return;
-			}
+    return new Promise(async (resolve, reject) => {
+      if (!job || !job.file) {
+        reject('invalid/null job');
+        return;
+      }
 
-			job.checksum = await fastdigest(job);
-			let metadata = {
-				filename: job.file.name,
-				filetype: job.file.type,
-				filesize: job.file.size,
-				lastModified: job.file.lastModified,
-				checksum: job.checksum,
-			};
+      job.checksum = await fastdigest(job);
+      let metadata = {
+        filename: job.file.name,
+        filetype: job.file.type,
+        filesize: job.file.size,
+        lastModified: job.file.lastModified,
+        checksum: job.checksum,
+      };
 
-			const encodedMetadata = encodeMetadata(metadata);
-			let v = encodeURIComponent(encodedMetadata);
-			// console.log(v);
-			const tusOptions = {
-				endpoint: `${endpoint}?metadata=${v}`,
-				chunkSize,
-				retryDelays: [0, 1000, 3000, 5000],
-				parallelUploads,
-				metadata,
-				onUploadUrlAvailable() {
-					job.url = job.tus.url;
-				},
-				onError(error) {
-					console.log(error);
-					reject(error);
-				},
-				onProgress(bytesUploaded, bytesTotal) {
-					job.transmitPercentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
-					job.bytesUploaded = bytesUploaded;
-					job.bytesTotal = bytesTotal;
-				},
-				onSuccess(resp) {
-					// let x = resp.lastResponse._xhr;
-					// let msg = `上传成功`;
-					// if (x.status === 208) {
-					// 	msg = '文件已经在服务器上了';
-					// }
-					// console.log(`${metadata.filename} ${msg}(${x.status}): ${job.url}`);
+      const encodedMetadata = encodeMetadata(metadata);
+      let v = encodeURIComponent(encodedMetadata);
+      // console.log(v);
+      const tusOptions = {
+        endpoint: `${endpoint}?metadata=${v}`,
+        chunkSize,
+        retryDelays: [0, 1000, 3000, 5000],
+        parallelUploads,
+        metadata,
+        onUploadUrlAvailable() {
+          job.url = job.tus.url;
+        },
+        onError(error) {
+          console.log(error);
+          reject(error);
+        },
+        onProgress(bytesUploaded, bytesTotal) {
+          job.transmitPercentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+          job.bytesUploaded = bytesUploaded;
+          job.bytesTotal = bytesTotal;
+        },
+        onSuccess(resp) {
+          // let x = resp.lastResponse._xhr;
+          // let msg = `上传成功`;
+          // if (x.status === 208) {
+          // 	msg = '文件已经在服务器上了';
+          // }
+          // console.log(`${metadata.filename} ${msg}(${x.status}): ${job.url}`);
 
-					resolve(job);
-				},
-			};
-      console.log(tusOptions);
-			job.tus = new tus.Upload(job.file, tusOptions);
-			job.tus.start();
-		});
-	}
+          resolve(job);
+        },
+      };
+      job.tus = new tus.Upload(job.file, tusOptions);
+      job.tus.start();
+    });
+  }
 
-	function reset() {
-		clearSelectedFiles();
-	}
+  function reset() {
+    clearSelectedFiles();
+  }
 
   // 获取已选择的试卷ID列表（排除当前索引）
-function getSelectedPaperIDs(excludeIndex = -1) {
-  return paper_configs
-    .map((config, index) => ({ id: config.paperID, index }))
-    .filter(item => item.index !== excludeIndex && item.id !== 0)
-    .map(item => item.id);
-}
+  function getSelectedPaperIDs(excludeIndex = -1) {
+    return paper_configs
+      .map((config, index) => ({ id: config.paperID, index }))
+      .filter((item) => item.index !== excludeIndex && item.id !== 0)
+      .map((item) => item.id);
+  }
 
-
-  async function fetchExamID(){
-      fetch('/api/exam',{
+  async function fetchExamID() {
+    fetch('/api/exam', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-  })
+    })
       .then((response) => response.json())
       .then((result) => {
-        if(result.status != 0)
-        {
-          console.log("错误提示:",result.msg);
+        if (result.status != 0) {
+          console.log('错误提示:', result.msg);
           toast.warning(result.msg);
           goto('/teacher/exam');
-        }
-        else{
-          examID=result.data.id;
+        } else {
+          examID = result.data.id;
         }
         console.log(examID);
       })
@@ -489,15 +503,13 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         toast.error('未知错误');
       });
   }
-onMount(async () =>{
-    await fetchExamID();
-    tus= await import('tus-js-client');
-    tusInit();
-    queryFiles();
-})
-  
 
-  
+  onMount(async () => {
+    await fetchExamID();
+    tus = await import('tus-js-client');
+    tusInit(tus);
+    queryFiles();
+  });
 </script>
 
 <Title title="创建考试" line={true} />
@@ -581,6 +593,15 @@ onMount(async () =>{
             <div class="tooltip-text">{TIP_TEXT['online']}</div>
           </span>
         </label>
+
+        <label class="label">
+          <input type="radio" bind:group={exam_method} value={'02'} class="choice-radio-input" />
+          线下机房考试
+          <span class="tip-wrapper">
+            <img src="/exam_list/tip.png" alt="提示" style="width: 14px; height:auto" />
+            <div class="tooltip-text">{TIP_TEXT['offline']}</div>
+          </span>
+        </label>
       </div>
     </div>
 
@@ -611,6 +632,27 @@ onMount(async () =>{
       </div>
     </div>
 
+    <div class="examination-room-container">
+      <RequiredLabel text="考场配置" colon={false} Asterisk={false} />
+      <div class="examination-room-button-container normal-button-container">
+        <Button
+          plain={true}
+          type="primary"
+          size="small"
+          onclick={()=>{
+            show_rooms_panel=true;
+          }}
+          >
+          考场选择
+        </Button>
+        <div class="room-number-container">
+          <span class="examinee-number-text">已选择</span>
+          <span>{exam_rooms.length}</span>
+          <span>个考场，总容量为 {total_capacity} 名考生</span>
+        </div>
+      </div>
+    </div>
+
     <div class="examinee-container">
       <RequiredLabel text="考试人员" colon={false} Asterisk={false} />
       <div class="examinee-button-container normal-button-container">
@@ -635,28 +677,11 @@ onMount(async () =>{
       </div>
     </div>
 
-    <div class = "file-container">
+    <div class="file-container">
       <RequiredLabel text="考试说明" colon={false} Asterisk={false} />
-      <div class = "file-button-container">
-        <!-- <Button
-        plain={true}
-        type="primary"
-        size="small"
-        onclick={() => {
-          uploadFiles(selectedFiles);
-        }}
-      >
-        上传文件
-      </Button> -->
-
+      <div class="file-button-container">
         <label class="file-upload-label">
-          <Button
-            plain={true}
-            type="primary"
-            size="small"
-          >
-            上传文件
-          </Button>
+          <Button plain={true} type="primary" size="small">上传文件</Button>
           <input
             class="file-input-hidden"
             type="file"
@@ -664,31 +689,30 @@ onMount(async () =>{
             bind:files={selectedFiles}
             onchange={() => uploadFiles()}
           />
-      </label>
-
-      
+        </label>
+      </div>
     </div>
 
-       </div>
-       
-       <div class="fileListContainer {uploadedFileList.length===0 ? 'hideButton' :' '}">
-      <RequiredLabel text="附件列表" Asterisk={false} colon = {false}></RequiredLabel>
-          <div class="file-list-wrapper">
-            {#if uploadedFileList.length === 0}
-            {:else}
-              <ul class="file-list">
-                {#each uploadedFileList as file, idx (file.checksum)}
-                  <li class="file-item">
-                    <div class="file-info">
-                      <span class="file-name" title={file.name}>{file.name}</span>
-                    </div>
-                    <span><Button plain={true}  type="danger" size="medium" onclick={() => deleteFiles(file)}>删除</Button></span>
-                  </li>
-                {/each}
-              </ul>
-            {/if}
-          </div>
+    <div class="fileListContainer {uploadedFileList.length === 0 ? 'hideButton' : ' '}">
+      <RequiredLabel text="附件列表" Asterisk={false} colon={true}></RequiredLabel>
+      <div class="file-list-wrapper">
+        {#if uploadedFileList.length === 0}{:else}
+          <ul class="file-list">
+            {#each uploadedFileList as file, idx (file.checksum)}
+              <li class="file-item">
+                <div class="file-info">
+                  <span class="file-name" title={file.name}>{file.name}</span>
+                </div>
+                <span
+                  ><Button plain={true} type="danger" size="medium" onclick={() => deleteFiles(file)}>删除</Button
+                  ></span
+                >
+              </li>
+            {/each}
+          </ul>
+        {/if}
       </div>
+    </div>
 
     <div class="bottom-action-panel-fixed">
       <button
@@ -700,18 +724,18 @@ onMount(async () =>{
       <button
         class="save-action-button"
         onclick={() => {
-      handleSubmit({ 
-        examID,
-        exam_name, 
-        exam_rules, 
-        exam_type, 
-        exam_method, 
-        paper_configs, 
-        exam_examinee, 
-        invigilators,
-        uploadedFileList
-      });
-    }}>保存</button
+          handleSubmit({
+            examID,
+            exam_name,
+            exam_rules,
+            exam_type,
+            exam_method,
+            paper_configs,
+            exam_examinee,
+            invigilators,
+            uploadedFileList,
+          });
+        }}>保存</button
       >
     </div>
   </div>
@@ -722,7 +746,7 @@ onMount(async () =>{
     <div class="paper-config-head">
       <span class="paper-num">试卷{paperConfigIndex + 1}</span>
       <button
-        class={paperConfigIndex != 0 ? 'delete-paper-button' : 'hide'}
+        class="delete-paper-button {paper_configs.length > 1 ? ' ' : 'hideButton'}"
         onclick={() => {
           paper_configs.splice(paperConfigIndex, 1);
           // 清空考场选择
@@ -783,21 +807,19 @@ onMount(async () =>{
         <RequiredLabel text="考试时段模式" />
         <div class="config-row-content">
           <label class="label">
-
             <input
               type="radio"
               checked={paper_configs[paperConfigIndex].periodMode === '00'}
               value={'00'}
               class="choice-radio-input"
               onchange={() => {
-              if (paper_configs[paperConfigIndex].periodMode !== '00') {
-                 paper_configs[paperConfigIndex].periodMode = '00';
-                 resetTime(paperConfigIndex);
-              }
-            }}
+                if (paper_configs[paperConfigIndex].periodMode !== '00') {
+                  paper_configs[paperConfigIndex].periodMode = '00';
+                  resetTime(paperConfigIndex);
+                }
+              }}
             />
             固定时段考试
-
 
             <span class="tip-wrapper">
               <img class="tip" alt="提示" src="/exam_list/tip.png" />
@@ -805,20 +827,19 @@ onMount(async () =>{
                 {TIP_TEXT['fixed']}
               </div>
             </span>
-
           </label>
           <label class="label">
-          <input
+            <input
               type="radio"
               checked={paper_configs[paperConfigIndex].periodMode === '02'}
               value={'02'}
               class="choice-radio-input"
-               onchange={() => {
-              if (paper_configs[paperConfigIndex].periodMode !== '02') {
+              onchange={() => {
+                if (paper_configs[paperConfigIndex].periodMode !== '02') {
                   paper_configs[paperConfigIndex].periodMode = '02';
                   resetTime(paperConfigIndex);
-              }
-            }}
+                }
+              }}
             />
             灵活时段考试
           </label>
@@ -826,18 +847,23 @@ onMount(async () =>{
       </div>
 
       <div class="exam-time-container config-row">
-      <!-- class:hideButton={paper_configs[paperConfigIndex].periodMode === '02'} -->
+        <!-- class:hideButton={paper_configs[paperConfigIndex].periodMode === '02'} -->
         <RequiredLabel text="考试时段" />
         <div class="config-row-content">
           <DatePicker
+            bind:this={date_picker}
             is_time_selection={true}
             input_width={'350px'}
             is_single_date_selection={false}
-            on:start_date_selected={onChooseStartTime(paperConfigIndex,paper_configs,updateDuration)}
-            on:end_date_selected={onChooseEndTime(paperConfigIndex,paper_configs,updateDuration)}
-            onDateConfirm={()=>[
-              updateDuration(paperConfigIndex,paper_configs)
-            ]}
+            on:start_date_selected={onChooseStartTime(paperConfigIndex, paper_configs, updateDuration)}
+            on:end_date_selected={onChooseEndTime(paperConfigIndex, paper_configs, updateDuration)}
+            initial_start_date={paper_configs[paperConfigIndex].startTime
+              ? new Date(paper_configs[paperConfigIndex].startTime)
+              : null}
+            initial_end_date={paper_configs[paperConfigIndex].endTime
+              ? new Date(paper_configs[paperConfigIndex].endTime)
+              : null}
+            onDateConfirm={() => [updateDuration(paperConfigIndex, paper_configs)]}
           ></DatePicker>
         </div>
       </div>
@@ -846,7 +872,7 @@ onMount(async () =>{
         <RequiredLabel text="考试时长" />
         <div class="config-row-content">
           <input
-            class="{paper_configs[paperConfigIndex].periodMode==='00'?"duration-input":'simple-input'}"
+            class={paper_configs[paperConfigIndex].periodMode === '00' ? 'duration-input' : 'simple-input'}
             value={paper_configs[paperConfigIndex].duration}
             type="number"
             min="1"
@@ -866,7 +892,11 @@ onMount(async () =>{
         </div>
       </div>
 
-      <div class="exam-duration-container config-row {paper_configs[paperConfigIndex].periodMode === '02' ? 'hideButton' : ''}">
+      <div
+        class="exam-duration-container config-row {paper_configs[paperConfigIndex].periodMode === '02'
+          ? 'hideButton'
+          : ''}"
+      >
         <RequiredLabel text="考场规则" />
 
         <div class="config-row-content">
@@ -874,9 +904,9 @@ onMount(async () =>{
 
           <input
             class="simple-input"
-            type='number'
+            type="number"
             bind:value={paper_configs[paperConfigIndex].lateEntryTime}
-            min='0'
+            min="0"
             max={paper_configs[paperConfigIndex].duration}
             oninput={(event) => {
               const max = paper_configs[paperConfigIndex].duration;
@@ -888,16 +918,16 @@ onMount(async () =>{
                 event.target.value = 1;
                 paper_configs[paperConfigIndex].lateEntryTime = 1;
               }
-            }}  
+            }}
           />
 
           <span style="font-size: 14px;">分钟内可进入考场，可提前</span>
-            
+
           <input
             class="simple-input"
-            type='number'
+            type="number"
             bind:value={paper_configs[paperConfigIndex].earlySubmissionTime}
-            min='0'
+            min="0"
             max={paper_configs[paperConfigIndex].duration}
             oninput={(event) => {
               const max = paper_configs[paperConfigIndex].duration;
@@ -905,8 +935,8 @@ onMount(async () =>{
               if (val > max) {
                 event.target.value = max;
                 paper_configs[paperConfigIndex].earlySubmissionTime = max;
-              } 
-            }}  
+              }
+            }}
           />
 
           <span style="font-size: 14px;">分钟交卷</span>
@@ -961,7 +991,7 @@ onMount(async () =>{
       </div>
 
       <div class="show-name-container {paper_configs[paperConfigIndex].markMethod !== '00' ? 'hide' : 'config-row'}">
-        <RequiredLabel text="批改时是否显示考生姓名：" Asterisk={false} colon={false} />
+        <RequiredLabel text="显示考生姓名" Asterisk={false} />
 
         <div class="config-row-content">
           <label class="label">
@@ -1019,11 +1049,19 @@ onMount(async () =>{
         <RequiredLabel text="批改模式" />
 
         <div class="config-row-content" style="display: flex;flex-direction:column">
-          <span class="grading-config-row-text">单人阅卷</span>
+          <label class="label" style="color: #757575;">
+            <input
+              type="radio"
+              bind:group={paper_configs[paperConfigIndex].markMode}
+              value={'10'}
+              class="choice-radio-input"
+            />
+            单人批改
+          </label>
         </div>
       </div>
 
-      <div
+      <!-- <div
         class="grading-mode-button-container {paper_configs[paperConfigIndex].markMethod !== '00'
           ? 'hide'
           : ' config-row'}"
@@ -1040,7 +1078,7 @@ onMount(async () =>{
             单人批改
           </label>
         </div>
-      </div>
+      </div> -->
     </div>
 
     <PaperSelectionPanel
@@ -1056,9 +1094,7 @@ onMount(async () =>{
         /** @type {number} */ selected_id,
         /** @type {string} */ selected_name,
         /** @type {string} */ selected_type,
-        
       ) => {
-        
         paper_configs[paperConfigIndex].show_paper_selection_panel = false;
         paper_configs[paperConfigIndex].paperID = selected_id;
         paper_configs[paperConfigIndex].paperName = selected_name;
@@ -1072,7 +1108,6 @@ onMount(async () =>{
         //确认后将选择的考生取出
         show_examinee_panel = false;
         exam_examinee = selected;
-        console.log(exam_examinee);
       }}
       onCancel={(/** @type {boolean} */ load_new_file) => {
         show_examinee_panel = false;
@@ -1082,6 +1117,19 @@ onMount(async () =>{
       }}
       ids={exam_examinee}
     ></ExamineeSelectionPanel>
+
+    <ExaminationRoomSelectionPanel
+        show_panel = {show_rooms_panel}
+        onConfirm={(selected) =>{
+          show_rooms_panel=false;
+          exam_rooms=selected;
+        }}
+        onCancel={()=>{
+          show_rooms_panel=false;
+        }}>
+        exam_start_time = {start_time}
+        exam_end_time = {end_time}
+    </ExaminationRoomSelectionPanel>
   </div>
 {/snippet}
 
@@ -1114,20 +1162,32 @@ onMount(async () =>{
       .examRuleInputContainer,
       .examTypeChooseContainer,
       .exam-type-choose-container,
-      .paper-configs-container,
       .total-duration-container,
+      .examination-room-container,
       .examinee-container,
-      .file-container,
-      .fileListContainer {
+      .file-container {
         display: grid;
         grid-template-columns: auto 1fr;
-        // margin-left:15%;
         gap: 20px;
-        // align-items: center;
       }
     }
   }
-  
+
+  .paper-configs-container {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 20px;
+    align-items: start;
+    margin-bottom: 10px;
+  }
+
+  .fileListContainer {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
   .exam-name-input {
     //max-width:60%;
     min-height: 32px;
@@ -1174,7 +1234,7 @@ onMount(async () =>{
       background-color: #f2f2f2;
       padding-top: 10px;
       padding-left: 5%; //配置试卷区域的左边距
-
+      padding-bottom: 20px;
       .paper-button-container {
         display: flex;
         flex-direction: row;
@@ -1249,12 +1309,14 @@ onMount(async () =>{
   .show-name-container.config-row,
   .marking-method-container.config-row,
   .grading-mode-button-container,
-  .examinee-button-container.normal-button-container {
+  .examinee-button-container.normal-button-container,
+  .examination-room-button-container.normal-button-container{
     display: flex;
     flex-wrap: nowrap;
     margin-top: 10px;
     padding-bottom: 10px;
     gap: 10px;
+
     .duration-input {
       height: 20px;
       width: 60px;
@@ -1274,6 +1336,7 @@ onMount(async () =>{
 
   .config-row-content {
     font-size: 14px;
+    margin-top: 5px;
   }
   .bottom-action-panel-fixed {
     display: flex;
@@ -1288,7 +1351,7 @@ onMount(async () =>{
     padding: 15px 20px;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     border-top: 1px solid #eee;
-    z-index: 100;
+    z-index: 1010;
     .cancel-action-button {
       width: 100px;
       height: 32px;
@@ -1338,7 +1401,7 @@ onMount(async () =>{
   .simple-input {
     border-radius: 3px;
     height: 26px;
-    width:70px;
+    width: 70px;
     padding: 0 8px;
     background-color: #fff;
     border: 1px solid #ccc;
@@ -1346,12 +1409,12 @@ onMount(async () =>{
     box-sizing: border-box;
     outline: none;
     transition: border 0.2s;
-    
+
     &:hover,
     &:focus {
       border-color: #409eff;
     }
-    
+
     &.disabled {
       cursor: not-allowed;
       background-color: #f5f5f5;
@@ -1359,33 +1422,33 @@ onMount(async () =>{
     }
   }
 
-  .examinee-number-container {
+  .examinee-number-container,
+  .room-number-container {
     font-size: 14px;
-    padding-top:4px;
+    padding-top: 4px;
   }
 
-  .file-button{
-    color:var(--blue);
+  .file-button {
+    color: var(--blue);
   }
 
   .file-upload-label {
-  display: inline-block;
-  position: relative;
-  cursor: pointer;
-}
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+  }
 
-.file-input-hidden {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
+  .file-input-hidden {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
 
-.file-list-wrapper {
-    margin-top: 8px;
+  .file-list-wrapper {
     max-width: 360px;
   }
 
@@ -1462,5 +1525,10 @@ onMount(async () =>{
 
   .file-del:hover img {
     opacity: 1;
+  }
+
+  .choice-radio-input {
+    vertical-align: middle; /*垂直居中 */
+    margin-bottom: 6px;
   }
 </style>
