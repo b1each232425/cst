@@ -270,6 +270,16 @@
   function confirm_publish() {
     // 实现发布练习的逻辑
     console.log('练习信息:', currentPractice);
+       let publishPractice = currentPractice.find((item) => {
+      // 判断是否有练习不处于可删除状态
+      return  item.Status === '已作废';
+    });
+    console.log('publishPractice:', publishPractice);
+    if (publishPractice) {
+      toast.error('已作废的练习无法发布');
+      publishDialogOpen = false;
+      return; // 直接返回，不执行删除操作
+    }
     const queryParams = new URLSearchParams();
     queryParams.append(
       'id',
@@ -615,7 +625,8 @@
     });
     console.log('publishPractice:', publishPractice);
     if (publishPractice) {
-      toast.error('存在练习无法删除');
+      toast.error('已发布和已作废的练习无法删除');
+      deleteDialogOpen = false;
       return; // 直接返回，不执行删除操作
     }
 
@@ -681,7 +692,7 @@
     if (is_all_selected) {
       displayed_practice_list.forEach((practice) => {
         const exist = currentPractice.find((item) => {
-          practice.id === item.id;
+         return practice.ID === item.ID;
         });
         if (!exist) {
           currentPractice.push(practice);
@@ -690,7 +701,7 @@
     } else {
       displayed_practice_list.forEach((practice) => {
         const index = currentPractice.findIndex((item) => {
-          return practice.id === item.id;
+          return practice.ID === item.ID;
         });
         if (index !== -1) {
           currentPractice.splice(index, 1);
@@ -698,6 +709,7 @@
       });
     }
     is_all_selected = isAllSelected();
+    console.log("curr",currentPractice);
   }
 
   /**
@@ -845,6 +857,8 @@
       <div>
         <button class="new-practice-btn" onclick={create_new_practice}> 新增 </button>
         <button class="delete-practice-btn" onclick={() => delete_practice(currentPractice)}> 删除 </button>
+        <button class="publish-practice-btn" onclick={() => publish_practice(currentPractice)}>发布</button>
+        <button class="invalidated-btn" onclick={() => invalidated(currentPractice)}>作废</button>
       </div>
     </div>
 
@@ -884,15 +898,18 @@
                         }
                         practice.selected = true;
                         is_all_selected = isAllSelected();
+                        
                       } else {
                         const index = currentPractice.findIndex((g) => {
-                          g.ID === practice.ID;
+                         return g.ID === practice.ID;
                         });
+                        
                         if (index !== -1) {
                           currentPractice.splice(index, 1);
                         }
                         practice.selected = false;
                         is_all_selected = isAllSelected();
+                       
                       }
                     }}
                   />
@@ -1109,7 +1126,7 @@
         background-color: #35c908;
       }
     }
-    .unpublish-practice-btn {
+    .invalidated-btn {
       background-color: #e68c06;
       color: white;
       border: none;
