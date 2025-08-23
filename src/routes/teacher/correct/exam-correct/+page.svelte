@@ -559,7 +559,7 @@
     }
 
     .table {
-      height: 70vh;
+      height: 65vh;
       overflow-y: auto;
       scrollbar-width: thin;
       scrollbar-color: #ccc transparent;
