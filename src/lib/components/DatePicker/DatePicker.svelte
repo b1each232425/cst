@@ -476,6 +476,8 @@
     }
 
     updateInputValue();
+    dispatch('start_date_selected', { date: internal_start_date });
+    dispatch('end_date_selected', { date: internal_end_date });
   };
 
   // 初始化日期选择器
