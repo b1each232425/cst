@@ -29,7 +29,9 @@
   }
 
   function logout() {
-    fetch(`/api/logout`)
+    fetch(`/api/user/logout`, {
+      method: 'POST',
+    })
       .then((res) => {
         if (!res.ok)
           return res.text().then((error_text) => {

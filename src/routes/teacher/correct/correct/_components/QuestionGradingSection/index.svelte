@@ -168,7 +168,6 @@
 
     .student-answer,
     .correction {
-      background-color: rgb(247, 248, 251);
       padding: 0.5rem 1rem;
       display: flex;
       flex-direction: column;
@@ -176,21 +175,20 @@
 
     .student-answer {
       @include flex-column;
+      background-color: rgb(245, 248, 255); /* 非常淡 */
 
       .answers {
         @include flex-column;
 
         .answer-item {
           padding-left: 1rem;
-
-          // .answer-content {
-          //   color: #3399ff;
-          // }
         }
       }
     }
 
     .correction {
+      background-color: rgb(247, 248, 251);
+
       .scores,
       details {
         padding: 0.5rem;
