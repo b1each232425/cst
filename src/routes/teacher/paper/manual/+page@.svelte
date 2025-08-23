@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 15:21:42
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-21 21:40:32
+ * @LastEditTime: 2025-08-23 11:13:30
  * @FilePath: \exam\src\routes\teacher\paper\manual\+page@.svelte
  * @Description: 自定义组卷页面
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -14,6 +14,11 @@
     import Toast from "$lib/components/Toast/Toast.svelte";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
     import QuestionPreviewPanel from "../../question-bank/_components/QuestionPreviewPanel.svelte";
+    import SingleSelectEditPanel from "../../question-bank/_components/singlePage.svelte";
+    import MultipleSelectEditPanel from "../../question-bank/_components/multiplePage.svelte";
+    import JudgeSelectEditPanel from "../../question-bank/_components/judgePage.svelte";
+    import FillBlankEditPanel from "../../question-bank/_components/fillBank.svelte";
+    import ShortAnswerEditPanel from "../../question-bank/_components/shortAnswer.svelte";
     import "$lib/components/Button/index.scss"
     import "$lib/components/Input/index.scss"
     import { goto } from "$app/navigation";
@@ -49,7 +54,6 @@
                 if (data.status !== 0){
                     throw new Error(data.msg);  
                 }
-                // console.log(data);
                 return data;
             })
             .catch(error => {
@@ -94,12 +98,91 @@
                 if (data.status !== 0){
                     throw new Error(data.msg);  
                 }
-                // console.log(data);
                 return data;
             })
             .catch(error => {
                 toast.error(error.message, 1000);
                 console.error('保存试卷出错：', error);
+                return null;
+            });
+    }
+
+    // 获取题库题目
+    function fetchQuestion(question) {
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("bankID", question.belong_to);
+        PARAMS.append("page", 1);
+        PARAMS.append("pageSize", 10);
+        PARAMS.append("content", question.content);
+        if(question.tags.length!==0) question.tags.forEach(tag => PARAMS.append("tags", tag));
+        PARAMS.append("type", question.type);
+        PARAMS.append("difficulty", question.difficulty);
+
+        return fetch(`/api/questions?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
+                return data;
+            })
+            .catch(error => {
+                toast.error(error.message, 1000);
+                console.error('获取题库题目出错：', error);
+                return null;
+            });
+    }
+
+    // 更新题目
+    function updateQuestion(question) {
+        // 构建更新题目的数据，确保与TheoryQuestion类型匹配
+        const updateData = {
+            ID: question.id,
+            Type: question.type,
+            Difficulty: question.difficulty,
+            Content: question.content,
+            Tags: question.tags || [],
+            Options: question.options || [],
+            Answers: question.answers || [],
+            Analysis: question.analysis || "",
+            Score: question.score || 0,
+            QuestionAttachmentsPath: question.question_attachments_path || "",
+            BelongTO: question.belong_to || -1
+        };
+
+        // 调用题库管理的更新接口
+        return fetch('/api/questions', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ data: updateData })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
+                return data;
+            })
+            .catch(error => {
+                toast.error(error.message, 1000);
+                console.error('编辑题目出错：', error);
                 return null;
             });
     }
@@ -113,6 +196,38 @@
     let is_adding_group = $state(false);      // 添加题组
     let page_is_ready = $state(false);
     let sidebar_collapsed = $state(false);    // 侧边栏收起状态
+    let is_editing_question = $state(false); // 编辑题目
+
+    // 编辑组件状态管理
+    let show_single_select_edit_panel = $state(false);      // 显示单选题编辑面板
+    let show_multiple_select_edit_panel = $state(false);    // 显示多选题编辑面板
+    let show_judge_select_edit_panel = $state(false);      // 显示判断题编辑面板
+    let show_fill_bank_edit_panel = $state(false);         // 显示填空题编辑面板
+    let show_short_answer_edit_panel = $state(false);      // 显示简答题编辑面板
+
+    // 编辑组件实例
+    let single_select_edit_panel_component;
+    let multiple_select_edit_panel_component;
+    let judge_select_edit_panel_component;
+    let fill_bank_edit_panel_component;
+    let short_answer_edit_panel_component;
+
+    // 当前编辑的题目
+    let editing_question = $state(null);
+
+    // 高亮状态管理
+    let highlighted_questions = $state(new Set()); // 存储需要高亮的题目ID
+
+    // 高亮题目
+    function highlightQuestion(questionId) {
+        highlighted_questions.add(questionId);
+        // 3秒后自动褪去高亮
+        setTimeout(() => {
+            highlighted_questions.delete(questionId);
+            // 在 Svelte 5 中，需要重新赋值来触发响应式更新
+            highlighted_questions = new Set(highlighted_questions);
+        }, 3000);
+    }
 
     // 响应式侧边栏控制
     let resizeObserver = null;
@@ -277,10 +392,10 @@
     // 获取标签input的宽度
     function getTagInputWidth(text) {
         if (!text || text.trim() === '') {
-            return 35; // 默认最小宽度
+            return 40; // 默认最小宽度
         }
         const textWidth = getTextWidth(text, '12px sans-serif');
-        const minWidth = 35; // 最小宽度
+        const minWidth = 40; // 最小宽度
         const padding = 8; // 左右padding的总和
         const calculatedWidth = Math.max(textWidth + padding, minWidth);
         return Math.min(calculatedWidth, 200); // 最大宽度限制
@@ -349,7 +464,6 @@
 
     // 删除题组
     function deleteGroup(groupID) {
-
         // 判断是否为最后一个题组
         if (paper_groups.length === 1) {
             toast.error("至少保留一个题组", 1000);
@@ -381,11 +495,14 @@
                         action: "move_group",
                         payload: GROUP_IDS
                     },
-                    {
+                ];
+
+                if(QUESTION_IDS.length > 0) {
+                    ACTIONS.push({
                         action: "move_question",
                         payload: QUESTION_IDS
-                    }
-                ];
+                    });
+                }
 
                 savePaper(paperID, ACTIONS)
                     .then(() => {
@@ -552,6 +669,24 @@
 
     // 导入题目后信息更新
     function updateAfterImport(updatedGroups, updatedInfo) {
+        // 获取新导入的题目 ID
+        const NEW_QUESTION_IDS = updatedGroups.flatMap(group =>
+            group.questions.map(question => question.id)
+        );
+
+        // 获取旧的题目 ID
+        const OLD_QUESTION_IDS = paper_groups.flatMap(group =>
+            group.questions.map(question => question.id)
+        );
+
+        // 获取新导入的题目 ID 和旧的题目 ID 的差集
+        const IMPORTED_QUESTION_IDS = NEW_QUESTION_IDS.filter(id => !OLD_QUESTION_IDS.includes(id));
+
+        // 设置新导入的题目为展开状态
+        const NEW_QUESTION_STATE = { ...get(QUESTION_OPEN_STATE) };
+        IMPORTED_QUESTION_IDS.forEach(id => NEW_QUESTION_STATE[id] = true);
+        QUESTION_OPEN_STATE.set(NEW_QUESTION_STATE);
+
         // 更新试卷信息
         paper_groups = updatedGroups;
         paper_info = updatedInfo;
@@ -567,36 +702,13 @@
             });
         }
         
-        // 自动展开新导入的题目和目标题组
-        if (updatedGroups && updatedGroups.length > 0) {
-            const NEW_GROUP_STATE = { ...get(GROUP_OPEN_STATE) };
-            const NEW_QUESTION_STATE = { ...get(QUESTION_OPEN_STATE) };
-            
-            // 找到目标题组（导入题目的题组）
-            const targetGroup = updatedGroups.find(group => group.id === to_import_group.id);
-            if (targetGroup) {
-                // 确保目标题组是展开状态
-                NEW_GROUP_STATE[targetGroup.id] = true;
-                
-                // 将目标题组中的所有题目设置为展开状态
-                // 这样可以确保新导入的题目和原有题目都展开
-                targetGroup.questions.forEach(question => {
-                    NEW_QUESTION_STATE[question.id] = true;
-                });
-            }
-            
-            // 更新展开状态
-            GROUP_OPEN_STATE.set(NEW_GROUP_STATE);
-            QUESTION_OPEN_STATE.set(NEW_QUESTION_STATE);
-        }
-        
         // 重置导入参数
         to_add_group = { id: 0, name: ""};
     }
 
     // 一键展开所有题组和题目
     function expandAll() {
-         // 创建新的展开状态对象
+        // 创建新的展开状态对象
         const NEW_GROUP_STATE = {};
         const NEW_QUESTION_STATE = {};
 
@@ -695,12 +807,12 @@
 
         // 边界：最上面的题再往上 or 最下面的题再往下，直接 return
         if (INDEX === 0 && direction === 'up') {
-            toast.error("已经是第一道题", 1000);
+            toast.error("已经是第一道题目", 1000);
             return;
         }
 
         if (INDEX === FULL_QUESTION_IDS.length - 1 && direction === 'down') {
-            toast.error("已经是最后一道题", 1000);
+            toast.error("已经是最后一道题目", 1000);
             return;
         }
 
@@ -771,6 +883,8 @@
                 paper_info = result.data;
                 total_score = paper_info.TotalScore;
                 question_count = paper_info.QuestionCount;
+                // 移动成功后高亮题目
+                highlightQuestion(question.id);
             });
     }
 
@@ -973,6 +1087,96 @@
             });
     }
 
+    // 编辑题目
+    function editQuestion(question) {
+        fetchQuestion(question)
+            .then(result => {
+                const QUESTION_LIST = result.data;
+                const QUESTION = QUESTION_LIST.find(q => q.ID === question.bank_question_id);
+                
+                // 转换数据格式以匹配编辑组件的期望
+                const convertedQuestion = {
+                    id: QUESTION.ID,
+                    content: QUESTION.Content,
+                    type: QUESTION.Type,
+                    options: QUESTION.Options || [],
+                    answers: QUESTION.Answers || [],
+                    analysis: QUESTION.Analysis || "",
+                    difficulty: QUESTION.Difficulty || 1,
+                    tags: QUESTION.Tags || [],
+                    score: QUESTION.Score || 0,
+                    question_attachments_path: QUESTION.QuestionAttachmentsPath || "",
+                    belong_to: question.belong_to || QUESTION.BelongTO || -1
+                };
+                
+                // 使用转换后的数据
+                editing_question = convertedQuestion;
+                is_editing_question = true;
+                
+                switch (question.type) {
+                    case '00': // 单选题
+                        single_select_edit_panel_component.initPanel();
+                        show_single_select_edit_panel = true;
+                        break;
+                    case '02': // 多选题
+                        multiple_select_edit_panel_component.initPanel();
+                        show_multiple_select_edit_panel = true;
+                        break;
+                    case '04': // 判断题
+                        judge_select_edit_panel_component.initPanel();
+                        show_judge_select_edit_panel = true;
+                        break;
+                    case '06': // 填空题
+                        fill_bank_edit_panel_component.initPanel();
+                        show_fill_bank_edit_panel = true;
+                        break;
+                    case '08': // 简答题
+                        short_answer_edit_panel_component.initPanel();
+                        show_short_answer_edit_panel = true;
+                        break;
+                }
+            });
+    }
+
+    // 编辑组件确认
+    async function onEditPanelConfirm(editedQuestionData) {
+        // 合并编辑后的数据
+        const updatedQuestion = {
+            ...editing_question,
+            ...editedQuestionData
+        };
+
+        // 调用更新题目接口
+        updateQuestion(updatedQuestion)
+            .then(() => fetchPaper(paperID))
+            .then((result) => {
+                paper_groups = result.data.GroupsData;
+                paper_info = result.data;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+                toast.success("题目更新成功", 1000);
+            })
+            .finally(() => {
+                closeAllEditPanels();
+            });
+    }
+
+    // 编辑组件取消
+    function onEditPanelCancel() {
+        closeAllEditPanels();
+    }
+
+    // 关闭所有编辑面板
+    function closeAllEditPanels() {
+        show_single_select_edit_panel = false;
+        show_multiple_select_edit_panel = false;
+        show_judge_select_edit_panel = false;
+        show_fill_bank_edit_panel = false;
+        show_short_answer_edit_panel = false;
+        editing_question = null;
+        is_editing_question = false;
+    }
+
     /***************** 题组列表区 *****************/
 
 
@@ -1170,6 +1374,8 @@
                 paper_info = result.data;
                 total_score = paper_info.TotalScore;
                 question_count = paper_info.QuestionCount;
+                // 拖拽移动成功后高亮题目
+                highlightQuestion(dragged_question_item.question.id);
             })
             .finally(() => {
                 handleDragEnd();
@@ -1235,8 +1441,6 @@
                             }
                         });
                     }
-    
-                    // console.log(result)
                     
                 } else {
                     // 3秒后跳转
@@ -1254,6 +1458,7 @@
     })
 </script>
 
+<!-- 导入题目弹窗 -->
 {#if import_modal_is_open}
     <ImportQuestion
         onclose={closeImportModal}
@@ -1263,6 +1468,52 @@
         savePaper={savePaper}
     />
 {/if}
+
+<!-- 编辑题目弹窗 -->
+<SingleSelectEditPanel
+    bind:this={single_select_edit_panel_component}
+    show={show_single_select_edit_panel}
+    question_data={editing_question}
+    is_new_question={false}
+    onCancel={onEditPanelCancel}
+    onConfirm={onEditPanelConfirm}
+/>
+
+<MultipleSelectEditPanel
+    bind:this={multiple_select_edit_panel_component}
+    show={show_multiple_select_edit_panel}
+    question_data={editing_question}
+    is_new_question={false}
+    onCancel={onEditPanelCancel}
+    onConfirm={onEditPanelConfirm}
+/>
+
+<JudgeSelectEditPanel
+    bind:this={judge_select_edit_panel_component}
+    show={show_judge_select_edit_panel}
+    question_data={editing_question}
+    is_new_question={false}
+    onCancel={onEditPanelCancel}
+    onConfirm={onEditPanelConfirm}
+/>
+
+<FillBlankEditPanel
+    bind:this={fill_bank_edit_panel_component}
+    show={show_fill_bank_edit_panel}
+    question_data={editing_question}
+    is_new_question={false}
+    onCancel={onEditPanelCancel}
+    onConfirm={onEditPanelConfirm}
+/>
+
+<ShortAnswerEditPanel
+    bind:this={short_answer_edit_panel_component}
+    show={show_short_answer_edit_panel}
+    question_data={editing_question}
+    is_new_question={false}
+    onCancel={onEditPanelCancel}
+    onConfirm={onEditPanelConfirm}
+/>
 
 {#if page_is_ready}
     <div class="add-paper">
@@ -1297,7 +1548,6 @@
         <div class="bottom-area">
             <!-- 侧边栏 -->
             <div class="side-bar {sidebar_collapsed ? 'collapsed' : ''}" >
-                
                 <!-- 试卷信息 -->
                 <div class="paper-info-container">
                     <span class="title">试卷信息</span>
@@ -1513,7 +1763,11 @@
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                             <div class="single-group-content">
                                 <!-- 头部下拉栏 -->
-                                <div class="group-header" onclick={()=>changeOpenState("group",group.id)} title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"}>
+                                <div class="group-header"
+                                    onclick={()=>changeOpenState("group",group.id)}
+                                    title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"}
+                                    style="{$GROUP_OPEN_STATE[group.id] ? "" : "border-radius: var(--border-radius-sm);"}"
+                                >
                                     <!-- 左侧区域 -->
                                     <div class="header-left">
                                         <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
@@ -1552,7 +1806,8 @@
                                                     <div class="single-question
                                                         {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'top' && dragged_type === 'question') ? 'drag-over-top' : ''}
                                                         {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'bottom' && dragged_type === 'question') ? 'drag-over-bottom' : ''}
-                                                        {dragged_question_item.question?.id === question.id ? "dragging":""}"
+                                                        {dragged_question_item.question?.id === question.id ? "dragging":""}
+                                                        {highlighted_questions.has(question.id) ? "highlighted" : ""}"
                                                         draggable={!question.isEditingScore && !question.isEditingSubScore}
                                                         ondragstart={(event)=>handleQuestionDragStart(event,question,group)}
                                                         ondragover={(event)=>handleQuestionDragOver(event,question,group)}
@@ -1560,7 +1815,7 @@
                                                         ondragend={handleDragEnd}
                                                     >
                                                         <!-- 头部下拉栏 -->
-                                                        <div class="question-header">
+                                                        <div class="question-header" style="{$QUESTION_OPEN_STATE[question.id] ? "" : "border-radius: var(--border-radius-sm);"}">
                                                             <!-- 左侧区域 -->
                                                             <!-- svelte-ignore a11y_click_events_have_key_events -->
                                                             <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1587,7 +1842,7 @@
                                                                 >
                                                                 <button onclick={()=>moveQuestion(group,question,"up")} class="move-btn" title="上移">↑</button>
                                                                 <button onclick={()=>moveQuestion(group,question,"down")} class="move-btn" title="下移">↓</button>
-                                                                <!-- <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
+                                                                <button onclick={()=>editQuestion(question)} class="edit-question-btn" title="编辑" aria-label="编辑题目">
                                                                     <svg
                                                                         viewBox="0 0 1024 1024"
                                                                         fill="none"
@@ -1603,8 +1858,7 @@
                                                                             fill="currentColor"
                                                                         />
                                                                     </svg>
-                                                                </button> -->
-                                                                
+                                                                </button>
                                                                 <button onclick={()=>deleteQuestion(question.id,group)} class="delete-question-btn" title="删除">✕</button>
                                                             </div>
                                                         </div>
@@ -1652,7 +1906,6 @@
 {/if}
 
 <style>
-    
     .add-paper {
         font-family: 'Noto Sans SC', sans-serif;
         color: var(--text-primary);
@@ -1857,7 +2110,7 @@
                             display: flex;
                             width: 280px;
                             min-width: 280px;
-                            height: 48px;
+                            height: 50px;
                             gap: 10px 16px;
                             overflow-y: auto;
                             flex-wrap: wrap;
@@ -1866,7 +2119,6 @@
                             .paper-tag {
                                 /* background-color: red; */
                                 display: flex;
-                                height: 18px;
                                 border: 1.5px solid transparent;
 
                                 /* 颜色块 */
@@ -1880,7 +2132,6 @@
                                 .content-box {
                                     display: flex;
                                     align-items: center;
-                                    height: 16px;
                                     border-bottom: 1px solid transparent;
                                     
                                     &:hover {
@@ -1893,9 +2144,8 @@
 
                                     input {
                                         font-weight: 500;
-                                        height: 16px;
                                         padding: 0;
-                                        min-width: 35px;
+                                        min-width: 40px;
                                         border: none;
                                         font-size: 12px;
                                         outline: none;
@@ -2131,11 +2381,12 @@
                 height: 100%;
                 margin: 20px 0;
                 min-width: min-content;
+
                 
                 .single-group-content {
                     border: 1px solid var(--border-light);
                     border-radius: var(--border-radius-sm);
-
+                    
                     /* 头部下拉栏 */
                     .group-header {
                         background-color: var(--bg-secondary);
@@ -2143,6 +2394,7 @@
                         padding: 10px 20px;
                         align-items: center;
                         cursor: pointer;
+                        border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
 
                         span {
                             min-width: max-content;
@@ -2291,9 +2543,17 @@
                                 background-color: var(--bg-primary);
                                 position: relative;
                                 cursor: grab;
+                                transition: all 1s ease;
 
                                 &.dragging {
                                     opacity: 0.5; /* 半透明 */
+                                }
+
+                                /* 高亮效果 */
+                                &.highlighted {
+                                    border: 1px solid var(--border-light);
+                                    border-color: #1890ff;
+                                    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
                                 }
     
                                 &.drag-over-top::before,
@@ -2323,6 +2583,7 @@
                                     background-color: #fafafa;
                                     display: flex;
                                     border-bottom: 1px solid var(--border-light);
+                                    border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
 
                                     span {
                                         min-width: max-content;
