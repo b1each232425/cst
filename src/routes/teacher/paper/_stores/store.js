@@ -37,4 +37,7 @@ export const QUESTION_OPEN_STATE = writable({});
 // 题组的每题分数
 export const GROUP_AVERAGE_SCORE = writable({});
 
+// 侧边栏折叠状态
+export const SIDEBAR_COLLAPSED = writable(false);
+
 //////////////////// 自定义组卷区 //////////////////////

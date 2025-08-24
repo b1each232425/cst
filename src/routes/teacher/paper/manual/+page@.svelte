@@ -26,7 +26,7 @@
     import { onMount, tick } from "svelte";
     import { toast } from "$lib/components/Toast/Toast";
     import { get } from "svelte/store";
-    import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, GROUP_AVERAGE_SCORE } from "../_stores/store";
+    import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, GROUP_AVERAGE_SCORE, SIDEBAR_COLLAPSED } from "../_stores/store";
     import { stopPropagation } from "svelte/legacy";
     import { debounce } from "$lib/utils/optimize";
 
@@ -51,6 +51,7 @@
                 return response.json();
             })
             .then(data => {
+                console.log(data);
                 if (data.status !== 0){
                     throw new Error(data.msg);  
                 }
@@ -190,7 +191,6 @@
     let import_modal_is_open = $state(false);  // 从题库中导入题目弹窗
     let is_adding_group = $state(false);      // 添加题组
     let page_is_ready = $state(false);
-    let sidebar_collapsed = $state(false);    // 侧边栏收起状态
     let is_editing_question = $state(false); // 编辑题目
     let is_update_average_question_score = $state(false); // 更新题组平均分
 
@@ -273,10 +273,10 @@
     // 检查页面宽度并自动收起/展开侧边栏
     function checkPageWidth() {
         const pageWidth = window.innerWidth;
-        if (pageWidth < SIDEBAR_COLLAPSE_THRESHOLD && !sidebar_collapsed) {
-            sidebar_collapsed = true;
-        } else if (pageWidth >= SIDEBAR_COLLAPSE_THRESHOLD && sidebar_collapsed) {
-            sidebar_collapsed = false;
+        if (pageWidth < SIDEBAR_COLLAPSE_THRESHOLD && !get(SIDEBAR_COLLAPSED)) {
+            SIDEBAR_COLLAPSED.set(true);
+        } else if (pageWidth >= SIDEBAR_COLLAPSE_THRESHOLD && get(SIDEBAR_COLLAPSED)) {
+            SIDEBAR_COLLAPSED.set(false);
         }
     }
 
@@ -1469,65 +1469,63 @@
     /***************** 拖拽功能区 *****************/
 
     // 挂载区
-    onMount (async () => {
-        // 设置响应式监听器
-        setupResponsiveListener();
-        
-        // 初始检查页面宽度
-        checkPageWidth();
-        
-        paperID = get(CURRENT_PAPER_ID);
-        if(paperID === 0) {
-            await goto("/teacher/paper");
-            toast.success("试卷内容已保存",1000);
-            return;
-        }
-        fetchPaper(paperID)
-            .then(result => {
-                if (result) {
-                    paper_info = result.data;
-                    paper_groups = result.data.GroupsData;
-    
-                    paper_name = paper_info.Name;
-                    category = paper_info.Category;
-                    level = paper_info.Level;
-                    suggested_duration = paper_info.SuggestedDuration;
-                    total_score = paper_info.TotalScore;
-                    question_count = paper_info.QuestionCount;
-                    description = paper_info.Description;
-                    tags = paper_info.Tags;
-    
-                    page_is_ready = true;
-                    
-                    // 页面加载完成后自动展开所有题组和题目
-                    if (paper_groups && paper_groups.length > 0) {
-                        expandAll();
-                        
-                        // 检查每个题组的分数一致性，如果不一致则清空每题分值输入框
-                        paper_groups.forEach(group => {
-                            if (!checkGroupScoreConsistency(group)) {
-                                clearGroupAverageScore(group);
-                            }
-                        });
-                    }
-                    
-                } else {
-                    // 3秒后跳转
-                    toast.warning("3秒后跳转回试卷列表", 3000);
-                    setTimeout(() => {
-                        goto("/teacher/paper");
-                    }, 3000);
-                }
-            });
-            
-        // 返回清理函数
-        return () => {
+    onMount(() => {
+        // 立即注册清理函数
+        const cleanup = () => {
             cleanupResponsiveListener();
-            // 清理所有高亮定时器
             highlight_timers.forEach(timer => clearTimeout(timer));
             highlight_timers.clear();
         };
-    })
+
+        // 异步逻辑
+        (async () => {
+            // 设置响应式监听器
+            setupResponsiveListener();
+
+            // 初始检查页面宽度
+            checkPageWidth();
+
+            paperID = get(CURRENT_PAPER_ID);
+            if (paperID === 0) {
+                await goto("/teacher/paper");
+                toast.success("试卷内容已保存", 1000);
+                return;
+            }
+
+            const result = await fetchPaper(paperID);
+            if (result) {
+                paper_info = result.data;
+                paper_groups = result.data.GroupsData;
+
+                paper_name = paper_info.Name;
+                category = paper_info.Category;
+                level = paper_info.Level;
+                suggested_duration = paper_info.SuggestedDuration;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+                description = paper_info.Description;
+                tags = paper_info.Tags;
+
+                page_is_ready = true;
+
+                if (paper_groups && paper_groups.length > 0) {
+                    expandAll();
+
+                    paper_groups.forEach(group => {
+                        if (!checkGroupScoreConsistency(group)) {
+                            clearGroupAverageScore(group);
+                        }
+                    });
+                }
+            } else {
+                toast.warning("3秒后跳转回试卷列表", 3000);
+                setTimeout(() => goto("/teacher/paper"), 3000);
+            }
+        })();
+
+        return cleanup; // ✅ 立即注册清理函数
+    });
+
 </script>
 
 <!-- 导入题目弹窗 -->
@@ -1619,7 +1617,7 @@
         <!-- 下半区 -->
         <div class="bottom-area">
             <!-- 侧边栏 -->
-            <div class="side-bar {sidebar_collapsed ? 'collapsed' : ''}" >
+            <div class="side-bar {$SIDEBAR_COLLAPSED ? 'collapsed' : ''}" >
                 <!-- 试卷信息 -->
                 <div class="paper-info-container">
                     <span class="title">试卷信息</span>
@@ -1827,10 +1825,11 @@
             <!-- 侧边栏折叠按钮 -->
             <div class="sidebar-collapsed-btn-container">
                 <button class="sidebar-collapsed-btn"
-                    onclick={()=>sidebar_collapsed = !sidebar_collapsed}
+                    onclick={()=> SIDEBAR_COLLAPSED.set(!get(SIDEBAR_COLLAPSED))}
+                    title={$SIDEBAR_COLLAPSED ? "展开" : "折叠"}
                 >
                 <img
-                    src={sidebar_collapsed ? '/student_answer_exam/right-arrows.svg' : '/student_answer_exam/left-arrows.svg'}
+                    src={$SIDEBAR_COLLAPSED ? '/student_answer_exam/right-arrows.svg' : '/student_answer_exam/left-arrows.svg'}
                     alt="切换箭头"
                     draggable={false}
                     />
@@ -2018,6 +2017,7 @@
                                         
                                             <!-- 暂无题目 -->
                                         {:else}
+                                            <!-- svelte-ignore a11y_no_static_element_interactions -->
                                             <div class="no-questions-container"
                                                 ondragover={(event)=>handleQuestionDragOver(event,{ id: null },group)}
                                                 ondrop={handleQuestionDrop}
@@ -2259,6 +2259,8 @@
                                 /* background-color: red; */
                                 display: flex;
                                 border: 1.5px solid transparent;
+                                height: max-content;
+                                max-height: max-content;
 
                                 /* 颜色块 */
                                 .color-block {
