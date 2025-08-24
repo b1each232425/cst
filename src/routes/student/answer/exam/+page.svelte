@@ -395,18 +395,60 @@
           } else {
             questionElement.scrollIntoView({
               behavior: 'smooth',
-              block: 'center',
+              block: 'start',
             });
           }
         }
       }, 0);
     }
   }
+  function _storageKeyForMarked() { // 标记题目状态的 localStorage key
+    // 使用 exam_id/exam_session_id/examinee_id 区分不同考试/考生；预览时使用 preview 标识
+    const idPart = exam_id || 'preview';
+    const sessionPart = exam_session_id || 'preview';
+    const examineePart = examinee_id || 'preview';
+    return `exam_marked_${idPart}_${sessionPart}_${examineePart}`;
+  }
+  function saveMarkedQuestionsToStorage() { // 保存标记状态到 localStorage
+    try {
+      localStorage.setItem(_storageKeyForMarked(), JSON.stringify(markedQuestions));
+    } catch (e) {
+      console.warn('保存标记状态到 localStorage 失败', e);
+    }
+  }
+  function loadMarkedQuestionsFromStorage() { // 从 localStorage 加载标记状态
+    try {
+      const raw = localStorage.getItem(_storageKeyForMarked());
+      if (!raw) {
+        // 初始化为 false 数组
+        markedQuestions.length = 0;
+        markedQuestions.push(...Array(examQuestions.length).fill(false));
+        return;
+      }
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) {
+        markedQuestions.length = 0;
+        markedQuestions.push(...Array(examQuestions.length).fill(false));
+        return;
+      }
+      // 如果长度不同，按最小长度合并并补齐 false
+      const len = examQuestions.length;
+      const newArr = Array.from({ length: len }, (_, i) => !!arr[i]);
+      markedQuestions.length = 0;
+      markedQuestions.push(...newArr);
+    } catch (e) {
+      console.warn('读取标记状态失败', e);
+      markedQuestions.length = 0;
+      markedQuestions.push(...Array(examQuestions.length).fill(false));
+    }
+  }
+
 
   // 阻止事件冒泡，避免触发题目切换
   function toggleMarkQuestion(index, event) {
     event.stopPropagation();
     markedQuestions[index] = !markedQuestions[index];
+    saveMarkedQuestionsToStorage();
   }
 
   //加载函数
@@ -429,6 +471,7 @@
           examQuestions.push(...flattenExamQuestions());
           questionGroups.length = 0;
           questionGroups.push(...getQuestionGroups());
+          loadMarkedQuestionsFromStorage();
 
           //如果是预览的话直接从localStorage获取title
           const exam_title = localStorage.getItem('examTitle');
@@ -528,6 +571,8 @@
           examQuestions.push(...flattenExamQuestions());
           questionGroups.length = 0;
           questionGroups.push(...getQuestionGroups());
+
+          loadMarkedQuestionsFromStorage();
         })
         .catch((error) => {
           console.error('请求失败:', error);
@@ -596,7 +641,9 @@
         <!-- <Button type="primary" round size="large" onclick={submitMessageBox}>
           <span> 提交 </span>
         </Button> -->
-        <button class="submit-button" onclick={submitMessageBox}>提交</button>
+        {#if !ifPreview}
+         <button class="submit-button" onclick={submitMessageBox}>提交</button>
+        {/if}
       </div>
     </div>
     <!-- 预览提醒用visibility控制 -->
@@ -668,17 +715,19 @@
                       {query_url}
                       editor_height="200px"
                     ></Question>
-                    <div class="question-mark-btn-container">
-                      <button
-                        class="mark-btn"
-                        class:marked={markedQuestions[index]}
-                        onclick={(event) => toggleMarkQuestion(index, event)}
-                        title={markedQuestions[index] ? '取消标记' : '标记此题'}
-                      >
-                        <img src="/student_answer_exam/red_flag.png" alt="标记" class="flag-icon" />
-                        {markedQuestions[index] ? '取消标记' : '标记此题'}
-                      </button>
-                    </div>
+                    {#if !ifPreview}
+                      <div class="question-mark-btn-container">
+                        <button
+                          class="mark-btn"
+                          class:marked={markedQuestions[index]}
+                          onclick={(event) => toggleMarkQuestion(index, event)}
+                          title={markedQuestions[index] ? '取消标记' : '标记此题'}
+                        >
+                          <img src="/student_answer_exam/red_flag.png" alt="标记" class="flag-icon" />
+                          {markedQuestions[index] ? '取消标记' : '标记此题'}
+                        </button>
+                      </div>
+                    {/if}
                   </div>
                 {/each}
               {:else}
@@ -1036,6 +1085,7 @@
     -webkit-tap-highlight-color: transparent; /* 移动端点击高亮去除 */
   }
 
+
   .button:focus,
   .button:active {
     outline: none;
@@ -1227,7 +1277,9 @@
   //说明区域样式
   .nav-sections {
     height: 100%;
-    overflow: scroll;
+    /* 只允许纵向滚动，隐藏横向滚动，防止出现水平滚动条 */
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   // 用于放置nav-sections的头部位置，放"答题卡"标题和图例说明
   .nav-header {
