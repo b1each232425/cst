@@ -148,7 +148,7 @@
         <div class="info-item required">
           <span class="label">姓名</span>
           <div class="value">
-            <input type="text" bind:value={detail.name} />
+            <input type="text" bind:value={detail.name} placeholder="请输入姓名" />
             <div class="error-message">{formErrors.name}</div>
           </div>
         </div>
@@ -194,14 +194,14 @@
         <div class="info-item required">
           <span class="label">证件号码</span>
           <div class="value">
-            <input type="text" bind:value={detail.idNumber} />
+            <input type="text" bind:value={detail.idNumber} placeholder="请输入证件号码" />
             <div class="error-message">{formErrors.idNumber}</div>
           </div>
         </div>
         <div class="info-item required">
           <span class="label">邮箱</span>
           <div class="value">
-            <input type="text" bind:value={detail.email} />
+            <input type="text" bind:value={detail.email} placeholder="请输入邮箱" />
             <div class="error-message">{formErrors.email}</div>
           </div>
         </div>
@@ -211,7 +211,7 @@
         <div class="info-item required">
           <span class="label">电话</span>
           <div class="value">
-            <input type="text" bind:value={detail.phone} />
+            <input type="text" bind:value={detail.phone} placeholder="请输入电话" />
             <div class="error-message">{formErrors.phone}</div>
           </div>
         </div>
