@@ -5,7 +5,7 @@
  * @LastEditTime: 2025-08-06 14:18:07
  * @FilePath: \exam-fe\src\routes\student\+layout.svelte
  * @Description: 学生端 layout
- * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
+ * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved.
 -->
 
 <script>
@@ -17,6 +17,7 @@
 
   const PRACTICE_PATH = '/student/practice';
   const EXAM_PATH = '/student/exam';
+  const ENROLL_PLAN_PATH = '/student/enroll-plan';
 
   let { children } = $props();
 
@@ -28,8 +29,14 @@
     goto(EXAM_PATH);
   }
 
+  function gotoEnrollPlan() {
+    goto(ENROLL_PLAN_PATH);
+  }
+
   function logout() {
-    fetch(`/api/logout`)
+    fetch(`/api/user/logout`, {
+      method: 'POST',
+    })
       .then((res) => {
         if (!res.ok)
           return res.text().then((error_text) => {
@@ -79,6 +86,7 @@
     {@render logo()}
     <button class:selected={page.url.pathname === PRACTICE_PATH} onclick={gotoPractice}> 练习 </button>
     <button class:selected={page.url.pathname === EXAM_PATH} onclick={gotoExam}>考试</button>
+    <button class:selected={page.url.pathname === ENROLL_PLAN_PATH} onclick={gotoEnrollPlan}>报名计划</button>
   </div>
   <button class="logout" onclick={handleLogout}>退出登录</button>
 </div>
@@ -103,7 +111,7 @@
 
       button {
         font-size: 1.2rem;
-        width: 5rem;
+        width: 6rem;
         margin-top: 1rem;
         padding-bottom: 0.5rem;
 

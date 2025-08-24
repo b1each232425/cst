@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 15:21:42
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-17 21:31:39
+ * @LastEditTime: 2025-08-21 15:43:29
  * @FilePath: \exam\src\routes\teacher\paper\+page.svelte
  * @Description: 试卷列表页面
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -52,7 +52,6 @@
                 if (data.status !== 0){
                     throw new Error(data.msg);  
                 }
-                // console.log(data);
                 return data;
             })
             .catch(error => {
@@ -90,7 +89,6 @@
             if (data.status !== 0){
                 throw new Error(data.msg);  
             }
-            // console.log(data);
             return data;
         })
         .catch(error => {
@@ -559,13 +557,17 @@
         color: var(--text-primary);
         display: flex;
         flex-direction: column;
+        overflow: hidden;
+        height: 100%;
+        /* background-color: red; */
         
         /* 操作栏区域 */
         .header {
             /* background-color: red; */
             display: flex;
             font-size: 14px;
-            margin: 15px 0;
+            margin: 10px 0 25px 0;
+            flex-wrap: wrap;
 
             /* 左侧 */
             .left-side {
@@ -573,6 +575,7 @@
                 display: flex;
                 gap: 30px;
                 align-items: center;
+                flex-wrap: wrap;
 
                 /* 搜索试卷名称 & 试卷标签 */
                 .search-paper-name, .search-paper-tag {
@@ -600,12 +603,21 @@
                 gap: 12px;
                 margin-left: auto;
             }
+
+            @media (max-width: 930px) {
+                .right-side {
+                    width: 100%; /* ✅ 占整行 */
+                    margin-left: 0; /* ✅ 去掉右对齐 */
+                    justify-content: flex-start; /* ✅ 靠左 */
+                    margin-top: 30px; /* ✅ 和上方内容有间距 */
+                }
+            }
         }
 
         /* 表格区域 */
         .table-container {
-            height: calc(87vh - 215px);
             overflow: auto;
+            height: calc(100vh - 300px);
 
             /* 表格内容 */
             table {
@@ -641,7 +653,7 @@
 
                 td {
                     border-bottom: 1px solid var(--border-light);
-                    height: 60px;
+                    height: 80px;
 
                     /* 试卷难度 */
                     .easy-level { font-size: 15px; color: var(--green); }
@@ -667,12 +679,9 @@
                                 background: none;
                                 transition: all 0.2s;
                                 white-space: nowrap;  /* 文本内容不换行 */
-                                border-radius: var(--btn-border-radius);
-                                border: 1px solid var(--border-medium);
 
                                 &:hover {
                                     font-weight: bold;
-                                    border: 1px solid var(--border-dark)
                                 }
                             }
 
@@ -680,7 +689,6 @@
                                 color: var(--blue);
         
                                 &:hover {
-                                    background-color: #e6f7ff;
                                     color: var(--primary-hover);
                                 }
                             }
@@ -689,7 +697,6 @@
                                 color: var(--red);
         
                                 &:hover {
-                                    background-color: #fff2f0;
                                     color: var(--red);
                                 }
                             }
@@ -718,26 +725,26 @@
                     min-width: 120px;
                 }
                 .assembly-type {
-                    min-width: 72px;
+                    min-width: 70px;
                 }
                 .category {
-                    min-width: 58px;
+                    min-width: 70px;
                 }
                 .question-count {
-                    min-width: 58px;
+                    min-width: 70px;
                 }
                 .total-score {
-                    min-width: 58px;
+                    min-width: 70px;
                 }
                 .suggested-duration {
-                    min-width: 82px;
+                    min-width: 95px;
                 }
                 .paper-tag {
                     max-width: 200px;
                     min-width: 120px;
                 }
                 .level {
-                    min-width: 58px;
+                    min-width: 70px;
                 }
                 .update-time {
                     min-width: 74px;

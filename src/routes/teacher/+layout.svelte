@@ -100,7 +100,8 @@
     .content-wrapper {
       display: flex;
       flex-direction: column;
-      flex: 1;
+      flex: 1 1 auto;
+      height: calc(100% - 100px);
       position: relative;
 
       .content-container {

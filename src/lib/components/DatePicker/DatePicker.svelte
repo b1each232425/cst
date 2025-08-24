@@ -476,6 +476,8 @@
     }
 
     updateInputValue();
+    dispatch('start_date_selected', { date: internal_start_date });
+    dispatch('end_date_selected', { date: internal_end_date });
   };
 
   // 初始化日期选择器
@@ -629,8 +631,8 @@
       </div>
 
       <div class="calendar-footer">
-        <button class="cancel-btn" onclick={dateConfirm} data-testid="clear-btn">取消</button>
-        <button class="clear-btn" onclick={reset} data-testid="clear-btn">清除</button>
+        <button class="cancel-btn" onclick={dateConfirm}>取消</button>
+        <button class="clear-btn" onclick={reset}>清除</button>
         <button class="confirm-btn" onclick={dateConfirm}>确定</button>
       </div>
     </div>
@@ -645,6 +647,7 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       width: var(--date-picker-width);
+      height: 28px;
       padding: 6px 32px 6px 12px; /* 右边32px给图标留空间 */
       font-size: 16px;
       box-sizing: border-box;
@@ -667,7 +670,7 @@
       background-color: white;
       border: 1px solid #ccc;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      padding: 10px;
+      padding: 0px 10px 10px;
       z-index: 1000;
 
       .dual-calendar-popup {

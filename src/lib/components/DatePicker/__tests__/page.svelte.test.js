@@ -491,12 +491,33 @@ describe('DatePicker 组件测试', () => {
     const input = screen.getByRole('textbox');
     await fireEvent.click(input); // 打开日历
 
-    const resetButton = screen.getByTestId('clear-btn');
+    const resetButton = screen.getByRole('button', { name: '清除' });
     await fireEvent.click(resetButton); // 点击清除按钮
 
     // 验证日期选择器重置
     const inputValue = screen.getByRole('textbox');
     expect(inputValue.value).toBe(`开始日期   ~   结束日期`);
+  });
+
+  it('应该正确关闭日期选择器', async () => {
+    render(DatePicker, {
+      props: {
+        initial_start_date: new Date('2023-08-05'),
+        initial_end_date: new Date('2023-08-06'),
+        is_single_date_selection: false,
+        is_time_selection: false,
+      },
+    });
+
+    const input = screen.getByRole('textbox');
+    await fireEvent.click(input); // 打开日历
+
+    const resetButton = screen.getByRole('button', { name: '取消' });
+    await fireEvent.click(resetButton); // 点击清除按钮
+
+    // 验证日期选择器重置
+    const inputValue = screen.getByRole('textbox');
+    expect(inputValue.value).toBe(`2023-08-05 ~ 2023-08-06`);
   });
 
   it('应该正确处理用户多次打开选择器(单日期)', async () => {
