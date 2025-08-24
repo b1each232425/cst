@@ -677,6 +677,30 @@
       </div>
     </div>
 
+    <div class="invigilator-container">
+      <RequiredLabel text="监考员" colon={false} Asterisk={false} />
+      <div class="examinee-button-container normal-button-container">
+        <Button
+          plain={true}
+          type="primary"
+          size="small"
+          onclick={() => {
+            show_examinee_panel = true;
+          }}
+        >
+          配置监考员
+        </Button>
+
+        <div class="invigilator-number-container">
+          <span class="examinee-number-text">已选择 </span>
+          <span class="examinee-number-text {exam_examinee.length === 0 && exam_method === '02'}"
+            >{exam_examinee.length}</span
+          >
+          <span class="examinee-number-text"> 名</span>
+        </div>
+      </div>
+    </div>
+
     <div class="file-container">
       <RequiredLabel text="考试说明" colon={false} Asterisk={false} />
       <div class="file-button-container">
@@ -1165,6 +1189,7 @@
       .total-duration-container,
       .examination-room-container,
       .examinee-container,
+      .invigilator-container,
       .file-container {
         display: grid;
         grid-template-columns: auto 1fr;
@@ -1423,6 +1448,7 @@
   }
 
   .examinee-number-container,
+  .invigilator-container,
   .room-number-container {
     font-size: 14px;
     padding-top: 4px;
