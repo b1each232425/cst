@@ -647,6 +647,7 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       width: var(--date-picker-width);
+      height: 30px;
       padding: 6px 32px 6px 12px; /* 右边32px给图标留空间 */
       font-size: 16px;
       box-sizing: border-box;
