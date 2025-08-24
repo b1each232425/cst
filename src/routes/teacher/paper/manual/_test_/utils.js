@@ -40,6 +40,7 @@ export const SINGLE_CHOICE_QUESTION = {
     sub_score: null, // 子分数：只有简答题和填空题有子分数，其他题目没有子分数（null）
     difficulty: 1, // 难度: 1-简单 2-中等 3-困难
     bank_question_id: 340, // 题库题目ID
+    belong_to: 84,
 }
 
 // 多选题
@@ -74,6 +75,7 @@ export const MULTIPLE_CHOICE_QUESTION = {
     sub_score: null,
     difficulty: 2,
     bank_question_id: 348,
+    belong_to: 84,
 }
 
 // 判断题
@@ -100,6 +102,7 @@ export const TRUE_FALSE_QUESTION = {
     sub_score: null,
     difficulty: 2,
     bank_question_id: 338,
+    belong_to: 84,
 }
 
 // 填空题
@@ -135,6 +138,7 @@ export const FILL_BLANK_QUESTION = {
     sub_score: [1, 1, 1],
     difficulty: 3,
     bank_question_id: 358,
+    belong_to: 84,
 }
 
 // 简答题
@@ -160,6 +164,7 @@ export const SHORT_ANSWER_QUESTION = {
     ],
     difficulty: 2,
     bank_question_id: 361,
+    belong_to: 84,
 }
 
 // 试卷信息
