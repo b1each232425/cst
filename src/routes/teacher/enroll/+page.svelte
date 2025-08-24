@@ -5,6 +5,7 @@
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
+  import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
   import { isTemplateMiddle } from 'typescript';
   import { goto } from '$app/navigation';
 
@@ -196,6 +197,11 @@
   let exam_subject = $state('全部');
   let exam_subject_options = ['全部', '理论', '实操'];
 
+  // 消息提示框数据
+  let is_show_messagebox = $state(false);
+  let messagebox_title = $state('');
+  let messagebox_content = $state('');
+
   // 处理创建报名计划按钮点击事件
   function handleNewEnroll() {
     goto('/teacher/enroll/add-enroll');
@@ -209,6 +215,39 @@
   // 处理查看考试按钮点击事件
   function handleSeeStudent(id) {
     goto(`/teacher/enroll/see-enroll/${id}`);
+  }
+
+  // 处理消息提示框按确定钮点击事件
+  function handleMessageBoxConfirm() {
+    is_show_messagebox = false;
+  }
+
+  // 处理消息提示框取消按钮点击事件
+  function handleMessageBoxCancel() {
+    messagebox_title = '';
+    messagebox_content = '';
+    is_show_messagebox = false;
+  }
+
+  // 处理表格发布按钮点击事件
+  function handlePublic() {
+    messagebox_title = '确认发布';
+    messagebox_content = '发布后，所有用户都可看到此报名计划，确定要继续吗？';
+    is_show_messagebox = true;
+  }
+
+  // 处理表格删除按钮点击事件
+  function handleDelete() {
+    messagebox_title = '确认删除';
+    messagebox_content = '删除后，该条数据会永久消失，确定要继续删除吗？';
+    is_show_messagebox = true;
+  }
+
+  // 处理表格作废按钮点击事件
+  function handleRepeal() {
+    messagebox_title = '确认作废';
+    messagebox_content = '删作废，该条数据会被作废，确定要继续作废吗？';
+    is_show_messagebox = true;
   }
 </script>
 
@@ -293,13 +332,13 @@
                 </td>
                 <td>
                   {#if item.status === '未发布'}
-                    <button class="op-btn">发布</button>
-                    <button class="op-btn" onclick={handleEdit(item.id)}>编辑</button>
-                    <button class="de-btn">删除</button>
+                    <button class="op-btn" onclick={handlePublic}>发布</button>
+                    <button class="op-btn" onclick={() => handleEdit(item.id)}>编辑</button>
+                    <button class="de-btn" onclick={handleDelete}>删除</button>
                   {:else if item.status === '已发布'}
-                    <button class="op-btn" onclick={handleSeeStudent(item.id)}>查看考生</button>
-                    <button class="op-btn" onclick={handleEdit(item.id)}>编辑</button>
-                    <button class="de-btn">作废</button>
+                    <button class="op-btn" onclick={() => handleSeeStudent(item.id)}>查看考生</button>
+                    <button class="op-btn" onclick={() => handleEdit(item.id)}>编辑</button>
+                    <button class="de-btn" onclick={handleRepeal}>作废</button>
                   {:else if item.status === '已作废'}
                     ----
                   {:else if item.status === '审核截止'}
@@ -326,6 +365,15 @@
     </div>
   </div>
 </div>
+
+<!-- 消息提示框 -->
+<MessageBox
+  visible={is_show_messagebox}
+  title={messagebox_title}
+  content={messagebox_content}
+  onConfirm={handleMessageBoxConfirm}
+  onCancel={handleMessageBoxCancel}
+></MessageBox>
 
 <style lang="scss">
   .enroll-management {

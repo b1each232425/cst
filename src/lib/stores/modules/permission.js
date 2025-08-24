@@ -195,4 +195,17 @@ export const baseNavItems = writable([
       },
     ],
   },
+  {
+    name: 'invigilate',
+    title: '监考管理',
+    path: '/teacher/invigilate',
+    icon: '/invigilate/invigilate.svg',
+    children: [
+      {
+        name: 'detail',
+        title: '监考详情',
+        path: '/teacher/invigilate/detail',
+      },
+    ],
+  },
 ]);

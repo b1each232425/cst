@@ -111,14 +111,57 @@
       toast.error(`下载文件失败！${error.message || ''}`);
     }
   }
-  async function downloadAllAttachments() { // 下载所有附件
+  async function downloadAllAttachments() { // 下载所有附件 -> 改为打包为 zip 后下载（前端 JSZip 实现）
     if (!files || files.length === 0) {
       toast.error("没有可下载的附件");
       return;
     }
-    for (const file of files) { // 遍历所有文件并下载
-      await downloadAttachment(file);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // 添加小延迟，避免浏览器同时触发太多下载
+    try {
+      // 动态导入 jszip，若未安装请执行 `npm i jszip`
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+
+//      toast.success("开始准备下载并打包，请稍候...");
+
+      // 顺序下载每个文件并加入 zip（根据需要可改为并发限制）
+      for (const file of files) {
+        const url = `/api/file/${file.checksum}`;
+        const res = await fetch(url, { credentials: "include" });
+        if (!res.ok) {
+          toast.error(`下载文件失败：${file.name}`);
+          console.error("下载文件失败:", file, await res.text().catch(()=>""));
+          continue; // 跳过无法下载的文件
+        }
+        const blob = await res.blob();
+        // 使用文件原名（若不存在则用 checksum）
+        const filename = file.name || file.file_name || file.checksum || "file";
+        zip.file(filename, blob);
+      }
+
+      // 生成 zip（带进度回调）
+      const zipBlob = await zip.generateAsync(
+        { type: "blob" },
+        (metadata) => {
+          // 可选：周期性更新提示
+          toast.success(`打包中 ${Math.round(metadata.percent)}%`, 800);
+        }
+      );
+
+      const zipName = `${title || "attachments"}.zip`;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(zipBlob);
+      a.download = zipName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(a.href);
+        document.body.removeChild(a);
+      }, 1000);
+
+ //     toast.success("打包完成，开始下载");
+    } catch (error) {
+      console.error("一键打包下载失败:", error);
+      toast.error(`一键打包下载失败！${error.message || ""}`);
     }
   }
   function downloadFile(file) { //下载文件
@@ -263,6 +306,7 @@
           throw new Error(data.Msg);
         } else {
         
+    //      console.log("获取考试信息成功:", data);
 
         if (!data.data.examInfo.Name) throw new Error('标题不能为空'); // 考试信息
           title = data.data.examInfo.Name;
@@ -477,7 +521,7 @@
               )}</span
             >
           </div>
-          {#if exam_sessions[current_session]?.PeriodMode === "00"}
+          {#if exam_sessions[current_session]?.PeriodMode === "00" || exam_sessions[current_session]?.PeriodMode === "02"}
             <div class="exam-info-item">
               <span class="label">结束时间：</span>
               <span
@@ -764,12 +808,13 @@
     padding-top: 20px;
     padding-left: 70px;
     padding-right: 70px;
+    align-items: center;
   }
 
   .exam-info-item {
     display: flex;
-    justify-content: space-between;
-
+    justify-content: flex-start;
+    width: min(234px, calc(100% - 140px)); /* 最大宽度 520px，考虑左右 padding（70+70）时不超出 */    /* 将每一行整体水平居中于父容器 */
     span {
       font-weight: 1000;
       margin-right: 8px;
