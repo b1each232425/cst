@@ -88,21 +88,24 @@
 
   // 处理退出登录点击事件
   async function handleLogout() {
-    fetch('/api/user/logout')
-      .then((response) => response.json())
-      .then(async (data) => {
-        if (data.status !== 0) throw new Error('退出登录失败');
-
-        // 清除 qNearSessions
-        document.cookie = 'qNearSessions=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-
-        // 跳转到登录页
-        goto('/login');
+    fetch(`/api/user/logout`, {
+      method: 'POST',
+    })
+      .then((res) => {
+        if (!res.ok)
+          return res.text().then((error_text) => {
+            throw new Error(`请求失败：${res.status} ${res.statusText}` + (error_text ? '-' + error_text : ''));
+          });
+        return res.json();
       })
-      .catch((error) => {
-        nav_map = []; // 失败时设为空数组
-        console.error('退出登录失败:', error);
-        toast.error('退出登录失败：', error);
+      .then((res) => {
+        if (!res.status) {
+          toast.success('登出成功');
+          goto('/login');
+        } else throw new Error(res.msg ?? '登出失败');
+      })
+      .catch((err) => {
+        toast.error(err.message);
       });
   }
 

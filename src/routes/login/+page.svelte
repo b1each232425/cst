@@ -28,6 +28,9 @@
   let accountEmail = $state('');
   let idNumber = $state('');
 
+  // 是否在消息提示框展示超链接
+  let isShowpact = $state(false);
+
   // 区号选择
   let selectedCountryCode = $state('+86');
   const countryCodes = [
@@ -203,7 +206,7 @@
     }
 
     if (!agreeTerms) {
-      showMessage('提示', '请先同意用户协议');
+      showMessage('提示', '您还没有同意用户协议，请先同意用户协议：');
       return;
     }
 
@@ -354,6 +357,9 @@
    */
   function closeMessage() {
     messageBoxVisible = false;
+    if (messageBoxContent === '您还没有同意用户协议，请先同意用户协议：') {
+      agreeTerms = true;
+    }
   }
 
   // 处理注册按钮点击事件
@@ -472,7 +478,17 @@
   show_cancel_button={false}
   confirm_text="确定"
   onConfirm={closeMessage}
-/>
+>
+  {#if messageBoxContent === '您还没有同意用户协议，请先同意用户协议：'}
+    <div class="agreement-messagebox-container">
+      <span class="agreement-text">
+        我已阅读并同意<a href="#">用户协议</a>、
+        <a href="#">隐私政策</a>、
+        <a href="#">产品服务协议</a>
+      </span>
+    </div>
+  {/if}
+</MessageBox>
 
 <!-- 角色选择对话框 -->
 {#if roleSelectVisible}
@@ -795,6 +811,10 @@
 
   .login-btn:hover {
     background: var(--primary-hover);
+  }
+
+  .agreement-messagebox-container {
+    display: flex;
   }
 
   .agreement-container {
