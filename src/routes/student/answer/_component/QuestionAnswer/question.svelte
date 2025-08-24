@@ -115,8 +115,10 @@
       input.style.fontSize = '16px';
 
       span.replaceWith(input);
-    });
+      
 
+    });
+    
     return doc.body.innerHTML;
   }
 
@@ -183,7 +185,7 @@
     {#if index !== null && index !== undefined}
       <h2>{index + 1}.</h2>
       {#if question.Score !== undefined}
-        <span class="question-score-inline">（{question.Score}分）</span>
+        <span class="question-score-inline">（{question.Score}分）</span> 
       {/if}
     {/if}
     <div class="piptap-content" style="width: 80%;" bind:this={contentWrapper}>
@@ -200,11 +202,12 @@
   .question {
     background-color: #fff;
     border-radius: 8px;
-    margin-bottom: 25px;
+    margin-bottom: 50px;
     width: 100%;
     min-width: 100%;
     max-width: 100%;
   }
+  
 
   .question-score-inline {
     color: #ff7e08;
