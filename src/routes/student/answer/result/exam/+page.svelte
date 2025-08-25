@@ -296,6 +296,9 @@
           throw new Error('exam_paper_group 不能为空');
         question_groups_map = new Map(Object.entries(data.data.exam_paper_group));
 
+        if (!data.data.exam_paper)  throw new Error('exam_paper_info 不能为空');
+          exam_paper_info = data.data.exam_paper; // 试卷信息
+
         //加载题目
         total_score = 0; // 重置总分
         resetQuestionGroup();
@@ -304,7 +307,6 @@
         nowSessionIndex = queryIndex;
         showScore();
         load_success = true;
-        toast.success("切换成功", 2000);
       })
       .catch((error) => {
         console.error('请求失败:', error);
