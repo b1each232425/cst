@@ -647,7 +647,7 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       width: var(--date-picker-width);
-      height: 30px;
+      height: 28px;
       padding: 6px 32px 6px 12px; /* 右边32px给图标留空间 */
       font-size: 16px;
       box-sizing: border-box;
@@ -670,7 +670,7 @@
       background-color: white;
       border: 1px solid #ccc;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      padding: 10px;
+      padding: 0px 10px 10px;
       z-index: 1000;
 
       .dual-calendar-popup {
