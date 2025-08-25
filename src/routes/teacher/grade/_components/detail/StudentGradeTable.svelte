@@ -33,7 +33,7 @@
 
   // 状态变量（按照用户管理页面的命名风格）
   let currentData = $state([]);
-  
+
   // 分页相关状态（按照用户管理页面的风格）
   let current_page = $state(1);
   let page_size = $state(10);
@@ -98,18 +98,16 @@
 
     // 组装查询参数
     const params = new URLSearchParams({
-      category: type,               
+      category: type,
       page: String(current_page),
       pageSize: String(page_size),
-      ...(type === 'exam'
-        ? { examID: resource_id }
-        : { practiceID: resource_id }),
-      keyword: searchKeyword.trim()
+      ...(type === 'exam' ? { examID: resource_id } : { practiceID: resource_id }),
+      keyword: searchKeyword.trim(),
     });
 
     return fetch(`/api/grade/examinee/list?${params.toString()}`, {
       method: 'GET',
-      credentials: 'include'
+      credentials: 'include',
     })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -127,15 +125,15 @@
               students.push(...practice.student_scores);
             }
           });
-          
+
           currentData = students.map((stu) => ({
-            stu_id: stu.stu_id, 
+            stu_id: stu.stu_id,
             phone: stu.phone || '-',
             name: stu.name || '-',
             nickname: stu.nickname || '-',
             highestScore: stu.highest_score ?? 0,
             submitCount: stu.submitted_cnt ?? 0,
-            remark: stu.remark || '-'
+            remark: stu.remark || '-',
           }));
           total_items = json.rowCount || 0;
         } else {
@@ -150,19 +148,18 @@
                 nickname: stu.nickname || '-',
                 scores: stu.exam_sessions.map((s) => ({
                   exam_session_id: s.exam_session_id,
-                  score: s.score ?? 0
+                  score: s.score ?? 0,
                 })),
                 total_score: total_score,
-                remark: stu.remark || '-'
+                remark: stu.remark || '-',
               });
             });
           });
           currentData = merged;
 
-          
           total_items = json.rowCount || 0;
         }
-        
+
         loading = false;
       })
       .catch((err) => {
@@ -215,21 +212,19 @@
   function handleViewDetail(student) {
     if (type === 'exam') {
       // 获取当前考试中的所有 exam_session_id
-      const examSessionIds = student.scores?.map(score => score.exam_session_id) || [];
-      
+      const examSessionIds = student.scores?.map((score) => score.exam_session_id) || [];
+
       if (examSessionIds.length > 0) {
         console.log('当前考试中的exam_session_id:', examSessionIds);
-        
+
         const examSessionIdStr = examSessionIds.join(',');
         window.location.href = `/student/answer/result/exam?exam-session-id-arr=[${examSessionIdStr}]`;
-        
       } else {
         console.log('未找到exam_session_id');
       }
     } else {
       console.log('练习类型，无exam_session_id');
     }
-    
   }
 
   // 初始化
@@ -252,10 +247,10 @@
   {#if !isfolded}
     <div class="card-body">
       <div class="search-section">
-        <InputBox 
-          show_label={false} 
-          placeholder="请输入学生电话/账号/姓名" 
-          bind:value={searchKeyword} 
+        <InputBox
+          show_label={false}
+          placeholder="请输入学生电话/账号/姓名"
+          bind:value={searchKeyword}
           onInput={debouncedSearch}
         />
       </div>
@@ -323,9 +318,7 @@
                     {/each}
                   {/if}
                   <td class="detail-cell">
-                    <button class="detail-btn" onclick={() => handleViewDetail(student)}>
-                      查看详情
-                    </button>
+                    <button class="detail-btn" onclick={() => handleViewDetail(student)}> 查看详情 </button>
                   </td>
                   <td class="note-cell">{student.remark != null ? student.remark : '-'}</td>
                 </tr>
@@ -392,7 +385,7 @@
     }
     .card-body {
       .search-section {
-		max-width:20%;
+        max-width: 20%;
       }
       .loading-indicator {
         display: flex;
@@ -463,15 +456,15 @@
             font-size: 14px;
             text-decoration: underline;
             padding: 0;
-            
+
             &:hover {
               color: #0040a7;
             }
           }
 
           .empty-row {
-      border-bottom: none;
-    }
+            border-bottom: none;
+          }
         }
       }
     }
