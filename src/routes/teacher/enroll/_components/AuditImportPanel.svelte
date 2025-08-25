@@ -5,15 +5,15 @@
   import Empty from '$lib/components/Table/Empty.svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
   import { onMount } from 'svelte';
-  import { validMobile, validEmail, validIdCard } from '$lib/utils/validate';
+  import { validMobile, validIdCard } from '$lib/utils/validate';
 
-  let { is_show_import_panel, candidate_list = [], closePanel = () => {} } = $props();
+  let { is_show_import_panel, auditor_list = [], closePanel = () => {} } = $props();
 
   let success_count = $state(0); // 成功识别条数
   let failure_count = $state(0); // 失败识别条数
 
   // 不要就地排序 props，返回新数组（避免副作用）
-  function sortCandidatesByError(list) {
+  function sortAuditorsByError(list) {
     return [...list].sort((a, b) => {
       if (!!a.error && !b.error) return -1;
       if (!a.error && !!b.error) return 1;
@@ -22,74 +22,74 @@
   }
 
   // 行内编辑状态
-  let editing_index = $state(-1); // 正在编辑的行索引
-  let editing_id_card = $state(null); // 正在编辑的唯一标识（身份证号）
-  let editing_row = $state(null); // 副本
+  let editing_index = $state(-1);
+  let editing_id = $state(null);
+  let editing_row = $state(null);
 
-  // 处理编辑按钮点击事件
   function handleEdit(row, index) {
     editing_index = index;
-    editing_id_card = row.id_card;
-    editing_row = { ...row }; // 创建副本，避免直接改原数组
+    editing_id = row.id;
+    editing_row = { ...row };
   }
 
-  // 处理保存编辑按钮点击事件
   function handleSaveEdit() {
-    // 校验当前编辑行
-    const validatedRow = validateCandidate(editing_row);
+    const validated_row = validateAuditor(editing_row);
+    auditor_list = auditor_list.map((item) => (item.id === editing_id ? validated_row : item));
 
-    candidate_list = candidate_list.map((item) => (item.id_card === editing_id_card ? validatedRow : item));
-
-    // 更新成功/失败统计
-    success_count = candidate_list.filter((c) => !c.error).length;
-    failure_count = candidate_list.filter((c) => c.error).length;
+    success_count = auditor_list.filter((a) => !a.error).length;
+    failure_count = auditor_list.filter((a) => a.error).length;
 
     handleCancelEdit();
   }
 
-  // 处理取消编辑按钮点击事件
   function handleCancelEdit() {
     editing_index = -1;
-    editing_id_card = null;
+    editing_id = null;
     editing_row = null;
   }
 
-  // 处理删除按钮点击事件
   function handleDelete(row) {
-    candidate_list = candidate_list.filter((item) => item.id_card !== row.id_card);
+    auditor_list = auditor_list.filter((item) => item.id !== row.id);
   }
 
-  // 校验参数
-  function validateCandidate(candidate) {
+  function validateAuditor(auditor) {
     let error = '';
 
-    if (!candidate.name || candidate.name.trim() === '') {
+    if (!auditor.name || auditor.name.trim() === '') {
       error += '姓名不能为空 ';
     }
-    if (!validMobile(candidate.phone)) {
+    if (!validMobile(auditor.phone)) {
       error += '手机号不合法 ';
     }
-    if (!validEmail(candidate.email)) {
-      error += '邮箱不合法 ';
-    }
-    if (!validIdCard(candidate.id_card)) {
+    if (!validIdCard(auditor.id_card)) {
       error += '证件号不合法 ';
     }
 
-    return { ...candidate, error };
+    return { ...auditor, error };
   }
 
   onMount(() => {
-    candidate_list = sortCandidatesByError(candidate_list).map(validateCandidate);
-    success_count = candidate_list.filter((c) => !c.error).length;
-    failure_count = candidate_list.filter((c) => c.error).length;
+    // 模拟审查人员数据
+    auditor_list =
+      auditor_list.length > 0
+        ? auditor_list
+        : [
+            { id: 1, name: '张三', gender: '男', phone: '13800000001', id_card: '440101199901010011' },
+            { id: 2, name: '李四', gender: '女', phone: 'not_a_phone', id_card: '440101199802022222' },
+            { id: 3, name: '王五', gender: '男', phone: '13800000003', id_card: 'wrong_id_card' },
+            { id: 4, name: '', gender: '女', phone: '13800000004', id_card: '440101199604044444' },
+          ];
+
+    auditor_list = sortAuditorsByError(auditor_list).map(validateAuditor);
+    success_count = auditor_list.filter((a) => !a.error).length;
+    failure_count = auditor_list.filter((a) => a.error).length;
   });
 </script>
 
-<div class={is_show_import_panel ? 'candidate-panel-container' : 'hide'}>
-  <div class="candidate-panel">
+<div class={is_show_import_panel ? 'auditor-panel-container' : 'hide'}>
+  <div class="auditor-panel">
     <div class="panel-header">
-      <span class="panel-header-text">导入报考人员</span>
+      <span class="panel-header-text">导入审查人员</span>
       <button class="close-btn" onclick={closePanel}>×</button>
     </div>
 
@@ -107,42 +107,33 @@
         </div>
       </div>
 
-      <div class="candidate-table-container">
-        <table class="candidate-table">
+      <div class="auditor-table-container">
+        <table class="auditor-table">
           <thead>
             <tr>
-              <th style="width: 5%">姓名</th>
+              <th style="width: 10%">姓名</th>
+              <th style="width: 10%">性别</th>
               <th style="width: 10%">电话</th>
-              <th style="width: 10%">邮箱</th>
-              <th style="width: 5%">性别</th>
-              <th style="width: 15%">证件号</th>
-              <th style="width: 10%">证件类型</th>
-              <th style="width: 10%">出生日期</th>
-              <th style="width: 10%">住址</th>
-              <th style="width: 10%">错误信息</th>
-              <th style="width: 15%">操作</th>
+              <th style="width: 20%">证件号</th>
+              <th style="width: 25%">错误信息</th>
+              <th style="width: 25%">操作</th>
             </tr>
           </thead>
           <tbody>
-            {#if candidate_list.length === 0}
+            {#if auditor_list.length === 0}
               <tr class="empty-row">
                 <td colspan="10" class="empty-cell">
-                  <Empty text="暂无报考人员数据" />
+                  <Empty text="暂无审查人员数据" />
                 </td>
               </tr>
             {:else}
-              {#each candidate_list as c, idx (c.id_card)}
-                {#if editing_id_card === c.id_card}
-                  <!-- 编辑行：用副本 editing_row 渲染输入框 -->
+              {#each auditor_list as a, idx (a.id)}
+                {#if editing_id === a.id}
                   <tr class="edit-row">
                     <td><input bind:value={editing_row.name} type="text" /></td>
-                    <td><input bind:value={editing_row.phone} type="text" /></td>
-                    <td><input bind:value={editing_row.email} type="text" /></td>
                     <td><input bind:value={editing_row.gender} type="text" /></td>
+                    <td><input bind:value={editing_row.phone} type="text" /></td>
                     <td><input bind:value={editing_row.id_card} type="text" /></td>
-                    <td><input bind:value={editing_row.id_type} type="text" /></td>
-                    <td> <input bind:value={editing_row.birth} type="text" /> </td>
-                    <td><input bind:value={editing_row.address} type="text" /></td>
                     <td class="error-text">{editing_row.error}</td>
                     <td class="action-btn-container">
                       <button class="save-btn" onclick={handleSaveEdit}>保存</button>
@@ -150,20 +141,15 @@
                     </td>
                   </tr>
                 {:else}
-                  <!-- 只读行 -->
-                  <tr class={c.error ? 'failed-row' : 'success-row'}>
-                    <td>{c.name}</td>
-                    <td>{c.phone}</td>
-                    <td>{c.email}</td>
-                    <td>{c.gender}</td>
-                    <td>{c.id_card}</td>
-                    <td>{c.id_type}</td>
-                    <td>{c.birth}</td>
-                    <td>{c.address}</td>
-                    <td class={c.error ? 'error-text' : ''}>{c.error || '--'}</td>
+                  <tr class={a.error ? 'failed-row' : 'success-row'}>
+                    <td>{a.name}</td>
+                    <td>{a.gender}</td>
+                    <td>{a.phone}</td>
+                    <td>{a.id_card}</td>
+                    <td class={a.error ? 'error-text' : ''}>{a.error || '--'}</td>
                     <td class="action-btn-container">
-                      <button class="edit-btn" onclick={() => handleEdit(c, idx)}>编辑</button>
-                      <button class="delete-btn" onclick={() => handleDelete(c)}>删除</button>
+                      <button class="edit-btn" onclick={() => handleEdit(a, idx)}>编辑</button>
+                      <button class="delete-btn" onclick={() => handleDelete(a)}>删除</button>
                     </td>
                   </tr>
                 {/if}
@@ -190,7 +176,7 @@
   $gray-font-color: rgba(0, 0, 0, 0.6);
 
   /* 遮罩层 */
-  .candidate-panel-container {
+  .auditor-panel-container {
     position: fixed;
     top: 0%;
     left: 0%;
@@ -200,12 +186,12 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
+    z-index: 10000;
   }
 
   /* 弹窗主体 */
-  .candidate-panel {
-    width: 1400px;
+  .auditor-panel {
+    width: 1200px;
     height: 700px;
     min-width: 800px;
     max-height: 90vh;
@@ -300,7 +286,7 @@
       }
 
       /* 表格区域 */
-      .candidate-table-container {
+      .auditor-table-container {
         margin-top: 20px;
         flex: 1; // 占据剩余空间
         min-height: 200px;
@@ -309,7 +295,7 @@
         border: 1px solid #f0f0f0;
         border-radius: 6px;
 
-        .candidate-table {
+        .auditor-table {
           width: 100%;
           border-collapse: collapse;
 

@@ -187,7 +187,7 @@
     },
   ]);
 
-  let searchKeyword = $state('');
+  let search_keyword = $state('');
 
   function handleMove(row) {
     alert(`迁移 ${row.name}`);
@@ -203,7 +203,7 @@
 
     <div class="move-list-body">
       <div class="search-bar">
-        <InputBox placeholder="请输入关键词" type="text" bind:value={searchKeyword} show_label={false} />
+        <InputBox placeholder="请输入关键词" type="text" bind:value={search_keyword} show_label={false} />
       </div>
 
       <div class="move-list-table">
