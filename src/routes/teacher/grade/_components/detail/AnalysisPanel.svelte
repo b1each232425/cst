@@ -5,7 +5,6 @@
   import Empty from '$lib/components/Table/Empty.svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
 
-
   /**
    * @typedef {Object} Props
    * @property {'practice' | 'exam'} type - 类型
@@ -111,54 +110,54 @@
     // 清空之前的数据，避免显示旧数据
     questions = [];
     questionGroup = [];
-    
+
     const apiUrl = `/api/grade?category=exam&examSessionID=${sessionId}`;
-    
+
     fetch(apiUrl, {
       method: 'GET',
       credentials: 'include',
     })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          return response.json();
-        })
-        .then((resp_data) => {
-          if (resp_data.status !== 0) {
-            throw new Error(resp_data.msg || '获取数据失败');
-          }
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then((resp_data) => {
+        if (resp_data.status !== 0) {
+          throw new Error(resp_data.msg || '获取数据失败');
+        }
 
-          // 处理返回的数据结构
-          const flatQuestions = [];
-          if (resp_data.data.exam_paper_questions) {
-            // 遍历每个分组的题目，并为题目设置正确的GroupID
-            Object.entries(resp_data.data.exam_paper_questions).forEach(([groupId, groupQuestions]) => {
-              if (Array.isArray(groupQuestions)) {
-                groupQuestions.forEach((question) => {
-                  // 确保题目有正确的GroupID
-                  question.GroupID = parseInt(groupId);
-                  flatQuestions.push(question);
-                });
-              }
-            });
-          }
+        // 处理返回的数据结构
+        const flatQuestions = [];
+        if (resp_data.data.exam_paper_questions) {
+          // 遍历每个分组的题目，并为题目设置正确的GroupID
+          Object.entries(resp_data.data.exam_paper_questions).forEach(([groupId, groupQuestions]) => {
+            if (Array.isArray(groupQuestions)) {
+              groupQuestions.forEach((question) => {
+                // 确保题目有正确的GroupID
+                question.GroupID = parseInt(groupId);
+                flatQuestions.push(question);
+              });
+            }
+          });
+        }
 
-          questions = transformQuestions(
-            flatQuestions,
-            resp_data.data.question_answers_stats || {},
-            resp_data.data.subjective_scores || {},
-          );
-          questionGroup = resp_data.data.exam_paper_groups || [];
-          isLoaded = true;
-        })
-        .catch((error) => {
-          console.error('获取考试数据失败:', error);
-          // 发生错误时也要清空数据
-          questions = [];
-          questionGroup = [];
-          isLoaded = true; // 确保加载状态结束
-        });
+        questions = transformQuestions(
+          flatQuestions,
+          resp_data.data.question_answers_stats || {},
+          resp_data.data.subjective_scores || {},
+        );
+        questionGroup = resp_data.data.exam_paper_groups || [];
+        isLoaded = true;
+      })
+      .catch((error) => {
+        console.error('获取考试数据失败:', error);
+        // 发生错误时也要清空数据
+        questions = [];
+        questionGroup = [];
+        isLoaded = true; // 确保加载状态结束
+      });
   }
 
   /**
@@ -169,52 +168,52 @@
     // 清空之前的数据，避免显示旧数据
     questions = [];
     questionGroup = [];
-    
+
     fetch(`/api/grade?category=practice&practiceID=${practiceId}`, {
       method: 'GET',
       credentials: 'include',
     })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          return response.json();
-        })
-        .then((resp_data) => {
-          if (resp_data.status !== 0) {
-            throw new Error(resp_data.msg || '获取数据失败');
-          }
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then((resp_data) => {
+        if (resp_data.status !== 0) {
+          throw new Error(resp_data.msg || '获取数据失败');
+        }
 
-          // 处理返回的数据结构（练习数据结构可能与考试不同）
-          const flatQuestions = [];
-          if (resp_data.data.exam_paper_questions) {
-            // 遍历每个分组的题目，并为题目设置正确的GroupID
-            Object.entries(resp_data.data.exam_paper_questions).forEach(([groupId, groupQuestions]) => {
-              if (Array.isArray(groupQuestions)) {
-                groupQuestions.forEach((question) => {
-                  // 确保题目有正确的GroupID
-                  question.GroupID = parseInt(groupId);
-                  flatQuestions.push(question);
-                });
-              }
-            });
-          }
+        // 处理返回的数据结构（练习数据结构可能与考试不同）
+        const flatQuestions = [];
+        if (resp_data.data.exam_paper_questions) {
+          // 遍历每个分组的题目，并为题目设置正确的GroupID
+          Object.entries(resp_data.data.exam_paper_questions).forEach(([groupId, groupQuestions]) => {
+            if (Array.isArray(groupQuestions)) {
+              groupQuestions.forEach((question) => {
+                // 确保题目有正确的GroupID
+                question.GroupID = parseInt(groupId);
+                flatQuestions.push(question);
+              });
+            }
+          });
+        }
 
-          questions = transformQuestions(
-            flatQuestions,
-            resp_data.data.question_answers_stats || {},
-            resp_data.data.subjective_scores || {},
-          );
-          questionGroup = resp_data.data.exam_paper_groups || [];
-          isLoaded = true;
-        })
-        .catch((error) => {
-          console.error('获取练习数据失败:', error);
-          // 发生错误时也要清空数据
-          questions = [];
-          questionGroup = [];
-          isLoaded = true; // 确保加载状态结束
-        });
+        questions = transformQuestions(
+          flatQuestions,
+          resp_data.data.question_answers_stats || {},
+          resp_data.data.subjective_scores || {},
+        );
+        questionGroup = resp_data.data.exam_paper_groups || [];
+        isLoaded = true;
+      })
+      .catch((error) => {
+        console.error('获取练习数据失败:', error);
+        // 发生错误时也要清空数据
+        questions = [];
+        questionGroup = [];
+        isLoaded = true; // 确保加载状态结束
+      });
   }
 
   /**
@@ -235,7 +234,7 @@
       // 根据当前选中的试卷ID查找对应的试卷信息
       // 注意：currentPaperId是字符串，session.id是数字，需要类型转换
       const selectedSession = papers.find((session) => String(session.id) === currentPaperId);
-      
+
       if (selectedSession) {
         // 使用选中试卷的exam_session_id获取分析数据
         fetchAnalysisDataBySessionId(selectedSession.id);
@@ -287,17 +286,17 @@
       <div class="title">试卷分析</div>
     </button>
   </div>
-  
+
   {#if !isfolded && isLoaded}
-  {#if type === 'exam' && papers.length > 1}
-    <div class="paper-select">
-      <Select bind:value={currentPaperId} placeholder="选择试卷" changeValue={handlePaperChange}>
-        {#each options as option}
-          <Option value={option.value} label={option.label}>{option.label}</Option>
-        {/each}
-      </Select>
-    </div>
-  {/if}
+    {#if type === 'exam' && papers.length > 1}
+      <div class="paper-select">
+        <Select bind:value={currentPaperId} placeholder="选择试卷" changeValue={handlePaperChange}>
+          {#each options as option}
+            <Option value={option.value} label={option.label}>{option.label}</Option>
+          {/each}
+        </Select>
+      </div>
+    {/if}
     <div class="analysis-content">
       {#if questions.length === 0 || questionGroup.length === 0}
         <!-- 暂无数据显示 -->
@@ -311,7 +310,10 @@
             <div class="group-title">
               {group.Name}
               {#if questions.filter((q) => q.groupId === group.ID).length > 0}
-                (共{questions.filter((q) => q.groupId === group.ID).reduce((sum, q) => sum + q.score, 0)}分，共{questions.filter((q) => q.groupId === group.ID).length}题)
+                (共{questions
+                  .filter((q) => q.groupId === group.ID)
+                  .reduce((sum, q) => sum + q.score, 0)}分，共{questions.filter((q) => q.groupId === group.ID)
+                  .length}题)
               {/if}
             </div>
             {#if questions.filter((q) => q.groupId === group.ID).length === 0}
