@@ -186,7 +186,46 @@
       }, 0);
     }
   }
+  function _storageKeyForMarked() { // 标记题目状态的 localStorage key
+    const pid = practice_id || 'preview';
+    const sessionPart = practice_submission_id || 'preview';
+    return `practice_marked_${pid}_${sessionPart}`;
+  }
+  function saveMarkedQuestionsToStorage() { // 保存标记状态到 localStorage
+    try {
+      localStorage.setItem(_storageKeyForMarked(), JSON.stringify(markedQuestions));
+    } catch (e) {
+      console.warn('保存标记状态到 localStorage 失败', e);
+    }
+  }
+  function loadMarkedQuestionsFromStorage() { // 从 localStorage 加载标记状态
+    try {
+      const raw = localStorage.getItem(_storageKeyForMarked());
+      // 初始化为 false 数组
+      if (!raw) {
+        markedQuestions.length = 0;
+        markedQuestions.push(...Array(examQuestions.length).fill(false));
+        return;
+      }
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) {
+        markedQuestions.length = 0;
+        markedQuestions.push(...Array(examQuestions.length).fill(false));
+        return;
+      }
+      // 合并长度并补齐
+      const len = examQuestions.length;
+      const newArr = Array.from({ length: len }, (_, i) => !!arr[i]);
+      markedQuestions.length = 0;
+      markedQuestions.push(...newArr);
+    } catch (e) {
+      console.warn('读取标记状态失败', e);
+      markedQuestions.length = 0;
+      markedQuestions.push(...Array(examQuestions.length).fill(false));
+    }
+  }
 
+  //题目加载类逻辑
   function getQuestionGroups() {
     const groups = [];
 
@@ -384,6 +423,7 @@
   function toggleMarkQuestion(index, event) {
     event.stopPropagation();
     markedQuestions[index] = !markedQuestions[index];
+    saveMarkedQuestionsToStorage();
   }
 
   onMount(async () => {
@@ -405,20 +445,21 @@
           examQuestions.push(...flattenExamQuestions());
           questionGroups.length = 0;
           questionGroups.push(...getQuestionGroups());
+          loadMarkedQuestionsFromStorage();
 
           //如果是预览的话直接从localStorage获取title
           const exam_title = localStorage.getItem('practiceTitle');
 
-          // 暂时统一名称为预览练习
-          title = '预览练习';
 
-          // if (!title) {
-          //   if (!exam_title) {
-          //     title = '预览练习';
-          //   } else {
-          //     title = exam_title;
-          //   }
-          // }
+          if (!title) {
+             //////////////////
+             if (!exam_title) {
+               title = '预览练习';
+             } else {
+               title = exam_title;
+             }
+           }
+           
 
           // 允许渲染页面
           load_success = true;
@@ -485,6 +526,7 @@
           examQuestions.push(...flattenExamQuestions());
           questionGroups.length = 0;
           questionGroups.push(...getQuestionGroups());
+          loadMarkedQuestionsFromStorage();
         })
         .catch((error) => {
           console.error('请求失败:', error);
@@ -537,7 +579,10 @@
           <span> 提交 </span>
         </Button> -->
 
-        <button class="submit-button" onclick={submitMessageBox}>提交</button>
+        {#if !ifPreview}
+          <button class="submit-button" onclick={submitMessageBox}>提交</button>
+        {/if}
+        
       </div>
     </div>
     <!-- 预览提醒 -->
@@ -624,17 +669,19 @@
                     {saveAnswer}
                     editor_height="200px"
                   ></Question>
-                  <div class="question-mark-btn-container">
-                    <button
-                      class="mark-btn"
-                      class:marked={markedQuestions[index]}
-                      onclick={(event) => toggleMarkQuestion(index, event)}
-                      title={markedQuestions[index] ? '取消标记' : '标记此题'}
-                    >
-                      <img src="/student_answer_exam/red_flag.png" alt="标记" class="flag-icon" />
-                      {markedQuestions[index] ? '取消标记' : '标记此题'}
-                    </button>
-                  </div>
+                  {#if !ifPreview}
+                    <div class="question-mark-btn-container">
+                      <button
+                        class="mark-btn"
+                        class:marked={markedQuestions[index]}
+                        onclick={(event) => toggleMarkQuestion(index, event)}
+                        title={markedQuestions[index] ? '取消标记' : '标记此题'}
+                      >
+                        <img src="/student_answer_exam/red_flag.png" alt="标记" class="flag-icon" />
+                        {markedQuestions[index] ? '取消标记' : '标记此题'}
+                      </button>
+                    </div>
+                  {/if}
                 </div>
               {/each}
             {:else}
@@ -744,6 +791,24 @@
     overflow: auto;
   }
 
+  .timer-container {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* 图标与计时器间距 */
+  }
+  .timer-container img {
+    width: 28px;
+    height: 28px;
+    display: block;
+  }
+  .timer-box {
+    display: inline-flex;
+    align-items: center;
+    /* 根据计时器组件输出调整字体/高度 */
+    font-size: 14px;
+    line-height: 1;
+  }
+
   .back-btn {
     display: flex;
     align-items: center;
@@ -851,9 +916,8 @@
     display: flex;
     align-items: center;
     width: fit-content;
-    right: 7px;
+    right: 17px;
     z-index: 1001; /* 确保在其他元素之上 */
-    min-width: 85px; /* 设置最小宽度 */
   }
 
   .submit-btn {
@@ -1171,7 +1235,10 @@
   //说明区域样式
   .nav-sections {
     height: 100%;
-    overflow: scroll;
+    height: 100%;
+    /* 只允许纵向滚动，隐藏横向滚动，防止出现水平滚动条 */
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   // 用于放置nav-sections的头部位置，放"答题卡"标题和图例说明
   .nav-header {

@@ -164,8 +164,6 @@
             ).then( result => {
                 question_list = result.data || [];
                 total_questions = result.rowCount;
-
-                // console.log(result);
             });
 
             // 获取题库的标签
@@ -364,7 +362,6 @@
                 question_list = result.data || [];
                 total_questions = result.rowCount;
                 checkAllSelected();
-                // console.log(result)
             });
         } else { question_list = []; }
     }
@@ -769,7 +766,6 @@
 </div>
 
 <style>
-
     /* 遮罩 */
     .modal-overlay {
         font-family: 'Noto Sans SC', sans-serif;

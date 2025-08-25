@@ -16,9 +16,9 @@
       <span>{answer}</span>
     {/each}
   {:else}
-    {#each Array(question.Answer_Num) as _, index}
+    {#each Array(question.AnswerNum) as _, index}
       <div class="single-answer">
-         {#if question.Answer_Num > 1}
+         {#if question.AnswerNum > 1}
             ({index + 1}){@html question.Answers[index].answer}
           {:else}
           {@html question.Answers[index].answer}
