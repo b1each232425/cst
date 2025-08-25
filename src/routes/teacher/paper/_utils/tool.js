@@ -53,6 +53,14 @@ export const DIFFICULTY_TRANS = {
     "困难": "hard-level"
 };
 
+// 试卷状态转换
+export const STATUS_TRANS = {
+    "00": "未发布",
+    "02": "已发布",
+    "04": "作废",
+    "06": "异常",
+};
+
 /**
  * @description: 以UTF-8字符为单位限制输入字符长度
  * @example: <input use:utf8MaxLength={10} bind:value />

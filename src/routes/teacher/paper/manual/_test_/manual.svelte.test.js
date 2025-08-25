@@ -1719,7 +1719,6 @@ describe('自定义组卷页面', () => {
                                                 SHORT_ANSWER_QUESTION
                                             ],
                                         },
-                                        
                                         {
                                             id: 1197,
                                             name: "空白题组",
@@ -1758,6 +1757,183 @@ describe('自定义组卷页面', () => {
 
                                 // 点击moveBtn
                                 fireEvent.click(moveBtn);
+                            });
+
+                            it('连续移动题组 - 覆盖highlightGroup的if分支', async () => {
+                                // 使用独立的测试数据
+                                const SINGLE_PAPER_INFO = {
+                                    ID: 230,
+                                    Name: "测试试卷",
+                                    Category: "00",
+                                    Level: "00",
+                                    GroupsData: [
+                                        {
+                                            id: 1196,
+                                            name: "移动题组1",
+                                            order: 1,
+                                            questions: [],
+                                        },
+                                        {
+                                            id: 1197,
+                                            name: "移动题组2",
+                                            order: 2,
+                                            questions: [],
+                                        },
+                                        {
+                                            id: 1198,
+                                            name: "移动题组3",
+                                            order: 3,
+                                            questions: [],
+                                        }
+                                    ]
+                                };
+                            
+                                // 临时mock试卷信息
+                                global.fetch.mockResolvedValueOnce({
+                                    ok: true,
+                                    json: () => Promise.resolve({
+                                        status: 0,
+                                        msg: "success",
+                                        API: "/api/paper/manual",
+                                        method: "GET",
+                                        data: SINGLE_PAPER_INFO,
+                                    })
+                                });
+                            
+                                // 渲染页面
+                                const { container } = render(Manual);
+                            
+                                // 等待页面渲染完成
+                                await waitFor(() => {
+                                    expect(screen.getAllByText(/移动题组1/)).toHaveLength(2);
+                                });
+                            
+                                // 第一次移动：题组3上移
+                                global.fetch.mockResolvedValueOnce({
+                                    ok: true,
+                                    json: () => Promise.resolve({
+                                        status: 0,
+                                        msg: "success",
+                                        API: "/api/paper/manual",
+                                        method: "PUT",
+                                    })
+                                });
+                            
+                                const moveAfterFirstMove = {
+                                    ID: 230,
+                                    Name: "测试试卷",
+                                    Category: "00",
+                                    Level: "00",
+                                    GroupsData: [
+                                        {
+                                            id: 1196,
+                                            name: "移动题组1",
+                                            order: 1,
+                                            questions: [],
+                                        },
+                                        {
+                                            id: 1197,
+                                            name: "移动题组3",
+                                            order: 2,
+                                            questions: [],
+                                        },
+                                        {
+                                            id: 1198,
+                                            name: "移动题组2",
+                                            order: 3,
+                                            questions: [],
+                                        }
+                                    ]
+                                };
+                            
+                                global.fetch.mockResolvedValueOnce({
+                                    ok: true,
+                                    json: () => Promise.resolve({
+                                        status: 0,
+                                        msg: "success",
+                                        API: "/api/paper/manual",
+                                        method: "GET",
+                                        data: moveAfterFirstMove,
+                                    })
+                                });
+                            
+                                // 获取第三个group-header类
+                                const groupHeader = container.querySelectorAll('.group-header')[2];
+                                const moveBtn = groupHeader.querySelector('button[title="上移"]');
+                                fireEvent.click(moveBtn);
+                            
+                                // 等待第一次移动完成
+                                await waitFor(() => {
+                                    const groupHeader2 = container.querySelectorAll('.group-header')[1];
+                                    expect(groupHeader2.textContent).toContain("移动题组3");
+                                });
+                            
+                                // 关键：在5秒内再次移动同一个题组，触发highlightGroup的if分支
+                                // 等待一小段时间，确保第一次高亮还在
+                                await new Promise(resolve => setTimeout(resolve, 100));
+                            
+                                // 第二次移动：题组3再次上移
+                                global.fetch.mockResolvedValueOnce({
+                                    ok: true,
+                                    json: () => Promise.resolve({
+                                        status: 0,
+                                        msg: "success",
+                                        API: "/api/paper/manual",
+                                        method: "PUT",
+                                    })
+                                });
+                            
+                                const moveAfterSecondMove = {
+                                    ID: 230,
+                                    Name: "测试试卷",
+                                    Category: "00",
+                                    Level: "00",
+                                    GroupsData: [
+                                        {
+                                            id: 1196,
+                                            name: "移动题组3",
+                                            order: 1,
+                                            questions: [],
+                                        },
+                                        {
+                                            id: 1197,
+                                            name: "移动题组1",
+                                            order: 2,
+                                            questions: [],
+                                        },
+                                        {
+                                            id: 1198,
+                                            name: "移动题组2",
+                                            order: 3,
+                                            questions: [],
+                                        }
+                                    ]
+                                };
+                            
+                                global.fetch.mockResolvedValueOnce({
+                                    ok: true,
+                                    json: () => Promise.resolve({
+                                        status: 0,
+                                        msg: "success",
+                                        API: "/api/paper/manual",
+                                        method: "GET",
+                                        data: moveAfterSecondMove,
+                                    })
+                                });
+                            
+                                // 再次点击上移按钮（同一个题组）
+                                const groupHeader2 = container.querySelectorAll('.group-header')[1];
+                                const moveBtn2 = groupHeader2.querySelector('button[title="上移"]');
+                                fireEvent.click(moveBtn2);
+                            
+                                // 验证第二次移动完成
+                                await waitFor(() => {
+                                    const groupHeader3 = container.querySelectorAll('.group-header')[0];
+                                    expect(groupHeader3.textContent).toContain("移动题组3");
+                                });
+                            
+                                // 等待一小段时间，让定时器有机会执行
+                                await new Promise(resolve => setTimeout(resolve, 100));
                             });
                         });
                     });
