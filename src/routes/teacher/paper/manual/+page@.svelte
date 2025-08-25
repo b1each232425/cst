@@ -811,6 +811,7 @@
             toast.error("已经是第一个题组", 1000);
             return;
         }
+        
         // 判断是否是最后一个题组
         if(group.id === paper_groups[paper_groups.length - 1].id && direction === "down") {
             toast.error("已经是最后一个题组", 1000);
