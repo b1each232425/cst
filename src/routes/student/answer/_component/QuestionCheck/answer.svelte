@@ -1,20 +1,20 @@
 <script>
-  import Option from "../QuestionAnswer/option.svelte";
+  import Option from '../QuestionAnswer/option.svelte';
   let { question } = $props();
-  const defaultAnswer = $state("未填")
+  const defaultAnswer = $state('未填');
 
   function getCompleteAnswer(index) {
-    console.log("question in complete:", $inspect(question));
+    // console.log("question in complete:", $inspect(question));
     const prefix = question.AnswerNum > 1 ? `(${index + 1})` : '';
     const studentAnswer = question.StudentAnswer?.answer?.[index];
-    const answer = studentAnswer && studentAnswer !== "" ? studentAnswer : defaultAnswer;
+    const answer = studentAnswer && studentAnswer !== '' ? studentAnswer : defaultAnswer;
     return prefix + answer;
   }
 </script>
 
 <div class="layout">
-    <!-- 单/多选  这里的多选主要是为了区分这个圆角的大小 判断题 -->
-  {#if question.Type === "00" || question.Type === "02" || question.Type === "04"}
+  <!-- 单/多选  这里的多选主要是为了区分这个圆角的大小 判断题 -->
+  {#if question.Type === '00' || question.Type === '02' || question.Type === '04'}
     <div class="options">
       {#each question.Options as option}
         <label class="option">
@@ -27,37 +27,39 @@
             disabled
           />
           <!-- 圆形选项 根据类型区分方形还是圆形-->
-          <span class="option-id" class:single-yesOrNo={question.Type === "00" || question.Type === "04"} class:multple={question.Type === "02"}>{option.label}</span>
+          <span
+            class="option-id"
+            class:single-yesOrNo={question.Type === '00' || question.Type === '04'}
+            class:multple={question.Type === '02'}>{option.label}</span
+          >
           <!-- 选项内容 -->
           <Option {option} />
         </label>
       {/each}
     </div>
-  {:else if question.Type === "06" || question.Type === "08"}
+  {:else if question.Type === '06' || question.Type === '08'}
     <div class="analysis-container">
-    <div class="system-tips">您的回答</div>
+      <div class="system-tips">您的回答</div>
       {#each Array(question.AnswerNum) as _, index}
-    <div class="fill-blank">
-      {@html getCompleteAnswer(index)}
+        <div class="fill-blank">
+          {@html getCompleteAnswer(index)}
+        </div>
+      {/each}
     </div>
-  {/each}
-      </div>
-    {/if}
+  {/if}
 </div>
-
 
 <style scoped lang="scss">
   .layout {
     max-width: 100%;
     width: 100%;
   }
-    .option {
+  .option {
     display: flex;
     align-items: center;
     padding: 10px;
     border-radius: 4px;
     transition: background-color 0.2s;
-
 
     input {
       margin-right: 10px;
@@ -71,16 +73,16 @@
       min-width: 30px;
       height: 30px;
       text-align: center;
-      
+
       background-color: white;
       border: 1px solid #797979;
       margin-right: 10px;
       font-size: 16px;
     }
-    .single-yesOrNo{
+    .single-yesOrNo {
       border-radius: 50%;
     }
-    .multple{
+    .multple {
       border-radius: 8px;
     }
     /* 选中样式：当 input 被选中时，改变 option-id 的外观 */
@@ -89,10 +91,8 @@
       border: 1px solid #165dff;
       color: #165dff;
     }
-
-
   }
-    .analysis-container {
+  .analysis-container {
     background-color: #f0f4ff;
     border-radius: 8px;
     padding: 16px 20px;
@@ -105,7 +105,7 @@
     display: none;
   }
 
-    .fill-blank {
+  .fill-blank {
     display: flex;
     justify-content: flex-start;
     align-items: center;
@@ -118,13 +118,11 @@
     max-width: 5%;
     font-size: 14px;
   }
-  .system-tips{
-        color: #3b82f6;
+  .system-tips {
+    color: #3b82f6;
     font-size: 20px;
     font-weight: 600;
     margin-bottom: 12px;
     line-height: 1.4;
   }
-
-  
 </style>
