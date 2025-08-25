@@ -264,33 +264,7 @@ import '$lib/components/Input/index.scss';
     // console.log("题库名称:", $state.snapshot(item.name))
   }
 
-  /**
-   * 题库名称输入框失去焦点处理函数
-   * @param {string} old_name - 原题库名称
-   * @param {string} new_name - 题库名称
-   * @param {BankCardItemData} item - 题库数据
-   */
-  function bankNameOnchangeHandleFunc(old_name, new_name, item) {
-    if (new_name == null) {
-      return;
-    }
 
-    if (typeof new_name !== 'string') {
-      throw new Error('new_name must be a string');
-    }
-
-    if (new_name != '') {
-      return;
-    }
-
-    if (old_name == null) {
-      throw new Error('old_name is required');
-    }
-
-    item.Name = old_name;
-
-    item.is_changed = checkBankDataChange(item);
-  }
 
   /**
    * 添加标签处理函数
@@ -375,30 +349,6 @@ import '$lib/components/Input/index.scss';
    */
   function tagOnChangeHandleFunc(old_content, new_content, index, item) {
     // console.log("标签内容:", $state.snapshot(new_content));
-
-    if (new_content == null) {
-      return;
-    }
-
-    if (typeof new_content !== 'string') {
-      throw new Error('content must be a string');
-    }
-
-    if (old_content == null) {
-      throw new Error('old_content is required');
-    }
-
-    if (typeof old_content !== 'string') {
-      throw new Error('old_content must be a string');
-    }
-
-    new_content = new_content == '' ? old_content : new_content;
-
-    if (item?.Tags) {
-      item.Tags[index] = new_content;
-    } else {
-      throw new Error('current item tags is null');
-    }
 
     item.is_changed = checkBankDataChange(item);
   }
@@ -580,9 +530,6 @@ o888o o888o   "888" o888o o888o o888o o888o
               },
               name_change: (name) => {
                 bankNameChangeHandleFunc(name, item);
-              },
-              name_input_onchange: (old_name, new_name) => {
-                bankNameOnchangeHandleFunc(old_name, new_name, item);
               },
               discard: () => {
                 discardChanges(item);
