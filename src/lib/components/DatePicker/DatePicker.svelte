@@ -476,6 +476,8 @@
     }
 
     updateInputValue();
+    dispatch('start_date_selected', { date: internal_start_date });
+    dispatch('end_date_selected', { date: internal_end_date });
   };
 
   // 初始化日期选择器
@@ -629,7 +631,8 @@
       </div>
 
       <div class="calendar-footer">
-        <button class="clear-btn" onclick={reset} data-testid="clear-btn">清除</button>
+        <button class="cancel-btn" onclick={dateConfirm}>取消</button>
+        <button class="clear-btn" onclick={reset}>清除</button>
         <button class="confirm-btn" onclick={dateConfirm}>确定</button>
       </div>
     </div>
@@ -644,7 +647,8 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       width: var(--date-picker-width);
-      padding: 6px 12px;
+      height: 28px;
+      padding: 6px 32px 6px 12px; /* 右边32px给图标留空间 */
       font-size: 16px;
       box-sizing: border-box;
       background-color: white;
@@ -653,8 +657,10 @@
       background-repeat: no-repeat;
       background-size: 20px;
       background-position: right 10px center;
-      text-align: left;
+      text-align: center;
       cursor: pointer;
+      /* 调整文本视觉居中 */
+      padding-right: calc(32px + 10px); /* 图标宽+右间距 */
     }
 
     .calendar-main {
@@ -664,7 +670,7 @@
       background-color: white;
       border: 1px solid #ccc;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      padding: 10px;
+      padding: 0px 10px 10px;
       z-index: 1000;
 
       .dual-calendar-popup {
@@ -817,6 +823,7 @@
         padding-right: 10px;
 
         .clear-btn,
+        .cancel-btn,
         .confirm-btn {
           padding: 6px 12px;
           font-size: 14px;
@@ -825,18 +832,31 @@
           cursor: pointer;
         }
 
+        /* 清除按钮 - 红色警告 */
         .clear-btn {
+          background-color: #ff4d4f;
+          color: white;
+          border-color: #ff4d4f;
+        }
+
+        .clear-btn:hover {
+          background-color: #ff7875;
+        }
+
+        /* 取消按钮 - 使用原先清除按钮样式 */
+        .cancel-btn {
           background-color: #f8f8f8;
           color: #333;
         }
 
+        .cancel-btn:hover {
+          background-color: #f0f0f0;
+        }
+
+        /* 确认按钮 */
         .confirm-btn {
           background-color: #007bff;
           color: white;
-        }
-
-        .clear-btn:hover {
-          background-color: #f0f0f0;
         }
 
         .confirm-btn:hover {

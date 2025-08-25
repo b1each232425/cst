@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 15:21:42
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-16 12:21:26
+ * @LastEditTime: 2025-08-23 17:51:56
  * @FilePath: \exam\src\routes\teacher\paper\manual\+page@.svelte
  * @Description: 自定义组卷页面
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -14,6 +14,11 @@
     import Toast from "$lib/components/Toast/Toast.svelte";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
     import QuestionPreviewPanel from "../../question-bank/_components/QuestionPreviewPanel.svelte";
+    import SingleSelectEditPanel from "../../question-bank/_components/singlePage.svelte";
+    import MultipleSelectEditPanel from "../../question-bank/_components/multiplePage.svelte";
+    import JudgeSelectEditPanel from "../../question-bank/_components/judgePage.svelte";
+    import FillBlankEditPanel from "../../question-bank/_components/fillBank.svelte";
+    import ShortAnswerEditPanel from "../../question-bank/_components/shortAnswer.svelte";
     import "$lib/components/Button/index.scss"
     import "$lib/components/Input/index.scss"
     import { goto } from "$app/navigation";
@@ -21,7 +26,7 @@
     import { onMount, tick } from "svelte";
     import { toast } from "$lib/components/Toast/Toast";
     import { get } from "svelte/store";
-    import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, GROUP_AVERAGE_SCORE } from "../_stores/store";
+    import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, GROUP_AVERAGE_SCORE, SIDEBAR_COLLAPSED } from "../_stores/store";
     import { stopPropagation } from "svelte/legacy";
     import { debounce } from "$lib/utils/optimize";
 
@@ -46,10 +51,10 @@
                 return response.json();
             })
             .then(data => {
+                console.log(data);
                 if (data.status !== 0){
                     throw new Error(data.msg);  
                 }
-                // console.log(data);
                 return data;
             })
             .catch(error => {
@@ -94,12 +99,86 @@
                 if (data.status !== 0){
                     throw new Error(data.msg);  
                 }
-                // console.log(data);
                 return data;
             })
             .catch(error => {
                 toast.error(error.message, 1000);
                 console.error('保存试卷出错：', error);
+                return null;
+            });
+    }
+
+    // 获取题库题目
+    function fetchQuestion(question) {
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("bankID", question.belong_to);
+        PARAMS.append("questionID", question.bank_question_id);
+
+        return fetch(`/api/questions?${PARAMS.toString()}`, {
+            method: "GET",
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
+                return data;
+            })
+            .catch(error => {
+                toast.error(error.message, 1000);
+                console.error('获取题库题目出错：', error);
+                return null;
+            });
+    }
+
+    // 更新题目
+    function updateQuestion(question) {
+        // 构建更新题目的数据，确保与TheoryQuestion类型匹配
+        const updateData = {
+            ID: question.id,
+            Type: question.type,
+            Difficulty: question.difficulty,
+            Content: question.content,
+            Tags: question.tags || [],
+            Options: question.options || [],
+            Answers: question.answers || [],
+            Analysis: question.analysis || "",
+            Score: question.score || 0,
+            QuestionAttachmentsPath: question.question_attachments_path || "",
+            BelongTO: question.belong_to || -1
+        };
+
+        // 调用题库管理的更新接口
+        return fetch('/api/questions', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ data: updateData })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
+                return data;
+            })
+            .catch(error => {
+                toast.error(error.message, 1000);
+                console.error('编辑题目出错：', error);
                 return null;
             });
     }
@@ -112,9 +191,117 @@
     let import_modal_is_open = $state(false);  // 从题库中导入题目弹窗
     let is_adding_group = $state(false);      // 添加题组
     let page_is_ready = $state(false);
+    let is_editing_question = $state(false); // 编辑题目
+    let is_update_average_question_score = $state(false); // 更新题组平均分
+
+    // 编辑组件状态管理
+    let show_single_select_edit_panel = $state(false);      // 显示单选题编辑面板
+    let show_multiple_select_edit_panel = $state(false);    // 显示多选题编辑面板
+    let show_judge_select_edit_panel = $state(false);      // 显示判断题编辑面板
+    let show_fill_bank_edit_panel = $state(false);         // 显示填空题编辑面板
+    let show_short_answer_edit_panel = $state(false);      // 显示简答题编辑面板
+
+    // 编辑组件实例
+    let single_select_edit_panel_component;
+    let multiple_select_edit_panel_component;
+    let judge_select_edit_panel_component;
+    let fill_bank_edit_panel_component;
+    let short_answer_edit_panel_component;
+
+    // 当前编辑的题目
+    let editing_question = $state(null);
+
+    // 高亮状态管理
+    let highlighted_questions = $state(new Set()); // 存储需要高亮的题目ID
+    let highlighted_groups = $state(new Set()); // 存储需要高亮的题组ID
+    let highlight_timers = new Map(); // 存储每个题目和题组的高亮定时器
+
+    // 高亮题目
+    function highlightQuestion(questionId) {
+        // 先添加高亮状态，确保高亮延续
+        highlighted_questions.add(questionId);
+        
+        // 如果该题目已经有高亮定时器，先清除它
+        if (highlight_timers.has(`question_${questionId}`)) {
+            clearTimeout(highlight_timers.get(`question_${questionId}`));
+        }
+        
+        // 创建新的5秒定时器
+        const timer = setTimeout(() => {
+            highlighted_questions.delete(questionId);
+            // 在 Svelte 5 中，需要重新赋值来触发响应式更新
+            highlighted_questions = new Set(highlighted_questions);
+            // 清除定时器引用
+            highlight_timers.delete(`question_${questionId}`);
+        }, 5000);
+        
+        // 保存定时器引用
+        highlight_timers.set(`question_${questionId}`, timer);
+    }
+
+    // 高亮题组
+    function highlightGroup(groupId) {
+        // 先添加高亮状态，确保高亮延续
+        highlighted_groups.add(groupId);
+        
+        // 如果该题组已经有高亮定时器，先清除它
+        if (highlight_timers.has(`group_${groupId}`)) {
+            clearTimeout(highlight_timers.get(`group_${groupId}`));
+        }
+        
+        // 创建新的5秒定时器
+        const timer = setTimeout(() => {
+            highlighted_groups.delete(groupId);
+            // 在 Svelte 5 中，需要重新赋值来触发响应式更新
+            highlighted_groups = new Set(highlighted_groups);
+            // 清除定时器引用
+            highlight_timers.delete(`group_${groupId}`);
+        }, 5000);
+        
+        // 保存定时器引用
+        highlight_timers.set(`group_${groupId}`, timer);
+    }
+
+    // 响应式侧边栏控制
+    let resizeObserver = null;
+    const SIDEBAR_COLLAPSE_THRESHOLD = 1200; // 当页面宽度小于1200px时收起侧边栏
 
     function closeImportModal() {
         import_modal_is_open = false;
+    }
+
+    // 检查页面宽度并自动收起/展开侧边栏
+    function checkPageWidth() {
+        const pageWidth = window.innerWidth;
+        if (pageWidth < SIDEBAR_COLLAPSE_THRESHOLD && !get(SIDEBAR_COLLAPSED)) {
+            SIDEBAR_COLLAPSED.set(true);
+        } else if (pageWidth >= SIDEBAR_COLLAPSE_THRESHOLD && get(SIDEBAR_COLLAPSED)) {
+            SIDEBAR_COLLAPSED.set(false);
+        }
+    }
+
+    // 设置响应式监听器
+    function setupResponsiveListener() {
+        // 使用 ResizeObserver 监听页面大小变化
+        if (typeof ResizeObserver !== 'undefined') {
+            resizeObserver = new ResizeObserver(() => {
+                checkPageWidth();
+            });
+            resizeObserver.observe(document.body);
+        } else {
+            // 降级方案：使用 window resize 事件
+            window.addEventListener('resize', checkPageWidth);
+        }
+    }
+
+    // 清理响应式监听器
+    function cleanupResponsiveListener() {
+        if (resizeObserver) {
+            resizeObserver.disconnect();
+            resizeObserver = null;
+        } else {
+            window.removeEventListener('resize', checkPageWidth);
+        }
     }
 
     /***************** 控制开关区 ******************/
@@ -169,6 +356,11 @@
                 return response.json();
             })
             .then(result => {
+
+                if (result.status !== 0){
+                    throw new Error(result.msg);  
+                }
+
                 const PREVIEW_QUESTIONS = result.data;
                 
                 if (category === "00") {
@@ -186,7 +378,8 @@
                 }
             })
             .catch(error => {
-                console.error('获取试卷详情出错：', error);
+                toast.error(error.message, 1000);
+                console.error('预览试卷出错：', error);
                 return null;
             });
     }
@@ -217,6 +410,28 @@
 
         // 计算并返回颜色数组的索引
         return CHARCODE % TAG_COLOR_LIST.length;
+    }
+
+    // 计算文本宽度的函数
+    function getTextWidth(text, font = '12px sans-serif') {
+        // 创建一个临时的canvas元素来计算文本宽度
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        context.font = font;
+        const metrics = context.measureText(text);
+        return metrics.width;
+    }
+
+    // 获取标签input的宽度
+    function getTagInputWidth(text) {
+        if (!text || text.trim() === '') {
+            return 40; // 默认最小宽度
+        }
+        const textWidth = getTextWidth(text, '12px sans-serif');
+        const minWidth = 40; // 最小宽度
+        const padding = 8; // 左右padding的总和
+        const calculatedWidth = Math.max(textWidth + padding, minWidth);
+        return Math.min(calculatedWidth, 200); // 最大宽度限制
     }
 
     let to_add_tag = $state("");
@@ -277,7 +492,9 @@
     let to_add_group = $state(null);
     let to_edit_groupID = $state(null);
     let to_edit_group_name = $state("");
-    let to_edit_group = $state(null);
+    let to_edit_group_sidebar_component = $state(null);
+    let to_edit_group_content_component = $state(null);
+    let to_edit_group_position = $state("");
     let to_import_group = $state(null);
 
     // 删除题组
@@ -294,9 +511,15 @@
             confirm_button_type: "danger",
 
             onConfirm: () => {
-                // 删除后重新排序
-                let groupIDs = paper_groups.map(group => group.id);
-                groupIDs = groupIDs.filter(id => id !== groupID)
+                const NEW_PAPER_GROUPS = [ ...paper_groups ];
+                const GROUP_INDEX = NEW_PAPER_GROUPS.findIndex(g => g.id === groupID);
+                NEW_PAPER_GROUPS.splice(GROUP_INDEX, 1);
+                const GROUP_IDS = NEW_PAPER_GROUPS.map(group => group.id);
+
+                // 获取所有题目的ID数组
+                const QUESTION_IDS = NEW_PAPER_GROUPS.flatMap(group =>
+                    group.questions.map(question => question.id)
+                );
 
                 const ACTIONS = [
                     {
@@ -305,9 +528,16 @@
                     },
                     {
                         action: "move_group",
-                        payload: groupIDs
-                    }
+                        payload: GROUP_IDS
+                    },
                 ];
+
+                if(QUESTION_IDS.length > 0) {
+                    ACTIONS.push({
+                        action: "move_question",
+                        payload: QUESTION_IDS
+                    });
+                }
 
                 savePaper(paperID, ACTIONS)
                     .then(() => {
@@ -362,14 +592,23 @@
                 .then(result => {
                     fetchPaper(paperID)
                         .then(result => {
+                            // 获取旧题组的 ID 数组
+                            const OLD_GROUP_IDS = paper_groups.map(group => group.id);
                             paper_groups = result.data.GroupsData;
+                            // 获取新题组的 ID 数组
+                            const NEW_GROUP_IDS = result.data.GroupsData.map(group => group.id);
+                            // 获取新题组和旧题组的差集
+                            const ADDED_GROUP_IDS = NEW_GROUP_IDS.filter(id => !OLD_GROUP_IDS.includes(id));
+                            // 将新题组展开
+                            const NEW_GROUP_STATE = { ...get(GROUP_OPEN_STATE) };
+                            ADDED_GROUP_IDS.forEach(id => NEW_GROUP_STATE[id] = true);
+                            GROUP_OPEN_STATE.set(NEW_GROUP_STATE);
+                            
                             paper_info = result.data;
                             is_adding_group = false;
                             to_add_group_name = "";
                             toast.success("添加成功", 1000);
                     });
-                })
-                .finally(() => {
                 });
         }
     }
@@ -377,9 +616,15 @@
     // 编辑题组名称
     async function editGroupName(id, name, position) {
         to_edit_groupID = id;
+        to_edit_group_position = position;
         to_edit_group_name = name;
-        await tick();
-        to_edit_group.focus();
+        if(position === "content") {
+            await tick();
+            to_edit_group_content_component.focus();
+        } else {
+            await tick();
+            to_edit_group_sidebar_component.focus();
+        }
     }
 
     let is_cancelling_edit_group_name = $state(false);
@@ -388,7 +633,11 @@
     function confirmEditGroupName() {
         if(!is_cancelling_edit_group_name && to_edit_group_name.trim() !== "") {
 
-            to_edit_group.blur();
+            if(to_edit_group_position === "side-bar") {
+                to_edit_group_sidebar_component.blur();
+            } else {
+                to_edit_group_content_component.blur();
+            }
 
             const ACTIONS = [
                 {
@@ -418,6 +667,7 @@
         is_cancelling_edit_group_name = true;
         to_edit_groupID = null;
         to_edit_group_name = "";
+        to_edit_group_position = "";
         is_cancelling_edit_group_name = false;
     }
 
@@ -474,6 +724,24 @@
 
     // 导入题目后信息更新
     function updateAfterImport(updatedGroups, updatedInfo) {
+        // 获取新导入的题目 ID
+        const NEW_QUESTION_IDS = updatedGroups.flatMap(group =>
+            group.questions.map(question => question.id)
+        );
+
+        // 获取旧的题目 ID
+        const OLD_QUESTION_IDS = paper_groups.flatMap(group =>
+            group.questions.map(question => question.id)
+        );
+
+        // 获取新导入的题目 ID 和旧的题目 ID 的差集
+        const IMPORTED_QUESTION_IDS = NEW_QUESTION_IDS.filter(id => !OLD_QUESTION_IDS.includes(id));
+
+        // 设置新导入的题目为展开状态
+        const NEW_QUESTION_STATE = { ...get(QUESTION_OPEN_STATE) };
+        IMPORTED_QUESTION_IDS.forEach(id => NEW_QUESTION_STATE[id] = true);
+        QUESTION_OPEN_STATE.set(NEW_QUESTION_STATE);
+
         // 更新试卷信息
         paper_groups = updatedGroups;
         paper_info = updatedInfo;
@@ -489,36 +757,13 @@
             });
         }
         
-        // 自动展开新导入的题目和目标题组
-        if (updatedGroups && updatedGroups.length > 0) {
-            const NEW_GROUP_STATE = { ...get(GROUP_OPEN_STATE) };
-            const NEW_QUESTION_STATE = { ...get(QUESTION_OPEN_STATE) };
-            
-            // 找到目标题组（导入题目的题组）
-            const targetGroup = updatedGroups.find(group => group.id === to_import_group.id);
-            if (targetGroup) {
-                // 确保目标题组是展开状态
-                NEW_GROUP_STATE[targetGroup.id] = true;
-                
-                // 将目标题组中的所有题目设置为展开状态
-                // 这样可以确保新导入的题目和原有题目都展开
-                targetGroup.questions.forEach(question => {
-                    NEW_QUESTION_STATE[question.id] = true;
-                });
-            }
-            
-            // 更新展开状态
-            GROUP_OPEN_STATE.set(NEW_GROUP_STATE);
-            QUESTION_OPEN_STATE.set(NEW_QUESTION_STATE);
-        }
-        
         // 重置导入参数
         to_add_group = { id: 0, name: ""};
     }
 
     // 一键展开所有题组和题目
     function expandAll() {
-         // 创建新的展开状态对象
+        // 创建新的展开状态对象
         const NEW_GROUP_STATE = {};
         const NEW_QUESTION_STATE = {};
 
@@ -559,6 +804,54 @@
         }
     }
 
+    // 移动题组
+    function moveGroup(group, direction) {
+        // 判断是否是第一个题组
+        if(group.id === paper_groups[0].id && direction === "up") {
+            toast.error("已经是第一个题组", 1000);
+            return;
+        }
+        // 判断是否是最后一个题组
+        if(group.id === paper_groups[paper_groups.length - 1].id && direction === "down") {
+            toast.error("已经是最后一个题组", 1000);
+            return;
+        }
+
+        // 交换题组
+        const NEW_PAPER_GROUPS = [ ...paper_groups ];
+        const GROUP_INDEX = NEW_PAPER_GROUPS.findIndex(g => g.id === group.id);
+        const TARGET_GROUP_INDEX = GROUP_INDEX + (direction === "up" ? -1 : 1);
+        [NEW_PAPER_GROUPS[GROUP_INDEX], NEW_PAPER_GROUPS[TARGET_GROUP_INDEX]] = [NEW_PAPER_GROUPS[TARGET_GROUP_INDEX], NEW_PAPER_GROUPS[GROUP_INDEX]];
+        const GROUP_IDS = NEW_PAPER_GROUPS.map(group => group.id);
+
+        // 获取所有题目的ID数组
+        const QUESTION_IDS = NEW_PAPER_GROUPS.flatMap(group =>
+            group.questions.map(question => question.id)
+        );
+
+        const ACTIONS = [
+            {
+                action: "move_group",
+                payload: GROUP_IDS,
+            },
+            {
+                action: "move_question",
+                payload: QUESTION_IDS
+            }
+        ];
+        
+        savePaper(paperID, ACTIONS)
+            .then(() => fetchPaper(paperID))
+            .then((result) => {
+                paper_groups = result.data.GroupsData;
+                paper_info = result.data;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+                // 移动成功后高亮题组
+                highlightGroup(group.id);
+            });
+    }
+
     // 移动题目
     function moveQuestion(group, question, direction) {
         // 获取题目 ID 数组
@@ -569,25 +862,26 @@
         // 获取待移动的题目索引
         const INDEX = FULL_QUESTION_IDS.indexOf(question.id);
 
-        // 边界：最上面的题再往上 or 最下面的题再往下，直接 return
-        if (INDEX === 0 && direction === 'up') {
-            toast.error("已经是第一题", 1000);
-            return;
-        }
-
-        if (INDEX === FULL_QUESTION_IDS.length - 1 && direction === 'down') {
-            toast.error("已经是最后一题", 1000);
-            return;
-        }
-
-        // 默认原题组
-        let target_groupID = group.id;
-
         // 找当前题组在 paper_groups 中的索引
         const CURRENT_GROUP_INDEX = paper_groups.findIndex(g => g.id === group.id);
 
         // 找当前题目在本组里的索引
         const QUESTION_INDEX_IN_GROUP = group.questions.findIndex(q => q.id === question.id);
+
+        // 边界检查：第一道题且位于第一个题组时不能前移
+        if (direction === 'up' && INDEX === 0 && CURRENT_GROUP_INDEX === 0) {
+            toast.error("已经是第一道题目", 1000);
+            return;
+        }
+
+        // 边界检查：最后一道题且位于最后一个题组时不能后移
+        if (direction === 'down' && INDEX === FULL_QUESTION_IDS.length - 1 && CURRENT_GROUP_INDEX === paper_groups.length - 1) {
+            toast.error("已经是最后一道题目", 1000);
+            return;
+        }
+
+        // 默认原题组
+        let target_groupID = group.id;
 
         // 如果题目是组内第一个且往上移动，或者是组内最后一个且往下移动，可能跨组
         if (
@@ -647,6 +941,8 @@
                 paper_info = result.data;
                 total_score = paper_info.TotalScore;
                 question_count = paper_info.QuestionCount;
+                // 移动成功后高亮题目
+                highlightQuestion(question.id);
             });
     }
 
@@ -849,6 +1145,95 @@
             });
     }
 
+    // 编辑题目
+    function editQuestion(question) {
+        fetchQuestion(question)
+            .then(result => {
+                const QUESTION = result.data[0];
+
+                // 转换数据格式以匹配编辑组件的期望
+                const convertedQuestion = {
+                    id: QUESTION.ID,
+                    content: QUESTION.Content,
+                    type: QUESTION.Type,
+                    options: QUESTION.Options || [],
+                    answers: QUESTION.Answers || [],
+                    analysis: QUESTION.Analysis || "",
+                    difficulty: QUESTION.Difficulty || 1,
+                    tags: QUESTION.Tags || [],
+                    score: QUESTION.Score || 0,
+                    question_attachments_path: QUESTION.QuestionAttachmentsPath || "",
+                    belong_to: question.belong_to || QUESTION.BelongTO || -1
+                };
+                
+                // 使用转换后的数据
+                editing_question = convertedQuestion;
+                is_editing_question = true;
+                
+                switch (question.type) {
+                    case '00': // 单选题
+                        single_select_edit_panel_component.initPanel();
+                        show_single_select_edit_panel = true;
+                        break;
+                    case '02': // 多选题
+                        multiple_select_edit_panel_component.initPanel();
+                        show_multiple_select_edit_panel = true;
+                        break;
+                    case '04': // 判断题
+                        judge_select_edit_panel_component.initPanel();
+                        show_judge_select_edit_panel = true;
+                        break;
+                    case '06': // 填空题
+                        fill_bank_edit_panel_component.initPanel();
+                        show_fill_bank_edit_panel = true;
+                        break;
+                    case '08': // 简答题
+                        short_answer_edit_panel_component.initPanel();
+                        show_short_answer_edit_panel = true;
+                        break;
+                }
+            });
+    }
+
+    // 编辑组件确认
+    async function onEditPanelConfirm(editedQuestionData) {
+        // 合并编辑后的数据
+        const updatedQuestion = {
+            ...editing_question,
+            ...editedQuestionData
+        };
+
+        // 调用更新题目接口
+        updateQuestion(updatedQuestion)
+            .then(() => fetchPaper(paperID))
+            .then((result) => {
+                paper_groups = result.data.GroupsData;
+                paper_info = result.data;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+                toast.success("题目更新成功", 1000);
+            })
+            .finally(() => {
+                closeAllEditPanels();
+            });
+    }
+
+    // 编辑组件取消
+    function onEditPanelCancel() {
+        closeAllEditPanels();
+    }
+
+    // 关闭所有编辑面板
+    function closeAllEditPanels() {
+        show_single_select_edit_panel = false;
+        show_multiple_select_edit_panel = false;
+        show_judge_select_edit_panel = false;
+        show_fill_bank_edit_panel = false;
+        show_short_answer_edit_panel = false;
+        editing_question = null;
+        is_editing_question = false;
+    }
+
     /***************** 题组列表区 *****************/
 
 
@@ -937,6 +1322,8 @@
                 paper_info = result.data;
                 total_score = paper_info.TotalScore;
                 question_count = paper_info.QuestionCount;
+                // 拖拽移动成功后高亮题组
+                highlightGroup(dragged_group.id);
             })
             .finally(() => {
                 handleDragEnd();
@@ -1046,6 +1433,8 @@
                 paper_info = result.data;
                 total_score = paper_info.TotalScore;
                 question_count = paper_info.QuestionCount;
+                // 拖拽移动成功后高亮题目
+                highlightQuestion(dragged_question_item.question.id);
             })
             .finally(() => {
                 handleDragEnd();
@@ -1054,6 +1443,16 @@
 
     // 拖拽结束（全部）
     function handleDragEnd() {
+        // 如果是拖拽题组，高亮被拖拽的题组
+        if (dragged_type === "group" && dragged_group) {
+            highlightGroup(dragged_group.id);
+        }
+        // 如果是拖拽题目，高亮被拖拽的题目
+        else if (dragged_type === "question" && dragged_question_item.question) {
+            highlightQuestion(dragged_question_item.question.id);
+        }
+
+        // 重置所有拖拽状态
         is_dragging_group = false;
         dragged_group = null;
         drag_over_group = null;
@@ -1064,61 +1463,72 @@
         drag_over_question_position = null;
         dragged_over_questionID_CSS = 0;
         is_dragging_question = false;
-
+        dragged_type = null;
     }
 
     /***************** 拖拽功能区 *****************/
 
     // 挂载区
-    onMount (async () => {
-        paperID = get(CURRENT_PAPER_ID);
-        if(paperID === 0) {
-            await goto("/teacher/paper");
-            toast.success("试卷内容已保存",1000);
-            return;
-        }
-        fetchPaper(paperID)
-            .then(result => {
-                if (result) {
-                    paper_info = result.data;
-                    paper_groups = result.data.GroupsData;
-    
-                    paper_name = paper_info.Name;
-                    category = paper_info.Category;
-                    level = paper_info.Level;
-                    suggested_duration = paper_info.SuggestedDuration;
-                    total_score = paper_info.TotalScore;
-                    question_count = paper_info.QuestionCount;
-                    description = paper_info.Description;
-                    tags = paper_info.Tags;
-    
-                    page_is_ready = true;
-                    
-                    // 页面加载完成后自动展开所有题组和题目
-                    if (paper_groups && paper_groups.length > 0) {
-                        expandAll();
-                        
-                        // 检查每个题组的分数一致性，如果不一致则清空每题分值输入框
-                        paper_groups.forEach(group => {
-                            if (!checkGroupScoreConsistency(group)) {
-                                clearGroupAverageScore(group);
-                            }
-                        });
-                    }
-    
-                    // console.log(result)
-                    
-                } else {
-                    // 3秒后跳转
-                    toast.warning("3秒后跳转回试卷列表", 3000);
-                    setTimeout(() => {
-                        goto("/teacher/paper");
-                    }, 3000);
+    onMount(() => {
+        // 立即注册清理函数
+        const cleanup = () => {
+            cleanupResponsiveListener();
+            highlight_timers.forEach(timer => clearTimeout(timer));
+            highlight_timers.clear();
+        };
+
+        // 异步逻辑
+        (async () => {
+            // 设置响应式监听器
+            setupResponsiveListener();
+
+            // 初始检查页面宽度
+            checkPageWidth();
+
+            paperID = get(CURRENT_PAPER_ID);
+            if (paperID === 0) {
+                await goto("/teacher/paper");
+                toast.success("试卷内容已保存", 1000);
+                return;
+            }
+
+            const result = await fetchPaper(paperID);
+            if (result) {
+                paper_info = result.data;
+                paper_groups = result.data.GroupsData;
+
+                paper_name = paper_info.Name;
+                category = paper_info.Category;
+                level = paper_info.Level;
+                suggested_duration = paper_info.SuggestedDuration;
+                total_score = paper_info.TotalScore;
+                question_count = paper_info.QuestionCount;
+                description = paper_info.Description;
+                tags = paper_info.Tags;
+
+                page_is_ready = true;
+
+                if (paper_groups && paper_groups.length > 0) {
+                    expandAll();
+
+                    paper_groups.forEach(group => {
+                        if (!checkGroupScoreConsistency(group)) {
+                            clearGroupAverageScore(group);
+                        }
+                    });
                 }
-            });
-    })
+            } else {
+                toast.warning("3秒后跳转回试卷列表", 3000);
+                setTimeout(() => goto("/teacher/paper"), 3000);
+            }
+        })();
+
+        return cleanup; // ✅ 立即注册清理函数
+    });
+
 </script>
 
+<!-- 导入题目弹窗 -->
 {#if import_modal_is_open}
     <ImportQuestion
         onclose={closeImportModal}
@@ -1128,6 +1538,52 @@
         savePaper={savePaper}
     />
 {/if}
+
+<!-- 编辑题目弹窗 -->
+<SingleSelectEditPanel
+    bind:this={single_select_edit_panel_component}
+    show={show_single_select_edit_panel}
+    question_data={editing_question}
+    is_new_question={false}
+    onCancel={onEditPanelCancel}
+    onConfirm={onEditPanelConfirm}
+/>
+
+<MultipleSelectEditPanel
+    bind:this={multiple_select_edit_panel_component}
+    show={show_multiple_select_edit_panel}
+    question_data={editing_question}
+    is_new_question={false}
+    onCancel={onEditPanelCancel}
+    onConfirm={onEditPanelConfirm}
+/>
+
+<JudgeSelectEditPanel
+    bind:this={judge_select_edit_panel_component}
+    show={show_judge_select_edit_panel}
+    question_data={editing_question}
+    is_new_question={false}
+    onCancel={onEditPanelCancel}
+    onConfirm={onEditPanelConfirm}
+/>
+
+<FillBlankEditPanel
+    bind:this={fill_bank_edit_panel_component}
+    show={show_fill_bank_edit_panel}
+    question_data={editing_question}
+    is_new_question={false}
+    onCancel={onEditPanelCancel}
+    onConfirm={onEditPanelConfirm}
+/>
+
+<ShortAnswerEditPanel
+    bind:this={short_answer_edit_panel_component}
+    show={show_short_answer_edit_panel}
+    question_data={editing_question}
+    is_new_question={false}
+    onCancel={onEditPanelCancel}
+    onConfirm={onEditPanelConfirm}
+/>
 
 {#if page_is_ready}
     <div class="add-paper">
@@ -1161,7 +1617,7 @@
         <!-- 下半区 -->
         <div class="bottom-area">
             <!-- 侧边栏 -->
-            <div class="side-bar">
+            <div class="side-bar {$SIDEBAR_COLLAPSED ? 'collapsed' : ''}" >
                 <!-- 试卷信息 -->
                 <div class="paper-info-container">
                     <span class="title">试卷信息</span>
@@ -1236,14 +1692,15 @@
                             <!-- 固定用于创建新标签的标签 -->
                             <div class="paper-tag" style="border: 1.5px dashed var(--border-medium);">
                                 <div class="color-block" style="background-color: {to_add_tag===""? "#40d5ff":TAG_COLOR_LIST[getColorIndex(to_add_tag)]};"></div>
-                                <div class="btn-box">
+                                <div class="content-box">
                                     <input type="text"
                                         bind:value={to_add_tag}
                                         onchange={addTag}
                                         placeholder="+标签"
                                         use:utf8MaxLength={30}
+                                        style="width: {getTagInputWidth(to_add_tag)}px;"
                                     />
-                                    <button onmousedown={clearToAddTagContent}>✕</button>
+                                    <button onmousedown={clearToAddTagContent} title="取消">✕</button>
                                 </div>
                             </div>
 
@@ -1251,9 +1708,16 @@
                             {#each tags as tag, index}
                                 <div class="paper-tag">
                                     <div class="color-block" style="background-color: {tag===""? "#40d5ff":TAG_COLOR_LIST[getColorIndex(tag)]};"></div>
-                                    <div class="btn-box">
-                                        <input type="text" bind:value={tags[index]} onkeydown={oldTagEnter} onblur={()=>updateOldTag(index)} placeholder="+标签" maxlength="30"/>
-                                        <button onmousedown={()=>deleteTag(index)}>✕</button>
+                                    <div class="content-box">
+                                        <input type="text"
+                                            bind:value={tags[index]}
+                                            onkeydown={oldTagEnter}
+                                            onblur={()=>updateOldTag(index)}
+                                            placeholder="+标签"
+                                            use:utf8MaxLength={30}
+                                            style="width: {getTagInputWidth(tags[index])}px;"
+                                        />
+                                        <button onmousedown={()=>deleteTag(index)} title="删除">✕</button>
                                     </div>
                                 </div>
                             {/each}
@@ -1267,7 +1731,9 @@
                     <div class="question-groups-header">
                         <div class="title-box">
                             <div class="title">题组列表</div>
-                            <span>共有 {paper_groups.length} 个题组</span>
+                            <span>共有</span>
+                            <span class="group-count">{paper_groups.length}</span>
+                            <span>个题组</span>
                         </div>
                         <button onclick={()=>addGroup()} class="btn btn--primary is-plain">添加题组</button>
                     </div>
@@ -1280,12 +1746,19 @@
                             {#if paper_groups.length !== 0}
                                 {#each paper_groups as group}
                                     <!-- 编辑题组状态 -->
-                                    {#if to_edit_groupID === group.id}
+                                    {#if to_edit_groupID === group.id && to_edit_group_position === "side-bar"}
                                         <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                        <div class="single-group
-                                            {dragged_group === group ? "dragging":""}"
+                                        <div class="single-group edit-group">
+                                            <input
+                                                bind:value={to_edit_group_name}
+                                                onchange={()=>confirmEditGroupName()}
+                                                onblur={()=>{if(to_edit_group_name.trim() === ""||to_edit_group_name.trim() === group.name){cancelEditGroupName()}}}
+                                                bind:this={to_edit_group_sidebar_component}
+                                                onclick={(e)=>{e.stopPropagation()}}
+                                                class="add-group-input"
+                                                type="text"
+                                                placeholder="请输入题组名称"
                                             >
-                                            <input bind:value={to_edit_group_name} onchange={()=>confirmEditGroupName()} onblur={()=>{if(to_edit_group_name.trim() === ""||to_edit_group_name.trim() === group.name){cancelEditGroupName()}}} bind:this={to_edit_group} class="add-group-input" type="text" placeholder="按 Enter 键确认编辑">
                                             <div class="btn-box">
                                                 <!-- 取消按钮 -->
                                                 <button onmousedown={()=>cancelEditGroupName()} class="delete-group-btn" title="取消">✖</button>
@@ -1296,7 +1769,8 @@
                                         <div class="single-group
                                             {(drag_over_group === group && drag_over_group_position === 'top' && dragged_type === 'group') ? 'drag-over-top' : ''}
                                             {(drag_over_group === group && drag_over_group_position === 'bottom' && dragged_type === 'group') ? 'drag-over-bottom' : ''}
-                                            {dragged_group === group ? "dragging":""}"
+                                            {dragged_group === group ? "dragging":""}
+                                            {highlighted_groups.has(group.id) ? "highlighted" : ""}"
                                             draggable="true"
                                             ondragstart={(event)=>handleGroupDragStart(event,group)}
                                             ondragover={(event)=>handleGroupDragOver(event,group)}
@@ -1334,11 +1808,11 @@
     
                             <!-- 添加题组 -->
                             {#if is_adding_group}
-                                <div class="single-group">
+                                <div class="single-group add-group">
                                     <input bind:value={to_add_group_name} onchange={confirmAddgroup} onblur={()=>{if(to_add_group_name.trim() === "")cancelAddGroup()}} bind:this={to_add_group} class="add-group-input" type="text" placeholder="请输入题组名称">
                                     <div class="btn-box">
                                         <!-- 取消按钮 -->
-                                        <button onmousedown={()=>cancelAddGroup()} class="delete-group-btn" title="删除">✖</button>
+                                        <button onmousedown={()=>cancelAddGroup()} class="delete-group-btn cancel-add" title="取消">✖</button>
                                     </div>
                                 </div>
                             {/if}
@@ -1348,40 +1822,117 @@
                 </div>
             </div>
 
+            <!-- 侧边栏折叠按钮 -->
+            <div class="sidebar-collapsed-btn-container">
+                <button class="sidebar-collapsed-btn"
+                    onclick={()=> SIDEBAR_COLLAPSED.set(!get(SIDEBAR_COLLAPSED))}
+                    title={$SIDEBAR_COLLAPSED ? "展开" : "折叠"}
+                >
+                <img
+                    src={$SIDEBAR_COLLAPSED ? '/student_answer_exam/right-arrows.svg' : '/student_answer_exam/left-arrows.svg'}
+                    alt="切换箭头"
+                    draggable={false}
+                    />
+                </button>
+            </div>
+
             <!-- 内容区 -->
-            <div class="content-container">
-                {#if paper_groups}
-                    {#each paper_groups as group, groupIndex}
-                    <!-- svelte-ignore a11y_click_events_have_key_events -->
-                    <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <div class="single-group-content">
-                            <!-- 头部下拉栏 -->
-                            <div class="group-header" onclick={()=>changeOpenState("group",group.id)} title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"}>
+            <div class="content-container-outer-box">
+                <div class="content-container">
+                    {#if paper_groups}
+                        {#each paper_groups as group, groupIndex}
+                        <div class="single-group-content
+                            {highlighted_groups.has(group.id) ? "highlighted" : ""}">
+                            <!-- 头部下拉栏 - 编辑题组名称 -->
+                            {#if to_edit_groupID === group.id && to_edit_group_position === "content"}
+                                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                <div class="group-header"
+                                    onclick={()=>{
+                                        if(!to_edit_groupID && !is_update_average_question_score) changeOpenState("group",group.id)
+                                    }}
+                                    title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"}
+                                    style="{$GROUP_OPEN_STATE[group.id] ? "" : "border-radius: var(--border-radius-sm);"}"
+                                >
                                 <!-- 左侧区域 -->
                                 <div class="header-left">
                                     <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
-                                    <span>{group.name}（共{group.questions.length}题，共{
-                                        group.questions.reduce((sum,q)=>sum+(q.score||0),0)
-                                    }分）</span>
+                                    <input
+                                        bind:value={to_edit_group_name}
+                                        onchange={()=>confirmEditGroupName()}
+                                        onblur={()=>{if(to_edit_group_name.trim() === ""||to_edit_group_name.trim() === group.name){cancelEditGroupName()}}}
+                                        bind:this={to_edit_group_content_component}
+                                        onclick={(e)=>{e.stopPropagation()}}
+                                        class="add-group-input"
+                                        type="text"
+                                        placeholder="请输入题组名称"
+                                    >
                                 </div>
 
                                 <!-- 右侧区域 -->
                                 <div class="header-right">
-                                    <span>每题分值：</span>
-                                        <input class="input"
-                                            type="number"
-                                            placeholder="请输入"
-                                            bind:value={$GROUP_AVERAGE_SCORE[group.id]}
-                                            oninput={debounce(()=>updateAverageQuestionScore(group),500,false)}
-                                            min={0.5}
-                                            step={0.5}
-                                            onclick={(e)=>{e.stopPropagation()}}
-                                            title=""
-                                            onchange={()=>updateAverageQuestionScore(group)}
-                                        >
-                                    <button onclick={(e)=>{e.stopPropagation();importQuestions(group)}} class="btn btn--primary" title="">导入题目</button>
+                                    <button onmousedown={(e)=>{e.stopPropagation();cancelEditGroupName()}} class="delete-group-btn" title="取消">✕</button>
                                 </div>
                             </div>
+                            {:else}
+                                <!-- 头部下拉栏 - 展开题组 -->
+                                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                <div class="group-header"
+                                    onclick={()=>{
+                                        if(!to_edit_groupID && !is_update_average_question_score) changeOpenState("group",group.id)
+                                    }}
+                                    title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"}
+                                    style="{$GROUP_OPEN_STATE[group.id] ? "" : "border-radius: var(--border-radius-sm);"}"
+                                >
+                                    <!-- 左侧区域 -->
+                                    <div class="header-left">
+                                        <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
+                                        <span>{group.name}（共{group.questions.length}题，共{
+                                            group.questions.reduce((sum,q)=>sum+(q.score||0),0)
+                                        }分）</span>
+                                    </div>
+    
+                                    <!-- 右侧区域 -->
+                                    <div class="header-right">
+                                        <span>每题分值：</span>
+                                            <input class="input"
+                                                type="number"
+                                                placeholder="请输入"
+                                                bind:value={$GROUP_AVERAGE_SCORE[group.id]}
+                                                oninput={debounce(()=>updateAverageQuestionScore(group),500,false)}
+                                                min={0.5}
+                                                step={0.5}
+                                                onclick={(e)=>{e.stopPropagation()}}
+                                                title=""
+                                                onchange={()=>updateAverageQuestionScore(group)}
+                                                onfocus={()=>{is_update_average_question_score = true;}}
+                                                onblur={()=>{is_update_average_question_score = false;}}
+                                            >
+                                        <button onclick={(e)=>{e.stopPropagation();importQuestions(group)}} class="btn btn--primary import-btn">导入题目</button>
+                                        <button onclick={(e)=>{e.stopPropagation();moveGroup(group,"up")}} class="move-btn" title="上移">↑</button>
+                                        <button onclick={(e)=>{e.stopPropagation();moveGroup(group,"down")}} class="move-btn" title="下移">↓</button>
+                                        <button onclick={(e)=>{e.stopPropagation();editGroupName(group.id,group.name,"content")}} class="edit-group-btn" title="编辑" aria-label="编辑题组">
+                                            <svg
+                                                viewBox="0 0 1024 1024"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                width="12"
+                                                height="12"
+                                            >
+                                                <path
+                                                    d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                                    fill="currentColor"
+                                                />
+                                            </svg>
+                                        </button>
+                                        <button onclick={(e)=>{e.stopPropagation();deleteGroup(group.id)}} class="delete-group-btn" title="删除">✕</button>
+                                    </div>
+                                </div>
+                            {/if}
 
                             <!-- 题目列表 -->
                             {#if $GROUP_OPEN_STATE[group.id]}
@@ -1389,10 +1940,12 @@
                                     <div class="group-question-list {is_dragging_question ? "drag-over" : ""}">
                                         {#if group.questions.length !== 0}
                                             {#each group.questions as question, questionIndex}
+                                                <!-- svelte-ignore a11y_no_static_element_interactions -->
                                                 <div class="single-question
                                                     {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'top' && dragged_type === 'question') ? 'drag-over-top' : ''}
                                                     {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'bottom' && dragged_type === 'question') ? 'drag-over-bottom' : ''}
-                                                    {dragged_question_item.question?.id === question.id ? "dragging":""}"
+                                                    {dragged_question_item.question?.id === question.id ? "dragging":""}
+                                                    {highlighted_questions.has(question.id) ? "highlighted" : ""}"
                                                     draggable={!question.isEditingScore && !question.isEditingSubScore}
                                                     ondragstart={(event)=>handleQuestionDragStart(event,question,group)}
                                                     ondragover={(event)=>handleQuestionDragOver(event,question,group)}
@@ -1400,7 +1953,7 @@
                                                     ondragend={handleDragEnd}
                                                 >
                                                     <!-- 头部下拉栏 -->
-                                                    <div class="question-header">
+                                                    <div class="question-header" style="{$QUESTION_OPEN_STATE[question.id] ? "" : "border-radius: var(--border-radius-sm);"}">
                                                         <!-- 左侧区域 -->
                                                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                                                         <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1427,7 +1980,7 @@
                                                             >
                                                             <button onclick={()=>moveQuestion(group,question,"up")} class="move-btn" title="上移">↑</button>
                                                             <button onclick={()=>moveQuestion(group,question,"down")} class="move-btn" title="下移">↓</button>
-                                                            <!-- <button class="edit-question-btn" title="编辑" aria-label="编辑题目">
+                                                            <button onclick={()=>editQuestion(question)} class="edit-question-btn" title="编辑" aria-label="编辑题目">
                                                                 <svg
                                                                     viewBox="0 0 1024 1024"
                                                                     fill="none"
@@ -1443,8 +1996,7 @@
                                                                         fill="currentColor"
                                                                     />
                                                                 </svg>
-                                                            </button> -->
-                                                            
+                                                            </button>
                                                             <button onclick={()=>deleteQuestion(question.id,group)} class="delete-question-btn" title="删除">✕</button>
                                                         </div>
                                                     </div>
@@ -1465,6 +2017,7 @@
                                         
                                             <!-- 暂无题目 -->
                                         {:else}
+                                            <!-- svelte-ignore a11y_no_static_element_interactions -->
                                             <div class="no-questions-container"
                                                 ondragover={(event)=>handleQuestionDragOver(event,{ id: null },group)}
                                                 ondrop={handleQuestionDrop}
@@ -1483,19 +2036,25 @@
                                 </div>
                             {/if}
                         </div>
-                    {/each}
-                {/if}
+                        {/each}
+                    {/if}
+                </div>
             </div>
         </div>
     </div>
 {/if}
 
 <style>
-
     .add-paper {
         font-family: 'Noto Sans SC', sans-serif;
         color: var(--text-primary);
-        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 100%;
+        height: 100vh;
+        width: 100vw;
+        overflow-x: auto;
         
         /* 顶部栏 */
         .header {
@@ -1504,14 +2063,13 @@
             padding: 16px 32px 16px 24px;
             align-items: center;
             border-bottom: 1.5px solid var(--border-light);
-            min-height: 40px;
             white-space: nowrap;
 
             /* 标题 */
             .title-container {
                 display: flex;
-                margin-right: auto;
                 align-items: center;
+                margin-right: auto;
 
                 /* 标题符 */
                 .title-icon {
@@ -1539,7 +2097,6 @@
                 font-size: 20px;
                 transition: all 0.3s;
                 width: 30%;
-                margin-left: auto;
                 min-width: 108px;
                 white-space: nowrap;
                 overflow: hidden;
@@ -1583,6 +2140,7 @@
 
                 button {
                     padding: 10px 15px;
+                    margin: 0;
                 }
             }
         }
@@ -1590,15 +2148,25 @@
         /* 下半区 */
         .bottom-area {
             /* background-color: rebeccapurple; */
-            height: 92vh;
             display: flex;
+            height: calc(100% - 80px);
 
             /* 侧边栏 */
             .side-bar {
                 /* background-color: aliceblue; */
-                width: 372px;
-                min-width: 372px;
-                padding: 18px 24px;
+                width: 400px;
+                min-width: 400px;
+                transition: all 0.3s ease;
+                white-space: nowrap;
+
+                &.collapsed {
+                    width: 0;
+                    min-width: 0;
+                    overflow: hidden;
+                    /* transform: translateX(-100%); */
+                    /* opacity: 0; */
+                    /* visibility: hidden; */
+                }
 
                 /* 试卷信息 */
                 .paper-info-container {
@@ -1607,7 +2175,11 @@
                     flex-direction: column;
                     gap: 12px;
                     font-size: 14px;
-                    margin-bottom: 24px;
+                    padding: 18px 24px;
+
+                    span {
+                        min-width: max-content;
+                    }
                     
                     /* 提示词 */
                     .info-label { margin-right: 16px; min-width: 56px; }
@@ -1675,8 +2247,9 @@
                         .tags-container {
                             /* background-color: violet; */
                             display: flex;
-                            width: 300px;
-                            height: 48px;
+                            width: 280px;
+                            min-width: 280px;
+                            height: 50px;
                             gap: 10px 16px;
                             overflow-y: auto;
                             flex-wrap: wrap;
@@ -1685,8 +2258,9 @@
                             .paper-tag {
                                 /* background-color: red; */
                                 display: flex;
-                                height: 16px;
                                 border: 1.5px solid transparent;
+                                height: max-content;
+                                max-height: max-content;
 
                                 /* 颜色块 */
                                 .color-block {
@@ -1696,10 +2270,9 @@
                                 }
 
                                 /* 按钮块 */
-                                .btn-box {
+                                .content-box {
                                     display: flex;
                                     align-items: center;
-                                    height: 16px;
                                     border-bottom: 1px solid transparent;
                                     
                                     &:hover {
@@ -1712,15 +2285,15 @@
 
                                     input {
                                         font-weight: 500;
-                                        height: 16px;
                                         padding: 0;
-                                        width: 42px;
+                                        min-width: 40px;
                                         border: none;
                                         font-size: 12px;
                                         outline: none;
                                         margin-left: 2px;
-                                        margin-right: 4px;
                                         color: var(--text-primary);
+                                        transition: width 0.2s ease;
+                                        background: none
                                     }
 
                                     button {
@@ -1740,7 +2313,7 @@
                                     }
                                 }
 
-                                .btn-box:hover button {
+                                .content-box:hover button {
                                     visibility: visible;
                                 }
                             }
@@ -1751,6 +2324,7 @@
                 /* 题组列表 */
                 .question-groups-container {
                     /* background-color: aquamarine; */
+                    padding: 18px 24px;
 
                     /* 标题 */
                     .question-groups-header {
@@ -1795,7 +2369,6 @@
                                 background-color: #eef4fa;
                                 border-radius: var(--border-radius-md);
                                 border: 2px dashed var(--primary-color);
-                                
                             }
     
                             .single-group {
@@ -1807,9 +2380,18 @@
                                 border-radius: var(--border-radius-md);
                                 position: relative;
                                 background-color: var(--bg-primary);
+                                transition: all 1s;
     
                                 &.dragging {
                                     opacity: 0.5; /* 半透明 */
+                                }
+
+                                /* 高亮效果 */
+                                &.highlighted {
+                                    border: 1px solid var(--border-light);
+                                    border-color: #1890ff;
+                                    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+                                    z-index: 2;
                                 }
     
                                 &.drag-over-top::before,
@@ -1903,27 +2485,76 @@
                 }
             }
 
+            /* 侧边栏折叠按钮 */
+            .sidebar-collapsed-btn-container {
+                border-left: 1px solid var(--border-light);
+                position: relative;
+
+                .sidebar-collapsed-btn {
+                    position: absolute;
+                    top: 30%;
+                    padding: 15px 0px;
+                    background: none;
+                    cursor: pointer;
+                    background-color: #ffffff;
+                    border: 1px solid var(--border-light);
+                    border-radius: 16px;
+                    left: -8px;
+
+                    &:hover {
+                        background-color: #eeefef;
+                    }
+
+                    img {
+                        width: 16px;
+                        height: 16px;
+                    }
+                }
+            }
+
             /* 内容区 */
+            .content-container-outer-box {
+                overflow: auto;
+                width: 100%;
+                padding: 0 20px;
+                min-width: 800px;
+            }
+
             .content-container {
                 /* background-color: aliceblue; */
-                padding: 20px;
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
-                flex-grow: 1;
-
+                transition: all 0.3s ease;
+                width: 100%;
+                height: 100%;
+                margin: 20px 0;
+                min-width: min-content;
+                
                 .single-group-content {
                     border: 1px solid var(--border-light);
                     border-radius: var(--border-radius-sm);
+                    transition: all 1s;
 
+                    /* 高亮效果 */
+                    &.highlighted {
+                        border: 1px solid var(--border-light);
+                        border-color: #1890ff;
+                        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+                    }
+                    
                     /* 头部下拉栏 */
                     .group-header {
                         background-color: var(--bg-secondary);
                         display: flex;
                         padding: 10px 20px;
                         align-items: center;
-                        min-width: 588px;
                         cursor: pointer;
+                        border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
+
+                        span {
+                            min-width: max-content;
+                        }
 
                         &:hover {
                             background-color: #edf2f7;
@@ -1957,6 +2588,20 @@
                                 font-weight: 600;
                             }
                             
+                            /* 添加题组 */
+                            .add-group-input {
+                                padding: 6px;
+                                transition: all 0.3s;
+                                outline: none;
+                                border-radius: var(--input-border-radius);
+                                border: 1px solid var(--border-light);
+                                width: 35vw;
+
+                                &:focus {
+                                    border: 1px solid #40a9ff;
+                                    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+                                }
+                            }
                         }
 
                         /* 右侧区域 */
@@ -1965,17 +2610,67 @@
                             display: flex;
                             align-items: center;
 
+                            /* 每题分值 */
                             input {
                                 width: 75px;
-                                margin-right: 36px;
+                                margin-right: 12px;
                                 padding-left: 12px;
                             }
-
                             span {
                                 font-size: 14px;
                                 color: var(--text-secondary);
                                 margin-right: 1vw;
                             }
+
+                            /* 导入题目按钮 */
+                            .import-btn {
+                                margin-right: 36px;
+                            }
+                            
+                            .move-btn, .delete-group-btn, .edit-group-btn {
+                                width: 30px;
+                                height: 30px;
+                                margin-left: 6px;
+                                border-radius: var(--btn-border-radius);
+                                border: 1px solid var(--border-light);
+                                background-color: var(--bg-primary);
+                                cursor: pointer;
+                            }
+
+                            /* 移动按钮 */
+                            .move-btn {
+                                font-size: 16px;
+
+                                &:hover {
+                                    color: var(--primary-color);
+                                    border-color: var(--primary-color);
+                                    transition: all 0.3s;
+                                }
+                            }
+
+                            .edit-group-btn {
+                                &:hover {
+                                    color: var(--green);
+                                    border-color: var(--green);
+                                    transition: all 0.3s;
+                                }
+
+                                svg {
+                                    margin-top: 4px;
+                                }
+                            }
+
+                            /* 删除按钮 */
+                            .delete-group-btn {
+                                font-weight: bold;
+
+                                &:hover {
+                                    color: var(--red);
+                                    border-color: var(--red);
+                                    transition: all 0.3s;
+                                }
+                            }
+                            
                         }
                     }
                     
@@ -2030,9 +2725,17 @@
                                 background-color: var(--bg-primary);
                                 position: relative;
                                 cursor: grab;
+                                transition: all 1s ease;
 
                                 &.dragging {
                                     opacity: 0.5; /* 半透明 */
+                                }
+
+                                /* 高亮效果 */
+                                &.highlighted {
+                                    border: 1px solid var(--border-light);
+                                    border-color: #1890ff;
+                                    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
                                 }
     
                                 &.drag-over-top::before,
@@ -2062,6 +2765,11 @@
                                     background-color: #fafafa;
                                     display: flex;
                                     border-bottom: 1px solid var(--border-light);
+                                    border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
+
+                                    span {
+                                        min-width: max-content;
+                                    }
                                     
                                     &:hover {
                                         background-color: #edf2f7;

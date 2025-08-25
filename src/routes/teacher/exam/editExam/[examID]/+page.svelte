@@ -277,8 +277,24 @@
       lateEntryTime: 1,
       earlySubmissionTime: 0,
     };
-    paper_configs = [...paper_configs, default_paper_config];
+    
+    //保证在没有选择时间的情况下也能新增试卷
+     if(paper_configs.length>=1&&paper_configs[paper_configs.length-1].startTime!=''&&paper_configs[paper_configs.length-1].endTime!='')
+    {
+      const prev = paper_configs.length-1;
+      const prevEnd = new Date(paper_configs[prev].endTime);
+      const nextStart = new Date(prevEnd);
+      nextStart.setHours(prevEnd.getHours() + 1);
 
+      const nextEnd = new Date(nextStart);
+      nextEnd.setMinutes(nextStart.getMinutes() + 120); // 默认 120 分钟
+
+      default_paper_config.startTime = nextStart.toISOString();
+      default_paper_config.endTime   = nextEnd.toISOString();
+     
+    }
+    paper_configs = [...paper_configs, default_paper_config];
+    if(paper_configs.length>=1) {updateDuration(paper_configs.length-1,paper_configs);}
     // 清空考场选择
     // exam_rooms = [];
     // invigilators = [];
@@ -971,7 +987,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
     <div class="paper-config-head">
       <span class="paper-num">试卷{paperConfigIndex + 1}</span>
       <button
-        class={paperConfigIndex != 0 ? 'delete-paper-button' : 'hide'}
+        class='delete-paper-button'
         onclick={() => {
           paper_configs.splice(paperConfigIndex, 1);
           // 清空考场选择
@@ -1087,6 +1103,8 @@ function getSelectedPaperIDs(excludeIndex = -1) {
             is_single_date_selection={false}
             on:start_date_selected={onChooseStartTime(paperConfigIndex,paper_configs, updateDuration)}
             on:end_date_selected={onChooseEndTime(paperConfigIndex,paper_configs, updateDuration)}
+            initial_start_date={paper_configs[paperConfigIndex].startTime ? new Date(paper_configs[paperConfigIndex].startTime) : null}
+            initial_end_date={paper_configs[paperConfigIndex].endTime ? new Date(paper_configs[paperConfigIndex].endTime) : null}
             onDateConfirm={()=>[
               updateDuration(paperConfigIndex,paper_configs)
             ]}
@@ -1202,7 +1220,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
       </div>
 
       <div class="show-name-container {paper_configs[paperConfigIndex].markMethod !== '00' ? 'hide' : 'config-row'}">
-        <RequiredLabel text="批改时是否显示考生姓名：" Asterisk={false} colon={false} />
+        <RequiredLabel text="批改时是否显示考生姓名" Asterisk={false} colon={true} />
 
         <div class="config-row-content">
           <label class="label">
@@ -1352,11 +1370,9 @@ function getSelectedPaperIDs(excludeIndex = -1) {
       .examRuleInputContainer,
       .examTypeChooseContainer,
       .exam-type-choose-container,
-      .paper-configs-container,
       .total-duration-container,
       .examinee-container,
-      .file-container,
-      .fileListContainer {
+      .file-container {
         display: grid;
         grid-template-columns: auto 1fr;
         // margin-left:15%;
@@ -1365,6 +1381,14 @@ function getSelectedPaperIDs(excludeIndex = -1) {
       }
     }
   }
+
+  .fileListContainer,
+  .paper-configs-container{
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 20px;
+    align-items: start;
+   }
 
   .exam-name-input {
     //max-width:60%;
@@ -1701,4 +1725,9 @@ function getSelectedPaperIDs(excludeIndex = -1) {
   .file-del:hover img {
     opacity: 1;
   }
+
+  .choice-radio-input {
+  vertical-align: middle;   /*垂直居中 */
+  margin-bottom: 6px;
+}
 </style>

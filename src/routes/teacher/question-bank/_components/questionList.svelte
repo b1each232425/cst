@@ -128,35 +128,9 @@
     <th class="questionTags">标签</th>
     <th class="updateTime sortable">
       <div>
-        <button
-          class="orderBtn"
-          onclick={() => {
-            sort_field = 'update_time';
-
-            if (sort_order === 'asc') {
-              sort_order = 'desc';
-            } else {
-              sort_order = 'asc';
-            }
-          }}
-        >
+       
           <span>更新时间</span>
-          <svg
-            viewBox="0 0 1024 1024"
-            version="1.1"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-            style="width: 20px;height:20px;"
-          >
-            <path
-              d="M480.32 865.536l-206.592-198.848a45.696 45.696 0 0 1 31.68-78.656h413.184a45.696 45.696 0 0 1 31.68 78.656l-206.592 198.848a45.696 45.696 0 0 1-63.36 0z"
-              fill={sort_field === 'update_time' ? (sort_order === 'asc' ? '#cdcdcd' : '#444') : '#cdcdcd'}
-            ></path>
-            <path
-              d="M480.32 222.528L273.728 421.376a45.696 45.696 0 0 0 31.68 78.656h413.184a45.696 45.696 0 0 0 31.68-78.72L543.68 222.592a45.696 45.696 0 0 0-63.36 0z"
-              fill={sort_field === 'update_time' ? (sort_order === 'asc' ? '#444' : '#cdcdcd') : '#cdcdcd'}
-            ></path>
-          </svg>
-        </button>
+         
       </div>
     </th>
     <th class="operations">操作</th>
@@ -187,10 +161,14 @@
     </td>
     <td style="overflow:hidden;text-overflow:ellipsis;cursor:pointer;">
       <div class="tags-container">
+        {#if question.tags === undefined || question.tags.length === 0}
+            <span>———</span>
+          
+        {/if}
        <UneditableTags tags={question.tags || []} />
       </div>
     </td>
-    <td style="cursor:pointer;">{question.update_time_str}</td>
+    <td style="cursor:pointer;">{new Date(question.update_time_str).toLocaleString()}</td>
     <td
       onclick={(e) => {
         e.stopPropagation();

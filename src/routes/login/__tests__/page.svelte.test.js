@@ -1342,4 +1342,80 @@ describe('登录页面组件测试', () => {
 			expect(screen.getByText('网络错误，请检查网络连接后重试')).toBeInTheDocument();
 		});
 	});
+
+	/**
+	 * 测试用户无可用角色的情况
+	 */
+	it('应该正确处理用户无可用角色的情况', async () => {
+		// 模拟登录成功的响应
+		const mockLoginResponse = {
+			ok: true,
+			json: () => Promise.resolve({ status: 0, msg: '登录成功' })
+		};
+
+		// 模拟获取用户角色返回空数组的响应
+		const mockUserMeResponse = {
+			ok: true,
+			json: () => Promise.resolve({
+				status: 0,
+				data: {
+					Domains: [] // 空的角色数组
+				}
+			})
+		};
+
+		// 模拟fetch调用
+		const mockFetch = vi.fn()
+			.mockResolvedValueOnce(mockLoginResponse) // 第一次调用：登录请求
+			.mockResolvedValueOnce(mockUserMeResponse); // 第二次调用：获取用户角色
+
+		global.fetch = mockFetch;
+
+		render(LoginPage);
+
+		// 切换到手机号登录
+		await fireEvent.click(screen.getByText('手机号登录'));
+
+		const phoneInput = screen.getByPlaceholderText('请输入手机号');
+		const passwordInput = screen.getByPlaceholderText('请输入密码');
+		const checkbox = screen.getByRole('checkbox');
+		const loginButton = screen.getByRole('button', { name: '登录' });
+
+		// 填写表单
+		await fireEvent.input(phoneInput, { target: { value: '13800138000' } });
+		await fireEvent.input(passwordInput, { target: { value: 'testpassword' } });
+		await fireEvent.click(checkbox);
+
+		// 点击登录按钮
+		await fireEvent.click(loginButton);
+
+		// 等待异步操作完成
+		await new Promise(resolve => setTimeout(resolve, 100));
+
+		// 验证登录请求被调用
+		expect(mockFetch).toHaveBeenNthCalledWith(1, '/api/login', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				name: '+8613800138000',
+				cert: 'testpassword'
+			})
+		});
+
+		// 验证获取用户角色请求被调用
+		expect(mockFetch).toHaveBeenNthCalledWith(2, '/api/user/me', {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+
+		// 验证显示无可用角色的提示信息
+		await waitFor(() => {
+			expect(screen.getByText('提示')).toBeInTheDocument();
+			expect(screen.getByText('您没有可用的登录角色，请联系管理员')).toBeInTheDocument();
+		});
+	});
 });

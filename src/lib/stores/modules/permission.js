@@ -164,4 +164,48 @@ export const baseNavItems = writable([
       },
     ],
   },
+  {
+    name: 'enroll',
+    title: '报名管理',
+    path: '/teacher/enroll',
+    icon: '/enroll/enroll.svg',
+    children_is_parallel: false,
+    children: [
+      {
+        name: 'add-enroll',
+        title: '创建报名计划',
+        path: '/teacher/enroll/add-enroll',
+      },
+      {
+        name: 'edit-enroll',
+        title: '编辑报名计划',
+        path: '/teacher/enroll/edit-enroll/\\d+$',
+      },
+      {
+        name: 'see-enroll',
+        title: '查看报名人员',
+        path: '/teacher/enroll/see-enroll/\\d+$',
+        children: [
+          {
+            name: 'person-detail',
+            title: '报名信息详情',
+            path: '/teacher/enroll/see-enroll/\\d+/person-detail/\\d+$',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'invigilate',
+    title: '监考管理',
+    path: '/teacher/invigilate',
+    icon: '/invigilate/invigilate.svg',
+    children: [
+      {
+        name: 'detail',
+        title: '监考详情',
+        path: '/teacher/invigilate/detail',
+      },
+    ],
+  },
 ]);
