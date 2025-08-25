@@ -569,23 +569,21 @@
         <div class="exam-header-right">
           <button
             class="submit-btn"
-            class:disabled={nowSessionIndex == 0}
-            onclick={async () => {
-              ShowOtherSessionDetails(-1);
-            }}
+            disabled={nowSessionIndex === 0}
+            onclick={() => ShowOtherSessionDetails(-1)}
           >
-            &lt;&lt;上一张</button
-          >
+             上一张
+          </button>
           <button
             class="submit-btn"
-            class:disabled={nowSessionIndex == examSessionInfoLenght - 1}
-            onclick={async () => {
-              ShowOtherSessionDetails(1);
-            }}
+            disabled={nowSessionIndex === examSessionInfoLenght - 1}
+            onclick={() => ShowOtherSessionDetails(1)}
           >
-            下一张&gt;&gt;
+            下一张 
           </button>
+
         </div>
+
       {/if}
     </div>
     <!-- 考试主体布局 -->
@@ -796,6 +794,14 @@
   :global(body) {
     overflow: auto;
   }
+  .submit-btn:disabled {
+    color: #999;          /* 文字变灰 */
+    cursor: not-allowed;  /* 鼠标提示不可点击 */
+    background-color: inherit; /* 背景保持原样 */
+    opacity: 1;           /* 防止部分浏览器自动降低透明度 */
+  }
+
+
 
   .exam-container {
     position: absolute;
@@ -1098,7 +1104,7 @@
     width: 42px;
     justify-content: center;
     font-weight: 600;
-    margin-right: 30px;
+    margin-right: 18px;
     color: rgba(0, 82, 217, 1);
   }
   .rank-list {
