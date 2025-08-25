@@ -4,7 +4,6 @@
   const defaultAnswer = $state('未填');
 
   function getCompleteAnswer(index) {
-    // console.log("question in complete:", $inspect(question));
     const prefix = question.AnswerNum > 1 ? `(${index + 1})` : '';
     const studentAnswer = question.StudentAnswer?.answer?.[index];
     const answer = studentAnswer && studentAnswer !== '' ? studentAnswer : defaultAnswer;
