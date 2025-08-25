@@ -22,12 +22,16 @@
   }=$props();
   
   let is_selection_mode=$state(false);
-  let invigilator_list = $state([]);
-  let selected_invigilator_list = $derived(exam_invigilator_list.filter(r => r.selected));
+//let invigilator_list = $state([]);
+let invigilator_list = $state([
+  { id: 1, name: '监考员A', exam_site_name: '考点1', capacity: 30, invigilator_count: 2, selected: false },
+  { id: 2, name: '监考员B', exam_site_name: '考点2', capacity: 25, invigilator_count: 1, selected: true },
+]);
+  let selected_invigilator_list = $derived(invigilator_list.filter(r => r.selected));
   /** 当前页是否已全部选中 */
   let is_total_selected = $derived(
-  exam_invigilator_list.length > 0 &&
-  exam_invigilator_list.every(r => r.selected)
+  invigilator_list.length > 0 &&
+  invigilator_list.every(r => r.selected)
     );
   //搜索参数
   let search_params = $state({
@@ -38,9 +42,14 @@
     filter:{}
   });
 
+  let pagination_params = $state({
+    page: 1,
+    pageSize: 10
+  });
+
   function toggleSelectAll(e) {
   const checked = e.target.checked;
-  exam_invigilator_list.forEach(r => (r.selected = checked));
+  invigilator_list.forEach(r => (r.selected = checked));
   }
 
   function handleCheckBoxChange(invigilator,event){
@@ -48,6 +57,35 @@
     invigilator.selected = !invigilator.selected;
   }
 
+  async function fetchExaminvigilators(){
+    const query_params = new URLSearchParams({
+      page: search_params.page.toString(),
+      pageSize: search_params.pageSize.toString(),
+      domain:'cst.school^examSupervisor'
+    }).toString();
+    fetch(`/api/user?${query_params}`,{
+      method:'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        },
+      })
+      .then((response)=>response.json())
+      .then((result => {
+        if(result.status === 0)
+        {
+          invigilator_list = result.data;
+        }
+        else{
+          toast.error("获取列表失败"+result.msg);
+          console.log("获取失败:",result.msg);
+        }
+       }))
+      .catch((err) => {
+        console.error(err);
+        toast.error('获取失败');
+      })
+  }
 
   onMount(async()=>{
     await fetchExaminvigilators();
@@ -76,7 +114,7 @@
             <div class="exam-invigilator-search-container">
               <InputBox
               label={'搜索监考员'} 
-              placeholder={'请输入监考员或考点名'}
+              placeholder={'请输入手机号或姓名'}
               
               clearable={true}
               >
@@ -94,25 +132,25 @@
             <table class="table">
               <thead class="exam-invigilator-table-head">
                 <tr class="table-head-row">
-                  <th>监考员</th>
-                  <th>所属考点</th>
-                  <th>监考员容量</th>
-                  <th>监考员数量</th>
+                  <th>手机号</th>
+                  <th>账号</th>
+                  <th>姓名</th>
+                  <th>性别</th>
                 </tr>
               </thead>
               <tbody>
                 {#each selected_invigilator_list as selected_invigilator, index}
                   <tr class="exam_invigilator">
-                    <td>{selected_invigilator.name}</td>
-                    <td>{selected_invigilator.exam_site_name}</td>
-                    <td>{selected_invigilator.capacity}</td>
-                    <td>{selected_invigilator.invigilator_count || "--"}</td>
+                    <td>{selected_invigilator.MobilePhone}</td>
+                    <td>{selected_invigilator.Account}</td>
+                    <td>{selected_invigilator.OfficialName}</td>
+                    <td>{selected_invigilator.Gender || "--"}</td>
                   </tr>
                   {/each}
               </tbody>
             </table>
 
-            <div class ="{exam_invigilator_list.length === 0?'no-data-text' : 'hideButton'}" > 
+            <div class ="{selected_invigilator_list.length === 0?'no-data-text' : 'hideButton'}" > 
               <Empty text = "暂无数据"/>
             </div>
           </div>
@@ -130,14 +168,14 @@
                     onchange={toggleSelectAll}
                     checked={is_total_selected}
                   /></th>
-                  <th>监考员</th>
-                  <th>所属考点</th>
-                  <th>监考员容量</th>
-                  <th>监考员数量</th>
+                  <th>手机号</th>
+                  <th>账号</th>
+                  <th>姓名</th>
+                  <th>性别</th>
                 </tr>
               </thead>
               <tbody>
-                {#each exam_invigilator_list as invigilator, index}
+                {#each invigilator_list as invigilator, index}
                   <tr class="exam_invigilator"
                   onclick= {(event) => handleCheckBoxChange(invigilator, event)}
                   >
@@ -148,22 +186,59 @@
                         checked={invigilator.selected}
                         />
                     </td>
-                    <td>{invigilator.name}</td>
-                    <td>{invigilator.exam_site_name}</td>
-                    <td>{invigilator.capacity}</td>
-                    <td>{invigilator.invigilator_count || "--"}</td>
+                    <td>{invigilator.MobilePhone}</td>
+                    <td>{invigilator.Account}</td>
+                    <td>{invigilator.OfficialName}</td>
+                    <td>{invigilator.Gender || "--"}</td>
                   </tr>
                   {/each}
               </tbody>
             </table>
 
-            <div class ="{exam_invigilator_list.length === 0?'no-data-text' : 'hideButton'}" > 
+            <div class ="{invigilator_list.length === 0?'no-data-text' : 'hideButton'}" > 
               <Empty text = "暂无数据"/>
             </div>
           </div>
           {/if}
         </div>
     </div>
+    
+    <div class="pagination-container {!is_selection_mode ? ' ' : 'hideButton'}">
+
+            <Pagination
+              total_items={selected_invigilator_list.length}
+              current_page={pagination_params.page}
+              page_size_options={[10, 20, 50]}
+              on:pageChange={(e) => {
+                pagination_params.page = e.detail;
+              }}
+              on:pageSizeChange={(e) => {
+                pagination_params.pageSize = e.detail;
+                pagination_params.page = 1; // 重置到第一页
+              }}
+            />
+          </div>
+    
+    <div class="pagination-container {is_selection_mode ? ' ' : 'hideButton'}">
+          <span style="font-size: 12px; margin-right:10px">
+            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_invigilator_list.length}</span> 条
+          </span>
+          <Pagination
+            total_items={invigilator_list.length}
+            current_page={pagination_params.page}
+            page_size_options={[10, 20, 50]}
+            on:pageChange={(e) => {
+              pagination_params.page = e.detail;
+              is_total_selected = false;
+            }}
+            on:pageSizeChange={(e) => {
+              pagination_params.pageSize = e.detail;
+              pagination_params.page = 1; // 重置到第一页
+              is_total_selected = false;;
+            }}
+          ></Pagination>
+        </div>
+
 
         <div class="panel-footer">
                 <button class="btn btn--info is-plain" onclick={() => {
@@ -420,6 +495,13 @@
             }
             }
         }
-
+  
+  .pagination-container {
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    margin: 16px 0;
+    padding: 0 16px;
+  }
     
 </style>

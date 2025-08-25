@@ -44,6 +44,11 @@ let exam_room_list = $state([
     filter:{}
   });
 
+  let pagination_params = $state({
+    page: 1,
+    pageSize: 10
+  });
+
   function toggleSelectAll(e) {
   const checked = e.target.checked;
   exam_room_list.forEach(r => (r.selected = checked));
@@ -58,9 +63,9 @@ let exam_room_list = $state([
     const query_params = new URLSearchParams({
       page: search_params.page.toString(),
       pageSize: search_params.pageSize.toString(),
-      orderBy: JSON.stringify(search_params.orderBy),
-      data: JSON.stringify(search_params.data),
-      filter: JSON.stringify(search_params.filter)
+      // orderBy: JSON.stringify(search_params.orderBy),
+      // data: JSON.stringify(search_params.data),
+      // filter: JSON.stringify(search_params.filter)
     }).toString();
     fetch(`/api/exam-room/list?${query_params}`,{
       method:'GET',
@@ -214,12 +219,48 @@ let exam_room_list = $state([
           {/if}
         </div>
     </div>
+    
+    <div class="pagination-container {!is_selection_mode ? ' ' : 'hideButton'}">
+
+            <Pagination
+              total_items={selected_room_list.length}
+              current_page={pagination_params.page}
+              page_size_options={[10, 20, 50]}
+              on:pageChange={(e) => {
+                pagination_params.page = e.detail;
+              }}
+              on:pageSizeChange={(e) => {
+                pagination_params.pageSize = e.detail;
+                pagination_params.page = 1; // 重置到第一页
+              }}
+            />
+          </div>
+    
+    <div class="pagination-container {is_selection_mode ? ' ' : 'hideButton'}">
+          <span style="font-size: 12px; margin-right:10px">
+            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_room_list.length}</span> 条
+          </span>
+          <Pagination
+            total_items={exam_room_list.length}
+            current_page={pagination_params.page}
+            page_size_options={[10, 20, 50]}
+            on:pageChange={(e) => {
+              pagination_params.page = e.detail;
+              is_total_selected = false;
+            }}
+            on:pageSizeChange={(e) => {
+              pagination_params.pageSize = e.detail;
+              pagination_params.page = 1; // 重置到第一页
+              is_total_selected = false;;
+            }}
+          ></Pagination>
+        </div>
+
 
         <div class="panel-footer">
                 <button class="btn btn--info is-plain" onclick={() => {
                     show_panel = false;
                     search_params.page = 1;
-                    selected_ids = [];
                     is_selection_mode = false;
                     onCancel();
                 }}>取消</button>
@@ -470,6 +511,13 @@ let exam_room_list = $state([
             }
             }
         }
-
+  
+  .pagination-container {
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    margin: 16px 0;
+    padding: 0 16px;
+  }
     
 </style>

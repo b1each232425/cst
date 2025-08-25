@@ -19,6 +19,7 @@ export function onChooseEndTime(index, paper_configs, updateDuration) {
       endDate.setSeconds(0, 0);
       paper_configs[index].endTime = endDate.toISOString();
       updateDuration(index,paper_configs);
+      
     }
   };
 }
@@ -37,11 +38,14 @@ export function updateDuration(index,paper_configs) {
     const end = new Date(endTime);
     const timeDifference = end.getTime() - start.getTime();
     const durationInMinutes = Math.floor(timeDifference / (1000 * 60));
-
+    // 确保时长不为负数
+    const validDuration = Math.max(0, durationInMinutes);
     paper_configs[index].duration = Math.max(0, durationInMinutes);
     paper_configs[index].maxDuration = Math.max(0, durationInMinutes);
     // 新增：自动调整提前交卷时间和迟到进入时间
-    if (paper_configs[index].earlySubmissionTime > durationInMinutes) {
+    if (validDuration > 0)
+    {
+      if (paper_configs[index].earlySubmissionTime > durationInMinutes) {
         paper_configs[index].earlySubmissionTime = durationInMinutes;
     }
     
@@ -49,8 +53,9 @@ export function updateDuration(index,paper_configs) {
         paper_configs[index].lateEntryTime = Math.min(durationInMinutes, 1); // 确保最小为1分钟
     }
   }
+  }
 
-export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, exam_method, paper_configs, exam_examinee = [], invigilators = [],uploadedFileList }) {
+export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, exam_method, paper_configs, exam_examinee = [], invigilators = [],uploadedFileList, exam_rooms = [] }) {
     /* 1. 必填字段校验（保持原逻辑） */
     if (exam_name === '') {
       toast.warning('请输入考试名称');
@@ -143,11 +148,6 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
       MarkMode: cfg.markMode,
       SessionNum: cfg.sessionNum,
     }));
-
-    // 附加文件：若用户上传了文件，则遍历填充；否则留空数组
-    // const fileArr = files.length ? files.map((f) => ({ Name: f.name, Url: f.url || '' })) : [];
-
-    console.log("examinee",exam_examinee);
     const invalid_examinee = exam_examinee.filter(e => !e.id )
     const valid_examinee = exam_examinee?.length
   ? exam_examinee.filter(e => e && e.id).map(item => item.id)
@@ -185,7 +185,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
         });
 }
 
-
+  console.log("handlesubmit:",invigilators);
     const exam_data = {
       data: {
         examInfo: {
@@ -199,10 +199,11 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
         examSessions: examSessionsdata,
         examinee: exam_examinee.map((e) => e.id ), // 用户选中的考生 id 数组
         invigilators: invigilators.map((i) => i.id), // 监考员 id 数组
+        examRoomConfigs: exam_rooms.map((r) => r.id), // 考场配置 id 数组
       },
     };
 
-    console.log('exam_data', exam_data);
+    console.log('exam_data', exam_data.invigilators);
     console.log('paperconfig',paper_configs);
     fetch('/api/exam', {
       method: 'PUT',
