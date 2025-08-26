@@ -8,71 +8,42 @@
   import Empty from '$lib/components/Table/Empty.svelte';
 
   let {
-    show = $bindable(false),
-    onTestSelectFunc = () => {},
-    selectedTestId = $bindable(null),
-    paper_list = [],
+    show = $bindable(false), // 是否展示选择练习面板
+    onTestSelectFunc = () => {}, // 处理练习选择事件
+    selected_test_id = $bindable(null), // 试卷id
+    paper_list = [], // 试卷列表数据
   } = $props();
 
-  let searchText = $state('');
-  let tagSearchText = $state('');
-
-  let selectedStructure = $state('全部');
-
-  // 当前页的试卷，直接使用paper_list，不需要再次切片
-  let currentPageTests = $derived(paper_list);
+  let search_text = $state(''); // 试卷关键词
+  let tag_search_text = $state(''); // 试卷标签关键词
+  let selected_structure = $state('全部'); // 练习类型
+  let current_page_tests = $derived(paper_list); // 当前页面数据
 
   // 分页相关
-  let currentPage = $state(1);
-  let pageSize = $state(10);
-  let totalTests = $state(0);
-
-  // 当选择特定页码时的处理函数
-  /**
-   * @param {number} pageNum - 要跳转的页码
-   */
-  function handlePageChoose(event) {
-    if (event.detail !== currentPage) {
-      currentPage = event.detail;
-      fetchPaperList({
-        name: searchText,
-        tags: tagSearchText,
-        assembly_type: selectedStructure,
-        page: event.detail,
-      });
-    }
-  }
-
-  // 当选择每页条数时的处理函数
-  /**
-   * @param {string|number} value - 每页显示的条数
-   */
-  function handlePageSizeChange(event) {
-    // 确保value是数字类型
-
-    pageSize = event.detail;
-    currentPage = 1; // 重置到第一页
-    fetchPaperList({
-      name: searchText,
-      tags: tagSearchText,
-      assembly_type: selectedStructure,
-      page: '1',
-      page_size: pageSize,
-    });
-  }
+  let current_page = $state(1);
+  let page_size = $state(10);
+  let total_tests = $state(0);
 
   // 选择试卷
-  /**
-   * @param {number} testId
-   */
-  function selectTest(testId) {
-    selectedTestId = testId === selectedTestId ? null : testId;
+  function selectTest(test_id) {
+    selected_test_id = test_id === selected_test_id ? null : test_id;
+  }
+
+  // 搜索试卷
+  function searchPapers() {
+    current_page = 1; // 重置到第一页
+    fetchPaperList({
+      name: search_text,
+      tags: tag_search_text,
+      assembly_type: selected_structure,
+      page: '1', // 重置到第一页
+    });
   }
 
   // 确认选择
   function confirmSelection() {
     const selected = paper_list.find(
-      (/** @type {{ID: number, Name: string, assembly_type: string}} */ test) => test.ID === selectedTestId,
+      (/** @type {{ID: number, Name: string, assembly_type: string}} */ test) => test.ID === selected_test_id,
     );
     if (selected) {
       // 确保传递正确的数据结构给父组件
@@ -91,6 +62,32 @@
     show = false;
   }
 
+  // 当选择特定页码时的处理函数
+  function handlePageChoose(event) {
+    if (event.detail !== current_page) {
+      current_page = event.detail;
+      fetchPaperList({
+        name: search_text,
+        tags: tag_search_text,
+        assembly_type: selected_structure,
+        page: event.detail,
+      });
+    }
+  }
+
+  // 当选择每页条数时的处理函数
+  function handlePageSizeChange(event) {
+    page_size = event.detail;
+    current_page = 1; // 重置到第一页
+    fetchPaperList({
+      name: search_text,
+      tags: tag_search_text,
+      assembly_type: selected_structure,
+      page: '1',
+      page_size: page_size,
+    });
+  }
+
   /**
    * 获取试卷列表
    * @param {Object} params 查询参数对象
@@ -106,8 +103,8 @@
     const searchParams = new URLSearchParams({
       name: params.name || '',
       tags: params.tags || '',
-      page: params.page || String(currentPage),
-      pageSize: params.page_size || String(pageSize),
+      page: params.page || String(current_page),
+      page_size: params.page_size || String(page_size),
       category: '02', // 默认分类
       ...(params.assembly_type && params.assembly_type !== '全部' ? { assembly_type: params.assembly_type } : {}),
     });
@@ -126,14 +123,14 @@
       .then((result) => {
         if (!result.data) {
           paper_list = [];
-          totalTests = 0;
+          total_tests = 0;
           return;
         }
         //获取试卷的记录
         const records = result.data;
 
         // 更新总数 - 从total_count字段获取
-        totalTests = result.rowCount || 0;
+        total_tests = result.rowCount || 0;
 
         // 更新试卷列表
         paper_list = records.map((/** @type {any} */ item) => {
@@ -170,7 +167,7 @@
       .catch((error) => {
         console.error('获取试卷列表失败', error);
         paper_list = [];
-        totalTests = 0;
+        total_tests = 0;
         throw error;
       });
   }
@@ -181,17 +178,6 @@
       fetchPaperList();
     }
   });
-
-  // 搜索试卷
-  function searchPapers() {
-    currentPage = 1; // 重置到第一页
-    fetchPaperList({
-      name: searchText,
-      tags: tagSearchText,
-      assembly_type: selectedStructure,
-      page: '1', // 重置到第一页
-    });
-  }
 </script>
 
 {#if show}
@@ -217,7 +203,7 @@
               id="search-text"
               type="text"
               placeholder="搜索试卷名称"
-              bind:value={searchText}
+              bind:value={search_text}
               onInput={searchPapers}
             />
           </div>
@@ -227,7 +213,7 @@
               id="tag-search"
               type="text"
               placeholder="搜索试卷标签"
-              bind:value={tagSearchText}
+              bind:value={tag_search_text}
               onInput={searchPapers}
             />
           </div>
@@ -253,16 +239,16 @@
               </tr>
             </thead>
             <tbody>
-              {#if currentPageTests.length > 0}
-                {#each currentPageTests as test (test.ID)}
-                  <tr class:selected={selectedTestId === test.ID} onclick={() => selectTest(test.ID)}>
+              {#if current_page_tests.length > 0}
+                {#each current_page_tests as test (test.ID)}
+                  <tr class:selected={selected_test_id === test.ID} onclick={() => selectTest(test.ID)}>
                     <td class="select-cell">
                       <label class="custom-radio">
                         <input
                           type="radio"
                           name="test-selection"
                           value={test.ID}
-                          checked={selectedTestId === test.ID}
+                          checked={selected_test_id === test.ID}
                           onclick={() => selectTest(test.ID)}
                         />
                         <span class="radio-checkmark"></span>
@@ -313,9 +299,9 @@
         <div class="pagination-container">
           <div class="total-count"></div>
           <Pagination
-            total_items={totalTests}
-            current_page={currentPage}
-            page_size={pageSize}
+            total_items={total_tests}
+            {current_page}
+            {page_size}
             page_size_options={[5, 10, 20]}
             on:pageChange={handlePageChoose}
             on:pageSizeChange={handlePageSizeChange}

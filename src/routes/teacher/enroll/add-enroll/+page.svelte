@@ -6,16 +6,17 @@
   import AuditSelectPanel from '../_components/AuditSelectPanel.svelte';
   import { goto } from '$app/navigation';
 
-  let plan_name = $state('');
-  let people_limit = $state('unlimited');
-  let limited_number = $state('');
-  let subjects = $state({ theory: true, practice: true });
-  let start_date = $state(null);
-  let end_date = $state(null);
-  let deadline = $state(null);
-  let show_audit_panel = $state(false);
+  let plan_name = $state(''); // 计划名称
+  let people_limit = $state('unlimited'); // 是否限制报名人数
+  let limited_number = $state(''); // 限制多少人
+  let subjects = $state({ theory: true, practice: true }); // 选择的科目
+  let start_date = $state(null); // 报名开始时间
+  let end_date = $state(null); // 报名结束时间
+  let deadline = $state(null); // 审核截止时间
+  let show_audit_panel = $state(false); // 是否展示选择审核员面板
+  let audit_data = $state(null); // 审核员数据
   let show_practice_panel = $state(false); // 是否展示选择练习面板
-  let practice_initial_id = $state(null);
+  let practice_initial_id = $state(null); // 当前选择试卷id
   let practice_data = $state(null); // 试卷数据
 
   // 错误提示内容
@@ -29,13 +30,48 @@
     practice: '',
   });
 
+  // 处理选择练习按钮点击事件
+  function handlePracticeSelect() {
+    show_practice_panel = true;
+  }
+
+  // 更新选择的试卷
+  function updateTestSelection(data) {
+    practice_data = data;
+  }
+
+  // 处理选择审核人按钮点击事件
+  function handleSelectAudit() {
+    show_audit_panel = true;
+  }
+
+  // 更新选中的审核员
+  function updateAuditSelection(data) {
+    audit_data = data;
+  }
+
+  // 处理开始日期变化
+  function handleStartDateChange(event) {
+    start_date = event.detail.date;
+  }
+
+  // 处理终止日期变化
+  function handleEndDateChange(event) {
+    end_date = event.detail.date;
+  }
+
+  // 处理截止日期变化
+  function handleDeadlineChange(event) {
+    deadline = event.detail.date;
+  }
+
   // 处理保存按钮点击事件
   function handleSave() {
     // 简单的校验示例
     errors.plan_name = plan_name.trim() === '' ? '计划名称不能为空' : '';
-    errors.plan_period = start_date && end_date ? '' : '请选择计划报名时段'; // 假设 DatePicker 内部还要传值，这里仅占位
-    errors.audit_deadline = deadline ? '' : '请选择截止日期'; // 同上
-    errors.auditor = ''; // 假设后续实现选择审核人
+    errors.plan_period = start_date && end_date ? '' : '请选择计划报名时段';
+    errors.audit_deadline = deadline ? '' : '请选择截止日期';
+    errors.auditor = audit_data ? '' : '请选择审核员';
     errors.people_limit = people_limit === '' ? '请选择人数限制' : '';
     if (people_limit === 'limited' && !limited_number) {
       errors.people_limit = '请输入限制人数';
@@ -59,36 +95,6 @@
   // 处理取消按钮点击事件
   function handleCancle() {
     goto('/teacher/enroll');
-  }
-
-  // 处理开始日期变化
-  function handleStartDateChange(event) {
-    start_date = event.detail.date;
-  }
-
-  // 处理终止日期变化
-  function handleEndDateChange(event) {
-    end_date = event.detail.date;
-  }
-
-  // 处理截止日期变化
-  function handleDeadlineChange(event) {
-    deadline = event.detail.date;
-  }
-
-  // 处理选择练习按钮点击事件
-  function handlePracticeSelect() {
-    show_practice_panel = true;
-  }
-
-  // 更新选择的试卷
-  function updateTestSelection(data) {
-    practice_data = data;
-  }
-
-  // 处理选择审核人按钮点击事件
-  function handleSelectAudit() {
-    show_audit_panel = true;
   }
 </script>
 
@@ -126,10 +132,29 @@
   </div>
   <div class="error-text">{errors.audit_deadline}</div>
 
-  <!-- 审核人 -->
+  <!-- 审核员 -->
   <div class="form-row">
-    <div class="label required">审核人：</div>
-    <button class="btn" onclick={handleSelectAudit}>选择审核人</button>
+    <div class="label required">审核员：</div>
+    <div class="input-wrapper">
+      {#if !audit_data}
+        <!-- 还未选择审核人 -->
+        <div class="select-wrapper">
+          <button class="btn" onclick={handleSelectAudit}>选择审核员</button>
+        </div>
+      {:else}
+        <!-- 已选择审核人 -->
+        <div class="selected-audit-display">
+          <div class="audit-info-container">
+            <div class="audit-info-row">
+              <span class="audit-name" title={audit_data.audit_list.map((a) => a.name).join('、')}>
+                {audit_data.audit_list.map((a) => a.name).join('、')}
+              </span>
+            </div>
+          </div>
+          <button class="btn change-audit-btn" onclick={handleSelectAudit}>更换审核员</button>
+        </div>
+      {/if}
+    </div>
   </div>
   <div class="error-text">{errors.auditor}</div>
 
@@ -191,9 +216,7 @@
     </div>
   </div>
   <div class="error-text">
-    {#if !practice_data}
-      {errors.practice}
-    {/if}
+    {errors.practice}
   </div>
 
   <!-- 底部按钮 -->
@@ -207,10 +230,10 @@
 <PracticeSelectPanel
   bind:show={show_practice_panel}
   onTestSelectFunc={updateTestSelection}
-  bind:selectedTestId={practice_initial_id}
+  bind:selected_test_id={practice_initial_id}
 />
 
-<AuditSelectPanel bind:show={show_audit_panel} />
+<AuditSelectPanel bind:show={show_audit_panel} onSelectAudit={updateAuditSelection} />
 
 <style>
   .create-plan {
@@ -226,6 +249,47 @@
     display: flex;
     align-items: center;
     margin: 20px 0 6px 0;
+
+    .selected-audit-display {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-radius: 4px;
+      margin-left: 8px;
+
+      .audit-info-container {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .audit-info-row {
+        font-size: 14px;
+        color: #333;
+        background-color: #e7e5e5;
+        border-radius: 6px;
+        padding: 4px 8px;
+      }
+
+      .audit-name {
+        font-weight: 500;
+        color: #000;
+      }
+
+      .change-audit-btn {
+        background-color: white;
+        border: 1px solid #007bff;
+        border-radius: 3px;
+        color: #007bff;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .change-audit-btn:hover {
+        background-color: #007bff;
+        color: #fff;
+      }
+    }
 
     .selected-test-display {
       display: flex;

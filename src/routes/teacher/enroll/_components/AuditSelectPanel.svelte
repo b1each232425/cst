@@ -8,11 +8,21 @@
   import Empty from '$lib/components/Table/Empty.svelte';
   import AuditImportPanel from './AuditImportPanel.svelte';
 
-  let { show = $bindable(false) } = $props();
+  let { show = $bindable(false), onSelectAudit = () => {} } = $props();
 
-  let search_text = $state('');
-
+  let search_text = $state(''); // 查询审核员文本内容
   let show_all_audit = $state(false); // 是否展示所有审查员
+
+  let audit_id_list = $state([]); // 已选审核员id
+  let audit_list = $state([]); // 已选审查员数据
+
+  let is_show_import_panel = $state(false); // 是否展示批量导入审查员面板
+  let file_input = $state(null); // 文件输入框DOM
+
+  // 分页器数据
+  let current_page = $state(1);
+  let page_size = $state(10);
+  let total_items = $derived(show_all_audit ? all_audit_list.length : audit_list.length);
 
   // 全部审查员数据
   let all_audit_list = $state([
@@ -28,33 +38,30 @@
     { id: 10, name: '钱七', gender: '男', phone: '13800000005', idCard: '440101199505055555' },
   ]);
 
-  // 已选审查员数据
-  let audit_id_list = $state([]);
-  let audit_list = $state([]);
-
-  // 是否展示批量导入审查员面板
-  let is_show_import_panel = $state(false);
-
-  let file_input = $state(null); // 文件输入框DOM
-
-  // 分页器数据
-  let current_page = $state(1);
-  let page_size = $state(10);
-  let total_items = $derived(show_all_audit ? all_audit_list.length : audit_list.length);
+  // 批量导入数据
+  let import_audit_list = $state([
+    { id: 1, name: '张三', gender: '男', phone: '13800000001', id_card: '440101199901010011', error: '' },
+    { id: 2, name: '李四', gender: '女', phone: 'not_a_phone', id_card: '440101199802022222', error: '' },
+    { id: 3, name: '王五', gender: '男', phone: '13800000003', id_card: 'wrong_id_card', error: '' },
+    { id: 4, name: '', gender: '女', phone: '13800000004', id_card: '440101199604044444', error: '' },
+  ]);
 
   // 关闭弹窗
   function closeModal() {
     show = false;
   }
 
+  // 处理分页器页数变化
   function handlePageChoose(e) {
     current_page = e.detail;
   }
 
+  // 处理分页器页面大小变化
   function handlePageSizeChange(e) {
     page_size = e.detail;
   }
 
+  // 处理选择审核员按钮点击事件
   function handleSelectAudit() {
     if (show_all_audit) {
       audit_list = all_audit_list.filter((item) => audit_id_list.includes(item.id));
@@ -62,21 +69,25 @@
     show_all_audit = !show_all_audit;
   }
 
+  // 处理审核员选中事件
   function selectAudit(id) {
     const index = audit_id_list.indexOf(id);
     if (index === -1) {
-      // 不存在，加入
       audit_id_list.push(id);
     } else {
-      // 已存在，删除
       audit_id_list.splice(index, 1);
     }
+
+    // 每次选择时同步刷新 audit_list
+    audit_list = all_audit_list.filter((item) => audit_id_list.includes(item.id));
   }
 
+  // 处理管理批量导入审核员事件
   function closeAuditImportPanle() {
     is_show_import_panel = false;
   }
 
+  // 处理批量导入审核员按钮点击事件
   function handleImportAudit() {
     if (file_input) {
       file_input.click();
@@ -102,6 +113,12 @@
 
     // 重置文件，避免重复选择同一个文件时不触发
     file_input.value = null;
+  }
+
+  // 处理确定按钮点击事件
+  function handleConfirmSelect() {
+    onSelectAudit({ audit_list });
+    closeModal();
   }
 </script>
 
@@ -247,13 +264,14 @@
       <!-- 底部按钮 -->
       <div class="modal-footer">
         <Button type="info" onclick={closeModal}>取消</Button>
-        <Button>确定</Button>
+        <Button onclick={handleConfirmSelect}>确定</Button>
       </div>
     </div>
   </div>
 {/if}
 
-<AuditImportPanel {is_show_import_panel} closePanel={closeAuditImportPanle}></AuditImportPanel>
+<AuditImportPanel {is_show_import_panel} auditor_list={import_audit_list} closePanel={closeAuditImportPanle}
+></AuditImportPanel>
 
 <!-- 隐藏的文件选择框 -->
 <input type="file" accept=".xls,.xlsx" bind:this={file_input} style="display:none" onchange={handleFileUpload} />

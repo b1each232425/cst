@@ -6,6 +6,7 @@
   import { onMount } from 'svelte';
 
   let { is_show_move_panel = false, closePanel = () => {} } = $props();
+  let search_keyword = $state(''); // 搜索关键词
 
   // 模拟数据
   let candidate_list = $state([
@@ -187,8 +188,7 @@
     },
   ]);
 
-  let search_keyword = $state('');
-
+  // 迁移按钮点击事件
   function handleMove(row) {
     alert(`迁移 ${row.name}`);
   }

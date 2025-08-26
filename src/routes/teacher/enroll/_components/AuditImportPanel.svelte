@@ -12,7 +12,11 @@
   let success_count = $state(0); // 成功识别条数
   let failure_count = $state(0); // 失败识别条数
 
-  // 不要就地排序 props，返回新数组（避免副作用）
+  let editing_index = $state(-1); // 当前编辑行下标
+  let editing_id = $state(null); // 当前编辑数据id
+  let editing_row = $state(null); // 当前编辑行数据
+
+  // 重新排序数据，错误数据放在最前面
   function sortAuditorsByError(list) {
     return [...list].sort((a, b) => {
       if (!!a.error && !b.error) return -1;
@@ -21,20 +25,19 @@
     });
   }
 
-  // 行内编辑状态
-  let editing_index = $state(-1);
-  let editing_id = $state(null);
-  let editing_row = $state(null);
-
+  // 处理编辑按钮点击事件
   function handleEdit(row, index) {
     editing_index = index;
     editing_id = row.id;
     editing_row = { ...row };
   }
 
+  // 处理保存编辑按钮点击事件
   function handleSaveEdit() {
     const validated_row = validateAuditor(editing_row);
     auditor_list = auditor_list.map((item) => (item.id === editing_id ? validated_row : item));
+
+    auditor_list = sortAuditorsByError(auditor_list);
 
     success_count = auditor_list.filter((a) => !a.error).length;
     failure_count = auditor_list.filter((a) => a.error).length;
@@ -42,16 +45,19 @@
     handleCancelEdit();
   }
 
+  // 处理取消编辑按钮点击事件
   function handleCancelEdit() {
     editing_index = -1;
     editing_id = null;
     editing_row = null;
   }
 
+  // 处理删除按钮点击事件
   function handleDelete(row) {
     auditor_list = auditor_list.filter((item) => item.id !== row.id);
   }
 
+  // 检查数据格式是否合法
   function validateAuditor(auditor) {
     let error = '';
 
@@ -69,18 +75,8 @@
   }
 
   onMount(() => {
-    // 模拟审查人员数据
-    auditor_list =
-      auditor_list.length > 0
-        ? auditor_list
-        : [
-            { id: 1, name: '张三', gender: '男', phone: '13800000001', id_card: '440101199901010011' },
-            { id: 2, name: '李四', gender: '女', phone: 'not_a_phone', id_card: '440101199802022222' },
-            { id: 3, name: '王五', gender: '男', phone: '13800000003', id_card: 'wrong_id_card' },
-            { id: 4, name: '', gender: '女', phone: '13800000004', id_card: '440101199604044444' },
-          ];
-
-    auditor_list = sortAuditorsByError(auditor_list).map(validateAuditor);
+    // 先校验，再排序
+    auditor_list = sortAuditorsByError(auditor_list.map(validateAuditor));
     success_count = auditor_list.filter((a) => !a.error).length;
     failure_count = auditor_list.filter((a) => a.error).length;
   });

@@ -40,6 +40,9 @@
 
     candidate_list = candidate_list.map((item) => (item.id_card === editing_id_card ? validatedRow : item));
 
+    // 重新排序，保证错误数据始终在前
+    candidate_list = sortCandidatesByError(candidate_list);
+
     // 更新成功/失败统计
     success_count = candidate_list.filter((c) => !c.error).length;
     failure_count = candidate_list.filter((c) => c.error).length;
@@ -80,7 +83,7 @@
   }
 
   onMount(() => {
-    candidate_list = sortCandidatesByError(candidate_list).map(validateCandidate);
+    candidate_list = sortCandidatesByError(candidate_list.map(validateCandidate));
     success_count = candidate_list.filter((c) => !c.error).length;
     failure_count = candidate_list.filter((c) => c.error).length;
   });
