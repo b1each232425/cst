@@ -39,15 +39,17 @@ let exam_room_list = $state([
   let search_params = $state({
     page: 1,
     pageSize: 10,
-    orderBy:[{ "capacity": "DESC"}],
+    orderBy:[{ "roomCount": "DESC"}],
     data:{},
-    filter:{}
+    filter:{},
   });
 
   let pagination_params = $state({
     page: 1,
     pageSize: 10
   });
+
+  let name_search_timer = null;
 
   function toggleSelectAll(e) {
   const checked = e.target.checked;
@@ -60,13 +62,20 @@ let exam_room_list = $state([
   }
 
   async function fetchExamRooms(){
-    const query_params = new URLSearchParams({
-      page: search_params.page.toString(),
-      pageSize: search_params.pageSize.toString(),
-      // orderBy: JSON.stringify(search_params.orderBy),
-      // data: JSON.stringify(search_params.data),
-      // filter: JSON.stringify(search_params.filter)
-    }).toString();
+    const query_params = new URLSearchParams();
+    query_params.append('page', search_params.page.toString());
+    query_params.append('pageSize', search_params.pageSize.toString());
+    
+    // 添加 orderBy 参数（JSON 格式）
+    if (search_params.orderBy && search_params.orderBy.length > 0) {
+      query_params.append('orderBy', JSON.stringify(search_params.orderBy));
+    }
+    
+    // 添加 filter 参数（JSON 格式）
+    if (search_params.filter && Object.keys(search_params.filter).length > 0) {
+      query_params.append('filter', JSON.stringify(search_params.filter));
+    }
+    console.log(query_params.toString());
     fetch(`/api/exam-room/list?${query_params}`,{
       method:'GET',
       credentials: 'include',
@@ -92,6 +101,19 @@ let exam_room_list = $state([
       })
   }
 
+  function searchRoomName(value){
+     search_params.filter = {
+       ...search_params.filter,
+       ...(value ? { name: value } : {})   // 有值就放进 filter
+     };
+    if(name_search_timer)
+      clearTimeout(name_search_timer);
+      name_search_timer = setTimeout(() => {
+      fetchExamRooms();
+      name_search_timer = null;
+    }, 300);
+  }
+
   onMount(async()=>{
     await fetchExamRooms();
   })
@@ -115,9 +137,9 @@ let exam_room_list = $state([
     <div class="panel-body">
         <div class="exam-time-container">
                 <span class="exam-time-text">考试时间：</span>
-                <span class="exam-time-text">{exam_start_time.toLocaleString()}</span>
+                <span class="exam-time-text">{isNaN(exam_start_time) ? '开始时间未选择' : exam_start_time.toLocaleString()}</span>
                 <span class="exam-time-text">-</span>
-                <span class="exam-time-text">{exam_end_time.toLocaleString()}</span>
+                <span class="exam-time-text">{isNaN(exam_end_time) ? '结束时间未选择' : exam_end_time.toLocaleString()}</span>
         </div>
         <div class="tip-container">
                 <img src="/exam_list/tip.png" alt="提示" style="width: 15px;" />
@@ -132,14 +154,14 @@ let exam_room_list = $state([
               <InputBox
               label={'搜索考场'} 
               placeholder={'请输入考场或考点名'}
-              
+              onInput={searchRoomName}
               clearable={true}
               >
             </InputBox>
 
             </div>
             <div class="button-group">
-                <button class="{is_selection_mode ? 'btn btn--info' : 'btn btn--primary'} " onclick={is_selection_mode=!is_selection_mode}>{is_selection_mode ? '返回考场列表' : '添加考场'}</button>
+                <button class="{is_selection_mode ? 'btn btn--info' : 'btn btn--primary'} " onclick={()=>is_selection_mode=!is_selection_mode}>{is_selection_mode ? '返回考场列表' : '添加考场'}</button>
             </div>
           </div>
 

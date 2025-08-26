@@ -291,6 +291,29 @@ describe('PaperSelectionPanel 组件测试', () => {
       const selectedRadio = utils.getRadioButtons().find(radio => radio.value === '1');
       expect(selectedRadio).toBeChecked();
     });
+
+    it('触发默认的 onConfirm，使默认参数计入覆盖（Svelte 5）', async () => {
+  // 1. 完全不传 onConfirm，让它保持默认值 () => {}
+  render(PaperSelectionPanel, {
+    props: {
+      show_panel: true,
+      selected_ID: 1,          // 关键：让内部 paperselected_ID 初始化即有效
+      selected_name: 'dummy',
+      selected_type: '00',
+    },
+  });
+
+  // 2. 等数据渲染出来
+  await waitFor(() => {
+    expect(screen.getByText('数学期末考试试卷')).toBeInTheDocument();
+  });
+
+  // 3. 直接点“确定”——不会触发 toast，而是调用默认 onConfirm
+  const confirmBtn = screen.getByRole('button', { name: /确定/ });
+  await fireEvent.click(confirmBtn);
+
+  // 4. 只要没抛异常，空函数就被执行过，覆盖率即被标记为已覆盖
+});
   });
 
   describe('筛选功能测试', () => {

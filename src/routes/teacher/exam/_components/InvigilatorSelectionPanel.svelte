@@ -122,7 +122,7 @@ let invigilator_list = $state([
 
             </div>
             <div class="button-group">
-                <button class="{is_selection_mode ? 'btn btn--info' : 'btn btn--primary'} " onclick={is_selection_mode=!is_selection_mode}>{is_selection_mode ? '返回监考员列表' : '添加监考员'}</button>
+                <button class="{is_selection_mode ? 'btn btn--info' : 'btn btn--primary'} " onclick={() => is_selection_mode=!is_selection_mode}>{is_selection_mode ? '返回监考员列表' : '添加监考员'}</button>
             </div>
           </div>
 
