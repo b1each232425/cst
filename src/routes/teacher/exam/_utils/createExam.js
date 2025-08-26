@@ -185,7 +185,6 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
         });
 }
 
-  console.log("handlesubmit:",invigilators);
     const exam_data = {
       data: {
         examInfo: {
