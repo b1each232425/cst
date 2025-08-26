@@ -274,6 +274,15 @@
       });
   }
 
+  /**
+   * 导出学生名单
+   */
+  function handleExamImportStudent() {
+    // TODO: 实现导出学生名单的逻辑
+    toast.error('导出学生名单功能待实现');
+  }
+
+
   // 页面初始化
   onMount(async () => {
     // 从 URL 参数获取考试 ID
@@ -322,7 +331,24 @@
         </section>
       </div>
 
-      <div class="buttons-container">
+      <!-- <div class="buttons-container">
+        <button
+          class="submit-button"
+          onclick={() => handleExamSubmitted([Number(examId)])}
+          disabled={examData?.submitted || !examData?.canSubmit}
+          title={examData?.submitted
+            ? '成绩已提交'
+            : !examData?.canSubmit
+              ? '所有试卷状态必须为已批改才能提交'
+              : '点击提交成绩'}
+        >
+          提交成绩
+        </button>
+      </div> -->
+      <div class="bottom-action-panel-fixed">
+        <button class="import-button"
+        onclick={() => handleExamImportStudent()}
+        >导出学生</button>
         <button
           class="submit-button"
           onclick={() => handleExamSubmitted([Number(examId)])}
@@ -340,22 +366,17 @@
   </div>
 {/if}
 
-<!-- <div class="bottom-action-panel-fixed">
-      <button class="import-button">导出学生</button
-      >
-      <button class="submit-button">提交成绩</button
-      >
-    </div> -->
+
 <style lang="scss" scoped>
   .page-container {
     background-color: var(--bg-primary);
-    height: 100%;
+    height: 94%;
     width: 100%;
 
     .detail-container {
       display: flex;
       flex-direction: column;
-      height: 98%;
+      height: 100%;
       gap: 20px;
       overflow: auto;
       padding: 10px;
@@ -423,61 +444,61 @@
     }
   }
 
-  // .bottom-action-panel-fixed {
-  //   display: flex;
-  //   position: fixed;
-  //   gap: 20%;
-  //   bottom: 0;
-  //   left: 0;
-  //   right: 0;
-  //   display: flex;
-  //   justify-content: center;
-  //   background-color: #fff;
-  //   padding: 15px 20px;
-  //   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  //   border-top: 1px solid #eee;
-  //   z-index: 100;
+  .bottom-action-panel-fixed {
+    display: flex;
+    position: fixed;
+    gap: 20%;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    background-color: #fff;
+    padding: 10px 0px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    border-top: 1px solid #eee;
+    z-index: 100;
 
-  //   .import-button {
-  //       padding: 10px 20px;
-  //       font-size: 14px;
-  //       color: white;
-  //       background-color: var(--blue);
-  //       border: none;
-  //       border-radius: var(--btn-border-radius);
-  //       cursor: pointer;
-  //       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  //       transition: background-color 0.3s;
+    .import-button {
+      padding: 10px 20px;
+      font-size: 14px;
+      color: white;
+      background-color: var(--blue);
+      border: none;
+      border-radius: var(--btn-border-radius);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transition: background-color 0.3s;
 
-  //       &:hover {
-  //         opacity: 0.8;
-  //       }
-  //       &:disabled {
-  //         background-color: var(--gray);
-  //         cursor: not-allowed;
-  //         opacity: 0.6;
-  //       }
-  //     }
+      &:hover {
+        opacity: 0.8;
+      }
+      &:disabled {
+        background-color: var(--gray);
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+    }
 
-  //   .submit-button {
-  //       padding: 10px 20px;
-  //       font-size: 14px;
-  //       color: white;
-  //       background-color: var(--green);
-  //       border: none;
-  //       border-radius: var(--btn-border-radius);
-  //       cursor: pointer;
-  //       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  //       transition: background-color 0.3s;
+    .submit-button {
+      padding: 10px 20px;
+      font-size: 14px;
+      color: white;
+      background-color: var(--green);
+      border: none;
+      border-radius: var(--btn-border-radius);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transition: background-color 0.3s;
 
-  //       &:hover {
-  //         opacity: 0.8;
-  //       }
-  //       &:disabled {
-  //         background-color: var(--gray);
-  //         cursor: not-allowed;
-  //         opacity: 0.6;
-  //       }
-  //     }
-  //  }
+      &:hover {
+        opacity: 0.8;
+      }
+      &:disabled {
+        background-color: var(--gray);
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+    }
+  }
 </style>

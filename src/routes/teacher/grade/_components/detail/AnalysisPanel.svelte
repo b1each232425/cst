@@ -8,14 +8,14 @@
   /**
    * @typedef {Object} Props
    * @property {'practice' | 'exam'} type - 类型
-   * @property {number} resourceId - 资源ID
+   * @property {string|number} resource_id - 资源ID（可能是字符串或数字）
    * @property {Array} [papers] - 试卷选项（考试类型需要）
    */
 
   /**
    * @type {Props}
    */
-  let { type, resourceId, papers = [] } = $props();
+  let { type, resource_id, papers = [] } = $props();
 
   // 获取 Context 数据
   let contextData = $state(null);
@@ -97,7 +97,7 @@
         index: q.Order,
         score: q.Score,
         averageScore: isObjective ? undefined : avgScore || 0,
-        groupId: q.GroupID || null, // 确保使用正确的GroupID字段
+        groupId: q.GroupID || null, 
       };
     });
   }
@@ -153,10 +153,10 @@
       })
       .catch((error) => {
         console.error('获取考试数据失败:', error);
-        // 发生错误时也要清空数据
+        // 发生错误时清空数据
         questions = [];
         questionGroup = [];
-        isLoaded = true; // 确保加载状态结束
+        isLoaded = true; 
       });
   }
 
@@ -165,11 +165,13 @@
    */
   function fetchPracticeAnalysisData(practiceId) {
     isLoaded = false;
-    // 清空之前的数据，避免显示旧数据
+    // 清空旧数据
     questions = [];
     questionGroup = [];
 
-    fetch(`/api/grade?category=practice&practiceID=${practiceId}`, {
+    const apiUrl = `/api/grade?category=practice&practiceID=${practiceId}`;
+
+    fetch(apiUrl, {
       method: 'GET',
       credentials: 'include',
     })
@@ -209,10 +211,10 @@
       })
       .catch((error) => {
         console.error('获取练习数据失败:', error);
-        // 发生错误时也要清空数据
+        // 发生错误时清空数据
         questions = [];
         questionGroup = [];
-        isLoaded = true; // 确保加载状态结束
+        isLoaded = true;
       });
   }
 
@@ -268,9 +270,9 @@
 
       // 加载初始数据
       updateData();
-    } else if (type === 'practice' && resourceId) {
-      // 练习类型直接使用 resourceId
-      fetchPracticeAnalysisData(resourceId);
+    } else if (type === 'practice' && resource_id) {
+      // 练习类型直接使用 resource_id
+      fetchPracticeAnalysisData(resource_id);
     }
   });
 </script>
@@ -287,41 +289,39 @@
     </button>
   </div>
 
-  {#if !isfolded && isLoaded}
-    {#if type === 'exam' && papers.length > 1}
-      <div class="paper-select">
-        <Select bind:value={currentPaperId} placeholder="选择试卷" changeValue={handlePaperChange}>
-          {#each options as option}
-            <Option value={option.value} label={option.label}>{option.label}</Option>
-          {/each}
-        </Select>
+  {#if !isfolded}
+    {#if !isLoaded}
+      <div style="padding: 20px; text-align: center; color: #666;">
+        正在加载试卷分析数据...
       </div>
-    {/if}
-    <div class="analysis-content">
-      {#if questions.length === 0 || questionGroup.length === 0}
-        <!-- 暂无数据显示 -->
-        <div class="no-data">
-          <Empty text="暂无试卷分析数据" />
+    {:else}
+      {#if type === 'exam' && papers.length > 1}
+        <div class="paper-select">
+          <Select bind:value={currentPaperId} placeholder="选择试卷" changeValue={handlePaperChange}>
+            {#each options as option}
+              <Option value={option.value} label={option.label}>{option.label}</Option>
+            {/each}
+          </Select>
         </div>
-      {:else}
-        <!-- 简化的题目列表显示-->
-        {#each questionGroup as group}
-          <div class="question-group">
-            <div class="group-title">
-              {group.Name}
-              {#if questions.filter((q) => q.groupId === group.ID).length > 0}
+      {/if}
+      
+      <div class="analysis-content">
+        {#if questions.length === 0 || questionGroup.length === 0}
+          <!-- 暂无数据显示 -->
+          <div class="no-data">
+            <Empty text="暂无试卷分析数据" />
+          </div>
+        {:else}
+          <!-- 题目列表显示-->
+          {#each questionGroup.filter(group => questions.filter((q) => q.groupId === group.ID).length > 0) as group}
+            <div class="question-group">
+              <div class="group-title">
+                {group.Name}
                 (共{questions
                   .filter((q) => q.groupId === group.ID)
                   .reduce((sum, q) => sum + q.score, 0)}分，共{questions.filter((q) => q.groupId === group.ID)
                   .length}题)
-              {/if}
-            </div>
-            {#if questions.filter((q) => q.groupId === group.ID).length === 0}
-              <!-- 分组内暂无题目 -->
-              <div class="group-no-data">
-                <Empty text="暂无数据" />
               </div>
-            {:else}
               {#each questions.filter((q) => q.groupId === group.ID) as question}
                 <div class="question-item">
                   <div class="question-header">
@@ -353,18 +353,12 @@
                   {/if}
                 </div>
               {/each}
-            {/if}
-          </div>
-        {/each}
-      {/if}
-    </div>
+            </div>
+          {/each}
+        {/if}
+      </div>
+    {/if}
   {/if}
-  <!-- {#if !isLoaded}
-		<div class="loading-indicator">
-			<div class="spinner"></div>
-			<span>正在加载，请稍候...</span>
-		</div>
-	{/if} -->
 </div>
 
 <style lang="scss" scoped>
@@ -422,10 +416,6 @@
           font-weight: bold;
           margin-bottom: 15px;
           color: var(--text-primary);
-        }
-
-        .group-no-data {
-          text-align: center;
         }
 
         .question-item {
