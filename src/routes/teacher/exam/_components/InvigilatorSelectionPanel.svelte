@@ -4,7 +4,7 @@
  * @LastEditors: yeweixuan t051521@163.com
  * @LastEditTime: 2025-08-11 14:55:31
  * @FilePath: \exam\src\routes\teacher\exam\components\ExamineeSelectionPanel
- * @Description: 用于查看选中的考场以及为考试挑选考场的面板
+ * @Description: 用于查看选中的监考员以及为考试挑选监考员的面板
  * @Copyright (c) 2025 by yeweixuan t051521@163.com, All Rights Reserved. 
 -->
  <script>
@@ -17,31 +17,29 @@
   import {onMount} from 'svelte';
   let{
     show_panel = false,
-    onConfirm=(seleted_exam_rooms) =>{},
+    onConfirm=(seleted_exam_invigilators) =>{},
     onCancel=()=>{},
-    exam_start_time = new Date(),
-    exam_end_time = new Date()
   }=$props();
   
   let is_selection_mode=$state(false);
-//let exam_room_list = $state([]);
-let exam_room_list = $state([
-  { id: 1, name: '考场A', exam_site_name: '考点1', capacity: 30, invigilator_count: 2, selected: false },
-  { id: 2, name: '考场B', exam_site_name: '考点2', capacity: 25, invigilator_count: 1, selected: true },
+//let invigilator_list = $state([]);
+let invigilator_list = $state([
+  { id: 1, name: '监考员A', exam_site_name: '考点1', capacity: 30, invigilator_count: 2, selected: false },
+  { id: 2, name: '监考员B', exam_site_name: '考点2', capacity: 25, invigilator_count: 1, selected: true },
 ]);
-  let selected_room_list = $derived(exam_room_list.filter(r => r.selected));
+  let selected_invigilator_list = $derived(invigilator_list.filter(r => r.selected));
   /** 当前页是否已全部选中 */
   let is_total_selected = $derived(
-  exam_room_list.length > 0 &&
-  exam_room_list.every(r => r.selected)
+  invigilator_list.length > 0 &&
+  invigilator_list.every(r => r.selected)
     );
   //搜索参数
   let search_params = $state({
     page: 1,
     pageSize: 10,
-    orderBy:[{ "roomCount": "DESC"}],
+    orderBy:[{ "capacity": "DESC"}],
     data:{},
-    filter:{},
+    filter:{}
   });
 
   let pagination_params = $state({
@@ -49,34 +47,23 @@ let exam_room_list = $state([
     pageSize: 10
   });
 
-  let name_search_timer = null;
-
   function toggleSelectAll(e) {
   const checked = e.target.checked;
-  exam_room_list.forEach(r => (r.selected = checked));
+  invigilator_list.forEach(r => (r.selected = checked));
   }
 
-  function handleCheckBoxChange(room,event){
+  function handleCheckBoxChange(invigilator,event){
     if (event.target.type === 'checkbox') return;
-    room.selected = !room.selected;
+    invigilator.selected = !invigilator.selected;
   }
 
-  async function fetchExamRooms(){
-    const query_params = new URLSearchParams();
-    query_params.append('page', search_params.page.toString());
-    query_params.append('pageSize', search_params.pageSize.toString());
-    
-    // 添加 orderBy 参数（JSON 格式）
-    if (search_params.orderBy && search_params.orderBy.length > 0) {
-      query_params.append('orderBy', JSON.stringify(search_params.orderBy));
-    }
-    
-    // 添加 filter 参数（JSON 格式）
-    if (search_params.filter && Object.keys(search_params.filter).length > 0) {
-      query_params.append('filter', JSON.stringify(search_params.filter));
-    }
-    console.log(query_params.toString());
-    fetch(`/api/exam-room/list?${query_params}`,{
+  async function fetchExaminvigilators(){
+    const query_params = new URLSearchParams({
+      page: search_params.page.toString(),
+      pageSize: search_params.pageSize.toString(),
+      domain:'cst.school^examSupervisor'
+    }).toString();
+    fetch(`/api/user?${query_params}`,{
       method:'GET',
       credentials: 'include',
       headers: {
@@ -85,10 +72,9 @@ let exam_room_list = $state([
       })
       .then((response)=>response.json())
       .then((result => {
-        console.log(result);
         if(result.status === 0)
         {
-          exam_room_list = result.data;
+          invigilator_list = result.data;
         }
         else{
           toast.error("获取列表失败"+result.msg);
@@ -101,28 +87,15 @@ let exam_room_list = $state([
       })
   }
 
-  function searchRoomName(value){
-     search_params.filter = {
-       ...search_params.filter,
-       ...(value ? { name: value } : {})   // 有值就放进 filter
-     };
-    if(name_search_timer)
-      clearTimeout(name_search_timer);
-      name_search_timer = setTimeout(() => {
-      fetchExamRooms();
-      name_search_timer = null;
-    }, 300);
-  }
-
   onMount(async()=>{
-    await fetchExamRooms();
+    await fetchExaminvigilators();
   })
 </script>
 
-    <div class={show_panel ? 'exam-room-panel-container' : 'hide'}>
-        <div class="exam-room-panel">
+    <div class={show_panel ? 'exam-invigilator-panel-container' : 'hide'}>
+        <div class="exam-invigilator-panel">
             <div class="panel-header">
-                <span class="panel-header-text">{is_selection_mode ? '选择考场' : '考场列表'}</span>
+                <span class="panel-header-text">{is_selection_mode ? '选择监考员' : '监考员列表'}</span>
             <button
                 class="close-btn"
                 onclick={() => {
@@ -135,70 +108,58 @@ let exam_room_list = $state([
             </div>
 
     <div class="panel-body">
-        <div class="exam-time-container">
-                <span class="exam-time-text">考试时间：</span>
-                <span class="exam-time-text">{isNaN(exam_start_time) ? '开始时间未选择' : exam_start_time.toLocaleString()}</span>
-                <span class="exam-time-text">-</span>
-                <span class="exam-time-text">{isNaN(exam_end_time) ? '结束时间未选择' : exam_end_time.toLocaleString()}</span>
-        </div>
-        <div class="tip-container">
-                <img src="/exam_list/tip.png" alt="提示" style="width: 15px;" />
-                <span class="exam-tip-text">
-                    考试时间更新后会清空已选择的考场，建议确认考试时间后再进行考场选择
-                </span>
-        </div>
         <!-- 查看选择后的列表 -->
-        <div class="selected-exam-room-container">
+        <div class="selected-exam-invigilator-container">
           <div class="action-container">
-            <div class="exam-room-search-container">
+            <div class="exam-invigilator-search-container">
               <InputBox
-              label={'搜索考场'} 
-              placeholder={'请输入考场或考点名'}
-              onInput={searchRoomName}
+              label={'搜索监考员'} 
+              placeholder={'请输入手机号或姓名'}
+              
               clearable={true}
               >
             </InputBox>
 
             </div>
             <div class="button-group">
-                <button class="{is_selection_mode ? 'btn btn--info' : 'btn btn--primary'} " onclick={()=>is_selection_mode=!is_selection_mode}>{is_selection_mode ? '返回考场列表' : '添加考场'}</button>
+                <button class="{is_selection_mode ? 'btn btn--info' : 'btn btn--primary'} " onclick={() => is_selection_mode=!is_selection_mode}>{is_selection_mode ? '返回监考员列表' : '添加监考员'}</button>
             </div>
           </div>
 
           <!-- 查看模式 -->
            {#if !is_selection_mode}
-          <div class="exam-room-selection-table-container">
+          <div class="exam-invigilator-selection-table-container">
             <table class="table">
-              <thead class="exam-room-table-head">
+              <thead class="exam-invigilator-table-head">
                 <tr class="table-head-row">
-                  <th>考场</th>
-                  <th>所属考点</th>
-                  <th>考场容量</th>
-                  <th>监考员数量</th>
+                  <th>手机号</th>
+                  <th>账号</th>
+                  <th>姓名</th>
+                  <th>性别</th>
                 </tr>
               </thead>
               <tbody>
-                {#each selected_room_list as selected_room, index}
-                  <tr class="exam_room">
-                    <td>{selected_room.name}</td>
-                    <td>{selected_room.exam_site_name}</td>
-                    <td>{selected_room.capacity}</td>
-                    <td>{selected_room.invigilator_count || "--"}</td>
+                {#each selected_invigilator_list as selected_invigilator, index}
+                  <tr class="exam_invigilator">
+                    <td>{selected_invigilator.MobilePhone}</td>
+                    <td>{selected_invigilator.Account}</td>
+                    <td>{selected_invigilator.OfficialName}</td>
+                    <td>{selected_invigilator.Gender || "--"}</td>
                   </tr>
                   {/each}
               </tbody>
             </table>
 
-            <div class ="{exam_room_list.length === 0?'no-data-text' : 'hideButton'}" > 
+            <div class ="{selected_invigilator_list.length === 0?'no-data-text' : 'hideButton'}" > 
               <Empty text = "暂无数据"/>
             </div>
           </div>
           
           {:else}
           <!-- 选择模式 -->
-          <div class="exam-room-selection-table-container">
+          <div class="exam-invigilator-selection-table-container">
             <table class="table">
-              <thead class="exam-room-table-head">
+              <thead class="exam-invigilator-table-head">
                 <tr class="table-head-row">
                   <th>
                     <input
@@ -207,34 +168,34 @@ let exam_room_list = $state([
                     onchange={toggleSelectAll}
                     checked={is_total_selected}
                   /></th>
-                  <th>考场</th>
-                  <th>所属考点</th>
-                  <th>考场容量</th>
-                  <th>监考员数量</th>
+                  <th>手机号</th>
+                  <th>账号</th>
+                  <th>姓名</th>
+                  <th>性别</th>
                 </tr>
               </thead>
               <tbody>
-                {#each exam_room_list as room, index}
-                  <tr class="exam_room"
-                  onclick= {(event) => handleCheckBoxChange(room, event)}
+                {#each invigilator_list as invigilator, index}
+                  <tr class="exam_invigilator"
+                  onclick= {(event) => handleCheckBoxChange(invigilator, event)}
                   >
                     <td>
                         <input
                         type="checkbox"
                         class="custom-checkbox"
-                        checked={room.selected}
+                        checked={invigilator.selected}
                         />
                     </td>
-                    <td>{room.name}</td>
-                    <td>{room.exam_site_name}</td>
-                    <td>{room.capacity}</td>
-                    <td>{room.invigilator_count || "--"}</td>
+                    <td>{invigilator.MobilePhone}</td>
+                    <td>{invigilator.Account}</td>
+                    <td>{invigilator.OfficialName}</td>
+                    <td>{invigilator.Gender || "--"}</td>
                   </tr>
                   {/each}
               </tbody>
             </table>
 
-            <div class ="{exam_room_list.length === 0?'no-data-text' : 'hideButton'}" > 
+            <div class ="{invigilator_list.length === 0?'no-data-text' : 'hideButton'}" > 
               <Empty text = "暂无数据"/>
             </div>
           </div>
@@ -245,7 +206,7 @@ let exam_room_list = $state([
     <div class="pagination-container {!is_selection_mode ? ' ' : 'hideButton'}">
 
             <Pagination
-              total_items={selected_room_list.length}
+              total_items={selected_invigilator_list.length}
               current_page={pagination_params.page}
               page_size_options={[10, 20, 50]}
               on:pageChange={(e) => {
@@ -260,10 +221,10 @@ let exam_room_list = $state([
     
     <div class="pagination-container {is_selection_mode ? ' ' : 'hideButton'}">
           <span style="font-size: 12px; margin-right:10px">
-            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_room_list.length}</span> 条
+            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_invigilator_list.length}</span> 条
           </span>
           <Pagination
-            total_items={exam_room_list.length}
+            total_items={invigilator_list.length}
             current_page={pagination_params.page}
             page_size_options={[10, 20, 50]}
             on:pageChange={(e) => {
@@ -283,13 +244,14 @@ let exam_room_list = $state([
                 <button class="btn btn--info is-plain" onclick={() => {
                     show_panel = false;
                     search_params.page = 1;
+                    selected_ids = [];
                     is_selection_mode = false;
                     onCancel();
                 }}>取消</button>
                 <button class="btn btn--primary is-plain" onclick={() => {
                     show_panel = false;
                     is_selection_mode = false;
-                    onConfirm(selected_room_list);
+                    onConfirm(selected_invigilator_list);
                 }}>确定</button>
         </div>
     </div>
@@ -317,7 +279,7 @@ let exam_room_list = $state([
     pointer-events: none;
   }
 
-    .exam-room-panel-container {
+    .exam-invigilator-panel-container {
     position: fixed;
     top: 0%;
     left: 0%;
@@ -330,7 +292,7 @@ let exam_room_list = $state([
     z-index: 2000;
   }
 
-  .exam-room-panel {
+  .exam-invigilator-panel {
     width: 1000px;
     min-width: 800px;
     height: 75vh;
@@ -401,13 +363,13 @@ let exam_room_list = $state([
             justify-content: center;
             padding: 0 0 5px 0;
         }
-        .selected-exam-room-container {
+        .selected-exam-invigilator-container {
             flex: 1;
             display: flex;
             flex-direction: column;
             min-height: 450px;
         }
-        .exam-room-selection-table-container {
+        .exam-invigilator-selection-table-container {
             margin: 20px 0px 0 0px;
             flex: 1;
             min-height: 440px;
@@ -445,7 +407,7 @@ let exam_room_list = $state([
     align-items: center;
     justify-content: space-between;
     padding: 0 16px;
-        .exam-room-search-container {
+        .exam-invigilator-search-container {
         flex: 0 0 350px;
         display: flex;
         justify-content: flex-start;
@@ -460,7 +422,7 @@ let exam_room_list = $state([
             border-collapse: collapse;
             flex: 1;
             max-height: 40px;
-            .exam-room-table-head {
+            .exam-invigilator-table-head {
             background-color: #ffffff;
             font-size: 14px;
             font-weight: normal;
