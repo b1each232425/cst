@@ -11,6 +11,7 @@
   import { toast } from '$lib/components/Toast/Toast.js';
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import ExaminationRoomSelectionPanel from '../_components/ExaminationRoomSelectionPanel.svelte';
+  import InvigilatorSelectionPanel from '../_components/InvigilatorSelectionPanel.svelte';
   import {
     onChooseStartTime,
     onChooseEndTime,
@@ -241,16 +242,23 @@
   let show_paper_selection_panel = $state(false);
   let show_examinee_panel = $state(false);
   let show_rooms_panel = $state(false);
+  let show_invigilator_panel = $state(false);
   let files = $state([]);
   let start_time = $derived(paper_configs.length > 0 
-        ? new Date(Math.min(...paper_configs.map(config => new Date(config.start_time).getTime())))
+        ? new Date(Math.min(...paper_configs.map(config => new Date(config.startTime).getTime())))
         : new Date());
 
   let end_time = $derived(paper_configs.length > 0
-        ? new Date(Math.max(...paper_configs.map(config => new Date(config.end_time).getTime())))
+        ? new Date(Math.max(...paper_configs.map(config => new Date(config.endTime).getTime())))
         : new Date());
   
-  
+//   let exam_start_time = $state();
+//   let exam_end_time = $state();
+//   $effect(() => {
+//   exam_start_time = start_time;
+//   exam_end_time = end_time;
+//   console.log("start",exam_start_time);
+// });
   // 计算所有考场容量的总和
   let total_capacity = $derived(exam_rooms.reduce((sum, room) => sum + (room.capacity || 0), 0));
   function addNewPaper() {
@@ -259,8 +267,8 @@
       paperType: '', //试卷类型
       paperName: '',
       periodMode: '00', //考试时间段模式
-      startTime: '',
-      endTime: '',
+      startTime: new Date(),
+      endTime: new Date(),
       duration: 0,
       maxDuration: 0,
       isOptionShuffled: false, //是否选项乱序
@@ -406,7 +414,6 @@
                 // url: r.url || `${fileApi}/${r.checksum}` // 可选：下载地址
               },
             ];
-            console.log('uploadedFileList', uploadedFileList);
             reset();
           }
         })
@@ -497,7 +504,6 @@
         } else {
           examID = result.data.id;
         }
-        console.log(examID);
       })
       .catch((error) => {
         toast.error('未知错误');
@@ -632,7 +638,7 @@
       </div>
     </div>
 
-    <div class="examination-room-container">
+    <div class="examination-room-container {exam_method === '02' ? '' : 'hideButton'}">
       <RequiredLabel text="考场配置" colon={false} Asterisk={false} />
       <div class="examination-room-button-container normal-button-container">
         <Button
@@ -671,6 +677,30 @@
           <span class="examinee-number-text">已选择 </span>
           <span class="examinee-number-text {exam_examinee.length === 0 && exam_method === '02'}"
             >{exam_examinee.length}</span
+          >
+          <span class="examinee-number-text"> 名</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="invigilator-container {exam_method === '02' ? '' : 'hideButton'}">
+      <RequiredLabel text="监考员" colon={false} Asterisk={false} />
+      <div class="examinee-button-container normal-button-container">
+        <Button
+          plain={true}
+          type="primary"
+          size="small"
+          onclick={() => {
+            show_invigilator_panel = true;
+          }}
+        >
+          配置监考员
+        </Button>
+
+        <div class="invigilator-number-container">
+          <span class="examinee-number-text">已选择 </span>
+          <span class="examinee-number-text {invigilators.length === 0 && exam_method === '02'}"
+            >{invigilators.length}</span
           >
           <span class="examinee-number-text"> 名</span>
         </div>
@@ -734,6 +764,7 @@
             exam_examinee,
             invigilators,
             uploadedFileList,
+            exam_rooms,
           });
         }}>保存</button
       >
@@ -893,9 +924,7 @@
       </div>
 
       <div
-        class="exam-duration-container config-row {paper_configs[paperConfigIndex].periodMode === '02'
-          ? 'hideButton'
-          : ''}"
+        class="exam-duration-container config-row {paper_configs[paperConfigIndex].periodMode === '02' ? 'hideButton'  : ''}"
       >
         <RequiredLabel text="考场规则" />
 
@@ -991,7 +1020,7 @@
       </div>
 
       <div class="show-name-container {paper_configs[paperConfigIndex].markMethod !== '00' ? 'hide' : 'config-row'}">
-        <RequiredLabel text="显示考生姓名" Asterisk={false} />
+       <RequiredLabel text="批改时是否显示考生姓名" Asterisk={false} colon={true} />
 
         <div class="config-row-content">
           <label class="label">
@@ -1015,33 +1044,6 @@
         </div>
       </div>
 
-      <!-- <div
-                        class="grading-config-container {paper_configs[
-                            paperConfigIndex
-                        ].markMethod !== '00'
-                            ? 'hide'
-                            : ' config-row'}"
-                    >
-                        <RequiredLabel text="批改配置" Asterisk={false} />
-                        <div class="config-row-content graders-container">
-                            <div class = "graders-type-1">
-
-                                <Button
-                                    plain={true}
-                                    size="small"
-                                    onClick={() => {
-                                        paper_configs[paperConfigIndex].showGraderSelectionPanel = true;
-                                    }}
-                                >
-                                    <img
-                                        src="/exam_list/add.svg"
-                                        alt="添加"
-                                        style="height: 10px; margin-right:5px"
-                                    />添加批阅员
-                                </Button>
-                            </div>
-                        </div>
-                    </div> -->
 
       <div
         class="grading-mode-container {paper_configs[paperConfigIndex].markMethod !== '00' ? 'hide' : ' config-row'}"
@@ -1123,13 +1125,28 @@
         onConfirm={(selected) =>{
           show_rooms_panel=false;
           exam_rooms=selected;
+          
         }}
         onCancel={()=>{
           show_rooms_panel=false;
-        }}>
+        }}
         exam_start_time = {start_time}
         exam_end_time = {end_time}
-    </ExaminationRoomSelectionPanel>
+    ></ExaminationRoomSelectionPanel>
+
+    <InvigilatorSelectionPanel
+      show_panel={show_invigilator_panel}
+      onConfirm={(selected) => {
+        show_invigilator_panel = false;
+        invigilators = selected;
+        console.log("invigilator",invigilators);
+      }}
+      onCancel={() => {
+        show_invigilator_panel = false;
+      }}
+    ></InvigilatorSelectionPanel>
+
+
   </div>
 {/snippet}
 
@@ -1165,6 +1182,7 @@
       .total-duration-container,
       .examination-room-container,
       .examinee-container,
+      .invigilator-container,
       .file-container {
         display: grid;
         grid-template-columns: auto 1fr;
@@ -1310,7 +1328,8 @@
   .marking-method-container.config-row,
   .grading-mode-button-container,
   .examinee-button-container.normal-button-container,
-  .examination-room-button-container.normal-button-container{
+  .examination-room-button-container.normal-button-container,
+  .invigilator-number-container{
     display: flex;
     flex-wrap: nowrap;
     margin-top: 10px;

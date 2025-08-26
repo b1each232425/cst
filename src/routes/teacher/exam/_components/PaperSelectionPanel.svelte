@@ -60,7 +60,7 @@
   //搜索参数
   let search_params = $state({
     name: '',
-    tags: '',
+    tag: '',
     page: 1,
     page_size: 10,
     assembly_type: '00',
@@ -80,12 +80,7 @@
    * 防抖计时器
    */
   let name_search_timer = null;
-
-  // /**
-  //  * @type {number|null}
-  //  * 防抖计时器
-  //  */
-  // let tagsSearchTimer = null;
+  let tag_search_timer = null;
 
   /**
    * @type {number|null}
@@ -109,54 +104,29 @@
     return DIFFICULTY_COLOR_DEFAULT; // 默认颜色为黑色
   }
 
-  /**
-   * @param {string} value
-   * 试卷名搜索
-   */
-  // function onSearchName(value) {
-  //     search_params.name = value;
-
-  //     //防抖逻辑
-  //     if (name_search_timer) {
-  //         clearTimeout(name_search_timer);
-  //     }
-  //     name_search_timer = setTimeout(() => {
-  //         search_params.page = 1;
-  //         searchPaper();
-  //         name_search_timer = null;
-  //     }, 300);
-  // }
-
-  /**
-   * @param {string} value
-   * 标签搜索
-   */
-  // function onSearchTags(value) {
-  //     search_params.tags = value;
-
-  //     //防抖逻辑
-  //     if (tagsSearchTimer) {
-  //         clearTimeout(tagsSearchTimer);
-  //     }
-  //     tagsSearchTimer = setTimeout(() => {
-  //         searchPaper();
-  //         tagsSearchTimer = null;
-  //     }, 300);
-  // }
 
   function searchPaperName(value){
       search_params.name=value;
       if(name_search_timer)
-      {clearTimeout(name_search_timer);}
+      clearTimeout(name_search_timer);
       name_search_timer = setTimeout(() => {
       searchPaper();
-      console.log("名称变化调用");
       name_search_timer = null;
     }, 300);
   }
+
+  function searchPaperTag(value){
+    search_params.tag=value;
+      if(tag_search_timer)
+      clearTimeout(tag_search_timer);
+      tag_search_timer = setTimeout(() => {
+      searchPaper();
+      tag_search_timer = null;
+    }, 300);
+  }
+
   function handlePageChange(event) {
     search_params.page = event.detail;
-    console.log("页数变化调用");
     searchPaper();
   }
 
@@ -164,7 +134,6 @@
   function handlePageSizeChange(event) {
     search_params.page_size = event.detail;
     search_params.page = 1; // 重置到第一页
-    console.log("条数变化调用");
     searchPaper();
   }
 
@@ -185,8 +154,8 @@
     if (search_params.name) {
       queryParams.append('name', search_params.name);
     }
-    if (search_params.tags) {
-      queryParams.append('tags', search_params.tags);
+    if (search_params.tag) {
+      queryParams.append('tags', search_params.tag);
     }
 
     const response = await fetch(`/api/paper?${queryParams.toString()}`, {
@@ -199,9 +168,11 @@
 
     const result = await response.json();
     if (result.status !== 0) {
-      error = result.msg || '搜索失败';
+      error = result.msg;
       paperList = [];
       totals = 0;
+      toast.error(result.msg);
+      console.log(result.msg);
     } else {
       paperList = result.data;
       totals = result.rowCount;
@@ -270,7 +241,16 @@
                       clearable={true}
                     />
         </div>
-        
+        <div class="paper-selection-search-container">
+        <InputBox
+                      label="试卷标签"
+                      placeholder="请输入考试标签搜索"
+                      bind:value={search_params.tag}
+                      onInput={searchPaperTag}
+                      clearable={true}
+                    />
+        </div>
+
         <div class="paper-type-container">
           <div class="paper-type-dropdown">
             <!-- <Select  placeholder="试卷类型" changeValue={onPaperTypeChange}>
@@ -305,10 +285,10 @@
               <tr class="paper-list {isDisabled ? 'disabled-row' : ''}"
               onclick={() => {
                 if (!isDisabled) {
-        paperselected_ID = paper.ID;
-        paperselected_name = paper.Name;
-        paperselected_type = paper.AssemblyType;
-      }
+                  paperselected_ID = paper.ID;
+                  paperselected_name = paper.Name;
+                  paperselected_type = paper.AssemblyType;
+                }
               }}>
                 <td>
                   <input
@@ -624,7 +604,8 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    // justify-content: space-between;
+    gap: 30px;
     padding: 0 16px;
     margin-bottom: 10px;
   }
