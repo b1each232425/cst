@@ -406,10 +406,12 @@
   <div class="exam-detail-container">
     <div class="nav">
       <div class="nav-left">
-        <button class="back-btn" onclick={backToExamList}>
-          <span class="icon"> ← </span>
-          <span> 返回 </span>
+        <button
+          class="return-button-span"
+          onclick={backToExamList}>
+          返回
         </button>
+
         <div class="exam-header-right">
           <div class="server-time-label">当前时间</div>
           {#if examinee_id}
@@ -886,5 +888,18 @@
       color: $btn-hover-color;
       text-decoration: underline;
     }
+  }
+  .return-button-span {
+    all: unset;
+    width: 70px;
+    height: 35px;
+    text-align: center;
+    background-color: white;
+    border: 1px solid #ddd;
+    color: black;
+    cursor: pointer;
+    display: inline-block;
+    line-height: 35px;
+    border-radius: 5px;
   }
 </style>

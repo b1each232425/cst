@@ -4,7 +4,7 @@
   const defaultAnswer = $state("未填")
 
   function getCompleteAnswer(index) {
-    const prefix = question.Answer_num > 1 ? `(${index + 1})` : '';
+    const prefix = question.AnswerNum > 1 ? `(${index + 1})` : '';
     const studentAnswer = question.StudentAnswer?.answer?.[index];
     const answer = studentAnswer && studentAnswer !== "" ? studentAnswer : defaultAnswer;
     return prefix + answer;
@@ -33,15 +33,15 @@
       {/each}
     </div>
   {:else if question.Type === "06" || question.Type === "08"}
-  <div class="analysis-container">
-  <div class="system-tips">您的回答</div>
-    {#each Array(question.Answer_Num) as _, index}
-  <div class="fill-blank">
-    {@html getCompleteAnswer(index)}
-  </div>
-{/each}
+    <div class="analysis-container">
+    <div class="system-tips">您的回答</div>
+      {#each Array(question.AnswerNum) as _, index}
+    <div class="fill-blank">
+      {@html getCompleteAnswer(index)}
     </div>
-  {/if}
+  {/each}
+      </div>
+    {/if}
 </div>
 
 
