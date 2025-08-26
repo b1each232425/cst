@@ -464,6 +464,17 @@ describe('批改页面测试', () => {
     });
   });
 
+  it('点击返回按钮应正确跳转', async () => {
+    window.history.back = vi.fn(); // 重写 history.back
+
+    setExamCorrect();
+
+    render(CorrectPage);
+
+    await waitFor(() => fireEvent.click(screen.getByText('返回')));
+    expect(window.history.back).toHaveBeenCalledTimes(1);
+  });
+
   describe('路径参数错误报错提示测试', () => {
     it('路径参数不存在 exam_session_id 和 practice_id 时应报错', async () => {
       page.url = new URL('http://localhost');
