@@ -476,17 +476,14 @@
           //如果是预览的话直接从localStorage获取title
           const exam_title = localStorage.getItem('examTitle');
 
-          // 暂时统一名称为预览考试
-          title = '预览考试';
-
-          // if (!title) {
-          //   //////////////////
-          //   if (!exam_title) {
-          //     title = '预览考试';
-          //   } else {
-          //     title = exam_title;
-          //   }
-          // }
+          if (!title) {
+             //////////////////
+             if (!exam_title) {
+               title = '预览考试';
+             } else {
+               title = exam_title;
+             }
+           }
 
           // 允许渲染页面
           load_success = true;
@@ -869,6 +866,22 @@
     }
   }
 
+  .exam-time-info :global(.button),
+  .exam-time-info button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 6px 10px !important; /* 恢复合适内边距 */
+    height: 32px !important;
+    line-height: normal !important; /* 避免行高干扰居中 */
+    box-sizing: border-box !important;
+    width: auto !important;
+  }
+  .exam-time-info button > span {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
   /* 考试容器样式 */
   .exam-container {
     position: absolute;
@@ -1064,33 +1077,17 @@
 
   // 考试开始时间和结束时间信息区域
   .exam-time-info {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* 文本和按钮靠左排列，使用 gap 控制间距 */
+    gap: 8px;
     background-color: #f2f3f5;
     font-size: 14px;
     font-weight: 500;
-    width: 70%;
-    padding: 5px;
+    width: 100%;
+    padding: 8px 10px;
     margin-bottom: 10px;
     border-radius: 10px;
-  }
-  .button {
-    background-color: transparent;
-    border: none;
-    color: #0066ff;
-    font-size: 14px;
-    font-weight: bold;
-    padding: 0;
-    height: auto;
-    outline: none;
-    box-shadow: none;
-    -webkit-tap-highlight-color: transparent; /* 移动端点击高亮去除 */
-  }
-
-
-  .button:focus,
-  .button:active {
-    outline: none;
-    box-shadow: none;
-    background-color: transparent;
   }
 
   //作答偏好信息

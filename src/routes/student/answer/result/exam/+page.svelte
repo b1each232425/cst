@@ -296,6 +296,9 @@
           throw new Error('exam_paper_group 不能为空');
         question_groups_map = new Map(Object.entries(data.data.exam_paper_group));
 
+        if (!data.data.exam_paper)  throw new Error('exam_paper_info 不能为空');
+          exam_paper_info = data.data.exam_paper; // 试卷信息
+
         //加载题目
         total_score = 0; // 重置总分
         resetQuestionGroup();
@@ -304,7 +307,6 @@
         nowSessionIndex = queryIndex;
         showScore();
         load_success = true;
-        toast.success("切换成功", 2000);
       })
       .catch((error) => {
         console.error('请求失败:', error);
@@ -325,19 +327,53 @@
       });
   }
   function nextQuestion() { // 切换到下一题
-    if (currentQuestionIndex < exam_paper.length - 1) {
-      currentQuestionIndex++;
-      currentQuestion = exam_paper[currentQuestionIndex];
+    if (!is_full_examMode && show_wrong_questions) {
+      // 在逐题+只看错题时，跳到下一个错题（包含半对）
+      for (let i = currentQuestionIndex + 1; i < exam_paper.length; i++) {
+        const q = exam_paper[i];
+        if (isWrong(q)) {
+          currentQuestionIndex = i;
+          currentQuestion = exam_paper[i];
+          return;
+        }
+      }
+      // 无下一个错题则保持不变
+    } else {
+      if (currentQuestionIndex < exam_paper.length - 1) {
+        currentQuestionIndex++;
+        currentQuestion = exam_paper[currentQuestionIndex];
+      }
     }
   }
   function prevQuestion() { // 切换到上一题
-    if (currentQuestionIndex > 0) {
-      currentQuestionIndex--;
-      currentQuestion = exam_paper[currentQuestionIndex];
+    if (!is_full_examMode && show_wrong_questions) {
+      // 在逐题+只看错题时，跳到上一个错题（包含半对）
+      for (let i = currentQuestionIndex - 1; i >= 0; i--) {
+        const q = exam_paper[i];
+        if (isWrong(q)) {
+          currentQuestionIndex = i;
+          currentQuestion = exam_paper[i];
+          return;
+        }
+      }
+      // 无上一个错题则保持不变
+    } else {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        currentQuestion = exam_paper[currentQuestionIndex];
+      }
     }
   }
   function goToQuestion(index) { // 跳转到指定题目
+    // 如果当前是只看错题模式，但点击的是一个“非错题”，则先关闭错题模式
+    if (show_wrong_questions && !isWrong(exam_paper[index])) {
+      show_wrong_questions = false;
+      // 清空过滤结果（可选）
+      filtered_questions.length = 0;
+    }
+
     currentQuestionIndex = index;
+    currentQuestion = exam_paper[currentQuestionIndex];
 
     // 如果是全卷模式，滚动到对应题目位置
     if (is_full_examMode) {
@@ -375,21 +411,34 @@
   function goBack() { // 返回到考试列表
     window.location.href = '/student/exam';
   }
+  function isWrong(q) {
+    return !(Number(q.Score) === Number(q.StudentScore));
+  }
   function filterWrongQuestions() { // 过滤错题
     show_wrong_questions = !show_wrong_questions;
 
-    // 根据 show_wrong_questions 过滤题目
-    filtered_questions = show_wrong_questions
-      ? exam_paper.filter((question) => question.StudentScore === 0 && question.Score > 0) // 仅显示错题
-      : exam_paper; // 显示所有题目
+    // 生成错题列表并包含全局索引（包含半对）
+    filtered_questions.length = 0;
+    exam_paper.forEach((q, idx) => {
+      if (isWrong(q)) {
+        filtered_questions.push({ ...q, _globalIndex: idx });
+      }
+    });
 
     if (show_wrong_questions) {
-      clone_exam_paper = exam_paper;
-      exam_paper = filtered_questions;
-      // console.log(exam_paper);
+      // 逐题模式下跳到第一道错题（如果存在）
+      if (!is_full_examMode) {
+        if (filtered_questions.length > 0) {
+          currentQuestionIndex = filtered_questions[0]._globalIndex;
+          currentQuestion = exam_paper[currentQuestionIndex];
+        } else {
+          toast.info('没有错题', 2000);
+        }
+      }
+      // 全卷模式不需要修改 exam_paper，模板会隐藏正确题（模板判断请改为 isWrong(question)）
     } else {
-      exam_paper = clone_exam_paper;
-      // console.log(exam_paper);
+      // 取消只看错题后保持当前索引对应的题目显示
+      currentQuestion = exam_paper[currentQuestionIndex];
     }
   }
 
@@ -509,30 +558,32 @@
     <div class="exam-header">
       <!-- 考试顶栏的左操作键 -->
       <div class="exam-header-left">
-        <button class="back-btn" onclick={goBack}> &lt; 返回 </button>
+         <button
+            class="return-button-span"
+            onclick={goBack}>返回</button
+           >
       </div>
+     
       <div class="exam-title">{exam_paper_info.Name}</div>
       {#if examSessionInfoLenght >= 2}
         <div class="exam-header-right">
           <button
             class="submit-btn"
-            class:disabled={nowSessionIndex == 0}
-            onclick={async () => {
-              ShowOtherSessionDetails(-1);
-            }}
+            disabled={nowSessionIndex === 0}
+            onclick={() => ShowOtherSessionDetails(-1)}
           >
-            &lt;&lt;上一张</button
-          >
+             上一张
+          </button>
           <button
             class="submit-btn"
-            class:disabled={nowSessionIndex == examSessionInfoLenght - 1}
-            onclick={async () => {
-              ShowOtherSessionDetails(1);
-            }}
+            disabled={nowSessionIndex === examSessionInfoLenght - 1}
+            onclick={() => ShowOtherSessionDetails(1)}
           >
-            下一张&gt;&gt;
+            下一张 
           </button>
+
         </div>
+
       {/if}
     </div>
     <!-- 考试主体布局 -->
@@ -656,35 +707,33 @@
           <div class="question-container" class:stretch={!showLeftInfo}>
             {#if is_full_examMode}
               {#each exam_paper as question, index}
-                <!-- 如果是新的分组就显示分组标题 -->
-                {#if index === 0 || question.group_name !== exam_paper[index - 1].group_name}
-                  <div class="question-header">
-                    <h2>{question.group_name}</h2>
+                {#if !show_wrong_questions || (show_wrong_questions && isWrong(question))}
+                  <!-- 如果是新的分组就显示分组标题 -->
+                  {#if index === 0 || question.group_name !== exam_paper[index - 1].group_name}
+                    <div class="question-header">
+                      <h2>{question.group_name}</h2>
+                    </div>
+                  {/if}
+                  <div class="question-mark-container" id={`question-${index}`}>
+                    <!-- 题目组件及学生作答-->
+                    <Quesion {question} {index} />
+                    <!-- 学生作答得分/解析组件 -->
+                    <Score {question} />
                   </div>
                 {/if}
-                <div class="question-mark-container" id={`question-${index}`}>
-                  <!-- 题目组件及学生作答-->
-                  <Quesion {question} {index} />
-                  <!-- 学生作答得分/解析组件 -->
-                  <Score {question} />
-                </div>
               {/each}
             {:else}
               <div class="question-header">
                 <h2>{currentQuestion.group_name}</h2>
               </div>
               <!-- 逐题模式：只显示当前题目 -->
-
               <div class="question-mark-container">
                 <Quesion question={currentQuestion} index={currentQuestionIndex} />
                 <Score question={currentQuestion} />
               </div>
-
               <div class="question-footer">
                 <button class="nav-btn" onclick={prevQuestion} disabled={currentQuestionIndex === 0}>上一题</button>
-                <button class="nav-btn" onclick={nextQuestion} disabled={currentQuestionIndex === exam_paper.length - 1}
-                  >下一题</button
-                >
+                <button class="nav-btn" onclick={nextQuestion} disabled={currentQuestionIndex === exam_paper.length - 1}>下一题</button>
               </div>
             {/if}
           </div>
@@ -745,6 +794,14 @@
   :global(body) {
     overflow: auto;
   }
+  .submit-btn:disabled {
+    color: #999;          /* 文字变灰 */
+    cursor: not-allowed;  /* 鼠标提示不可点击 */
+    background-color: inherit; /* 背景保持原样 */
+    opacity: 1;           /* 防止部分浏览器自动降低透明度 */
+  }
+
+
 
   .exam-container {
     position: absolute;
@@ -761,6 +818,19 @@
     font-family:
       -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue',
       sans-serif;
+  }
+  .return-button-span {
+    all: unset;
+    width: 70px;
+    height: 35px;
+    text-align: center;
+    background-color: white;
+    border: 1px solid #ddd;
+    color: black;
+    cursor: pointer;
+    display: inline-block;
+    line-height: 35px;
+    border-radius: 5px;
   }
   .exam-content {
     display: flex;
@@ -1034,7 +1104,7 @@
     width: 42px;
     justify-content: center;
     font-weight: 600;
-    margin-right: 30px;
+    margin-right: 18px;
     color: rgba(0, 82, 217, 1);
   }
   .rank-list {
