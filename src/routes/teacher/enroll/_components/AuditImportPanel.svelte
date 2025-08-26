@@ -74,6 +74,7 @@
     return { ...auditor, error };
   }
 
+  // 处理确认批量导入按钮点击事件
   function handleConfirmImport() {
     let success_audit_list = auditor_list.filter((item) => !item.error);
     onImportAudit({ success_audit_list });
