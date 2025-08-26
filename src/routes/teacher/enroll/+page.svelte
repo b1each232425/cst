@@ -176,17 +176,6 @@
       practice: '英语专项训练',
       status: '已作废',
     },
-    {
-      id: 4,
-      name: '2024年英语六级报名',
-      subject: '英语',
-      currentNum: 120,
-      planNum: 150,
-      auditDeadline: '2025-05-20 00:00:00',
-      duration: '2024-06-01 00:00:00 ~ 2024-06-02 00:00:00',
-      practice: '英语专项训练',
-      status: '审核截止',
-    },
   ];
 
   // 计划状态
