@@ -7,7 +7,7 @@
   import { onMount } from 'svelte';
   import { validMobile, validIdCard } from '$lib/utils/validate';
 
-  let { is_show_import_panel, auditor_list = [], closePanel = () => {} } = $props();
+  let { is_show_import_panel, auditor_list = [], closePanel = () => {}, onImportAudit = () => {} } = $props();
 
   let success_count = $state(0); // 成功识别条数
   let failure_count = $state(0); // 失败识别条数
@@ -67,11 +67,17 @@
     if (!validMobile(auditor.phone)) {
       error += '手机号不合法 ';
     }
-    if (!validIdCard(auditor.id_card)) {
+    if (!validIdCard(auditor.idCard)) {
       error += '证件号不合法 ';
     }
 
     return { ...auditor, error };
+  }
+
+  function handleConfirmImport() {
+    let success_audit_list = auditor_list.filter((item) => !item.error);
+    onImportAudit({ success_audit_list });
+    closePanel();
   }
 
   onMount(() => {
@@ -129,7 +135,7 @@
                     <td><input bind:value={editing_row.name} type="text" /></td>
                     <td><input bind:value={editing_row.gender} type="text" /></td>
                     <td><input bind:value={editing_row.phone} type="text" /></td>
-                    <td><input bind:value={editing_row.id_card} type="text" /></td>
+                    <td><input bind:value={editing_row.idCard} type="text" /></td>
                     <td class="error-text">{editing_row.error}</td>
                     <td class="action-btn-container">
                       <button class="save-btn" onclick={handleSaveEdit}>保存</button>
@@ -141,7 +147,7 @@
                     <td>{a.name}</td>
                     <td>{a.gender}</td>
                     <td>{a.phone}</td>
-                    <td>{a.id_card}</td>
+                    <td>{a.idCard}</td>
                     <td class={a.error ? 'error-text' : ''}>{a.error || '--'}</td>
                     <td class="action-btn-container">
                       <button class="edit-btn" onclick={() => handleEdit(a, idx)}>编辑</button>
@@ -162,7 +168,7 @@
 
     <div class="panel-footer">
       <Button type="primary" plain onclick={closePanel}>取消</Button>
-      <Button type="primary">确认导入</Button>
+      <Button type="primary" onclick={handleConfirmImport}>确认导入</Button>
     </div>
   </div>
 </div>

@@ -40,10 +40,10 @@
 
   // 批量导入数据
   let import_audit_list = $state([
-    { id: 1, name: '张三', gender: '男', phone: '13800000001', id_card: '440101199901010011', error: '' },
-    { id: 2, name: '李四', gender: '女', phone: 'not_a_phone', id_card: '440101199802022222', error: '' },
-    { id: 3, name: '王五', gender: '男', phone: '13800000003', id_card: 'wrong_id_card', error: '' },
-    { id: 4, name: '', gender: '女', phone: '13800000004', id_card: '440101199604044444', error: '' },
+    { id: 1, name: '张三', gender: '男', phone: '13800000001', idCard: '440101199901010011', error: '' },
+    { id: 2, name: '李四', gender: '女', phone: 'not_a_phone', idCard: '440101199802022222', error: '' },
+    { id: 3, name: '王五', gender: '男', phone: '13800000003', idCard: 'wrong_id_card', error: '' },
+    { id: 4, name: '', gender: '女', phone: '13800000004', idCard: '440101199604044444', error: '' },
   ]);
 
   // 关闭弹窗
@@ -113,6 +113,23 @@
 
     // 重置文件，避免重复选择同一个文件时不触发
     file_input.value = null;
+  }
+
+  // 处理批量导入审核员事件
+  function updateAuditChange({ success_audit_list }) {
+    success_audit_list.forEach((item) => {
+      // 只取需要的字段，插入 audit_list
+      audit_list = [
+        ...audit_list,
+        {
+          id: item.id,
+          name: item.name,
+          gender: item.gender,
+          phone: item.phone,
+          idCard: item.idCard,
+        },
+      ];
+    });
   }
 
   // 处理确定按钮点击事件
@@ -270,7 +287,11 @@
   </div>
 {/if}
 
-<AuditImportPanel {is_show_import_panel} auditor_list={import_audit_list} closePanel={closeAuditImportPanle}
+<AuditImportPanel
+  {is_show_import_panel}
+  auditor_list={import_audit_list}
+  onImportAudit={updateAuditChange}
+  closePanel={closeAuditImportPanle}
 ></AuditImportPanel>
 
 <!-- 隐藏的文件选择框 -->
