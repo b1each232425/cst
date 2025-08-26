@@ -64,7 +64,14 @@
   // 处理选择审核员按钮点击事件
   function handleSelectAudit() {
     if (show_all_audit) {
-      audit_list = all_audit_list.filter((item) => audit_id_list.includes(item.id));
+      // 过滤出已选的审核员
+      const selected = all_audit_list.filter((item) => audit_id_list.includes(item.id));
+
+      // 在原有 audit_list 基础上追加
+      audit_list = [...audit_list, ...selected];
+
+      // 去重
+      audit_list = audit_list.filter((item, index, self) => index === self.findIndex((t) => t.id === item.id));
     }
     show_all_audit = !show_all_audit;
   }
@@ -72,14 +79,23 @@
   // 处理审核员选中事件
   function selectAudit(id) {
     const index = audit_id_list.indexOf(id);
-    if (index === -1) {
-      audit_id_list.push(id);
-    } else {
-      audit_id_list.splice(index, 1);
-    }
 
-    // 每次选择时同步刷新 audit_list
-    audit_list = all_audit_list.filter((item) => audit_id_list.includes(item.id));
+    if (index === -1) {
+      // 新增选中
+      audit_id_list.push(id);
+
+      // 在原有列表基础上追加
+      const target = all_audit_list.find((item) => item.id === id);
+      if (target && !audit_list.some((a) => a.id === id)) {
+        audit_list = [...audit_list, target];
+      }
+    } else {
+      // 取消选中
+      audit_id_list.splice(index, 1);
+
+      // 从 audit_list 中移除
+      audit_list = audit_list.filter((item) => item.id !== id);
+    }
   }
 
   // 处理管理批量导入审核员事件
