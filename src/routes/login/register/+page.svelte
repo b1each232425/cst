@@ -1,10 +1,14 @@
 <script>
   import { goto } from '$app/navigation';
+  import { toast } from '$lib/components/Toast/Toast';
 
-  let email = $state('');
-  let password = $state('');
-  let confirm_password = $state('');
-  let code = $state('');
+  let email = $state(''); // 邮箱
+  let password = $state(''); /// 密码
+  let confirm_password = $state(''); // 二次确认密码
+  let code = $state(''); // 验证码
+
+  let password_hidden = $state(true); // 默认隐藏
+  let confirm_password_hidden = $state(true); // 默认隐藏
 
   // 错误信息
   let email_error = $state('');
@@ -19,7 +23,30 @@
 
   // 处理获取验证码按钮点击事件
   function handleGetCode() {
-    alert('获取验证码');
+    // 请求获取验证码信息
+    fetch(`/api/user/verification-code/email?recipient=${email}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((res) => {
+        if (res.status !== 0) {
+          toast.error('获取验证码失败，请检查邮箱是否正确');
+        } else {
+          toast.success('获取验证码成功，请及时查看');
+        }
+      })
+      .catch((e) => {
+        console.log(e);
+        toast.error('获取验证码失败', '网络错误，请检查网络连接后重试');
+      });
   }
 
   // 处理注册按钮点击事件
@@ -49,37 +76,35 @@
       return;
     }
 
-    // 模拟发送请求
-    try {
-      // 假设这里是后端接口调用
-      const res = await fakeRegisterApi({ email, password, code });
-
-      if (!res.success) {
-        // 后端返回的错误，按字段提示
-        if (res.field === 'email') email_error = res.message;
-        if (res.field === 'code') code_error = res.message;
-      } else {
-        alert('注册成功！');
-        goto('/login');
-      }
-    } catch (err) {
-      console.error('注册请求失败', err);
-    }
-  }
-
-  // 模拟后端 API
-  function fakeRegisterApi({ email, password, code }) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (!email.includes('@')) {
-          resolve({ success: false, field: 'email', message: '邮箱格式不正确' });
-        } else if (code !== '1234') {
-          resolve({ success: false, field: 'code', message: '验证码错误' });
-        } else {
-          resolve({ success: true });
+    // 发送注册请求
+    fetch(`/api/user/register/email?verification-code=${code}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        Email: email,
+        UserToken: password,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
         }
-      }, 1000);
-    });
+        return response.json();
+      })
+      .then((res) => {
+        if (res.status !== 0) {
+          toast.error('注册失败，请重新注册');
+        } else {
+          toast.success('注册成功！');
+          goto('/login');
+        }
+      })
+      .catch((e) => {
+        console.log(e);
+        toast.error('注册失败', '网络错误，请检查网络连接后重试');
+      });
   }
 </script>
 
@@ -113,16 +138,25 @@
 
           <!-- 输入密码 -->
           <div class="input-group">
-            <div class="input-wrapper">
+            <div class="input-wrapper password-wrapper">
               <input
-                oninput={() => {
-                  password ? (password_error = '') : (password_error = '请输入密码');
-                }}
                 bind:value={password}
-                type="password"
+                type={password_hidden ? 'password' : 'text'}
                 placeholder="请输入密码"
                 class="form-input"
+                oninput={() => {
+                  password ? (password_error = '') : (password_error = '请确认密码');
+                }}
               />
+
+              {#if password}
+                <button type="button" class="toggle-password-btn" onclick={() => (password_hidden = !password_hidden)}>
+                  <img
+                    src={password_hidden ? '/teacher_mgt/show.svg' : '/teacher_mgt/hide.svg'}
+                    alt={password_hidden ? '显示密码' : '隐藏密码'}
+                  />
+                </button>
+              {/if}
             </div>
             <div class="error-text">{password_error}</div>
           </div>
@@ -131,15 +165,29 @@
           <div class="input-group">
             <div class="input-wrapper">
               <input
-                oninput={() => {
-                  confirm_password ? (confirm_password_error = '') : (confirm_password_error = '请再次输入密码');
-                }}
                 bind:value={confirm_password}
-                type="password"
+                type={confirm_password_hidden ? 'password' : 'text'}
                 placeholder="请再次输入密码"
                 class="form-input"
+                oninput={() => {
+                  confirm_password ? (confirm_password_error = '') : (confirm_password_error = '请确认密码');
+                }}
               />
+
+              {#if confirm_password}
+                <button
+                  type="button"
+                  class="toggle-password-btn"
+                  onclick={() => (confirm_password_hidden = !confirm_password_hidden)}
+                >
+                  <img
+                    src={confirm_password_hidden ? '/teacher_mgt/show.svg' : '/teacher_mgt/hide.svg'}
+                    alt={confirm_password_hidden ? '显示密码' : '隐藏密码'}
+                  />
+                </button>
+              {/if}
             </div>
+
             <div class="error-text">{confirm_password_error}</div>
           </div>
 
@@ -271,6 +319,26 @@
     box-shadow: 0 0 0 2px rgba(0, 82, 217, 0.1);
   }
 
+  .password-wrapper {
+    display: flex;
+    align-items: center;
+  }
+
+  .toggle-password-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+
+    img {
+      width: 30px;
+    }
+  }
+
+  .toggle-password-btn:hover {
+    color: var(--primary-color);
+  }
+
   /* 通用输入框样式 */
   .form-input {
     width: 100%;
@@ -383,5 +451,21 @@
     .form-input {
       font-size: 0.85rem;
     }
+  }
+
+  /* 处理Edge/IE 的内置显示密码图标 */
+  .form-input[type='password']::-ms-reveal,
+  .form-input[type='password']::-ms-clear {
+    display: none;
+  }
+
+  /* 针对 Chrome/Edge Safari */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 1000px white inset; /* 覆盖背景色 */
+    -webkit-text-fill-color: #333; /* 字体颜色 */
+    transition: background-color 5000s ease-in-out 0s; /* 防止闪烁 */
   }
 </style>

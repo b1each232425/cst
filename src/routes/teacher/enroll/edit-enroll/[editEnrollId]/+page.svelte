@@ -7,7 +7,7 @@
   let plan_name = $state('');
   let people_limit = $state('unlimited');
   let limited_number = $state('');
-  let subjects = $state({ theory: false, practice: false });
+  let subjects = $state({ theory: true, practice: true });
   let start_date = $state(null);
   let end_date = $state(null);
   let deadline = $state(null);
@@ -178,6 +178,7 @@
     width: 200px;
     text-align: right;
     margin-right: 12px;
+    padding-bottom: 5px;
     font-size: 16px;
     flex-shrink: 0;
   }
