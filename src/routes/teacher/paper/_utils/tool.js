@@ -56,9 +56,14 @@ export const DIFFICULTY_TRANS = {
 // 试卷状态转换
 export const STATUS_TRANS = {
     "00": "未发布",
-    "02": "已发布",
-    "04": "作废",
-    "06": "异常",
+    "02": "已删除",
+    "04": "异常",
+    "06": "已发布",
+
+    "未发布": "primary",
+    "已删除": "info",
+    "异常": "danger",
+    "已发布": "success",
 };
 
 /**

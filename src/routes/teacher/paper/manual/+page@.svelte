@@ -1163,7 +1163,7 @@
     function editQuestion(question) {
         fetchQuestion(question)
             .then(result => {
-                const QUESTION = result.data[0];
+                const QUESTION = result.data;
 
                 // 转换数据格式以匹配编辑组件的期望
                 const convertedQuestion = {

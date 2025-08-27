@@ -9,16 +9,15 @@
 -->
 <script>
     // @ts-nocheck
-
+    import Tag from "$lib/components/Tag/Tag.svelte";
     import Title from "$lib/components/Title/Title.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
-    import Tag from "$lib/components/Tag/Tag.svelte";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
     import Empty from "$lib/components/Table/Empty.svelte";
     import UneditableTag from "$lib/components/Tag/UneditableTag.svelte";
     import "$lib/components/Button/index.scss"
     import "$lib/components/Input/index.scss"
-    import { LEVEL_TRANS, CATEGORY_TRANS, ASSEMBLY_TYPE_TRANS, utf8MaxLength } from "./_utils/tool";
+    import { LEVEL_TRANS, CATEGORY_TRANS, ASSEMBLY_TYPE_TRANS, utf8MaxLength, STATUS_TRANS } from "./_utils/tool";
     import { goto } from "$app/navigation";
     import { debounce } from "$lib/utils/optimize";
     import { onMount } from "svelte";
@@ -434,7 +433,6 @@
                 publishPaperAPI(ID)
                     .then(result1 => {
                         if (result1) {
-                            console.log(result1);
                             toast.success("发布成功", 1000);
                             fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
                                 .then(result => {
@@ -541,7 +539,7 @@
                     <th>建议时长(分)</th>
                     <th>试卷标签</th>
                     <th>试卷难度</th>
-                    <!-- <th>状态</th> -->
+                    <th>状态</th>
                     <th>更新时间</th>
                     <th>创建日期</th>
                     <th>操作</th>
@@ -578,24 +576,75 @@
                                 </div>
                             </td>
                             <td class="level"><span class={LEVEL_TRANS[LEVEL_TRANS[paper.Level]]}>{LEVEL_TRANS[paper.Level]}</span></td>
-                            <!-- <td class="status">{STATUS_TRANS[paper.Status]}</td> -->
+                            <td class="status">
+                                <div class="status-tag-container">
+                                    <Tag
+                                    them="light"
+                                    type={STATUS_TRANS[STATUS_TRANS[paper.Status]]}
+                                    >{STATUS_TRANS[paper.Status]}</Tag>
+                                </div>
+                            </td>
                             <td class="update-time">{formatTimestamp(paper.UpdateTime,{show_date:true,show_time:true})}</td>
                             <td class="create-time">{formatTimestamp(paper.CreateTime,{show_date:true,show_time:false})}</td>
                             <td>
+                                <!-- 未发布 -->
+                                {#if paper.Status === "00"}
+                                    <div class="operation">
+                                        <!-- 第一行按钮 -->
+                                        <div class="operation-line">
+                                            <button onclick={()=>editPaper(paper.ID)} class="blue-btn">修改</button>
+                                            <button onclick={()=>publishPaper(paper.ID)} class="blue-btn">发布</button>
+                                            <button onclick={()=>previewPaper(paper.ID,paper.Category)} class="blue-btn">预览</button>
+                                            <button onclick={()=>deleteSinglePaper(paper.ID)} class="red-btn">删除</button>
+                                        </div>
+            
+                                        <!-- 第二行按钮 -->
+                                        <!-- <div class="operation-line"> -->
+                                            <!-- <button class="blue-btn">日志</button> -->
+                                        <!-- </div> -->
+                                    </div>
+                                {/if}
+
+                                <!-- 已删除 -->
+                                {#if paper.Status === "02"}
+                                    <div class="operation">
+                                        <!-- 第一行按钮 -->
+                                        <div class="operation-line">
+                                            <button onclick={()=>previewPaper(paper.ID,paper.Category)} class="blue-btn">预览</button>
+                                            <!-- <div class="operation-line"> -->
+                                                <!-- <button class="blue-btn">日志</button> -->
+                                            <!-- </div> -->
+                                        </div>
+                                    </div>
+                                {/if}
+
+                                <!-- 异常 -->
+                                {#if paper.Status === "04"}
+                                    <div class="operation">
+                                        <!-- 第一行按钮 -->
+                                        <div class="operation-line">
+                                            <button onclick={()=>previewPaper(paper.ID,paper.Category)} class="blue-btn">预览</button>
+                                            <button onclick={()=>deleteSinglePaper(paper.ID)} class="red-btn">删除</button>
+                                            <!-- <div class="operation-line"> -->
+                                                <!-- <button class="blue-btn">日志</button> -->
+                                            <!-- </div> -->
+                                        </div>
+                                    </div>
+                                {/if}
+
+                                <!-- 已发布 -->
+                                {#if paper.Status === "06"}
                                 <div class="operation">
                                     <!-- 第一行按钮 -->
                                     <div class="operation-line">
-                                        <button onclick={()=>editPaper(paper.ID)} class="blue-btn">修改</button>
-                                        <button onclick={()=>publishPaper(paper.ID)} class="blue-btn">发布</button>
                                         <button onclick={()=>previewPaper(paper.ID,paper.Category)} class="blue-btn">预览</button>
                                         <button onclick={()=>deleteSinglePaper(paper.ID)} class="red-btn">删除</button>
+                                        <!-- <div class="operation-line"> -->
+                                            <!-- <button class="blue-btn">日志</button> -->
+                                        <!-- </div> -->
                                     </div>
-        
-                                    <!-- 第二行按钮 -->
-                                    <!-- <div class="operation-line"> -->
-                                        <!-- <button class="blue-btn">日志</button> -->
-                                    <!-- </div> -->
                                 </div>
+                                {/if}
                             </td>
                         </tr>
                     {/each}
@@ -783,6 +832,11 @@
                         flex-wrap: wrap;
                         max-height: 65px;
                     }
+
+                    .status-tag-container {
+                        display: flex;
+                        justify-content: center;
+                    }
                 }
 
                 .checkbox {
@@ -796,7 +850,7 @@
                     min-width: 120px;
                 }
                 .assembly-type {
-                    min-width: 70px;
+                    min-width: 85px;
                 }
                 .category {
                     min-width: 70px;
@@ -817,11 +871,14 @@
                 .level {
                     min-width: 70px;
                 }
+                .status {
+                    min-width: 70px;
+                }
                 .update-time {
-                    min-width: 74px;
+                    min-width: 84px;
                 }
                 .create-time {
-                    min-width: 74px;
+                    min-width: 84px;
                 }
             }
 
