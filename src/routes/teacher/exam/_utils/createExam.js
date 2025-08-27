@@ -198,12 +198,15 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
         examSessions: examSessionsdata,
         examinee: exam_examinee.map((e) => e.id ), // 用户选中的考生 id 数组
         invigilators: invigilators.map((i) => i.id), // 监考员 id 数组
-        examRoomConfigs: exam_rooms.map((r) => r.id), // 考场配置 id 数组
+        examRoomConfigs: exam_rooms.map((r) => ({
+          examRoomID: r.id,
+          invigilators_count: r.invigilators_count
+        })), // 考场配置 id 数组
       },
     };
 
     console.log('exam_data', exam_data.invigilators);
-    console.log('paperconfig',paper_configs);
+   // console.log('paperconfig',paper_configs);
     fetch('/api/exam', {
       method: 'PUT',
       credentials: 'include',

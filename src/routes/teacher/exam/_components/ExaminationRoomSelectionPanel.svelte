@@ -26,8 +26,8 @@
   let is_selection_mode=$state(false);
 //let exam_room_list = $state([]);
 let exam_room_list = $state([
-  { id: 1, name: '考场A', exam_site_name: '考点1', capacity: 30, invigilator_count: 2, selected: false },
-  { id: 2, name: '考场B', exam_site_name: '考点2', capacity: 25, invigilator_count: 1, selected: true },
+  { id: 1, name: '考场A', exam_site_name: '考点1', capacity: 30, invigilators_count: 2, selected: false },
+  { id: 2, name: '考场B', exam_site_name: '考点2', capacity: 25, invigilators_count: 1, selected: true },
 ]);
   let selected_room_list = $derived(exam_room_list.filter(r => r.selected));
   /** 当前页是否已全部选中 */
