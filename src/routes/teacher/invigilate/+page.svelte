@@ -105,7 +105,7 @@
       endTime: new Date('2025-08-24 11:20:00').getTime(),
       status: '22',
       examineeNum: 45,
-      absenteeNum: 2,
+      absenteeNum: 0,
     },
     // {
     //   examSessionID: 1009,
