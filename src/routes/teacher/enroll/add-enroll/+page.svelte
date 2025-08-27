@@ -4,6 +4,9 @@
   import Title from '$lib/components/Title/Title.svelte';
   import PracticeSelectPanel from '../_components/PracticeSelectPanel.svelte';
   import AuditSelectPanel from '../_components/AuditSelectPanel.svelte';
+  import divisions from 'china-division/dist/pcas-code.json';
+  import Select from '$lib/components/Select/Select.svelte';
+  import Option from '$lib/components/Select/Option.svelte';
   import { goto } from '$app/navigation';
 
   let plan_name = $state(''); // 计划名称
@@ -18,6 +21,11 @@
   let show_practice_panel = $state(false); // 是否展示选择练习面板
   let practice_initial_id = $state(null); // 当前选择试卷id
   let practice_data = $state(null); // 试卷数据
+  let detail_exam_location = $state(''); // 考试详细地点
+  // 考试预定地点
+  let exam_plan_location = $derived(() => {
+    return `${province} ${city} ${district} ${detail_exam_location}`.trim();
+  });
 
   // 错误提示内容
   let errors = $state({
@@ -28,6 +36,7 @@
     people_limit: '',
     subjects: '',
     practice: '',
+    exam_plan_location: '',
   });
 
   // 处理选择练习按钮点击事件
@@ -76,6 +85,7 @@
     if (people_limit === 'limited' && !limited_number) {
       errors.people_limit = '请输入限制人数';
     }
+    errors.exam_plan_location = exam_plan_location() ? '' : '请输入考试地点';
     errors.subjects = !subjects.theory && !subjects.practice ? '请至少选择一个考试科目' : '';
     errors.practice = practice_data ? '' : '请选择练习';
 
@@ -96,6 +106,50 @@
   function handleCancle() {
     goto('/teacher/enroll');
   }
+
+  // ====== 处理地址选择 ======
+  const AREA_DATA = divisions.map((p) => ({
+    label: p.name,
+    value: p.code,
+    children:
+      p.children?.map((c) => ({
+        label: c.name,
+        value: c.code,
+        children:
+          c.children?.map((a) => ({
+            label: a.name,
+            value: a.code,
+          })) || [],
+      })) || [],
+  }));
+
+  let province = $state('');
+  let city = $state('');
+  let district = $state('');
+
+  let provinces = AREA_DATA;
+  let cities = $state([]);
+  let districts = $state([]);
+
+  // 当选择省份时，更新城市
+  $effect(() => {
+    if (province) {
+      const selectedProvince = provinces.find((p) => p.value === province);
+      cities = selectedProvince ? selectedProvince.children : [];
+      city = '';
+      district = '';
+      districts = [];
+    }
+  });
+
+  // 当选择城市时，更新区县
+  $effect(() => {
+    if (city) {
+      const selectedCity = cities.find((c) => c.value === city);
+      districts = selectedCity ? selectedCity.children : [];
+      district = '';
+    }
+  });
 </script>
 
 <Title title="创建报名计划"></Title>
@@ -131,6 +185,48 @@
     </div>
   </div>
   <div class="error-text">{errors.audit_deadline}</div>
+
+  <!-- 审核截止时间 -->
+  <div class="form-row">
+    <div class="label required">考试地点：</div>
+    <div class="address">
+      <div class="address-setting">
+        <!-- 省份 -->
+        <div class="select-address-setting">
+          <Select bind:value={province}>
+            <Option value="" label="请选择省" />
+            {#each provinces as p}
+              <Option value={p.value} label={p.label} />
+            {/each}
+          </Select>
+        </div>
+
+        <div class="select-address-setting">
+          <!-- 城市 -->
+          <Select bind:value={city} disabled={!province}>
+            <Option value="" label="请选择市" />
+            {#each cities as c}
+              <Option value={c.value} label={c.label} />
+            {/each}
+          </Select>
+        </div>
+
+        <div class="select-address-setting">
+          <!-- 区县 -->
+          <Select bind:value={district} disabled={!city}>
+            <Option value="" label="请选择区" />
+            {#each districts as d}
+              <Option value={d.value} label={d.label} />
+            {/each}
+          </Select>
+        </div>
+      </div>
+
+      <!-- 详细地址输入 -->
+      <input type="text" class="detail-address-input" placeholder="请输入详细地址（如街道、门牌号）" />
+    </div>
+  </div>
+  <div class="error-text">{errors.exam_plan_location}</div>
 
   <!-- 审核员 -->
   <div class="form-row">
@@ -239,7 +335,7 @@
   .create-plan {
     width: 800px;
     margin: 10px auto;
-    padding: 24px;
+    padding: 0px 24px 10px 24px;
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -247,8 +343,8 @@
 
   .form-row {
     display: flex;
-    align-items: center;
-    margin: 20px 0 6px 0;
+    align-items: start;
+    margin: 15px 0 6px 0;
 
     .selected-audit-display {
       display: flex;
@@ -336,6 +432,33 @@
         }
       }
     }
+
+    .address {
+      margin-left: 8px;
+
+      .address-setting {
+        display: flex;
+        gap: 12px; /* 下拉框之间的间距 */
+        margin-bottom: 8px;
+      }
+
+      .select-address-setting {
+        width: 110px;
+      }
+
+      .detail-address-input {
+        width: 100%;
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+        outline: none;
+      }
+
+      .detail-address-input:focus {
+        border-color: #409eff;
+      }
+    }
   }
 
   .label {
@@ -365,6 +488,7 @@
 
   .input-box-small {
     width: 130px;
+    height: 15px;
     padding: 6px;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -386,7 +510,7 @@
   .options {
     display: flex;
     gap: 16px;
-    align-items: center;
+    padding-top: 2px;
     margin-left: 4px;
 
     label {
@@ -414,7 +538,7 @@
   .form-actions {
     display: flex;
     justify-content: flex-start;
-    margin-top: 30px;
+    margin-top: 20px;
     margin-left: 220px;
     gap: 200px;
   }
