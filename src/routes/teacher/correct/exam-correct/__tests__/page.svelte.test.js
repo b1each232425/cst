@@ -343,7 +343,9 @@ describe('考试批改列表组件测试', () => {
       await waitFor(() => {
         const button = screen.getAllByRole('button', { name: '进入批改' })[0];
         fireEvent.click(button);
-        expect(goto).toHaveBeenCalledWith('/teacher/correct/correct?name=数学考试A&exam_session_id=11');
+        expect(goto).toHaveBeenCalledWith(
+          '/teacher/correct/correct?name=数学期末&exam_session_name=数学考试A&exam_session_id=11',
+        );
       });
     });
 

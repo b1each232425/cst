@@ -3,13 +3,13 @@
  * @Date: 2025-08-23 13:28:11
  * @LastEditors: 林炜佳 wj2144632819@qq.com
  * @LastEditTime: 2025-08-23 23:55:07
- * @FilePath: \exam\src\routes\teacher\invigilate\+page.svelte
- * @Description: 教师端监考管理列表
+ * @FilePath: \exam\src\routes\teacher\invigilate\detail\+page@.svelte
+ * @Description: 教师端监考详情页
  * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
 -->
 
 <script>
-  import { goto, invalidate } from '$app/navigation';
+  import MessageBox from '$lib/components/MessageBox/MessageBox.js';
   import Title from '$lib/components/Title/Title.svelte';
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Select from '$lib/components/Select/Select.svelte';
@@ -179,10 +179,11 @@
 
   let selected_examinee_id_set = $state(new Set());
 
-  function gotoInvigilationList() {
+  function goBack() {
     history.back();
   }
 
+  // 获取监考详情信息
   function getInvigilateDetail() {
     const q = JSON.stringify({
       orderBy: [{ Duration: 'DESC', Time: 'DESC' }],
@@ -209,11 +210,14 @@
         if (!res.status) {
           invigilation_info = res.data?.info ?? {};
           examinee_list = res.data?.examinees ?? [];
+          total_count = res.rowCount ?? 0;
 
           if (Object.prototype.toString.call(invigilation_info) !== '[object Object]') {
             invigilation_info = {};
             throw new Error('invigilation_info 数据类型错误');
           }
+
+          if (Object.keys(invigilation_info).length === 0) throw new Error('监考信息为空');
 
           if (!Array.isArray(examinee_list)) {
             examinee_list = [];
@@ -222,7 +226,16 @@
         } else throw new Error(res.msg ?? '获取监考信息失败');
       })
       .catch((err) => {
-        toast.error(err.message);
+        MessageBox({
+          type: 'danger',
+          title: '出错啦',
+          content: err.message,
+          show_cancel_button: false,
+          on_close_by_click_outside: false,
+          confirm_button_type: 'danger',
+          onConfirm: () => goBack(),
+          onCancel: () => goBack(),
+        });
         console.error(err);
       });
   }
@@ -260,21 +273,8 @@
       })
       .then((res) => {
         if (!res.status) {
-          invigilation_info = res.data?.info ?? {};
-          examinee_list = res.data?.examinees ?? [];
-
-          if (Object.prototype.toString.call(invigilation_info) !== '[object Object]') {
-            invigilation_info = {};
-            throw new Error('invigilation_info 数据类型错误');
-          }
-
-          if (!Array.isArray(examinee_list)) {
-            examinee_list = [];
-            throw new Error('examinee_list 数据类型错误');
-          }
-
           if (typeof callback === 'function') callback(); // 这里可以用于更新本地的数据
-        } else throw new Error(res.msg ?? '获取监考信息失败');
+        } else throw new Error(res.msg ?? '更新监考信息失败');
       })
       .catch((err) => {
         toast.error(err.message);
@@ -282,12 +282,14 @@
       });
   }
 
+  // 更新考场情况
   function updateBasicEval(basic_eval) {
     updateInfos({
       basicEval: basic_eval,
     });
   }
 
+  // 更新一个学生的状态
   function updateSingleExamineeStatus(examinee_id, status) {
     updateInfos({
       examineeIDs: [examinee_id],
@@ -295,6 +297,7 @@
     });
   }
 
+  // 更新一个学生的备注
   function updateSingleExamineeRemark(examinee_id, remark) {
     updateInfos({
       examineeIDs: [examinee_id],
@@ -304,7 +307,7 @@
 
   const debounceUpdateSingleExamineeRemark = debounce(updateSingleExamineeRemark, 500);
 
-  // 批量更新
+  // 批量更新学生的状态
   function batchUpdateExamineeStatus(status) {
     updateInfos(
       {
@@ -319,6 +322,7 @@
     );
   }
 
+  // 批量更新学生的备注
   function batchUpdateExamineeRemark() {
     updateInfos(
       {
@@ -335,12 +339,14 @@
 
   const debounceBatchUpdateExamineeRemark = debounce(batchUpdateExamineeRemark, 1000);
 
+  // 处理全选框
   function toggleSelectAll() {
     if (selected_examinee_id_set.size === examinee_list.length) selected_examinee_id_set = new Set();
     else selected_examinee_id_set = new Set(examinee_list.map((e) => e.examineeID));
   }
 
-  function toggleSelect(examinee_id) {
+  // 处理单个选框
+  function toggleSelectSingle(examinee_id) {
     // 创建新的 Set 以确保响应式更新
     const newSet = new Set(selected_examinee_id_set);
 
@@ -361,7 +367,7 @@
 <div class="detail">
   <!-- 顶部信息 -->
   <div class="header card">
-    <button onclick={gotoInvigilationList}></button>
+    <button onclick={goBack}>返回</button>
     <div class="info">
       <span class="exam-session-name">{invigilation_info.examSessionName}</span>
       <span class="number"
@@ -393,7 +399,7 @@
         <div class="info-item">
           <div class="label">考场情况：</div>
           {#if is_invigilating}
-            <div class="data">
+            <div class="data" data-testid="basic-eval-select">
               <Select value={invigilation_info.basicEval} changeValue={updateBasicEval}>
                 {#each Object.entries(EVAL_MAP) as [key, value]}
                   <Option value={key} label={value} />
@@ -434,14 +440,14 @@
             <div class="label">搜索：</div>
             <input
               type="text"
-              placeholder="准考证号、身份证号或姓名"
+              placeholder="姓名、身份证号或准考证号"
               bind:value={exam_session_name}
               class="input"
               oninput={debounceGetInvigilateDetail}
             />
           </div>
           {#if is_invigilating}
-            <div class="select" data-testid="exam-status-select">
+            <div class="select" data-testid="batch-select">
               <div class="label">批量标记：</div>
               <Select
                 value={status}
@@ -483,7 +489,7 @@
                 {#if is_invigilating}
                   <!-- 全选框 -->
                   <th class="select">
-                    <button class="square-container {{} ? 'checked' : ''}" onclick={toggleSelectAll}>
+                    <button class="square-container" onclick={toggleSelectAll} data-testid="select-all">
                       {#if selected_examinee_id_set.size === examinee_list.length}
                         <div class="check-square"></div>
                       {/if}
@@ -497,14 +503,16 @@
                 <th>备注</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody getByTestId="examinee-tbody">
               {#each examinee_list as { examineeID, identityID, name, examCard, status, remark }}
                 <tr>
                   {#if is_invigilating}
+                    <!-- 单选框 -->
                     <td class="select">
                       <button
-                        class="square-container {{ examineeID } ? 'checked' : ''}"
-                        onclick={() => toggleSelect(examineeID)}
+                        class="square-container"
+                        onclick={() => toggleSelectSingle(examineeID)}
+                        data-testid="select-single"
                       >
                         {#if selected_examinee_id_set.has(examineeID)}
                           <div class="check-square"></div>
@@ -527,7 +535,13 @@
                       </div></td
                     >
                   {:else}
-                    <td class:unknown={!EXAMINEE_STATUE_MAP[status]}>{EXAMINEE_STATUE_MAP[status] ?? '未知状态'}</td>
+                    <td
+                      class="status"
+                      class:absent={status === '02'}
+                      class:cheat={status === '06'}
+                      class:abnormal={status === '14'}
+                      class:unknown={!EXAMINEE_STATUE_MAP[status]}>{EXAMINEE_STATUE_MAP[status] ?? '未知状态'}</td
+                    >
                   {/if}
                   <td class="remark"
                     >{#if is_invigilating}
@@ -535,6 +549,7 @@
                         <input
                           type="text"
                           class="input"
+                          placeholder="暂无备注"
                           value={remark}
                           oninput={(e) => debounceUpdateSingleExamineeRemark(examineeID, e.target.value)}
                         />
@@ -610,6 +625,7 @@
         height: 1.8rem;
         border-top-left-radius: 0.4rem; /* 左上角 */
         border-bottom-right-radius: 0.4rem; /* 右下角 */
+        color: transparent;
 
         &:hover {
           cursor: pointer;
@@ -721,7 +737,7 @@
             .select {
               display: flex;
               align-items: center;
-              z-index: 10001;
+              z-index: 1002;
             }
 
             .label {
@@ -757,7 +773,7 @@
                 font-size: 14px;
                 color: var(--gray);
                 background-color: white;
-                z-index: 10000;
+                z-index: 1001;
               }
 
               tr {
@@ -822,6 +838,18 @@
                       .remark-input {
                         width: 80%;
                         margin: auto;
+                      }
+                    }
+
+                    &.status {
+                      &.absent {
+                        color: #666; /* 灰色表示缺考 */
+                      }
+                      &.cheat {
+                        color: var(--red); /* 红色表示作弊 */
+                      }
+                      &.abnormal {
+                        color: #ffc107; /* 黄色表示异常 */
                       }
                     }
                   }
