@@ -51,7 +51,6 @@
                 return response.json();
             })
             .then(data => {
-                console.log(data);
                 if (data.status !== 0){
                     throw new Error(data.msg);  
                 }
@@ -89,7 +88,7 @@
             credentials: "include",
             body: JSON.stringify(DATA)
         })
-        .then(response => {
+            .then(response => {
                 if (!response.ok) {
                     throw new Error(`请求失败，状态码：${response.status}`);
                 }
@@ -193,6 +192,8 @@
     let page_is_ready = $state(false);
     let is_editing_question = $state(false); // 编辑题目
     let is_update_average_question_score = $state(false); // 更新题组平均分
+    let is_saving = $state(false);
+    let is_exiting = $state(false);
 
     // 编辑组件状态管理
     let show_single_select_edit_panel = $state(false);      // 显示单选题编辑面板
@@ -335,7 +336,19 @@
                 }
             }
         ];
-        savePaper(paperID, ACTIONS);
+        savePaper(paperID, ACTIONS)
+            .then(async () => {
+                if(is_saving) {
+                    is_saving = false;
+                    toast.success("试卷内容已保存", 1000);
+                }
+                if(is_exiting) {
+                    is_exiting = false;
+                    await goto("/teacher/paper");
+                    toast.success("试卷内容已保存", 1000);
+                    return;
+                }
+            });
     }
 
     // 预览试卷
@@ -811,6 +824,7 @@
             toast.error("已经是第一个题组", 1000);
             return;
         }
+        
         // 判断是否是最后一个题组
         if(group.id === paper_groups[paper_groups.length - 1].id && direction === "down") {
             toast.error("已经是最后一个题组", 1000);
@@ -1149,7 +1163,7 @@
     function editQuestion(question) {
         fetchQuestion(question)
             .then(result => {
-                const QUESTION = result.data[0];
+                const QUESTION = result.data;
 
                 // 转换数据格式以匹配编辑组件的期望
                 const convertedQuestion = {
@@ -1374,10 +1388,18 @@
     // 题目拖拽放下
     function handleQuestionDrop(event) {
         event.preventDefault();
+        
+        // 先保存必要的数据，避免后续被清空
+        const draggedQuestion = dragged_question_item.question;
+        const draggedGroup = dragged_question_item.group;
+        const targetGroup = drag_over_question_item.group;
+        
         if (
             is_dragging_group ||
-            (dragged_question_item.question.id === drag_over_question_item.question.id &&
-            dragged_question_item.group.id === drag_over_question_item.group.id)
+            !draggedQuestion ||
+            !targetGroup ||
+            (draggedQuestion.id === drag_over_question_item.question?.id &&
+            draggedGroup.id === targetGroup.id)
         ) {
             handleDragEnd();
             return;
@@ -1387,25 +1409,25 @@
         const QUESTION_IDS = paper_groups
             .flatMap(group => group.questions
             .map(question => question.id))
-            .filter(id => id !== dragged_question_item.question.id);
+            .filter(id => id !== draggedQuestion.id);
 
         let dropIndex = 0;
 
-        if (drag_over_question_item.question.id) {
+        if (drag_over_question_item.question?.id) {
             // 非空题组的情况
             dropIndex = QUESTION_IDS.findIndex(id => id === drag_over_question_item.question.id);
             
             if (drag_over_question_position === "bottom") dropIndex += 1;
         } else {
             // 空题组的情况
-            const groupIndex = paper_groups.findIndex(group => group.id === drag_over_question_item.group.id);
+            const groupIndex = paper_groups.findIndex(group => group.id === targetGroup.id);
             // 统计该组前面所有题目的数量
             dropIndex = paper_groups
                 .slice(0, groupIndex)
                 .reduce((count, group) => count + group.questions.length, 0);
         }
 
-        QUESTION_IDS.splice(dropIndex, 0, dragged_question_item.question.id);
+        QUESTION_IDS.splice(dropIndex, 0, draggedQuestion.id);
 
         // 处理请求
         const ACTIONS = [
@@ -1417,10 +1439,10 @@
                 action: "update_question",
                 payload: [
                     {
-                        id: dragged_question_item.question.id,
-                        group_id: drag_over_question_item.group.id,
+                        id: draggedQuestion.id,
+                        group_id: targetGroup.id,
                         order: dropIndex + 1,
-                        score: dragged_question_item.score
+                        score: draggedQuestion.score
                     }
                 ]
             }
@@ -1433,10 +1455,9 @@
                 paper_info = result.data;
                 total_score = paper_info.TotalScore;
                 question_count = paper_info.QuestionCount;
-                // 拖拽移动成功后高亮题目
-                highlightQuestion(dragged_question_item.question.id);
-            })
-            .finally(() => {
+                
+                // 使用保存的数据进行高亮
+                highlightQuestion(draggedQuestion.id);
                 handleDragEnd();
             });
     }
@@ -1606,11 +1627,25 @@
             
             <!-- 操作区 -->
             <div class="operation">
-                <button onclick={()=>expandAll()} class="btn btn--primary is-plain">一键展开</button>
-                <button onclick={()=>collapseAll()} class="btn btn--primary is-plain">一键收起</button>
+                <button onclick={()=>expandAll()} class="btn btn--info is-plain">一键展开</button>
+                <button onclick={()=>collapseAll()} class="btn btn--info is-plain">一键收起</button>
                 <button onclick={()=>previewPaper()} class="btn btn--primary is-plain">预览试卷</button>
                 <button onclick={()=>importQuestions({id:0,name:""})} class="btn btn--primary">从题库中导入</button>
-                <button onclick={()=>{UpDatePaperInfo();goto('/teacher/paper')}} class="btn btn--primary is-plain">保存并退出</button>
+                <button onclick={()=>{is_exiting = true;UpDatePaperInfo()}} class="btn btn--primary is-plain">保存并退出</button>
+                <button onclick={()=>{is_saving = true;UpDatePaperInfo()}} class="btn btn--primary is-plain save-btn">保存</button>
+                <button onclick={()=>{
+                        MessageBox({
+                            title: "退出确认",
+                            content: "请问是否要退出？",
+                            confirm_button_type: "danger",
+
+                            onConfirm: () => {
+                                is_exiting = true;
+                                UpDatePaperInfo()
+                            }
+                        });
+                    }}
+                    class="btn btn--danger is-plain">退出</button>
             </div>
         </div>
 
