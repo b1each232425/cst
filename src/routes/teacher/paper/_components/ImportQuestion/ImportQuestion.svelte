@@ -521,7 +521,7 @@
         <!-- 头部 -->
         <div class="container-header">
             <span class="title">从题库导入题目</span>
-            <button onclick={onclose}>✖</button>
+            <button onclick={onclose} class="close-import-btn">✖</button>
         </div>
 
         <!-- 内容区 -->

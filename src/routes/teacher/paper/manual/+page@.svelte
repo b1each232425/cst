@@ -1632,7 +1632,7 @@
                 <button onclick={()=>previewPaper()} class="btn btn--primary is-plain">预览试卷</button>
                 <button onclick={()=>importQuestions({id:0,name:""})} class="btn btn--primary">从题库中导入</button>
                 <button onclick={()=>{is_exiting = true;UpDatePaperInfo()}} class="btn btn--primary is-plain">保存并退出</button>
-                <button onclick={()=>{is_saving = true;UpDatePaperInfo()}} class="btn btn--primary is-plain">保存</button>
+                <button onclick={()=>{is_saving = true;UpDatePaperInfo()}} class="btn btn--primary is-plain save-btn">保存</button>
                 <button onclick={()=>{
                         MessageBox({
                             title: "退出确认",

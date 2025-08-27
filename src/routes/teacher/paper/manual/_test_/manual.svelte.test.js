@@ -235,7 +235,7 @@ describe('自定义组卷页面', () => {
 
     describe('顶部栏', () => {
         it('渲染', async () => {
-            render(Manual);
+            const { container } = render(Manual);
             
             // 等待页面渲染完成（有题组说明渲染完成）
             await waitFor(() => {
@@ -255,6 +255,8 @@ describe('自定义组卷页面', () => {
             expect(screen.getByText('预览试卷')).toBeInTheDocument();
             expect(screen.getByText('从题库中导入')).toBeInTheDocument();
             expect(screen.getByText('保存并退出')).toBeInTheDocument();
+            expect(container.querySelector('.save-btn')).toBeInTheDocument();
+            expect(screen.getByText('退出')).toBeInTheDocument();
         });
 
         describe('交互', () => {
@@ -636,7 +638,7 @@ describe('自定义组卷页面', () => {
             });
 
             it('从题库中导入', async () => {
-                render(Manual);
+                const { container } = render(Manual);
 
                 // 等待页面渲染完成（有题组说明渲染完成）
                 await waitFor(() => {
@@ -651,6 +653,15 @@ describe('自定义组卷页面', () => {
                 // 验证“题库列表”四个字
                 await waitFor(() => {
                     expect(screen.getByText('题库列表')).toBeInTheDocument();
+                });
+
+                // 点击关闭按钮
+                const closeButton = container.querySelector('.close-import-btn');
+                fireEvent.click(closeButton);
+
+                // 验证弹窗是否被关闭
+                await waitFor(() => {
+                    expect(screen.queryByText('题库列表')).not.toBeInTheDocument();
                 });
             });
 
@@ -677,6 +688,78 @@ describe('自定义组卷页面', () => {
                 // 点击保存并退出按钮
                 const saveButton = screen.getByText('保存并退出');
                 fireEvent.click(saveButton);
+
+                // 验证goto是否被调用
+                await waitFor(() => {
+                    expect(goto).toHaveBeenCalledWith('/teacher/paper');
+                });
+            });
+
+            it('保存', async () => {
+                const { container } = render(Manual);
+
+                // 等待页面渲染完成（有题组说明渲染完成）
+                await waitFor(() => {
+                    // 泛型匹配（有两个）
+                    expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                });
+
+                // 修改mock信息：请求成功
+                global.fetch.mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        status: 0,
+                        msg: "success",
+                        API: "/api/paper/manual",
+                        method: "PUT"
+                    })
+                });
+
+                // 获取保存按钮
+                const saveButton = container.querySelector('.save-btn');
+
+                // 点击保存按钮
+                fireEvent.click(saveButton);
+
+                // 验证toast是否被调用
+                await waitFor(() => {
+                    expect(toast.success).toHaveBeenCalledWith('试卷内容已保存', 1000);
+                });
+            });
+
+            it('退出', async () => {
+                render(Manual);
+
+                // 等待页面渲染完成（有题组说明渲染完成）
+                await waitFor(() => {
+                    // 泛型匹配（有两个）
+                    expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                });
+
+                // 修改mock信息：请求成功
+                global.fetch.mockResolvedValueOnce({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        status: 0,
+                        msg: "success",
+                        API: "/api/paper/manual",
+                        method: "PUT"
+                    })
+                });
+
+                // 点击退出按钮
+                const exitButton = screen.getByText('退出');
+                fireEvent.click(exitButton);
+
+                // 验证弹窗
+                await waitFor(() => {
+                    expect(screen.getByText('退出确认')).toBeInTheDocument();
+                    expect(screen.getByText('请问是否要退出？')).toBeInTheDocument();
+                });
+
+                // 点击确定按钮
+                const confirmButton = screen.getByText('确定');
+                fireEvent.click(confirmButton);
 
                 // 验证goto是否被调用
                 await waitFor(() => {
