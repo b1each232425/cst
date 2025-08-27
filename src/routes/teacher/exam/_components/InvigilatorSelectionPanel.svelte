@@ -150,7 +150,7 @@ let invigilator_list = $state([
               </tbody>
             </table>
 
-            <div class ="{selected_invigilator_list.length === 0?'no-data-text' : 'hideButton'}" > 
+            <div class ="{selected_invigilator_list.length === 0 ? 'no-data-text' : 'hideButton'}" > 
               <Empty text = "暂无数据"/>
             </div>
           </div>
@@ -195,7 +195,7 @@ let invigilator_list = $state([
               </tbody>
             </table>
 
-            <div class ="{invigilator_list.length === 0?'no-data-text' : 'hideButton'}" > 
+            <div class ="{invigilator_list.length === 0 ? 'no-data-text' : 'hideButton'}" > 
               <Empty text = "暂无数据"/>
             </div>
           </div>
@@ -244,7 +244,7 @@ let invigilator_list = $state([
                 <button class="btn btn--info is-plain" onclick={() => {
                     show_panel = false;
                     search_params.page = 1;
-                    selected_ids = [];
+                    selected_invigilator_list = [];
                     is_selection_mode = false;
                     onCancel();
                 }}>取消</button>

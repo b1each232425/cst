@@ -315,15 +315,10 @@
   }
 
   function resetTime(index) {
-    // paper_configs[index].startTime='';
-    // paper_configs[index].endTime = '';
-    if(paper_configs[index].periodMode==='02')
-    {
+    if (paper_configs[index].periodMode === '02') {
       paper_configs[index].duration = 0;
-      paper_configs[index].maxDuration = 0;
-    }
-    else{
-      updateDuration(index,paper_configs);
+    } else {
+      updateDuration(index, paper_configs);
     }
   }
   
