@@ -172,8 +172,8 @@
   let page = $state(1);
   let page_size = $state(10);
 
-  let invigilation_info = $state({ ...MOCK_INFO });
-  let examinee_list = $state([...MOCK_EXAMINEES]);
+  let invigilation_info = $state({});
+  let examinee_list = $state([]);
 
   let is_invigilating = $derived(invigilation_info?.status === '04');
 
@@ -181,6 +181,19 @@
 
   function goBack() {
     history.back();
+  }
+
+  function showErrorDialog(content) {
+    MessageBox({
+      type: 'danger',
+      title: '出错啦',
+      content,
+      show_cancel_button: false,
+      on_close_by_click_outside: false,
+      confirm_button_type: 'danger',
+      onConfirm: () => goBack(),
+      onCancel: () => goBack(),
+    });
   }
 
   // 获取监考详情信息
@@ -226,16 +239,7 @@
         } else throw new Error(res.msg ?? '获取监考信息失败');
       })
       .catch((err) => {
-        MessageBox({
-          type: 'danger',
-          title: '出错啦',
-          content: err.message,
-          show_cancel_button: false,
-          on_close_by_click_outside: false,
-          confirm_button_type: 'danger',
-          onConfirm: () => goBack(),
-          onCancel: () => goBack(),
-        });
+        showErrorDialog(err.message);
         console.error(err);
       });
   }
@@ -357,8 +361,21 @@
   }
 
   onMount(() => {
-    exam_session_id = Number(appPage.url.searchParams.get('exam_session_id'));
-    exam_room_id = Number(appPage.url.searchParams.get('exam_room_id'));
+    const exam_session_id_str = appPage.url.searchParams.get('exam_session_id');
+    const exam_room_id_str = appPage.url.searchParams.get('exam_room_id');
+
+    if (!exam_session_id_str || !exam_room_id_str) {
+      showErrorDialog('路径参数错误');
+      return;
+    }
+
+    exam_session_id = Number(exam_session_id_str);
+    exam_room_id = Number(exam_room_id_str);
+
+    if (!Number.isFinite(exam_session_id) || !Number.isFinite(exam_room_id)) {
+      showErrorDialog('路径参数错误');
+      return;
+    }
 
     getInvigilateDetail();
   });
@@ -383,7 +400,6 @@
       ><span><span class="label">地点：</span>{invigilation_info.examSiteName}-{invigilation_info.examRoomName}</span>
       <span class="info-item"
         ><span class="circle"></span>
-        <!-- TODO 默认值是什么 -->
         <span class:unknown={!STATUS_MAP[invigilation_info.status]}
           >{STATUS_MAP[invigilation_info.status] ?? '未知状态'}
         </span></span
@@ -477,7 +493,9 @@
               class:is-disabled={selected_examinee_id_set.size === 0}
               onclick={() => (selected_examinee_id_set = new Set())}>取消选中</button
             >
-            <div class="tip">当前已选中 <span class="data">{selected_examinee_id_set.size}</span> 人</div>
+            <div class="tip" data-testid="selected-count-tip">
+              当前已选中 <span class="data">{selected_examinee_id_set.size}</span> 人
+            </div>
           {/if}
         </div>
 
@@ -491,7 +509,7 @@
                   <th class="select">
                     <button class="square-container" onclick={toggleSelectAll} data-testid="select-all">
                       {#if selected_examinee_id_set.size === examinee_list.length}
-                        <div class="check-square"></div>
+                        <div class="check-square" data-testid="check-square"></div>
                       {/if}
                     </button>
                   </th>
@@ -503,7 +521,7 @@
                 <th>备注</th>
               </tr>
             </thead>
-            <tbody getByTestId="examinee-tbody">
+            <tbody data-testid="examinee-tbody">
               {#each examinee_list as { examineeID, identityID, name, examCard, status, remark }}
                 <tr>
                   {#if is_invigilating}
@@ -515,7 +533,7 @@
                         data-testid="select-single"
                       >
                         {#if selected_examinee_id_set.has(examineeID)}
-                          <div class="check-square"></div>
+                          <div class="check-square" data-testid="check-square"></div>
                         {/if}
                       </button></td
                     >
@@ -525,7 +543,7 @@
                   <td>{examCard}</td>
                   {#if is_invigilating}
                     <td>
-                      <div class="select">
+                      <div class="select" data-testid="single-select">
                         <Select value={status} changeValue={(val) => updateSingleExamineeStatus(examineeID, val)}>
                           <Option value="" label="无" />
                           <Option value="02" label={EXAMINEE_STATUE_MAP['02']} />

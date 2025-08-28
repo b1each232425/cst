@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/sve
 import CorrectPage from '../+page@.svelte';
 import { toast } from '$lib/components/Toast/Toast.js';
 import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+import { page } from '$app/state';
 
 vi.mock('$app/state', () => ({
   page: {
@@ -15,9 +16,6 @@ vi.mock('$lib/components/MessageBox/MessageBox.js', () => ({
     onConfirm();
   }),
 }));
-
-import { page } from '$app/state';
-import { json, redirect } from '@sveltejs/kit';
 
 const MOCK_DATA = {
   question_sets: [

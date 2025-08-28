@@ -9,16 +9,15 @@
 -->
 <script>
     // @ts-nocheck
-
+    import Tag from "$lib/components/Tag/Tag.svelte";
     import Title from "$lib/components/Title/Title.svelte";
     import Pagination from "$lib/components/Pagination/Pagination.svelte";
-    import Tag from "$lib/components/Tag/Tag.svelte";
     import MessageBox from "$lib/components/MessageBox/MessageBox";
     import Empty from "$lib/components/Table/Empty.svelte";
     import UneditableTag from "$lib/components/Tag/UneditableTag.svelte";
     import "$lib/components/Button/index.scss"
     import "$lib/components/Input/index.scss"
-    import { LEVEL_TRANS, CATEGORY_TRANS, ASSEMBLY_TYPE_TRANS, utf8MaxLength } from "./_utils/tool";
+    import { LEVEL_TRANS, CATEGORY_TRANS, ASSEMBLY_TYPE_TRANS, utf8MaxLength, STATUS_TRANS } from "./_utils/tool";
     import { goto } from "$app/navigation";
     import { debounce } from "$lib/utils/optimize";
     import { onMount } from "svelte";
@@ -79,23 +78,23 @@
             credentials: "include",
             body: JSON.stringify(DATA)
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`请求失败，状态码：${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.status !== 0){
-                throw new Error(data.msg);  
-            }
-            return data;
-        })
-        .catch(error => {
-            toast.error(error.message, 1000);
-            console.error('删除试卷出错：', error);
-            return null;
-        });
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
+                return data;
+            })
+            .catch(error => {
+                toast.error(error.message, 1000);
+                console.error('删除试卷出错：', error);
+                return null;
+            });
     }
 
     // 获取试卷列表
@@ -133,6 +132,44 @@
             .catch(error => {
                 toast.error(error.message, 1000);
                 console.error('获取试卷列表出错：', error);
+                return null;
+            });
+    }
+
+    // 发布试卷
+    function publishPaperAPI(
+        paperID = 0
+    ){
+        // 设置响应头
+        const HEADERS = {
+            "Content-Type": "application/json"
+        };
+
+        const PARAMS = new URLSearchParams();
+
+        PARAMS.append("paper_id", paperID);
+
+        // 发起 POST 请求
+        return fetch(`/api/paper?${PARAMS.toString()}`, {
+            method: "POST",
+            headers: HEADERS,
+            credentials: "include"
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`请求失败，状态码：${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
+                return data;
+            })
+            .catch(error => {
+                toast.error(error.message, 1000);
+                console.error('发布试卷出错：', error);
                 return null;
             });
     }
@@ -356,20 +393,21 @@
                 return response.json();
             })
             .then(result => {
-
                 if (result.status !== 0){
                     throw new Error(result.msg);  
                 }
 
                 const PREVIEW_QUESTIONS = result.data;
-                
+
                 if (category === "00") {
+                    localStorage.setItem("examTitle", result.data.Paper.Name);
                     localStorage.setItem(
                         "examQuestions",
                         JSON.stringify(PREVIEW_QUESTIONS),
                     );
                     window.location.href = "/student/answer/exam";
                 } else if (category === "02") {
+                    localStorage.setItem("practiceTitle", result.data.Paper.Name);
                     localStorage.setItem(
                         "practiceQuestions",
                         JSON.stringify(PREVIEW_QUESTIONS),
@@ -382,6 +420,34 @@
                 console.error('预览试卷出错：', error);
                 return null;
             });
+    }
+
+    // 发布试卷
+    function publishPaper(ID) {
+        MessageBox({
+            title: "发布确认",
+            content: "请问是否要发布该试卷？",
+            confirm_button_type: "primary",
+
+            onConfirm: () => {
+                publishPaperAPI(ID)
+                    .then(result1 => {
+                        if (result1) {
+                            toast.success("发布成功", 1000);
+                            fetchPaperList(get(SEARCH_PAPER_NAME), get(SEARCH_PAPER_TAGS), get(PAPER_PAGE), get(PAPER_PAGE_SIZE), "")
+                                .then(result => {
+                                    if (result) {
+                                        total_papers = result.rowCount;
+                                        paper_list = result.data || [];
+                                    } else {
+                                        total_papers = 0;
+                                        paper_list = [];
+                                    }
+                                });
+                        }
+                    });
+            }
+        });
     }
 
     /******************* 操作区 ********************/
@@ -473,6 +539,7 @@
                     <th>建议时长(分)</th>
                     <th>试卷标签</th>
                     <th>试卷难度</th>
+                    <th>状态</th>
                     <th>更新时间</th>
                     <th>创建日期</th>
                     <th>操作</th>
@@ -509,22 +576,75 @@
                                 </div>
                             </td>
                             <td class="level"><span class={LEVEL_TRANS[LEVEL_TRANS[paper.Level]]}>{LEVEL_TRANS[paper.Level]}</span></td>
+                            <td class="status">
+                                <div class="status-tag-container">
+                                    <Tag
+                                    them="light"
+                                    type={STATUS_TRANS[STATUS_TRANS[paper.Status]]}
+                                    >{STATUS_TRANS[paper.Status]}</Tag>
+                                </div>
+                            </td>
                             <td class="update-time">{formatTimestamp(paper.UpdateTime,{show_date:true,show_time:true})}</td>
                             <td class="create-time">{formatTimestamp(paper.CreateTime,{show_date:true,show_time:false})}</td>
                             <td>
+                                <!-- 未发布 -->
+                                {#if paper.Status === "00"}
+                                    <div class="operation">
+                                        <!-- 第一行按钮 -->
+                                        <div class="operation-line">
+                                            <button onclick={()=>editPaper(paper.ID)} class="blue-btn">修改</button>
+                                            <button onclick={()=>publishPaper(paper.ID)} class="blue-btn">发布</button>
+                                            <button onclick={()=>previewPaper(paper.ID,paper.Category)} class="blue-btn">预览</button>
+                                            <button onclick={()=>deleteSinglePaper(paper.ID)} class="red-btn">删除</button>
+                                        </div>
+            
+                                        <!-- 第二行按钮 -->
+                                        <!-- <div class="operation-line"> -->
+                                            <!-- <button class="blue-btn">日志</button> -->
+                                        <!-- </div> -->
+                                    </div>
+                                {/if}
+
+                                <!-- 已删除 -->
+                                {#if paper.Status === "02"}
+                                    <div class="operation">
+                                        <!-- 第一行按钮 -->
+                                        <div class="operation-line">
+                                            <button onclick={()=>previewPaper(paper.ID,paper.Category)} class="blue-btn">预览</button>
+                                            <!-- <div class="operation-line"> -->
+                                                <!-- <button class="blue-btn">日志</button> -->
+                                            <!-- </div> -->
+                                        </div>
+                                    </div>
+                                {/if}
+
+                                <!-- 异常 -->
+                                {#if paper.Status === "04"}
+                                    <div class="operation">
+                                        <!-- 第一行按钮 -->
+                                        <div class="operation-line">
+                                            <button onclick={()=>previewPaper(paper.ID,paper.Category)} class="blue-btn">预览</button>
+                                            <button onclick={()=>deleteSinglePaper(paper.ID)} class="red-btn">删除</button>
+                                            <!-- <div class="operation-line"> -->
+                                                <!-- <button class="blue-btn">日志</button> -->
+                                            <!-- </div> -->
+                                        </div>
+                                    </div>
+                                {/if}
+
+                                <!-- 已发布 -->
+                                {#if paper.Status === "06"}
                                 <div class="operation">
                                     <!-- 第一行按钮 -->
                                     <div class="operation-line">
-                                        <button onclick={()=>editPaper(paper.ID)} class="blue-btn">修改</button>
-                                        <button class="blue-btn" onclick={()=>previewPaper(paper.ID,paper.Category)}>预览</button>
+                                        <button onclick={()=>previewPaper(paper.ID,paper.Category)} class="blue-btn">预览</button>
                                         <button onclick={()=>deleteSinglePaper(paper.ID)} class="red-btn">删除</button>
+                                        <!-- <div class="operation-line"> -->
+                                            <!-- <button class="blue-btn">日志</button> -->
+                                        <!-- </div> -->
                                     </div>
-        
-                                    <!-- 第二行按钮 -->
-                                    <!-- <div class="operation-line"> -->
-                                        <!-- <button class="blue-btn">日志</button> -->
-                                    <!-- </div> -->
                                 </div>
+                                {/if}
                             </td>
                         </tr>
                     {/each}
@@ -712,6 +832,11 @@
                         flex-wrap: wrap;
                         max-height: 65px;
                     }
+
+                    .status-tag-container {
+                        display: flex;
+                        justify-content: center;
+                    }
                 }
 
                 .checkbox {
@@ -725,7 +850,7 @@
                     min-width: 120px;
                 }
                 .assembly-type {
-                    min-width: 70px;
+                    min-width: 85px;
                 }
                 .category {
                     min-width: 70px;
@@ -746,11 +871,14 @@
                 .level {
                     min-width: 70px;
                 }
+                .status {
+                    min-width: 70px;
+                }
                 .update-time {
-                    min-width: 74px;
+                    min-width: 84px;
                 }
                 .create-time {
-                    min-width: 74px;
+                    min-width: 84px;
                 }
             }
 
