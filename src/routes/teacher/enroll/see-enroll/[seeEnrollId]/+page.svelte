@@ -8,6 +8,7 @@
   import PersonImportPanel from '../../_components/PersonImportPanel.svelte';
   import PersonMovePanel from '../../_components/PersonMovePanel.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
+  import { checkFileData } from '../../_utils/handleFileInput';
   import { toast } from '$lib/components/Toast/Toast';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
@@ -59,41 +60,7 @@
   ]);
 
   // 模拟批量导入数据
-  let candidate_list = $state([
-    {
-      name: '张三',
-      phone: '13800001111',
-      email: 'zhangsan@example.com',
-      gender: '男',
-      id_card: '110101199001011234',
-      id_type: '身份证',
-      birth: '1990-01-01',
-      address: '北京市朝阳区',
-      error: '',
-    },
-    {
-      name: '李四',
-      phone: '13900002222',
-      email: 'lisi@example.com',
-      gender: '女',
-      id_card: '110101199205051111',
-      id_type: '身份证',
-      birth: '1992-05-05',
-      address: '上海市浦东新区',
-      error: '',
-    },
-    {
-      name: '王五',
-      phone: '13900002222',
-      email: 'lisi@example.com',
-      gender: '女',
-      id_card: '110101199205051112  ',
-      id_type: '身份证',
-      birth: '1992-05-05',
-      address: '上海市浦东新区',
-      error: '身份证号不合法',
-    },
-  ]);
+  let candidate_list = $state([]);
 
   // 审核状态
   let audit_status = $state('全部');
@@ -130,18 +97,31 @@
   let messagebox_title = $state('');
   let messagebox_content = $state('');
 
+  let person_import_panel = $state(null); // 导入报考人员DOM组件
+
   // 文件上传处理
-  function handleFileUpload(event) {
+  async function handleFileUpload(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
     const file = files[0];
     const ext = file.name.split('.').pop().toLowerCase();
 
-    // 只允许 Excel
-    if (ext !== 'xls' && ext !== 'xlsx') {
-      alert('只支持 Excel 文件（.xls, .xlsx）');
-      return;
+    if (file) {
+      let result = await checkFileData(file);
+
+      if (result.error) {
+        error = result.error;
+        toast.error(error);
+        return;
+      }
+
+      if (result.data.length <= 0) {
+        return;
+      }
+
+      candidate_list = result.data;
+      person_import_panel.initCandidates();
     }
 
     // 打开导入面板
@@ -519,7 +499,8 @@
 <!-- 隐藏的文件选择框 -->
 <input type="file" accept=".xls,.xlsx" bind:this={file_input} style="display:none" onchange={handleFileUpload} />
 
-<PersonImportPanel {is_show_import_panel} {candidate_list} closePanel={closeImportPanel}></PersonImportPanel>
+<PersonImportPanel bind:this={person_import_panel} {is_show_import_panel} {candidate_list} closePanel={closeImportPanel}
+></PersonImportPanel>
 
 <PersonMovePanel {is_show_move_panel} closePanel={closeMovePanel}></PersonMovePanel>
 
