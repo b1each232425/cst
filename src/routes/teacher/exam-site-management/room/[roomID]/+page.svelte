@@ -1,11 +1,11 @@
 <script>
 	import { goto } from "$app/navigation";
-	import { formatISOString } from "$lib/common/time_utils";
+	import { formatISOString } from "$lib/utils/time_utils";
 
     // @ts-nocheck
-    import DatePicker from "$lib/component/DatePicker/DatePicker.svelte";
-    import Pagination from "$lib/component/Pagination.svelte";
-    import Title from "$lib/component/Title.svelte";
+    import DatePicker from "../../DatePicker/DatePicker.svelte";
+    import Pagination from "../../Pagination.svelte";
+    import Title from '$lib/components/Title/Title.svelte';
     import { onMount } from "svelte";
 
     /**
