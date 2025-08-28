@@ -17,19 +17,16 @@
    */
   let { type, resource_id, papers = [] } = $props();
 
-  // 获取 Context 数据
-  let context_data = $state(null);
-  try {
+  // 获取 Context 数据，使用更简洁的方式
+  const contextData = $derived(() => {
     if (type === 'practice') {
       const context = getContext('practice');
-      context_data = context?.practiceData;
+      return context?.practiceData;
     } else {
       const context = getContext('exam');
-      context_data = context?.examData;
+      return context?.examData;
     }
-  } catch {
-    // Context 不存在时忽略
-  }
+  });
 
   // 状态变量（按照用户管理页面的命名风格）
   let currentData = $state([]);
@@ -50,43 +47,6 @@
     isfolded = !isfolded;
   }
 
-  /**
-   * 合并学生成绩（考试类型）
-   */
-  function mergeStudentGrades(data) {
-    const map = new Map();
-
-    for (const item of data) {
-      if (!map.has(item.stu_id)) {
-        map.set(item.stu_id, {
-          stu_id: item.stu_id,
-          exam_id: item.exam_id,
-          phone: item.phone,
-          nickname: item.nickname,
-          name: item.name,
-          scores: [
-            {
-              exam_session_id: item.exam_session_id,
-              score: item.score,
-            },
-          ],
-          total_score: item.score ?? 0,
-          remark: item.remark,
-        });
-      } else {
-        const existing = map.get(item.stu_id);
-        if (existing) {
-          existing.scores.push({
-            exam_session_id: item.exam_session_id,
-            score: item.score,
-          });
-          existing.total_score += item.score ?? 0;
-        }
-      }
-    }
-
-    return Array.from(map.values());
-  }
 
   /**
    * 获取学生成绩数据
@@ -271,11 +231,11 @@
                 {#if type === 'practice'}
                   <th>最高得分</th>
                   <th>作答次数</th>
-                {:else if context_data?.papers?.length === 1}
+                {:else if contextData()?.papers?.length === 1}
                   <th>得分</th>
                 {:else}
                   <th>总得分</th>
-                  {#each context_data?.papers || [] as paper, index}
+                  {#each contextData()?.papers || [] as paper, index}
                     <th>试卷{index + 1}</th>
                   {/each}
                 {/if}
@@ -292,26 +252,26 @@
                   <td>{student.name || '-'}</td>
                   {#if type === 'practice'}
                     <td class="score-cell">
-                      <span class={getScoreClass(student.highestScore, context_data?.total_score || 100)}>
+                      <span class={getScoreClass(student.highestScore, contextData()?.total_score || 100)}>
                         {student.highestScore != null ? student.highestScore : '-'}
                       </span>
                     </td>
                     <td>{student.submitCount}</td>
-                  {:else if context_data?.papers?.length === 1}
+                  {:else if contextData()?.papers?.length === 1}
                     <td class="score-cell">
-                      <span class={getScoreClass(student.total_score, context_data?.total_score || 100)}>
+                      <span class={getScoreClass(student.total_score, contextData()?.total_score || 100)}>
                         {student.total_score != null ? student.total_score : '-'}
                       </span>
                     </td>
                   {:else}
                     <td class="score-cell">
-                      <span class={getScoreClass(student.total_score, context_data?.total_score || 100)}>
+                      <span class={getScoreClass(student.total_score, contextData()?.total_score || 100)}>
                         {student.total_score != null ? student.total_score : '-'}
                       </span>
                     </td>
                     {#each student.scores || [] as score, index}
                       <td class="score-cell">
-                        <span class={getScoreClass(score.score, context_data?.papers?.[index]?.total_score || 100)}>
+                        <span class={getScoreClass(score.score, contextData()?.papers?.[index]?.total_score || 100)}>
                           {score.score != null ? score.score : '-'}
                         </span>
                       </td>
