@@ -317,7 +317,7 @@
     }
     //清空考场选择
     exam_rooms = [];
-    invigilators = [];
+    //invigilators = [];
   }
 
   function resetTime(index) {

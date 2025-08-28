@@ -13,6 +13,8 @@
     'cst.school.examSite^admin': '考点负责人',
     'cst.school^scoreChecker': '核分员',
     'cst.school^student': '学生',
+    'cst.school^student': '学生',
+    'assess.examSite^admin': '考点管理员',
   };
 
   // 登录页面组件

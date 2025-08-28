@@ -42,7 +42,8 @@
   let preview_id = $state([]);
   let acquire_id = $state(false);
   let show_session_panel = $state(false);
-
+  let examID_to_preview = $state(false);
+  let show_preview_popup = $state(false);
   // 映射关系
   const TypeMap = {
     '00': '平时考试',
@@ -400,6 +401,45 @@
       })
   }
 
+   //预览函数的实现
+  async function preview(exam) {
+          // //获取试卷的信息
+          let paperParam = new URLSearchParams();
+          let examName = exam.name;
+          paperParam.append('paper_id', exam.exam_sessions[0].paper_id);
+          paperParam.append('mode', 'preview');
+          return fetch(`/api/paper/manual?${paperParam.toString()}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+
+            credentials: 'include',
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error('请求试卷信息失败');
+              }
+              return response.json();
+            })
+            .then((paperInfo) => {
+              if (paperInfo.status !== 0) {
+                throw new Error('请求试卷信息失败');
+              }
+
+              let examQuestions = {
+                Questions: paperInfo.data.Questions,
+                QuestionGroupInfo: paperInfo.data.QuestionGroupInfo,
+              };
+              let examTitle = examName;
+              //存进localStorage
+              localStorage.setItem('examQuestions', JSON.stringify(examQuestions));
+              localStorage.setItem('examTitle', examTitle);
+              goto(`/student/answer/exam`);
+            });
+        }
+
+
   function handleCheckBoxChange(data,event){
      const examID = data.id;
      const is_selected = selected_exam_ids.includes(examID);
@@ -478,22 +518,39 @@ function handleSelectAll(event) {
     }}>
     删除考试</button>
 
+    <div class="preview-wrapper">
     <button class="preview-exam-button action-button {status!='00'&&status!='02'&&status!='04' ?'hideButton' : ''}"
     onclick={()=>{
-            preview_id = exam_list[index].exam_sessions.map(session => session.paper_id);
-            CURRENT_PAPER_ID.set(preview_id);
-            goto(`/teacher/exam/previewExam/${preview_id[0]}`)
-            
-        }}>预览试卷</button>
-        <!-- <button class="preview-exam-button action-button {status!='00'&&status!='02'&&status!='04' ?'hideButton' : ''}"
-         onclick={()=>{
-          event.stopPropagation();
-          preview_id = exam_list[index].exam_sessions.map(session => session.paper_id);
-          // CURRENT_PAPER_ID.set(preview_id);
-          // previewPaper(preview_id[0],"00")
-          show_session_panel=true;
-         }
-        }>预览试卷</button> -->
+            // preview_id = exam_list[index].exam_sessions.map(session => session.paper_id);
+            // CURRENT_PAPER_ID.set(preview_id);
+            // goto(`/teacher/exam/previewExam/${preview_id[0]}`)
+            examID_to_preview = exam_list[index].id;
+            show_preview_popup=!show_preview_popup;
+        }}
+        onblur={() => {
+      closeTimer = setTimeout(() => {
+        show_preview_popup = false;
+        examID_to_preview = null;
+      }, 100); // 延迟关闭，给点击弹窗内容留时间
+    }}
+    
+    >预览试卷</button>
+
+    <div class="{examID_to_preview === exam_list[index].id && show_preview_popup ? 'preview-popup' : 'hideButton'}">
+      {#each exam_list[index].exam_sessions as session, idx}
+        <div
+          class="session-item"
+          onclick={() => {
+            preview({ ...exam_list[index], exam_sessions: [session] }); // 只预览当前场次
+            examID_to_preview = null;
+          }}
+        >
+          场次 {idx + 1}
+        </div>
+      {/each}
+    </div>
+    </div>
+
     <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}"
     onclick={(event)=>{
             event.stopPropagation(); // 阻止冒泡
@@ -986,4 +1043,32 @@ function handleSelectAll(event) {
     z-index: 1001;
     }
   }
+.preview-wrapper {
+  position: relative;
+  display: inline-block;
+  .preview-popup {
+  position: absolute;
+  top: 100%;
+  // right: 100%;
+  background: white;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 100px;
+  padding: 4px 0;
+}
+}
+  
+
+.session-item {
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.session-item:hover {
+  background-color: #f0f0f0;
+}
 </style>
