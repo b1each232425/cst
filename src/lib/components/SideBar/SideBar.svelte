@@ -18,6 +18,10 @@
     /\/teacher\/exam\/editExam\/\d+/,
     /\/teacher\/grade\/exam-grade\/detail\?id=\d+/,
     /\/teacher\/grade\/practice-grade\/detail\?id=\d+/,
+    '/teacher/enroll/add-enroll',
+    /\/teacher\/enroll\/edit-enroll\/\d+/,
+    /\/teacher\/enroll\/see-enroll\/\d+/,
+    /\/teacher\/enroll\/see-enroll\/\d+\/person-detail\/\d+/,
   ];
 
   let { nav_map = [] } = $props();

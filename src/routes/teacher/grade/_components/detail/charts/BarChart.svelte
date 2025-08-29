@@ -102,7 +102,7 @@
   function initChart() {
     // console.log(chartDom)
     if (!chartDom) {
-      console.log('chartDom is null')
+      // console.log('chartDom is null')
       return
     }
 

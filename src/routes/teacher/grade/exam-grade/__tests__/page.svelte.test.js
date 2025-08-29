@@ -23,6 +23,20 @@ vi.mock('$lib/components/Select/Option.svelte', () => ({
     default: vi.fn(() => ({ $$: { fragment: null } }))
 }));
 
+vi.mock('$app/navigation', () => ({
+  goto: vi.fn(),
+}));
+
+vi.mock('$app/stores', () => ({
+  // 如果你用了 page 或 navigating 等 store，也需要 mock
+  page: {
+    subscribe: vi.fn(),
+  },
+  navigating: {
+    subscribe: vi.fn(),
+  },
+}));
+
 // 模拟工具函数
 vi.mock('$lib/utils', () => ({
     sget: (obj, path, def) => {

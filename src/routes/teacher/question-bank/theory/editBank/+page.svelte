@@ -36,7 +36,13 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   	import Select from '$lib/components/Select/Select.svelte';
 	import Option from '$lib/components/Select/Option.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+ 	import Button from '$lib/components/Button/Button.svelte';
+  import BatchImportQuestionPanel from '../../_components/BatchImportQuestionPanel.svelte';
+  import{selectQuestion}from'../../store.js'
 import '$lib/components/Input/index.scss';
+ 
+
+
 
   /**
    * @description ICON集合
@@ -179,12 +185,15 @@ import '$lib/components/Input/index.scss';
    * @type {boolean}
    */
   let show_multiple_select_edit_panel = $state(false);
-
+//* @description 导入面板
+     let batchImportPanel;
   /**
    * @description 多选题编辑面板组件
    * @type {MultipleSelectEditPanel}
    */
   let mutiple_select_edit_panel_componet;
+
+
 
   /**
    * @description 显示判断题编辑面板
@@ -304,7 +313,11 @@ import '$lib/components/Input/index.scss';
    * @type {Array<string>}
    */
 
-
+   //显示题库面板
+      const onClickImportQuestion = async () => {
+        selectQuestion.clear()
+        batchImportPanel.showPanel()
+    };
    /**
      * @description 已有标签变更
      * @param {string} old_content
@@ -670,7 +683,7 @@ import '$lib/components/Input/index.scss';
   /**
    * @description 获取题目列表
    */
-  const getQuestionList = async () => {
+ const getQuestionList = async () => {
     if(bank_id==0){
       return ;
     }
@@ -713,7 +726,7 @@ import '$lib/components/Input/index.scss';
   };
 
   /**
-   * @description 题目id
+   * @description 题库id
    * @type {number}
    */
   let bank_id = $state(0);
@@ -1018,11 +1031,9 @@ o888o o888o   "888" o888o o888o o888o o888o
     <input  bind:value={search_question_content} placeholder="请输入题目名称"       oninput={()=>{getQuestionList();}}/>
   </div>
         </div>
-    
-        <div class="questionListControlBtnContainer">
-         
-
- 
+            
+         <div class="questionListControlBtnContainer">
+    <Button type="primary" size="small" onclick={onClickImportQuestion}>批量导入</Button>
   <Select placeholder="添加题目" bind:value={question_type_select} changeValue={onAddNewQuestion}>
        	<Option value="00" label="单选"></Option>
 				<Option value="02" label="多选"></Option>
@@ -1121,6 +1132,8 @@ o888o o888o   "888" o888o o888o o888o o888o
         }}
     ></ShortAnswerEditPanel>
 
+
+    <BatchImportQuestionPanel bind:this={batchImportPanel} bank_id={bank_id} />
 </div>
 
 
@@ -1516,6 +1529,7 @@ o888o o888o   "888" o888o o888o o888o o888o
           }
 
           .questionListControlBtnContainer {
+            gap:10px;
             display: flex;
           }
         }
@@ -1691,4 +1705,6 @@ o888o o888o   "888" o888o o888o o888o o888o
       }
     }
   }
+
+ 
 </style>

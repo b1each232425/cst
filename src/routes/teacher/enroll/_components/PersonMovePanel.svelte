@@ -6,6 +6,7 @@
   import { onMount } from 'svelte';
 
   let { is_show_move_panel = false, closePanel = () => {} } = $props();
+  let search_keyword = $state(''); // 搜索关键词
 
   // 模拟数据
   let candidate_list = $state([
@@ -187,8 +188,7 @@
     },
   ]);
 
-  let searchKeyword = $state('');
-
+  // 迁移按钮点击事件
   function handleMove(row) {
     alert(`迁移 ${row.name}`);
   }
@@ -203,7 +203,7 @@
 
     <div class="move-list-body">
       <div class="search-bar">
-        <InputBox placeholder="请输入关键词" type="text" bind:value={searchKeyword} show_label={false} />
+        <InputBox placeholder="请输入关键词" type="text" bind:value={search_keyword} show_label={false} />
       </div>
 
       <div class="move-list-table">

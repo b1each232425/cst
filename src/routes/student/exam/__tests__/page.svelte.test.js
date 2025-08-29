@@ -332,7 +332,7 @@ describe('考试列表组件测试', () => {
 
   it('选择开始和结束日期发送请求获取数据', async () => {
     mockFetch({
-      status: 1,
+      status: 0,
       data: MOCK_EXAMS,
     });
 

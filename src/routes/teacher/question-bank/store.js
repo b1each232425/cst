@@ -23,4 +23,5 @@ function createMapStore() {
 }
 
 export const selection = createMapStore();
+export const selectQuestion = createMapStore();
 export const change=createMapStore();

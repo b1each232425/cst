@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/sve
 import CorrectPage from '../+page@.svelte';
 import { toast } from '$lib/components/Toast/Toast.js';
 import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+import { page } from '$app/state';
 
 vi.mock('$app/state', () => ({
   page: {
@@ -15,9 +16,6 @@ vi.mock('$lib/components/MessageBox/MessageBox.js', () => ({
     onConfirm();
   }),
 }));
-
-import { page } from '$app/state';
-import { json, redirect } from '@sveltejs/kit';
 
 const MOCK_DATA = {
   question_sets: [
@@ -462,6 +460,17 @@ describe('批改页面测试', () => {
       expect(screen.getByText('• 错误')).toBeInTheDocument();
       expect(screen.getByText('• 含错')).toBeInTheDocument();
     });
+  });
+
+  it('点击返回按钮应正确跳转', async () => {
+    window.history.back = vi.fn(); // 重写 history.back
+
+    setExamCorrect();
+
+    render(CorrectPage);
+
+    await waitFor(() => fireEvent.click(screen.getByText('返回')));
+    expect(window.history.back).toHaveBeenCalledTimes(1);
   });
 
   describe('路径参数错误报错提示测试', () => {

@@ -8,7 +8,6 @@
   import AnalysisPanel from '../../_components/detail/AnalysisPanel.svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
 
-
   // 后端返回数据类型
   /**
    * @typedef {Object} Session
@@ -113,38 +112,38 @@
    * 格式化考试时间
    */
   function formatExamTime(sessions) {
-  if (!Array.isArray(sessions) || sessions.length === 0) return '--';
+    if (!Array.isArray(sessions) || sessions.length === 0) return '--';
 
-  try {
-    const pad = (n) => n.toString().padStart(2, '0');
+    try {
+      const pad = (n) => n.toString().padStart(2, '0');
 
-    const fmt = (date) => {
-      const y = date.getFullYear();
-      const m = pad(date.getMonth() + 1);
-      const d = pad(date.getDate());
-      const h = pad(date.getHours());
-      const min = pad(date.getMinutes());
-      const s = pad(date.getSeconds());
-      return `${y}-${m}-${d} ${h}:${min}:${s}`;
-    };
+      const fmt = (date) => {
+        const y = date.getFullYear();
+        const m = pad(date.getMonth() + 1);
+        const d = pad(date.getDate());
+        const h = pad(date.getHours());
+        const min = pad(date.getMinutes());
+        const s = pad(date.getSeconds());
+        return `${y}-${m}-${d} ${h}:${min}:${s}`;
+      };
 
-    return sessions
-      .map((s, i) => {
-        if (!s.start_time) return `试卷${i + 1}:--`;
+      return sessions
+        .map((s, i) => {
+          if (!s.start_time) return `试卷${i + 1}:--`;
 
-        const start = new Date(s.start_time);
-        const end   = s.end_time ? new Date(s.end_time) : null;
+          const start = new Date(s.start_time);
+          const end = s.end_time ? new Date(s.end_time) : null;
 
-        const startStr = fmt(start);
-        const endStr   = end ? fmt(end) : '--';
+          const startStr = fmt(start);
+          const endStr = end ? fmt(end) : '--';
 
-        return `试卷${i + 1}:${startStr} - ${endStr}`;
-      })
-      .join('  ');
-  } catch {
-    return '--';
+          return `试卷${i + 1}:${startStr} - ${endStr}`;
+        })
+        .join('  ');
+    } catch {
+      return '--';
+    }
   }
-}
 
   /**
    * 将原始考试数据转换为更适合展示的结构
@@ -184,8 +183,7 @@
     }));
 
     // 检查所有session的状态是否都为'10'
-    const canSubmit = sessions.every(s => s.status === '10');
-
+    const canSubmit = sessions.every((s) => s.status === '10');
 
     return {
       id: raw.id,
@@ -276,6 +274,15 @@
       });
   }
 
+  /**
+   * 导出学生名单
+   */
+  function handleExamImportStudent() {
+    // TODO: 实现导出学生名单的逻辑
+    toast.error('导出学生名单功能待实现');
+  }
+
+
   // 页面初始化
   onMount(async () => {
     // 从 URL 参数获取考试 ID
@@ -319,21 +326,38 @@
 
       <div class="third-row">
         <!-- 试卷分析 -->
-        <!-- <section class="card analysis-section">
-			<AnalysisPanel
-				type="exam"
-				resource_id={examId}
-				papers={examData?.papers || []}
-			/>
-		</section> -->
+        <section class="card analysis-section">
+          <AnalysisPanel type="exam" resource_id={examId} papers={examData?.papers || []} />
+        </section>
       </div>
 
-      <div class="buttons-container">
+      <!-- <div class="buttons-container">
         <button
           class="submit-button"
           onclick={() => handleExamSubmitted([Number(examId)])}
           disabled={examData?.submitted || !examData?.canSubmit}
-          title={examData?.submitted ? '成绩已提交' : (!examData?.canSubmit ? '所有试卷状态必须为已批改才能提交' : '点击提交成绩')}
+          title={examData?.submitted
+            ? '成绩已提交'
+            : !examData?.canSubmit
+              ? '所有试卷状态必须为已批改才能提交'
+              : '点击提交成绩'}
+        >
+          提交成绩
+        </button>
+      </div> -->
+      <div class="bottom-action-panel-fixed">
+        <button class="import-button"
+        onclick={() => handleExamImportStudent()}
+        >导出学生</button>
+        <button
+          class="submit-button"
+          onclick={() => handleExamSubmitted([Number(examId)])}
+          disabled={examData?.submitted || !examData?.canSubmit}
+          title={examData?.submitted
+            ? '成绩已提交'
+            : !examData?.canSubmit
+              ? '所有试卷状态必须为已批改才能提交'
+              : '点击提交成绩'}
         >
           提交成绩
         </button>
@@ -342,17 +366,17 @@
   </div>
 {/if}
 
+
 <style lang="scss" scoped>
   .page-container {
     background-color: var(--bg-primary);
-    height: 100%;
+    height: 94%;
     width: 100%;
-    
 
     .detail-container {
       display: flex;
       flex-direction: column;
-      height: 98%;
+      height: 100%;
       gap: 20px;
       overflow: auto;
       padding: 10px;
@@ -363,7 +387,7 @@
         border-radius: 4px;
         padding: 10px;
       }
-      
+
       .first-row {
         display: flex;
         gap: 10px;
@@ -396,6 +420,7 @@
       right: 24px;
       z-index: 1000;
       gap: 20px;
+
       .submit-button {
         padding: 10px 20px;
         font-size: 14px;
@@ -415,6 +440,64 @@
           cursor: not-allowed;
           opacity: 0.6;
         }
+      }
+    }
+  }
+
+  .bottom-action-panel-fixed {
+    display: flex;
+    position: fixed;
+    gap: 20%;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    background-color: #fff;
+    padding: 10px 0px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    border-top: 1px solid #eee;
+    z-index: 100;
+
+    .import-button {
+      padding: 10px 20px;
+      font-size: 14px;
+      color: white;
+      background-color: var(--blue);
+      border: none;
+      border-radius: var(--btn-border-radius);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transition: background-color 0.3s;
+
+      &:hover {
+        opacity: 0.8;
+      }
+      &:disabled {
+        background-color: var(--gray);
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+    }
+
+    .submit-button {
+      padding: 10px 20px;
+      font-size: 14px;
+      color: white;
+      background-color: var(--green);
+      border: none;
+      border-radius: var(--btn-border-radius);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transition: background-color 0.3s;
+
+      &:hover {
+        opacity: 0.8;
+      }
+      &:disabled {
+        background-color: var(--gray);
+        cursor: not-allowed;
+        opacity: 0.6;
       }
     }
   }

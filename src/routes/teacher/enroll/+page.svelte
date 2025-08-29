@@ -10,7 +10,7 @@
   import { goto } from '$app/navigation';
 
   // 模拟数据
-  let enrollList = [
+  let enroll_list = $state([
     {
       id: 1,
       name: '2025年春季考试报名',
@@ -55,139 +55,7 @@
       practice: '英语专项训练',
       status: '审核截止',
     },
-    {
-      id: 1,
-      name: '2025年春季考试报名',
-      subject: '数学',
-      currentNum: 35,
-      planNum: 50,
-      auditDeadline: '2025-03-15 00:00:00',
-      duration: '2025-04-01 00:00:00 ~ 2025-04-10 00:00:00',
-      practice: '模拟练习一',
-      status: '已发布',
-    },
-    {
-      id: 2,
-      name: '2025年英语四级报名',
-      subject: '英语',
-      currentNum: 120,
-      planNum: 150,
-      auditDeadline: '2025-05-20 00:00:00',
-      duration: '2025-06-01 00:00:00 ~ 2025-06-02 00:00:00',
-      practice: '英语专项训练',
-      status: '未发布',
-    },
-    {
-      id: 3,
-      name: '2024年英语六级报名',
-      subject: '英语',
-      currentNum: 120,
-      planNum: 150,
-      auditDeadline: '2025-05-20 00:00:00',
-      duration: '2024-06-01 00:00:00 ~ 2024-06-02 00:00:00',
-      practice: '英语专项训练',
-      status: '已作废',
-    },
-    {
-      id: 4,
-      name: '2024年英语六级报名',
-      subject: '英语',
-      currentNum: 120,
-      planNum: 150,
-      auditDeadline: '2025-05-20 00:00:00',
-      duration: '2024-06-01 00:00:00 ~ 2024-06-02 00:00:00',
-      practice: '英语专项训练',
-      status: '审核截止',
-    },
-    {
-      id: 1,
-      name: '2025年春季考试报名',
-      subject: '数学',
-      currentNum: 35,
-      planNum: 50,
-      auditDeadline: '2025-03-15 00:00:00',
-      duration: '2025-04-01 00:00:00 ~ 2025-04-10 00:00:00',
-      practice: '模拟练习一',
-      status: '已发布',
-    },
-    {
-      id: 2,
-      name: '2025年英语四级报名',
-      subject: '英语',
-      currentNum: 120,
-      planNum: 150,
-      auditDeadline: '2025-05-20 00:00:00',
-      duration: '2025-06-01 00:00:00 ~ 2025-06-02 00:00:00',
-      practice: '英语专项训练',
-      status: '未发布',
-    },
-    {
-      id: 3,
-      name: '2024年英语六级报名',
-      subject: '英语',
-      currentNum: 120,
-      planNum: 150,
-      auditDeadline: '2025-05-20 00:00:00',
-      duration: '2024-06-01 00:00:00 ~ 2024-06-02 00:00:00',
-      practice: '英语专项训练',
-      status: '已作废',
-    },
-    {
-      id: 4,
-      name: '2024年英语六级报名',
-      subject: '英语',
-      currentNum: 120,
-      planNum: 150,
-      auditDeadline: '2025-05-20 00:00:00',
-      duration: '2024-06-01 00:00:00 ~ 2024-06-02 00:00:00',
-      practice: '英语专项训练',
-      status: '审核截止',
-    },
-    {
-      id: 1,
-      name: '2025年春季考试报名',
-      subject: '数学',
-      currentNum: 35,
-      planNum: 50,
-      auditDeadline: '2025-03-15 00:00:00',
-      duration: '2025-04-01 00:00:00 ~ 2025-04-10 00:00:00',
-      practice: '模拟练习一',
-      status: '已发布',
-    },
-    {
-      id: 2,
-      name: '2025年英语四级报名',
-      subject: '英语',
-      currentNum: 120,
-      planNum: 150,
-      auditDeadline: '2025-05-20 00:00:00',
-      duration: '2025-06-01 00:00:00 ~ 2025-06-02 00:00:00',
-      practice: '英语专项训练',
-      status: '未发布',
-    },
-    {
-      id: 3,
-      name: '2024年英语六级报名',
-      subject: '英语',
-      currentNum: 120,
-      planNum: 150,
-      auditDeadline: '2025-05-20 00:00:00',
-      duration: '2024-06-01 00:00:00 ~ 2024-06-02 00:00:00',
-      practice: '英语专项训练',
-      status: '已作废',
-    },
-    {
-      id: 4,
-      name: '2024年英语六级报名',
-      subject: '英语',
-      currentNum: 120,
-      planNum: 150,
-      auditDeadline: '2025-05-20 00:00:00',
-      duration: '2024-06-01 00:00:00 ~ 2024-06-02 00:00:00',
-      practice: '英语专项训练',
-      status: '审核截止',
-    },
-  ];
+  ]);
 
   // 计划状态
   let plan_status = $state('全部');
@@ -196,6 +64,14 @@
   // 考试科目
   let exam_subject = $state('全部');
   let exam_subject_options = ['全部', '理论', '实操'];
+
+  // 选中的待操作 id
+  let select_delete_id = $state([]); // 待删除
+  let select_repeal_id = $state([]); // 待作废
+  let select_public_id = $state(null); // 待发布
+
+  // 当前操作类型（delete | repeal | public）
+  let current_action = '';
 
   // 消息提示框数据
   let is_show_messagebox = $state(false);
@@ -212,42 +88,127 @@
     goto(`/teacher/enroll/edit-enroll/${id}`);
   }
 
-  // 处理查看考试按钮点击事件
+  // 处理查看考生按钮点击事件
   function handleSeeStudent(id) {
     goto(`/teacher/enroll/see-enroll/${id}`);
   }
 
-  // 处理消息提示框按确定钮点击事件
-  function handleMessageBoxConfirm() {
-    is_show_messagebox = false;
-  }
-
-  // 处理消息提示框取消按钮点击事件
-  function handleMessageBoxCancel() {
-    messagebox_title = '';
-    messagebox_content = '';
-    is_show_messagebox = false;
-  }
-
   // 处理表格发布按钮点击事件
-  function handlePublic() {
+  function handlePublic(id) {
+    select_public_id = id;
+    current_action = 'public';
     messagebox_title = '确认发布';
     messagebox_content = '发布后，所有用户都可看到此报名计划，确定要继续吗？';
     is_show_messagebox = true;
   }
 
-  // 处理表格删除按钮点击事件
-  function handleDelete() {
+  // ---------- 作废 ----------
+  function handleRepeal(id) {
+    select_repeal_id = [id];
+    current_action = 'repeal';
+    messagebox_title = '确认作废';
+    messagebox_content = '作废后，该条数据将不能再使用，确定要继续吗？';
+    is_show_messagebox = true;
+  }
+
+  // 批量作废
+  function handleBatchRepeal() {
+    if (select_repeal_id.length === 0) return;
+    const validIds = select_repeal_id.filter((id) => {
+      const item = enroll_list.find((i) => i.id === id);
+      return item && (item.status === '未发布' || item.status === '已发布');
+    });
+    if (validIds.length !== select_repeal_id.length) {
+      messagebox_title = '部分选择无效';
+      messagebox_content = `你选择的 ${select_repeal_id.length} 条数据中，有 ${select_repeal_id.length - validIds.length} 条不符合作废条件。\n是否继续作废合法的 ${validIds.length} 条？`;
+      current_action = 'repeal';
+      select_repeal_id = validIds;
+    } else {
+      messagebox_title = '确认作废';
+      messagebox_content = `确定要作废选中的 ${validIds.length} 条数据吗？`;
+      current_action = 'repeal';
+    }
+    is_show_messagebox = true;
+  }
+
+  // ---------- 删除 ----------
+  function handleDelete(id) {
+    select_delete_id = [id];
+    current_action = 'delete';
     messagebox_title = '确认删除';
     messagebox_content = '删除后，该条数据会永久消失，确定要继续删除吗？';
     is_show_messagebox = true;
   }
 
-  // 处理表格作废按钮点击事件
-  function handleRepeal() {
-    messagebox_title = '确认作废';
-    messagebox_content = '删作废，该条数据会被作废，确定要继续作废吗？';
+  // 批量删除
+  function handleBatchDelete() {
+    if (select_delete_id.length === 0) return;
+
+    const validIds = select_delete_id.filter((id) => {
+      const item = enroll_list.find((i) => i.id === id);
+      return item && item.status === '未发布';
+    });
+
+    if (validIds.length !== select_delete_id.length) {
+      messagebox_title = '部分选择无效';
+      messagebox_content = `你选择的 ${select_delete_id.length} 条数据中，有 ${select_delete_id.length - validIds.length} 条不符合删除条件。\n是否继续删除合法的 ${validIds.length} 条？`;
+      current_action = 'delete';
+      select_delete_id = validIds;
+    } else {
+      messagebox_title = '确认删除';
+      messagebox_content = `确定要删除选中的 ${validIds.length} 条数据吗？`;
+      current_action = 'delete';
+    }
     is_show_messagebox = true;
+  }
+
+  // ---------- 全选/取消全选 ----------
+  function handleSelectAll(e) {
+    if (e.target.checked) {
+      select_delete_id = enroll_list.map((item) => item.id);
+      select_repeal_id = enroll_list.map((item) => item.id);
+    } else {
+      select_delete_id = [];
+      select_repeal_id = [];
+    }
+  }
+
+  function isChecked(id) {
+    return select_delete_id.includes(id) || select_repeal_id.includes(id);
+  }
+
+  // ---------- 确认/取消 ----------
+  function handleMessageBoxConfirm() {
+    if (current_action === 'public') {
+      enroll_list = enroll_list.map((item) => (item.id === select_public_id ? { ...item, status: '已发布' } : item));
+    }
+
+    if (current_action === 'delete' && select_delete_id.length > 0) {
+      enroll_list = enroll_list.filter((item) => !select_delete_id.includes(item.id));
+      select_delete_id = [];
+      select_repeal_id = [];
+    }
+
+    if (current_action === 'repeal' && select_repeal_id.length > 0) {
+      enroll_list = enroll_list.map((item) =>
+        select_repeal_id.includes(item.id) ? { ...item, status: '已作废' } : item,
+      );
+      select_delete_id = [];
+      select_repeal_id = [];
+    }
+
+    current_action = '';
+    is_show_messagebox = false;
+  }
+
+  function handleMessageBoxCancel() {
+    select_delete_id = [];
+    select_repeal_id = [];
+    select_public_id = null;
+    current_action = '';
+    messagebox_title = '';
+    messagebox_content = '';
+    is_show_messagebox = false;
   }
 </script>
 
@@ -285,9 +246,9 @@
       </div>
 
       <div>
-        <button onclick={handleNewEnroll} class="new-enroll-btn">新增</button>
-        <button class="delete-enroll-btn">删除</button>
-        <button class="invalid-enroll-btn">作废</button>
+        <button class="new-enroll-btn" onclick={handleNewEnroll}>新增</button>
+        <button class="delete-enroll-btn" onclick={handleBatchDelete}>删除</button>
+        <button class="invalid-enroll-btn" onclick={handleBatchRepeal}>作废</button>
       </div>
     </div>
 
@@ -296,7 +257,12 @@
         <thead>
           <tr>
             <th style="width: 6%">
-              <input type="checkbox" class="checkbox" />
+              <input
+                type="checkbox"
+                class="checkbox"
+                onchange={handleSelectAll}
+                checked={enroll_list.length === select_delete_id.length}
+              />
             </th>
             <th style="width: 12%">名称</th>
             <th style="width: 10%">考试科目</th>
@@ -309,10 +275,26 @@
           </tr>
         </thead>
         <tbody>
-          {#if enrollList.length > 0}
-            {#each enrollList as item}
+          {#if enroll_list.length > 0}
+            {#each enroll_list as item}
               <tr>
-                <td><input type="checkbox" class="checkbox" /></td>
+                <td
+                  ><input
+                    type="checkbox"
+                    class="checkbox"
+                    checked={isChecked(item.id)}
+                    onchange={(e) => {
+                      if (e.target.checked) {
+                        // 勾选时两个数组都放
+                        select_delete_id = [...new Set([...select_delete_id, item.id])];
+                        select_repeal_id = [...new Set([...select_repeal_id, item.id])];
+                      } else {
+                        select_delete_id = select_delete_id.filter((id) => id !== item.id);
+                        select_repeal_id = select_repeal_id.filter((id) => id !== item.id);
+                      }
+                    }}
+                  /></td
+                >
                 <td>{item.name}</td>
                 <td>{item.subject}</td>
                 <td>{item.currentNum}/{item.planNum}</td>
@@ -332,13 +314,13 @@
                 </td>
                 <td>
                   {#if item.status === '未发布'}
-                    <button class="op-btn" onclick={handlePublic}>发布</button>
+                    <button class="op-btn" onclick={() => handlePublic(item.id)}>发布</button>
                     <button class="op-btn" onclick={() => handleEdit(item.id)}>编辑</button>
-                    <button class="de-btn" onclick={handleDelete}>删除</button>
+                    <button class="de-btn" onclick={() => handleDelete(item.id)}>删除</button>
                   {:else if item.status === '已发布'}
                     <button class="op-btn" onclick={() => handleSeeStudent(item.id)}>查看考生</button>
                     <button class="op-btn" onclick={() => handleEdit(item.id)}>编辑</button>
-                    <button class="de-btn" onclick={handleRepeal}>作废</button>
+                    <button class="de-btn" onclick={() => handleRepeal(item.id)}>作废</button>
                   {:else if item.status === '已作废'}
                     ----
                   {:else if item.status === '审核截止'}
