@@ -790,10 +790,9 @@ let match;
  
 // 记录所有 `()` 的位置
 while ((match = regex.exec(title)) !==null) {
-    const isChineseBracket = match[0] === '（）'; // 判断是否是中文括号
     matches.push({
         startIndex: match.index,
-        endIndex: match.index + match[0].length // 中文括号 endIndex +1
+        endIndex: match.index + match[0].length 
     });
     if (match.index === regex.lastIndex) {
         regex.lastIndex++;

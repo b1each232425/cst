@@ -15,6 +15,10 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import QuestionPreviewPanel from './QuestionPreview.svelte';
   import ShortAnswerEditPanel from './shortAnswer.svelte';
   import FillBlankEditPanel from "./fillBank.svelte";
+  import{selectQuestion}from '../store'
+  import { toast } from '$lib/components/Toast/Toast';
+  import {checkData, download_theory, parseQuestionData} from "../utils/check";
+
 
 
  let {
@@ -28,7 +32,7 @@ let total_questions = $state([]);
 //导入失败题目列表
 let failure_question_list = $state([]);
 //导入状态数据
-let imported_stats_data = $state({});
+let imported_stats_data = $state({success: 0, failure: 0, total: 0});
 
   // 定义当前选中的标签索引
   let activeIndex = $state(0)
@@ -211,6 +215,7 @@ let imported_stats_data = $state({});
 
 
     function onToggleQuestionSelect(id) {
+      toast.success("id:"+id)
     questions.forEach(q => {
       if (q.id === id) {
         q.is_selected = !q.is_selected
@@ -230,15 +235,17 @@ let imported_stats_data = $state({});
     if (isSelectedAll) {
       // 已全选，点击后取消全选
       // 遍历questions
-      total_questions.forEach(q => {
-        q.is_selected = false
-      })
+    selectQuestion.clear();
 
       isSelectedAll = false
     } else {
       // 未全选，点击后全选
       total_questions.forEach(q => {
-        q.is_selected = true
+        if(!$selectQuestion.has(q.id)){
+          selectQuestion.toggle(q.id)
+        }
+      
+
       })
 
       isSelectedAll = true
@@ -268,6 +275,200 @@ let imported_stats_data = $state({});
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  }
+
+
+    function updateTabs(tabs /** @type {any[]} */, questions /** @type {any[]} */) {
+    /** @type {{[key: string]: {name: string, type: string}}} */
+    const typeMap = {
+      "00": {name: "单选题", type: "00"},
+      "02": {name: "多选题", type: "02"},
+      "04": {name: "判断题", type: "04"},
+      "06": {name: "填空题", type: "06"},
+      "08": {name: "简答题", type: "08"}
+    };
+
+    /** @type {{[key: string]: number}} */
+    const counts = {};
+    questions.forEach((question /** @type {any} */) => {
+      const type = question.type;
+      counts[type] = (counts[type] || 0) + 1;
+    });
+
+    // 更新现有tabs中的count值
+    Object.keys(counts).forEach(type => {
+      const existingTab = tabs.find(tab => tab.type === type);
+      if (existingTab) {
+        existingTab.count += counts[type];
+      } else {
+        // 如果不存在对应项，创建新项
+        if (typeMap[type]) {
+          tabs.push({
+            name: typeMap[type].name,
+            count: counts[type],
+            type: type
+          });
+        }
+      }
+    });
+
+    return tabs;
+  }
+
+    //处理文件上传
+  async function handleFileUpload(event) {
+    try {
+      const files = event.target.files;
+      if (!files || files.length === 0) {
+        // onImport([], false);
+        return;
+      }
+
+      const file = files[0];
+      if (file) {
+        let result = await checkData(file);
+        if (!result.success && result.success.length === 0) {
+          console.error("文件格式错误")
+         toast.error("文件格式错误")
+          return
+        }
+
+        console.log(result)
+        const parsedQuestions = parseQuestionData(result)
+        console.log('解析结果:', parsedQuestions);
+        // questions = [...questions, ...parsedQuestions]
+
+        if (parsedQuestions.length === 0) {
+          console.error("解析题目失败，请检查格式是否有误")
+          toast.error("解析题目失败，请检查格式是否有误")
+          return
+        }
+
+        isImported = true
+
+        total_questions = [...total_questions, ...parsedQuestions]
+
+        let failure_question_count = (result.failure?.length ?? 2) - 2
+        // 将格式错误的数据直接放入failure_question_list 含表头数据
+        if (failure_question_count > 0) {
+          failure_question_list = [...failure_question_list, ...result.failure];
+        }
+
+
+        if (failure_question_count > 0) {
+          imported_stats_data.failure += failure_question_count
+        }
+       
+        imported_stats_data.total += parsedQuestions.length + failure_question_count
+        imported_stats_data.success += parsedQuestions.length
+
+        updateTabs(tabs, parsedQuestions)
+
+        handleTabClick(0)
+
+        if (file_input) {
+          file_input.value = null
+        }
+      }
+
+    } catch (error) {
+      console.error('解析失败:', error);
+    }
+  }
+
+
+    function onDownloadFailureQuestions() {
+    try {
+      download_theory(failure_question_list)
+    } catch (e) {
+      console.error(e)
+      toast.error("下载失败，请重试")
+    }
+
+  }
+
+
+ function onImportQuestions(new_question_data) {
+    // 构建 body 数据
+    let data = [];
+  const fieldMap = {
+    type: 'Type',
+    difficulty: 'Difficulty',
+    content: 'Content',
+    tags: 'Tags',
+    options: 'Options',
+    answers: 'Answers',
+    analysis: 'Analysis',
+    score: 'Score',
+    question_attachments_path: 'QuestionAttachmentsPath',
+    // ...
+  };
+
+  if(!new_question_data || new_question_data.length === 0){
+     throw new Error("没有可导入的题目")
+    return;
+  }
+
+  for (let i = 0; i < new_question_data.length; i++) {
+    const q = new_question_data[i];
+    const item = {};
+    for (const key in fieldMap) {
+      if (q[key] !== undefined) {
+        item[fieldMap[key]] = q[key];
+      }
+    }
+    item.BelongTO = bank_id;
+    data.push(item);
+
+  }
+
+
+    return fetch('/api/questions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP错误`);
+        }
+        return response.json();
+      })
+      .then((result) => {
+        if (result.status !== 0) {
+          throw new Error(`${result.msg}`);
+        }
+      
+        toast.success("导入题目成功")
+      
+      })
+      .catch((error) => {
+        throw error; // 继续抛出错误以便调用者处理
+        return;
+      });
+  }
+   async function onClickImportButton() {
+    try {
+      selected_questions = total_questions.filter(q => q.is_selected)
+    for(let i=0;i<total_questions.length;i++){
+     if($selectQuestion.has(total_questions[i].id)){
+       
+          selected_questions.push(total_questions[i])
+     }
+
+    }
+      const res = await onImportQuestions(selected_questions)
+      console.log(res)
+
+     
+      window.location.reload(); 
+    } catch (error) {
+      console.error("导入失败:", error)
+      toast.error("上传题目失败，请重试")
+    }
+
   }
 </script>
 
@@ -316,14 +517,14 @@ o888o o888o   "888" o888o o888o o888o o888o
               </div>
             </div>
           </div>
-          <p class="step-text over-line" style="margin-top: 36px;">第二步:上传文件</p>
+          <p class="step-text over-line" style="margin-top: 36px;" >第二步:上传文件</p>
           <div class="upload-download-container">
-            <div class="upload-download-box download-box">
+            <div class="upload-download-box download-box" onclick={() => {if(file_input){file_input.click()}}}>
               <input
                 type="file"
                 id="fileInput"
                 style="display: none;"
-               
+                onchange={handleFileUpload}
                 bind:this={file_input}
               />
               <div class="img-container">
@@ -362,7 +563,7 @@ o888o o888o   "888" o888o o888o o888o o888o
             <p class="stats-data-text" style="color: var(--red);">{imported_stats_data.failure} </p>
             <p> 道</p>
             {#if imported_stats_data.failure >= 0}
-              <div class="download-container" >
+              <div class="download-container" onclick={onDownloadFailureQuestions} >
                 <img class="" src="{icons.download}" alt="下载结果">
               </div>
             {/if}
@@ -377,7 +578,7 @@ o888o o888o   "888" o888o o888o o888o o888o
               />
               <p>{isSelectedAll ? '取消全选' : '全选'}</p>
             </div>
-            <div class="import-button" ><p>导入题目</p></div>
+            <div class="import-button" onclick={onClickImportButton} ><p>导入题目</p></div>
           </div>
         </div>
 
@@ -412,8 +613,8 @@ o888o o888o   "888" o888o o888o o888o o888o
               <input
                 type="checkbox"
                 class="checkbox-item"
-                checked={q.is_selected}
-                onchange={() => onToggleQuestionSelect(q.id)}
+                checked={$selectQuestion.has(q.id)}
+                onclick={()=>{  selectQuestion.toggle(q.id)}}
               />
               <div class="order-container">
                 <p>{index + 1}.</p>
@@ -544,7 +745,7 @@ o888o o888o   "888" o888o o888o o888o o888o
         min-width: 1000px;
         height: 100vh;
         position: fixed;
-        z-index: 10002;
+        z-index: 1002;
         top: 0;
         right: 0;
         bottom: 0;
@@ -720,7 +921,7 @@ o888o o888o   "888" o888o o888o o888o o888o
     }
 
     .mask-container {
-        z-index: 10003;
+        z-index: 1002;
         position: absolute;
         top: 50px;
         width: 100%;

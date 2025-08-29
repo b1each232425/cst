@@ -38,7 +38,10 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
  	import Button from '$lib/components/Button/Button.svelte';
   import BatchImportQuestionPanel from '../../_components/BatchImportQuestionPanel.svelte';
+  import{selectQuestion}from'../../store.js'
 import '$lib/components/Input/index.scss';
+ 
+
 
 
   /**
@@ -312,6 +315,7 @@ import '$lib/components/Input/index.scss';
 
    //显示题库面板
       const onClickImportQuestion = async () => {
+        selectQuestion.clear()
         batchImportPanel.showPanel()
     };
    /**
@@ -679,7 +683,7 @@ import '$lib/components/Input/index.scss';
   /**
    * @description 获取题目列表
    */
-  const getQuestionList = async () => {
+ const getQuestionList = async () => {
     if(bank_id==0){
       return ;
     }

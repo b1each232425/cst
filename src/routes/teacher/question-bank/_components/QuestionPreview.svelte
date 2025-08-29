@@ -1,7 +1,7 @@
 <script>
   import {TheoryQuestion} from "../theory/type";
-  import UneditableTag from "$lib/components/Tag/UneditableTags.svelte";
-
+    import UneditableTag from "$lib/components/Tag/UneditableTags.svelte";
+ import {replaceSpansWithLines} from "$lib/utils/blank_changer"
   /**
    * @type {{
    *      question: TheoryQuestion,
@@ -26,10 +26,10 @@
         return "多选题";
       case "04":
         return "判断题";
-      case "06":
-        return "填空题";
-      case "08":
+         case "06":
         return "简答题";
+      case "08":
+        return "填空题";
       default:
         return "未知";
     }
@@ -70,9 +70,9 @@
             <p>【标签】</p>
         </span>
     <div>
-      {#each tags as tag}
-        <UneditableTag content={tag}></UneditableTag>
-      {/each}
+    
+         <UneditableTag tags={tags}></UneditableTag>
+   
     </div>
   </div>
 {/snippet}
@@ -301,7 +301,7 @@
 {#snippet fillBlank(/** @type {TheoryQuestion} */ question)}
   <div class="question-content">
     <div class="piptap-content">
-      {@html question.content}
+      {@html  replaceSpansWithLines(question.content)}
     </div>
   </div>
   {@render baseLabel(question.score, question.difficulty, question.tags)}
