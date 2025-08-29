@@ -1,441 +1,501 @@
 <script>
-	import { onMount, getContext } from 'svelte';
-	import Select from '$lib/components/Select/Select.svelte';
-	import Option from '$lib/components/Select/Option.svelte';
+  import { onMount, getContext } from 'svelte';
+  import Select from '$lib/components/Select/Select.svelte';
+  import Option from '$lib/components/Select/Option.svelte';
+  import Empty from '$lib/components/Table/Empty.svelte';
+  import { toast } from '$lib/components/Toast/Toast.js';
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {'practice' | 'exam'} type - 类型
-	 * @property {number} resourceId - 资源ID
-	 * @property {Array} [papers] - 试卷选项（考试类型需要）
-	 */
+  /**
+   * @typedef {Object} Props
+   * @property {'practice' | 'exam'} type - 类型
+   * @property {string|number} resource_id - 资源ID（可能是字符串或数字）
+   * @property {Array} [papers] - 试卷选项（考试类型需要）
+   */
 
-	/**
-	 * @type {Props}
-	 */
-	let { type, resourceId, papers = [] } = $props();
+  /**
+   * @type {Props}
+   */
+  let { type, resource_id, papers = [] } = $props();
 
-	// 获取 Context 数据
-	let contextData = $state(null);
-	try {
-		if (type === 'practice') {
-			const context = getContext('practice');
-			contextData = context?.practiceData;
-		} else {
-			const context = getContext('exam');
-			contextData = context?.examData;
-		}
-	} catch {
-		// Context 不存在时忽略
-	}
+  // 获取 Context 数据
+  let contextData = $state(null);
+  try {
+    if (type === 'practice') {
+      const context = getContext('practice');
+      contextData = context?.practiceData;
+    } else {
+      const context = getContext('exam');
+      contextData = context?.examData;
+    }
+  } catch {
+    // Context 不存在时忽略
+  }
 
-	// 状态变量
-	let questions = $state([]);
-	let questionGroup = $state([]);
-	let isLoaded = $state(false);
-	let isfolded = $state(false);
-	let currentPaperId = $state('');
-	let options = $state([]);
+  // 状态变量
+  let questions = $state([]);
+  let questionGroup = $state([]);
+  let isLoaded = $state(false);
+  let isfolded = $state(false);
+  let currentPaperId = $state('');
+  let options = $state([]);
 
-	// 切换折叠状态
-	function toggleFold() {
-		isfolded = !isfolded;
-	}
+  // 监听 currentPaperId 的变化
+  $effect(() => {
+    if (currentPaperId) {
+      // 当 currentPaperId 变化时，重新获取数据
+      if (type === 'exam' && papers.length > 0) {
+        updateData();
+      }
+    }
+  });
 
-	/**
-	 * 将后端返回的原始题目数据转换为前端所需格式
-	 */
-	function transformQuestions(rawQuestions, answerStats, subjectiveAvgScores) {
-		return rawQuestions.map((q) => {
-			const isObjective = q.Type === '00' || q.Type === '02' || q.Type === '04';
-			const stat = answerStats[String(q.ID)] || {};
-			const avgScore = subjectiveAvgScores[String(q.ID)];
+  // 切换折叠状态
+  function toggleFold() {
+    isfolded = !isfolded;
+  }
 
-			let options = undefined;
+  /**
+   * 将后端返回的原始题目数据转换为前端所需格式
+   */
+  function transformQuestions(rawQuestions, answerStats, subjectiveAvgScores) {
+    return rawQuestions.map((q) => {
+      const isObjective = q.Type === '00' || q.Type === '02' || q.Type === '04';
+      const stat = answerStats[String(q.ID)] || {};
+      const avgScore = subjectiveAvgScores[String(q.ID)];
 
-			if (isObjective && Array.isArray(q.Options)) {
-				const total = Object.values(stat).reduce((sum, val) => sum + val, 0);
+      let options = undefined;
 
-				options = q.Options.map((opt) => {
-					const label = opt.label;
-					const count = stat[label] || 0;
-					const rate = total > 0 ? parseFloat(((count / total) * 100).toFixed(1)) : 0;
+      if (isObjective && Array.isArray(q.Options)) {
+        const total = Object.values(stat).reduce((sum, val) => sum + val, 0);
 
-					return {
-						label,
-						text: opt.value,
-						selectionRate: rate
-					};
-				});
-			}
+        options = q.Options.map((opt) => {
+          const label = opt.label;
+          const count = stat[label] || 0;
+          const rate = total > 0 ? parseFloat(((count / total) * 100).toFixed(1)) : 0;
 
-			return {
-				id: q.ID,
-				type: q.Type,
-				content: q.Content,
-				options: options,
-				answer: (() => {
-					if (isObjective) {
-						return Array.isArray(q.Answers) ? q.Answers : [];
-					} else {
-						const list = Array.isArray(q.Answers) ? q.Answers.map((a) => a.answer) : [];
-						return list;
-					}
-				})(),
-				index: q.Order,
-				score: q.Score,
-				averageScore: isObjective ? undefined : avgScore || 0,
-				groupId: q.GroupID
-			};
-		});
-	}
+          return {
+            label,
+            text: opt.value,
+            selectionRate: rate,
+          };
+        });
+      }
 
-	/**
-	 * 获取分析数据（考试类型）
-	 */
-	async function fetchAnalysisDataBySessionId(sessionId) {
-		isLoaded = false;
-		try {
-			const response = await fetch(`/api/teacher/exam-analysis?examSessionID=${sessionId}`, {
-				method: 'GET',
-				credentials: 'include'
-			});
+      return {
+        id: q.ID,
+        type: q.Type,
+        content: q.Content,
+        options: options,
+        answer: (() => {
+          if (isObjective) {
+            return Array.isArray(q.Answers) ? q.Answers : [];
+          } else {
+            const list = Array.isArray(q.Answers) ? q.Answers.map((a) => a.answer) : [];
+            return list;
+          }
+        })(),
+        index: q.Order,
+        score: q.Score,
+        averageScore: isObjective ? undefined : avgScore || 0,
+        groupId: q.GroupID || null, 
+      };
+    });
+  }
 
-			const resp_data = await response.json();
-			if (resp_data.status < 0) {
-				throw new Error(resp_data.msg);
-			}
-			questions = transformQuestions(
-				resp_data.data.questions,
-				resp_data.data.question_answers_stats,
-				resp_data.data.subjective_scores
-			);
-			questionGroup = resp_data.data.question_groups;
-			isLoaded = true;
-		} catch (error) {
-			console.error('获取考试数据失败:', error);
-		}
-	}
+  /**
+   * 获取分析数据（考试类型）
+   */
+  function fetchAnalysisDataBySessionId(sessionId) {
+    isLoaded = false;
+    // 清空之前的数据，避免显示旧数据
+    questions = [];
+    questionGroup = [];
 
-	/**
-	 * 获取分析数据（练习类型）
-	 */
-	async function fetchPracticeAnalysisData(practiceId) {
-		isLoaded = false;
-		try {
-			const response = await fetch(`/api/teacher/practice-analysis?practiceID=${practiceId}`, {
-				method: 'GET',
-				credentials: 'include'
-			});
+    const apiUrl = `/api/grade?category=exam&examSessionID=${sessionId}`;
 
-			const resp_data = await response.json();
-			if (resp_data.status < 0) {
-				throw new Error(resp_data.msg);
-			}
-			questions = transformQuestions(
-				resp_data.data.questions,
-				resp_data.data.question_answers_stats,
-				resp_data.data.subjective_scores
-			);
-			questionGroup = resp_data.data.question_groups;
-			isLoaded = true;
-		} catch (error) {
-			console.error('获取练习数据失败:', error);
-		}
-	}
+    fetch(apiUrl, {
+      method: 'GET',
+      credentials: 'include',
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then((resp_data) => {
+        if (resp_data.status !== 0) {
+          throw new Error(resp_data.msg || '获取数据失败');
+        }
 
-	/**
-	 * 将试卷数据转换为下拉选项
-	 */
-	function examDataToOptions() {
-		return papers.map((session) => ({
-			value: session.id,
-			label: session.name
-		}));
-	}
+        // 处理返回的数据结构
+        const flatQuestions = [];
+        if (resp_data.data.exam_paper_questions) {
+          // 遍历每个分组的题目，并为题目设置正确的GroupID
+          Object.entries(resp_data.data.exam_paper_questions).forEach(([groupId, groupQuestions]) => {
+            if (Array.isArray(groupQuestions)) {
+              groupQuestions.forEach((question) => {
+                // 确保题目有正确的GroupID
+                question.GroupID = parseInt(groupId);
+                flatQuestions.push(question);
+              });
+            }
+          });
+        }
 
-	/**
-	 * 更新数据
-	 */
-	function updateData() {
-		if (currentPaperId) {
-			const selectedSession = papers.find((session) => session.id === currentPaperId);
+        questions = transformQuestions(
+          flatQuestions,
+          resp_data.data.question_answers_stats || {},
+          resp_data.data.subjective_scores || {},
+        );
+        questionGroup = resp_data.data.exam_paper_groups || [];
+        isLoaded = true;
+      })
+      .catch((error) => {
+        console.error('获取考试数据失败:', error);
+        // 发生错误时清空数据
+        questions = [];
+        questionGroup = [];
+        isLoaded = true; 
+      });
+  }
 
-			if (selectedSession) {
-				fetchAnalysisDataBySessionId(selectedSession.id);
-			} else {
-				fetchAnalysisDataBySessionId(papers[0].id);
-			}
-		}
-	}
+  /**
+   * 获取分析数据（练习类型）
+   */
+  function fetchPracticeAnalysisData(practiceId) {
+    isLoaded = false;
+    // 清空旧数据
+    questions = [];
+    questionGroup = [];
 
-	/**
-	 * 处理试卷选择变化
-	 */
-	function handlePaperChange(event) {
-		currentPaperId = event.detail;
-		updateData();
-	}
+    const apiUrl = `/api/grade?category=practice&practiceID=${practiceId}`;
 
+    fetch(apiUrl, {
+      method: 'GET',
+      credentials: 'include',
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then((resp_data) => {
+        if (resp_data.status !== 0) {
+          throw new Error(resp_data.msg || '获取数据失败');
+        }
 
+        // 处理返回的数据结构（练习数据结构可能与考试不同）
+        const flatQuestions = [];
+        if (resp_data.data.exam_paper_questions) {
+          // 遍历每个分组的题目，并为题目设置正确的GroupID
+          Object.entries(resp_data.data.exam_paper_questions).forEach(([groupId, groupQuestions]) => {
+            if (Array.isArray(groupQuestions)) {
+              groupQuestions.forEach((question) => {
+                // 确保题目有正确的GroupID
+                question.GroupID = parseInt(groupId);
+                flatQuestions.push(question);
+              });
+            }
+          });
+        }
+
+        questions = transformQuestions(
+          flatQuestions,
+          resp_data.data.question_answers_stats || {},
+          resp_data.data.subjective_scores || {},
+        );
+        questionGroup = resp_data.data.exam_paper_groups || [];
+        isLoaded = true;
+      })
+      .catch((error) => {
+        console.error('获取练习数据失败:', error);
+        // 发生错误时清空数据
+        questions = [];
+        questionGroup = [];
+        isLoaded = true;
+      });
+  }
+
+  /**
+   * 将试卷数据转换为下拉选项
+   */
+  function examDataToOptions() {
+    return papers.map((session, index) => ({
+      value: String(session.id), // 确保value是字符串类型，统一处理
+      label: session.name || `试卷${index + 1}`, // 使用试卷名称，如果没有则使用默认名称
+    }));
+  }
+
+  /**
+   * 更新数据
+   */
+  function updateData() {
+    if (currentPaperId) {
+      // 根据当前选中的试卷ID查找对应的试卷信息
+      // 注意：currentPaperId是字符串，session.id是数字，需要类型转换
+      const selectedSession = papers.find((session) => String(session.id) === currentPaperId);
+
+      if (selectedSession) {
+        // 使用选中试卷的exam_session_id获取分析数据
+        fetchAnalysisDataBySessionId(selectedSession.id);
+      } else {
+        // 如果没有找到选中的试卷，使用第一个试卷
+        if (papers.length > 0) {
+          fetchAnalysisDataBySessionId(papers[0].id);
+        }
+      }
+    }
+  }
+
+  /**
+   * 处理试卷选择变化（通过 changeValue 回调）
+   */
+  function handlePaperChange(selectedPaperId) {
+    // 更新当前选中的试卷ID
+    currentPaperId = selectedPaperId;
+  }
+
+  // 组件挂载时的初始化
+  onMount(() => {
+    if (type === 'exam' && papers.length > 0) {
+      // 初始化选项
+      options = examDataToOptions();
+
+      // 设置默认选中的试卷
+      if (!currentPaperId && papers.length > 0) {
+        currentPaperId = String(papers[0].id); // 这里设置的是exam_session_id转换为字符串
+      }
+
+      // 加载初始数据
+      updateData();
+    } else if (type === 'practice' && resource_id) {
+      // 练习类型直接使用 resource_id
+      fetchPracticeAnalysisData(resource_id);
+    }
+  });
 </script>
 
 <div class="analysis-card">
-	<div class="card-header">
-		<button class="card-title-button" onclick={toggleFold}>
-			{#if isfolded}
-				<img src="/sidebar/nav_icon/unfold.svg" alt="收起" />
-			{:else}
-				<img src="/sidebar/nav_icon/fold.svg" alt="展开" />
-			{/if}
-			<div class="title">试卷分析</div>
-		</button>
-	</div>
-	{#if type === 'exam' && papers.length > 1}
-		<div class="dropdown">
-			<Select
-				value={currentPaperId}
-				placeholder="选择试卷"
-				on:change={handlePaperChange}
-			>
-				{#each options as option}
-					<Option value={option.value} label={option.label}>{option.label}</Option>
-				{/each}
-			</Select>
-		</div>
-	{/if}
-	{#if !isfolded && isLoaded}
-		<div class="analysis-content">
-			{#if questions.length === 0 || questionGroup.length === 0}
-				<!-- 暂无数据显示 -->
-				<div class="no-data">
-					<div class="no-data-text">暂无试卷分析数据</div>
-				</div>
-			{:else}
-				<!-- 简化的题目列表显示-->
-				{#each questionGroup as group}
-					<div class="question-group">
-						<h3 class="group-title">{group.name}</h3>
-						{#if questions.filter(q => q.groupId === group.id).length === 0}
-							<!-- 分组内暂无题目 -->
-							<div class="group-no-data">
-								<span>该分组暂无题目数据</span>
-							</div>
-						{:else}
-							{#each questions.filter(q => q.groupId === group.id) as question}
-								<div class="question-item">
-									<div class="question-header">
-										<span class="question-number">第{question.index}题</span>
-										<span class="question-score">({question.score}分)</span>
-										{#if question.averageScore !== undefined}
-											<span class="average-score">平均分: {question.averageScore}</span>
-										{/if}
-									</div>
-									<div class="question-content">
-										{@html question.content}
-									</div>
-									{#if question.options}
-										<div class="options-stats">
-											{#each question.options as option}
-												<div class="option-stat">
-													<span class="option-label">{option.label}:</span>
-													<span class="option-text">{option.text}</span>
-													<span class="option-percentage">({option.selectionRate}%)</span>
-												</div>
-											{/each}
-										</div>
-									{/if}
-								</div>
-							{/each}
-						{/if}
-					</div>
-				{/each}
-			{/if}
-		</div>
-	{/if}
-	<!-- {#if !isLoaded}
-		<div class="loading-indicator">
-			<div class="spinner"></div>
-			<span>正在加载，请稍候...</span>
-		</div>
-	{/if} -->
+  <div class="card-header">
+    <button class="card-title-button" onclick={toggleFold}>
+      {#if isfolded}
+        <img src="/sidebar/nav_icon/unfold.svg" alt="收起" />
+      {:else}
+        <img src="/sidebar/nav_icon/fold.svg" alt="展开" />
+      {/if}
+      <div class="title">试卷分析</div>
+    </button>
+  </div>
+
+  {#if !isfolded}
+    {#if !isLoaded}
+      <div style="padding: 20px; text-align: center; color: #666;">
+        正在加载试卷分析数据...
+      </div>
+    {:else}
+      {#if type === 'exam' && papers.length > 1}
+        <div class="paper-select">
+          <Select bind:value={currentPaperId} placeholder="选择试卷" changeValue={handlePaperChange}>
+            {#each options as option}
+              <Option value={option.value} label={option.label}>{option.label}</Option>
+            {/each}
+          </Select>
+        </div>
+      {/if}
+      
+      <div class="analysis-content">
+        {#if questions.length === 0 || questionGroup.length === 0}
+          <!-- 暂无数据显示 -->
+          <div class="no-data">
+            <Empty text="暂无试卷分析数据" />
+          </div>
+        {:else}
+          <!-- 题目列表显示-->
+          {#each questionGroup.filter(group => questions.filter((q) => q.groupId === group.ID).length > 0) as group}
+            <div class="question-group">
+              <div class="group-title">
+                {group.Name}
+                (共{questions
+                  .filter((q) => q.groupId === group.ID)
+                  .reduce((sum, q) => sum + q.score, 0)}分，共{questions.filter((q) => q.groupId === group.ID)
+                  .length}题)
+              </div>
+              {#each questions.filter((q) => q.groupId === group.ID) as question}
+                <div class="question-item">
+                  <div class="question-header">
+                    <span class="question-number">第{question.index}题</span>
+                    <span class="question-score">({question.score}分)</span>
+                    {#if question.averageScore !== undefined}
+                      <span class="average-score">平均分: {question.averageScore}</span>
+                    {/if}
+                  </div>
+                  <div class="question-content">
+                    {@html question.content}
+                  </div>
+                  {#if question.options}
+                    <div class="options-stats">
+                      {#each question.options as option}
+                        <div class="option-stat">
+                          <span class="option-label">{option.label}:</span>
+                          <span class="option-text">{@html option.text}</span>
+                          <span class="option-percentage">({option.selectionRate}%)</span>
+                        </div>
+                      {/each}
+                    </div>
+                  {/if}
+                  {#if Array.isArray(question.answer) && question.answer.length > 0}
+                    <div class="correct-answers">
+                      <span class="answer-label">正确答案:</span>
+                      <span class="answer-content">{question.answer.join(', ')}</span>
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {/each}
+        {/if}
+      </div>
+    {/if}
+  {/if}
 </div>
 
 <style lang="scss" scoped>
-	.analysis-card {
-		width: 100%;
-		height: 100%;
-		margin-bottom: 40px;
+  .analysis-card {
+    width: 100%;
+    height: 100%;
+    margin-bottom: 40px;
 
-		.card-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 40px;
-			padding-bottom: 10px;
-			border-bottom: 2px solid #f0f0f0;
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f0f0;
 
-			.card-title-button {
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				gap: 10px;
-				cursor: pointer;
-				background: none;
-				border: none;
+      .card-title-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        cursor: pointer;
+        background: none;
+        border: none;
 
-				img {
-					width: 32px;
-					height: 32px;
-				}
-				.title {
-					font-size: 22px;
-					font-weight: bold;
-				}
-			}
-		}
+        img {
+          width: 32px;
+          height: 32px;
+        }
+        .title {
+          font-size: 22px;
+          font-weight: bold;
+        }
+      }
+    }
 
-		.dropdown {
-			margin-bottom: 40px;
-			margin-left: 40px;
-			width: 400px;
-		}
+    .paper-select {
+      max-width: 20%;
+    }
 
-		.analysis-content {
-			margin-top: 30px;
-			margin-left: 50px;
+    .analysis-content {
+      margin-top: 20px;
+      margin-left: 10px;
+      margin-right: 10px;
 
-			.no-data {
-				display: flex;
-				flex-direction: column;
-				align-items: center;
-				justify-content: center;
-				padding: 60px 20px;
-				text-align: center;
+      .no-data {
+        text-align: center;
+      }
 
-				.no-data-icon {
-					font-size: 48px;
-					margin-bottom: 16px;
-					opacity: 0.6;
-				}
+      .question-group {
+        margin-bottom: 30px;
 
-				.no-data-text {
-					font-size: 16px;
-					color: #666;
-					margin-bottom: 8px;
-					font-weight: 500;
-				}
+        .group-title {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 15px;
+          color: var(--text-primary);
+        }
 
-				.no-data-hint {
-					font-size: 14px;
-					color: #999;
-				}
-			}
+        .question-item {
+          margin-bottom: 20px;
+          padding: 15px;
+          border: 1px solid #e0e0e0;
+          border-radius: 5px;
+          background: #fafafa;
 
-			.question-group {
-				margin-bottom: 30px;
+          .question-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
 
-				.group-title {
-					font-size: 18px;
-					font-weight: bold;
-					margin-bottom: 15px;
-					color: #333;
-				}
+            .question-number {
+              font-weight: bold;
+              color: #333;
+            }
 
-				.group-no-data {
-					padding: 20px;
-					text-align: center;
-					color: #999;
-					font-size: 14px;
-					background: #f8f9fa;
-					border-radius: 4px;
-					border: 1px dashed #ddd;
-				}
+            .question-score {
+              color: #666;
+            }
 
-				.question-item {
-					margin-bottom: 20px;
-					padding: 15px;
-					border: 1px solid #e0e0e0;
-					border-radius: 5px;
-					background: #fafafa;
+            .average-score {
+              color: #007bff;
+              font-weight: 500;
+            }
+          }
 
-					.question-header {
-						display: flex;
-						align-items: center;
-						gap: 10px;
-						margin-bottom: 10px;
+          .question-content {
+            margin-bottom: 10px;
+            line-height: 1.5;
+            color: #333;
+          }
 
-						.question-number {
-							font-weight: bold;
-							color: #333;
-						}
+          .options-stats {
+            .option-stat {
+              display: flex;
+              align-items: center;
+              gap: 5px;
+              margin-bottom: 5px;
+              font-size: 14px;
 
-						.question-score {
-							color: #666;
-						}
+              .option-label {
+                font-weight: bold;
+                color: #333;
+              }
 
-						.average-score {
-							color: #007bff;
-							font-weight: 500;
-						}
-					}
+              .option-text {
+                color: #666;
+                flex: 1;
+              }
 
-					.question-content {
-						margin-bottom: 10px;
-						line-height: 1.5;
-						color: #333;
-					}
+              .option-percentage {
+                color: #007bff;
+                font-weight: 500;
+              }
+            }
+          }
 
-					.options-stats {
-						.option-stat {
-							display: flex;
-							align-items: center;
-							gap: 5px;
-							margin-bottom: 5px;
-							font-size: 14px;
+          .correct-answers {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-left: 3px solid #28a745;
+            border-radius: 3px;
 
-							.option-label {
-								font-weight: bold;
-								color: #333;
-							}
+            .answer-label {
+              font-weight: bold;
+              color: #28a745;
+              margin-right: 8px;
+            }
 
-							.option-text {
-								color: #666;
-							}
-
-							.option-percentage {
-								color: #007bff;
-								font-weight: 500;
-							}
-						}
-					}
-				}
-			}
-		}
-
-		.loading-indicator {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: 20px;
-			flex-direction: column;
-			color: var(--gray);
-
-			.spinner {
-				width: 40px;
-				height: 40px;
-				border: 4px solid #ccc;
-				border-top-color: var(--blue);
-				border-radius: 50%;
-				animation: spin 0.8s linear infinite;
-				margin-bottom: 10px;
-			}
-
-			@keyframes spin {
-				to {
-					transform: rotate(360deg);
-				}
-			}
-		}
-	}
+            .answer-content {
+              color: #333;
+            }
+          }
+        }
+      }
+    }
+  }
 </style>

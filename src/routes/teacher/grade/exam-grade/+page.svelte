@@ -13,7 +13,6 @@
   import { debounce } from '../_utils/debounce.js';
   import { safeDisplayNumber, safeDisplayText, safeDisplayBoolean } from '../_utils/dataFormatter.js';
 
-
   /**
    * @typedef {object} ExamSessionInfo
    * @property {number} exam_id - 考试ID
@@ -169,7 +168,7 @@
     state.loading = true; // 开始加载
     state.selected = {}; // 清空选中状态
     state.selectAll = false; // 重置全选状态
-    
+
     const params = {
       name: state.filters.name,
       type: state.filters.type,
@@ -177,7 +176,7 @@
       examID: state.filters.examID,
       ...state.pagination,
     };
-    
+
     getExams(params)
       .then((data) => {
         state.exams = formatExamData(data?.data || []);
@@ -191,27 +190,30 @@
       });
   }
 
-  /** 
+  /**
    * 更新筛选条件并触发搜索
-   * @param {Partial<typeof state.filters>} newFilters 
+   * @param {Partial<typeof state.filters>} newFilters
    */
   function setFilters(newFilters) {
     state.filters = { ...state.filters, ...newFilters };
+    // 筛选条件改变时清空选中状态
+    state.selected = {};
+    state.selectAll = false;
     debouncedSearch(); // 使用防抖搜索
   }
 
-  /** 
+  /**
    * 设置当前页码并重新获取数据
-   * @param {number} page 
+   * @param {number} page
    */
   function setPage(page) {
     state.pagination.page = page;
     fetchExams();
   }
 
-  /** 
+  /**
    * 设置每页显示数量，重置页码并重新获取数据
-   * @param {number} pageSize 
+   * @param {number} pageSize
    */
   function setPageSize(pageSize) {
     state.pagination.pageSize = pageSize;
@@ -219,7 +221,7 @@
     fetchExams();
   }
 
-  /** 
+  /**
    * 切换单个考试的选中状态
    * @param {number} id 考试ID
    */
@@ -245,7 +247,7 @@
     state.selected = newSelected;
   }
 
-  /** 
+  /**
    * 提交考试成绩
    * @param {number[]} examIds 考试ID数组
    */
@@ -260,7 +262,7 @@
       });
   }
 
-  /** 
+  /**
    * 导出考试成绩（待实现功能）
    * @param {number[]} examIds 考试ID数组
    */
@@ -269,14 +271,14 @@
   }
 
   // 筛选面板相关事件处理
-  
+
   /** 处理搜索输入变化 */
   function handleSearchInput(value) {
     setFilters({ name: value });
   }
 
   // 批量操作相关事件处理
-  
+
   function handleBatchExport() {
     handleFeatureNotImplemented('批量导出');
   }
@@ -290,11 +292,11 @@
 
     if (selectedIds.length > 0) {
       // 检查选中的考试是否都可以提交
-      const selectedExams = state.exams.filter(exam => selectedIds.includes(exam.id));
-      const canSubmitAll = selectedExams.every(exam => 
-        !exam.submitted && exam.sessions.every(session => session.status === '10')
+      const selectedExams = state.exams.filter((exam) => selectedIds.includes(exam.id));
+      const canSubmitAll = selectedExams.every(
+        (exam) => !exam.submitted && exam.sessions.every((session) => session.status === '10'),
       );
-      
+
       if (canSubmitAll) {
         submitGrades(selectedIds); // 提交选中的考试成绩
       } else {
@@ -325,20 +327,18 @@
   // 计算属性：基于状态自动计算的值
   let selectedCount = $derived(Object.keys(state.selected).filter((k) => state.selected[Number(k)]).length);
   let hasSelection = $derived(selectedCount > 0);
-  
+
   // 计算是否可以批量提交：选中的考试都未提交且所有场次状态都为'10'
   let canBatchSubmit = $derived(() => {
     if (selectedCount === 0) return false;
-    
+
     const selectedIds = Object.keys(state.selected)
       .filter((id) => state.selected[Number(id)])
       .map(Number);
-    
-    const selectedExams = state.exams.filter(exam => selectedIds.includes(exam.id));
-    
-    return selectedExams.every(exam => 
-      !exam.submitted && exam.sessions.every(session => session.status === '10')
-    );
+
+    const selectedExams = state.exams.filter((exam) => selectedIds.includes(exam.id));
+
+    return selectedExams.every((exam) => !exam.submitted && exam.sessions.every((session) => session.status === '10'));
   });
 
   // 组件挂载时获取数据
@@ -372,7 +372,20 @@
         <div class="filter-group">
           <span class="filter-hint">考试类别</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={state.filters.type}>
+            <Select
+              value={state.filters.type}
+              placeholder="全部"
+              changeValue={(value) => {
+                if (value !== state.filters.type) {
+                  state.filters.type = value;
+                  state.pagination.page = 1;
+                  // 筛选条件改变时清除选中状态
+                  state.selected = {};
+                  state.selectAll = false;
+                  fetchExams();
+                }
+              }}
+            >
               <Option value="" label="全部" />
               <Option value="00" label="平时考试" />
               <Option value="02" label="资格证考试" />
@@ -383,7 +396,20 @@
         <div class="filter-group">
           <span class="filter-hint">提交状态</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={state.filters.submitted}>
+            <Select
+              value={state.filters.submitted}
+              placeholder="全部"
+              changeValue={(value) => {
+                if (value !== state.filters.submitted) {
+                  state.filters.submitted = value;
+                  state.pagination.page = 1;
+                  // 筛选条件改变时清除选中状态
+                  state.selected = {};
+                  state.selectAll = false;
+                  fetchExams();
+                }
+              }}
+            >
               <Option value={-1} label="全部" />
               <Option value={1} label="已提交" />
               <Option value={0} label="未提交" />
@@ -413,7 +439,7 @@
   <div class="table-container">
     <div class="table-content">
       <!-- 考试数据表格 -->
-      <div class="exam-table-container">
+      <div class="exam-table-container" class:no-data-container={state.exams.length === 0 && !state.loading}>
         <table class="exam-table">
           <thead>
             <!-- 表格头部 -->
@@ -460,7 +486,7 @@
                   </div>
                 </td>
               </tr>
-            <!-- 空数据状态显示 -->
+              <!-- 空数据状态显示 -->
             {:else if state.exams.length === 0}
               <tr>
                 <td colspan="12" class="no-data">
@@ -469,138 +495,138 @@
                   </div>
                 </td>
               </tr>
-            <!-- 考试数据列表 -->
+              <!-- 考试数据列表 -->
             {:else}
               {#each state.exams as exam (exam.id)}
-                  <!-- 考试数据行 -->
-                  <tr class="exam-list-row">
-                    <!-- 单选复选框 -->
-                    <td class="exam-select">
-                      <button
-                        class="square-container {state.selected[exam.id] ? 'checked' : ''}"
-                        onclick={() => toggleSelect(exam.id)}
-                      >
-                        {#if state.selected[exam.id]}
-                          <div class="check-square"></div>
-                        {/if}
-                      </button>
-                    </td>
-                    <!-- 考试基本信息 -->
-                    <td class="exam-name">{exam.name}</td>
-                    <td class="exam-type">{exam.type === '00' ? '平时考试' : '资格证考试'}</td>
-                    <!-- 考试场次信息 -->
-                    <td class="exam-sessions">
-                      {#if exam.sessions && exam.sessions.length > 0}
-                        {#each exam.sessions as session (session.exam_session_id)}
-                          <div class="session-item">
-                            {session.paper_name || '-'}
-                          </div>
-                        {/each}
+                <!-- 考试数据行 -->
+                <tr class="exam-list-row">
+                  <!-- 单选复选框 -->
+                  <td class="exam-select">
+                    <button
+                      class="square-container {state.selected[exam.id] ? 'checked' : ''}"
+                      onclick={() => toggleSelect(exam.id)}
+                    >
+                      {#if state.selected[exam.id]}
+                        <div class="check-square"></div>
+                      {/if}
+                    </button>
+                  </td>
+                  <!-- 考试基本信息 -->
+                  <td class="exam-name">{exam.name}</td>
+                  <td class="exam-type">{exam.type === '00' ? '平时考试' : '资格证考试'}</td>
+                  <!-- 考试场次信息 -->
+                  <td class="exam-sessions">
+                    {#if exam.sessions && exam.sessions.length > 0}
+                      {#each exam.sessions as session (session.exam_session_id)}
+                        <div class="session-item">
+                          {session.paper_name || '-'}
+                        </div>
+                      {/each}
+                    {:else}
+                      -
+                    {/if}
+                  </td>
+                  <!-- 考试时间 -->
+                  <td class="exam-time">
+                    {#if exam.sessions && exam.sessions.length > 0}
+                      {#each exam.sessions as session (session.exam_session_id)}
+                        <div class="session-item">
+                          {session.start_time != '-' ? new Date(session.start_time).toLocaleString() : ''} - {session.end_time !=
+                          '-'
+                            ? new Date(session.end_time).toLocaleString()
+                            : ''}
+                        </div>
+                      {/each}
+                    {:else}
+                      -
+                    {/if}
+                  </td>
+                  <!-- 考试总分 -->
+                  <td class="exam-total-score">
+                    {#if exam.sessions && exam.sessions.length > 0}
+                      {#each exam.sessions as session (session.exam_session_id)}
+                        <div class="session-item">
+                          {session.total_score != null ? session.total_score : '-'}
+                        </div>
+                      {/each}
+                    {:else}
+                      -
+                    {/if}
+                  </td>
+                  <!-- 考试平均分 -->
+                  <td class="exam-average-score">
+                    {#if exam.sessions && exam.sessions.length > 0}
+                      {#each exam.sessions as session (session.exam_session_id)}
+                        <div class="session-item">
+                          {safeDisplayNumber(session.average_score, 1) ?? '-'}
+                        </div>
+                      {/each}
+                    {:else}
+                      -
+                    {/if}
+                  </td>
+                  <!-- 应考人数 -->
+                  <td class="exam-scheduled-examinees">
+                    {#if exam.sessions && exam.sessions.length > 0}
+                      {#each exam.sessions as session (session.exam_session_id)}
+                        <div class="session-item">
+                          {session.scheduled_examinees != null ? session.scheduled_examinees : '-'}
+                        </div>
+                      {/each}
+                    {:else}
+                      -
+                    {/if}
+                  </td>
+                  <!-- 实考人数 -->
+                  <td class="exam-actual-examinees">
+                    {#if exam.sessions && exam.sessions.length > 0}
+                      {#each exam.sessions as session (session.exam_session_id)}
+                        <div class="session-item">
+                          {session.actual_examinees != null ? session.actual_examinees : '-'}
+                        </div>
+                      {/each}
+                    {:else}
+                      -
+                    {/if}
+                  </td>
+                  <!-- 通过人数 -->
+                  <td class="exam-pass-examinees">
+                    {#if exam.sessions && exam.sessions.length > 0}
+                      {#each exam.sessions as session (session.exam_session_id)}
+                        <div class="session-item">
+                          {session.pass_examinees != null ? session.pass_examinees : '-'}
+                        </div>
+                      {/each}
+                    {:else}
+                      -
+                    {/if}
+                  </td>
+                  <!-- 提交状态 -->
+                  <td class="exam-submitted" class:submitted={exam.submitted} class:not-submitted={!exam.submitted}>
+                    {exam.submitted === null || exam.submitted === undefined
+                      ? '-'
+                      : exam.submitted
+                        ? '已提交'
+                        : '未提交'}
+                  </td>
+                  <!-- 操作按钮 -->
+                  <td class="operation">
+                    <button class="op-btn" onclick={() => handleDetailClick(exam.id)}>详情</button>
+                    <button class="op-btn" onclick={handleExport} style="display: none;">导出</button>
+                    {#if !exam.submitted}
+                      {#if exam.sessions.every((session) => session.status === '10')}
+                        <button class="op-btn op-btn-submit" onclick={() => submitGrades([exam.id])}> 提交 </button>
                       {:else}
-                        -
+                        <button class="op-btn op-btn-unable-submit"> 提交 </button>
                       {/if}
-                    </td>
-                    <!-- 考试时间 -->
-                    <td class="exam-time">
-                      {#if exam.sessions && exam.sessions.length > 0}
-                        {#each exam.sessions as session (session.exam_session_id)}
-                          <div class="session-item">
-                            {session.start_time != '-' ? new Date(session.start_time).toLocaleString() : ''} - {session.end_time !=
-                            '-'
-                              ? new Date(session.end_time).toLocaleString()
-                              : ''}
-                          </div>
-                        {/each}
-                      {:else}
-                        -
-                      {/if}
-                    </td>
-                    <!-- 考试总分 -->
-                    <td class="exam-total-score">
-                      {#if exam.sessions && exam.sessions.length > 0}
-                        {#each exam.sessions as session (session.exam_session_id)}
-                          <div class="session-item">
-                            {session.total_score != null ? session.total_score : '-'}
-                          </div>
-                        {/each}
-                      {:else}
-                        -
-                      {/if}
-                    </td>
-                    <!-- 考试平均分 -->
-                    <td class="exam-average-score">
-                      {#if exam.sessions && exam.sessions.length > 0}
-                        {#each exam.sessions as session (session.exam_session_id)}
-                          <div class="session-item">
-                            {safeDisplayNumber(session.average_score,1) ?? '-'}
-                          </div>
-                        {/each}
-                      {:else}
-                        -
-                      {/if}
-                    </td>
-                    <!-- 应考人数 -->
-                    <td class="exam-scheduled-examinees">
-                      {#if exam.sessions && exam.sessions.length > 0}
-                        {#each exam.sessions as session (session.exam_session_id)}
-                          <div class="session-item">
-                            {session.scheduled_examinees != null ? session.scheduled_examinees : '-'}
-                          </div>
-                        {/each}
-                      {:else}
-                        -
-                      {/if}
-                    </td>
-                    <!-- 实考人数 -->
-                    <td class="exam-actual-examinees">
-                      {#if exam.sessions && exam.sessions.length > 0}
-                        {#each exam.sessions as session (session.exam_session_id)}
-                          <div class="session-item">
-                            {session.actual_examinees != null ? session.actual_examinees : '-'}
-                          </div>
-                        {/each}
-                      {:else}
-                        -
-                      {/if}
-                    </td>
-                    <!-- 通过人数 -->
-                    <td class="exam-pass-examinees">
-                      {#if exam.sessions && exam.sessions.length > 0}
-                        {#each exam.sessions as session (session.exam_session_id)}
-                          <div class="session-item">
-                            {session.pass_examinees != null ? session.pass_examinees : '-'}
-                          </div>
-                        {/each}
-                      {:else}
-                        -
-                      {/if}
-                    </td>
-                    <!-- 提交状态 -->
-                    <td class="exam-submitted" class:submitted={exam.submitted} class:not-submitted={!exam.submitted}>
-                      {exam.submitted === null || exam.submitted === undefined
-                        ? '-'
-                        : exam.submitted
-                          ? '已提交'
-                          : '未提交'}
-                    </td>
-                    <!-- 操作按钮 -->
-                    <td class="operation">
-                      <button class="op-btn" onclick={() => handleDetailClick(exam.id)}>详情</button>
-                      <button class="op-btn" onclick={handleExport} style="display: none;">导出</button>
-                      {#if !exam.submitted}
-                        {#if exam.sessions.every(session => session.status === '10')}
-                          <button class="op-btn op-btn-submit" onclick={() => submitGrades([exam.id])}> 提交 </button>
-                        {:else}
-                          <button class="op-btn op-btn-unable-submit" > 提交 </button>
-                        {/if}
-                      {/if}
-                    </td>
-                  </tr>
-                {/each}
-              {/if}
-            </tbody>
-          </table>
-        </div>
+                    {/if}
+                  </td>
+                </tr>
+              {/each}
+            {/if}
+          </tbody>
+        </table>
+      </div>
     </div>
     <!-- 分页组件 -->
     <div class="pagination-wrapper">
@@ -621,8 +647,9 @@
     flex-direction: column;
     min-height: 600px;
     overflow: hidden;
-    height: 84vh; 
+    height: 85vh;
     position: relative;
+    max-width: 100vw;
   }
 
   /* 筛选区域样式 */
@@ -640,23 +667,26 @@
     position: relative;
     min-height: 0;
     padding: 0 23px;
-    flex: 1; 
+    flex: 1;
     padding-bottom: 60px; /* 为固定分页器留出空间 */
+    max-width: 100%;
   }
 
   .table-content {
     flex: 1;
     overflow: hidden;
     min-height: 0;
+    width: 100%;
   }
 
   /* 分页器样式 */
   .pagination-wrapper {
     flex-shrink: 0; /* 分页器不收缩 */
     position: absolute;
-    bottom: 10px;
+    bottom: 0px;
     right: 20px;
   }
+  
 
   /* 筛选面板和操作栏样式 */
   .top-action-bar {
@@ -664,7 +694,7 @@
     justify-content: flex-start;
     align-items: center;
     padding: 16px 0 0 0;
-    flex-wrap: wrap; 
+    flex-wrap: wrap;
   }
 
   /* 筛选条件区域 */
@@ -709,6 +739,7 @@
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
+    flex-shrink: 0;
   }
 
   /* 选中项计数显示 */
@@ -718,6 +749,8 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    flex-shrink: 0;
+
     .count {
       font-size: 16px;
       font-weight: bold;
@@ -736,24 +769,25 @@
     color: #fff;
     white-space: nowrap;
     flex-shrink: 0;
+    min-width: 80px;
 
     /* 不同按钮的背景色 */
     &.export {
-      background-color: #0052d9; 
+      background-color: #0052d9;
     }
     &.submit {
-      background-color: #067945; 
+      background-color: #067945;
     }
     &.log {
-      background-color: #0052d9; 
+      background-color: #0052d9;
     }
 
     /* 禁用状态样式 */
     &:disabled {
-      background-color: #bbd3fb; 
+      background-color: #bbd3fb;
       cursor: not-allowed;
       &.submit {
-        background-color: #85dbbe; 
+        background-color: #85dbbe;
       }
     }
   }
@@ -763,15 +797,15 @@
     width: 100%;
     height: 100%;
     max-height: 100%;
-    overflow: auto; /* 支持滚动 */
     flex: 1;
     min-height: 0;
-    
+    overflow-x: auto;
+    overflow-y: auto;
 
     // 自定义滚动条样式
     &::-webkit-scrollbar {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
     }
 
     &::-webkit-scrollbar-track {
@@ -787,14 +821,27 @@
         background: #a8a8a8; /* 悬停时颜色 */
       }
     }
+
+    &.no-data-container {
+      overflow: hidden;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .exam-table-container {
+      &::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+    }
   }
 
   /* 表格基础样式 */
   .exam-table {
     width: 100%;
-    min-width: 1200px; 
-    border-collapse: collapse; 
-    table-layout: fixed; 
+    min-width: 1200px;
+    border-collapse: collapse;
+    table-layout: fixed;
 
     thead {
       position: sticky; /* 表头固定 */
@@ -807,9 +854,16 @@
   /* 空数据和加载状态样式 */
   .no-data {
     text-align: center;
-    padding: 40px;
-    color: #999;
+    padding: 40px 20px;
     font-size: 14px;
+  }
+
+  .empty-container {
+    width: 100%;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .loading-row {
@@ -831,7 +885,7 @@
     th {
       font-size: 14px;
       font-weight: normal;
-      color: rgb(0, 0, 0, 0.3); 
+      color: rgb(0, 0, 0, 0.3);
       padding: 30px 4px 5px 4px;
       vertical-align: middle;
       text-align: center;
@@ -841,46 +895,103 @@
 
   /* 表格列宽度设置 */
   .exam-select {
-    width: 4%; /* 选择列 */
+    width: 4%;
+    min-width: 50px; /* 最小宽度保证可见性 */
   }
   .exam-name {
-    width: 12%; /* 名称列 */
+    width: 12%;
+    min-width: 120px;
   }
   .exam-type {
-    width: 8%; /* 类型列 */
+    width: 8%;
+    min-width: 80px;
   }
   .exam-sessions {
-    width: 12%; /* 场次列 */
+    width: 12%;
+    min-width: 120px;
   }
   .exam-time {
-    width: 16%; /* 时间列 */
+    width: 16%;
+    min-width: 160px;
   }
   .exam-total-score {
-    width: 8%; /* 总分列 */
+    width: 8%;
+    min-width: 70px;
   }
   .exam-average-score {
-    width: 8%; /* 平均分列 */
+    width: 8%;
+    min-width: 80px;
   }
   .exam-scheduled-examinees {
-    width: 8%; /* 应考人数列 */
+    width: 8%;
+    min-width: 80px;
   }
   .exam-actual-examinees {
-    width: 8%; /* 实考人数列 */
+    width: 8%;
+    min-width: 80px;
   }
   .exam-pass-examinees {
-    width: 8%; /* 通过人数列 */
+    width: 8%;
+    min-width: 80px;
   }
   .exam-submitted {
-    width: 8%; /* 提交状态列 */
+    width: 8%;
+    min-width: 80px;
   }
   .operation {
-    width: 12%; /* 操作列 */
+    width: 12%;
+    min-width: 120px;
+  }
+
+  /* 在小屏幕上隐藏或合并一些列 */
+  @media (max-width: 1200px) {
+    .exam-scheduled-examinees,
+    .exam-pass-examinees {
+      display: none; /* 隐藏应考人数和通过人数列 */
+    }
+
+    .exam-time {
+      width: 20%;
+    }
+
+    .exam-sessions {
+      width: 15%;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .exam-total-score,
+    .exam-average-score {
+      display: none; /* 在更小屏幕上隐藏分数列 */
+    }
+
+    .exam-name {
+      width: 20%;
+    }
+
+    .exam-type {
+      width: 12%;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .exam-sessions {
+      display: none; /* 在手机屏幕上隐藏场次列 */
+    }
+
+    .exam-name {
+      width: 30%;
+    }
+
+    .exam-time {
+      width: 25%;
+    }
   }
 
   /* 表格数据行样式 */
   .exam-list-row {
     width: 100%;
-    border-bottom: 1px solid #e0e0e0; 
+    border-bottom: 1px solid #e0e0e0;
     background-color: #fff;
 
     td {
@@ -894,7 +1005,7 @@
 
   /* 操作按钮样式 */
   .op-btn {
-    color: #0052d9; 
+    color: #0052d9;
     background: none;
     border: none;
     cursor: pointer;
@@ -903,11 +1014,11 @@
     font-size: 14px;
 
     &.op-btn-submit {
-      color: #00a870; 
+      color: #00a870;
     }
 
     &.op-btn-unable-submit {
-      color: rgb(126, 125, 125); 
+      color: rgb(126, 125, 125);
       cursor: not-allowed;
     }
   }
@@ -918,11 +1029,11 @@
     font-size: 14px;
     line-height: 1.4;
     padding: 1px 0;
-    
+
     &:last-child {
       margin-bottom: 0; /* 最后一项无下边距 */
     }
-    
+
     /* 当只有一个场次时不显示间距 */
     &:only-child {
       margin-bottom: 0;
@@ -932,11 +1043,11 @@
   /* 提交状态样式：根据状态显示不同颜色 */
   .exam-submitted {
     &.submitted {
-      color: #00a870; 
+      color: #00a870;
     }
 
     &.not-submitted {
-      color: #c9353f; 
+      color: #c9353f;
     }
   }
 
@@ -960,7 +1071,7 @@
   }
 
   .info-icon:hover {
-    color: rgba(0, 0, 0, 0.7); 
+    color: rgba(0, 0, 0, 0.7);
   }
 
   /* 工具提示框样式 */
@@ -969,7 +1080,7 @@
     bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #333; 
+    background-color: #333;
     color: white;
     padding: 6px 8px;
     border-radius: 4px;
@@ -992,7 +1103,7 @@
     left: 50%;
     transform: translateX(-50%);
     border: 4px solid transparent;
-    border-top-color: #333; 
+    border-top-color: #333;
   }
 
   /* 悬停时显示工具提示 */
@@ -1008,8 +1119,8 @@
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    border: 1px solid #919191; 
-    border-radius: 3px; 
+    border: 1px solid #919191;
+    border-radius: 3px;
     margin: 0;
     padding: 0;
     width: 16px;
@@ -1017,8 +1128,8 @@
 
     /* 悬停效果 */
     &:hover {
-      background-color: #e0e0e0; 
-      border-color: #aaa; 
+      background-color: #e0e0e0;
+      border-color: #aaa;
     }
   }
 
@@ -1026,6 +1137,6 @@
   .check-square {
     width: 11px;
     height: 11px;
-    background-color: #165dff; 
+    background-color: #165dff;
   }
 </style>

@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
-	formatISOString,
-	validateNumericField,
-	formatPracticeData,
-	formatExamData
+  formatISOString,
+  validateNumericField,
+  formatPracticeData,
+  formatExamData,
+  safeDisplayNumber,      
+  safeDisplayText,        
+  safeDisplayBoolean      
 } from '../dataFormatter.js';
 
 describe('数据格式化工具测试', () => {
@@ -44,10 +47,10 @@ describe('数据格式化工具测试', () => {
 
 		it('应该正确处理特定日期', () => {
 			// 使用固定的UTC时间来避免时区问题
-			const isoString = '2023-01-01T00:00:00.000Z';
+			const isoString = '2025-01-01T00:00:00.000Z';
 			const result = formatISOString(isoString);
-			expect(result).toContain('2023');
-			expect(result).toContain('00:00:00');
+			expect(result).toContain('2025');
+			expect(result).toContain('08:00:00');
 		});
 	});
 
@@ -259,4 +262,66 @@ describe('数据格式化工具测试', () => {
 			expect(result).toBe(examData); // 应该是同一个数组引用
 		});
 	});
+
+	describe('safeDisplayNumber - 安全显示数值', () => {
+  it('应该返回 "-" 当值为 null / undefined / "" / -1', () => {
+    expect(safeDisplayNumber(null)).toBe('-');
+    expect(safeDisplayNumber(undefined)).toBe('-');
+    expect(safeDisplayNumber('')).toBe('-');
+    expect(safeDisplayNumber(-1)).toBe('-');
+  });
+
+  it('应该返回 "-" 当值为 NaN / Infinity / 负数', () => {
+    expect(safeDisplayNumber('abc')).toBe('-');
+    expect(safeDisplayNumber(NaN)).toBe('-');
+    expect(safeDisplayNumber(Infinity)).toBe('-');
+    expect(safeDisplayNumber(-5)).toBe('-');
+  });
+
+  it('应该返回原数字符串，当 decimals 未传', () => {
+    expect(safeDisplayNumber(0)).toBe('0');
+    expect(safeDisplayNumber('123')).toBe('123');
+    expect(safeDisplayNumber(123.456)).toBe('123.456');
+  });
+
+  it('应该按指定小数位格式化', () => {
+    expect(safeDisplayNumber(3.1415926, 2)).toBe('3.14');
+    expect(safeDisplayNumber(123, 0)).toBe('123');
+  });
+});
+
+// =============================================
+// safeDisplayText
+// =============================================
+describe('safeDisplayText - 安全显示文本', () => {
+  it('应该返回 "-" 当值为 null / undefined / ""', () => {
+    expect(safeDisplayText(null)).toBe('-');
+    expect(safeDisplayText(undefined)).toBe('-');
+    expect(safeDisplayText('')).toBe('-');
+  });
+
+  it('应该将其它值转为字符串', () => {
+    expect(safeDisplayText(0)).toBe('0');
+    expect(safeDisplayText(false)).toBe('false');
+    expect(safeDisplayText('abc')).toBe('abc');
+  });
+});
+
+// =============================================
+// safeDisplayBoolean
+// =============================================
+describe('safeDisplayBoolean - 安全显示布尔值', () => {
+  it('应该返回 "-" 当值为 null / undefined', () => {
+    expect(safeDisplayBoolean(null)).toBe('-');
+    expect(safeDisplayBoolean(undefined)).toBe('-');
+  });
+
+  it('应该返回 trueText / falseText', () => {
+    expect(safeDisplayBoolean(true)).toBe('是');
+    expect(safeDisplayBoolean(false)).toBe('否');
+    expect(safeDisplayBoolean(true, '开', '关')).toBe('开');
+    expect(safeDisplayBoolean(0, '开', '关')).toBe('关');
+    expect(safeDisplayBoolean('任意真值')).toBe('是');
+  });
+});
 });
