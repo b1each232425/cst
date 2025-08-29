@@ -51,10 +51,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 	 *          delete_tag?: (index: number) => void; // 删除tag的处理函数
 	 *          add_tag?: (content: string) => void; // 添加tag的处理函数
 	 *          tag_change?: (content: string, index: number) => void; // tag内容变化的处理函数, 输入时调用
-	 *          tag_onchange?: (old_content:string, new_content: string, index: number) => void; // tag内容变化的处理函数, 失去焦点或按下回车时调用
 	 *          name_change?: (content: string) => void; // 题库名称变化的处理函数
-	 *          name_input_blur?: (content: string) => void; // 题库名称输入框失去焦点的处理函数
-	 *          name_input_onchange?: (old_content:string, new_content: string) => void; // 题库名称变化的处理函数, 失去焦点或按下回车时调用
 	 *          discard?: () => void; // 放弃修改的处理函数
 	 *          logs?: () => void; // 查看日志的处理函数
 	 *      };
@@ -223,12 +220,6 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 					class="bank-name-input"
 					placeholder="在此输入题库名称"
 					bind:value={bank_name}
-					onblur={() => {
-						normal_handle_funcs?.name_input_blur?.(bank_name);
-					}}
-					oninput={() => {
-						normal_handle_funcs?.name_change?.(bank_name);
-					}}
 					onchange={() => {
 						normal_handle_funcs?.name_input_onchange?.(
 							old_bank_name,
