@@ -3,7 +3,7 @@
    * @Author: 彭海峰 1614818457@qq.com
    * @Date: 2025-08-8 10:56:09
  * @LastEditors: lly 3102128343@qq.com
- * @LastEditTime: 2025-08-24 23:51:34
+ * @LastEditTime: 2025-08-29 11:57:42
    * @FilePath: \src\routes\student\answer\result\exam\+page@.svelte
    * @Description:
    */
@@ -388,8 +388,6 @@
   });
   //开启错题练习
   function startPracticeError() {
-   //获取错题数据id
-   
    //传给作答界面
     goto(`/student/answer/practice?practice-id=${practice_id}`);
   }
