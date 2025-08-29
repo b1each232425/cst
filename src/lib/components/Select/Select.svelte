@@ -31,7 +31,16 @@
   import { writable } from 'svelte/store';
   import { validateAndAssign } from '$lib/utils/validate';
 
-  let { value = $bindable(), placeholder = '请选择', direction = 'bottom', disabled = false, multiple = false, filterable = false, changeValue = () => {}, children } = $props();
+  let {
+    value = $bindable(),
+    placeholder = '请选择',
+    direction = 'bottom',
+    disabled = false,
+    multiple = false,
+    filterable = false,
+    changeValue = () => {},
+    children,
+  } = $props();
 
   const DIRECTIONS = ['top', 'bottom'];
 
@@ -118,17 +127,16 @@
   // 处理外部传入value
   $effect(() => {
     initLabelvalue();
-    if (value === '') {
-      // 如果有OptionData中value为空的选项，则selectedLabel为对应的值，否则为placeholder
-      if (OptionData.some((item) => item.selectValue === '')) {
-        selectedLabel = OptionData.filter((item) => item.selectValue === '').map((item) => item.selectLabel);
-      } else {
-        selectedLabel = [placeholder];
-      }
-      changeValue(value);
-    }
-    if (value === undefined || value === null) changeValue(value);
   });
+
+  if (value === '') {
+    // 如果有OptionData中value为空的选项，则selectedLabel为对应的值，否则为placeholder
+    if (OptionData.some((item) => item.selectValue === '')) {
+      selectedLabel = OptionData.filter((item) => item.selectValue === '').map((item) => item.selectLabel);
+    } else {
+      selectedLabel = [placeholder];
+    }
+  }
 
   /** 处理初始化value @type {function} */
   function initLabelvalue() {
@@ -208,7 +216,11 @@
         <div class="tags">
           {#each selectedLabel as label, index (index)}
             <span class="tag-item">
-              <button aria-label="取消选择" data-testid="select-tag-item-cancel" onclick={() => handleConcelOption(index)}></button>
+              <button
+                aria-label="取消选择"
+                data-testid="select-tag-item-cancel"
+                onclick={() => handleConcelOption(index)}
+              ></button>
               <span class="tag-label">{label}</span>
             </span>
           {/each}
@@ -230,7 +242,13 @@
       data-testid="select-input"
     />
   {/if}
-  <button class="select__icon" class:is-disabled={disabled} aria-label="Toggle dropdown" tabindex="-1" onclick={toggleSelect}>
+  <button
+    class="select__icon"
+    class:is-disabled={disabled}
+    aria-label="Toggle dropdown"
+    tabindex="-1"
+    onclick={toggleSelect}
+  >
     <img src="/dropdown/arrow_black.png" alt="Dropdown icon" style={isShow ? 'transform: rotate(180deg);' : ''} />
   </button>
   <ul class="select__options {direction}" class:is-hidden={!isShow} role="listbox" data-testid="select-options">

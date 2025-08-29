@@ -15,8 +15,8 @@
     subjects: '理论、实操',
     examType: '正考',
     applyTime: '2025-08-18 15:46',
-    idCardFront: 'https://via.placeholder.com/200x120?text=身份证人像面',
-    idCardBack: 'https://via.placeholder.com/200x120?text=身份证国徽面',
+    idCardFront: '',
+    idCardBack: '',
     reviewer: '王彬',
     reviewStatus: '未审核',
   };

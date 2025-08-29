@@ -13,6 +13,8 @@
     'cst.school.examSite^admin': '考点负责人',
     'cst.school^scoreChecker': '核分员',
     'cst.school^student': '学生',
+    'cst.school^student': '学生',
+    'assess.examSite^admin': '考点管理员',
   };
 
   // 登录页面组件
@@ -1100,5 +1102,15 @@
     .id-input {
       font-size: 0.85rem;
     }
+  }
+
+  /* 针对 Chrome/Edge Safari */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 1000px white inset; /* 覆盖背景色 */
+    -webkit-text-fill-color: #333; /* 字体颜色 */
+    transition: background-color 5000s ease-in-out 0s; /* 防止闪烁 */
   }
 </style>

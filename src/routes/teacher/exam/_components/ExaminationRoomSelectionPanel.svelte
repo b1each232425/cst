@@ -1,10 +1,10 @@
 <!--
  * @Author: yeweixuan t051521@163.com
- * @Date: 2025-07-23 
+ * @Date: 2025-08-23 
  * @LastEditors: yeweixuan t051521@163.com
  * @LastEditTime: 2025-08-11 14:55:31
  * @FilePath: \exam\src\routes\teacher\exam\components\ExamineeSelectionPanel
- * @Description: 用于查看选中的考生以及为考试挑选学生的面板
+ * @Description: 用于查看选中的考场以及为考试挑选考场的面板
  * @Copyright (c) 2025 by yeweixuan t051521@163.com, All Rights Reserved. 
 -->
  <script>
@@ -14,6 +14,7 @@
   import Empty from '$lib/components/Table/Empty.svelte';
   import {toast} from '$lib/components/Toast/Toast.js'
   import '$lib/components/Button/index.scss';
+  import {onMount} from 'svelte';
   let{
     show_panel = false,
     onConfirm=(seleted_exam_rooms) =>{},
@@ -25,8 +26,8 @@
   let is_selection_mode=$state(false);
 //let exam_room_list = $state([]);
 let exam_room_list = $state([
-  { id: 1, name: '考场A', exam_site_name: '考点1', capacity: 30, invigilator_count: 2, selected: false },
-  { id: 2, name: '考场B', exam_site_name: '考点2', capacity: 25, invigilator_count: 1, selected: true },
+  { id: 1, name: '考场A', exam_site_name: '考点1', capacity: 30, invigilators_count: 2, selected: false },
+  { id: 2, name: '考场B', exam_site_name: '考点2', capacity: 25, invigilators_count: 1, selected: true },
 ]);
   let selected_room_list = $derived(exam_room_list.filter(r => r.selected));
   /** 当前页是否已全部选中 */
@@ -38,17 +39,84 @@ let exam_room_list = $state([
   let search_params = $state({
     page: 1,
     pageSize: 10,
+    orderBy:[{ "roomCount": "DESC"}],
+    data:{},
+    filter:{},
   });
+
+  let pagination_params = $state({
+    page: 1,
+    pageSize: 10
+  });
+
+  let name_search_timer = null;
 
   function toggleSelectAll(e) {
   const checked = e.target.checked;
   exam_room_list.forEach(r => (r.selected = checked));
-}
+  }
 
   function handleCheckBoxChange(room,event){
     if (event.target.type === 'checkbox') return;
     room.selected = !room.selected;
   }
+
+  async function fetchExamRooms(){
+    const query_params = new URLSearchParams();
+    query_params.append('page', search_params.page.toString());
+    query_params.append('pageSize', search_params.pageSize.toString());
+    
+    // 添加 orderBy 参数（JSON 格式）
+    if (search_params.orderBy && search_params.orderBy.length > 0) {
+      query_params.append('orderBy', JSON.stringify(search_params.orderBy));
+    }
+    
+    // 添加 filter 参数（JSON 格式）
+    if (search_params.filter && Object.keys(search_params.filter).length > 0) {
+      query_params.append('filter', JSON.stringify(search_params.filter));
+    }
+    console.log(query_params.toString());
+    fetch(`/api/exam-room/list?${query_params}`,{
+      method:'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        },
+      })
+      .then((response)=>response.json())
+      .then((result => {
+        console.log(result);
+        if(result.status === 0)
+        {
+          exam_room_list = result.data;
+        }
+        else{
+          toast.error("获取列表失败"+result.msg);
+          console.log("获取失败:",result.msg);
+        }
+       }))
+      .catch((err) => {
+        console.error(err);
+        toast.error('获取失败');
+      })
+  }
+
+  function searchRoomName(value){
+     search_params.filter = {
+       ...search_params.filter,
+       ...(value ? { name: value } : {})   // 有值就放进 filter
+     };
+    if(name_search_timer)
+      clearTimeout(name_search_timer);
+      name_search_timer = setTimeout(() => {
+      fetchExamRooms();
+      name_search_timer = null;
+    }, 300);
+  }
+
+  onMount(async()=>{
+    await fetchExamRooms();
+  })
 </script>
 
     <div class={show_panel ? 'exam-room-panel-container' : 'hide'}>
@@ -69,9 +137,9 @@ let exam_room_list = $state([
     <div class="panel-body">
         <div class="exam-time-container">
                 <span class="exam-time-text">考试时间：</span>
-                <span class="exam-time-text">{exam_start_time.toLocaleString()}</span>
+                <span class="exam-time-text">{isNaN(exam_start_time) ? '开始时间未选择' : exam_start_time.toLocaleString()}</span>
                 <span class="exam-time-text">-</span>
-                <span class="exam-time-text">{exam_end_time.toLocaleString()}</span>
+                <span class="exam-time-text">{isNaN(exam_end_time) ? '结束时间未选择' : exam_end_time.toLocaleString()}</span>
         </div>
         <div class="tip-container">
                 <img src="/exam_list/tip.png" alt="提示" style="width: 15px;" />
@@ -86,14 +154,14 @@ let exam_room_list = $state([
               <InputBox
               label={'搜索考场'} 
               placeholder={'请输入考场或考点名'}
-              
+              onInput={searchRoomName}
               clearable={true}
               >
             </InputBox>
 
             </div>
             <div class="button-group">
-                <button class="{is_selection_mode ? 'btn btn--info' : 'btn btn--primary'} " onclick={is_selection_mode=!is_selection_mode}>{is_selection_mode ? '返回考场列表' : '添加考场'}</button>
+                <button class="{is_selection_mode ? 'btn btn--info' : 'btn btn--primary'} " onclick={()=>is_selection_mode=!is_selection_mode}>{is_selection_mode ? '返回考场列表' : '添加考场'}</button>
             </div>
           </div>
 
@@ -173,12 +241,48 @@ let exam_room_list = $state([
           {/if}
         </div>
     </div>
+    
+    <div class="pagination-container {!is_selection_mode ? ' ' : 'hideButton'}">
+
+            <Pagination
+              total_items={selected_room_list.length}
+              current_page={pagination_params.page}
+              page_size_options={[10, 20, 50]}
+              on:pageChange={(e) => {
+                pagination_params.page = e.detail;
+              }}
+              on:pageSizeChange={(e) => {
+                pagination_params.pageSize = e.detail;
+                pagination_params.page = 1; // 重置到第一页
+              }}
+            />
+          </div>
+    
+    <div class="pagination-container {is_selection_mode ? ' ' : 'hideButton'}">
+          <span style="font-size: 12px; margin-right:10px">
+            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_room_list.length}</span> 条
+          </span>
+          <Pagination
+            total_items={exam_room_list.length}
+            current_page={pagination_params.page}
+            page_size_options={[10, 20, 50]}
+            on:pageChange={(e) => {
+              pagination_params.page = e.detail;
+              is_total_selected = false;
+            }}
+            on:pageSizeChange={(e) => {
+              pagination_params.pageSize = e.detail;
+              pagination_params.page = 1; // 重置到第一页
+              is_total_selected = false;;
+            }}
+          ></Pagination>
+        </div>
+
 
         <div class="panel-footer">
                 <button class="btn btn--info is-plain" onclick={() => {
                     show_panel = false;
                     search_params.page = 1;
-                    selected_ids = [];
                     is_selection_mode = false;
                     onCancel();
                 }}>取消</button>
@@ -429,6 +533,13 @@ let exam_room_list = $state([
             }
             }
         }
-
+  
+  .pagination-container {
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    margin: 16px 0;
+    padding: 0 16px;
+  }
     
 </style>

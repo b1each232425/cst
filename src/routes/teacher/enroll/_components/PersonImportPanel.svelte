@@ -6,6 +6,7 @@
   import { toast } from '$lib/components/Toast/Toast.js';
   import { onMount } from 'svelte';
   import { validMobile, validEmail, validIdCard } from '$lib/utils/validate';
+  import { validateRowData, validateDuplicates } from '../_utils/handleFileInput';
 
   let { is_show_import_panel, candidate_list = [], closePanel = () => {} } = $props();
 
@@ -29,16 +30,19 @@
   // 处理编辑按钮点击事件
   function handleEdit(row, index) {
     editing_index = index;
-    editing_id_card = row.id_card;
-    editing_row = { ...row }; // 创建副本，避免直接改原数组
+    editing_row = { ...row }; // 带 serial_number 的副本
   }
 
   // 处理保存编辑按钮点击事件
   function handleSaveEdit() {
     // 校验当前编辑行
-    const validatedRow = validateCandidate(editing_row);
+    const validatedRow = validateRowData(editing_row);
+    candidate_list = candidate_list.map((item) =>
+      item.serial_number === editing_row.serial_number ? validatedRow : item,
+    );
 
-    candidate_list = candidate_list.map((item) => (item.id_card === editing_id_card ? validatedRow : item));
+    // 重新排序，保证错误数据始终在前
+    candidate_list = sortCandidatesByError(candidate_list);
 
     // 更新成功/失败统计
     success_count = candidate_list.filter((c) => !c.error).length;
@@ -56,34 +60,29 @@
 
   // 处理删除按钮点击事件
   function handleDelete(row) {
-    candidate_list = candidate_list.filter((item) => item.id_card !== row.id_card);
-  }
-
-  // 校验参数
-  function validateCandidate(candidate) {
-    let error = '';
-
-    if (!candidate.name || candidate.name.trim() === '') {
-      error += '姓名不能为空 ';
-    }
-    if (!validMobile(candidate.phone)) {
-      error += '手机号不合法 ';
-    }
-    if (!validEmail(candidate.email)) {
-      error += '邮箱不合法 ';
-    }
-    if (!validIdCard(candidate.id_card)) {
-      error += '证件号不合法 ';
-    }
-
-    return { ...candidate, error };
-  }
-
-  onMount(() => {
-    candidate_list = sortCandidatesByError(candidate_list).map(validateCandidate);
+    candidate_list = candidate_list.filter((item) => item.serial_number !== row.serial_number);
     success_count = candidate_list.filter((c) => !c.error).length;
     failure_count = candidate_list.filter((c) => c.error).length;
-  });
+  }
+
+  // 确认导入按钮点击事件
+  function handleConfirmImport() {
+    const validated = validateDuplicates(candidate_list);
+
+    if (validated === true) {
+      // 没有重复
+      closePanel();
+    } else {
+      // 有重复，validated 是带错误信息的数组
+      candidate_list = validated;
+    }
+  }
+
+  export function initCandidates() {
+    candidate_list = sortCandidatesByError(candidate_list);
+    success_count = candidate_list.filter((c) => !c.error).length;
+    failure_count = candidate_list.filter((c) => c.error).length;
+  }
 </script>
 
 <div class={is_show_import_panel ? 'candidate-panel-container' : 'hide'}>
@@ -131,8 +130,8 @@
                 </td>
               </tr>
             {:else}
-              {#each candidate_list as c, idx (c.id_card)}
-                {#if editing_id_card === c.id_card}
+              {#each candidate_list as c, idx (`row-${c.serial_number}`)}
+                {#if editing_row && editing_row.serial_number === c.serial_number}
                   <!-- 编辑行：用副本 editing_row 渲染输入框 -->
                   <tr class="edit-row">
                     <td><input bind:value={editing_row.name} type="text" /></td>
@@ -152,14 +151,14 @@
                 {:else}
                   <!-- 只读行 -->
                   <tr class={c.error ? 'failed-row' : 'success-row'}>
-                    <td>{c.name}</td>
-                    <td>{c.phone}</td>
-                    <td>{c.email}</td>
-                    <td>{c.gender}</td>
-                    <td>{c.id_card}</td>
-                    <td>{c.id_type}</td>
-                    <td>{c.birth}</td>
-                    <td>{c.address}</td>
+                    <td>{c.name || '--'}</td>
+                    <td>{c.phone || '--'}</td>
+                    <td>{c.email || '--'}</td>
+                    <td>{c.gender || '--'}</td>
+                    <td>{c.id_card || '--'}</td>
+                    <td>{c.id_type || '--'}</td>
+                    <td>{c.birth || '--'}</td>
+                    <td>{c.address || '--'}</td>
                     <td class={c.error ? 'error-text' : ''}>{c.error || '--'}</td>
                     <td class="action-btn-container">
                       <button class="edit-btn" onclick={() => handleEdit(c, idx)}>编辑</button>
@@ -180,7 +179,7 @@
 
     <div class="panel-footer">
       <Button type="primary" plain onclick={closePanel}>取消</Button>
-      <Button type="primary">确认导入</Button>
+      <Button type="primary" onclick={() => handleConfirmImport()}>确认导入</Button>
     </div>
   </div>
 </div>
@@ -328,6 +327,7 @@
             height: 40px;
             line-height: 40px;
             box-sizing: border-box;
+            border-bottom: 1px solid #e0e0e0;
           }
 
           .empty-row td {
@@ -344,6 +344,7 @@
 
           .error-text {
             color: #ff4d4f;
+            white-space: pre-line;
           }
 
           .failed-row {
@@ -355,7 +356,6 @@
           }
 
           .success-row {
-            height: 50px;
             background-color: #e0f0ff;
             &:hover {
               background-color: #c0d8ff;

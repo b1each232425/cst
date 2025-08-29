@@ -103,34 +103,34 @@
       examRoomName: '801听力教室',
       startTime: new Date('2025-08-24 09:00:00').getTime(),
       endTime: new Date('2025-08-24 11:20:00').getTime(),
-      status: '02',
+      status: '22',
       examineeNum: 45,
-      absenteeNum: 2,
-    },
-    {
-      examSessionID: 1009,
-      examRoomID: 2009,
-      examSessionName: '2025年春季计算机等级考试',
-      examSiteName: '西安雁塔分校',
-      examRoomName: '901机房',
-      startTime: new Date('2025-08-25 14:00:00').getTime(),
-      endTime: new Date('2025-08-25 16:00:00').getTime(),
-      status: '04',
-      examineeNum: 35,
-      absenteeNum: 1,
-    },
-    {
-      examSessionID: 1010,
-      examRoomID: 2010,
-      examSessionName: '2025年春季职业技能鉴定',
-      examSiteName: '重庆渝中分校',
-      examRoomName: '1001实训室',
-      startTime: new Date('2025-08-26 10:00:00').getTime(),
-      endTime: new Date('2025-08-26 12:00:00').getTime(),
-      status: '06',
-      examineeNum: 25,
       absenteeNum: 0,
     },
+    // {
+    //   examSessionID: 1009,
+    //   examRoomID: 2009,
+    //   examSessionName: '2025年春季计算机等级考试',
+    //   examSiteName: '西安雁塔分校',
+    //   examRoomName: '901机房',
+    //   startTime: new Date('2025-08-25 14:00:00').getTime(),
+    //   endTime: new Date('2025-08-25 16:00:00').getTime(),
+    //   status: '04',
+    //   examineeNum: 35,
+    //   absenteeNum: 1,
+    // },
+    // {
+    //   examSessionID: 1010,
+    //   examRoomID: 2010,
+    //   examSessionName: '2025年春季职业技能鉴定',
+    //   examSiteName: '重庆渝中分校',
+    //   examRoomName: '1001实训室',
+    //   startTime: new Date('2025-08-26 10:00:00').getTime(),
+    //   endTime: new Date('2025-08-26 12:00:00').getTime(),
+    //   status: '06',
+    //   examineeNum: 25,
+    //   absenteeNum: 0,
+    // },
   ];
 
   // 场次状态映射
@@ -200,7 +200,7 @@
 
           if (!Array.isArray(exam_session_list)) {
             exam_session_list = [];
-            throw new Error('exam_list 数据类型错误');
+            throw new Error('exam_session_list 数据类型错误');
           }
         } else throw new Error(res.msg ?? '获取监考列表失败');
       })
@@ -282,8 +282,8 @@
           <th>操作</th>
         </tr>
       </thead>
-      <tbody>
-        {#each exam_session_list as { examSessionID, examRoomID, examSessionName, examSiteName, examRoomName, startTime, endTime, status, examineeNum, absenteeNum }}
+      <tbody data-testid="invigilate-tbody">
+        {#each exam_session_list as { examSessionID, examRoomID, examSessionName, examSiteName, examRoomName, startTime, endTime, status, examineeNum, absenteeNum } (examSessionID)}
           <tr>
             <td>{examSessionName}</td>
             <td>{examSiteName}</td>
@@ -305,8 +305,10 @@
             >
             <td class="option">
               <div class="option-item">
-                <button onclick={() => gotoInvigilate(examSessionID, examRoomID)}
-                  >{status === '04' ? '进入监考' : '查看详情'}</button
+                <button
+                  onclick={() => (STATUS_MAP[status] ? gotoInvigilate(examSessionID, examRoomID) : {})}
+                  class:can-click={STATUS_MAP[status]}
+                  >{STATUS_MAP[status] ? (status === '04' ? '进入监考' : '查看详情') : '--'}</button
                 >
               </div>
             </td>
@@ -431,22 +433,18 @@
                   button {
                     background: none;
                     border: none;
-                    cursor: pointer;
                     padding: 0;
-                    color: #2f54eb;
+                    pointer-events: none;
 
-                    &.disabled {
-                      color: #ccc;
-                      cursor: not-allowed;
-                      border: 0;
-                    }
-
-                    &:not(.disabled):hover {
-                      font-weight: bold;
-                    }
-
-                    &:not(.disabled) {
+                    &.can-click {
+                      pointer-events: all;
+                      cursor: pointer;
+                      color: #2f54eb;
                       border-bottom: 1px solid #2f54eb;
+
+                      &:hover {
+                        font-weight: bold;
+                      }
                     }
                   }
                 }
