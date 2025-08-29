@@ -21,6 +21,7 @@
   import QuestionPreviewPanel from './QuestionPreviewPanel.svelte';
   import { questionLimit } from '../utils/questionConfig.js';
   import { toast } from '$lib/components/Toast/Toast';
+  import { change } from '../store';
 
   const editor_width = 'calc(100% - 24px - 10px)';
   const editor_height = '100%';
@@ -385,7 +386,6 @@
 
             // 获取map长度
             const blankNodeCount = blankNodes.size;
-            console.log(blankNodeCount);
             let index = blankNodeCount + 1;
             editor.insertContent({
               type: 'blankItem',
@@ -677,7 +677,7 @@
     
     editor.state.doc.descendants((node, pos) => {
         if (node.type.name === 'blankItem') {
-            blanks.push({ node, pos });
+           
         } else if (node.marks?.some(mark => mark.attrs.class === 'blank-item')) {
             const mark = node.marks.find(m => m.attrs.class === 'blank-item');
             const blankItemNode = editor.state.schema.nodes.blankItem.create({
@@ -687,7 +687,7 @@
                 content: node.text,
             });
             blank_nodes.push({ originalNode: node, originalPos: pos, newNode: blankItemNode });
-            blanks.push({ node: blankItemNode, pos }); 
+           
         }
     });
  
@@ -705,7 +705,20 @@
         editor.view.dispatch(tr);
     }
  
-    
+        editor.state.doc.descendants((node, pos) => {
+        if (node.type.name === 'blankItem') {
+            blanks.push({ node, pos });
+        } else if (node.marks?.some(mark => mark.attrs.class === 'blank-item')) {
+            const mark = node.marks.find(m => m.attrs.class === 'blank-item');
+            const blankItemNode = editor.state.schema.nodes.blankItem.create({
+                id: mark.attrs.id,
+                blankNumber: mark.attrs.blankNumber,
+                style: 'display: inline-block; color: #2196f3;',
+                content: node.text,
+            });
+            blanks.push({ node: blankItemNode, pos }); 
+        }
+    });
     return blanks.sort((a, b) => a.pos - b.pos);
 }
 
@@ -757,8 +770,7 @@
 
       // 在这里添加你的自定义逻辑
       removedBlanks.forEach((blank) => {
-        console.log(`删除了填空项 ID: ${blank.id}, 编号: ${blank.blankNumber}`);
-
+        
         onDeleteAnswer(blank.blankNumber - 1);
         // 示例：你可以在这里执行其他逻辑
         // 比如更新相关的数据结构、发送通知等
@@ -767,10 +779,72 @@
 
     // 检查是否需要重新编号，并返回变化信息
     function checkForRenumbering(transaction) {
+        let changeTitle = false;
       let needsRenumbering = false;
       let removedBlanks = [];
       let addedBlanks = [];
+   let title = title_editor?.getHTML() || '';
+const regex = /(?:\(\))/g; 
+let matches = [];
+let match;
+ 
+// 记录所有 `()` 的位置
+while ((match = regex.exec(title)) !==null) {
+    matches.push({
+        startIndex: match.index,
+        endIndex: match.index + match[0].length 
+    });
+    if (match.index === regex.lastIndex) {
+        regex.lastIndex++;
+    }
+}
+ 
 
+ 
+// 删除所有 `()` 并插入 `blankItem`
+let newContent = '';
+let lastIndex = 0;
+const blankNodeCount = blankNodes.size;
+let index = blankNodeCount + 1;
+ 
+ if (matches.length != 0) {
+// 遍历所有匹配的 `()`，并在其位置插入 `blankItem`
+matches.forEach((match, i) => {
+    // 添加 `()` 之前的部分
+    newContent += title.substring(lastIndex, match.startIndex);
+ 
+    // 在 `()` 的位置插入 `blankItem`
+    const blankItemHTML = `<span 
+        type="blankItem" 
+        id="blank_${Date.now()}_${i}" 
+        class="blank-item" 
+        blankNumber="${index + i}"
+    ></span>`;
+    newContent += blankItemHTML;
+    onAddAnswer();
+    // 更新 `lastIndex`，跳过 `()`
+    lastIndex = match.endIndex;
+});
+changeTitle = true;
+
+ // 添加剩余部分
+newContent += title.substring(lastIndex);
+ 
+if(newContent !== title){
+title_editor?.setContent(newContent);
+}
+ renumberBlanks();
+  return {
+        needsRenumbering:false,
+        removedBlanks:[],
+        addedBlanks:[],
+      };
+ }
+ 
+
+ 
+
+      
       // 检查是否有结构变化
       if (transaction.docChanged) {
         const oldBlanksMap = new Map();
@@ -881,6 +955,7 @@
    */
 
   const onDeleteAnswer = (index) => {
+    console.log('删除答案', index);
     if (question_answers.length <= 0) return;
 
     for (let i = index; i < question_answers.length; i++) {
@@ -918,7 +993,7 @@
 
 <div class="editorContainer {show ? '' : 'hide'}">
   <div class="topBar">
- 
+
     <span>{is_new_question ? `新增` : `编辑`}填空题</span>
     
 
@@ -930,6 +1005,7 @@
           // resetPanel();
         }}>取消</button
       >
+      
       <button class="confirmBtn" onclick={onEditConfirm}>保存</button>
     </div>
   </div>
@@ -971,7 +1047,9 @@
                       editor,
                     ) => {
                       title_editor_warning = 0;
+                        
                       question_title_content = editor.getPreviewHTML() || '';
+                      
                     },
                     onFocus: () => {
                       console.log('onfocus');
@@ -1113,6 +1191,7 @@
                       editor,
                     ) => {
                       analysis_editor_warning = 0;
+                     
                       question_analysis_content = editor?.getPreviewHTML();
                     },
                   }}

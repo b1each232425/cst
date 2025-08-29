@@ -113,7 +113,6 @@
   onMount(async () => {
     // 从 URL 参数获取练习 ID
     practiceId = $page.url.searchParams.get('id');
-    console.log('练习ID:', practiceId);
 
     if (!practiceId) {
       console.error('缺少练习ID参数');
@@ -139,7 +138,9 @@
         <div class="card card3"><StudentGradeTable type="practice" resource_id={practiceId} papers={[]} /></div>
       </div>
       <div class="third-row">
-        <!-- <div class="card card4"><AnalysisPanel type="practice" resource_id={practiceId} papers={[]} /></div> -->
+        <div class="card card4">
+          <AnalysisPanel type="practice" resource_id={practiceId} papers={[]} />
+        </div>
       </div>
     </div>
   </div>
@@ -154,7 +155,7 @@
     .detail-container {
       display: flex;
       flex-direction: column;
-      height: 98%;
+      height: 97%;
       gap: 20px;
       overflow: auto;
       padding: 10px;
@@ -182,13 +183,16 @@
         }
       }
 
-      .second-row,
+      .second-row {
+        .card3 {
+          min-width: 1480px;
+        }
+      }
+
       .third-row {
-        .card3,
         .card4 {
           min-width: 1480px;
         }
-
       }
     }
   }
