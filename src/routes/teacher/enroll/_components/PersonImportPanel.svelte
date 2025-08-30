@@ -3,6 +3,7 @@
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Button from '$lib/components/Button/Button.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
+  import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
   import { onMount } from 'svelte';
   import { validMobile, validEmail, validIdCard } from '$lib/utils/validate';
@@ -12,8 +13,14 @@
 
   let success_count = $state(0); // 成功识别条数
   let failure_count = $state(0); // 失败识别条数
+  let editing_row = $state(null); // 当前编辑行副本
 
-  // 不要就地排序 props，返回新数组（避免副作用）
+  // 消息提示框数据
+  let is_show_messagebox = $state(false);
+  let messagebox_title = $state('');
+  let messagebox_content = $state('');
+
+  // 根据错误数据重新排列
   function sortCandidatesByError(list) {
     return [...list].sort((a, b) => {
       if (!!a.error && !b.error) return -1;
@@ -22,14 +29,8 @@
     });
   }
 
-  // 行内编辑状态
-  let editing_index = $state(-1); // 正在编辑的行索引
-  let editing_id_card = $state(null); // 正在编辑的唯一标识（身份证号）
-  let editing_row = $state(null); // 副本
-
   // 处理编辑按钮点击事件
-  function handleEdit(row, index) {
-    editing_index = index;
+  function handleEdit(row) {
     editing_row = { ...row }; // 带 serial_number 的副本
   }
 
@@ -48,13 +49,11 @@
     success_count = candidate_list.filter((c) => !c.error).length;
     failure_count = candidate_list.filter((c) => c.error).length;
 
-    handleCancelEdit();
+    editing_row = null;
   }
 
   // 处理取消编辑按钮点击事件
   function handleCancelEdit() {
-    editing_index = -1;
-    editing_id_card = null;
     editing_row = null;
   }
 
@@ -63,18 +62,28 @@
     candidate_list = candidate_list.filter((item) => item.serial_number !== row.serial_number);
     success_count = candidate_list.filter((c) => !c.error).length;
     failure_count = candidate_list.filter((c) => c.error).length;
+
+    const validated = validateDuplicates(candidate_list);
+    candidate_list = validated.data;
   }
 
   // 确认导入按钮点击事件
   function handleConfirmImport() {
+    // 先跑一遍重复校验，确保 candidate_list 的 error 最新
     const validated = validateDuplicates(candidate_list);
+    candidate_list = validated.data;
 
-    if (validated === true) {
-      // 没有重复
+    // 检查是否所有数据都没有错误
+    const allValid = candidate_list.every((item) => !item.error);
+
+    if (allValid) {
+      // 全部正确，返回原 candidate_list
       closePanel();
     } else {
-      // 有重复，validated 是带错误信息的数组
-      candidate_list = validated;
+      // 存在错误，只返回正确的数据
+      messagebox_title = '存在错误数据';
+      messagebox_content = '是否只导入正确的报名人员数据？';
+      is_show_messagebox = true;
     }
   }
 
@@ -82,6 +91,21 @@
     candidate_list = sortCandidatesByError(candidate_list);
     success_count = candidate_list.filter((c) => !c.error).length;
     failure_count = candidate_list.filter((c) => c.error).length;
+  }
+
+  // ---------- 消息提示框：确认/取消 ----------
+  function handleMessageBoxConfirm() {
+    const validData = candidate_list.filter((item) => !item.error);
+    closePanel();
+    messagebox_title = '';
+    messagebox_content = '';
+    is_show_messagebox = false;
+  }
+
+  function handleMessageBoxCancel() {
+    messagebox_title = '';
+    messagebox_content = '';
+    is_show_messagebox = false;
   }
 </script>
 
@@ -130,7 +154,7 @@
                 </td>
               </tr>
             {:else}
-              {#each candidate_list as c, idx (`row-${c.serial_number}`)}
+              {#each candidate_list as c (`row-${c.serial_number}`)}
                 {#if editing_row && editing_row.serial_number === c.serial_number}
                   <!-- 编辑行：用副本 editing_row 渲染输入框 -->
                   <tr class="edit-row">
@@ -161,7 +185,7 @@
                     <td>{c.address || '--'}</td>
                     <td class={c.error ? 'error-text' : ''}>{c.error || '--'}</td>
                     <td class="action-btn-container">
-                      <button class="edit-btn" onclick={() => handleEdit(c, idx)}>编辑</button>
+                      <button class="edit-btn" onclick={() => handleEdit(c)}>编辑</button>
                       <button class="delete-btn" onclick={() => handleDelete(c)}>删除</button>
                     </td>
                   </tr>
@@ -184,6 +208,15 @@
   </div>
 </div>
 
+<!-- 消息提示框 -->
+<MessageBox
+  visible={is_show_messagebox}
+  title={messagebox_title}
+  content={messagebox_content}
+  onConfirm={handleMessageBoxConfirm}
+  onCancel={handleMessageBoxCancel}
+></MessageBox>
+
 <style lang="scss" scoped>
   $normal-font-size: 14px;
   $gray-font-color: rgba(0, 0, 0, 0.6);
@@ -199,7 +232,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
+    z-index: 1000;
   }
 
   /* 弹窗主体 */
