@@ -441,36 +441,34 @@ export function validateDuplicates(data) {
 
   let hasDuplicate = false;
 
-  // 标记错误
+  // 标记错误（注意：先清理旧的“重复”错误）
   const result = data.map((item) => {
-    let errorType = item.error || '';
+    // 先移除旧的“重复类错误”
+    let errorType = (item.error || '')
+      .replace(/邮箱重复\n?/g, '')
+      .replace(/电话重复\n?/g, '')
+      .replace(/证件号重复\n?/g, '');
 
     if (item.email && emailCount[item.email] > 1) {
-      if (!errorType.includes('邮箱重复')) {
-        errorType += '邮箱重复\n';
-      }
+      errorType += '邮箱重复\n';
       hasDuplicate = true;
     }
 
     if (item.phone && phoneCount[item.phone] > 1) {
-      if (!errorType.includes('电话重复')) {
-        errorType += '电话重复\n';
-      }
+      errorType += '电话重复\n';
       hasDuplicate = true;
     }
 
     if (item.id_card && idCardCount[item.id_card] > 1) {
-      if (!errorType.includes('证件号重复')) {
-        errorType += '证件号重复\n';
-      }
+      errorType += '证件号重复\n';
       hasDuplicate = true;
     }
 
     return {
       ...item,
-      error: errorType,
+      error: errorType.trim() ? errorType : '', // 避免出现只有换行的情况
     };
   });
 
-  return hasDuplicate ? result : true;
+  return { data: result, hasDuplicate };
 }
