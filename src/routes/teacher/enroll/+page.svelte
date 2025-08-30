@@ -177,7 +177,7 @@
     return select_delete_id.includes(id) || select_repeal_id.includes(id);
   }
 
-  // ---------- 确认/取消 ----------
+  // ---------- 消息提示框确认/取消 ----------
   function handleMessageBoxConfirm() {
     if (current_action === 'public') {
       enroll_list = enroll_list.map((item) => (item.id === select_public_id ? { ...item, status: '已发布' } : item));
@@ -209,6 +209,21 @@
     messagebox_title = '';
     messagebox_content = '';
     is_show_messagebox = false;
+  }
+
+  // ---------- 分页器 ----------
+  let current_page = $state(1); // 当前页数
+  let page_size = $state(10); // 当前页面大小
+
+  // 父组件控制分页器的行为
+  function handlePageChange(event) {
+    current_page = event.detail;
+    // 做分页逻辑处理
+  }
+
+  function handlePageSizeChange(event) {
+    page_size = event.detail;
+    // 做每页条数变化逻辑处理
   }
 </script>
 
@@ -343,7 +358,11 @@
     </div>
 
     <div class="pagination-container">
-      <Pagination total_items={200} />
+      <Pagination
+        on:pageChange={handlePageChange}
+        on:pageSizeChange={handlePageSizeChange}
+        total_items={enroll_list.length}
+      />
     </div>
   </div>
 </div>
