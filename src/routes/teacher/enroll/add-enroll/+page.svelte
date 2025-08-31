@@ -317,7 +317,7 @@
 
   <!-- 底部按钮 -->
   <div class="form-actions">
-    <button class="btn-cancel" onclick={handleCancle}>取消</button>
+    <button class="btn-cancel" onclick={handleCancle} data-testid="btn-cancel">取消</button>
     <button class="btn-save" onclick={handleSave}>保存</button>
   </div>
 </div>
