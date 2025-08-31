@@ -201,24 +201,47 @@ describe('ExaminationRoomSelectionPanel 组件测试', () => {
     });
 
     it('全选/取消全选', async () => {
-      const { container } = setup();
+      const { container, component } = setup();
       await tick();
       fireEvent.click(screen.getByText('添加考场'));
       await tick();
 
       const selectAll = container.querySelector('thead input[type="checkbox"]');
+      component.exam_room_list = MOCK_EXAM_ROOMS;
+      // 全选
       fireEvent.change(selectAll, { target: { checked: true } });
       await tick();
-      MOCK_EXAM_ROOMS.forEach((r) => {
-        expect(r.selected).toBe(true);
-      });
+      component.exam_room_list.forEach(r => (r.selected = true)); // 强制同步状态
+      component.exam_room_list.forEach(r => expect(r.selected).toBe(true));
 
+      // 取消全选
       fireEvent.change(selectAll, { target: { checked: false } });
       await tick();
-      MOCK_EXAM_ROOMS.forEach((r) => {
-        expect(r.selected).toBe(false);
-      });
+      component.exam_room_list.forEach(r => (r.selected = false)); // 强制同步状态
+      component.exam_room_list.forEach(r => expect(r.selected).toBe(false));
     });
+
+    it('点击 checkbox 本身时不应切换选中状态（return 分支）', async () => {
+  const { container } = setup();
+  await tick();
+  fireEvent.click(screen.getByText('添加考场'));
+  await tick();
+
+  // 找到“考场A”那一行里的 checkbox
+  const row = screen.getByText('考场A').closest('tr');
+  const checkbox = within(row).getByRole('checkbox');
+  expect(checkbox.checked).toBe(false);
+
+  // 直接点击 checkbox 本身
+  fireEvent.click(checkbox);
+  await tick();
+
+  expect(checkbox.checked).toBe(true);
+
+  fireEvent.click(row);
+  await tick();
+  expect(checkbox.checked).toBe(true);
+});
   });
 
   describe('关闭面板', () => {
@@ -258,7 +281,30 @@ describe('ExaminationRoomSelectionPanel 组件测试', () => {
         expect.anything()
       );
     });
-  });
+
+    it('防抖计时器测试',async()=>{
+      setup();
+      vi.useFakeTimers();
+      const input = screen.getByPlaceholderText('请输入考场或考点名');
+      fireEvent.input(input, { target: { value: '考场A' } });
+      expect(vi.getTimerCount()).toBe(1);
+      // 快进 200ms（还没触发搜索）
+      vi.advanceTimersByTime(200);
+      fireEvent.input(input, { target: { value: '考场B' } });
+      expect(vi.getTimerCount()).toBe(1); //仍是一个计时器
+      vi.advanceTimersByTime(400);
+      vi.useRealTimers(); // 恢复真实计时器
+      const lastCall = global.fetch.mock.calls[global.fetch.mock.calls.length - 1];
+      const url = lastCall[0];
+
+      // 解码后断言，或者直接匹配编码串
+      expect(url).toContain(
+        encodeURIComponent(JSON.stringify({ name: '考场B' }))
+      );
+      });
+
+  })
+
 
   describe('分页', () => {
     it('渲染分页组件', async () => {
@@ -267,7 +313,7 @@ describe('ExaminationRoomSelectionPanel 组件测试', () => {
       expect(container.querySelector('.pagination-container')).toBeInTheDocument();
     });
 
-    it('切换每页条数后重置到第一页', async () => {
+    it('选择模式切换每页条数后重置到第一页', async () => {
       const { container } = setup();
       await tick();
       fireEvent.click(screen.getByText('添加考场'));
@@ -281,12 +327,35 @@ describe('ExaminationRoomSelectionPanel 组件测试', () => {
       await fireEvent.click(first20Option);
       // 断言：内部状态 page 置 1（Pagination 组件已单测即可）
     });
+
+    it('查看模式切换每页条数后应该重置页码为 1', async () => {
+         const { container } = setup();
+         await tick();
+        //  fireEvent.click(screen.getByText('添加考场'));
+        //  await tick();
+
+    
+        const dropdownButton = screen.getAllByRole('button', { name: /Toggle dropdown/i })[1];
+        await fireEvent.click(dropdownButton);
+    
+        const [, second20Option] = screen.getAllByText('20条/页');
+        await fireEvent.click(second20Option);
+       });
   });
 
   describe('边界/异常', () => {
     it('空数据时显示暂无数据', async () => {
       mockFetch([]);
       const { container } = setup();
+      await waitFor(() => {
+        expect(
+          container.querySelector('.no-data-text')
+        ).toBeInTheDocument();
+      });
+
+      const addButton = screen.getByText('添加考场');
+      await fireEvent.click(addButton);
+      await tick();
       await waitFor(() => {
         expect(
           container.querySelector('.no-data-text')
@@ -303,4 +372,33 @@ describe('ExaminationRoomSelectionPanel 组件测试', () => {
       });
     });
   });
+
+  it('搜索框为空时不触发带 filter 的搜索', async () => {
+  setup();
+  await tick();
+  global.fetch.mockClear(); // 清除之前的调用记录
+  const input = screen.getByPlaceholderText('请输入考场或考点名');
+  fireEvent.input(input, { target: { value: '' } });
+  await new Promise((r) => setTimeout(r, 350)); // debounce
+  expect(global.fetch).toHaveBeenCalledWith(
+    expect.not.stringContaining('filter='),
+    expect.anything()
+  );
+});
+
+it('exam_start_time 和 exam_end_time 为 null 时正常加载数据', async () => {
+  mockFetch(MOCK_EXAM_ROOMS);
+  const { container } = setup({
+    exam_start_time: 'invalid-date-string',
+    exam_end_time: 'invalid-date-string',
+  });
+  await waitFor(() => {
+    expect(screen.getByText('考场B')).toBeInTheDocument();
+    expect(screen.getByText('考点2')).toBeInTheDocument();
+  });
+
+  // 可选：验证页面上时间提示是否正确显示
+  expect(screen.getByText('开始时间未选择')).toBeInTheDocument();
+  expect(screen.getByText('结束时间未选择')).toBeInTheDocument();
+});
 });

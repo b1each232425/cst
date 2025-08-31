@@ -48,6 +48,7 @@
   let date_picker = $state();
   let start_time = $state();
   let end_time = $state();
+  let closeTimer = $state();
   // 映射关系
   const TypeMap = {
     '00': '平时考试',
@@ -109,8 +110,8 @@
       Filter: {
         Name: search_params.name || '',
         Status: search_params.status || '',
-        start_time: search_params.start_time ? new Date(search_params.start_time).getTime() : 0,
-        end_time: search_params.end_time ? new Date(search_params.end_time).getTime() : 0
+        StartTime: search_params.start_time ? new Date(search_params.start_time).getTime() : 0,
+        EndTime: search_params.end_time ? new Date(search_params.end_time).getTime() : 0
       },
       page: search_params.page,
       pageSize: search_params.page_size,
@@ -428,6 +429,7 @@ function ChooseEndTime(){
           // //获取试卷的信息
           let paperParam = new URLSearchParams();
           let examName = exam.name;
+          let message;
           paperParam.append('paper_id', exam.exam_sessions[0].paper_id);
           paperParam.append('mode', 'preview');
           return fetch(`/api/paper/manual?${paperParam.toString()}`, {
@@ -440,13 +442,13 @@ function ChooseEndTime(){
           })
             .then((response) => {
               if (!response.ok) {
-                throw new Error('请求试卷信息失败');
+                message="网络异常";
               }
               return response.json();
             })
             .then((paperInfo) => {
               if (paperInfo.status !== 0) {
-                throw new Error('请求试卷信息失败');
+                message=paperInfo.msg;
               }
 
               let examQuestions = {
@@ -458,7 +460,13 @@ function ChooseEndTime(){
               localStorage.setItem('examQuestions', JSON.stringify(examQuestions));
               localStorage.setItem('examTitle', examTitle);
               goto(`/student/answer/exam`);
+            })
+            .catch((error) => {
+              console.error(message);
+              toast.error(message);
             });
+
+            
         }
 
 
@@ -550,10 +558,10 @@ function handleSelectAll(event) {
             show_preview_popup=!show_preview_popup;
         }}
         onblur={() => {
-      closeTimer = setTimeout(() => {
-        show_preview_popup = false;
-        examID_to_preview = null;
-      }, 100); // 延迟关闭，给点击弹窗内容留时间
+        closeTimer = setTimeout(() => {
+          show_preview_popup = false;
+          examID_to_preview = null;
+        }, 100); // 延迟关闭，给点击弹窗内容留时间
     }}
     
     >预览试卷</button>
@@ -655,7 +663,7 @@ function handleSelectAll(event) {
         />
       </div>
 
-      <!-- <div class="datePart">
+      <div class="datePart">
         <DatePicker
             bind:this={date_picker}
             is_time_selection={true}
@@ -665,7 +673,7 @@ function handleSelectAll(event) {
             on:end_date_selected={ChooseEndTime()}
             onDateConfirm={() => searchExam() }
           ></DatePicker>
-      </div> -->
+      </div>
 
       <div class="filterPart">
         <Select placeholder="全部状态" changeValue={onSelectExamStatus}>
