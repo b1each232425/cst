@@ -320,8 +320,7 @@
 </div>
         {:else if error}
           <div class="error-state">
-            <div class="error-message">暂无数据</div>
-            <button class="btn btn--primary" onclick={() => getExamDistributionData()}>重试</button>
+            <Empty text="暂无试卷数据" />
           </div>
         {:else if series_data.length === 0}
           <div class="empty-state">
@@ -403,16 +402,11 @@
 
         .error-state {
           display: flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
           height: 100%;
-          gap: 10px;
-
-          .error-message {
-            color: #e74c3c;
-            font-size: 14px;
-          }
+          margin-top: 45px;
+          margin-bottom: 60px;
         }
 
         .echarts-wrapper {

@@ -861,6 +861,14 @@ describe('试卷管理页面测试', () => {
             describe('预览', () => {
 
                 it('正常情况', async () => {
+                    // Mock window.location
+                    const originalLocation = window.location;
+                    delete window.location;
+                    window.location = {
+                        href: '',
+                        assign: vi.fn(),
+                        replace: vi.fn()
+                    };
 
                     const { container } = render(Paper);
 
@@ -976,8 +984,20 @@ describe('试卷管理页面测试', () => {
 
                     // 验证window.location.href被调用
                     await waitFor(() => {
-                        expect(window.location.href).toBe('http://localhost:3000/');
+                        expect(window.location.href).toBe('/student/answer/exam');
                     });
+
+                    // 恢复原始 location
+                    window.location = originalLocation;
+
+                    // Mock window.location
+                    const originalLocation2 = window.location;
+                    delete window.location;
+                    window.location = {
+                        href: '',
+                        assign: vi.fn(),
+                        replace: vi.fn()
+                    };
 
                     // 点击第二条数据的预览按钮
                     const secondRow = container.querySelectorAll('tbody tr')[1];
@@ -985,8 +1005,11 @@ describe('试卷管理页面测试', () => {
 
                     // 验证window.location.href被调用
                     await waitFor(() => {
-                        expect(window.location.href).toBe('http://localhost:3000/');
+                        expect(window.location.href).toBe('/student/answer/practice');
                     });
+
+                    // 恢复原始 location
+                    window.location = originalLocation2;
                 });
 
                 it('失败情况1：请求失败', async () => {

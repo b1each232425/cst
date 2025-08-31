@@ -23,120 +23,104 @@
   import { page as appPage } from '$app/state';
   import { debounce } from '$lib/utils/optimize';
 
-  const MOCK_INFO = {
-    examSessionName: '2025年春季期末考试',
-    examSiteName: '广州天河分校',
-    examRoomName: '101多媒体教室',
-    examRoomCapacity: 120,
-    startTime: new Date('2025-08-22 09:00:00').getTime(),
-    endTime: new Date('2025-08-22 11:30:00').getTime(),
-    status: '04',
-    basicEval: '02',
-    examineeNum: 120,
-    absenteeNum: 8,
-    cheaterNum: 2,
-    abnormalExamineeNum: 2,
-    extendedTimeNum: 2,
-  };
+  // const MOCK_INFO = {
+  //   ExamSessionName: '2025年春季期末考试',
+  //   ExamSiteName: '广州天河分校',
+  //   ExamRoomName: '101多媒体教室',
+  //   ExamRoomCapacity: 120,
+  //   StartTime: new Date('2025-08-22 09:00:00').getTime(),
+  //   EndTime: new Date('2025-08-22 11:30:00').getTime(),
+  //   Status: '04',
+  //   BasicEval: '02',
+  //   ExamineeNum: 120,
+  //   AbsenteeNum: 8,
+  //   CheaterNum: 2,
+  //   AbnormalExamineeNum: 2,
+  //   ExtendedTimeNum: 2,
+  // };
 
-  const MOCK_EXAMINEES = [
-    {
-      examineeID: 5001,
-      examCard: '20250822001',
-      identityID: '440101199001011234',
-      name: '张三',
-      status: '02',
-      remark: '缺考',
-    },
-    {
-      examineeID: 5002,
-      examCard: '20250822002',
-      identityID: '440101199002022345',
-      name: '李四',
-      status: '02',
-      remark: '',
-    },
-    {
-      examineeID: 5003,
-      examCard: '20250822003',
-      identityID: '440101199003033456',
-      name: '王五',
-      status: '06',
-      remark: '正常参加考试',
-    },
-    {
-      examineeID: 5004,
-      examCard: '20250822004',
-      identityID: '440101199004044567',
-      name: '赵六',
-      status: '06',
-      remark: '提前交卷',
-    },
-    {
-      examineeID: 5005,
-      examCard: '20250822005',
-      identityID: '440101199005055678',
-      name: '钱七',
-      status: '14',
-      remark: '作弊嫌疑',
-    },
-    {
-      examineeID: 5006,
-      examCard: '20250822006',
-      identityID: '440101199006066789',
-      name: '孙八',
-      status: '14',
-      remark: '身体不适中途退场',
-    },
-    {
-      examineeID: 5007,
-      examCard: '20250822007',
-      identityID: '440101199007077890',
-      name: '周九',
-      status: '02',
-      remark: '缺考',
-    },
-    {
-      examineeID: 5008,
-      examCard: '20250822008',
-      identityID: '440101199008088901',
-      name: '吴十',
-      status: '14',
-      remark: '忘记带身份证',
-    },
-    {
-      examineeID: 5009,
-      examCard: '20250822009',
-      identityID: '440101199009099012',
-      name: '郑十一',
-      status: '06',
-      remark: '正常参加考试',
-    },
-    {
-      examineeID: 5010,
-      examCard: '20250822010',
-      identityID: '440101199010101123',
-      name: '王十二',
-      status: '02',
-      remark: '表现优秀',
-    },
-    {
-      examineeID: 5011,
-      examCard: '20250822011',
-      identityID: '440101199011111234',
-      name: '李十三',
-      status: '06',
-      remark: '交白卷',
-    },
-    {
-      examineeID: 5012,
-      examCard: '20250822012',
-      identityID: '440101199012121345',
-      name: '张十四',
-      status: '14',
-      remark: '设备故障重考',
-    },
-  ];
+  // const MOCK_EXAMINEES = [
+  //   {
+  //     ExamineeID: 5001,
+  //     ExamCard: '20250822001',
+  //     IdentityID: '440101199001011234',
+  //     Name: '张三',
+  //     Status: '02',
+  //     Remark: '缺考',
+  //   },
+  //   {
+  //     ExamineeID: 5002,
+  //     ExamCard: '20250822002',
+  //     IdentityID: '440101199002022345',
+  //     Name: '李四',
+  //     Status: '02',
+  //     Remark: '',
+  //   },
+  //   {
+  //     ExamineeID: 5003,
+  //     ExamCard: '20250822003',
+  //     IdentityID: '440101199003033456',
+  //     Name: '王五',
+  //     Status: '06',
+  //     Remark: '正常参加考试',
+  //   },
+  //   {
+  //     ExamineeID: 5004,
+  //     ExamCard: '20250822004',
+  //     IdentityID: '440101199004044567',
+  //     Name: '赵六',
+  //     Status: '06',
+  //     Remark: '提前交卷',
+  //   },
+  //   {
+  //     ExamineeID: 5005,
+  //     ExamCard: '20250822005',
+  //     IdentityID: '440101199005055678',
+  //     Name: '钱七',
+  //     Status: '14',
+  //     Remark: '作弊嫌疑',
+  //   },
+  //   {
+  //     ExamineeID: 5006,
+  //     ExamCard: '20250822006',
+  //     IdentityID: '440101199006066789',
+  //     Name: '孙八',
+  //     Status: '14',
+  //     Remark: '身体不适中途退场',
+  //   },
+  //   {
+  //     ExamineeID: 5007,
+  //     ExamCard: '20250822007',
+  //     IdentityID: '440101199007077890',
+  //     Name: '周九',
+  //     Status: '02',
+  //     Remark: '缺考',
+  //   },
+  //   {
+  //     ExamineeID: 5008,
+  //     ExamCard: '20250822008',
+  //     IdentityID: '440101199008088901',
+  //     Name: '吴十',
+  //     Status: '14',
+  //     Remark: '忘记带身份证',
+  //   },
+  //   {
+  //     ExamineeID: 5009,
+  //     ExamCard: '20250822009',
+  //     IdentityID: '440101199009099012',
+  //     Name: '郑十一',
+  //     Status: '06',
+  //     Remark: '正常参加考试',
+  //   },
+  //   {
+  //     ExamineeID: 5010,
+  //     ExamCard: '20250822010',
+  //     IdentityID: '440101199010101123',
+  //     Name: '王十二',
+  //     Status: '11',
+  //     Remark: '表现优秀',
+  //   },
+  // ];
 
   // 场次状态映射
   const STATUS_MAP = {
@@ -172,10 +156,10 @@
   let page = $state(1);
   let page_size = $state(10);
 
-  let invigilation_info = $state({ ...MOCK_INFO });
-  let examinee_list = $state([...MOCK_EXAMINEES]);
+  let invigilation_info = $state({});
+  let examinee_list = $state([]);
 
-  let is_invigilating = $derived(invigilation_info?.status === '04');
+  let is_invigilating = $derived(invigilation_info?.Status === '04');
 
   let selected_examinee_id_set = $state(new Set());
 
@@ -183,16 +167,29 @@
     history.back();
   }
 
+  function showErrorDialog(content) {
+    MessageBox({
+      type: 'danger',
+      title: '出错啦',
+      content,
+      show_cancel_button: false,
+      on_close_by_click_outside: false,
+      confirm_button_type: 'danger',
+      onConfirm: () => goBack(),
+      onCancel: () => goBack(),
+    });
+  }
+
   // 获取监考详情信息
   function getInvigilateDetail() {
     const q = JSON.stringify({
       orderBy: [{ Duration: 'DESC', Time: 'DESC' }],
       filter: {
-        searchText: search_text,
+        SearchText: search_text,
       },
       data: {
-        examSessionID: exam_session_id,
-        examRoomID: exam_room_id,
+        ExamSessionID: exam_session_id,
+        ExamRoomID: exam_room_id,
       },
       page,
       pageSize: page_size,
@@ -226,16 +223,7 @@
         } else throw new Error(res.msg ?? '获取监考信息失败');
       })
       .catch((err) => {
-        MessageBox({
-          type: 'danger',
-          title: '出错啦',
-          content: err.message,
-          show_cancel_button: false,
-          on_close_by_click_outside: false,
-          confirm_button_type: 'danger',
-          onConfirm: () => goBack(),
-          onCancel: () => goBack(),
-        });
+        showErrorDialog(err.message);
         console.error(err);
       });
   }
@@ -316,7 +304,7 @@
       },
       () => {
         examinee_list.forEach((e) => {
-          if (selected_examinee_id_set.has(e.examineeID)) e.status = status;
+          if (selected_examinee_id_set.has(e.ExamineeID)) e.Status = status;
         });
       },
     );
@@ -331,7 +319,7 @@
       },
       () => {
         examinee_list.forEach((e) => {
-          if (selected_examinee_id_set.has(e.examineeID)) e.remark = remark;
+          if (selected_examinee_id_set.has(e.ExamineeID)) e.Remark = remark;
         });
       },
     );
@@ -342,7 +330,7 @@
   // 处理全选框
   function toggleSelectAll() {
     if (selected_examinee_id_set.size === examinee_list.length) selected_examinee_id_set = new Set();
-    else selected_examinee_id_set = new Set(examinee_list.map((e) => e.examineeID));
+    else selected_examinee_id_set = new Set(examinee_list.map((e) => e.ExamineeID));
   }
 
   // 处理单个选框
@@ -357,8 +345,21 @@
   }
 
   onMount(() => {
-    exam_session_id = Number(appPage.url.searchParams.get('exam_session_id'));
-    exam_room_id = Number(appPage.url.searchParams.get('exam_room_id'));
+    const exam_session_id_str = appPage.url.searchParams.get('exam_session_id');
+    const exam_room_id_str = appPage.url.searchParams.get('exam_room_id');
+
+    if (!exam_session_id_str || !exam_room_id_str) {
+      showErrorDialog('路径参数错误');
+      return;
+    }
+
+    exam_session_id = Number(exam_session_id_str);
+    exam_room_id = Number(exam_room_id_str);
+
+    if (!Number.isFinite(exam_session_id) || !Number.isFinite(exam_room_id)) {
+      showErrorDialog('路径参数错误');
+      return;
+    }
 
     getInvigilateDetail();
   });
@@ -369,23 +370,22 @@
   <div class="header card">
     <button onclick={goBack}>返回</button>
     <div class="info">
-      <span class="exam-session-name">{invigilation_info.examSessionName}</span>
+      <span class="exam-session-name">{invigilation_info.ExamSessionName}</span>
       <span class="number"
-        ><img src="/invigilation/icons/group.svg" alt="" /><span class="data">{invigilation_info.examineeNum}</span
-        >/{invigilation_info.examRoomCapacity}</span
+        ><img src="/invigilation/icons/group.svg" alt="" /><span class="data">{invigilation_info.ExamineeNum}</span
+        >/{invigilation_info.ExamRoomCapacity}</span
       >
     </div>
     <div class="info">
       <span
-        ><span class="label">时间：</span>{formatTimestamp(invigilation_info.startTime)} ~ {formatTimestamp(
-          invigilation_info.endTime,
+        ><span class="label">时间：</span>{formatTimestamp(invigilation_info.StartTime)} ~ {formatTimestamp(
+          invigilation_info.EndTime,
         )}</span
-      ><span><span class="label">地点：</span>{invigilation_info.examSiteName}-{invigilation_info.examRoomName}</span>
+      ><span><span class="label">地点：</span>{invigilation_info.ExamSiteName}-{invigilation_info.ExamRoomName}</span>
       <span class="info-item"
         ><span class="circle"></span>
-        <!-- TODO 默认值是什么 -->
-        <span class:unknown={!STATUS_MAP[invigilation_info.status]}
-          >{STATUS_MAP[invigilation_info.status] ?? '未知状态'}
+        <span class:unknown={!STATUS_MAP[invigilation_info.Status]}
+          >{STATUS_MAP[invigilation_info.Status] ?? '未知状态'}
         </span></span
       >
     </div>
@@ -400,33 +400,33 @@
           <div class="label">考场情况：</div>
           {#if is_invigilating}
             <div class="data" data-testid="basic-eval-select">
-              <Select value={invigilation_info.basicEval} changeValue={updateBasicEval}>
+              <Select value={invigilation_info.BasicEval} changeValue={updateBasicEval}>
                 {#each Object.entries(EVAL_MAP) as [key, value]}
                   <Option value={key} label={value} />
                 {/each}
               </Select>
             </div>
           {:else}
-            <div class="data number" class:unknown={!EVAL_MAP[invigilation_info.basicEval]}>
-              {EVAL_MAP[invigilation_info.basicEval] ?? '未知状态'}
+            <div class="data number" class:unknown={!EVAL_MAP[invigilation_info.BasicEval]}>
+              {EVAL_MAP[invigilation_info.BasicEval] ?? '未知状态'}
             </div>
           {/if}
         </div>
         <div class="info-item">
           <div class="label">缺考人数：</div>
-          <div class="data number">{invigilation_info.absenteeNum}</div>
+          <div class="data number">{invigilation_info.AbsenteeNum}</div>
         </div>
         <div class="info-item">
           <div class="label">作弊人数：</div>
-          <div class="data number">{invigilation_info.cheaterNum}</div>
+          <div class="data number">{invigilation_info.CheaterNum}</div>
         </div>
         <div class="info-item">
           <div class="label">考试异常人数：</div>
-          <div class="data number">{invigilation_info.abnormalExamineeNum}</div>
+          <div class="data number">{invigilation_info.AbnormalExamineeNum}</div>
         </div>
         <div class="info-item">
           <div class="label">已延长时间人数：</div>
-          <div class="data number">{invigilation_info.extendedTimeNum}</div>
+          <div class="data number">{invigilation_info.ExtendedTimeNum}</div>
         </div>
       </div>
     </div>
@@ -477,7 +477,9 @@
               class:is-disabled={selected_examinee_id_set.size === 0}
               onclick={() => (selected_examinee_id_set = new Set())}>取消选中</button
             >
-            <div class="tip">当前已选中 <span class="data">{selected_examinee_id_set.size}</span> 人</div>
+            <div class="tip" data-testid="selected-count-tip">
+              当前已选中 <span class="data">{selected_examinee_id_set.size}</span> 人
+            </div>
           {/if}
         </div>
 
@@ -491,7 +493,7 @@
                   <th class="select">
                     <button class="square-container" onclick={toggleSelectAll} data-testid="select-all">
                       {#if selected_examinee_id_set.size === examinee_list.length}
-                        <div class="check-square"></div>
+                        <div class="check-square" data-testid="check-square"></div>
                       {/if}
                     </button>
                   </th>
@@ -503,30 +505,30 @@
                 <th>备注</th>
               </tr>
             </thead>
-            <tbody getByTestId="examinee-tbody">
-              {#each examinee_list as { examineeID, identityID, name, examCard, status, remark }}
+            <tbody data-testid="examinee-tbody">
+              {#each examinee_list as { ExamineeID, IdentityID, Name, ExamCard, Status, Remark } (ExamineeID)}
                 <tr>
                   {#if is_invigilating}
                     <!-- 单选框 -->
                     <td class="select">
                       <button
                         class="square-container"
-                        onclick={() => toggleSelectSingle(examineeID)}
+                        onclick={() => toggleSelectSingle(ExamineeID)}
                         data-testid="select-single"
                       >
-                        {#if selected_examinee_id_set.has(examineeID)}
-                          <div class="check-square"></div>
+                        {#if selected_examinee_id_set.has(ExamineeID)}
+                          <div class="check-square" data-testid="check-square"></div>
                         {/if}
                       </button></td
                     >
                   {/if}
-                  <td>{name}</td>
-                  <td>{identityID}</td>
-                  <td>{examCard}</td>
+                  <td>{Name}</td>
+                  <td>{IdentityID}</td>
+                  <td>{ExamCard}</td>
                   {#if is_invigilating}
                     <td>
-                      <div class="select">
-                        <Select value={status} changeValue={(val) => updateSingleExamineeStatus(examineeID, val)}>
+                      <div class="select" data-testid="single-select">
+                        <Select value={Status} changeValue={(val) => updateSingleExamineeStatus(ExamineeID, val)}>
                           <Option value="" label="无" />
                           <Option value="02" label={EXAMINEE_STATUE_MAP['02']} />
                           <Option value="06" label={EXAMINEE_STATUE_MAP['06']} />
@@ -537,10 +539,10 @@
                   {:else}
                     <td
                       class="status"
-                      class:absent={status === '02'}
-                      class:cheat={status === '06'}
-                      class:abnormal={status === '14'}
-                      class:unknown={!EXAMINEE_STATUE_MAP[status]}>{EXAMINEE_STATUE_MAP[status] ?? '未知状态'}</td
+                      class:absent={Status === '02'}
+                      class:cheat={Status === '06'}
+                      class:abnormal={Status === '14'}
+                      class:unknown={!EXAMINEE_STATUE_MAP[Status]}>{EXAMINEE_STATUE_MAP[Status] ?? '未知状态'}</td
                     >
                   {/if}
                   <td class="remark"
@@ -550,12 +552,12 @@
                           type="text"
                           class="input"
                           placeholder="暂无备注"
-                          value={remark}
-                          oninput={(e) => debounceUpdateSingleExamineeRemark(examineeID, e.target.value)}
+                          value={Remark}
+                          oninput={(e) => debounceUpdateSingleExamineeRemark(ExamineeID, e.target.value)}
                         />
                       </div>
                     {:else}
-                      {remark || '--'}
+                      {Remark || '--'}
                     {/if}</td
                   >
                 </tr>

@@ -10,7 +10,7 @@
   import { goto } from '$app/navigation';
 
   // 模拟数据
-  let enrollList = $state([
+  let enroll_list = $state([
     {
       id: 1,
       name: '2025年春季考试报名',
@@ -71,7 +71,7 @@
   let select_public_id = $state(null); // 待发布
 
   // 当前操作类型（delete | repeal | public）
-  let currentAction = '';
+  let current_action = '';
 
   // 消息提示框数据
   let is_show_messagebox = $state(false);
@@ -96,7 +96,7 @@
   // 处理表格发布按钮点击事件
   function handlePublic(id) {
     select_public_id = id;
-    currentAction = 'public';
+    current_action = 'public';
     messagebox_title = '确认发布';
     messagebox_content = '发布后，所有用户都可看到此报名计划，确定要继续吗？';
     is_show_messagebox = true;
@@ -105,7 +105,7 @@
   // ---------- 作废 ----------
   function handleRepeal(id) {
     select_repeal_id = [id];
-    currentAction = 'repeal';
+    current_action = 'repeal';
     messagebox_title = '确认作废';
     messagebox_content = '作废后，该条数据将不能再使用，确定要继续吗？';
     is_show_messagebox = true;
@@ -115,18 +115,18 @@
   function handleBatchRepeal() {
     if (select_repeal_id.length === 0) return;
     const validIds = select_repeal_id.filter((id) => {
-      const item = enrollList.find((i) => i.id === id);
+      const item = enroll_list.find((i) => i.id === id);
       return item && (item.status === '未发布' || item.status === '已发布');
     });
     if (validIds.length !== select_repeal_id.length) {
       messagebox_title = '部分选择无效';
       messagebox_content = `你选择的 ${select_repeal_id.length} 条数据中，有 ${select_repeal_id.length - validIds.length} 条不符合作废条件。\n是否继续作废合法的 ${validIds.length} 条？`;
-      currentAction = 'repeal';
+      current_action = 'repeal';
       select_repeal_id = validIds;
     } else {
       messagebox_title = '确认作废';
       messagebox_content = `确定要作废选中的 ${validIds.length} 条数据吗？`;
-      currentAction = 'repeal';
+      current_action = 'repeal';
     }
     is_show_messagebox = true;
   }
@@ -134,7 +134,7 @@
   // ---------- 删除 ----------
   function handleDelete(id) {
     select_delete_id = [id];
-    currentAction = 'delete';
+    current_action = 'delete';
     messagebox_title = '确认删除';
     messagebox_content = '删除后，该条数据会永久消失，确定要继续删除吗？';
     is_show_messagebox = true;
@@ -145,19 +145,19 @@
     if (select_delete_id.length === 0) return;
 
     const validIds = select_delete_id.filter((id) => {
-      const item = enrollList.find((i) => i.id === id);
+      const item = enroll_list.find((i) => i.id === id);
       return item && item.status === '未发布';
     });
 
     if (validIds.length !== select_delete_id.length) {
       messagebox_title = '部分选择无效';
       messagebox_content = `你选择的 ${select_delete_id.length} 条数据中，有 ${select_delete_id.length - validIds.length} 条不符合删除条件。\n是否继续删除合法的 ${validIds.length} 条？`;
-      currentAction = 'delete';
+      current_action = 'delete';
       select_delete_id = validIds;
     } else {
       messagebox_title = '确认删除';
       messagebox_content = `确定要删除选中的 ${validIds.length} 条数据吗？`;
-      currentAction = 'delete';
+      current_action = 'delete';
     }
     is_show_messagebox = true;
   }
@@ -165,8 +165,8 @@
   // ---------- 全选/取消全选 ----------
   function handleSelectAll(e) {
     if (e.target.checked) {
-      select_delete_id = enrollList.map((item) => item.id);
-      select_repeal_id = enrollList.map((item) => item.id);
+      select_delete_id = enroll_list.map((item) => item.id);
+      select_repeal_id = enroll_list.map((item) => item.id);
     } else {
       select_delete_id = [];
       select_repeal_id = [];
@@ -177,25 +177,27 @@
     return select_delete_id.includes(id) || select_repeal_id.includes(id);
   }
 
-  // ---------- 确认/取消 ----------
+  // ---------- 消息提示框确认/取消 ----------
   function handleMessageBoxConfirm() {
-    if (currentAction === 'public') {
-      enrollList = enrollList.map((item) => (item.id === select_public_id ? { ...item, status: '已发布' } : item));
+    if (current_action === 'public') {
+      enroll_list = enroll_list.map((item) => (item.id === select_public_id ? { ...item, status: '已发布' } : item));
     }
 
-    if (currentAction === 'delete' && select_delete_id.length > 0) {
-      enrollList = enrollList.filter((item) => !select_delete_id.includes(item.id));
+    if (current_action === 'delete' && select_delete_id.length > 0) {
+      enroll_list = enroll_list.filter((item) => !select_delete_id.includes(item.id));
       select_delete_id = [];
-    }
-
-    if (currentAction === 'repeal' && select_repeal_id.length > 0) {
-      enrollList = enrollList.map((item) =>
-        select_repeal_id.includes(item.id) ? { ...item, status: '已作废' } : item,
-      );
       select_repeal_id = [];
     }
 
-    currentAction = '';
+    if (current_action === 'repeal' && select_repeal_id.length > 0) {
+      enroll_list = enroll_list.map((item) =>
+        select_repeal_id.includes(item.id) ? { ...item, status: '已作废' } : item,
+      );
+      select_delete_id = [];
+      select_repeal_id = [];
+    }
+
+    current_action = '';
     is_show_messagebox = false;
   }
 
@@ -203,10 +205,25 @@
     select_delete_id = [];
     select_repeal_id = [];
     select_public_id = null;
-    currentAction = '';
+    current_action = '';
     messagebox_title = '';
     messagebox_content = '';
     is_show_messagebox = false;
+  }
+
+  // ---------- 分页器 ----------
+  let current_page = $state(1); // 当前页数
+  let page_size = $state(10); // 当前页面大小
+
+  // 父组件控制分页器的行为
+  function handlePageChange(event) {
+    current_page = event.detail;
+    // 做分页逻辑处理
+  }
+
+  function handlePageSizeChange(event) {
+    page_size = event.detail;
+    // 做每页条数变化逻辑处理
   }
 </script>
 
@@ -259,7 +276,7 @@
                 type="checkbox"
                 class="checkbox"
                 onchange={handleSelectAll}
-                checked={enrollList.length === select_delete_id.length}
+                checked={enroll_list.length === select_delete_id.length}
               />
             </th>
             <th style="width: 12%">名称</th>
@@ -273,8 +290,8 @@
           </tr>
         </thead>
         <tbody>
-          {#if enrollList.length > 0}
-            {#each enrollList as item}
+          {#if enroll_list.length > 0}
+            {#each enroll_list as item}
               <tr>
                 <td
                   ><input
@@ -341,7 +358,11 @@
     </div>
 
     <div class="pagination-container">
-      <Pagination total_items={200} />
+      <Pagination
+        on:pageChange={handlePageChange}
+        on:pageSizeChange={handlePageSizeChange}
+        total_items={enroll_list.length}
+      />
     </div>
   </div>
 </div>

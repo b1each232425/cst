@@ -22,116 +22,92 @@
   import { formatTimestamp } from '$lib/utils/time_utils';
   import { goto } from '$app/navigation';
 
-  const MOCK_EXAM_SESSION = [
-    {
-      examSessionID: 1001,
-      examRoomID: 2001,
-      examSessionName: '2025年春季期末考试',
-      examSiteName: '广州天河分校',
-      examRoomName: '101多媒体教室',
-      startTime: new Date('2025-08-22 09:00:00').getTime(),
-      endTime: new Date('2025-08-22 11:30:00').getTime(),
-      status: '02',
-      examineeNum: 120,
-      absenteeNum: 8,
-    },
-    {
-      examSessionID: 1002,
-      examRoomID: 2002,
-      examSessionName: '2025年春季期中考试',
-      examSiteName: '北京海淀分校',
-      examRoomName: '201标准考场',
-      startTime: new Date('2025-08-22 14:00:00').getTime(),
-      endTime: new Date('2025-08-22 15:30:00').getTime(),
-      status: '04',
-      examineeNum: 80,
-      absenteeNum: 3,
-    },
-    {
-      examSessionID: 1003,
-      examRoomID: 2003,
-      examSessionName: '2025年春季模拟考试',
-      examSiteName: '上海浦东分校',
-      examRoomName: '301计算机房',
-      startTime: new Date('2025-08-21 10:00:00').getTime(),
-      endTime: new Date('2025-08-21 12:00:00').getTime(),
-      status: '06',
-      examineeNum: 60,
-      absenteeNum: 5,
-    },
-    {
-      examSessionID: 1004,
-      examRoomID: 2004,
-      examSessionName: '2025年春季单元测试',
-      examSiteName: '深圳南山分校',
-      examRoomName: '401阶梯教室',
-      startTime: new Date('2025-08-20 15:00:00').getTime(),
-      endTime: new Date('2025-08-20 16:00:00').getTime(),
-      status: '08',
-      examineeNum: 150,
-      absenteeNum: 12,
-    },
-    {
-      examSessionID: 1005,
-      examRoomID: 2005,
-      examSessionName: '2025年春季入学考试',
-      examSiteName: '杭州西湖分校',
-      examRoomName: '501语音室',
-      startTime: new Date('2025-08-19 08:30:00').getTime(),
-      endTime: new Date('2025-08-19 10:30:00').getTime(),
-      status: '10',
-      examineeNum: 50,
-      absenteeNum: 2,
-    },
-    {
-      examSessionID: 1006,
-      examRoomID: 2006,
-      examSessionName: '2025年春季补考',
-      examSiteName: '成都武侯分校',
-      examRoomName: '601专用考场',
-      startTime: new Date('2025-08-18 13:00:00').getTime(),
-      endTime: new Date('2025-08-18 14:30:00').getTime(),
-      status: '12',
-      examineeNum: 30,
-      absenteeNum: 1,
-    },
-    {
-      examSessionID: 1008,
-      examRoomID: 2008,
-      examSessionName: '2025年春季英语四级模拟考',
-      examSiteName: '武汉江汉分校',
-      examRoomName: '801听力教室',
-      startTime: new Date('2025-08-24 09:00:00').getTime(),
-      endTime: new Date('2025-08-24 11:20:00').getTime(),
-      status: '22',
-      examineeNum: 45,
-      absenteeNum: 2,
-    },
-    // {
-    //   examSessionID: 1009,
-    //   examRoomID: 2009,
-    //   examSessionName: '2025年春季计算机等级考试',
-    //   examSiteName: '西安雁塔分校',
-    //   examRoomName: '901机房',
-    //   startTime: new Date('2025-08-25 14:00:00').getTime(),
-    //   endTime: new Date('2025-08-25 16:00:00').getTime(),
-    //   status: '04',
-    //   examineeNum: 35,
-    //   absenteeNum: 1,
-    // },
-    // {
-    //   examSessionID: 1010,
-    //   examRoomID: 2010,
-    //   examSessionName: '2025年春季职业技能鉴定',
-    //   examSiteName: '重庆渝中分校',
-    //   examRoomName: '1001实训室',
-    //   startTime: new Date('2025-08-26 10:00:00').getTime(),
-    //   endTime: new Date('2025-08-26 12:00:00').getTime(),
-    //   status: '06',
-    //   examineeNum: 25,
-    //   absenteeNum: 0,
-    // },
-  ];
+  // const MOCK_EXAM_SESSION = [
+  //   {
+  //     ExamSessionID: 1001,
+  //     ExamRoomID: 2001,
+  //     ExamSessionName: '2025年春季期末考试',
+  //     ExamSiteName: '广州天河分校',
+  //     ExamRoomName: '101多媒体教室',
+  //     StartTime: new Date('2025-08-22 09:00:00').getTime(),
+  //     EndTime: new Date('2025-08-22 11:30:00').getTime(),
+  //     Status: '02',
+  //     ExamineeNum: 120,
+  //     AbsenteeNum: 8,
+  //   },
+  //   {
+  //     ExamSessionID: 1002,
+  //     ExamRoomID: 2002,
+  //     ExamSessionName: '2025年春季期中考试',
+  //     ExamSiteName: '北京海淀分校',
+  //     ExamRoomName: '201标准考场',
+  //     StartTime: new Date('2025-08-22 14:00:00').getTime(),
+  //     EndTime: new Date('2025-08-22 15:30:00').getTime(),
+  //     Status: '04',
+  //     ExamineeNum: 80,
+  //     AbsenteeNum: 3,
+  //   },
+  //   {
+  //     ExamSessionID: 1003,
+  //     ExamRoomID: 2003,
+  //     ExamSessionName: '2025年春季模拟考试',
+  //     ExamSiteName: '上海浦东分校',
+  //     ExamRoomName: '301计算机房',
+  //     StartTime: new Date('2025-08-21 10:00:00').getTime(),
+  //     EndTime: new Date('2025-08-21 12:00:00').getTime(),
+  //     Status: '06',
+  //     ExamineeNum: 60,
+  //     AbsenteeNum: 5,
+  //   },
+  //   {
+  //     ExamSessionID: 1004,
+  //     ExamRoomID: 2004,
+  //     ExamSessionName: '2025年春季单元测试',
+  //     ExamSiteName: '深圳南山分校',
+  //     ExamRoomName: '401阶梯教室',
+  //     StartTime: new Date('2025-08-20 15:00:00').getTime(),
+  //     EndTime: new Date('2025-08-20 16:00:00').getTime(),
+  //     Status: '08',
+  //     ExamineeNum: 150,
+  //     AbsenteeNum: 12,
+  //   },
+  //   {
+  //     ExamSessionID: 1005,
+  //     ExamRoomID: 2005,
+  //     ExamSessionName: '2025年春季入学考试',
+  //     ExamSiteName: '杭州西湖分校',
+  //     ExamRoomName: '501语音室',
+  //     StartTime: new Date('2025-08-19 08:30:00').getTime(),
+  //     EndTime: new Date('2025-08-19 10:30:00').getTime(),
+  //     Status: '10',
+  //     ExamineeNum: 50,
+  //     AbsenteeNum: 2,
+  //   },
+  //   {
+  //     ExamSessionID: 1006,
+  //     ExamRoomID: 2006,
+  //     ExamSessionName: '2025年春季补考',
+  //     ExamSiteName: '成都武侯分校',
+  //     ExamRoomName: '601专用考场',
+  //     StartTime: new Date('2025-08-18 13:00:00').getTime(),
+  //     EndTime: new Date('2025-08-18 14:30:00').getTime(),
+  //     Status: '12',
+  //     ExamineeNum: 30,
+  //     AbsenteeNum: 1,
+  //   },
+  //   {
+  //     ExamSessionID: 1008,
+  //     ExamRoomID: 2008,
+  //     ExamSessionName: '2025年春季英语四级模拟考',
+  //     ExamSiteName: '武汉江汉分校',
+  //     ExamRoomName: '801听力教室',
+  //     StartTime: new Date('2025-08-24 09:00:00').getTime(),
+  //     EndTime: new Date('2025-08-24 11:20:00').getTime(),
+  //     Status: '22',
+  //     ExamineeNum: 45,
+  //     AbsenteeNum: 0,
+  //   },
+  // ];
 
   // 场次状态映射
   const STATUS_MAP = {
@@ -145,7 +121,7 @@
 
   let date_picker = null;
 
-  let exam_session_list = $state([...MOCK_EXAM_SESSION]);
+  let exam_session_list = $state([]);
 
   let exam_session_name = $state('');
   let start_time = $state(0);
@@ -175,10 +151,10 @@
     const q = JSON.stringify({
       orderBy: [{ Duration: 'DESC', Time: 'DESC' }],
       filter: {
-        examSessionName: exam_session_name,
-        examStatus: status,
-        startTime: start_time,
-        endTime: end_time,
+        ExamSessionName: exam_session_name,
+        ExamStatus: status,
+        StartTime: start_time,
+        EndTime: end_time,
       },
       page,
       pageSize: page_size,
@@ -283,32 +259,32 @@
         </tr>
       </thead>
       <tbody data-testid="invigilate-tbody">
-        {#each exam_session_list as { examSessionID, examRoomID, examSessionName, examSiteName, examRoomName, startTime, endTime, status, examineeNum, absenteeNum } (examSessionID)}
+        {#each exam_session_list as { ExamSessionID, ExamRoomID, ExamSessionName, ExamSiteName, ExamRoomName, StartTime, EndTime, Status, ExamineeNum, AbsenteeNum } (ExamSessionID)}
           <tr>
-            <td>{examSessionName}</td>
-            <td>{examSiteName}</td>
-            <td>{examRoomName}</td>
-            <td>{formatTimestamp(startTime)} ~ {formatTimestamp(endTime)}</td>
+            <td>{ExamSessionName}</td>
+            <td>{ExamSiteName}</td>
+            <td>{ExamRoomName}</td>
+            <td>{formatTimestamp(StartTime)} ~ {formatTimestamp(EndTime)}</td>
             <td
               class="status"
-              class:incoming={status === '02'}
-              class:underway={status === '04'}
-              class:ended={status === '06'}
-              class:marking={status === '08'}
-              class:marked={status === '10'}
-              class:submitted={status === '12'}
-              class:unknown={!STATUS_MAP[status]}>{STATUS_MAP[status] ?? '未知状态'}</td
+              class:incoming={Status === '02'}
+              class:underway={Status === '04'}
+              class:ended={Status === '06'}
+              class:marking={Status === '08'}
+              class:marked={Status === '10'}
+              class:submitted={Status === '12'}
+              class:unknown={!STATUS_MAP[Status]}>{STATUS_MAP[Status] ?? '未知状态'}</td
             >
-            <td>{examineeNum}</td>
-            <td class:has-absentee={status !== '02' && status !== '04' && absenteeNum !== 0}
-              >{status === '02' || status === '04' ? '--' : absenteeNum}</td
+            <td>{ExamineeNum}</td>
+            <td class:has-absentee={Status !== '02' && Status !== '04' && AbsenteeNum !== 0}
+              >{Status === '02' || Status === '04' ? '--' : AbsenteeNum}</td
             >
             <td class="option">
               <div class="option-item">
                 <button
-                  onclick={() => (STATUS_MAP[status] ? gotoInvigilate(examSessionID, examRoomID) : {})}
-                  class:can-click={STATUS_MAP[status]}
-                  >{STATUS_MAP[status] ? (status === '04' ? '进入监考' : '查看详情') : '--'}</button
+                  onclick={() => (STATUS_MAP[Status] ? gotoInvigilate(ExamSessionID, ExamRoomID) : {})}
+                  class:can-click={STATUS_MAP[Status]}
+                  >{STATUS_MAP[Status] ? (Status === '04' ? '进入监考' : '查看详情') : '--'}</button
                 >
               </div>
             </td>

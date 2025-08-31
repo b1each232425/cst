@@ -521,7 +521,7 @@
         <!-- 头部 -->
         <div class="container-header">
             <span class="title">从题库导入题目</span>
-            <button onclick={onclose}>✖</button>
+            <button onclick={onclose} class="close-import-btn">✖</button>
         </div>
 
         <!-- 内容区 -->
@@ -645,7 +645,9 @@
                                 <tr class:disabled-row={question_list.length > 0 && question_list.every(question => existing_question_ids.includes(question.ID))}>
                                     <th>
                                         {#if question_list.length > 0 && question_list.every(question => existing_question_ids.includes(question.ID))}
-                                            <Tag type="info" size="small">已导入</Tag>
+                                            <div class="imported-container">
+                                                <Tag type="info" size="middle">已导入</Tag>
+                                            </div>
                                         {:else}
                                             <input
                                                 type="checkbox"
@@ -675,7 +677,9 @@
                                             }}>
                                         <td class="checkbox">
                                             {#if existing_question_ids.includes(question.ID)}
-                                                <Tag type="info" size="small">已导入</Tag>
+                                                <div class="imported-container">
+                                                    <Tag type="info" size="middles">已导入</Tag>
+                                                </div>
                                             {:else}
                                             <input type="checkbox"
                                                 checked={selected_questions.map(question => question.ID).includes(question.ID)}
@@ -1100,6 +1104,12 @@
                                 th, td {
                                     padding: 6px 3px;
 
+                                    /* 已导入 */
+                                    .imported-container {
+                                        display: flex;
+                                        justify-content: center;
+                                        align-items: center;
+                                    }
                                 }
 
                                 th {
@@ -1112,7 +1122,7 @@
                                     padding-top: 14px;
                                     z-index: 1;
 
-                                    
+                                    /* 勾选框 */
                                     input {
                                         width: 16px;
                                         height: 16px;

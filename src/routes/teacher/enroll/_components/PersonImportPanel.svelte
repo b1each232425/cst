@@ -3,16 +3,24 @@
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Button from '$lib/components/Button/Button.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
+  import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
   import { toast } from '$lib/components/Toast/Toast.js';
   import { onMount } from 'svelte';
   import { validMobile, validEmail, validIdCard } from '$lib/utils/validate';
+  import { validateRowData, validateDuplicates } from '../_utils/handleFileInput';
 
   let { is_show_import_panel, candidate_list = [], closePanel = () => {} } = $props();
 
   let success_count = $state(0); // 成功识别条数
   let failure_count = $state(0); // 失败识别条数
+  let editing_row = $state(null); // 当前编辑行副本
 
-  // 不要就地排序 props，返回新数组（避免副作用）
+  // 消息提示框数据
+  let is_show_messagebox = $state(false);
+  let messagebox_title = $state('');
+  let messagebox_content = $state('');
+
+  // 根据错误数据重新排列
   function sortCandidatesByError(list) {
     return [...list].sort((a, b) => {
       if (!!a.error && !b.error) return -1;
@@ -21,24 +29,18 @@
     });
   }
 
-  // 行内编辑状态
-  let editing_index = $state(-1); // 正在编辑的行索引
-  let editing_id_card = $state(null); // 正在编辑的唯一标识（身份证号）
-  let editing_row = $state(null); // 副本
-
   // 处理编辑按钮点击事件
-  function handleEdit(row, index) {
-    editing_index = index;
-    editing_id_card = row.id_card;
-    editing_row = { ...row }; // 创建副本，避免直接改原数组
+  function handleEdit(row) {
+    editing_row = { ...row }; // 带 serial_number 的副本
   }
 
   // 处理保存编辑按钮点击事件
   function handleSaveEdit() {
     // 校验当前编辑行
-    const validatedRow = validateCandidate(editing_row);
-
-    candidate_list = candidate_list.map((item) => (item.id_card === editing_id_card ? validatedRow : item));
+    const validatedRow = validateRowData(editing_row);
+    candidate_list = candidate_list.map((item) =>
+      item.serial_number === editing_row.serial_number ? validatedRow : item,
+    );
 
     // 重新排序，保证错误数据始终在前
     candidate_list = sortCandidatesByError(candidate_list);
@@ -47,46 +49,64 @@
     success_count = candidate_list.filter((c) => !c.error).length;
     failure_count = candidate_list.filter((c) => c.error).length;
 
-    handleCancelEdit();
+    editing_row = null;
   }
 
   // 处理取消编辑按钮点击事件
   function handleCancelEdit() {
-    editing_index = -1;
-    editing_id_card = null;
     editing_row = null;
   }
 
   // 处理删除按钮点击事件
   function handleDelete(row) {
-    candidate_list = candidate_list.filter((item) => item.id_card !== row.id_card);
-  }
-
-  // 校验参数
-  function validateCandidate(candidate) {
-    let error = '';
-
-    if (!candidate.name || candidate.name.trim() === '') {
-      error += '姓名不能为空 ';
-    }
-    if (!validMobile(candidate.phone)) {
-      error += '手机号不合法 ';
-    }
-    if (!validEmail(candidate.email)) {
-      error += '邮箱不合法 ';
-    }
-    if (!validIdCard(candidate.id_card)) {
-      error += '证件号不合法 ';
-    }
-
-    return { ...candidate, error };
-  }
-
-  onMount(() => {
-    candidate_list = sortCandidatesByError(candidate_list.map(validateCandidate));
+    candidate_list = candidate_list.filter((item) => item.serial_number !== row.serial_number);
     success_count = candidate_list.filter((c) => !c.error).length;
     failure_count = candidate_list.filter((c) => c.error).length;
-  });
+
+    const validated = validateDuplicates(candidate_list);
+    candidate_list = validated.data;
+  }
+
+  // 确认导入按钮点击事件
+  function handleConfirmImport() {
+    // 先跑一遍重复校验，确保 candidate_list 的 error 最新
+    const validated = validateDuplicates(candidate_list);
+    candidate_list = validated.data;
+
+    // 检查是否所有数据都没有错误
+    const allValid = candidate_list.every((item) => !item.error);
+
+    if (allValid) {
+      // 全部正确，返回原 candidate_list
+      closePanel();
+    } else {
+      // 存在错误，只返回正确的数据
+      messagebox_title = '存在错误数据';
+      messagebox_content = '是否只导入正确的报名人员数据？';
+      is_show_messagebox = true;
+    }
+  }
+
+  export function initCandidates() {
+    candidate_list = sortCandidatesByError(candidate_list);
+    success_count = candidate_list.filter((c) => !c.error).length;
+    failure_count = candidate_list.filter((c) => c.error).length;
+  }
+
+  // ---------- 消息提示框：确认/取消 ----------
+  function handleMessageBoxConfirm() {
+    const validData = candidate_list.filter((item) => !item.error);
+    closePanel();
+    messagebox_title = '';
+    messagebox_content = '';
+    is_show_messagebox = false;
+  }
+
+  function handleMessageBoxCancel() {
+    messagebox_title = '';
+    messagebox_content = '';
+    is_show_messagebox = false;
+  }
 </script>
 
 <div class={is_show_import_panel ? 'candidate-panel-container' : 'hide'}>
@@ -134,8 +154,8 @@
                 </td>
               </tr>
             {:else}
-              {#each candidate_list as c, idx (c.id_card)}
-                {#if editing_id_card === c.id_card}
+              {#each candidate_list as c (`row-${c.serial_number}`)}
+                {#if editing_row && editing_row.serial_number === c.serial_number}
                   <!-- 编辑行：用副本 editing_row 渲染输入框 -->
                   <tr class="edit-row">
                     <td><input bind:value={editing_row.name} type="text" /></td>
@@ -155,17 +175,17 @@
                 {:else}
                   <!-- 只读行 -->
                   <tr class={c.error ? 'failed-row' : 'success-row'}>
-                    <td>{c.name}</td>
-                    <td>{c.phone}</td>
-                    <td>{c.email}</td>
-                    <td>{c.gender}</td>
-                    <td>{c.id_card}</td>
-                    <td>{c.id_type}</td>
-                    <td>{c.birth}</td>
-                    <td>{c.address}</td>
+                    <td>{c.name || '--'}</td>
+                    <td>{c.phone || '--'}</td>
+                    <td>{c.email || '--'}</td>
+                    <td>{c.gender || '--'}</td>
+                    <td>{c.id_card || '--'}</td>
+                    <td>{c.id_type || '--'}</td>
+                    <td>{c.birth || '--'}</td>
+                    <td>{c.address || '--'}</td>
                     <td class={c.error ? 'error-text' : ''}>{c.error || '--'}</td>
                     <td class="action-btn-container">
-                      <button class="edit-btn" onclick={() => handleEdit(c, idx)}>编辑</button>
+                      <button class="edit-btn" onclick={() => handleEdit(c)}>编辑</button>
                       <button class="delete-btn" onclick={() => handleDelete(c)}>删除</button>
                     </td>
                   </tr>
@@ -183,10 +203,19 @@
 
     <div class="panel-footer">
       <Button type="primary" plain onclick={closePanel}>取消</Button>
-      <Button type="primary">确认导入</Button>
+      <Button type="primary" onclick={() => handleConfirmImport()}>确认导入</Button>
     </div>
   </div>
 </div>
+
+<!-- 消息提示框 -->
+<MessageBox
+  visible={is_show_messagebox}
+  title={messagebox_title}
+  content={messagebox_content}
+  onConfirm={handleMessageBoxConfirm}
+  onCancel={handleMessageBoxCancel}
+></MessageBox>
 
 <style lang="scss" scoped>
   $normal-font-size: 14px;
@@ -203,7 +232,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
+    z-index: 1000;
   }
 
   /* 弹窗主体 */
@@ -331,6 +360,7 @@
             height: 40px;
             line-height: 40px;
             box-sizing: border-box;
+            border-bottom: 1px solid #e0e0e0;
           }
 
           .empty-row td {
@@ -347,6 +377,7 @@
 
           .error-text {
             color: #ff4d4f;
+            white-space: pre-line;
           }
 
           .failed-row {
