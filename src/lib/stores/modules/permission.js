@@ -207,4 +207,28 @@ export const baseNavItems = writable([
       },
     ],
   },
+  {
+    name: 'exam-site',
+    title: '考点管理',
+    path: '/teacher/exam-site',
+    icon: '/sidebar/nav_icon/exam_site.svg',
+    children_is_parallel: false,
+    children: [
+      {
+        name: 'details',
+        title: '考点详情',
+        path: '/teacher/exam-site/details/\\d+$',
+      },
+      {
+        name: 'edit',
+        title: '考点详情',
+        path: '/teacher/exam-site/edit/\\d+$',
+      },
+      {
+        name: 'edit',
+        title: '考试详情',
+        path: '/teacher/exam-site/room/\\d+$',
+      },
+    ],
+  },
 ]);
