@@ -16,6 +16,7 @@
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
+  import DatePicker from '$lib/components/DatePicker/DatePicker.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Title from '$lib/components/Title/Title.svelte';
@@ -44,6 +45,9 @@
   let show_session_panel = $state(false);
   let examID_to_preview = $state(false);
   let show_preview_popup = $state(false);
+  let date_picker = $state();
+  let start_time = $state();
+  let end_time = $state();
   // 映射关系
   const TypeMap = {
     '00': '平时考试',
@@ -105,8 +109,8 @@
       Filter: {
         Name: search_params.name || '',
         Status: search_params.status || '',
-        // start_time: search_params.start_time ? new Date(search_params.start_time).getTime() : 0,
-        // end_time: search_params.end_time ? new Date(search_params.end_time).getTime() : 0
+        start_time: search_params.start_time ? new Date(search_params.start_time).getTime() : 0,
+        end_time: search_params.end_time ? new Date(search_params.end_time).getTime() : 0
       },
       page: search_params.page,
       pageSize: search_params.page_size,
@@ -154,6 +158,24 @@
   // function toggleMoreActions(index) {
   //     exam_list[index].actionExpanded = !exam_list[index].actionExpanded;
   // }
+
+  function ChooseStartTime() {
+  return function (event) {
+    const startDate = event.detail.date;
+    const timestamp = new Date(startDate).getTime(); 
+    console.log("开始时间戳：", timestamp);
+    search_params.start_time = timestamp; 
+  };
+}
+
+function ChooseEndTime(){
+  return function (event) {
+    const startDate = event.detail.date;
+    const timestamp = new Date(startDate).getTime(); 
+    console.log("结束时间戳：", timestamp);
+    search_params.end_time = timestamp; 
+  };
+}
 
   function onSearchFunc(value) {
     search_params.name = value;
@@ -633,6 +655,18 @@ function handleSelectAll(event) {
         />
       </div>
 
+      <!-- <div class="datePart">
+        <DatePicker
+            bind:this={date_picker}
+            is_time_selection={true}
+            input_width={'330px'}
+            is_single_date_selection={false}
+            on:start_date_selected={ChooseStartTime()}
+            on:end_date_selected={ChooseEndTime()}
+            onDateConfirm={() => searchExam() }
+          ></DatePicker>
+      </div> -->
+
       <div class="filterPart">
         <Select placeholder="全部状态" changeValue={onSelectExamStatus}>
           <Option value="" label="全部状态" />
@@ -645,15 +679,7 @@ function handleSelectAll(event) {
           <Option value="16" label="已作废" />
         </Select>
       </div>
-      <div class="datePart">
-        <!-- <input 
-                    type="text" 
-                    class="search-input"
-                    placeholder="日期筛选"
-                    bind:value={search_params.name}
-                    oninput={(e) => onSearchFunc(e.target.value)}
-                /> -->
-      </div>
+      
     </div>
     <div class="buttonPart">
       <!-- {#if !is_delete_mode}
@@ -841,6 +867,7 @@ function handleSelectAll(event) {
       display: flex;
       justify-content: flex-end;
       padding: 0 40px 0px 0;
+      margin-top: 15px;
     }
   }
 
@@ -850,7 +877,7 @@ function handleSelectAll(event) {
     padding: 33px 37px 40px 37px;
     display: flex;
     flex-direction: column;
-
+    
     .examListTable {
       position: relative;
       font-size: 14px;
