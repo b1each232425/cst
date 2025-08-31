@@ -73,13 +73,13 @@ export default defineConfig({
 		port: 6443,
 		host:'0.0.0.0',
 		proxy:{
-			'/api': "https://e.w2w.io:6443",
+			'/api': "http://localhost:6612",
 			"/api/ws":{
-				target: "ws://e.w2w.io:6443",
+				target: "ws://localhost:6612",
 				ws: true
 			},
 			'/api/time-sync': {
-				target: 'ws://e.w2w.io:6443',
+				target: 'ws://localhost:6612',
 				ws: true,
 			}
 		},
