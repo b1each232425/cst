@@ -3,20 +3,6 @@
   import { goto } from '$app/navigation';
   import { isValidPhoneNumber, parsePhoneNumberWithError } from 'libphonenumber-js';
 
-  const DomainsMap = {
-    'cst.school^superAdmin': '超级管理员',
-    'cst.school^admin': '管理员',
-    'cst.school^teacher': '教师',
-    'cst.school.academicAffair^admin': '教务员',
-    'cst.school^examSupervisor': '监考员',
-    'cst.school^examGrader': '阅卷员',
-    'cst.school.examSite^admin': '考点负责人',
-    'cst.school^scoreChecker': '核分员',
-    'cst.school^student': '学生',
-    'cst.school^student': '学生',
-    'assess.examSite^admin': '考点管理员',
-  };
-
   // 登录页面组件
   let credential = $state('');
   let password = $state('');
@@ -274,7 +260,7 @@
             return;
           case 1:
             // 如果只有一个角色，直接确认选择
-            confirmRoleSelection(myDomains[0]);
+            confirmRoleSelection(myDomains[0].Domain);
             return;
           default:
             // 多个角色时弹出选择框
