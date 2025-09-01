@@ -94,6 +94,7 @@
   // 处理开始日期变化
   function handleStartDateChange(event) {
     start_date = event.detail.date;
+    console.log(start_date);
   }
 
   // 处理终止日期变化
@@ -156,7 +157,6 @@
       addEnrollReq();
       goto('/teacher/enroll');
     }
-    console.log(add_enroll_req());
   }
 
   // 处理取消按钮点击事件

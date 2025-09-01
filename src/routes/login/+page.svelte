@@ -265,7 +265,7 @@
           throw new Error('角色数据格式错误');
         }
 
-        const myDomains = data.data.Domains;
+        const myDomains = data.data.DomainObjects;
         availableRoles = myDomains;
 
         switch (myDomains.length) {
@@ -278,7 +278,7 @@
             return;
           default:
             // 多个角色时弹出选择框
-            selectedRole = myDomains[0]; // 默认选择第一个角色
+            selectedRole = myDomains[0].Domain; // 默认选择第一个角色
             roleSelectVisible = true;
             break;
         }
@@ -504,8 +504,8 @@
         <div class="role-options">
           {#each availableRoles as role (role)}
             <label class="role-option">
-              <input type="radio" bind:group={selectedRole} value={role} name="role" class="role-radio" />
-              <span class="role-label">{DomainsMap[role] || role}</span>
+              <input type="radio" bind:group={selectedRole} value={role.Domain} name="role" class="role-radio" />
+              <span class="role-label">{role.Name}</span>
             </label>
           {/each}
         </div>

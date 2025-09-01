@@ -5,6 +5,7 @@
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
 
   // 考试科目映射
   const SUBJECT_MAP = {
@@ -29,7 +30,7 @@
   let signup_name = $state('');
   let subject = $state('');
   let status = $state('');
-  let page = 1;
+  let current_page = 1;
   let page_size = 10;
 
   // 模拟报名计划数据
@@ -115,9 +116,31 @@
   // 总数据数
   let total_count = signup_list.length;
 
+  // 获取报名计划列表数据
+  function getEnrollData() {
+    fetch(`/api/registration?page=${current_page}&pageSize=${page_size}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // 处理数据
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
   // 分页事件（这里只是示例）
   function handlePageChange(e) {
-    page = e.detail;
+    current_page = e.detail;
   }
   function handlePageSizeChange(e) {
     page_size = e.detail;
@@ -136,6 +159,10 @@
   function handleComfirmMessageBox() {
     is_show_message_box = false;
   }
+
+  onMount(() => {
+    getEnrollData();
+  });
 </script>
 
 <svelte:head>

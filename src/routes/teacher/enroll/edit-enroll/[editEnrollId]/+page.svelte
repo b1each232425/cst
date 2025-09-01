@@ -4,7 +4,13 @@
   import Title from '$lib/components/Title/Title.svelte';
   import PracticeSelectPanel from '../../_components/PracticeSelectPanel.svelte';
   import AuditSelectPanel from '../../_components/AuditSelectPanel.svelte';
+  import divisions from 'china-division/dist/pcas-code.json';
+  import Select from '$lib/components/Select/Select.svelte';
+  import Option from '$lib/components/Select/Option.svelte';
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+
+  const { data } = $props();
 
   let plan_name = $state(''); // 计划名称
   let people_limit = $state('unlimited'); // 是否限制报名人数
@@ -15,9 +21,19 @@
   let deadline = $state(null); // 审核截止时间
   let show_audit_panel = $state(false); // 是否展示选择审核员面板
   let audit_data = $state(null); // 审核员数据
+  let audit_id_data = $state(null); // 审核员id数据
   let show_practice_panel = $state(false); // 是否展示选择练习面板
   let practice_initial_id = $state(null); // 当前选择试卷id
   let practice_data = $state(null); // 试卷数据
+  let detail_exam_location = $state(''); // 考试详细地点
+
+  let date_picker01 = $state(null);
+  let date_picker02 = $state(null);
+
+  // 考试预定地点
+  let exam_plan_location = $derived(() => {
+    return `${province || ''} ${city || ''} ${district || ''} ${detail_exam_location}`.trim();
+  });
 
   // 错误提示内容
   let errors = $state({
@@ -28,7 +44,36 @@
     people_limit: '',
     subjects: '',
     practice: '',
+    exam_plan_location: '',
   });
+
+  // 添加报名计划请求数据
+  let edit_enroll_req = $derived(() => {
+    return {
+      registration: {
+        ID: data.edit_enroll_id,
+        Name: plan_name,
+        StartTime: toTimestamp(start_date),
+        EndTime: toTimestamp(end_date),
+        ReviewEndtime: toTimestamp(deadline),
+        MaxNumber: people_limit === 'limited' ? Number(limited_number) : 0,
+        Course: (function () {
+          if (subjects.theory && subjects.practice) return '00';
+          if (subjects.theory) return '02';
+          if (subjects.practice) return '04';
+          return '';
+        })(),
+        ExamPlanLocation: exam_plan_location(),
+        ReviewerIds: audit_data ? audit_data.map((item) => item.ID) : [],
+      },
+      practice_ids: [practice_initial_id],
+    };
+  });
+
+  // 把时间转化成数字格式
+  function toTimestamp(date) {
+    return date ? Math.floor(new Date(date).getTime() / 1000) : null;
+  }
 
   // 处理选择练习按钮点击事件
   function handlePracticeSelect() {
@@ -65,6 +110,29 @@
     deadline = event.detail.date;
   }
 
+  // 编辑报名计划请求
+  function editEnrollReq() {
+    fetch('/api/registration', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'edit', data: edit_enroll_req() }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log(data);
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
   // 处理保存按钮点击事件
   function handleSave() {
     // 简单的校验示例
@@ -76,6 +144,7 @@
     if (people_limit === 'limited' && !limited_number) {
       errors.people_limit = '请输入限制人数';
     }
+    errors.exam_plan_location = exam_plan_location() ? '' : '请输入考试地点';
     errors.subjects = !subjects.theory && !subjects.practice ? '请至少选择一个考试科目' : '';
     errors.practice = practice_data ? '' : '请选择练习';
 
@@ -88,7 +157,8 @@
       !errors.people_limit &&
       !errors.subjects
     ) {
-      alert('校验通过，提交成功！');
+      editEnrollReq();
+      goto('/teacher/enroll');
     }
   }
 
@@ -96,9 +166,125 @@
   function handleCancle() {
     goto('/teacher/enroll');
   }
+
+  // ====== 处理地址选择 ======
+  const AREA_DATA = divisions.map((p) => ({
+    label: p.name,
+    value: p.code,
+    children:
+      p.children?.map((c) => ({
+        label: c.name,
+        value: c.code,
+        children:
+          c.children?.map((a) => ({
+            label: a.name,
+            value: a.code,
+          })) || [],
+      })) || [],
+  }));
+
+  let province = $state('');
+  let city = $state('');
+  let district = $state('');
+
+  let provinces = AREA_DATA;
+  let cities = $state([]);
+  let districts = $state([]);
+
+  // 当选择省份时，更新城市
+  $effect(() => {
+    if (province) {
+      const selectedProvince = provinces.find((p) => p.label === province);
+      cities = selectedProvince ? selectedProvince.children : [];
+      // city = '';
+      // district = '';
+      // districts = [];
+    }
+  });
+
+  // 当选择城市时，更新区县
+  $effect(() => {
+    if (city) {
+      const selectedCity = cities.find((c) => c.label === city);
+      districts = selectedCity ? selectedCity.children : [];
+      // district = '';
+    }
+  });
+
+  // 查看报名计划信息
+  function getEnrollPlanData() {
+    fetch(`/api/registration?id=${data.edit_enroll_id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((res) => {
+        if (res.status !== 0) {
+          throw new Error(res.msg);
+        }
+
+        let register = res.data.register;
+        let practice_ids = res.data.practice_ids;
+
+        // ====== 把后端数据填充到前端状态 ======
+        plan_name = register.Name || '';
+        people_limit = register.MaxNumber > 0 ? 'limited' : 'unlimited';
+        limited_number = register.MaxNumber || '';
+
+        // 科目：00 = 理论+实践, 02 = 理论, 04 = 实践
+        subjects = {
+          theory: register.Course === '00' || register.Course === '02',
+          practice: register.Course === '00' || register.Course === '04',
+        };
+
+        // ====== 把时间戳转成 Date 对象 ======
+        start_date = register.StartTime ? new Date(register.StartTime) : null;
+        end_date = register.EndTime ? new Date(register.EndTime) : null;
+        deadline = register.ReviewEndTime ? new Date(register.ReviewEndTime) : null;
+
+        // ====== 考试地点（省市区 + 详细地址） ======
+        if (register.ExamPlanLocation) {
+          const parts = register.ExamPlanLocation.split(' ');
+          province = parts[0] || '';
+          city = parts[1] || '';
+          district = parts[2] || '';
+        } else {
+          province = '';
+          city = '';
+          district = '';
+        }
+
+        detail_exam_location = register.ExamPlanLocation || '';
+
+        // 审核员
+        audit_id_data = register.ReviewerIds
+          ? register.ReviewerIds.replace(/{|}/g, '') // 去掉大括号 → "1817,57,71"
+              .split(',') // 分割成数组 → ["1817","57","71"]
+              .filter(Boolean) // 过滤空字符串
+              .map((id) => Number(id)) // 转成数字数组 → [1817, 57, 71]
+          : [];
+
+        // 练习 ID
+        practice_initial_id = practice_ids?.length ? practice_ids[0] : null;
+      })
+      .catch((e) => {
+        console.error('加载报名计划失败:', e);
+      });
+  }
+
+  onMount(async () => {
+    await getEnrollPlanData();
+  });
 </script>
 
-<Title title="创建报名计划"></Title>
+<Title title="编辑报名计划"></Title>
 <div class="create-plan">
   <!-- 计划名称 -->
   <div class="form-row">
@@ -112,9 +298,12 @@
     <div class="label required">计划报名时段：</div>
     <div class="date-picker">
       <DatePicker
+        bind:this={date_picker01}
         is_single_date_selection={false}
         is_time_selection={true}
         input_width={'350px'}
+        initial_start_date={start_date}
+        initial_end_date={end_date}
         on:start_date_selected={handleStartDateChange}
         on:end_date_selected={handleEndDateChange}
       ></DatePicker>
@@ -126,11 +315,63 @@
   <div class="form-row">
     <div class="label required">审核截止时间：</div>
     <div class="date-picker">
-      <DatePicker is_time_selection={true} input_width={'350px'} on:start_date_selected={handleDeadlineChange}
+      <DatePicker
+        bind:this={date_picker02}
+        is_time_selection={true}
+        input_width={'350px'}
+        initial_start_date={deadline}
+        on:start_date_selected={handleDeadlineChange}
       ></DatePicker>
     </div>
   </div>
   <div class="error-text">{errors.audit_deadline}</div>
+
+  <!-- 审核截止时间 -->
+  <div class="form-row">
+    <div class="label required">考试地点：</div>
+    <div class="address">
+      <div class="address-setting">
+        <!-- 省份 -->
+        <div class="select-address-setting">
+          <Select bind:value={province}>
+            <Option value="" label="请选择省" />
+            {#each provinces as p}
+              <Option value={p.label} label={p.label} />
+            {/each}
+          </Select>
+        </div>
+
+        <div class="select-address-setting">
+          <!-- 城市 -->
+          <Select bind:value={city} disabled={!province}>
+            <Option value="" label="请选择市" />
+            {#each cities as c}
+              <Option value={c.label} label={c.label} />
+            {/each}
+          </Select>
+        </div>
+
+        <div class="select-address-setting">
+          <!-- 区县 -->
+          <Select bind:value={district} disabled={!city}>
+            <Option value="" label="请选择区" />
+            {#each districts as d}
+              <Option value={d.label} label={d.label} />
+            {/each}
+          </Select>
+        </div>
+      </div>
+
+      <!-- 详细地址输入 -->
+      <input
+        bind:value={detail_exam_location}
+        type="text"
+        class="detail-address-input"
+        placeholder="请输入详细地址（如街道、门牌号）"
+      />
+    </div>
+  </div>
+  <div class="error-text">{errors.exam_plan_location}</div>
 
   <!-- 审核员 -->
   <div class="form-row">
@@ -146,8 +387,8 @@
         <div class="selected-audit-display">
           <div class="audit-info-container">
             <div class="audit-info-row">
-              <span class="audit-name" title={audit_data.audit_list.map((a) => a.name).join('、')}>
-                {audit_data.audit_list.map((a) => a.name).join('、')}
+              <span class="audit-name" title={audit_data.map((a) => a.OfficialName).join('、')}>
+                {audit_data.map((a) => a.OfficialName).join('、')}
               </span>
             </div>
           </div>
@@ -221,7 +462,7 @@
 
   <!-- 底部按钮 -->
   <div class="form-actions">
-    <button class="btn-cancel" onclick={handleCancle}>取消</button>
+    <button class="btn-cancel" onclick={handleCancle} data-testid="btn-cancel">取消</button>
     <button class="btn-save" onclick={handleSave}>保存</button>
   </div>
 </div>
@@ -239,7 +480,7 @@
   .create-plan {
     width: 800px;
     margin: 10px auto;
-    padding: 24px;
+    padding: 0px 24px 10px 24px;
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -247,8 +488,8 @@
 
   .form-row {
     display: flex;
-    align-items: center;
-    margin: 20px 0 6px 0;
+    align-items: start;
+    margin: 15px 0 6px 0;
 
     .selected-audit-display {
       display: flex;
@@ -336,6 +577,33 @@
         }
       }
     }
+
+    .address {
+      margin-left: 8px;
+
+      .address-setting {
+        display: flex;
+        gap: 12px; /* 下拉框之间的间距 */
+        margin-bottom: 8px;
+      }
+
+      .select-address-setting {
+        width: 110px;
+      }
+
+      .detail-address-input {
+        width: 100%;
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+        outline: none;
+      }
+
+      .detail-address-input:focus {
+        border-color: #409eff;
+      }
+    }
   }
 
   .label {
@@ -365,6 +633,7 @@
 
   .input-box-small {
     width: 130px;
+    height: 15px;
     padding: 6px;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -386,7 +655,7 @@
   .options {
     display: flex;
     gap: 16px;
-    align-items: center;
+    padding-top: 2px;
     margin-left: 4px;
 
     label {
@@ -414,7 +683,7 @@
   .form-actions {
     display: flex;
     justify-content: flex-start;
-    margin-top: 30px;
+    margin-top: 20px;
     margin-left: 220px;
     gap: 200px;
   }

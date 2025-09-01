@@ -9,11 +9,13 @@
   import { validMobile, validEmail, validIdCard } from '$lib/utils/validate';
   import { validateRowData, validateDuplicates } from '../_utils/handleFileInput';
 
-  let { is_show_import_panel, candidate_list = [], closePanel = () => {} } = $props();
+  let { enroll_id = 0, is_show_import_panel, candidate_list = [], closePanel = () => {} } = $props();
 
   let success_count = $state(0); // 成功识别条数
   let failure_count = $state(0); // 失败识别条数
   let editing_row = $state(null); // 当前编辑行副本
+
+  let import_req_data = $state({ register_id: enroll_id, student: [] });
 
   // 消息提示框数据
   let is_show_messagebox = $state(false);
@@ -63,22 +65,75 @@
     success_count = candidate_list.filter((c) => !c.error).length;
     failure_count = candidate_list.filter((c) => c.error).length;
 
-    const validated = validateDuplicates(candidate_list);
+    let validated = validateDuplicates(candidate_list);
     candidate_list = validated.data;
   }
 
+  // 查询考生信息
+  async function searchStudentData(name) {
+    try {
+      const response = await fetch(`/api/user?page=1&pageSize=10&fuzzyCondition=${name}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('网络错误');
+      }
+
+      const res = await response.json();
+
+      if (Array.isArray(res.data)) {
+        const students = res.data.map((item) => ({
+          student_id: item.ID,
+          exam_type: '00',
+        }));
+        import_req_data.student.push(...students);
+      }
+    } catch (err) {
+      console.error('Fetch users error:', err);
+    }
+  }
+
+  // 导入考生信息
+  function importStudentData(data) {
+    fetch('/api/registrationStudent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data: data }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log(data);
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
   // 确认导入按钮点击事件
-  function handleConfirmImport() {
+  async function handleConfirmImport() {
     // 先跑一遍重复校验，确保 candidate_list 的 error 最新
-    const validated = validateDuplicates(candidate_list);
+    let validated = validateDuplicates(candidate_list);
     candidate_list = validated.data;
 
     // 检查是否所有数据都没有错误
-    const allValid = candidate_list.every((item) => !item.error);
+    let all_valid = candidate_list.every((item) => !item.error);
 
-    if (allValid) {
+    if (all_valid) {
       // 全部正确，返回原 candidate_list
-      closePanel();
+      await Promise.all(candidate_list.map((item) => searchStudentData(item.name)));
+
+      importStudentData(import_req_data);
+      // closePanel();
     } else {
       // 存在错误，只返回正确的数据
       messagebox_title = '存在错误数据';
@@ -95,7 +150,7 @@
 
   // ---------- 消息提示框：确认/取消 ----------
   function handleMessageBoxConfirm() {
-    const validData = candidate_list.filter((item) => !item.error);
+    let valid_data = candidate_list.filter((item) => !item.error);
     closePanel();
     messagebox_title = '';
     messagebox_content = '';
