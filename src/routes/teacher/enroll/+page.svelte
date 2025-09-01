@@ -8,54 +8,10 @@
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
   import { isTemplateMiddle } from 'typescript';
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
 
   // 模拟数据
-  let enroll_list = $state([
-    {
-      id: 1,
-      name: '2025年春季考试报名',
-      subject: '数学',
-      currentNum: 35,
-      planNum: 50,
-      auditDeadline: '2025-03-15 00:00:00',
-      duration: '2025-04-01 00:00:00 ~ 2025-04-10 00:00:00',
-      practice: '模拟练习一',
-      status: '已发布',
-    },
-    {
-      id: 2,
-      name: '2025年英语四级报名',
-      subject: '英语',
-      currentNum: 120,
-      planNum: 150,
-      auditDeadline: '2025-05-20 00:00:00',
-      duration: '2025-06-01 00:00:00 ~ 2025-06-02 00:00:00',
-      practice: '英语专项训练',
-      status: '未发布',
-    },
-    {
-      id: 3,
-      name: '2024年英语六级报名',
-      subject: '英语',
-      currentNum: 120,
-      planNum: 150,
-      auditDeadline: '2025-05-20 00:00:00',
-      duration: '2024-06-01 00:00:00 ~ 2024-06-02 00:00:00',
-      practice: '英语专项训练',
-      status: '已作废',
-    },
-    {
-      id: 4,
-      name: '2024年英语六级报名',
-      subject: '英语',
-      currentNum: 120,
-      planNum: 150,
-      auditDeadline: '2025-05-20 00:00:00',
-      duration: '2024-06-01 00:00:00 ~ 2024-06-02 00:00:00',
-      practice: '英语专项训练',
-      status: '审核截止',
-    },
-  ]);
+  let enroll_list = $state([]);
 
   // 计划状态
   let plan_status = $state('全部');
@@ -78,6 +34,107 @@
   let messagebox_title = $state('');
   let messagebox_content = $state('');
 
+  let current_page = $state(1); // 当前页数
+  let page_size = $state(10); // 当前页面大小
+
+  // ---------------- 映射表 ----------------
+  const COURSE_MAP = {
+    '00': '理论、实操',
+    '02': '理论',
+    '04': '实操',
+  };
+
+  const STATUS_MAP = {
+    '00': '已发布',
+    '02': '未发布',
+    '04': '已结束',
+    '06': '审核截止',
+    '08': '已作废',
+    '10': '已删除',
+    '12': '已取消',
+  };
+
+  // 格式化时间
+  function formatDate(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const pad = (n) => (n < 10 ? '0' + n : n);
+    return (
+      date.getFullYear() +
+      '-' +
+      pad(date.getMonth() + 1) +
+      '-' +
+      pad(date.getDate()) +
+      ' ' +
+      pad(date.getHours()) +
+      ':' +
+      pad(date.getMinutes()) +
+      ':' +
+      pad(date.getSeconds())
+    );
+  }
+
+  // 获取报名列表数据
+  function getEnrollData() {
+    fetch(`/api/registration?page=${current_page}&pageSize=${page_size}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // 处理数据
+        enroll_list = data.data.registers.map((item) => {
+          const r = item.register;
+          return {
+            ...item,
+            register: {
+              ...r,
+              CourseText: COURSE_MAP[r.Course] || r.Course,
+              StatusText: STATUS_MAP[r.Status] || r.Status,
+              ReviewEndTimeText: formatDate(r.ReviewEndTime),
+              StartTimeText: formatDate(r.StartTime),
+              EndTimeText: formatDate(r.EndTime),
+            },
+          };
+        });
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
+  // 发布/作废/删除报名计划请求
+  function handleEnrollReq(id, status) {
+    fetch(`/api/registration?ids=${id}&status=${status}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // 处理数据
+        if (data.status === 0) {
+          getEnrollData();
+        }
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
   // 处理创建报名计划按钮点击事件
   function handleNewEnroll() {
     goto('/teacher/enroll/add-enroll');
@@ -93,6 +150,7 @@
     goto(`/teacher/enroll/see-enroll/${id}`);
   }
 
+  // ---------- 发布 ----------
   // 处理表格发布按钮点击事件
   function handlePublic(id) {
     select_public_id = id;
@@ -114,10 +172,12 @@
   // 批量作废
   function handleBatchRepeal() {
     if (select_repeal_id.length === 0) return;
+
     const validIds = select_repeal_id.filter((id) => {
-      const item = enroll_list.find((i) => i.id === id);
-      return item && (item.status === '未发布' || item.status === '已发布');
+      const item = enroll_list.find((i) => i.register.ID === id);
+      return item && item.register.Status === '00';
     });
+
     if (validIds.length !== select_repeal_id.length) {
       messagebox_title = '部分选择无效';
       messagebox_content = `你选择的 ${select_repeal_id.length} 条数据中，有 ${select_repeal_id.length - validIds.length} 条不符合作废条件。\n是否继续作废合法的 ${validIds.length} 条？`;
@@ -145,8 +205,8 @@
     if (select_delete_id.length === 0) return;
 
     const validIds = select_delete_id.filter((id) => {
-      const item = enroll_list.find((i) => i.id === id);
-      return item && item.status === '未发布';
+      const item = enroll_list.find((i) => i.register.ID === id);
+      return item && item.register.Status === '02';
     });
 
     if (validIds.length !== select_delete_id.length) {
@@ -165,8 +225,8 @@
   // ---------- 全选/取消全选 ----------
   function handleSelectAll(e) {
     if (e.target.checked) {
-      select_delete_id = enroll_list.map((item) => item.id);
-      select_repeal_id = enroll_list.map((item) => item.id);
+      select_delete_id = enroll_list.map((item) => item.register.ID);
+      select_repeal_id = enroll_list.map((item) => item.register.ID);
     } else {
       select_delete_id = [];
       select_repeal_id = [];
@@ -177,22 +237,23 @@
     return select_delete_id.includes(id) || select_repeal_id.includes(id);
   }
 
-  // ---------- 确认/取消 ----------
-  function handleMessageBoxConfirm() {
+  // ---------- 消息提示框确认/取消 ----------
+  async function handleMessageBoxConfirm() {
     if (current_action === 'public') {
-      enroll_list = enroll_list.map((item) => (item.id === select_public_id ? { ...item, status: '已发布' } : item));
+      handleEnrollReq(select_public_id, '00');
+      select_public_id = null;
     }
 
     if (current_action === 'delete' && select_delete_id.length > 0) {
-      enroll_list = enroll_list.filter((item) => !select_delete_id.includes(item.id));
+      await Promise.all(select_delete_id.map((id) => handleEnrollReq(id, '10')));
+
       select_delete_id = [];
       select_repeal_id = [];
     }
 
     if (current_action === 'repeal' && select_repeal_id.length > 0) {
-      enroll_list = enroll_list.map((item) =>
-        select_repeal_id.includes(item.id) ? { ...item, status: '已作废' } : item,
-      );
+      await Promise.all(select_repeal_id.map((id) => handleEnrollReq(id, '08')));
+
       select_delete_id = [];
       select_repeal_id = [];
     }
@@ -210,6 +271,20 @@
     messagebox_content = '';
     is_show_messagebox = false;
   }
+
+  // 父组件控制分页器的行为
+  function handlePageChange(event) {
+    current_page = event.detail;
+    getEnrollData();
+  }
+
+  function handlePageSizeChange(event) {
+    page_size = event.detail;
+  }
+
+  onMount(() => {
+    getEnrollData();
+  });
 </script>
 
 <div class="enroll-management">
@@ -282,48 +357,53 @@
                   ><input
                     type="checkbox"
                     class="checkbox"
-                    checked={isChecked(item.id)}
+                    checked={isChecked(item.register.ID)}
                     onchange={(e) => {
                       if (e.target.checked) {
                         // 勾选时两个数组都放
-                        select_delete_id = [...new Set([...select_delete_id, item.id])];
-                        select_repeal_id = [...new Set([...select_repeal_id, item.id])];
+                        select_delete_id = [...new Set([...select_delete_id, item.register.ID])];
+                        select_repeal_id = [...new Set([...select_repeal_id, item.register.ID])];
                       } else {
-                        select_delete_id = select_delete_id.filter((id) => id !== item.id);
-                        select_repeal_id = select_repeal_id.filter((id) => id !== item.id);
+                        select_delete_id = select_delete_id.filter((id) => id !== item.register.ID);
+                        select_repeal_id = select_repeal_id.filter((id) => id !== item.register.ID);
                       }
                     }}
                   /></td
                 >
-                <td>{item.name}</td>
-                <td>{item.subject}</td>
-                <td>{item.currentNum}/{item.planNum}</td>
-                <td>{item.auditDeadline}</td>
-                <td>{item.duration}</td>
-                <td>{item.practice}</td>
+                <td>{item.register.Name ? item.register.Name : '--'}</td>
+                <td>{item.register.CourseText ? item.register.CourseText : '--'}</td>
+                <td>{item.studentCount}/{item.register.MaxNumber ? item.register.MaxNumber : '∞'}</td>
+                <td>{item.register.ReviewEndTimeText ? item.register.ReviewEndTimeText : '--'}</td>
+                <td
+                  >{item.register.StartTimeText ? item.register.StartTimeText : '--'} ~ {item.register.EndTimeText
+                    ? item.register.EndTimeText
+                    : '--'}</td
+                >
+                <td>{item.practiceName ? item.practiceName : '--'}</td>
                 <td>
                   <span
-                    class="Status-tag {item.status === '已发布'
+                    class="Status-tag {item.register.StatusText === '已发布'
                       ? 'published'
-                      : item.status === '未发布'
+                      : item.register.StatusText === '未发布'
                         ? 'unpublished'
                         : 'invalidated'}"
                   >
-                    {item.status}
+                    {item.register.StatusText ? item.register.StatusText : '--'}
                   </span>
                 </td>
+
                 <td>
-                  {#if item.status === '未发布'}
-                    <button class="op-btn" onclick={() => handlePublic(item.id)}>发布</button>
-                    <button class="op-btn" onclick={() => handleEdit(item.id)}>编辑</button>
-                    <button class="de-btn" onclick={() => handleDelete(item.id)}>删除</button>
-                  {:else if item.status === '已发布'}
-                    <button class="op-btn" onclick={() => handleSeeStudent(item.id)}>查看考生</button>
-                    <button class="op-btn" onclick={() => handleEdit(item.id)}>编辑</button>
-                    <button class="de-btn" onclick={() => handleRepeal(item.id)}>作废</button>
-                  {:else if item.status === '已作废'}
-                    ----
-                  {:else if item.status === '审核截止'}
+                  {#if item.register.StatusText === '未发布'}
+                    <button class="op-btn" onclick={() => handlePublic(item.register.ID)}>发布</button>
+                    <button class="op-btn" onclick={() => handleEdit(item.register.ID)}>编辑</button>
+                    <button class="de-btn" onclick={() => handleDelete(item.register.ID)}>删除</button>
+                  {:else if item.register.StatusText === '已发布'}
+                    <button class="op-btn" onclick={() => handleSeeStudent(item.register.ID)}>查看考生</button>
+                    <button class="op-btn" onclick={() => handleEdit(item.register.ID)}>编辑</button>
+                    <button class="de-btn" onclick={() => handleRepeal(item.register.ID)}>作废</button>
+                  {:else if item.register.StatusText === '已作废'}
+                    --
+                  {:else if item.register.StatusText === '审核截止'}
                     <button class="op-btn">查看考生</button>
                   {/if}
                 </td>
@@ -343,7 +423,11 @@
     </div>
 
     <div class="pagination-container">
-      <Pagination total_items={200} />
+      <Pagination
+        on:pageChange={handlePageChange}
+        on:pageSizeChange={handlePageSizeChange}
+        total_items={enroll_list.length}
+      />
     </div>
   </div>
 </div>

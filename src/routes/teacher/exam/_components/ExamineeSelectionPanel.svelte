@@ -681,12 +681,13 @@ function handleCheckboxChange(examinee, event) {
     justify-content: center;
     align-items: center;
     z-index: 2000;
+    
   }
 
   .examinee-panel {
     width: 1000px;
     min-width: 800px;
-    height: 75vh;
+    max-height: 90vh;
     overflow-y: auto;
     background-color: white;
     display: flex;

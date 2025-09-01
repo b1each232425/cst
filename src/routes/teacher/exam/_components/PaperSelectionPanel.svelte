@@ -518,11 +518,11 @@
   }
 
   .paper-selection-panel {
-    //margin-left: 100px;
+    margin-left: 100px;
     justify-content: center;
-    width: 60%;
+    width: 75%;
     min-width: 900px;
-    height: 85vh;
+    max-height: 90vh;
     overflow-y: auto;
     background-color: white;
     display: flex;
@@ -530,28 +530,30 @@
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     z-index: 1001;
-    @media (max-width: 1440px) {
-      width: 75%;
-      min-width: 800px;
-      height: 85vh;
-      // margin-right: 30%;
-    }
+     
 
-    @media (max-width: 768px) {
-      width: 75%;
-      min-width: 320px;
-      max-height: 80vh;
-      height: 70vh;
-      //margin: 0 auto;
-    }
+  //   @media (max-width: 480px) {
+  //     width: 88%;
+  //     height: 95vh;
+  //     max-height: 95vh;
+  //     border-radius: 8px;
+  //    // margin-left:0%;
+  //   }
 
-    @media (max-width: 480px) {
-      width: 88%;
-      height: 95vh;
-      max-height: 95vh;
-      border-radius: 8px;
-     // margin-left:0%;
-    }
+  //   @media (max-width: 1440px) {
+  //     width: 80%;
+  //     min-width: 800px;
+  //     height: 85vh;
+  //     // margin-right: 30%;
+  //   }
+
+  //  @media (max-width: 1200px) {
+  //     width: 75%;
+  //     min-width: 320px;
+  //     max-height: 80vh;
+  //     height: 70vh;
+  //     //margin: 0 auto;
+  //   }
   }
 
   .panel-header {

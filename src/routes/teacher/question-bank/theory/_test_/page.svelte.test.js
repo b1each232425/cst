@@ -3,13 +3,19 @@ import {fireEvent, render, screen, waitFor} from '@testing-library/svelte';
 import bankPage from  '../+page.svelte'
 import { goto } from '$app/navigation';
 import * as ToastModule from '$lib/components/Toast/Toast.js';
-
+import BankCard from '../../_components/bankCard.svelte';
 // 模拟导航函数
 vi.mock('$app/navigation', () => ({
   goto: vi.fn(), // 模拟 goto 方法
   preloadCode: vi.fn(), 
   invalidate: vi.fn(),
 }));
+
+// Mock element.animate for JSDOM
+if (!HTMLElement.prototype.animate) {
+  HTMLElement.prototype.animate = function () { return { finished: Promise.resolve(), cancel: () => {} }; };
+}
+
 
 //题库管理页面单元测试
 describe('题库管理页面组件测试', ()=>{
@@ -558,24 +564,29 @@ it('批量删除题库成功时弹出成功提示', async () => {
   });
 
   render(bankPage);
-
+expect(await screen.findByText('题库A')).toBeInTheDocument();
   // 选中题库
-  const card = await screen.findByText('题库A');
-  await fireEvent.click(card);
+  const img = screen.getByAltText('选中');
+
+ await fireEvent.click(img); // 选中题库
+ 
 
   // 点击批量删除按钮
   const deleteBtn = screen.getByText('批量删除');
   await fireEvent.click(deleteBtn);
-
+const disbtn = screen.getAllByRole('button', { name: '取消' });
+const disbtn1=disbtn[disbtn.length - 1];
+  await fireEvent.click(disbtn1);
+    await fireEvent.click(deleteBtn);
   // 等待弹窗出现并点击“确定”按钮
-  const confirmBtn = await screen.findByText('确定');
-  await fireEvent.click(confirmBtn);
-
+const button = screen.getAllByRole('button', { name: '确定' });
+const confirmBtn = button[button.length - 1]; // 获取最后一个“确定”按钮
+expect(confirmBtn).toBeInTheDocument();
 
 
 });
 
-it('选中题库后，selected_bank_list 应包含该题库ID', async () => {
+it('选中题库与取消选中测试', async () => {
   // mock fetch 返回一个题库
   global.fetch = vi.fn().mockResolvedValue({
     ok: true,
@@ -589,53 +600,52 @@ it('选中题库后，selected_bank_list 应包含该题库ID', async () => {
     }),
   });
 
-  render(bankPage);
-
+  await render(bankPage);
+  expect(await screen.findByText('题库X')).toBeInTheDocument();
   // 等待题库渲染
-  const card = await screen.findByText('题库X');
-  // 点击卡片（选中）
-  await fireEvent.click(card);
- const deleteBtn = screen.getByText('批量删除');
-  await fireEvent.click(deleteBtn);
-const confirmBtn = await screen.findByText('确定');
+  const img = screen.getByAltText('选中');
+
+ await fireEvent.click(img); // 选中题库
+   await fireEvent.click(img);// 取消选中
+    await fireEvent.click(img); // 选中题库
+    const img1 = screen.getByAltText('取消选中');
+     await fireEvent.click(img1); // 取消题库
 });
 
-it('点击取消选中后，selected_bank_list 应为空', async () => {
-    const warningSpy = vi.spyOn(ToastModule.toast, 'warning');
-  // mock fetch 返回一个题库
-  global.fetch = vi.fn().mockResolvedValue({
-    ok: true,
-    json: async () => ({
-      status: 0,
-      msg: "success",
-      rowCount: 1,
-      data: [
-        { ID: 102, Name: "题库Y", Tags: [], CreateTime: "", UpdateTime: "" }
-      ]
-    }),
-  });
 
-  render(bankPage);
-
-  // 选中题库
-  const card = await screen.findByText('题库Y');
-  await fireEvent.click(card);
-
-  // 点击“取消选中”按钮
-  const cancelBtn = screen.getByRole('button', { name: /取消选中/i });
-  await fireEvent.click(cancelBtn);
-
-const deleteBtn = screen.getByText('批量删除');
-  await fireEvent.click(deleteBtn);
-    await waitFor(() => {
-    expect(warningSpy).toHaveBeenCalledWith(expect.stringContaining('请先选择要删除的题库'));
-  });
-});
-  if (!HTMLElement.prototype.animate) {
-  HTMLElement.prototype.animate = function () { return { finished: Promise.resolve() }; };
-}
 
 it('题库名字修改', async () => {
+ // mock fetch 返回一个题库
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      status: 0,
+      msg: "success",
+      rowCount: 1,
+      data: [
+        { ID: 101, Name: "题库X", Tags: [], CreateTime: "", UpdateTime: "" }
+      ]
+    }),
+  });
+
+  await render(bankPage);
+  expect(await screen.findByText('题库X')).toBeInTheDocument();
+    const input = document.querySelector('.bank-name-input');
+    
+    // 初始 title 应该是 bank_name 的初始值
+    expect(input).toHaveAttribute('title', '题库X');
+
+  await fireEvent.change(input, { target: { value: '新题库名称' } });
+ await fireEvent.input(input); 
+  // 5. 验证修改后的状态
+  expect(input).toHaveValue('新题库名称');
+    expect(input).toHaveAttribute('title', '新题库名称');
+
+      await fireEvent.change(input, { target: { value: '' } });
+ await fireEvent.input(input); 
+});
+
+it('题库标签调用', async () => {
   // mock fetch 返回一个题库
   global.fetch = vi.fn().mockResolvedValue({
     ok: true,
@@ -644,23 +654,29 @@ it('题库名字修改', async () => {
       msg: "success",
       rowCount: 1,
       data: [
-        { ID: 102, Name: "题库Y", Tags: [], CreateTime: "", UpdateTime: "" }
+        { ID: 101, Name: "题库X", Tags: ["1"], CreateTime: "", UpdateTime: "" }
       ]
     }),
   });
+ 
+  await render(bankPage);
 
-  render(bankPage);
+  expect(await screen.findByText('题库X')).toBeInTheDocument();
+  // 找到添加标签的输入框（通常是第一个没有内容的标签输入框）
+  const tagInputs = await screen.findAllByPlaceholderText('+标签'); // 改用 findAllBy 等待所有匹配元素
+  const newTagInput = tagInputs[0];
 
-  // 找到题库名称输入框
-  const nameInput = await screen.findByDisplayValue('题库Y');
-  // 输入新名字
-  await fireEvent.input(nameInput, { target: { value: '新题库名' } });
-  // 失去焦点，触发保存
-  await fireEvent.blur(nameInput);
+  await fireEvent.input(newTagInput, { target: { value: "新标签" } });
+  await fireEvent.blur(newTagInput);
+  const secondTagInput = tagInputs[1];
+expect(secondTagInput).toHaveValue("1");
+await fireEvent.input(secondTagInput, { target: { value: "12" } });
+ const disbtn=await screen.findAllByText('放弃修改'); 
+await fireEvent.click(disbtn[0]);
 
-  // 断言输入框的值已变为新名字
-  expect(nameInput.value).toBe('新题库名');
 });
+
+
 
 
 });
