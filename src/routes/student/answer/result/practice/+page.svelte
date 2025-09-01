@@ -3,7 +3,7 @@
    * @Author: 彭海峰 1614818457@qq.com
    * @Date: 2025-08-8 10:56:09
  * @LastEditors: lly 3102128343@qq.com
- * @LastEditTime: 2025-08-29 11:57:42
+ * @LastEditTime: 2025-08-31 14:38:31
    * @FilePath: \src\routes\student\answer\result\exam\+page@.svelte
    * @Description:
    */
@@ -19,6 +19,8 @@
   import ScoreBadge from '../../_component/QuestionCheck/ScoreBadge.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
   import Switch from '$lib/components/Switch/Switch.svelte';
+  import { goto } from '$app/navigation';
+  
 
   /**
    * @property {string} icon_src -操作提示图标地址
