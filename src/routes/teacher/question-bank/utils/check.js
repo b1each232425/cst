@@ -1494,7 +1494,7 @@ export async function checkData(file) {
  * @param {Object} jsonData - 输入的JSON数据
  * @returns {Array} 解析后的题目数组
  */
-export function parseQuestionData(jsonData) {
+export function parseQuestionData(jsonData, baseId) {
   let result = [];
 
   // 题型映射表
@@ -1601,7 +1601,7 @@ export function parseQuestionData(jsonData) {
 }
       // 构建结果对象
       const questionObj = {
-        id: index, // 基础ID + 索引
+        id: index+baseId, // 基础ID + 索引
         order: order,
         content: content,
         type: type,

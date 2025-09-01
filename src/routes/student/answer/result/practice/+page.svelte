@@ -2,8 +2,8 @@
   /*
    * @Author: 彭海峰 1614818457@qq.com
    * @Date: 2025-08-8 10:56:09
-   * @LastEditors: 彭海峰 1614818457@qq.com
-   * @LastEditTime: 2025-08-08 09:41:12
+ * @LastEditors: lly 3102128343@qq.com
+ * @LastEditTime: 2025-08-31 14:38:31
    * @FilePath: \src\routes\student\answer\result\exam\+page@.svelte
    * @Description:
    */
@@ -19,6 +19,8 @@
   import ScoreBadge from '../../_component/QuestionCheck/ScoreBadge.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
   import Switch from '$lib/components/Switch/Switch.svelte';
+  import { goto } from '$app/navigation';
+  
 
   /**
    * @property {string} icon_src -操作提示图标地址
@@ -434,6 +436,11 @@
 
 
   });
+  //开启错题练习
+  function startPracticeError() {
+   //传给作答界面
+    goto(`/student/answer/practice?practice-id=${practice_id}`);
+  }
 </script>
 
 <svelte:head>
@@ -462,6 +469,11 @@
            >
       </div>
       <div class="exam-title">{practice_paper_info.Name}</div>
+      <div class="exam-header-right"> 
+        <button class="error-collection-button" onclick={startPracticeError}>
+          错题练习
+        </button>
+      </div>
     </div>
     <!-- 考试主体布局 -->
     <div class="exam-content">
@@ -1211,5 +1223,26 @@
     .rank-score-user {
       font-size: 12px;
     }
+  }
+    .exam-header-right {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    right: 7px;
+    z-index: 1001; /* 确保在其他元素之上 */
+    min-width: 85px; /* 设置最小宽度 */
+  }
+   .error-collection-button {
+    all: unset;
+    width: 70px;
+    height: 35px;
+    text-align: center;
+    background-color: #0052d9;
+    color: white;
+    cursor: pointer;
+    display: inline-block;
+    line-height: 12.5px;
+    border-radius: 5px;
   }
 </style>

@@ -4,7 +4,6 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/sve
 import { goto } from '$app/navigation';
 import { toast } from '$lib/components/Toast/Toast.js';
 import PracticeList  from '../+page.svelte';
-import { json } from '@sveltejs/kit';
 
 // Mock 依赖模块
 vi.mock('$app/navigation', () => ({
@@ -209,7 +208,7 @@ const setup = (mockDataOverride = {}) => {
     },
     triggerCancelPublish:async()=>{
       const cancelButton = screen.getAllByText('作废');
-  await fireEvent.click(cancelButton[0]);
+  await fireEvent.click(cancelButton[1]);
   
   // 等待确认对话框出现
   
@@ -435,7 +434,7 @@ const table = screen.getAllByRole('table');
     setup();
     
     const publishButtons = screen.getAllByText('发布');
-    await fireEvent.click(publishButtons[0]);
+    await fireEvent.click(publishButtons[1]);
     
     expect(screen.getByText('请问是否要发布练习？')).toBeInTheDocument();
   });
@@ -453,7 +452,7 @@ const table = screen.getAllByRole('table');
     setup();
     
     const unpublishButtons = screen.getAllByText('作废');
-    await fireEvent.click(unpublishButtons[0]);
+    await fireEvent.click(unpublishButtons[1]);
     
     expect(screen.getByText('请问是否要取消发布练习？')).toBeInTheDocument();
   });
@@ -467,13 +466,13 @@ const table = screen.getAllByRole('table');
     
     expect(screen.getByText('暂无练习数据')).toBeInTheDocument();
   });
-
+  
   it('应正确显示学生人数和作答次数', () => {
     setup();
     
     // 检查学生人数显示
     MOCK_TRANSFORMED_PRACTICES.forEach(practice => {
-      expect(screen.getByText(practice.student_count.toString())).toBeInTheDocument();
+      expect(screen.getAllByText(practice.student_count.toString())[0]).toBeInTheDocument();
     });
     
     // 检查作答次数显示
@@ -573,8 +572,8 @@ it('确认取消发布练习应正确调用API并更新状态', async () => {
 
 
   // 打开取消发布确认对话框
-  const unpublishButtons = screen.getAllByText('取消发布');
-  await fireEvent.click(unpublishButtons[0]);
+  const unpublishButtons = screen.getAllByText('作废');
+  await fireEvent.click(unpublishButtons[1]);
 
   // 确认取消发布
   const confirmButton = screen.getAllByText('确定');
@@ -586,7 +585,7 @@ it('确认取消发布练习应正确调用API并更新状态', async () => {
   });
 
   // 验证练习状态是否更新
-  expect(screen.getAllByText('未发布')[0]).toBeInTheDocument();
+  expect(screen.getAllByText('已作废')[0]).toBeInTheDocument();
 });
 
 });
@@ -745,38 +744,39 @@ describe('通过类型下拉框来筛选练习',(()=>{
     })
     it('没有选择练习',(async()=>{
    setup();
-   const cancelButton = screen.getAllByText('取消发布');
+   const cancelButton = screen.getAllByText('作废');
    await fireEvent.click(cancelButton[0]);
 
    await waitFor(()=>{
-     expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('请选择要取消发布的练习'));
+     expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('请选择要作废的练习'));
    })
     }))
 
     it('取消取消发布练习',(async()=>{
       setup();
-      const cancelPublishButton = screen.getAllByText('取消发布');
-      await fireEvent.click(cancelPublishButton[0]);
+      const cancelPublishButton = screen.getAllByText('作废');
+      await fireEvent.click(cancelPublishButton[1]);
       await waitFor(()=>{
-        expect(screen.getByText('请问是否要取消发布练习？')).toBeInTheDocument();
+        expect(screen.getByText('请问是否要作废练习？')).toBeInTheDocument();
       })
       const cancelButton = screen.getAllByText('取消');
       await fireEvent.click(cancelButton[0]);
       await waitFor(()=>{
-        expect(screen.queryByText('请问是否要取消发布练习？')).not.toBeInTheDocument();
+        expect(screen.queryByText('请问是否要作废练习？')).not.toBeInTheDocument();
       })
 
     }))
 
     it('确认取消发布练习',(async()=>{
       setup();
-      const cancelButton = screen.getAllByText('取消发布');
-  await fireEvent.click(cancelButton[0]);
+      const cancelButton = screen.getAllByText('作废');
+  await fireEvent.click(cancelButton[1]);
   
   // 等待确认对话框出现
   
-    expect(screen.getByText('请问是否要取消发布练习？')).toBeInTheDocument();
- 
+     await waitFor(()=>{
+        expect(screen.getByText('请问是否要作废练习？')).toBeInTheDocument();
+      })
   const comBtn = screen.getAllByText('确定');
   await fireEvent.click(comBtn[0]);
     }))
@@ -786,11 +786,11 @@ describe('通过类型下拉框来筛选练习',(()=>{
       global.fetch.mockResolvedValueOnce({
         ok:false,
         text:async()=>
-          '取消发布失败'
+          '作废失败'
       })
       triggerCancelPublish();
     await waitFor(()=>{
- expect(toast.error).toBeCalledWith('取消发布失败');
+ expect(toast.error).toBeCalledWith('作废失败');
     }) 
 
     }))
@@ -804,7 +804,7 @@ describe('通过类型下拉框来筛选练习',(()=>{
       })
       triggerCancelPublish();
     await waitFor(()=>{
-      expect(toast.error).toBeCalledWith('取消发布练习失败');
+      expect(toast.error).toBeCalledWith('作废练习失败');
     })  
     }))
   }))

@@ -221,7 +221,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 					placeholder="在此输入题库名称"
 					bind:value={bank_name}
 					onchange={() => {
-						normal_handle_funcs?.name_input_onchange?.(
+						normal_handle_funcs?.name_change?.(
 							old_bank_name,
 							bank_name
 						);
@@ -248,9 +248,9 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 							bind:content={add_tag_input}
 							handle_funcs={{
 								onchange: (old_content, new_content) => {
-									add_tag_input = "";
-
+										add_tag_input = "";
 									normal_handle_funcs?.add_tag?.(new_content);
+								
 								},
 								delete: () => {
 									add_tag_input = "";
@@ -268,13 +268,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 									input_change: (content) => {
 										normal_handle_funcs?.tag_change?.(content, index);
 									},
-									onchange: (old_content, new_content) => {
-										normal_handle_funcs?.tag_onchange?.(
-											old_content,
-											new_content,
-											index
-										);
-									},
+								
 								}}
 							/>
 						</div>
