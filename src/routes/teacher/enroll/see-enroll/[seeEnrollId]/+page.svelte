@@ -8,16 +8,31 @@
   import PersonImportPanel from '../../_components/PersonImportPanel.svelte';
   import PersonMovePanel from '../../_components/PersonMovePanel.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
-  import { checkFileData } from '../../_utils/handleFileInput';
+  import { checkFileData, formatDateTime } from '../../_utils/handleFileInput';
   import { toast } from '$lib/components/Toast/Toast';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { onMount } from 'svelte';
 
-  // 模拟报名人员数据
+  // 考试类型映射
+  const examTypeMap = {
+    '00': '正考',
+    '02': '补考',
+  };
+
+  // 状态映射
+  const statusMap = {
+    '00': '报名中',
+    '02': '待审核',
+    '04': '通过',
+    '06': '不通过',
+    '08': '已迁移',
+  };
+
+  // 报名人员数据
   let person_list = $state([]);
 
-  // 模拟批量导入数据
+  // 批量导入数据
   let candidate_list = $state([]);
 
   // 审核状态
@@ -64,7 +79,6 @@
 
   // 查看单个报名计划考生
   function getEnrollPersonData() {
-    // 构造查询参数
     const searchParams = new URLSearchParams({
       id: data.see_enroll_id,
       page: current_page,
@@ -83,9 +97,25 @@
         }
         return response.json();
       })
-      .then((data) => {
-        person_list = data.student;
-        total_items = data.total;
+      .then((res) => {
+        // 转换成表格需要的格式
+        person_list = res.data.student.map((item) => ({
+          id: item.student.ID,
+          name: item.student.OfficialName,
+          phone: item.student.MobilePhone,
+          email: item.student.Email,
+          gender: item.student.Gender,
+          idNumber: item.student.IDCardNo,
+          idType: item.student.IDCardType,
+          enrollTime: formatDateTime(item.detail.RegisterTime), // 格式化时间
+          enrollMethod: item.detail.Type === '02' ? '人工导入' : '自报名', // 报名方式
+          examType: examTypeMap[item.detail.ExamType] || '正考', // 默认正考
+          auditor: item.reviewer || '--',
+          status: statusMap[item.detail.Status] || '未知',
+        }));
+
+        total_items = res.data.total;
+        console.log(person_list);
       })
       .catch((e) => {
         console.log(e);
@@ -355,6 +385,17 @@
     page_size = event.detail;
   }
 
+  // 下载模板按钮点击事件
+  function handleDownModel() {
+    const url = '/enroll/excel_data/导入考生模板1.xlsx';
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '导入考生模板1.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   onMount(() => {
     getEnrollPersonData();
   });
@@ -395,7 +436,7 @@
 
       <div>
         <button class="btn-import" onclick={handleImportPerson}>导入</button>
-        <button class="btn-down-model">下载模板</button>
+        <button class="btn-down-model" onclick={handleDownModel}>下载模板</button>
         <button class="btn-move" onclick={handleMovePerson}>批量移动</button>
         <button class="btn-approve" onclick={handleBatchApprove}>批量通过</button>
         <button class="btn-reject" onclick={handleBatchReject}>批量不通过</button>
@@ -411,7 +452,7 @@
                 type="checkbox"
                 class="checkbox"
                 onchange={handleSelectAll}
-                checked={person_list.length === select_approve_id.length}
+                checked={person_list ? person_list.length === select_approve_id.length : false}
               /></th
             >
             <th style="width: 6%">姓名</th>
@@ -429,7 +470,7 @@
           </tr>
         </thead>
         <tbody>
-          {#if person_list.length > 0}
+          {#if person_list}
             {#each person_list as item}
               <tr>
                 <td
@@ -505,7 +546,12 @@
 <!-- 隐藏的文件选择框 -->
 <input type="file" accept=".xls,.xlsx" bind:this={file_input} style="display:none" onchange={handleFileUpload} />
 
-<PersonImportPanel bind:this={person_import_panel} {is_show_import_panel} {candidate_list} closePanel={closeImportPanel}
+<PersonImportPanel
+  bind:this={person_import_panel}
+  enroll_id={data.see_enroll_id}
+  {is_show_import_panel}
+  {candidate_list}
+  closePanel={closeImportPanel}
 ></PersonImportPanel>
 
 <PersonMovePanel {is_show_move_panel} closePanel={closeMovePanel}></PersonMovePanel>
