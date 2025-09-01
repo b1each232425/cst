@@ -68,7 +68,6 @@
       current_page = event.detail;
       fetchPaperList({
         name: search_text,
-        tags: tag_search_text,
         assembly_type: selected_structure,
         page: event.detail,
       });
@@ -81,8 +80,6 @@
     current_page = 1; // 重置到第一页
     fetchPaperList({
       name: search_text,
-      tags: tag_search_text,
-      assembly_type: selected_structure,
       page: '1',
       page_size: page_size,
     });
@@ -92,7 +89,6 @@
    * 获取试卷列表
    * @param {Object} params 查询参数对象
    * @param {string} [params.name] 试卷名称
-   * @param {string} [params.tags] 试卷标签
    * @param {string} [params.assembly_type] 组卷方式
    * @param {string} [params.page] 页码
    * @param {string} [params.page_size] 每页数量
@@ -101,16 +97,14 @@
   async function fetchPaperList(params = {}) {
     // 构造查询参数
     const searchParams = new URLSearchParams({
-      name: params.name || '',
-      tags: params.tags || '',
       page: params.page || String(current_page),
       page_size: params.page_size || String(page_size),
-      category: '02', // 默认分类
-      ...(params.assembly_type && params.assembly_type !== '全部' ? { assembly_type: params.assembly_type } : {}),
+      teacher_name: '',
+      practice_name: '',
     });
 
     // 发送带参数的GET请求
-    const response = await fetch(`/api/paper?${searchParams}`, {
+    const response = await fetch(`/api/registerPractice?${searchParams}`, {
       method: 'GET',
       credentials: 'include',
     })
@@ -127,24 +121,15 @@
           return;
         }
         //获取试卷的记录
-        const records = result.data;
+        const records = result.data.practices || [];
 
-        // 更新总数 - 从total_count字段获取
-        total_tests = result.rowCount || 0;
+        // 更新总数
+        total_tests = result.data.total || 0;
 
         // 更新试卷列表
-        paper_list = records.map((/** @type {any} */ item) => {
-          // 处理时间格式
+        paper_list = records.map((item) => {
           let updateTimeObj = new Date(item.UpdateTime || item.CreateTime);
-          let updateDate = updateTimeObj.toLocaleDateString('zh-CN').replace(/\//g, '-');
-          let updateTime = updateTimeObj.toLocaleTimeString('zh-CN', {
-            hour: '2-digit',
-            minute: '2-digit',
-          });
-
-          // 创建日期只取年月日
           let createTimeObj = new Date(item.CreateTime || item.UpdateTime);
-          let createDate = createTimeObj.toISOString().split('T')[0];
 
           return {
             ...item,
@@ -155,10 +140,12 @@
                   ? '随机组卷（随机组卷）'
                   : '智能刷题（智能提升）',
             level: item.Level === '00' ? '简单' : item.Level === '02' ? '中等' : '困难',
-            // 添加格式化后的时间
-            update_time: `${updateDate} ${updateTime}`,
-            create_time: createDate,
-            // 确保有tags属性
+            correct_mode: item.CorrectMode === '00' ? 'AI批改' : item.CorrectMode === '10' ? '手动批改' : '未知',
+
+            // 格式化后的时间
+            update_time: formatDateTime(updateTimeObj),
+            create_time: formatDateTime(createTimeObj),
+
             tags: item.Tags || [],
             duration: item.SuggestedDuration,
           };
@@ -178,6 +165,19 @@
       fetchPaperList();
     }
   });
+
+  // 格式化日期时间：yyyy-mm-dd HH:MM:SS
+  function formatDateTime(date) {
+    if (!(date instanceof Date) || isNaN(date)) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    const mm = pad(date.getMonth() + 1);
+    const dd = pad(date.getDate());
+    const HH = pad(date.getHours());
+    const MM = pad(date.getMinutes());
+    const SS = pad(date.getSeconds());
+    return `${yyyy}-${mm}-${dd} ${HH}:${MM}:${SS}`;
+  }
 </script>
 
 {#if show}
@@ -226,23 +226,20 @@
           <table class="test-table">
             <thead>
               <tr>
-                <th class="select-cell"></th>
-                <th class="name-cell">试卷名称</th>
-                <th class="type-cell">组卷方式(练习类型)</th>
-                <th class="count-cell">试题数量</th>
-                <th class="score-cell">试卷总分</th>
-                <th class="standard-cell">试卷标签</th>
-                <th class="suggest-cell">建议时长(分钟)</th>
-                <th class="diff-cell">试卷难度</th>
-                <th class="update-cell">更新时间</th>
-                <th class="create-cell">创建日期</th>
+                <th style="width: 5%"></th>
+                <th style="width: 15%">试卷名称</th>
+                <th style="width: 20%">组卷方式(练习类型)</th>
+                <th style="width: 10%">批改方式</th>
+                <th style="width: 10%">试卷难度</th>
+                <th style="width: 20%">更新时间</th>
+                <th style="width: 20%">创建日期</th>
               </tr>
             </thead>
             <tbody>
               {#if current_page_tests.length > 0}
                 {#each current_page_tests as test (test.ID)}
                   <tr class:selected={selected_test_id === test.ID} onclick={() => selectTest(test.ID)}>
-                    <td class="select-cell">
+                    <td>
                       <label class="custom-radio">
                         <input
                           type="radio"
@@ -254,32 +251,20 @@
                         <span class="radio-checkmark"></span>
                       </label>
                     </td>
-                    <td class="name-cell">{test.Name}</td>
-                    <td class="type-cell">{test.assembly_type}</td>
-                    <td class="count-cell">{test.QuestionCount}</td>
-                    <td class="score-cell">{test.TotalScore}</td>
-                    <td class="standard-cell">
-                      {#if test.tags.length > 0}
-                        <UneditableHashTags tags={test.tags} />
-                      {:else}
-                        <span>--</span>
-                      {/if}
-                    </td>
-                    <td class="suggest-cell">{test.SuggestedDuration}</td>
-                    <td class="diff-cell">
+                    <td>{test.Name}</td>
+                    <td>{test.assembly_type}</td>
+                    <td>{test.correct_mode}</td>
+                    <td>
                       <span
                         class={`level ${test.level === '简单' ? 'easy' : test.level === '中等' ? 'medium' : 'hard'}`}
                       >
                         {test.level}
                       </span>
                     </td>
-                    <td class="update-cell">
-                      <div class="date-time">
-                        <div class="date">{test.update_time.split(' ')[0]}</div>
-                        <div class="time">{test.update_time.split(' ')[1]}</div>
-                      </div>
+                    <td>
+                      {test.update_time}
                     </td>
-                    <td class="create-cell">{test.create_time}</td>
+                    <td>{test.create_time}</td>
                   </tr>
                 {/each}
               {:else}
@@ -441,38 +426,6 @@
           background: #f9f9f9;
         }
 
-        /* 各列宽度控制 */
-        .select-cell {
-          width: 40px;
-        }
-        .name-cell {
-          width: 150px;
-        }
-        .type-cell {
-          width: 200px;
-        }
-        .count-cell {
-          width: 80px;
-        }
-        .score-cell {
-          width: 80px;
-        }
-        .standard-cell {
-          width: 150px;
-        }
-        .suggest-cell {
-          width: 125px;
-        }
-        .diff-cell {
-          width: 100px;
-        }
-        .update-cell {
-          width: 150px;
-        }
-        .create-cell {
-          width: 130px;
-        }
-
         .level.easy {
           color: green;
         }
@@ -503,21 +456,6 @@
 
           &.hard {
             color: #ff0000;
-          }
-        }
-
-        .date-time {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          align-items: center;
-          text-align: center;
-          width: 100%;
-
-          .date,
-          .time {
-            font-size: 14px;
-            text-align: center;
           }
         }
 

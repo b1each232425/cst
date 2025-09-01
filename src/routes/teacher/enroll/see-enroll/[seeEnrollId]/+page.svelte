@@ -12,52 +12,10 @@
   import { toast } from '$lib/components/Toast/Toast';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
+  import { onMount } from 'svelte';
 
   // 模拟报名人员数据
-  let person_list = $state([
-    {
-      id: 1,
-      name: '张三',
-      phone: '13800001111',
-      email: 'zhangsan@example.com',
-      gender: '男',
-      idNumber: '440101200001010011',
-      idType: '身份证',
-      enrollTime: '2025-08-01 00:00:00',
-      enrollMethod: '线上报名',
-      examType: '理论',
-      auditor: '李老师',
-      status: '未审核',
-    },
-    {
-      id: 2,
-      name: '李四',
-      phone: '13800002222',
-      email: 'lisi@example.com',
-      gender: '女',
-      idNumber: '440101200002020022',
-      idType: '护照',
-      enrollTime: '2025-08-03 00:00:00',
-      enrollMethod: '线下报名',
-      examType: '实操',
-      auditor: '王老师',
-      status: '通过',
-    },
-    {
-      id: 3,
-      name: '王五',
-      phone: '13800003333',
-      email: 'wangwu@example.com',
-      gender: '男',
-      idNumber: '440101200003030033',
-      idType: '身份证',
-      enrollTime: '2025-08-05 00:00:00',
-      enrollMethod: '线上报名',
-      examType: '理论',
-      auditor: '赵老师',
-      status: '未通过',
-    },
-  ]);
+  let person_list = $state([]);
 
   // 模拟批量导入数据
   let candidate_list = $state([]);
@@ -98,6 +56,41 @@
   let messagebox_content = $state('');
 
   let person_import_panel = $state(null); // 导入报考人员DOM组件
+
+  let total_items = $state(0); // 数据总数
+  let current_page = $state(1); // 当前页数
+  let page_size = $state(10); // 当前页面大小
+  const { data } = $props();
+
+  // 查看单个报名计划考生
+  function getEnrollPersonData() {
+    // 构造查询参数
+    const searchParams = new URLSearchParams({
+      id: data.see_enroll_id,
+      page: current_page,
+      pageSize: page_size,
+    });
+
+    fetch(`/api/registration?${searchParams}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        person_list = data.student;
+        total_items = data.total;
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
 
   // 文件上传处理
   async function handleFileUpload(event) {
@@ -352,6 +345,19 @@
     messagebox_content = '';
     is_show_messagebox = false;
   }
+
+  // 父组件控制分页器的行为
+  function handlePageChange(event) {
+    current_page = event.detail;
+  }
+
+  function handlePageSizeChange(event) {
+    page_size = event.detail;
+  }
+
+  onMount(() => {
+    getEnrollPersonData();
+  });
 </script>
 
 <div class="enroll-management">
@@ -491,7 +497,7 @@
     </div>
 
     <div class="pagination-container">
-      <Pagination total_items={200} />
+      <Pagination {total_items} on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} />
     </div>
   </div>
 </div>

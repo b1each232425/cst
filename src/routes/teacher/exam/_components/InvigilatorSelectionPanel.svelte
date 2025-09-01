@@ -295,7 +295,7 @@ let invigilator_list = $state([
   .exam-invigilator-panel {
     width: 1000px;
     min-width: 800px;
-    height: 75vh;
+    max-height: 90vh;
     overflow-y: auto;
     background-color: white;
     display: flex;
@@ -343,7 +343,6 @@ let invigilator_list = $state([
         flex: 1;
         display: flex;
         flex-direction: column;
-        min-height: 0;
         overflow-y: auto;
         .tip-container {
             display: flex;
@@ -372,7 +371,7 @@ let invigilator_list = $state([
         .exam-invigilator-selection-table-container {
             margin: 20px 0px 0 0px;
             flex: 1;
-            min-height: 440px;
+            max-height: 440px;
             position: relative;
             display: flex;
             flex-direction: column;

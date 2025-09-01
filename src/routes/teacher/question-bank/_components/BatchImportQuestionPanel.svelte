@@ -334,7 +334,7 @@ let imported_stats_data = $state({success: 0, failure: 0, total: 0});
         }
 
         console.log(result)
-        const parsedQuestions = parseQuestionData(result)
+        const parsedQuestions = parseQuestionData(result,total_questions.length);
         console.log('解析结果:', parsedQuestions);
         // questions = [...questions, ...parsedQuestions]
 
@@ -470,6 +470,30 @@ let imported_stats_data = $state({success: 0, failure: 0, total: 0});
     }
 
   }
+
+  // 处理拖拽文件
+  const handleDrop = (e) => {
+    e.preventDefault(); // 阻止默认行为（防止浏览器打开文件）
+    
+    if (e.dataTransfer.files.length) {
+      const file = e.dataTransfer.files[0]; // 获取第一个文件
+      if (!file_input) return;
+ 
+    // 创建一个新的 DataTransfer 对象
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file); // 添加文件
+ 
+    // 更新 file_input 的文件列表
+    file_input.files = dataTransfer.files;
+ 
+    // 可选：手动触发 change 事件（如果绑定了 on:change）
+    const event = new Event('change', { bubbles: true });
+    file_input.dispatchEvent(event);
+    }
+  };
+ 
+
+  
 </script>
 
 <!-- 
@@ -518,8 +542,8 @@ o888o o888o   "888" o888o o888o o888o o888o
             </div>
           </div>
           <p class="step-text over-line" style="margin-top: 36px;" >第二步:上传文件</p>
-          <div class="upload-download-container">
-            <div class="upload-download-box download-box" onclick={() => {if(file_input){file_input.click()}}}>
+          <div class="upload-download-container" onclick={() => {if(file_input){file_input.click()}}} ondrop={handleDrop} ondragover={(e) => e.preventDefault()}>
+            <div class="upload-download-box download-box" >
               <input
                 type="file"
                 id="fileInput"
