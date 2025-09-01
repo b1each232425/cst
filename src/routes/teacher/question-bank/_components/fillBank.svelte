@@ -779,6 +779,8 @@
 
     // 检查是否需要重新编号，并返回变化信息
     function checkForRenumbering(transaction) {
+     const blankNodeCount = blankNodes.size;
+     let index = blankNodeCount + 1;
         let changeTitle = false;
       let needsRenumbering = false;
       let removedBlanks = [];
@@ -787,7 +789,33 @@
 const regex = /(?:\(\))/g; 
 let matches = [];
 let match;
- 
+let newTitle = title;
+ newTitle = newTitle .replace(/_{6}/g, () => {
+  
+    
+    // 生成唯一的 blankItemHTML
+    const blankItemHTML = `<span 
+        type="blankItem" 
+        id="blank_${Date.now()}_${index}" 
+        class="blank-item" 
+        blankNumber="${index}"
+    ></span>`;
+   
+    index++; // 递增 blankNumber
+     onAddAnswer();
+    return blankItemHTML; // 替换为 <span>
+});
+if(newTitle !== title){
+    title_editor?.setContent(newTitle);
+ renumberBlanks();
+  return {
+        needsRenumbering:false,
+        removedBlanks:[],
+        addedBlanks:[],
+      };
+}
+
+
 // 记录所有 `()` 的位置
 while ((match = regex.exec(title)) !==null) {
     matches.push({
@@ -804,9 +832,8 @@ while ((match = regex.exec(title)) !==null) {
 // 删除所有 `()` 并插入 `blankItem`
 let newContent = '';
 let lastIndex = 0;
-const blankNodeCount = blankNodes.size;
-let index = blankNodeCount + 1;
- 
+
+
  if (matches.length != 0) {
 // 遍历所有匹配的 `()`，并在其位置插入 `blankItem`
 matches.forEach((match, i) => {
@@ -818,9 +845,11 @@ matches.forEach((match, i) => {
         type="blankItem" 
         id="blank_${Date.now()}_${i}" 
         class="blank-item" 
-        blankNumber="${index + i}"
+        blankNumber="${index}"
     ></span>`;
     newContent += blankItemHTML;
+    index++;
+    
     onAddAnswer();
     // 更新 `lastIndex`，跳过 `()`
     lastIndex = match.endIndex;
@@ -829,16 +858,16 @@ changeTitle = true;
 
  // 添加剩余部分
 newContent += title.substring(lastIndex);
- 
 if(newContent !== title){
 title_editor?.setContent(newContent);
-}
  renumberBlanks();
   return {
         needsRenumbering:false,
         removedBlanks:[],
         addedBlanks:[],
       };
+}
+
  }
  
 
@@ -1039,7 +1068,7 @@ title_editor?.setContent(newContent);
                       characterCountLimit: questionLimit.contentCharacterLenLimit,
                       enableCharacterCountLimit: false,
                     },
-                    placeholder: '请按照以下模版输入 “被称作“前四史”的史书是：(1)、(2)、(3) 、和(4)。”',
+                    placeholder: '请按照以下模版输入 “被称作“前四史”的史书是：______、______、() 、和()。”',
                     onContentChange: (
                       /**
                        * @type {PiptapEditor}

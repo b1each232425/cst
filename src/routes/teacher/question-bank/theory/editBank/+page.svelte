@@ -371,7 +371,7 @@ import '$lib/components/Input/index.scss';
   };
 
   const onAddNewQuestion = (value) => {
-    question_type_select = '';
+ 
  
     if (value !== '00' && value !== '02' && value !== '04' && value !== '06' && value !== '08') {
       return;
@@ -384,23 +384,27 @@ import '$lib/components/Input/index.scss';
       case '00':
         single_select_edit_panel_componet.initPanel();
         show_single_select_edit_panel = true;
-      
+         question_type_select = '';
         break;
       case '02':
         mutiple_select_edit_panel_componet.initPanel();
         show_multiple_select_edit_panel = true;
+           question_type_select = '';
         break;
       case '04':
         judge_edit_panel_componet.initPanel();
         show_judge_select_edit_panel = true;
+           question_type_select = '';
         break;
           case '06':
         fill_bank_edit_panel_componet.initPanel();
         show_fill_bank_edit_panel = true;
+           question_type_select = '';
         break;
    case '08':
         short_answer_edit_panel_componet.initPanel();
         show_short_answer_edit_panel = true;
+           question_type_select = '';
         break;
 
       default:
