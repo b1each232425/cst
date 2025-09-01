@@ -181,7 +181,7 @@
         query_params.append("pageSize", search_params.pageSize.toString());
 
         // 固定 domain
-        query_params.append("domain", "cst.school.examSite^admin");
+        query_params.append("domain", "assess^examSiteAdmin");
 
         // 模糊搜索条件
         if (search_params.name) {
@@ -198,6 +198,7 @@
             .then((response) => response.json())
             .then((result) => {
                 if (result.status !== 0) {
+                    console.log(result);
                     error = result.msg || "搜索失败";
                     graders_list = [];
                     totals = 0;
