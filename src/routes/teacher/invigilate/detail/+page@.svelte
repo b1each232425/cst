@@ -22,6 +22,9 @@
   import { formatTimestamp } from '$lib/utils/time_utils';
   import { page as appPage } from '$app/state';
   import { debounce } from '$lib/utils/optimize';
+  // import Upload from '$lib/components/Upload/Upload.svelte';
+
+  // TODO 监考员姓名
 
   // const MOCK_INFO = {
   //   ExamSessionName: '2025年春季期末考试',
@@ -31,8 +34,13 @@
   //   StartTime: new Date('2025-08-22 09:00:00').getTime(),
   //   EndTime: new Date('2025-08-22 11:30:00').getTime(),
   //   Status: '04',
+  //   ExamMode: '00',
+  //   ExamType: '00',
   //   BasicEval: '02',
+  //   Record:
+  //     '考试过程记录：发卷时间（8:55）、考试正式开始（9:00）、考生提问记录（张某询问答题卡填涂规范/10:15、刘某申请更换草稿纸/10:40）、中途离场记录（赵某因身体不适/11:00离场/由监考陪同）、收卷开始时间（11:25）、收卷完成时间（11:35）、试卷份数核对（实收28份/无遗漏）',
   //   ExamineeNum: 120,
+  //   InvigilatorNum: 1,
   //   AbsenteeNum: 8,
   //   CheaterNum: 2,
   //   AbnormalExamineeNum: 2,
@@ -132,11 +140,24 @@
     '12': '已提交',
   };
 
+  // 考试模式
+  const EXAM_MODE_MAP = {
+    '00': '线上考试',
+    '02': '线下考试',
+  };
+
   // 考生状态
   const EXAMINEE_STATUE_MAP = {
     '02': '缺考',
     '06': '作弊',
     '14': '考试异常',
+  };
+
+  // 考试类型
+  const EXAM_TYPE_MAP = {
+    '00': '平时考试',
+    '02': '期末成绩考试',
+    '04': '资格证考试',
   };
 
   // 考场状态
@@ -183,16 +204,15 @@
   // 获取监考详情信息
   function getInvigilateDetail() {
     const q = JSON.stringify({
-      orderBy: [{ Duration: 'DESC', Time: 'DESC' }],
-      filter: {
+      Filter: {
         SearchText: search_text,
       },
-      data: {
+      Data: {
         ExamSessionID: exam_session_id,
         ExamRoomID: exam_room_id,
       },
-      page,
-      pageSize: page_size,
+      Page: page,
+      PageSize: page_size,
     });
 
     fetch(`/api/invigilation?q=${q}`)
@@ -240,18 +260,17 @@
   }
 
   // 更新监考信息
-  function updateInfos(data, callback) {
-    fetch(`/api/invigilation`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        examSessionID: exam_session_id,
-        examRoomID: exam_room_id,
+  function updateInfos(update_type, data, callback) {
+    const q = JSON.stringify({
+      Data: {
+        ExamSessionID: exam_session_id,
+        ExamRoomID: exam_room_id,
+        UpdateType: update_type,
         ...data,
-      }),
-    })
+      },
+    });
+
+    fetch(`/api/invigilation?q=${q}`, { method: 'PATCH' })
       .then((res) => {
         if (!res.ok)
           return res.text().then((error_text) => {
@@ -272,24 +291,32 @@
 
   // 更新考场情况
   function updateBasicEval(basic_eval) {
-    updateInfos({
-      basicEval: basic_eval,
+    updateInfos('00', {
+      BasicEval: basic_eval,
     });
   }
 
+  function updateRecord(record) {
+    updateInfos('00', {
+      Record: record,
+    });
+  }
+
+  const debounceUpdateRecord = debounce(updateRecord, 1000);
+
   // 更新一个学生的状态
   function updateSingleExamineeStatus(examinee_id, status) {
-    updateInfos({
-      examineeIDs: [examinee_id],
-      status,
+    updateInfos('02', {
+      ExamineeIDs: [examinee_id],
+      Status: status,
     });
   }
 
   // 更新一个学生的备注
   function updateSingleExamineeRemark(examinee_id, remark) {
-    updateInfos({
-      examineeIDs: [examinee_id],
-      remark,
+    updateInfos('04', {
+      ExamineeIDs: [examinee_id],
+      Remark: remark,
     });
   }
 
@@ -298,9 +325,10 @@
   // 批量更新学生的状态
   function batchUpdateExamineeStatus(status) {
     updateInfos(
+      '02',
       {
-        status,
-        examineeIDs: Array.from(selected_examinee_id_set),
+        Status: status,
+        ExamineeIDs: Array.from(selected_examinee_id_set),
       },
       () => {
         examinee_list.forEach((e) => {
@@ -313,9 +341,10 @@
   // 批量更新学生的备注
   function batchUpdateExamineeRemark() {
     updateInfos(
+      '04',
       {
-        remark,
-        examineeIDs: Array.from(selected_examinee_id_set),
+        Remark: remark,
+        ExamineeIDs: Array.from(selected_examinee_id_set),
       },
       () => {
         examinee_list.forEach((e) => {
@@ -381,7 +410,16 @@
         ><span class="label">时间：</span>{formatTimestamp(invigilation_info.StartTime)} ~ {formatTimestamp(
           invigilation_info.EndTime,
         )}</span
-      ><span><span class="label">地点：</span>{invigilation_info.ExamSiteName}-{invigilation_info.ExamRoomName}</span>
+      ><span><span class="label">地点：</span>{invigilation_info.ExamSiteName}-{invigilation_info.ExamRoomName}</span
+      ><span
+        ><span class="label">类型：</span><span class:unknown={!EXAM_TYPE_MAP[invigilation_info.ExamType]}
+          >{EXAM_TYPE_MAP[invigilation_info.ExamType] ?? '未知状态'}</span
+        ></span
+      ><span
+        ><span class="label">模式：</span><span class:unknown={!EXAM_MODE_MAP[invigilation_info.ExamMode]}
+          >{EXAM_MODE_MAP[invigilation_info.ExamMode] ?? '未知状态'}</span
+        ></span
+      >
       <span class="info-item"
         ><span class="circle"></span>
         <span class:unknown={!STATUS_MAP[invigilation_info.Status]}
@@ -413,6 +451,10 @@
           {/if}
         </div>
         <div class="info-item">
+          <div class="label">监考员人数：</div>
+          <div class="data number">{invigilation_info.InvigilatorNum}</div>
+        </div>
+        <div class="info-item">
           <div class="label">缺考人数：</div>
           <div class="data number">{invigilation_info.AbsenteeNum}</div>
         </div>
@@ -428,6 +470,25 @@
           <div class="label">已延长时间人数：</div>
           <div class="data number">{invigilation_info.ExtendedTimeNum}</div>
         </div>
+        <div class="info-item record">
+          <div class="label">考场记录：</div>
+          {#if is_invigilating}
+            <textarea
+              type="text "
+              class="data record"
+              placeholder="请输入考场记录..."
+              value={invigilation_info.Record}
+              oninput={(e) => debounceUpdateRecord(e.target.value)}
+            ></textarea>
+          {:else}
+            <div class="data number record" data-testid="record">
+              {invigilation_info.Record === null || invigilation_info.Record === '' ? '无' : invigilation_info.Record}
+            </div>
+          {/if}
+        </div>
+        <!-- <div class="info-item">
+          <Upload><a href="javascript:void(0);">附件上传</a></Upload>
+        </div> -->
       </div>
     </div>
 
@@ -492,7 +553,7 @@
                   <!-- 全选框 -->
                   <th class="select">
                     <button class="square-container" onclick={toggleSelectAll} data-testid="select-all">
-                      {#if selected_examinee_id_set.size === examinee_list.length}
+                      {#if examinee_list.length > 0 && selected_examinee_id_set.size === examinee_list.length}
                         <div class="check-square" data-testid="check-square"></div>
                       {/if}
                     </button>
@@ -685,13 +746,13 @@
       gap: 1rem;
 
       .left-content {
-        flex: 2;
+        flex: 3;
 
         .total-info {
           display: flex;
           flex-direction: column;
           gap: 1rem;
-          margin-top: 4rem;
+          margin-top: 2rem;
 
           .info-item {
             display: flex;
@@ -699,13 +760,17 @@
             align-items: center;
             gap: 1rem;
 
+            &.record {
+              align-items: flex-start;
+            }
+
             .label {
               width: 8rem;
               text-align: right;
             }
 
             .data {
-              width: 6rem;
+              width: 10rem;
               background-color: #f0f0f0;
               height: 2rem;
               border-radius: 2px;
@@ -715,6 +780,27 @@
                 padding: 0 0.5rem;
                 line-height: 2rem;
               }
+
+              &.record {
+                height: 10rem;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                scrollbar-color: #ccc transparent;
+              }
+            }
+
+            textarea {
+              border-color: white;
+              resize: none;
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              border-radius: 2px;
+              padding: 0.5rem;
+            }
+
+            textarea:focus {
+              border-color: #409eff;
+              outline: none;
+              box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2); /* 可选的聚焦高亮效果 */
             }
           }
         }
