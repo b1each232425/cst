@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-18 20:02:57
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-24 12:18:08
+ * @LastEditTime: 2025-09-02 11:58:39
  * @FilePath: \exam\src\routes\teacher\paper\manual\_test_\manual.svelte.test.js
  * @Description: 自定义组卷页面测试
  * Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -1842,13 +1842,18 @@ describe('自定义组卷页面', () => {
                                 fireEvent.click(moveBtn);
                             });
 
-                            it('连续移动题组 - 覆盖highlightGroup的if分支', async () => {
+                            it('连续移动', async () => {
                                 // 使用独立的测试数据
                                 const SINGLE_PAPER_INFO = {
                                     ID: 230,
                                     Name: "测试试卷",
                                     Category: "00",
                                     Level: "00",
+                                    SuggestedDuration: 66,
+                                    Description: "我是试卷的说明",
+                                    Tags: ["测试", "简答", "填空"],
+                                    TotalScore: 15,
+                                    QuestionCount: 5,
                                     GroupsData: [
                                         {
                                             id: 1196,
@@ -1907,6 +1912,11 @@ describe('自定义组卷页面', () => {
                                     Name: "测试试卷",
                                     Category: "00",
                                     Level: "00",
+                                    SuggestedDuration: 66,
+                                    Description: "我是试卷的说明",
+                                    Tags: ["测试", "简答", "填空"],
+                                    TotalScore: 15,
+                                    QuestionCount: 5,
                                     GroupsData: [
                                         {
                                             id: 1196,
@@ -1915,13 +1925,13 @@ describe('自定义组卷页面', () => {
                                             questions: [],
                                         },
                                         {
-                                            id: 1197,
+                                            id: 1198,
                                             name: "移动题组3",
                                             order: 2,
                                             questions: [],
                                         },
                                         {
-                                            id: 1198,
+                                            id: 1197,
                                             name: "移动题组2",
                                             order: 3,
                                             questions: [],
@@ -1951,10 +1961,6 @@ describe('自定义组卷页面', () => {
                                     expect(groupHeader2.textContent).toContain("移动题组3");
                                 });
                             
-                                // 关键：在5秒内再次移动同一个题组，触发highlightGroup的if分支
-                                // 等待一小段时间，确保第一次高亮还在
-                                await new Promise(resolve => setTimeout(resolve, 100));
-                            
                                 // 第二次移动：题组3再次上移
                                 global.fetch.mockResolvedValueOnce({
                                     ok: true,
@@ -1971,21 +1977,26 @@ describe('自定义组卷页面', () => {
                                     Name: "测试试卷",
                                     Category: "00",
                                     Level: "00",
+                                    SuggestedDuration: 66,
+                                    Description: "我是试卷的说明",
+                                    Tags: ["测试", "简答", "填空"],
+                                    TotalScore: 15,
+                                    QuestionCount: 5,
                                     GroupsData: [
                                         {
-                                            id: 1196,
+                                            id: 1198,
                                             name: "移动题组3",
                                             order: 1,
                                             questions: [],
                                         },
                                         {
-                                            id: 1197,
+                                            id: 1196,
                                             name: "移动题组1",
                                             order: 2,
                                             questions: [],
                                         },
                                         {
-                                            id: 1198,
+                                            id: 1197,
                                             name: "移动题组2",
                                             order: 3,
                                             questions: [],
@@ -2003,6 +2014,8 @@ describe('自定义组卷页面', () => {
                                         data: moveAfterSecondMove,
                                     })
                                 });
+                                
+                                vi.useFakeTimers();
                             
                                 // 再次点击上移按钮（同一个题组）
                                 const groupHeader2 = container.querySelectorAll('.group-header')[1];
@@ -2014,17 +2027,801 @@ describe('自定义组卷页面', () => {
                                     const groupHeader3 = container.querySelectorAll('.group-header')[0];
                                     expect(groupHeader3.textContent).toContain("移动题组3");
                                 });
-                            
-                                // 等待一小段时间，让定时器有机会执行
-                                await new Promise(resolve => setTimeout(resolve, 100));
+
+                                vi.advanceTimersByTime(5001);
+                                vi.useRealTimers();
                             });
                         });
                     });
 
                     describe('题目', () => {
-                        // it('正常情况', async () => {
+                        it('边界情况', async () => {
+                            // 使用独立的测试数据
+                            const SINGLE_PAPER_INFO = {
+                                ID: 230,
+                                Name: "测试试卷",
+                                Category: "00",
+                                Level: "00",
+                                SuggestedDuration: 66,
+                                Description: "我是试卷的说明",
+                                Tags: ["测试", "简答", "填空"],
+                                TotalScore: 15,
+                                QuestionCount: 5,
+                                GroupsData: [
+                                    {
+                                        id: 1196,
+                                        name: "测试题组",
+                                        order: 1,
+                                        questions: [
+                                            SINGLE_CHOICE_QUESTION,
+                                            MULTIPLE_CHOICE_QUESTION,
+                                            TRUE_FALSE_QUESTION,
+                                            FILL_BLANK_QUESTION,
+                                            SHORT_ANSWER_QUESTION
+                                        ],
+                                    }
+                                ],
+                            };
 
-                        // });
+                            // 临时mock试卷信息
+                            global.fetch.mockResolvedValueOnce({
+                                ok: true,
+                                json: () => Promise.resolve({
+                                    status: 0,
+                                    msg: "success",
+                                    API: "/api/paper/manual",
+                                    method: "GET",
+                                    data: SINGLE_PAPER_INFO,
+                                })
+                            });
+
+                            // 渲染页面
+                            const { container } = render(Manual);
+
+                            // 等待页面渲染完成
+                            await waitFor(() => {
+                                expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                            });
+
+                            // 获取第一个question-header类
+                            const questionHeader = container.querySelectorAll('.question-header')[0];
+
+                            // 获取groupHeader里的title为"上移"的button
+                            const moveBtn = questionHeader.querySelector('button[title="上移"]');
+
+                            // 点击moveBtn
+                            fireEvent.click(moveBtn);
+
+                            // 验证toast被调用
+                            await waitFor(() => {
+                                expect(toast.error).toHaveBeenCalledWith('已经是第一道题目', 1000);
+                            });
+
+                            // 获取第五个question-header类
+                            const questionHeader5 = container.querySelectorAll('.question-header')[4];
+
+                            // 获取questionHeader5里的title为"下移"的button
+                            const moveBtn5 = questionHeader5.querySelector('button[title="下移"]');
+
+                            // 点击moveBtn5
+                            fireEvent.click(moveBtn5);
+
+                            // 验证toast被调用
+                            await waitFor(() => {
+                                expect(toast.error).toHaveBeenCalledWith('已经是最后一道题目', 1000);
+                            });
+                        });
+
+                        describe('正常情况', () => {
+                            describe('下移', () => {
+                                it('组内下移', async () => {
+                                    // 使用独立的测试数据
+                                    const SINGLE_PAPER_INFO = {
+                                        ID: 230,
+                                        Name: "测试试卷",
+                                        Category: "00",
+                                        Level: "00",
+                                        SuggestedDuration: 66,
+                                        Description: "我是试卷的说明",
+                                        Tags: ["测试", "简答", "填空"],
+                                        TotalScore: 15,
+                                        QuestionCount: 5,
+                                        GroupsData: [
+                                            {
+                                                id: 1196,
+                                                name: "测试题组",
+                                                order: 1,
+                                                questions: [
+                                                    SINGLE_CHOICE_QUESTION,
+                                                    MULTIPLE_CHOICE_QUESTION,
+                                                    TRUE_FALSE_QUESTION,
+                                                    FILL_BLANK_QUESTION,
+                                                    SHORT_ANSWER_QUESTION
+                                                ],
+                                            }
+                                        ],
+                                    }
+        
+                                    // 临时mock试卷信息
+                                    global.fetch.mockResolvedValueOnce({
+                                        ok: true,
+                                        json: () => Promise.resolve({
+                                            status: 0,
+                                            msg: "success",
+                                            API: "/api/paper/manual",
+                                            method: "GET",
+                                            data: SINGLE_PAPER_INFO,
+                                        })
+                                    });
+        
+                                    // 渲染页面
+                                    const { container } = render(Manual);
+        
+                                    // 等待页面渲染完成
+                                    await waitFor(() => {
+                                        expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                                    });
+        
+                                    // 获取第一个question-header类
+                                    const questionHeader = container.querySelectorAll('.question-header')[0];
+        
+                                    // 获取questionHeader里的title为"下移"的button
+                                    const moveBtn = questionHeader.querySelector('button[title="下移"]');
+        
+                                    // 点击moveBtn
+                                    fireEvent.click(moveBtn);
+                                });
+
+                                it('跨组下移', async () => {
+                                    // 使用独立的测试数据
+                                    const SINGLE_PAPER_INFO = {
+                                        ID: 230,
+                                        Name: "测试试卷",
+                                        Category: "00",
+                                        Level: "00",
+                                        SuggestedDuration: 66,
+                                        Description: "我是试卷的说明",
+                                        Tags: ["测试", "简答", "填空"],
+                                        TotalScore: 15,
+                                        QuestionCount: 5,
+                                        GroupsData: [
+                                            {
+                                                id: 1196,
+                                                name: "测试题组",
+                                                order: 1,
+                                                questions: [
+                                                    SINGLE_CHOICE_QUESTION,
+                                                    MULTIPLE_CHOICE_QUESTION,
+                                                    TRUE_FALSE_QUESTION,
+                                                    FILL_BLANK_QUESTION,
+                                                    SHORT_ANSWER_QUESTION
+                                                ],
+                                            },
+                                            {
+                                                id: 1197,
+                                                name: "空白题组",
+                                                order: 2,
+                                                questions: []
+                                            }
+                                        ],
+                                    }
+
+                                    // 临时mock试卷信息
+                                    global.fetch.mockResolvedValueOnce({
+                                        ok: true,
+                                        json: () => Promise.resolve({
+                                            status: 0,
+                                            msg: "success",
+                                            API: "/api/paper/manual",
+                                            method: "GET",
+                                            data: SINGLE_PAPER_INFO,
+                                        })
+                                    });
+
+                                    // 渲染页面
+                                    const { container } = render(Manual);
+
+                                    // 等待页面渲染完成
+                                    await waitFor(() => {
+                                        expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                                    });
+
+                                    // 获取第五个question-header类
+                                    const questionHeader5 = container.querySelectorAll('.question-header')[4];
+
+                                    // 获取questionHeader5里的title为"下移"的button
+                                    const moveBtn5 = questionHeader5.querySelector('button[title="下移"]');
+
+                                    // 点击moveBtn5
+                                    fireEvent.click(moveBtn5);
+                                });
+                            });
+
+                            describe('上移', () => {
+                                it('组内上移', async () => {
+                                    // 使用独立的测试数据
+                                    const SINGLE_PAPER_INFO = {
+                                        ID: 230,
+                                        Name: "测试试卷",
+                                        Category: "00",
+                                        Level: "00",
+                                        SuggestedDuration: 66,
+                                        Description: "我是试卷的说明",
+                                        Tags: ["测试", "简答", "填空"],
+                                        TotalScore: 15,
+                                        QuestionCount: 5,
+                                        GroupsData: [
+                                            {
+                                                id: 1196,
+                                                name: "测试题组",
+                                                order: 1,
+                                                questions: [
+                                                    SINGLE_CHOICE_QUESTION,
+                                                    MULTIPLE_CHOICE_QUESTION,
+                                                    TRUE_FALSE_QUESTION,
+                                                    FILL_BLANK_QUESTION,
+                                                    SHORT_ANSWER_QUESTION
+                                                ],
+                                            },
+                                        ],
+                                    }
+
+                                    // 临时mock试卷信息
+                                    global.fetch.mockResolvedValueOnce({
+                                        ok: true,
+                                        json: () => Promise.resolve({
+                                            status: 0,
+                                            msg: "success",
+                                            API: "/api/paper/manual",
+                                            method: "GET",
+                                            data: SINGLE_PAPER_INFO,
+                                        })
+                                    });
+
+                                    // 渲染页面
+                                    const { container } = render(Manual);
+
+                                    // 等待页面渲染完成
+                                    await waitFor(() => {
+                                        expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                                    });
+
+                                    // 获取第二个question-header类
+                                    const questionHeader = container.querySelectorAll('.question-header')[1];
+
+                                    // 获取questionHeader里的title为"上移"的button
+                                    const moveBtn = questionHeader.querySelector('button[title="上移"]');
+
+                                    // 点击moveBtn
+                                    fireEvent.click(moveBtn);
+                                });
+
+                                it('跨组上移', async () => {
+                                    // 使用独立的测试数据
+                                    const SINGLE_PAPER_INFO = {
+                                        ID: 230,
+                                        Name: "测试试卷",
+                                        Category: "00",
+                                        Level: "00",
+                                        SuggestedDuration: 66,
+                                        Description: "我是试卷的说明",
+                                        Tags: ["测试", "简答", "填空"],
+                                        TotalScore: 15,
+                                        QuestionCount: 5,
+                                        GroupsData: [
+                                            {
+                                                id: 1196,
+                                                name: "测试题组",
+                                                order: 1,
+                                                questions: [],
+                                            },
+                                            {
+                                                id: 1197,
+                                                name: "空白题组",
+                                                order: 2,
+                                                questions: [
+                                                    SINGLE_CHOICE_QUESTION,
+                                                    MULTIPLE_CHOICE_QUESTION,
+                                                    TRUE_FALSE_QUESTION,
+                                                    FILL_BLANK_QUESTION,
+                                                    SHORT_ANSWER_QUESTION
+                                                ]
+                                            }
+                                        ],
+                                    }
+
+                                    // 临时mock试卷信息
+                                    global.fetch.mockResolvedValueOnce({
+                                        ok: true,
+                                        json: () => Promise.resolve({
+                                            status: 0,
+                                            msg: "success",
+                                            API: "/api/paper/manual",
+                                            method: "GET",
+                                            data: SINGLE_PAPER_INFO,
+                                        })
+                                    });
+
+                                    // 渲染页面
+                                    const { container } = render(Manual);
+
+                                    // 等待页面渲染完成
+                                    await waitFor(() => {
+                                        expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                                    });
+
+                                    // 获取第一个question-header类
+                                    const questionHeader = container.querySelectorAll('.question-header')[0];
+
+                                    // 获取questionHeader里的title为"上移"的button
+                                    const moveBtn = questionHeader.querySelector('button[title="上移"]');
+
+                                    // 点击moveBtn
+                                    fireEvent.click(moveBtn);
+                                });
+                            });
+
+                            it('连续移动', async () => {
+                                // 使用独立的测试数据
+                                const SINGLE_PAPER_INFO = {
+                                    ID: 230,
+                                    Name: "测试试卷",
+                                    Category: "00",
+                                    Level: "00",
+                                    SuggestedDuration: 66,
+                                    Description: "我是试卷的说明",
+                                    Tags: ["测试", "简答", "填空"],
+                                    TotalScore: 15,
+                                    QuestionCount: 5,
+                                    GroupsData: [
+                                        {
+                                            id: 1196,
+                                            name: "测试题组",
+                                            order: 1,
+                                            questions: [
+                                                {
+                                                    id: 995, // 题目ID（标识试卷中的题目）
+                                                    tags: ["数据结构", "基础"],
+                                                    type: "00", // 题目类型: 00-单选题 02-多选题 04-判断题 06-填空题 08-简答题
+                                                    order: 1, // 题目序号（在整张试卷中的序号）
+                                                    score: 2, // 题目分数
+                                                    answers: ["B"],
+                                                    content: "<p><span style=\"font-size: 12pt\">以下哪一种数据结构最适合用于实现先进先出（FIFO）逻辑？</span></p>",
+                                                    options: [
+                                                        {
+                                                            label: "A",
+                                                            value: "<p><span style=\"font-size: 12pt\">栈</span></p>"
+                                                        },
+                                                        {
+                                                            label: "B",
+                                                            value: "<p><span style=\"font-size: 12pt\">队列</span></p>"
+                                                        },
+                                                        {
+                                                            label: "C",
+                                                            value: "<p><span style=\"font-size: 12pt\">树</span></p>"
+                                                        },
+                                                        {
+                                                            label: "D",
+                                                            value: "<p><span style=\"font-size: 12pt\">图</span></p>"
+                                                        }
+                                                    ],
+                                                    analysis: "<p>队列（Queue）遵循先进先出（FIFO）的顺序，而栈（Stack）是先进后出（LIFO）。</p>",
+                                                    group_id: 1196,
+                                                    sub_score: null, // 子分数：只有简答题和填空题有子分数，其他题目没有子分数（null）
+                                                    difficulty: 1, // 难度: 1-简单 2-中等 3-困难
+                                                    bank_question_id: 340, // 题库题目ID
+                                                    belong_to: 84,
+                                                },
+                                                {
+                                                    id: 996, // 题目ID（标识试卷中的题目）
+                                                    tags: ["数据结构", "基础"],
+                                                    type: "00", // 题目类型: 00-单选题 02-多选题 04-判断题 06-填空题 08-简答题
+                                                    order: 2, // 题目序号（在整张试卷中的序号）
+                                                    score: 2, // 题目分数
+                                                    answers: ["A", "B", "D"],
+                                                    content: "<p><span style=\"font-size: 12pt\">以下哪一种数据结构最适合用于实现先进先出（FIFO）逻辑？</span></p>",
+                                                    options: [
+                                                        {
+                                                            label: "A",
+                                                            value: "<p><span style=\"font-size: 12pt\">栈</span></p>"
+                                                        },
+                                                        {
+                                                            label: "B",
+                                                            value: "<p><span style=\"font-size: 12pt\">队列</span></p>"
+                                                        },
+                                                        {
+                                                            label: "C",
+                                                            value: "<p><span style=\"font-size: 12pt\">树</span></p>"
+                                                        },
+                                                        {
+                                                            label: "D",
+                                                            value: "<p><span style=\"font-size: 12pt\">图</span></p>"
+                                                        }
+                                                    ],
+                                                    analysis: "<p>队列（Queue）遵循先进先出（FIFO）的顺序，而栈（Stack）是先进后出（LIFO）。</p>",
+                                                    group_id: 1196,
+                                                    sub_score: null, // 子分数：只有简答题和填空题有子分数，其他题目没有子分数（null）
+                                                    difficulty: 2, // 难度: 1-简单 2-中等 3-困难
+                                                    bank_question_id: 340, // 题库题目ID
+                                                    belong_to: 84,
+                                                },
+                                                {
+                                                    id: 997, // 题目ID（标识试卷中的题目）
+                                                    tags: ["数据结构", "基础"],
+                                                    type: "00", // 题目类型: 00-单选题 02-多选题 04-判断题 06-填空题 08-简答题
+                                                    order: 3, // 题目序号（在整张试卷中的序号）
+                                                    score: 2, // 题目分数
+                                                    answers: ["B"],
+                                                    content: "<p><span style=\"font-size: 12pt\">以下哪一种数据结构最适合用于实现先进先出（FIFO）逻辑？</span></p>",
+                                                    options: [
+                                                        {
+                                                            label: "A",
+                                                            value: "<p><span style=\"font-size: 12pt\">栈</span></p>"
+                                                        },
+                                                        {
+                                                            label: "B",
+                                                            value: "<p><span style=\"font-size: 12pt\">队列</span></p>"
+                                                        },
+                                                        {
+                                                            label: "C",
+                                                            value: "<p><span style=\"font-size: 12pt\">树</span></p>"
+                                                        },
+                                                        {
+                                                            label: "D",
+                                                            value: "<p><span style=\"font-size: 12pt\">图</span></p>"
+                                                        }
+                                                    ],
+                                                    analysis: "<p>队列（Queue）遵循先进先出（FIFO）的顺序，而栈（Stack）是先进后出（LIFO）。</p>",
+                                                    group_id: 1196,
+                                                    sub_score: null, // 子分数：只有简答题和填空题有子分数，其他题目没有子分数（null）
+                                                    difficulty: 3, // 难度: 1-简单 2-中等 3-困难
+                                                    bank_question_id: 340, // 题库题目ID
+                                                    belong_to: 84,
+                                                }
+                                            ],
+                                        }
+                                    ]
+                                };
+
+                                // 临时mock试卷信息
+                                global.fetch.mockResolvedValueOnce({
+                                    ok: true,
+                                    json: () => Promise.resolve({
+                                        status: 0,
+                                        msg: "success",
+                                        API: "/api/paper/manual",
+                                        method: "GET",
+                                        data: SINGLE_PAPER_INFO,
+                                    })
+                                });
+
+                                // 渲染页面
+                                const { container } = render(Manual);
+
+                                // 等待页面渲染完成
+                                await waitFor(() => {
+                                    expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                                });
+
+                                // 获取第三个question-header类
+                                const questionHeader = container.querySelectorAll('.question-header')[2];
+
+                                // 获取questionHeader里的title为"上移"的button
+                                const moveBtn = questionHeader.querySelector('button[title="上移"]');
+
+                                // 临时mock返回结果
+                                global.fetch.mockResolvedValueOnce({
+                                    ok: true,
+                                    json: () => Promise.resolve({
+                                        status: 0,
+                                        msg: "success",
+                                        API: "/api/paper/manual",
+                                        method: "PUT",
+                                    })
+                                });
+
+                                // 构造移动题目后的试卷信息
+                                const MOVED_SINGLE_PAPER_INFO = {
+                                    ID: 230,
+                                    Name: "测试试卷",
+                                    Category: "00",
+                                    Level: "00",
+                                    SuggestedDuration: 66,
+                                    Description: "我是试卷的说明",
+                                    Tags: ["测试", "简答", "填空"],
+                                    TotalScore: 15,
+                                    QuestionCount: 5,
+                                    GroupsData: [
+                                        {
+                                            id: 1196,
+                                            name: "移动题组",
+                                            order: 1,
+                                            questions: [
+                                                {
+                                                    id: 995, // 题目ID（标识试卷中的题目）
+                                                    tags: ["数据结构", "基础"],
+                                                    type: "00", // 题目类型: 00-单选题 02-多选题 04-判断题 06-填空题 08-简答题
+                                                    order: 1, // 题目序号（在整张试卷中的序号）
+                                                    score: 2, // 题目分数
+                                                    answers: ["B"],
+                                                    content: "<p><span style=\"font-size: 12pt\">以下哪一种数据结构最适合用于实现先进先出（FIFO）逻辑？</span></p>",
+                                                    options: [
+                                                        {
+                                                            label: "A",
+                                                            value: "<p><span style=\"font-size: 12pt\">栈</span></p>"
+                                                        },
+                                                        {
+                                                            label: "B",
+                                                            value: "<p><span style=\"font-size: 12pt\">队列</span></p>"
+                                                        },
+                                                        {
+                                                            label: "C",
+                                                            value: "<p><span style=\"font-size: 12pt\">树</span></p>"
+                                                        },
+                                                        {
+                                                            label: "D",
+                                                            value: "<p><span style=\"font-size: 12pt\">图</span></p>"
+                                                        }
+                                                    ],
+                                                    analysis: "<p>队列（Queue）遵循先进先出（FIFO）的顺序，而栈（Stack）是先进后出（LIFO）。</p>",
+                                                    group_id: 1196,
+                                                    sub_score: null, // 子分数：只有简答题和填空题有子分数，其他题目没有子分数（null）
+                                                    difficulty: 1, // 难度: 1-简单 2-中等 3-困难
+                                                    bank_question_id: 340, // 题库题目ID
+                                                    belong_to: 84,
+                                                },
+                                                {
+                                                    id: 997, // 题目ID（标识试卷中的题目）
+                                                    tags: ["数据结构", "基础"],
+                                                    type: "00", // 题目类型: 00-单选题 02-多选题 04-判断题 06-填空题 08-简答题
+                                                    order: 2, // 题目序号（在整张试卷中的序号）
+                                                    score: 2, // 题目分数
+                                                    answers: ["A", "B", "D"],
+                                                    content: "<p><span style=\"font-size: 12pt\">以下哪一种数据结构最适合用于实现先进先出（FIFO）逻辑？</span></p>",
+                                                    options: [
+                                                        {
+                                                            label: "A",
+                                                            value: "<p><span style=\"font-size: 12pt\">栈</span></p>"
+                                                        },
+                                                        {
+                                                            label: "B",
+                                                            value: "<p><span style=\"font-size: 12pt\">队列</span></p>"
+                                                        },
+                                                        {
+                                                            label: "C",
+                                                            value: "<p><span style=\"font-size: 12pt\">树</span></p>"
+                                                        },
+                                                        {
+                                                            label: "D",
+                                                            value: "<p><span style=\"font-size: 12pt\">图</span></p>"
+                                                        }
+                                                    ],
+                                                    analysis: "<p>队列（Queue）遵循先进先出（FIFO）的顺序，而栈（Stack）是先进后出（LIFO）。</p>",
+                                                    group_id: 1196,
+                                                    sub_score: null, // 子分数：只有简答题和填空题有子分数，其他题目没有子分数（null）
+                                                    difficulty: 2, // 难度: 1-简单 2-中等 3-困难
+                                                    bank_question_id: 340, // 题库题目ID
+                                                    belong_to: 84,
+                                                },
+                                                {
+                                                    id: 996, // 题目ID（标识试卷中的题目）
+                                                    tags: ["数据结构", "基础"],
+                                                    type: "00", // 题目类型: 00-单选题 02-多选题 04-判断题 06-填空题 08-简答题
+                                                    order: 3, // 题目序号（在整张试卷中的序号）
+                                                    score: 2, // 题目分数
+                                                    answers: ["B"],
+                                                    content: "<p><span style=\"font-size: 12pt\">以下哪一种数据结构最适合用于实现先进先出（FIFO）逻辑？</span></p>",
+                                                    options: [
+                                                        {
+                                                            label: "A",
+                                                            value: "<p><span style=\"font-size: 12pt\">栈</span></p>"
+                                                        },
+                                                        {
+                                                            label: "B",
+                                                            value: "<p><span style=\"font-size: 12pt\">队列</span></p>"
+                                                        },
+                                                        {
+                                                            label: "C",
+                                                            value: "<p><span style=\"font-size: 12pt\">树</span></p>"
+                                                        },
+                                                        {
+                                                            label: "D",
+                                                            value: "<p><span style=\"font-size: 12pt\">图</span></p>"
+                                                        }
+                                                    ],
+                                                    analysis: "<p>队列（Queue）遵循先进先出（FIFO）的顺序，而栈（Stack）是先进后出（LIFO）。</p>",
+                                                    group_id: 1196,
+                                                    sub_score: null, // 子分数：只有简答题和填空题有子分数，其他题目没有子分数（null）
+                                                    difficulty: 3, // 难度: 1-简单 2-中等 3-困难
+                                                    bank_question_id: 340, // 题库题目ID
+                                                    belong_to: 84,
+                                                }
+                                            ],
+                                        }
+                                    ]
+                                };
+
+                                // 临时mock移动题目后的试卷信息
+                                global.fetch.mockResolvedValueOnce({
+                                    ok: true,
+                                    json: () => Promise.resolve({
+                                        status: 0,
+                                        msg: "success",
+                                        API: "/api/paper/manual",
+                                        method: "GET",
+                                        data: MOVED_SINGLE_PAPER_INFO,
+                                    })
+                                });
+
+                                // 点击moveBtn
+                                fireEvent.click(moveBtn);
+
+                                // 等待移动完成
+                                await waitFor(() => {
+                                    expect(screen.getAllByText(/移动题组/)).toHaveLength(2);
+                                });
+
+                                // 临时mock返回结果
+                                global.fetch.mockResolvedValueOnce({
+                                    ok: true,
+                                    json: () => Promise.resolve({
+                                        status: 0,
+                                        msg: "success",
+                                        API: "/api/paper/manual",
+                                        method: "PUT",
+                                    })
+                                });
+
+                                // 构造移动题目后的试卷信息
+                                const MOVED_SINGLE_PAPER_INFO2 = {
+                                    ID: 230,
+                                    Name: "测试试卷",
+                                    Category: "00",
+                                    Level: "00",
+                                    SuggestedDuration: 66,
+                                    Description: "我是试卷的说明",
+                                    Tags: ["测试", "简答", "填空"],
+                                    TotalScore: 15,
+                                    QuestionCount: 5,
+                                    GroupsData: [
+                                        {
+                                            id: 1196,
+                                            name: "再移动题组",
+                                            order: 1,
+                                            questions: [
+                                                {
+                                                    id: 997, // 题目ID（标识试卷中的题目）
+                                                    tags: ["数据结构", "基础"],
+                                                    type: "00", // 题目类型: 00-单选题 02-多选题 04-判断题 06-填空题 08-简答题
+                                                    order: 1, // 题目序号（在整张试卷中的序号）
+                                                    score: 2, // 题目分数
+                                                    answers: ["B"],
+                                                    content: "<p><span style=\"font-size: 12pt\">以下哪一种数据结构最适合用于实现先进先出（FIFO）逻辑？</span></p>",
+                                                    options: [
+                                                        {
+                                                            label: "A",
+                                                            value: "<p><span style=\"font-size: 12pt\">栈</span></p>"
+                                                        },
+                                                        {
+                                                            label: "B",
+                                                            value: "<p><span style=\"font-size: 12pt\">队列</span></p>"
+                                                        },
+                                                        {
+                                                            label: "C",
+                                                            value: "<p><span style=\"font-size: 12pt\">树</span></p>"
+                                                        },
+                                                        {
+                                                            label: "D",
+                                                            value: "<p><span style=\"font-size: 12pt\">图</span></p>"
+                                                        }
+                                                    ],
+                                                    analysis: "<p>队列（Queue）遵循先进先出（FIFO）的顺序，而栈（Stack）是先进后出（LIFO）。</p>",
+                                                    group_id: 1196,
+                                                    sub_score: null, // 子分数：只有简答题和填空题有子分数，其他题目没有子分数（null）
+                                                    difficulty: 1, // 难度: 1-简单 2-中等 3-困难
+                                                    bank_question_id: 340, // 题库题目ID
+                                                    belong_to: 84,
+                                                },
+                                                {
+                                                    id: 995, // 题目ID（标识试卷中的题目）
+                                                    tags: ["数据结构", "基础"],
+                                                    type: "00", // 题目类型: 00-单选题 02-多选题 04-判断题 06-填空题 08-简答题
+                                                    order: 2, // 题目序号（在整张试卷中的序号）
+                                                    score: 2, // 题目分数
+                                                    answers: ["A", "B", "D"],
+                                                    content: "<p><span style=\"font-size: 12pt\">以下哪一种数据结构最适合用于实现先进先出（FIFO）逻辑？</span></p>",
+                                                    options: [
+                                                        {
+                                                            label: "A",
+                                                            value: "<p><span style=\"font-size: 12pt\">栈</span></p>"
+                                                        },
+                                                        {
+                                                            label: "B",
+                                                            value: "<p><span style=\"font-size: 12pt\">队列</span></p>"
+                                                        },
+                                                        {
+                                                            label: "C",
+                                                            value: "<p><span style=\"font-size: 12pt\">树</span></p>"
+                                                        },
+                                                        {
+                                                            label: "D",
+                                                            value: "<p><span style=\"font-size: 12pt\">图</span></p>"
+                                                        }
+                                                    ],
+                                                    analysis: "<p>队列（Queue）遵循先进先出（FIFO）的顺序，而栈（Stack）是先进后出（LIFO）。</p>",
+                                                    group_id: 1196,
+                                                    sub_score: null, // 子分数：只有简答题和填空题有子分数，其他题目没有子分数（null）
+                                                    difficulty: 2, // 难度: 1-简单 2-中等 3-困难
+                                                    bank_question_id: 340, // 题库题目ID
+                                                    belong_to: 84,
+                                                },
+                                                {
+                                                    id: 996, // 题目ID（标识试卷中的题目）
+                                                    tags: ["数据结构", "基础"],
+                                                    type: "00", // 题目类型: 00-单选题 02-多选题 04-判断题 06-填空题 08-简答题
+                                                    order: 3, // 题目序号（在整张试卷中的序号）
+                                                    score: 2, // 题目分数
+                                                    answers: ["B"],
+                                                    content: "<p><span style=\"font-size: 12pt\">以下哪一种数据结构最适合用于实现先进先出（FIFO）逻辑？</span></p>",
+                                                    options: [
+                                                        {
+                                                            label: "A",
+                                                            value: "<p><span style=\"font-size: 12pt\">栈</span></p>"
+                                                        },
+                                                        {
+                                                            label: "B",
+                                                            value: "<p><span style=\"font-size: 12pt\">队列</span></p>"
+                                                        },
+                                                        {
+                                                            label: "C",
+                                                            value: "<p><span style=\"font-size: 12pt\">树</span></p>"
+                                                        },
+                                                        {
+                                                            label: "D",
+                                                            value: "<p><span style=\"font-size: 12pt\">图</span></p>"
+                                                        }
+                                                    ],
+                                                    analysis: "<p>队列（Queue）遵循先进先出（FIFO）的顺序，而栈（Stack）是先进后出（LIFO）。</p>",
+                                                    group_id: 1196,
+                                                    sub_score: null, // 子分数：只有简答题和填空题有子分数，其他题目没有子分数（null）
+                                                    difficulty: 3, // 难度: 1-简单 2-中等 3-困难
+                                                    bank_question_id: 340, // 题库题目ID
+                                                    belong_to: 84,
+                                                }
+                                            ],
+                                        }
+                                    ]
+                                };
+
+                                // 临时mock移动题目后的试卷信息
+                                global.fetch.mockResolvedValueOnce({
+                                    ok: true,
+                                    json: () => Promise.resolve({
+                                        status: 0,
+                                        msg: "success",
+                                        API: "/api/paper/manual",
+                                        method: "GET",
+                                        data: MOVED_SINGLE_PAPER_INFO2,
+                                    })
+                                });
+
+                                // 获取第二个question-header类
+                                const questionHeader2 = container.querySelectorAll('.question-header')[1];
+
+                                vi.useFakeTimers();
+
+                                // 点击questionHeader2里的title为"上移"的button
+                                const moveBtn2 = questionHeader2.querySelector('button[title="上移"]');
+                                fireEvent.click(moveBtn2);
+
+                                await waitFor(() => {
+                                    expect(screen.getAllByText(/再移动题组/)).toHaveLength(2);
+                                });
+                                
+                                vi.advanceTimersByTime(5001);
+                                vi.useRealTimers();
+                            });
+                        });
                     });
                 });
             });

@@ -459,6 +459,7 @@
                 if (result) {
                     total_papers = result.rowCount;
                     paper_list = result.data || [];
+                    console.log(paper_list);
                 } else {
                     total_papers = 0;
                     paper_list = [];

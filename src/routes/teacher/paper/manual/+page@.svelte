@@ -855,14 +855,20 @@
         ];
         
         savePaper(paperID, ACTIONS)
-            .then(() => fetchPaper(paperID))
-            .then((result) => {
-                paper_groups = result.data.GroupsData;
-                paper_info = result.data;
-                total_score = paper_info.TotalScore;
-                question_count = paper_info.QuestionCount;
-                // 移动成功后高亮题组
-                highlightGroup(group.id);
+            .then(result1 => {
+                fetchPaper(paperID)
+                    .then(result => {
+                        if(result) {
+                            paper_groups = result.data.GroupsData;
+                            paper_info = result.data;
+                            total_score = paper_info.TotalScore;
+                            question_count = paper_info.QuestionCount;
+                            // 移动成功后高亮题组
+                            highlightGroup(group.id);
+                        } else {
+                            console.log(123);
+                        }
+                    });
             });
     }
 
