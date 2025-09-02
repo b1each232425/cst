@@ -27,8 +27,13 @@ const MOCK_INFO = {
   StartTime: new Date('2025-08-22 09:00:00').getTime(),
   EndTime: new Date('2025-08-22 11:30:00').getTime(),
   Status: '04',
+  ExamMode: '00',
+  ExamType: '00',
   BasicEval: '02',
+  Record:
+    '考试过程记录：发卷时间（8:55）、考试正式开始（9:00）、考生提问记录（张某询问答题卡填涂规范/10:15、刘某申请更换草稿纸/10:40）、中途离场记录（赵某因身体不适/11:00离场/由监考陪同）、收卷开始时间（11:25）、收卷完成时间（11:35）、试卷份数核对（实收28份/无遗漏）',
   ExamineeNum: 120,
+  InvigilatorNum: 1,
   AbsenteeNum: 8,
   CheaterNum: 2,
   AbnormalExamineeNum: 2,
@@ -113,7 +118,7 @@ const MOCK_EXAMINEES = [
     ExamCard: '20250822010',
     IdentityID: '440101199010101123',
     Name: '王十二',
-    Status: '11',
+    Status: '06',
     Remark: '表现优秀',
   },
 ];
@@ -146,12 +151,16 @@ describe('教师端监考详情页测试', () => {
       await waitFor(() => {
         expect(screen.getByText('时间：')).toBeInTheDocument();
         expect(screen.getByText('地点：')).toBeInTheDocument();
+        expect(screen.getByText('类型：')).toBeInTheDocument();
+        expect(screen.getByText('模式：')).toBeInTheDocument();
         expect(screen.getByText('考试情况')).toBeInTheDocument();
         expect(screen.getByText('考场情况：')).toBeInTheDocument();
+        expect(screen.getByText('监考员人数：')).toBeInTheDocument();
         expect(screen.getByText('缺考人数：')).toBeInTheDocument();
         expect(screen.getByText('作弊人数：')).toBeInTheDocument();
         expect(screen.getByText('考试异常人数：')).toBeInTheDocument();
         expect(screen.getByText('已延长时间人数：')).toBeInTheDocument();
+        expect(screen.getByText('考场记录：')).toBeInTheDocument();
         expect(screen.getByText('考生名单')).toBeInTheDocument();
         expect(screen.getByText('搜索：')).toBeInTheDocument();
         expect(screen.getByPlaceholderText('姓名、身份证号或准考证号')).toBeInTheDocument();
@@ -204,17 +213,74 @@ describe('教师端监考详情页测试', () => {
     });
   });
 
-  it('非监考模式下出现未知状态的考生，应爆红提醒', async () => {
-    mockFetch({
-      status: 0,
-      data: { info: { ...MOCK_INFO, Status: '02' }, examinees: MOCK_EXAMINEES },
-      rowCount: MOCK_EXAMINEES.length,
+  describe('未知状态，应该显示红色警告提醒', () => {
+    it('非监考模式下出现未知状态的考生，应爆红提醒', async () => {
+      mockFetch({
+        status: 0,
+        data: {
+          info: { ...MOCK_INFO, Status: '02' },
+          examinees: [
+            ...MOCK_EXAMINEES,
+            {
+              ExamineeID: 5012,
+              ExamCard: '20250822010',
+              IdentityID: '440101199010101123',
+              Name: '王十二',
+              Status: '11',
+              Remark: '表现优秀',
+            },
+          ],
+        },
+        rowCount: MOCK_EXAMINEES.length,
+      });
+
+      render(InvigilateDetail);
+
+      await waitFor(() => {
+        expect(screen.getByText('未知状态')).toHaveClass('unknown');
+      });
     });
 
-    render(InvigilateDetail);
+    it('考试类型未知，应爆红提醒', async () => {
+      mockFetch({
+        status: 0,
+        data: { info: { ...MOCK_INFO, ExamType: '22' }, examinees: MOCK_EXAMINEES },
+        rowCount: MOCK_EXAMINEES.length,
+      });
 
-    await waitFor(() => {
-      expect(screen.getByText('未知状态')).toHaveClass('unknown');
+      render(InvigilateDetail);
+
+      await waitFor(() => {
+        expect(screen.getByText('未知状态')).toHaveClass('unknown');
+      });
+    });
+
+    it('考试模式未知，应爆红提醒', async () => {
+      mockFetch({
+        status: 0,
+        data: { info: { ...MOCK_INFO, ExamMode: '22' }, examinees: MOCK_EXAMINEES },
+        rowCount: MOCK_EXAMINEES.length,
+      });
+
+      render(InvigilateDetail);
+
+      await waitFor(() => {
+        expect(screen.getByText('未知状态')).toHaveClass('unknown');
+      });
+    });
+
+    it('考试状态未知，应爆红提醒', async () => {
+      mockFetch({
+        status: 0,
+        data: { info: { ...MOCK_INFO, Status: '22' }, examinees: MOCK_EXAMINEES },
+        rowCount: MOCK_EXAMINEES.length,
+      });
+
+      render(InvigilateDetail);
+
+      await waitFor(() => {
+        expect(screen.getByText('未知状态')).toHaveClass('unknown');
+      });
     });
   });
 
@@ -263,6 +329,21 @@ describe('教师端监考详情页测试', () => {
     expect(window.history.back).toHaveBeenCalledTimes(1);
   });
 
+  it('非监考模式下考场记录字段为空的时候，显示“无”', async () => {
+    mockFetch({
+      status: 0,
+      data: { info: { ...MOCK_INFO, Record: '', Status: '02' }, examinees: MOCK_EXAMINEES },
+      rowCount: MOCK_EXAMINEES.length,
+    });
+
+    render(InvigilateDetail);
+
+    await waitFor(() => {
+      const record = screen.getByTestId('record');
+      expect(record).toHaveTextContent('无');
+    });
+  });
+
   describe('获取监考信息测试', () => {
     it('获取监考信息成功', async () => {
       mockFetch({
@@ -284,8 +365,15 @@ describe('教师端监考详情页测试', () => {
         expect(screen.getByText(/2025-08-22 11:30/)).toBeInTheDocument();
         expect(screen.getByText(/广州天河分校/)).toBeInTheDocument();
         expect(screen.getByText(/101多媒体教室/)).toBeInTheDocument();
+        expect(screen.getByText('线上考试')).toBeInTheDocument();
+        expect(screen.getByText('平时考试')).toBeInTheDocument();
         expect(screen.getByText('进行中')).toBeInTheDocument();
         expect(screen.getByText('一般')).toBeInTheDocument();
+        expect(
+          screen.getByDisplayValue(
+            '考试过程记录：发卷时间（8:55）、考试正式开始（9:00）、考生提问记录（张某询问答题卡填涂规范/10:15、刘某申请更换草稿纸/10:40）、中途离场记录（赵某因身体不适/11:00离场/由监考陪同）、收卷开始时间（11:25）、收卷完成时间（11:35）、试卷份数核对（实收28份/无遗漏）',
+          ),
+        ).toBeInTheDocument();
 
         const tbody = screen.getByTestId('examinee-tbody');
         const dataRows = tbody.querySelectorAll('tr');
@@ -610,6 +698,21 @@ describe('教师端监考详情页测试', () => {
         });
       });
 
+      it('成功更新考场记录', async () => {
+        mockFetch({ status: 0 });
+
+        const textarea = screen.getByPlaceholderText('请输入考场记录...');
+        await fireEvent.input(textarea, { target: { value: '模拟考场记录' } });
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        await waitFor(() => {
+          expect(textarea).toHaveValue('模拟考场记录');
+          expect(global.fetch).toHaveBeenCalledTimes(1);
+          expect(toast.error).not.toHaveBeenCalled();
+        });
+      });
+
       it('成功更新一个考生的状态', async () => {
         mockFetch({ status: 0 });
 
@@ -759,6 +862,21 @@ describe('教师端监考详情页测试', () => {
 
       // 等待 render
       await screen.findByTestId('examinee-tbody');
+    });
+
+    it('输入考场记录，防抖成功', async () => {
+      mockFetch({ status: 0 });
+
+      const textarea = screen.getByPlaceholderText('请输入考场记录...');
+      await fireEvent.input(textarea, { target: { value: '模拟 ' } });
+      await fireEvent.input(textarea, { target: { value: '模拟考场 ' } });
+      await fireEvent.input(textarea, { target: { value: '模拟考场记录' } });
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledTimes(1);
+      });
     });
 
     it('输入搜索框，防抖成功', async () => {
