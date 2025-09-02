@@ -246,16 +246,9 @@ import '$lib/components/Input/index.scss';
    * @param {string} name - 题库名称
    * @param {BankCardItemData} item - 题库数据
    */
-  function bankNameChangeHandleFunc(name, item) {
+ function bankNameChangeHandleFunc(name, item) {
     // console.log("题库名称:", $state.snapshot(name));
 
-    if (name == null) {
-      return;
-    }
-
-    if (typeof name !== 'string') {
-      throw new Error('name must be a string');
-    }
 
     item.Name = name;
 
@@ -274,12 +267,8 @@ import '$lib/components/Input/index.scss';
   function addTagHandleFunc(item, content) {
     // // console.log("添加标签:", content);
 
-    if (content == null || content == '') {
+    if (content == '') {
       return;
-    }
-
-    if (typeof content !== 'string') {
-      throw new Error('content must be a string');
     }
 
     if (item?.Tags) {
@@ -323,57 +312,30 @@ import '$lib/components/Input/index.scss';
   function tagContentChangeHandleFunc(content, index, item) {
     // console.log("标签内容:", $state.snapshot(content));
 
-    if (content == null) {
-      return;
-    }
-
-    if (typeof content !== 'string') {
-      throw new Error('content must be a string');
-    }
+  
 
     if (item?.Tags) {
-      item.Tags[index] = content;
-    } else {
-      throw new Error('current item tags is null');
-    }
+      item.Tags[index] = content;}
+ 
 
     item.is_changed = checkBankDataChange(item);
   }
 
-  /**
-   * 题库标签内容改变处理函数, 失去焦点或按下回车时调用
-   * @param {string} old_content - 原标签内容
-   * @param {string} new_content - 新标签内容
-   * @param {number} index - 标签索引
-   * @param {BankCardItemData} item - 题库数据
-   */
-  function tagOnChangeHandleFunc(old_content, new_content, index, item) {
-    // console.log("标签内容:", $state.snapshot(new_content));
-
-    item.is_changed = checkBankDataChange(item);
-  }
-
+  
   /**
    * 放弃修改
    * @param {BankCardItemData} item - 题库数据
    */
   function discardChanges(item) {
     // console.log("放弃修改:", item);
-    if (item == null) {
-      return;
-    }
+
 
     let bank_index = bank_list.findIndex((bank) => bank.ID === item.ID);
 
-    if (bank_index === -1) {
-      return;
-    }
-
+   
     let origin_item =origin_bank_list[bank_index];
 
-    if (origin_item == null) {
-      throw new Error(`origin_item(${item.ID}) is null`);
-    }
+   
 
     item.Name = origin_item.Name;
     item.Tags = origin_item.Tags ?? [];
@@ -525,9 +487,7 @@ o888o o888o   "888" o888o o888o o888o o888o
               tag_change: (content, index) => {
                 tagContentChangeHandleFunc(content, index, item);
               },
-              tag_onchange: (old_content, new_content, index) => {
-                tagOnChangeHandleFunc(old_content, new_content, index, item);
-              },
+            
               name_change: (name) => {
                 bankNameChangeHandleFunc(name, item);
               },

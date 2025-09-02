@@ -17,19 +17,20 @@
    */
   let { type, resource_id, papers = [] } = $props();
 
-  // 获取 Context 数据
-  let contextData = $state(null);
-  try {
+  // 获取 Context 数据，使用更简洁的方式
+  const contextData = $derived(() => {
     if (type === 'practice') {
       const context = getContext('practice');
-      contextData = context?.practiceData;
+      return context?.practiceData;
     } else {
       const context = getContext('exam');
-      contextData = context?.examData;
+      return context?.examData;
     }
-  } catch {
-    // Context 不存在时忽略
-  }
+  });
+
+  // 使用 contextData 或 props 数据
+  let displayData = $derived(contextData() || {});
+  let availablePapers = $derived(displayData.papers || papers || []);
 
   // 状态变量
   let questions = $state([]);
@@ -37,16 +38,21 @@
   let isLoaded = $state(false);
   let isfolded = $state(false);
   let currentPaperId = $state('');
-  let options = $state([]);
 
-  // 监听 currentPaperId 的变化
-  $effect(() => {
-    if (currentPaperId) {
-      // 当 currentPaperId 变化时，重新获取数据
-      if (type === 'exam' && papers.length > 0) {
-        updateData();
-      }
+  // 响应式计算选项列表
+  let options = $derived(() => {
+    return availablePapers.map((session, index) => ({
+      value: String(session.id),
+      label: session.name || `试卷${index + 1}`,
+    }));
+  });
+
+  // 响应式获取当前资源ID
+  let currentResourceId = $derived(() => {
+    if (type === 'practice') {
+      return displayData.id || resource_id;
     }
+    return resource_id;
   });
 
   // 切换折叠状态
@@ -152,7 +158,6 @@
         isLoaded = true;
       })
       .catch((error) => {
-        console.error('获取考试数据失败:', error);
         // 发生错误时清空数据
         questions = [];
         questionGroup = [];
@@ -188,44 +193,65 @@
 
         // 处理返回的数据结构（练习数据结构可能与考试不同）
         const flatQuestions = [];
-        if (resp_data.data.exam_paper_questions) {
-          // 遍历每个分组的题目，并为题目设置正确的GroupID
-          Object.entries(resp_data.data.exam_paper_questions).forEach(([groupId, groupQuestions]) => {
-            if (Array.isArray(groupQuestions)) {
-              groupQuestions.forEach((question) => {
-                // 确保题目有正确的GroupID
-                question.GroupID = parseInt(groupId);
-                flatQuestions.push(question);
-              });
-            }
-          });
+        
+        // 尝试不同的字段名，练习可能使用不同的数据结构
+        let questionsData = resp_data.data.exam_paper_questions || 
+                           resp_data.data.practice_paper_questions || 
+                           resp_data.data.questions;
+        
+        if (questionsData) {
+          // 如果是对象格式（按组分组）
+          if (typeof questionsData === 'object' && !Array.isArray(questionsData)) {
+            Object.entries(questionsData).forEach(([groupId, groupQuestions]) => {
+              if (Array.isArray(groupQuestions)) {
+                groupQuestions.forEach((question) => {
+                  question.GroupID = parseInt(groupId);
+                  flatQuestions.push(question);
+                });
+              }
+            });
+          }
+          // 如果是数组格式（直接的题目列表）
+          else if (Array.isArray(questionsData)) {
+            questionsData.forEach((question) => {
+              // 如果没有GroupID，设置默认值
+              if (!question.GroupID) {
+                question.GroupID = 1;
+              }
+              flatQuestions.push(question);
+            });
+          }
         }
-
+        
         questions = transformQuestions(
           flatQuestions,
           resp_data.data.question_answers_stats || {},
           resp_data.data.subjective_scores || {},
         );
-        questionGroup = resp_data.data.exam_paper_groups || [];
+        
+        // 尝试不同的题目组字段名
+        questionGroup = resp_data.data.exam_paper_groups || 
+                       resp_data.data.practice_paper_groups || 
+                       resp_data.data.groups || 
+                       [];
+                       
+        // 如果没有找到题目组，创建默认组
+        if (questionGroup.length === 0 && flatQuestions.length > 0) {
+          questionGroup = [{
+            ID: 1,
+            Name: '默认题目组',
+            Order: 1
+          }];
+        }
+        
         isLoaded = true;
       })
       .catch((error) => {
-        console.error('获取练习数据失败:', error);
         // 发生错误时清空数据
         questions = [];
         questionGroup = [];
         isLoaded = true;
       });
-  }
-
-  /**
-   * 将试卷数据转换为下拉选项
-   */
-  function examDataToOptions() {
-    return papers.map((session, index) => ({
-      value: String(session.id), // 确保value是字符串类型，统一处理
-      label: session.name || `试卷${index + 1}`, // 使用试卷名称，如果没有则使用默认名称
-    }));
   }
 
   /**
@@ -235,15 +261,15 @@
     if (currentPaperId) {
       // 根据当前选中的试卷ID查找对应的试卷信息
       // 注意：currentPaperId是字符串，session.id是数字，需要类型转换
-      const selectedSession = papers.find((session) => String(session.id) === currentPaperId);
+      const selectedSession = availablePapers.find((session) => String(session.id) === currentPaperId);
 
       if (selectedSession) {
         // 使用选中试卷的exam_session_id获取分析数据
         fetchAnalysisDataBySessionId(selectedSession.id);
       } else {
         // 如果没有找到选中的试卷，使用第一个试卷
-        if (papers.length > 0) {
-          fetchAnalysisDataBySessionId(papers[0].id);
+        if (availablePapers.length > 0) {
+          fetchAnalysisDataBySessionId(availablePapers[0].id);
         }
       }
     }
@@ -255,24 +281,27 @@
   function handlePaperChange(selectedPaperId) {
     // 更新当前选中的试卷ID
     currentPaperId = selectedPaperId;
+    // 立即更新数据
+    if (type === 'exam' && selectedPaperId && availablePapers.length > 0) {
+      updateData();
+    }
   }
 
   // 组件挂载时的初始化
   onMount(() => {
-    if (type === 'exam' && papers.length > 0) {
-      // 初始化选项
-      options = examDataToOptions();
-
+    if (type === 'exam' && availablePapers.length > 0) {
       // 设置默认选中的试卷
-      if (!currentPaperId && papers.length > 0) {
-        currentPaperId = String(papers[0].id); // 这里设置的是exam_session_id转换为字符串
+      if (!currentPaperId && availablePapers.length > 0) {
+        currentPaperId = String(availablePapers[0].id);
+        // 加载初始数据
+        updateData();
       }
-
-      // 加载初始数据
-      updateData();
-    } else if (type === 'practice' && resource_id) {
-      // 练习类型直接使用 resource_id
-      fetchPracticeAnalysisData(resource_id);
+    } else if (type === 'practice') {
+      // 练习类型：使用响应式的 currentResourceId
+      const practiceId = currentResourceId();
+      if (practiceId) {
+        fetchPracticeAnalysisData(practiceId);
+      }
     }
   });
 </script>
@@ -295,10 +324,10 @@
         正在加载试卷分析数据...
       </div>
     {:else}
-      {#if type === 'exam' && papers.length > 1}
+      {#if type === 'exam' && availablePapers.length > 1}
         <div class="paper-select">
           <Select bind:value={currentPaperId} placeholder="选择试卷" changeValue={handlePaperChange}>
-            {#each options as option}
+            {#each options() as option}
               <Option value={option.value} label={option.label}>{option.label}</Option>
             {/each}
           </Select>

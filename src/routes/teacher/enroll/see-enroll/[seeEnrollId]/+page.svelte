@@ -8,58 +8,31 @@
   import PersonImportPanel from '../../_components/PersonImportPanel.svelte';
   import PersonMovePanel from '../../_components/PersonMovePanel.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
-  import { checkFileData } from '../../_utils/handleFileInput';
+  import { checkFileData, formatDateTime } from '../../_utils/handleFileInput';
   import { toast } from '$lib/components/Toast/Toast';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
+  import { onMount } from 'svelte';
 
-  // 模拟报名人员数据
-  let person_list = $state([
-    {
-      id: 1,
-      name: '张三',
-      phone: '13800001111',
-      email: 'zhangsan@example.com',
-      gender: '男',
-      idNumber: '440101200001010011',
-      idType: '身份证',
-      enrollTime: '2025-08-01 00:00:00',
-      enrollMethod: '线上报名',
-      examType: '理论',
-      auditor: '李老师',
-      status: '未审核',
-    },
-    {
-      id: 2,
-      name: '李四',
-      phone: '13800002222',
-      email: 'lisi@example.com',
-      gender: '女',
-      idNumber: '440101200002020022',
-      idType: '护照',
-      enrollTime: '2025-08-03 00:00:00',
-      enrollMethod: '线下报名',
-      examType: '实操',
-      auditor: '王老师',
-      status: '通过',
-    },
-    {
-      id: 3,
-      name: '王五',
-      phone: '13800003333',
-      email: 'wangwu@example.com',
-      gender: '男',
-      idNumber: '440101200003030033',
-      idType: '身份证',
-      enrollTime: '2025-08-05 00:00:00',
-      enrollMethod: '线上报名',
-      examType: '理论',
-      auditor: '赵老师',
-      status: '未通过',
-    },
-  ]);
+  // 考试类型映射
+  const examTypeMap = {
+    '00': '正考',
+    '02': '补考',
+  };
 
-  // 模拟批量导入数据
+  // 状态映射
+  const statusMap = {
+    '00': '报名中',
+    '02': '待审核',
+    '04': '通过',
+    '06': '不通过',
+    '08': '已迁移',
+  };
+
+  // 报名人员数据
+  let person_list = $state([]);
+
+  // 批量导入数据
   let candidate_list = $state([]);
 
   // 审核状态
@@ -98,6 +71,56 @@
   let messagebox_content = $state('');
 
   let person_import_panel = $state(null); // 导入报考人员DOM组件
+
+  let total_items = $state(0); // 数据总数
+  let current_page = $state(1); // 当前页数
+  let page_size = $state(10); // 当前页面大小
+  const { data } = $props();
+
+  // 查看单个报名计划考生
+  function getEnrollPersonData() {
+    const searchParams = new URLSearchParams({
+      id: data.see_enroll_id,
+      page: current_page,
+      pageSize: page_size,
+    });
+
+    fetch(`/api/registration?${searchParams}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((res) => {
+        // 转换成表格需要的格式
+        person_list = res.data.student.map((item) => ({
+          id: item.student.ID,
+          name: item.student.OfficialName,
+          phone: item.student.MobilePhone,
+          email: item.student.Email,
+          gender: item.student.Gender,
+          idNumber: item.student.IDCardNo,
+          idType: item.student.IDCardType,
+          enrollTime: formatDateTime(item.detail.RegisterTime), // 格式化时间
+          enrollMethod: item.detail.Type === '02' ? '人工导入' : '自报名', // 报名方式
+          examType: examTypeMap[item.detail.ExamType] || '正考', // 默认正考
+          auditor: item.reviewer || '--',
+          status: statusMap[item.detail.Status] || '未知',
+        }));
+
+        total_items = res.data.total;
+        console.log(person_list);
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
 
   // 文件上传处理
   async function handleFileUpload(event) {
@@ -352,6 +375,30 @@
     messagebox_content = '';
     is_show_messagebox = false;
   }
+
+  // 父组件控制分页器的行为
+  function handlePageChange(event) {
+    current_page = event.detail;
+  }
+
+  function handlePageSizeChange(event) {
+    page_size = event.detail;
+  }
+
+  // 下载模板按钮点击事件
+  function handleDownModel() {
+    const url = '/enroll/excel_data/导入考生模板1.xlsx';
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '导入考生模板1.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  onMount(() => {
+    getEnrollPersonData();
+  });
 </script>
 
 <div class="enroll-management">
@@ -389,7 +436,7 @@
 
       <div>
         <button class="btn-import" onclick={handleImportPerson}>导入</button>
-        <button class="btn-down-model">下载模板</button>
+        <button class="btn-down-model" onclick={handleDownModel}>下载模板</button>
         <button class="btn-move" onclick={handleMovePerson}>批量移动</button>
         <button class="btn-approve" onclick={handleBatchApprove}>批量通过</button>
         <button class="btn-reject" onclick={handleBatchReject}>批量不通过</button>
@@ -405,7 +452,7 @@
                 type="checkbox"
                 class="checkbox"
                 onchange={handleSelectAll}
-                checked={person_list.length === select_approve_id.length}
+                checked={person_list ? person_list.length === select_approve_id.length : false}
               /></th
             >
             <th style="width: 6%">姓名</th>
@@ -423,7 +470,7 @@
           </tr>
         </thead>
         <tbody>
-          {#if person_list.length > 0}
+          {#if person_list}
             {#each person_list as item}
               <tr>
                 <td
@@ -491,7 +538,7 @@
     </div>
 
     <div class="pagination-container">
-      <Pagination total_items={200} />
+      <Pagination {total_items} on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} />
     </div>
   </div>
 </div>
@@ -499,7 +546,12 @@
 <!-- 隐藏的文件选择框 -->
 <input type="file" accept=".xls,.xlsx" bind:this={file_input} style="display:none" onchange={handleFileUpload} />
 
-<PersonImportPanel bind:this={person_import_panel} {is_show_import_panel} {candidate_list} closePanel={closeImportPanel}
+<PersonImportPanel
+  bind:this={person_import_panel}
+  enroll_id={data.see_enroll_id}
+  {is_show_import_panel}
+  {candidate_list}
+  closePanel={closeImportPanel}
 ></PersonImportPanel>
 
 <PersonMovePanel {is_show_move_panel} closePanel={closeMovePanel}></PersonMovePanel>

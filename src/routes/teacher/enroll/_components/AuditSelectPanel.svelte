@@ -1,5 +1,4 @@
 <script>
-  import UneditableHashTags from '$lib/components/Tag/UneditableHashTags.svelte';
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Option from '$lib/components/Select/Option.svelte';
@@ -22,21 +21,10 @@
   // 分页器数据
   let current_page = $state(1);
   let page_size = $state(10);
-  let total_items = $derived(show_all_audit ? all_audit_list.length : audit_list.length);
+  let total_items = $derived(0);
 
   // 全部审查员数据
-  let all_audit_list = $state([
-    { id: 1, name: '张三', gender: '男', phone: '13800000001', idCard: '440101199901010011' },
-    { id: 2, name: '李四', gender: '女', phone: '13800000002', idCard: '440101199802022222' },
-    { id: 3, name: '王五', gender: '男', phone: '13800000003', idCard: '440101199703033333' },
-    { id: 4, name: '赵六', gender: '女', phone: '13800000004', idCard: '440101199604044444' },
-    { id: 5, name: '钱七', gender: '男', phone: '13800000005', idCard: '440101199505055555' },
-    { id: 6, name: '钱七', gender: '男', phone: '13800000005', idCard: '440101199505055555' },
-    { id: 7, name: '钱七', gender: '男', phone: '13800000005', idCard: '440101199505055555' },
-    { id: 8, name: '钱七', gender: '男', phone: '13800000005', idCard: '440101199505055555' },
-    { id: 9, name: '钱七', gender: '男', phone: '13800000005', idCard: '440101199505055555' },
-    { id: 10, name: '钱七', gender: '男', phone: '13800000005', idCard: '440101199505055555' },
-  ]);
+  let all_audit_list = $state([]);
 
   // 批量导入数据
   let import_audit_list = $state([
@@ -46,6 +34,28 @@
     { id: 4, name: '', gender: '女', phone: '13800000004', idCard: '440101199604044444', error: '' },
   ]);
 
+  // 查询审核员数据
+  function getAuditData() {
+    fetch(`/api/user?page=${current_page}&pageSize=${page_size}&domain=cst.school^teacher`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    })
+      .then((response) => response.json())
+      .then((res) => {
+        if (res.status !== 0) {
+          throw new Error(res.msg);
+        }
+        all_audit_list = res.data;
+        total_items = res.rowCount;
+      })
+      .catch((err) => {
+        console.error('Fetch users error:', err);
+      });
+  }
+
   // 关闭弹窗
   function closeModal() {
     show = false;
@@ -54,6 +64,7 @@
   // 处理分页器页数变化
   function handlePageChoose(e) {
     current_page = e.detail;
+    getAuditData();
   }
 
   // 处理分页器页面大小变化
@@ -62,16 +73,21 @@
   }
 
   // 处理选择审核员按钮点击事件
-  function handleSelectAudit() {
+  async function handleSelectAudit() {
+    if (!show_all_audit) {
+      // 第一次点击时拉取数据
+      await getAuditData();
+    }
+
     if (show_all_audit) {
       // 过滤出已选的审核员
-      const selected = all_audit_list.filter((item) => audit_id_list.includes(item.id));
+      const selected = all_audit_list.filter((item) => audit_id_list.includes(item.ID));
 
       // 在原有 audit_list 基础上追加
       audit_list = [...audit_list, ...selected];
 
       // 去重
-      audit_list = audit_list.filter((item, index, self) => index === self.findIndex((t) => t.id === item.id));
+      audit_list = audit_list.filter((item, index, self) => index === self.findIndex((t) => t.ID === item.ID));
     }
     show_all_audit = !show_all_audit;
   }
@@ -85,8 +101,8 @@
       audit_id_list.push(id);
 
       // 在原有列表基础上追加
-      const target = all_audit_list.find((item) => item.id === id);
-      if (target && !audit_list.some((a) => a.id === id)) {
+      const target = all_audit_list.find((item) => item.ID === id);
+      if (target && !audit_list.some((a) => a.ID === id)) {
         audit_list = [...audit_list, target];
       }
     } else {
@@ -94,7 +110,7 @@
       audit_id_list.splice(index, 1);
 
       // 从 audit_list 中移除
-      audit_list = audit_list.filter((item) => item.id !== id);
+      audit_list = audit_list.filter((item) => item.ID !== id);
     }
   }
 
@@ -138,11 +154,11 @@
       audit_list = [
         ...audit_list,
         {
-          id: item.id,
-          name: item.name,
-          gender: item.gender,
-          phone: item.phone,
-          idCard: item.idCard,
+          id: item.ID,
+          name: item.OfficialName,
+          gender: item.Gender,
+          phone: item.MobilePhone,
+          idCard: item.IDCardNo,
         },
       ];
     });
@@ -150,7 +166,7 @@
 
   // 处理确定按钮点击事件
   function handleConfirmSelect() {
-    onSelectAudit({ audit_list });
+    onSelectAudit(audit_list);
     closeModal();
   }
 </script>
@@ -203,21 +219,21 @@
               <thead>
                 <tr>
                   <th style="width: 5%"><input type="checkbox" /></th>
-                  <th style="width: 5%">姓名</th>
+                  <th style="width: 10%">姓名</th>
                   <th style="width: 20%">性别</th>
                   <th style="width: 30%">手机号</th>
-                  <th style="width: 40%">证件号</th>
+                  <th style="width: 35%">证件号</th>
                 </tr>
               </thead>
               <tbody>
                 {#if all_audit_list.length > 0}
                   {#each all_audit_list as audit}
-                    <tr onclick={() => selectAudit(audit.id)}>
-                      <td><input type="checkbox" checked={audit_id_list.includes(audit.id)} /></td>
-                      <td>{audit.name}</td>
-                      <td>{audit.gender}</td>
-                      <td>{audit.phone}</td>
-                      <td>{audit.idCard}</td>
+                    <tr onclick={() => selectAudit(audit.ID)}>
+                      <td><input type="checkbox" checked={audit_id_list.includes(audit.ID)} /></td>
+                      <td>{audit.OfficialName ? audit.OfficialName : '--'}</td>
+                      <td>{audit.Gender ? audit.Gender : '--'}</td>
+                      <td>{audit.MobilePhone ? audit.MobilePhone : '--'}</td>
+                      <td>{audit.IDCardNo ? audit.IDCardNo : '--'}</td>
                     </tr>
                   {/each}
                 {:else}
@@ -261,10 +277,10 @@
                 {#if audit_list.length > 0}
                   {#each audit_list as audit}
                     <tr>
-                      <td>{audit.name}</td>
-                      <td>{audit.gender}</td>
-                      <td>{audit.phone}</td>
-                      <td>{audit.idCard}</td>
+                      <td>{audit.OfficialName ? audit.OfficialName : '--'}</td>
+                      <td>{audit.Gender ? audit.Gender : '--'}</td>
+                      <td>{audit.MobilePhone ? audit.MobilePhone : '--'}</td>
+                      <td>{audit.IDCardNo ? audit.IDCardNo : '--'}</td>
                     </tr>
                   {/each}
                 {:else}

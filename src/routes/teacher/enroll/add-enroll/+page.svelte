@@ -22,9 +22,14 @@
   let practice_initial_id = $state(null); // 当前选择试卷id
   let practice_data = $state(null); // 试卷数据
   let detail_exam_location = $state(''); // 考试详细地点
+
   // 考试预定地点
   let exam_plan_location = $derived(() => {
-    return `${province} ${city} ${district} ${detail_exam_location}`.trim();
+    const provinceLabel = provinces.find((p) => p.value === province)?.label || '';
+    const cityLabel = cities.find((c) => c.value === city)?.label || '';
+    const districtLabel = districts.find((d) => d.value === district)?.label || '';
+
+    return `${provinceLabel} ${cityLabel} ${districtLabel} ${detail_exam_location}`.trim();
   });
 
   // 错误提示内容
@@ -38,6 +43,33 @@
     practice: '',
     exam_plan_location: '',
   });
+
+  // 添加报名计划请求数据
+  let add_enroll_req = $derived(() => {
+    return {
+      registration: {
+        Name: plan_name,
+        StartTime: toTimestamp(start_date),
+        EndTime: toTimestamp(end_date),
+        ReviewEndtime: toTimestamp(deadline),
+        MaxNumber: people_limit === 'limited' ? Number(limited_number) : 0,
+        Course: (function () {
+          if (subjects.theory && subjects.practice) return '00';
+          if (subjects.theory) return '02';
+          if (subjects.practice) return '04';
+          return '';
+        })(),
+        ExamPlanLocation: exam_plan_location(),
+        ReviewerIds: audit_data ? audit_data.map((item) => item.ID) : [],
+      },
+      practice_ids: [practice_initial_id],
+    };
+  });
+
+  // 把时间转化成数字格式
+  function toTimestamp(date) {
+    return date ? Math.floor(new Date(date).getTime() / 1000) : null;
+  }
 
   // 处理选择练习按钮点击事件
   function handlePracticeSelect() {
@@ -62,6 +94,7 @@
   // 处理开始日期变化
   function handleStartDateChange(event) {
     start_date = event.detail.date;
+    console.log(start_date);
   }
 
   // 处理终止日期变化
@@ -72,6 +105,29 @@
   // 处理截止日期变化
   function handleDeadlineChange(event) {
     deadline = event.detail.date;
+  }
+
+  // 添加报名计划请求
+  function addEnrollReq() {
+    fetch('/api/registration', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data: add_enroll_req() }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log(data);
+      })
+      .catch((e) => {
+        console.log(e);
+      });
   }
 
   // 处理保存按钮点击事件
@@ -98,7 +154,8 @@
       !errors.people_limit &&
       !errors.subjects
     ) {
-      alert('校验通过，提交成功！');
+      addEnrollReq();
+      goto('/teacher/enroll');
     }
   }
 
@@ -223,7 +280,12 @@
       </div>
 
       <!-- 详细地址输入 -->
-      <input type="text" class="detail-address-input" placeholder="请输入详细地址（如街道、门牌号）" />
+      <input
+        bind:value={detail_exam_location}
+        type="text"
+        class="detail-address-input"
+        placeholder="请输入详细地址（如街道、门牌号）"
+      />
     </div>
   </div>
   <div class="error-text">{errors.exam_plan_location}</div>
@@ -242,8 +304,8 @@
         <div class="selected-audit-display">
           <div class="audit-info-container">
             <div class="audit-info-row">
-              <span class="audit-name" title={audit_data.audit_list.map((a) => a.name).join('、')}>
-                {audit_data.audit_list.map((a) => a.name).join('、')}
+              <span class="audit-name" title={audit_data.map((a) => a.OfficialName).join('、')}>
+                {audit_data.map((a) => a.OfficialName).join('、')}
               </span>
             </div>
           </div>
@@ -317,7 +379,7 @@
 
   <!-- 底部按钮 -->
   <div class="form-actions">
-    <button class="btn-cancel" onclick={handleCancle}>取消</button>
+    <button class="btn-cancel" onclick={handleCancle} data-testid="btn-cancel">取消</button>
     <button class="btn-save" onclick={handleSave}>保存</button>
   </div>
 </div>

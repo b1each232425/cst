@@ -1,10 +1,11 @@
 <script>
     // @ts-nocheck
-    import Pagination from "../../Pagination.svelte";
+    import Pagination from "$lib/components/Pagination/Pagination.svelte";
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import Title from '$lib/components/Title/Title.svelte';
     import { formatISOString } from "$lib/utils/time_utils";
+    import InputBox from "$lib/components/Input/InputBox.svelte";
 
     /**
      * @type {Array<{
@@ -22,52 +23,109 @@
      *     }>
      *   }>
      * }>
+     * 
+     * 
+     * 
+     * 
+     * 
+     * 处理页面导航
+     * @param {boolean} is_next - 是否为下一页，true表示下一页，false表示上一页
+     * @description 根据is_next参数决定是前进到下一页还是后退到上一页，并重新获取数据
+     * 
+     * 
+     * 
+     * 处理页码选择
+     * @param {number} page - 要跳转的目标页码
+     * @description 直接跳转到指定页码并重新获取数据
+     * 
+     * 
+     * 
+     * 处理每页显示数量变化
+     * @param {string} value - 新的每页显示数量
+     * @description 更新每页显示数量，重置到第一页并重新获取数据
+     * 
+     * 
+     * 
+     * 处理页码搜索跳转
+     * @param {string} value - 要跳转的目标页码
+     * @description 验证输入的页码是否有效，如果有效则跳转到指定页码并重新获取数据
+     * 
+     * 
+     * 跳转到考场所有考试信息页
+     * @param {number} roomID - 考场ID
+     * 
+     * 
+     * 
+     * 进入监考
+     * @param {number} exam_session_id
+     * @param {number} exam_room_id
      */
-    let examRooms = $state([]);
 
-    let search_text = $state("");
-    let total_num = $state(0);
-    let total_pages = $state(0);
-    let current_page = $state(1);
-    let page_size = $state(10);
-    let current_site_id = $state("");
-    let siteName = $state("加载中...");
 
-    // 获取考点名称
-    async function fetchSiteName() {  //协商后端
-        try {
-            const queryParams = new URLSearchParams({
-                id: current_site_id,
-            });
+    let examRooms = $state([]); // 考场列表
+    let search_text = $state(""); // 搜索关键词
+    let total_num = $state(0); // 总记录数
+    let total_pages = $state(0); // 总页数
+    let current_page = $state(1); // 当前页码
+    let page_size = $state(10); // 每页显示数量
+    let current_site_id = $state(""); // 当前考点ID
+    let siteName = $state("加载中..."); // 考点名称
 
-            const response = await fetch(
-                `/api/exam-site/list?${queryParams}`,
-                {
-                    method: "GET",
-                    credentials: "include",
-                },
-            );
+    // 按钮控制类
+    function viewAllExams(roomID) { // 跳转到考场所有考试信息页
+        goto(`/teacher/examSiteManagement/room/${roomID}`);
+    }
+    function enterInvigilation(exam_session_id, exam_room_id){ // 进入监考
+        localStorage.setItem("invigilation_session_info", JSON.stringify({
+            exam_session_id: exam_session_id,
+            exam_room_id: exam_room_id,
+            is_admin: true
+        }));
+        goto(
+            `/teacher/invigilationList/invigilation`
+        )
 
+    }
+    async function handlePageSelect(page) { // 处理页码选择
+        current_page = page;
+        await fetchExamRoomsAndSiteName();
+    }
+    async function handlePageSizeChange(value) { // 处理每页显示数量变化
+        page_size = parseInt(value);
+        current_page = 1; // 重置到第一页
+        await fetchExamRoomsAndSiteName();
+    }
+
+    // 数据获取类
+    function fetchSiteName() {  // 获取考点名称
+        const queryParams = new URLSearchParams({
+            id: current_site_id,
+        });
+
+        return fetch(`/api/exam-site/list?${queryParams}`, {
+            method: "GET",
+            credentials: "include",
+        })
+        .then(response => {
             if (!response.ok) {
                 throw new Error("Network response was not ok");
             }
-
-            const responseData = await response.json();
+            return response.json();
+        })
+        .then(responseData => {
             if (responseData.status !== 0) {
                 console.error("获取考点名称失败:", responseData.msg);
                 siteName = "加载失败";
                 return;
             }
-
             siteName = responseData.data.name || "无数据";
-        } catch (error) {
+        })
+        .catch(error => {
             console.error("Error fetching site name:", error);
             siteName = "加载失败";
-        }
+        });
     }
-
-    // 从后端获取考场列表和考点名称
-    function fetchExamRoomsAndSiteName() {
+    function fetchExamRoomsAndSiteName() { // 从后端获取考场列表和考点名称
         fetchSiteName().then(() => {
             // 构造新的 q 参数
             const q = {
@@ -110,168 +168,15 @@
                 total_pages = Math.ceil(total_num / page_size);
             }
 
-            console.log(responseData.data);
         })
         .catch(error => {
             console.error("Error fetching exam rooms:", error);
         });
 
 
-        examRooms = [
-        {
-            site: 74,
-            id: 55,
-            name: "历奕泽",
-            capacity: 18,
-            recentExam: {
-                id: 20,
-                roomID: 18,
-                name: "公燕",
-                examID: 27,
-                examName: "顿依诺",
-                status: "进行中",
-                startTime: Date.now() - 3600 * 1000, // 1小时前
-                endTime: Date.now() + 3600 * 1000, // 1小时后
-                examineeNum: 3
-            },
-            available: true
-        },
-        {
-            site: 74,
-            id: 56,
-            name: "景昊轩",
-            capacity: 25,
-            recentExam: {
-                id: 21,
-                roomID: 19,
-                name: "王雷",
-                examID: 28,
-                examName: "化学期末",
-                status: "已结束",
-                startTime: Date.now() - 7200 * 1000, // 2小时前
-                endTime: Date.now() - 3600 * 1000, // 1小时前
-                examineeNum: 20
-            },
-            available: true
-        },
-        {
-            site: 74,
-            id: 57,
-            name: "楚子航",
-            capacity: 30,
-            recentExam: null, // 还没考试
-            available: false
-        },
-        {
-            site: 74,
-            id: 58,
-            name: "沈思雨",
-            capacity: 12,
-            recentExam: {
-                id: 22,
-                roomID: 20,
-                name: "李明",
-                examID: 29,
-                examName: "数学测验",
-                status: "未开始",
-                startTime: Date.now() + 3600 * 1000, // 1小时后
-                endTime: Date.now() + 7200 * 1000, // 2小时后
-                examineeNum: 5
-            },
-            available: true
-        },
-        {
-            site: 74,
-            id: 59,
-            name: "顾安琪",
-            capacity: 15,
-            recentExam: null,
-            available: true
-        }
-    ];
-
-    // 同时设置分页相关字段
-    total_num = examRooms.length;
-    total_pages = Math.ceil(total_num / page_size);
     }
 
-    /**
-     * 处理页面导航
-     * @param {boolean} is_next - 是否为下一页，true表示下一页，false表示上一页
-     * @description 根据is_next参数决定是前进到下一页还是后退到上一页，并重新获取数据
-     */
-    async function handlePageNavigation(is_next) {
-        if (is_next && current_page < total_pages) {
-            current_page++;
-        } else if (!is_next && current_page > 1) {
-            current_page--;
-        }
-        await fetchExamRoomsAndSiteName();
-    }
-
-    /**
-     * 处理页码选择
-     * @param {number} page - 要跳转的目标页码
-     * @description 直接跳转到指定页码并重新获取数据
-     */
-    async function handlePageSelect(page) {
-        current_page = page;
-        await fetchExamRoomsAndSiteName();
-    }
-
-    /**
-     * 处理每页显示数量变化
-     * @param {string} value - 新的每页显示数量
-     * @description 更新每页显示数量，重置到第一页并重新获取数据
-     */
-    async function handlePageSizeChange(value) {
-        page_size = parseInt(value);
-        current_page = 1; // 重置到第一页
-        await fetchExamRoomsAndSiteName();
-    }
-
-    /**
-     * 处理页码搜索跳转
-     * @param {string} value - 要跳转的目标页码
-     * @description 验证输入的页码是否有效，如果有效则跳转到指定页码并重新获取数据
-     */
-    async function handlePageSearch(value) {
-        const pageNum = parseInt(value);
-        if (!isNaN(pageNum) && pageNum > 0 && pageNum <= total_pages) {
-            current_page = pageNum;
-            await fetchExamRoomsAndSiteName();
-        }
-    }
-
-    /**
-     * 跳转到考场所有考试信息页
-     * @param {number} roomID - 考场ID
-     */
-    function viewAllExams(roomID) {
-        goto(`/teacher/examSiteManagement/room/${roomID}`);
-    }
-
-    /**
-     * 进入监考
-     * @param {number} exam_session_id
-     * @param {number} exam_room_id
-     */
-    function enterInvigilation(exam_session_id, exam_room_id){
-
-        console.log("进入监考", exam_session_id, exam_room_id);
-
-        localStorage.setItem("invigilation_session_info", JSON.stringify({
-            exam_session_id: exam_session_id,
-            exam_room_id: exam_room_id,
-            is_admin: true
-        }));
-
-        goto(
-            `/teacher/invigilationList/invigilation`
-        )
-
-    }
-
+    //入口
     onMount(async () => {
         const pathParts = window.location.pathname.split("/");
         const lastSegment = pathParts[pathParts.length - 1];
@@ -279,7 +184,6 @@
         await fetchExamRoomsAndSiteName();
     });
 
-    
 </script>
 
 <Title title="考场列表"/>
@@ -298,20 +202,17 @@
 
             <span class="label">搜索考场: </span>
             <div class="input-group">
-                <input
-                    type="text"
-                    placeholder="请输入考场名称"
+                <InputBox
                     bind:value={search_text}
+                    placeholder="请输入考场名称"
                     class="filter-input"
-                    onchange={(event) => {
-                        
+                    clearable={true}
+                    show_label={false}
+                    onInput={(val) => {
+                        search_text = val;
                         fetchExamRoomsAndSiteName();
-                        
                     }}
                 />
-                <button class="clear-button" onclick={() => (search_text = "")}
-                    >×</button
-                >
             </div>
         </div>
         <div class="content">
@@ -467,30 +368,22 @@
         </div>
 
         <div class="pagination-container">
-            <Pagination
-                total_data_num={total_num}
-                total_page_num={total_pages}
-                current_page_num={current_page}
-                max_show_page_num={5}
-                data_num_per_page_options={[
-                    { value: 10, label: "10条/页" },
-                    { value: 20, label: "20条/页" },
-                    { value: 50, label: "50条/页" },
-                ]}
-                selected={{ value: page_size, label: `${page_size}条/页` }}
-                onPageChangeFunc={handlePageNavigation}
-                onPageChooseFunc={handlePageSelect}
-                selectOptionFunc={handlePageSizeChange}
-                onPageSearchFunc={handlePageSearch}
-                expand_direction="up"
-            ></Pagination>
+            <div class="pagination-container">
+                <Pagination
+                    total_items={total_num}
+                    page_size={page_size}
+                    current_page={current_page}
+                    page_size_options={[10, 20, 50]}
+                    on:pageChange={(e) => handlePageSelect(e.detail)}
+                    on:pageSizeChange={(e) => handlePageSizeChange(e.detail)}
+                />
+            </div>
         </div>
     </div>
 </div>
 
 <style lang="scss" scoped>
     .page {
-        overflow: auto;
         height: 100%;
     }
     .container {

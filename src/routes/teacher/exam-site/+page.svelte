@@ -50,98 +50,28 @@
      *   error_msg: string,
      *   can_delete: boolean
      * }>}
-     */
-    let examSites = $state([]);
-
-    let current_page = $state(1);
-
-    let total_num = $state(0);
-
-    let total_pages = $state(1);
-
-    let page_size = $state(10);
-
-    let search_text = $state("");
-
-    let show_add_dialog = $state(false);
-
-    let show_admin_select_panel = $state(false);
-
-    /**
+     * 
+     *
      * @type {Array<admin_selection>}
-     */
-    let selected_admin_ids = $state([]); // 用于存储选中的考点负责人ID
-
-    /**
+     * 
+     * 
+     *
      * @type {NewSite}
-     */
-    let new_site = $state({
-        name: "",
-        address: "",
-        link: "",
-        admin: 0,
-        adminName: "",
-    });
-
-    let show_add_room_dialog = $state(false);
-    let new_room = $state({
-        name: "",
-        capacity: 0,
-    });
-    let sortAsc = $state(false); // true 升序，false 降序
-
-    let deleteDialogOpen = $state(false);
-
-    let current_delete_site_id = $state(0);
-
-    let current_site_id_for_room = $state(0); // 新增状态变量，存储要添加考场的考点ID
-
-    let show_action_toast = $state(false);
-
-    /**
+     *
+     * 
+     * 
+     * 
      * @type {import("$lib/component/ActionToast.svelte").default | null}
-     */
-    let action_toast = $state(null);
-
-    // 简单的IP地址正则表达式
-    const SERVER_IP_REGEX = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])(?::(?:[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?$/;
-
-    /**
+     * 
+     * 
+     * 
      * 检测考点服务器状态
      * @param {string} serverUrl - 考点服务器地址
      * @return {Promise<string>} err_msg
-     */
-    async function checkServerStatus(serverUrl) {
-       
-        let err_msg = "";
-
-        let protocol = SERVER_IP_REGEX.test(serverUrl) ? "http://" : "https://";
-
-        let reqUrl = protocol + serverUrl + "/api/hello";
-
-        let response = await fetch(reqUrl, {
-            method: "GET",
-            credentials: "include",
-        }).catch((err) => {
-            
-            err_msg = `网络连接异常, 请检查考点服务器地址(${serverUrl}) err: ${err.message}`;
-            
-            return {
-                ok: false,
-                status: 0,
-                statusText: err_msg,
-            };
-        });
-
-        if(!response.ok){
-            err_msg = `服务器连接失败: status:${response.status} reason:${response.statusText}`;
-        }
-
-        return err_msg;
-        
-    }
-
-    /**
+     * 
+     * 
+     * 
+     * 
      * 获取考点列表
      *
      * 该函数用于获取考点列表数据，并根据提供的参数进行过滤和分页。
@@ -150,8 +80,320 @@
      * @param {number} page_size - 每页显示的考点数量，默认为10。
      * @param {string} search_text - 搜索关键词，用于过滤考点名称或地址。
      * @param {boolean} sort_asc - 考场数量排序方式，true为升序，false为降序。
+     * 
+     * 
+     * 
+     * 处理页面导航
+     * @param {boolean} is_next - 是否为下一页，true表示下一页，false表示上一页
+     * @description 根据is_next参数决定是前进到下一页还是后退到上一页，并重新获取数据
+     * 
+     * 
+     * 
+     * 处理页码选择
+     * @param {number} page - 要跳转的目标页码
+     * @description 直接跳转到指定页码并重新获取数据
+     * 
+     * 
+     * 
+     * 打开新增考场对话框
+     * @param {number} siteID - 要添加考场的考点ID
+     * 
+     * 
+     *  
+     * 新增考场并发送请求到后端
+     * 
+     * 
+     * 
+     * 
+     * 打开删除考点确认对话框
+     * @param {number} id - 要删除的考点ID
+     * @description 设置当前要删除的考点ID并打开确认对话框
      */
-    async function getExamSites(
+
+    let examSites = $state([]); // 考点列表
+    let current_page = $state(1); // 当前页码
+    let total_num = $state(0); // 总记录数
+    let total_pages = $state(1); // 总页数
+    let page_size = $state(10); // 每页显示数量
+    let search_text = $state(""); // 搜索关键词
+    let show_add_dialog = $state(false); // 显示添加考点对话框
+    let show_admin_select_panel = $state(false); // 显示考点负责人选择面板
+    let selected_admin_ids = $state([]); // 用于存储选中的考点负责人ID
+    let new_site = $state({ // 新增考点信息
+        name: "",
+        address: "",
+        server_host: "",
+        admin: 0,
+        adminName: "",
+    });
+    let show_add_room_dialog = $state(false); // 显示添加考场对话框
+    let new_room = $state({ // 新增考场信息
+        name: "",
+        capacity: 0,
+    });
+    let sortAsc = $state(false); // true 升序，false 降序
+    let deleteDialogOpen = $state(false); // 显示删除考点对话框
+    let current_delete_site_id = $state(0); // 当前删除的考点ID
+    let current_site_id_for_room = $state(0); // 新增状态变量，存储要添加考场的考点ID
+    let show_action_toast = $state(false); // 显示操作提示框
+    let action_toast = $state(null); // 操作提示框
+    let _searchTimeout = null; // 搜索去抖定时器
+    // 简单的IP地址正则表达式
+    const SERVER_IP_REGEX = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])(?::(?:[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?$/;
+
+    //按钮控制类
+    function openAddDialog() { // 打开新增考点对话框
+        show_add_dialog = true;
+    }
+    function closeAddDialog() { // 关闭新增考点对话框
+        show_add_dialog = false;
+        new_site = { name: "", address: "", server_host: "", admin: 0 };
+    }
+    function confirmAddDialog() { // 确认新增考点对话框
+        // 校验必填字段
+        if (!new_site.name) {
+            toast.error("考点名称不能为空");
+            return Promise.resolve(); // 保持返回值为 Promise 以便调用方链式处理
+        }
+        if (!new_site.address) {
+            toast.error("考点地址不能为空");
+            return Promise.resolve();
+        }
+        if (!new_site.server_host) {
+            toast.error("考点服务链接不能为空");
+            return Promise.resolve();
+        }
+
+        const reqProto = {
+            // action: "addExamSite",
+            data: {
+                name: new_site.name,
+                address: new_site.address,
+                serverHost: new_site.server_host,
+                admin: new_site.admin
+            },
+        };
+
+        // 返回 fetch 的 Promise，便于外部继续链式处理
+        return fetch(
+            "/api/exam-site", // 假设新增考点的 API 接口
+            {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(reqProto),
+            },
+        )
+        .then(response => {
+            if (response.status != 200) {
+                throw new Error(`新增考点请求失败:, ${response.status}, ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("新增考点响应数据:", data);
+
+            if (data.status !== 0) {
+                console.error("新增考点失败:", data.msg);
+                toast.error("新增考点失败，请稍后重试");
+                return;
+            } else {
+                // 成功处理
+                closeAddDialog(); // 关闭弹窗并重置表单
+                // 刷新考点列表
+                return getExamSites(
+                    current_page,
+                    page_size,
+                    search_text,
+                    sortAsc,
+                ).then(() => {
+                    toast.success("新增考点成功");
+                });
+            }
+        })
+        .catch(err => {
+            console.error("操作失败: ", err);
+            toast.error("新增考点失败");
+        });
+    }
+    function handlePageChange(event) { // 处理页码切换
+        current_page = event.detail;
+        getExamSites(current_page, page_size, search_text, sortAsc);
+    }
+    function handlePageSizeChange(event) { // 处理每页条数切换
+        page_size = event.detail;
+        current_page = 1; // 每次改条数最好回到第一页
+        getExamSites(current_page, page_size, search_text, sortAsc);
+    }
+    function openAddRoomDialog(siteID) { // 打开新增考场对话框
+        current_site_id_for_room = siteID; // 存储考点ID
+        show_add_room_dialog = true;
+    }
+    function confirmAddRoomDialog() { // 确认新增考场对话框
+        // 校验必填字段
+        if (!new_room.name) {
+            toast.error("考场名称不能为空");
+            return Promise.resolve();
+        }
+        if (new_room.capacity <= 0) {
+            toast.error("考场容量必须大于0");
+            return Promise.resolve();
+        }
+
+        const reqProto = {
+            data: {
+                examSiteID: current_site_id_for_room, // 使用存储的考点ID
+                name: new_room.name,
+                capacity: new_room.capacity,
+            },
+        };
+
+        return fetch(
+            "/api/exam-room", // 假设新增考场的 API 接口
+            {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(reqProto),
+            },
+        )
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`新增考场请求失败: ${response.status} ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(responseData => {
+            if (!responseData) {
+                throw new Error("新增考场响应为空");
+            }
+
+            if (responseData.status !== 0) {
+                console.error("新增考场失败:", responseData.msg);
+                toast.error("新增考场失败，请稍后重试");
+                return;
+            }
+
+            // 成功处理
+            closeAddRoomDialog(); // 关闭弹窗并重置表单
+            // 刷新考点列表（getExamSites 返回 Promise）
+            return getExamSites(
+                current_page,
+                page_size,
+                search_text,
+                sortAsc,
+            ).then(() => {
+                toast.success("添加考场成功");
+            });
+        })
+        .catch(err => {
+            console.error("提交新增考场请求失败：", err);
+            toast.error("新增考场失败，请稍后重试");
+        });
+    }
+    function closeAddRoomDialog() { // 关闭新增考场对话框
+        show_add_room_dialog = false;
+        new_room = { name: "", capacity: 0 }; // 重置表单
+    }
+    function openDeleteDialog(id) { // 打开删除考点确认对话框
+        current_delete_site_id = id;
+        MessageBox({
+            title: '请问是否要删除考点？',
+            content: '删除后将无法恢复此考点',
+            onConfirm: () => {
+                deleteExamSite();
+            },
+        });
+    }
+    function deleteExamSite() { // 删除考点的函数
+        const reqProto = {
+            action: "deleteExamSite",
+            sets: [],
+            orderBy: [],
+            page: 1,
+            pageSize: 10,
+            data: {
+                id: current_delete_site_id,
+            },
+            filter: {},
+            authFilter: {},
+        };
+
+        fetch("/api/exam-site", {
+            method: "DELETE",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(reqProto),
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    return response.text().then((text) => {
+                        console.error("删除请求失败:", response.status, text);
+                        toast.error("删除考点失败，请稍后重试");
+                        // 抛出错误以终止后续 then
+                        throw new Error(`Request failed: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then((responseData) => {
+                if (responseData.status !== 0) {
+                    console.error("删除失败:", responseData.msg);
+                    toast.error(responseData.msg || "删除考点失败，请稍后重试");
+                    return;
+                }
+                // 成功处理
+                deleteDialogOpen = false;
+                return getExamSites(current_page, page_size, search_text, sortAsc).then(() => {
+                    toast.success("删除考点成功");
+                });
+            })
+            .catch((err) => {
+                console.error("提交失败：", err);
+                toast.error("删除考点失败，请稍后重试");
+            });
+    }
+
+    // 获取数据类
+    function checkServerStatus(serverUrl) { // 检测考点服务器状态
+        let err_msg = "";
+
+        serverUrl = (serverUrl || "").toString().trim();
+        if (!serverUrl) {
+            return Promise.resolve(`服务器地址为空，请填写考点服务地址`);
+        }
+
+        let protocol = SERVER_IP_REGEX.test(serverUrl) ? "http://" : "https://";
+        let reqUrl = protocol + serverUrl + "/api/hello";
+
+        return fetch(reqUrl, {
+            method: "GET",
+            credentials: "include",
+        })
+        .then((response) => {
+            if (!response.ok) {
+                // response 不 OK，返回错误信息字符串
+                err_msg = `服务器连接失败: status:${response.status} reason:${response.statusText}`;
+                return err_msg;
+            }
+            // 成功返回空字符串表示无错误
+            return "";
+        })
+        .catch((err) => {
+            // 网络或其他异常，返回错误信息字符串
+            err_msg = `网络连接异常, 请检查考点服务器地址(${serverUrl}) err: ${err.message}`;
+            return err_msg;
+        });
+    }
+    function getExamSites(  // 获取考点列表
         page = 1,
         page_size = 10,
         search_text = "",
@@ -176,404 +418,74 @@
             q: JSON.stringify(qParam)
         });
 
-        const response = await fetch(
-            `/api/exam-site/list?${queryParams}`,
-            {
-                method: "GET",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+        return fetch(`/api/exam-site/list?${queryParams}`, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
             }
-        );
+            return response.json();
+        })
+        .then(responseData => {
+            if (responseData.status !== 0) {
+                console.error("获取考点数据失败:", responseData.msg);
+            }
 
-        if (!response.ok) {
-            throw new Error("Network response was not ok");
-        }
+            if (!responseData.data) {
+                examSites = [];
+                total_num = 0;
+                total_pages = 1;
+                return;
+            }
 
-        const responseData = await response.json();
-
-        if (responseData.status !== 0) {
-            console.error("获取考点数据失败:", responseData.msg);
-        }
-        console.log("获取考点数据成功:", responseData);
-
-
-        ///记得加上！！！！！！！！！！！！！！！！！！！！！！！！！感叹号
-        if (responseData.data) {
-            examSites = [];
-            total_num = 0;
-            total_pages = 1;
-        } else {
             examSites = responseData.data;
             total_num = responseData.rowCount;
             total_pages = isNaN(Math.ceil(total_num / page_size)) ? 1 : Math.ceil(total_num / page_size);
 
-             examSites = [
-            {
-                id: 17,
-                name: "学宇航",
-                address: "上海市 贵原市 青冈县 宜巷81790号 42单元",
-                roomCount: 84,
-                serverHost: "localhost:6443",
-                admin: 67,
-                adminName: "温治文"
-            },
-            {
-                id: 18,
-                name: "明德中学考点",
-                address: "北京市 朝阳区 建国路 128号",
-                roomCount: 60,
-                serverHost: "3mindemo.0orz.top:6443",
-                admin: 102,
-                adminName: "赵一凡"
-            },
-            {
-                id: 19,
-                name: "启航学校考点",
-                address: "广州市 天河区 体育西路 56号",
-                roomCount: 45,
-                serverHost: "exam-node-guangzhou.local",
-                admin: 103,
-                adminName: "刘思远"
-            },
-            {
-                id: 20,
-                name: "求是中学考点",
-                address: "杭州市 西湖区 文三路 88号",
-                roomCount: 72,
-                serverHost: "exam-node-hangzhou.local",
-                admin: 104,
-                adminName: "孙嘉明"
-            },
-            {
-                id: 21,
-                name: "晨光中学考点",
-                address: "成都市 武侯区 人民南路 300号",
-                roomCount: 58,
-                serverHost: "exam-node-chengdu.local",
-                admin: 105,
-                adminName: "周雅婷"
-            },
-            {
-                id: 22,
-                name: "育才中学考点",
-                address: "武汉市 洪山区 雄楚大道 188号",
-                roomCount: 63,
-                serverHost: "exam-node-wuhan.local",
-                admin: 106,
-                adminName: "张文博"
-            },
-            {
-                id: 23,
-                name: "南山实验考点",
-                address: "深圳市 南山区 科技园 9号楼",
-                roomCount: 80,
-                serverHost: "exam-node-shenzhen.local",
-                admin: 107,
-                adminName: "陈思慧"
-            },
-            {
-                id: 24,
-                name: "励志中学考点",
-                address: "南京市 秦淮区 中山东路 188号",
-                roomCount: 55,
-                serverHost: "exam-node-nanjing.local",
-                admin: 108,
-                adminName: "何志成"
-            },
-            {
-                id: 25,
-                name: "博雅学校考点",
-                address: "西安市 雁塔区 长安南路 99号",
-                roomCount: 70,
-                serverHost: "exam-node-xian.local",
-                admin: 109,
-                adminName: "李诗涵"
-            },
-            {
-                id: 26,
-                name: "远航中学考点",
-                address: "天津市 河西区 解放南路 200号",
-                roomCount: 66,
-                serverHost: "exam-node-tianjin.local",
-                admin: 110,
-                adminName: "王俊凯"
-            },
-        ];
-
-            total_num = examSites.length;
-            total_pages = 1;
-        
             for (let site of examSites) {
                 site.status = "";
                 site.error_msg = "";
-
-                checkServerStatus(site.serverHost).then(
-                    (err_msg) => {
-                        if (err_msg === "") {
-                            site.status = "00"; // 正常
-                            site.error_msg = "";
-                        } else {
-                            site.status = "01"; // 异常
-                            site.error_msg = err_msg;
-                        }
+                // 发起状态检测（不阻塞主链）
+                checkServerStatus(site.serverHost).then((err_msg) => {
+                    if (err_msg === "") {
+                        site.status = "00"; // 正常
+                        site.error_msg = "";
+                    } else {
+                        site.status = "01"; // 异常
+                        site.error_msg = err_msg;
                     }
-                );
-            }
-        }
-    }
-
-    /**
-     * 处理页面导航
-     * @param {boolean} is_next - 是否为下一页，true表示下一页，false表示上一页
-     * @description 根据is_next参数决定是前进到下一页还是后退到上一页，并重新获取数据
-     */
-    async function handlePageNavigation(is_next) {
-        if (is_next && current_page < total_pages) {
-            current_page++;
-        } else if (!is_next && current_page > 1) {
-            current_page--;
-        }
-        await getExamSites(current_page, page_size, search_text, sortAsc);
-    }
-
-    /**
-     * 处理页码选择
-     * @param {number} page - 要跳转的目标页码
-     * @description 直接跳转到指定页码并重新获取数据
-     */
-    async function handlePageSelect(page) {
-        current_page = page;
-        await getExamSites(current_page, page_size, search_text, sortAsc);
-    }
-
-    // 页码切换事件
-    function handlePageChange(event) {
-        current_page = event.detail;
-        console.log("当前页：", current_page);
-        getExamSites(current_page, page_size)
-    }
-
-    // 每页条数切换事件
-    function handlePageSizeChange(event) {
-        page_size = event.detail;
-        current_page = 1; // 每次改条数最好回到第一页
-        console.log("每页条数：", page_size);
-        getExamSites(current_page, page_size)
-    }
-
-    function openAddDialog() {
-        show_add_dialog = true;
-    }
-    function closeAddDialog() {
-        show_add_dialog = false;
-        new_site = { name: "", address: "", link: "", admin: 0 };
-    }
-    async function confirmAddDialog() {
-        // 校验必填字段
-        if (!new_site.name) {
-            toast.error("考点名称不能为空");
-            return;
-        }
-        if (!new_site.address) {
-            toast.error("考点地址不能为空");
-            return;
-        }
-        if (!new_site.link) {
-            toast.error("考点服务链接不能为空");
-            return;
-        }
-
-        const reqProto = {
-    //        action: "addExamSite",
-            data: {
-                name: new_site.name,
-                address: new_site.address,
-                serverHost: new_site.link,
-                admin: new_site.admin
-            },
-        };
-
-        fetch(
-            "/api/exam-site", // 假设新增考点的 API 接口
-            {
-                method: "POST",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(reqProto),
-            },
-        )
-        .then(response => {
-
-            if (response.status != 200) {
-                throw new Error(`新增考点请求失败:, ${response.status}, ${response.statusText}`);
-            }
-
-            return response.json();
-        })
-        .then(data => {
-            console.log("新增考点响应数据:", data);
-
-            if (data.status !== 0) {
-                console.error("新增考点失败:", data.msg);
-                toast.error("新增考点失败，请稍后重试");
-            } else {
-                // 成功处理
-                closeAddDialog(); // 关闭弹窗并重置表单
-                getExamSites(
-                    // 刷新考点列表
-                    current_page,
-                    page_size,
-                    search_text,
-                    sortAsc,
-                );
-                toast.success("新增考场成功");
+                });
             }
         })
         .catch(err => {
-            console.error("操作失败: ", err);
-            toast.error("新增考点失败");
-        })
+            console.error("获取考点列表失败:", err);
+            toast.error("获取考点列表失败，请稍后重试");
+            // 失败时重置列表显示
+            examSites = [];
+            total_num = 0;
+            total_pages = 1;
+        });
     }
-
-    /**
-     * 打开新增考场对话框
-     * @param {number} siteID - 要添加考场的考点ID
-     */
-    function openAddRoomDialog(siteID) {
-        current_site_id_for_room = siteID; // 存储考点ID
-        show_add_room_dialog = true;
-    }
-    function closeAddRoomDialog() {
-        show_add_room_dialog = false;
-        new_room = { name: "", capacity: 0 }; // 重置表单
-    }
-
-    /**
-     * 新增考场并发送请求到后端
-     */
-    async function confirmAddRoomDialog() {
-        // 校验必填字段
-        if (!new_room.name) {
-            toast.error("考场名称不能为空");
-            return;
-        }
-        if (new_room.capacity <= 0) {
-            toast.error("考场容量必须大于0");
-            return;
-        }
-
-        try {
-            const reqProto = {
-                data: {
-                    examSiteID: current_site_id_for_room, // 使用存储的考点ID
-                    name: new_room.name,
-                    capacity: new_room.capacity,
-                },
-            };
-
-            const response = await fetch(
-                "/api/exam-room", // 假设新增考场的 API 接口
-                {
-                    method: "POST",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(reqProto),
-                },
-            );
-
-            const responseData = await response.json();
-
-            if (responseData.status !== 0) {
-                console.error("新增考场失败:", responseData.msg);
-                toast.error("新增考场失败，请稍后重试");
-            } else {
-                closeAddRoomDialog(); // 关闭弹窗并重置表单
-                // 刷新考点列表，虽然新增考场不直接影响考点列表，但可能需要刷新以更新考场数量等信息
-                await getExamSites(
-                    current_page,
-                    page_size,
-                    search_text,
-                    sortAsc,
-                );
-                toast.success("添加考场成功");
-            }
-        } catch (err) {
-            console.error("提交新增考场请求失败：", err);
-            toast.error("新增考场失败，请稍后重试");
-        }
-    }
-
-    async function sortByCount() {
+    async function sortByCount() { // 按考场数量排序
         sortAsc = !sortAsc;
         await getExamSites(current_page, page_size, search_text, sortAsc);
     }
 
-    /**
-     * 打开删除考点确认对话框
-     * @param {number} id - 要删除的考点ID
-     * @description 设置当前要删除的考点ID并打开确认对话框
-     */
-    async function openDeleteDialog(id) {
-        current_delete_site_id = id;
-        MessageBox({
-            title: '请问是否要删除考点？',
-            content: '删除后将无法恢复此考点',
-            onConfirm: () => {
-                deleteExamSite();
-            },
-        });
+    // 搜索去抖实现
+    function triggerSearchDebounced() {
+        clearTimeout(_searchTimeout);
+        _searchTimeout = setTimeout(() => {
+            current_page = 1;
+            getExamSites(current_page, page_size, search_text, sortAsc);
+        }, 300);
     }
 
-    /**
-     * 删除考点的函数
-     */
-    async function deleteExamSite() {
-        try {
-            const reqProto = {
-                action: "deleteExamSite",
-                data: {
-                    id: current_delete_site_id,
-                },
-            };
-
-            const response = await fetch("/api/admin/exam-site", {
-                method: "DELETE",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(reqProto),
-            });
-
-            const responseData = await response.json();
-
-            if (responseData.status !== 0) {
-                console.error("删除失败:", responseData.msg);
-                toast.error("删除考点失败，请稍后重试");
-            } else {
-                // 成功处理
-                deleteDialogOpen = false;
-                await getExamSites(
-                    current_page,
-                    page_size,
-                    search_text,
-                    sortAsc,
-                );
-                toast.success("删除考点成功");
-            }
-        } catch (err) {
-            console.error("提交失败：", err);
-            toast.error("删除考点失败，请稍后重试");
-        }
-    }
-
-
+    //入口
     onMount(() => {
         getExamSites(current_page, page_size, search_text, sortAsc);
     });
@@ -591,7 +503,8 @@
                     placeholder="请输入考点名称/考点地址"
                     bind:value={search_text}
                     onInput={(val) => {
-                    search_text = val;
+                      search_text = val;
+                      triggerSearchDebounced();
                     }}
                 />
             </div>
@@ -701,7 +614,7 @@
                                             class="operation"
                                             onclick={() =>
                                                 goto(
-                                                    `/teacher/exam-site-management/details/${site.id}`,
+                                                    `/teacher/exam-site/details/${site.id}`,
                                                 )}>查看考场</button
                                         >
                                         <button
@@ -721,15 +634,15 @@
                                         >
 
                                         <button
-                                            class="operation {!site.can_delete
+                                            class="operation {site.can_delete
                                                 ? 'disabled'
                                                 : ''}"
                                             onclick={() =>
-                                                site.can_delete
+                                                !site.can_delete
                                                     ? openDeleteDialog(site.id)
                                                     : null}
                                             >删除考点
-                                            {#if !site.can_delete}
+                                            {#if site.can_delete}
                                                 <div class="delete-error-tip">
                                                     该考点下的考场正在使用中，无法删除
                                                 </div>
@@ -797,7 +710,7 @@
                     <input
                         class="input"
                         placeholder="请输入考点服务链接"
-                        bind:value={new_site.serverHost}
+                        bind:value={new_site.server_host}
                     />
                 </div>
 
@@ -823,8 +736,8 @@
                                 选择考点负责人
                             </button>
                         {:else}
-                            <span class="selected-admin" title={new_site.adminName}>
-                                {new_site.adminName}
+                            <span class="selected-admin" title={new_site.OfficialName}>
+                                {new_site.OfficialName}
                             </span>
                             <button
                                 class="select-admin-btn reselect"
@@ -906,10 +819,11 @@
         show_admin_select_panel = false;
     }}
     onConfirm = {(/** @type {Array<admin_selection>}  */ selected_ids) => {
+        console.log("选中的考点负责人:", selected_ids);
         show_admin_select_panel = false;
         selected_admin_ids = selected_ids;
-        new_site.admin = selected_admin_ids.length > 0 ? selected_admin_ids[0].id : new_site.admin;
-        new_site.adminName = selected_admin_ids.length > 0 ? selected_admin_ids[0].name : new_site.adminName;
+        new_site.admin = selected_admin_ids.length > 0 ? selected_admin_ids[0].ID : new_site.admin;
+        new_site.OfficialName = selected_admin_ids.length > 0 ? selected_admin_ids[0].OfficialName : new_site.OfficialName;
     }}
 />
 

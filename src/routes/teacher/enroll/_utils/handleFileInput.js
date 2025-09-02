@@ -472,3 +472,22 @@ export function validateDuplicates(data) {
 
   return { data: result, hasDuplicate };
 }
+
+// 工具函数：时间格式化
+export function formatDateTime(dateString) {
+  const d = new Date(dateString);
+  const pad = (n) => (n < 10 ? '0' + n : n);
+  return (
+    d.getFullYear() +
+    '-' +
+    pad(d.getMonth() + 1) +
+    '-' +
+    pad(d.getDate()) +
+    ' ' +
+    pad(d.getHours()) +
+    ':' +
+    pad(d.getMinutes()) +
+    ':' +
+    pad(d.getSeconds())
+  );
+}
