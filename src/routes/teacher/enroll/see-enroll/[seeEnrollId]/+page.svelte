@@ -115,7 +115,35 @@
         }));
 
         total_items = res.data.total;
-        console.log(person_list);
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
+  // 批量通过或不通过学生审核以及撤销操作
+  function handleApproveOrReject(ids, status) {
+    const searchParams = new URLSearchParams({
+      ids: ids,
+      status: status,
+      register_id: data.see_enroll_id,
+      fail_reason: reject_reason,
+    });
+
+    fetch(`/api/registrationStudent?${searchParams}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((res) => {
+        getEnrollPersonData();
       })
       .catch((e) => {
         console.log(e);
@@ -227,7 +255,7 @@
   // 单个不通过
   function openRejectPanel(id) {
     select_reject_id = [id];
-    current_reject_id = id;
+    current_reject_id = [id];
     current_action = 'reject';
     is_show_reject_panel = true; // 直接弹输入框
   }
@@ -276,14 +304,10 @@
 
     if (current_reject_id) {
       // 单个不通过
-      person_list = person_list.map((item) =>
-        item.id === current_reject_id ? { ...item, status: '未通过', rejectReason: reject_reason } : item,
-      );
+      handleApproveOrReject(current_reject_id, '06');
     } else {
       // 批量不通过
-      person_list = person_list.map((item) =>
-        select_reject_id.includes(item.id) ? { ...item, status: '未通过', rejectReason: reject_reason } : item,
-      );
+      handleApproveOrReject(select_reject_id, '06');
     }
 
     // 清空选择
@@ -303,7 +327,7 @@
   // ---------- 撤销事件 ----------
   // 处理撤销通过按钮点击事件
   function handleRevokeApprove(id) {
-    select_revoke_approve_id = id;
+    select_revoke_approve_id = [id];
     current_action = 'revoke_approve';
     messagebox_title = '确认撤销通过';
     messagebox_content = '撤销通过后，该名人员将被取消录用，确定要继续吗？';
@@ -312,7 +336,7 @@
 
   // 处理撤销不通过按钮点击事件
   function handleRevokeReject(id) {
-    select_revoke_reject_id = id;
+    select_revoke_reject_id = [id];
     current_action = 'revoke_reject';
     messagebox_title = '确认撤销不通过';
     messagebox_content = '撤销不通过后，该名人员将被取消不通过状态，确定要继续吗？';
@@ -344,23 +368,17 @@
     }
 
     if (current_action === 'approve' && select_approve_id.length > 0) {
-      person_list = person_list.map((item) =>
-        select_approve_id.includes(item.id) ? { ...item, status: '通过' } : item,
-      );
+      handleApproveOrReject(select_approve_id, '04');
       select_reject_id = [];
       select_approve_id = [];
     }
 
     if (current_action === 'revoke_approve') {
-      person_list = person_list.map((item) =>
-        item.id === select_revoke_approve_id ? { ...item, status: '未审核' } : item,
-      );
+      handleApproveOrReject(select_revoke_approve_id, '02');
     }
 
     if (current_action === 'revoke_reject') {
-      person_list = person_list.map((item) =>
-        item.id === select_revoke_reject_id ? { ...item, status: '未审核' } : item,
-      );
+      handleApproveOrReject(select_revoke_reject_id, '02');
     }
 
     current_action = '';
@@ -504,20 +522,20 @@
                   <span
                     class="Status-tag {item.status === '通过'
                       ? 'published'
-                      : item.status === '未审核'
+                      : item.status === '待审核'
                         ? 'unpublished'
                         : 'invalidated'}">{item.status}</span
                   >
                 </td>
                 <td>
-                  {#if item.status === '未审核'}
+                  {#if item.status === '待审核'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item.id)}>查看详情</button>
                     <button class="via-btn" onclick={() => handleApprove(item.id)}>通过</button>
                     <button class="de-btn" onclick={() => openRejectPanel(item.id)}>不通过</button>
                   {:else if item.status === '通过'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item.id)}>查看详情</button>
                     <button class="de-btn" onclick={() => handleRevokeApprove(item.id)}>撤销通过</button>
-                  {:else if item.status === '未通过'}
+                  {:else if item.status === '不通过'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item.id)}>查看详情</button>
                     <button class="de-btn" onclick={() => handleRevokeReject(item.id)}>撤销不通过</button>
                   {/if}
