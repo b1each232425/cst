@@ -85,28 +85,6 @@
   }
 
 
-  //  function handleImportSuccess(is_all_ok,importedStudents = []) {
-  //   if (is_all_ok && importedStudents.length > 0) {
-  //   // 将导入的学生直接添加到已选择列表
-  //   importedStudents.forEach(student => {
-  //     if (!selected_examinee.find(item => item.ID === student.ID)) {
-  //       selected_examinee.push({
-  //         id: student.ID,
-  //         OfficialName: student.OfficialName,
-  //         Gender: student.Gender,
-  //         Account: student.Account,
-  //         MobilePhone: student.MobilePhone,
-  //         IDCardNo: student.IDCardNo,
-  //         Domains: ['cst.school^student'],
-  //         serialNumber: 1
-  //       });
-  //     }
-  //   });
-    
-  //   searchExaminee(); // 刷新学生列表
-  // }
-  // show_import_panel = false;
-  // }
 
   function handleImportSuccess(is_all_ok, import_data, exist_students) {
   if (is_all_ok && import_data) {
@@ -118,7 +96,7 @@
       IDCardNo: student.idCardNo || '',
       IDCardType: "居民身份证",
       Account: student.Account || '',
-      Domains: ['cst.school^student'],
+      Domains: ['assess^student'],
       serialNumber: selected_examinee.length + index + 1,
     }));
 
@@ -130,7 +108,7 @@
       MobilePhone: s.mobilePhone || '',
       IDCardNo: s.idCardNo || '',
       Account: s.account || '',
-      Domains: ['cst.school^student'],
+      Domains: ['assess^student'],
       serialNumber: 0, // 后续重新编号
     }));
 
