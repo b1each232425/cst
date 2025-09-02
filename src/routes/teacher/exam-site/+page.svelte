@@ -474,6 +474,56 @@
     onMount(() => {
         getExamSites(current_page, page_size, search_text, sortAsc);
     });
+
+
+    //测试用
+    // Expose some internals for tests when requested.
+    // Tests can set `globalThis.__TEST__ = true` before importing/rendering the component
+    // and then access these helpers to call functions directly or inspect state.
+    try {
+        if (typeof globalThis !== 'undefined' && globalThis.__TEST__) {
+            globalThis.__confirmAddDialog = confirmAddDialog;
+            globalThis.__closeAddDialog = closeAddDialog;
+            globalThis.__openAddDialog = openAddDialog;
+            globalThis.__getNewSite = () => new_site;
+            // room helpers
+            globalThis.__confirmAddRoomDialog = confirmAddRoomDialog;
+            globalThis.__openAddRoomDialog = openAddRoomDialog;
+            globalThis.__getNewRoom = () => new_room;
+            globalThis.__setNewRoom = (val) => { new_room = val; };
+            globalThis.__setCurrentSiteIdForRoom = (id) => { current_site_id_for_room = id; };
+            // expose sort helper and accessor for tests
+            globalThis.__sortByCount = sortByCount;
+            globalThis.__getSortAsc = () => sortAsc;
+            // expose page handler and current page for tests
+            globalThis.__handlePageChange = handlePageChange;
+            globalThis.__getCurrentPage = () => current_page;
+            // expose page size handler and accessor for tests
+            globalThis.__handlePageSizeChange = handlePageSizeChange;
+            globalThis.__getPageSize = () => page_size;
+            // expose delete dialog opener for tests
+            globalThis.__openDeleteDialog = openDeleteDialog;
+            // expose delete dialog open flag for tests
+            globalThis.__getDeleteDialogOpen = () => deleteDialogOpen;
+            // expose getExamSites and a read-only snapshot of list state for tests
+            globalThis.__getExamSites = getExamSites;
+            globalThis.__getExamSitesState = () => ({ exam_sites, total_num, total_pages });
+            // expose admin selection panel controls for tests
+            globalThis.__openAdminPanel = () => { show_admin_select_panel = true; };
+            globalThis.__closeAdminPanel = () => { show_admin_select_panel = false; };
+            globalThis.__getAdminPanelVisible = () => show_admin_select_panel;
+            globalThis.__getSelectedAdminIds = () => selected_admin_ids;
+            // helper to simulate the onConfirm handler of ExamSiteAdminSelectionPanel
+            globalThis.__simulateAdminConfirm = (selected_ids) => {
+                show_admin_select_panel = false;
+                selected_admin_ids = selected_ids;
+                new_site.admin = selected_admin_ids.length > 0 ? selected_admin_ids[0].ID : new_site.admin;
+                new_site.OfficialName = selected_admin_ids.length > 0 ? selected_admin_ids[0].OfficialName : new_site.OfficialName;
+            };
+        }
+    } catch (e) {
+        // ignore in non-browser/test envs
+    }
 </script>
 
 <Title title="考点列表" />
