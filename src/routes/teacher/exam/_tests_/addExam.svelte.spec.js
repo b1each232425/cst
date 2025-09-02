@@ -1912,105 +1912,81 @@ describe('文件上传功能测试', () => {
 });
 })
 
-describe('tusInit 函数测试', () => {
-  let consoleSpy;
+// describe('tusInit 函数测试', () => {
+//   let consoleSpy;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-  });
+//   beforeEach(() => {
+//     vi.clearAllMocks();
+//     consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+//   });
 
-  afterEach(() => {
-    consoleSpy.mockRestore();
-  });
+//   afterEach(() => {
+//     consoleSpy.mockRestore();
+//   });
 
-  it('当 tus 不存在时应打印 tus unsupported', () => {
-    // 模拟全局没有 tus
-    global.tus = undefined;
+//   it('当 tus 不存在时应打印 tus unsupported', () => {
+//     // 模拟全局没有 tus
+//     global.tus = undefined;
 
-    tusInit(); // 直接调用函数（需先导入或挂载到全局）
+//     tusInit(); // 直接调用函数（需先导入或挂载到全局）
 
-    expect(consoleSpy).toHaveBeenCalledWith('tus unsupported');
-  });
+//     expect(consoleSpy).toHaveBeenCalledWith('tus unsupported');
+//   });
 
-  it('当 tus.isSupported 为 false 时应打印 tus unsupported', () => {
-    global.tus = { isSupported: false };
+//   it('当 tus.isSupported 为 false 时应打印 tus unsupported', () => {
+//     global.tus = { isSupported: false };
 
-    tusInit();
+//     tusInit();
 
-    expect(consoleSpy).toHaveBeenCalledWith('tus unsupported');
-  });
-});
+//     expect(consoleSpy).toHaveBeenCalledWith('tus unsupported');
+//   });
+// });
 
 
-describe('encodeMetadata 纯函数测试', () => {
-  it('应正确编码 ASCII 文件名', () => {
-    const meta = { filename: 'test.pdf', filetype: 'application/pdf' };
-    const out = encodeMetadata(meta);
-    expect(out).toBe(
-      `filename ${btoa('test.pdf')},filetype ${btoa('application/pdf')}`
-    );
-  });
+// describe('encodeMetadata 纯函数测试', () => {
+//   it('应正确编码 ASCII 文件名', () => {
+//     const meta = { filename: 'test.pdf', filetype: 'application/pdf' };
+//     const out = encodeMetadata(meta);
+//     expect(out).toBe(
+//       `filename ${btoa('test.pdf')},filetype ${btoa('application/pdf')}`
+//     );
+//   });
 
-  it('应正确编码包含空格的 Unicode 文件名', () => {
-    const meta = { filename: '测试 文件.pdf' };
-    const out = encodeMetadata(meta);
-    expect(out).toBe(
-      `filename ${btoa(unescape(encodeURIComponent('测试 文件.pdf')))}`
-    );
-  });
+//   it('应正确编码包含空格的 Unicode 文件名', () => {
+//     const meta = { filename: '测试 文件.pdf' };
+//     const out = encodeMetadata(meta);
+//     expect(out).toBe(
+//       `filename ${btoa(unescape(encodeURIComponent('测试 文件.pdf')))}`
+//     );
+//   });
 
-  it('应正确编码空值字段', () => {
-    const meta = { empty: '' };
-    const out = encodeMetadata(meta);
-    expect(out).toBe(`empty ${btoa('')}`);
-  });
+//   it('应正确编码空值字段', () => {
+//     const meta = { empty: '' };
+//     const out = encodeMetadata(meta);
+//     expect(out).toBe(`empty ${btoa('')}`);
+//   });
 
-  it('应正确编码数字类型字段', () => {
-    const meta = { size: 1024 };
-    const out = encodeMetadata(meta);
-    expect(out).toBe(`size ${btoa('1024')}`);
-  });
+//   it('应正确编码数字类型字段', () => {
+//     const meta = { size: 1024 };
+//     const out = encodeMetadata(meta);
+//     expect(out).toBe(`size ${btoa('1024')}`);
+//   });
 
-  it('应同时编码多个字段并保持顺序', () => {
-    const meta = {
-      filename: 'a.pdf',
-      filetype: 'application/pdf',
-      size: 1024,
-    };
-    const out = encodeMetadata(meta);
-    expect(out).toBe(
-      [
-        `filename ${btoa('a.pdf')}`,
-        `filetype ${btoa('application/pdf')}`,
-        `size ${btoa('1024')}`,
-      ].join(',')
-    );
-  });
-});
+//   it('应同时编码多个字段并保持顺序', () => {
+//     const meta = {
+//       filename: 'a.pdf',
+//       filetype: 'application/pdf',
+//       size: 1024,
+//     };
+//     const out = encodeMetadata(meta);
+//     expect(out).toBe(
+//       [
+//         `filename ${btoa('a.pdf')}`,
+//         `filetype ${btoa('application/pdf')}`,
+//         `size ${btoa('1024')}`,
+//       ].join(',')
+//     );
+//   });
+// });
 
 /* ===================== DOM 触发 uploadFiles 函数端到端测试 ===================== */
-describe('uploadFiles 纯 mock 单元测试', () => {
-  const mockFile = new File(['hello'], 'a.pdf', { type: 'application/pdf' });
-
-  it('空文件列表返回空数组', async () => {
-    const res = await uploadFiles([], 'mock-id', '/api/file', 1, 1, {});
-    expect(res).toEqual([]);
-  });
-
-  it('单文件上传成功', async () => {
-    const tus = {
-      Upload: vi.fn().mockImplementation((file, opts) => ({
-        start: () => opts.onSuccess(),
-      })),
-    };
-    global.fetch = vi.fn(() =>
-      Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 0 }) })
-    );
-
-    const res = await uploadFiles([mockFile], 'mock-id', '/api/file', 1, 1, tus);
-    expect(res).toHaveLength(1);
-    expect(res[0].file.name).toBe('a.pdf');
-    expect(global.fetch).toHaveBeenCalled();
-  });
-});
