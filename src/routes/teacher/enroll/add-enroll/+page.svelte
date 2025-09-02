@@ -19,9 +19,10 @@
   let show_audit_panel = $state(false); // 是否展示选择审核员面板
   let audit_data = $state(null); // 审核员数据
   let show_practice_panel = $state(false); // 是否展示选择练习面板
-  let practice_initial_id = $state(null); // 当前选择试卷id
-  let practice_data = $state(null); // 试卷数据
+  let practice_initial_id = $state([]); // 当前选择试卷id
+  let practice_data = $state([]); // 试卷数据
   let detail_exam_location = $state(''); // 考试详细地点
+  let audit_id_data = $state([]); // 审核员id数据
 
   // 考试预定地点
   let exam_plan_location = $derived(() => {
@@ -62,7 +63,7 @@
         ExamPlanLocation: exam_plan_location(),
         ReviewerIds: audit_data ? audit_data.map((item) => item.ID) : [],
       },
-      practice_ids: [practice_initial_id],
+      practice_ids: practice_initial_id,
     };
   });
 
@@ -79,6 +80,7 @@
   // 更新选择的试卷
   function updateTestSelection(data) {
     practice_data = data;
+    console.log(practice_data);
   }
 
   // 处理选择审核人按钮点击事件
@@ -143,7 +145,7 @@
     }
     errors.exam_plan_location = exam_plan_location() ? '' : '请输入考试地点';
     errors.subjects = !subjects.theory && !subjects.practice ? '请至少选择一个考试科目' : '';
-    errors.practice = practice_data ? '' : '请选择练习';
+    errors.practice = practice_data.length > 0 ? '' : '请选择练习';
 
     // 校验通过后可以提交逻辑
     if (
@@ -354,7 +356,7 @@
   <div class="form-row">
     <div class="label required">练习：</div>
     <div class="input-wrapper">
-      {#if !practice_data}
+      {#if practice_data.length === 0}
         <!-- 还未选择练习 -->
         <div class="select-wrapper">
           <button id="test-select" class="btn" onclick={handlePracticeSelect}>选择练习</button>
@@ -364,11 +366,16 @@
         <div class="selected-test-display">
           <div class="test-info-container">
             <div class="test-info-row">
-              <span class="test-type">{practice_data.assembly_type} :</span>
-              <span class="test-name" title={practice_data.name}>{practice_data.name}</span>
+              {#each practice_data as test, idx}
+                <span class="test-type">{test.assembly_type} :</span>
+                <span class="test-name" title={test.name}>{test.name}</span>
+                {#if !(idx === practice_data.length - 1)}
+                  、
+                {/if}
+              {/each}
             </div>
           </div>
-          <button id="test-select" class="btn change-test-btn" onclick={handlePracticeSelect}> 更换练习 </button>
+          <button id="test-select" class="btn change-test-btn" onclick={handlePracticeSelect}>更换练习</button>
         </div>
       {/if}
     </div>
@@ -391,7 +398,7 @@
   bind:selected_test_id={practice_initial_id}
 />
 
-<AuditSelectPanel bind:show={show_audit_panel} onSelectAudit={updateAuditSelection} />
+<AuditSelectPanel bind:show={show_audit_panel} audit_id_list={audit_id_data} onSelectAudit={updateAuditSelection} />
 
 <style>
   .create-plan {

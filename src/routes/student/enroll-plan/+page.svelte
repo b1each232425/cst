@@ -53,7 +53,7 @@
   // 时间戳转 yyyy-MM-dd HH:mm:ss
   function formatTime(ts) {
     if (!ts) return '—';
-    const d = new Date(ts * 1000); // 后端是秒戳
+    const d = new Date(ts);
     const pad = (n) => String(n).padStart(2, '0');
     return (
       `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
@@ -200,7 +200,7 @@
                   <button class="option blue" onclick={handleEnroll}>继续报名</button>
                 {:else if item.status === '待审核'}
                   <button class="option blue" onclick={handleEnroll}>查看报名信息</button>
-                {:else if item.status === '审核通过待考试'}
+                {:else if item.status === '通过'}
                   <button class="option blue">请到达考试列表等待考试开始</button>
                 {:else if item.status === '审核不通过'}
                   <button class="option blue" onclick={handleEnroll}>重新提交</button>

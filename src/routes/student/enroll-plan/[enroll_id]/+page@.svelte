@@ -7,6 +7,7 @@
   import divisions from 'china-division/dist/pcas-code.json';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
+  import { error } from '@sveltejs/kit';
 
   const { data } = $props();
 
@@ -25,6 +26,12 @@
     tw_pass: '台湾居民来往大陆通信证',
   };
 
+  // 身份证信息
+  let id_card_front_file = $state(null); // 身份证正面图片
+  let id_card_back_file = $state(null); // 身份证反面图片
+  let id_card_front_path = $state(null); // 身份证正面路径
+  let id_card_back_path = $state(null); // 身份证反面路径
+
   // 报名信息数据
   let detail = $state({
     name: '',
@@ -35,8 +42,6 @@
     email: '',
     phone: '',
     address: '',
-    idCardFront: '',
-    idCardBack: '',
   });
 
   // 表单错误对象
@@ -44,18 +49,13 @@
     name: '',
     gender: '',
     idType: '',
-    birthDate: null,
+    birthDate: '',
     idNumber: '',
     email: '',
     phone: '',
     address: '',
     idCardFront: '',
     idCardBack: '',
-  });
-
-  // 考试预定地点
-  let exam_plan_location = $derived(() => {
-    return `${province || ''} ${city || ''} ${district || ''} ${detail.address}`.trim();
   });
 
   function validateForm() {
@@ -70,14 +70,101 @@
     };
   }
 
-  function handleFrontUpload(file) {}
+  // 根据身份证计算出生日期
+  function getBirthDateFromIdCard(idCard) {
+    if (!idCard) return null;
 
-  function handleBackUpload(file) {}
+    let birthStr = '';
+    if (idCard.length === 18) {
+      // 18位：第7到14位是出生日期 yyyyMMdd
+      birthStr = idCard.slice(6, 14);
+      const year = birthStr.slice(0, 4);
+      const month = birthStr.slice(4, 6);
+      const day = birthStr.slice(6, 8);
+      return `${year}-${month}-${day}`;
+    } else if (idCard.length === 15) {
+      // 15位：第7到12位是出生日期 yyMMdd，前面加上19
+      birthStr = idCard.slice(6, 12);
+      const year = '19' + birthStr.slice(0, 2);
+      const month = birthStr.slice(2, 4);
+      const day = birthStr.slice(4, 6);
+      return `${year}-${month}-${day}`;
+    } else {
+      return null; // 非法身份证号
+    }
+  }
+
+  // ocr身份证识别接口
+  function identifyIdCard(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch('/api/ocr', {
+      method: 'POST',
+      body: formData,
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.status === 0) {
+          detail.name = data.data.name;
+          detail.gender = data.data.gender;
+          detail.idNumber = data.data.id_number;
+          detail.idType = 'id_card';
+          detail.birthDate = getBirthDateFromIdCard(data.data.id_number);
+          formErrors.idCardFront = '已成功识别身份证信息';
+        }
+        console.log(detail.idType);
+        console.log(detail.birthDate);
+      })
+      .catch((e) => {
+        console.error(e);
+      });
+  }
+
+  // 上传文件接口
+  function handleFileUpload(file, file_dir) {
+    fetch('/api/uploadFiles', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file: file,
+        file_dir: file_dir,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((data) => {})
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
+  // 处理身份证正面上传事件
+  function handleFrontUpload(file) {
+    id_card_front_file = file;
+    identifyIdCard(id_card_front_file);
+    formErrors.idCardFront = '正在识别身份证信息...';
+  }
+
+  // 处理身份证反面上传事件
+  function handleBackUpload(file) {
+    id_card_back_file = file;
+  }
 
   // 监听出身日期变化
   function handleBirthDateChance(e) {
     detail.birthDate = e.detail.date;
-    console.log(detail.birthDate);
   }
 
   // 报名请求函数
@@ -193,6 +280,11 @@
     }
   });
 
+  // 个人居住地
+  let person_location = $derived(() => {
+    return `${province || ''} ${city || ''} ${district || ''} ${detail.address}`.trim();
+  });
+
   onMount(() => {
     getUserInfo();
   });
@@ -202,6 +294,29 @@
   <div class="section-container">
     <Title title="报名信息" />
     <div class="info-container">
+      <div class="info-row">
+        <div class="info-item idcard-item required">
+          <span class="label">身份证人像面</span>
+          <div class="value">
+            <Upload show_label={false} accept="image/*" limit_size="1000" onfile={handleFrontUpload}></Upload>
+            <div
+              class="error-message"
+              class:blue={formErrors.idCardFront === '正在识别身份证信息...'}
+              class:green={formErrors.idCardFront === '已成功识别身份证信息'}
+            >
+              {formErrors.idCardFront}
+            </div>
+          </div>
+        </div>
+        <div class="info-item idcard-item required">
+          <span class="label">身份证国徽面</span>
+          <div class="value">
+            <Upload show_label={false} accept="image/*" limit_size="1000" onfile={handleBackUpload}></Upload>
+            <div class="error-message">{formErrors.idCardBack}</div>
+          </div>
+        </div>
+      </div>
+
       <div class="info-row">
         <div class="info-item required">
           <span class="label">姓名</span>
@@ -242,7 +357,11 @@
         <div class="info-item required">
           <span class="label">出生日期</span>
           <div class="value">
-            <DatePicker input_width={'200px'} on:start_date_selected={handleBirthDateChance}></DatePicker>
+            <DatePicker
+              input_width={'200px'}
+              initial_start_date={new Date(detail.birthDate)}
+              on:start_date_selected={handleBirthDateChance}
+            ></DatePicker>
             <div class="error-message">{formErrors.birthDate}</div>
           </div>
         </div>
@@ -315,23 +434,6 @@
               placeholder="请输入详细地址（如街道、门牌号）"
               bind:value={detail.address}
             />
-          </div>
-        </div>
-      </div>
-
-      <div class="info-row">
-        <div class="info-item idcard-item required">
-          <span class="label">身份证人像面</span>
-          <div class="value">
-            <Upload show_label={false} accept="image/*" limit_size="10" onfile={handleFrontUpload}></Upload>
-            <!-- <div class="error-message">{formErrors.idCardFront}</div> -->
-          </div>
-        </div>
-        <div class="info-item idcard-item required">
-          <span class="label">身份证国徽面</span>
-          <div class="value">
-            <Upload show_label={false} accept="image/*" limit_size="10" onfile={handleFrontUpload}></Upload>
-            <!-- <div class="error-message">{formErrors.idCardBack}</div> -->
           </div>
         </div>
       </div>
@@ -435,10 +537,18 @@
 
       .error-message {
         font-size: 12px;
-        color: red;
         margin-top: 4px;
         line-height: 1.2;
-        height: 10px;
+        height: 14px;
+        color: red; /* 默认红色 */
+      }
+
+      .error-message.blue {
+        color: blue;
+      }
+
+      .error-message.green {
+        color: green;
       }
     }
 

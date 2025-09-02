@@ -14,9 +14,9 @@
   const { data } = $props();
 
   const ASSEMBLY_TYPE_MAP = {
-    '00': '自定义组卷（经典巩固）',
-    '02': '随机组卷（随机组卷）',
-    '04': '智能刷题（智能提升）',
+    '00': '经典巩固',
+    '02': '随机组卷',
+    '04': '智能刷题',
   };
 
   let plan_name = $state(''); // 计划名称
@@ -28,14 +28,11 @@
   let deadline = $state(null); // 审核截止时间
   let show_audit_panel = $state(false); // 是否展示选择审核员面板
   let audit_data = $state(null); // 审核员数据
-  let audit_id_data = $state(null); // 审核员id数据
+  let audit_id_data = $state([]); // 审核员id数据
   let show_practice_panel = $state(false); // 是否展示选择练习面板
-  let practice_initial_id = $state(null); // 当前选择试卷id
-  let practice_data = $state(null); // 试卷数据
+  let practice_initial_id = $state([]); // 选择的练习 id 数组
+  let practice_data = $state([]); // 选择的练习数组
   let detail_exam_location = $state(''); // 考试详细地点
-
-  let date_picker01 = $state(null);
-  let date_picker02 = $state(null);
 
   // 考试预定地点
   let exam_plan_location = $derived(() => {
@@ -73,7 +70,7 @@
         ExamPlanLocation: exam_plan_location(),
         ReviewerIds: audit_data ? audit_data.map((item) => item.ID || item.id) : [],
       },
-      practice_ids: [practice_initial_id],
+      practice_ids: practice_initial_id,
     };
   });
 
@@ -153,7 +150,7 @@
     }
     errors.exam_plan_location = exam_plan_location() ? '' : '请输入考试地点';
     errors.subjects = !subjects.theory && !subjects.practice ? '请至少选择一个考试科目' : '';
-    errors.practice = practice_data ? '' : '请选择练习';
+    errors.practice = practice_data.length > 0 ? '' : '请选择练习';
 
     // 校验通过后可以提交逻辑
     if (
@@ -240,7 +237,6 @@
         let register = res.data.register;
         let reviewers = res.data.reviewers;
         let practices = res.data.practices;
-        let practice_ids = res.data.practice_ids;
 
         // ====== 把后端数据填充到前端状态 ======
         plan_name = register.Name || '';
@@ -274,18 +270,16 @@
 
         // 审核员
         audit_data = reviewers;
+        audit_id_data = audit_data.map((item) => item.id);
 
         // 练习
-        practice_initial_id = practices.ID;
+        practice_initial_id = practices.map((item) => item.ID);
 
-        practice_data =
-          practices.length > 0
-            ? {
-                id: practices[0].ID,
-                name: practices[0].Name,
-                assembly_type: ASSEMBLY_TYPE_MAP[practices[0].Type] || '未知类型',
-              }
-            : null;
+        practice_data = practices.map((item) => ({
+          id: item.ID,
+          name: item.Name,
+          assembly_type: ASSEMBLY_TYPE_MAP[item.Type] || '未知类型',
+        }));
       })
       .catch((e) => {
         console.error('加载报名计划失败:', e);
@@ -311,7 +305,6 @@
     <div class="label required">计划报名时段：</div>
     <div class="date-picker">
       <DatePicker
-        bind:this={date_picker01}
         is_single_date_selection={false}
         is_time_selection={true}
         input_width={'350px'}
@@ -329,7 +322,6 @@
     <div class="label required">审核截止时间：</div>
     <div class="date-picker">
       <DatePicker
-        bind:this={date_picker02}
         is_time_selection={true}
         input_width={'350px'}
         initial_start_date={new Date(deadline)}
@@ -450,7 +442,7 @@
   <div class="form-row">
     <div class="label required">练习：</div>
     <div class="input-wrapper">
-      {#if !practice_data}
+      {#if practice_data.length === 0}
         <!-- 还未选择练习 -->
         <div class="select-wrapper">
           <button id="test-select" class="btn" onclick={handlePracticeSelect}>选择练习</button>
@@ -460,15 +452,22 @@
         <div class="selected-test-display">
           <div class="test-info-container">
             <div class="test-info-row">
-              <span class="test-type">{practice_data.assembly_type} :</span>
-              <span class="test-name" title={practice_data.name}>{practice_data.name}</span>
+              {#each practice_data as test, idx}
+                <span class="test-type">{test.assembly_type} :</span>
+                <span class="test-name" title={test.name}>{test.name}</span>
+                {#if !(idx === practice_data.length - 1)}
+                  、
+                {/if}
+              {/each}
             </div>
           </div>
-          <button id="test-select" class="btn change-test-btn" onclick={handlePracticeSelect}> 更换练习 </button>
+          <button id="test-select" class="btn change-test-btn" onclick={handlePracticeSelect}>更换练习</button>
         </div>
       {/if}
     </div>
   </div>
+  <div class="error-text">{errors.practice}</div>
+
   <div class="error-text">
     {errors.practice}
   </div>
@@ -487,7 +486,7 @@
   bind:selected_test_id={practice_initial_id}
 />
 
-<AuditSelectPanel bind:show={show_audit_panel} onSelectAudit={updateAuditSelection} />
+<AuditSelectPanel bind:show={show_audit_panel} audit_id_list={audit_id_data} onSelectAudit={updateAuditSelection} />
 
 <style>
   .create-plan {
