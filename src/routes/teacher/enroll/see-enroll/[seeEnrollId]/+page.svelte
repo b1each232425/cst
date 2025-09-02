@@ -508,16 +508,16 @@
                     }}
                   /></td
                 >
-                <td>{item.name}</td>
-                <td>{item.phone}</td>
-                <td>{item.email}</td>
-                <td>{item.gender}</td>
-                <td>{item.idNumber}</td>
-                <td>{item.idType}</td>
-                <td>{item.enrollTime}</td>
-                <td>{item.enrollMethod}</td>
-                <td>{item.examType}</td>
-                <td>{item.auditor}</td>
+                <td>{item.name ? item.name : '--'}</td>
+                <td>{item.phone ? item.phone : '--'}</td>
+                <td>{item.email ? item.email : '--'}</td>
+                <td>{item.gender ? item.gender : '--'}</td>
+                <td>{item.idNumber ? item.idNumber : '--'}</td>
+                <td>{item.idType ? item.idType : '--'}</td>
+                <td>{item.enrollTime ? item.enrollTime : '--'}</td>
+                <td>{item.enrollMethod ? item.enrollMethod : '--'}</td>
+                <td>{item.examType ? item.examType : '--'}</td>
+                <td>{item.auditor ? item.auditor : '--'}</td>
                 <td>
                   <span
                     class="Status-tag {item.status === '通过'
@@ -538,6 +538,8 @@
                   {:else if item.status === '不通过'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item.id)}>查看详情</button>
                     <button class="de-btn" onclick={() => handleRevokeReject(item.id)}>撤销不通过</button>
+                  {:else}
+                    --
                   {/if}
                 </td>
               </tr>

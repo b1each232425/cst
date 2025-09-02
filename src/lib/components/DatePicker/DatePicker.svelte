@@ -84,9 +84,11 @@
   // 校验传入参数
   (() => {
     // 校验 initial_start_date 参数
-    if (initial_start_date && !(initial_start_date instanceof Date)) {
-      console.warn(`[DatePicker] initial_start_date 应该是 Date 类型，当前为 ${typeof initial_start_date}`);
-      initial_start_date = null; // 设置默认值为 null
+    if (initial_start_date) {
+      if (!(initial_start_date instanceof Date) || isNaN(initial_start_date.getTime())) {
+        console.warn(`[DatePicker] initial_start_date 无效，当前为 ${initial_start_date}`);
+        initial_start_date = null;
+      }
     }
 
     // 校验 initial_end_date 参数
@@ -477,16 +479,20 @@
       selected_end_minute = now.getMinutes();
     }
 
-    if (initial_start_date instanceof Date) {
+    if (initial_start_date instanceof Date && !isNaN(initial_start_date.getTime())) {
       internal_start_date = new Date(initial_start_date);
       selected_start_hour = internal_start_date.getHours();
       selected_start_minute = internal_start_date.getMinutes();
+      start_year = internal_start_date.getFullYear();
+      start_month = internal_start_date.getMonth();
     }
 
-    if (initial_end_date instanceof Date) {
+    if (initial_end_date instanceof Date && !isNaN(initial_end_date.getTime())) {
       internal_end_date = new Date(initial_end_date);
       selected_end_hour = internal_end_date.getHours();
       selected_end_minute = internal_end_date.getMinutes();
+      end_year = internal_end_date.getFullYear();
+      end_month = internal_end_date.getMonth();
     }
 
     if (is_single_date_selection) {
@@ -500,26 +506,14 @@
     dispatch('end_date_selected', { date: internal_end_date });
   };
 
-  // 时间格式化函数
-  function formatDateTime(date) {
-    if (!date) return null;
-    const pad = (n) => String(n).padStart(2, '0');
-    const year = date.getFullYear();
-    const month = pad(date.getMonth() + 1);
-    const day = pad(date.getDate());
-    const hours = pad(date.getHours());
-    const minutes = pad(date.getMinutes());
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
-  }
-
   $effect(() => {
     // 如果有初始值就转成字符串
     if (initial_start_date) {
-      input_value = formatDateTime(initial_start_date);
+      input_value = formatDate(initial_start_date);
     }
 
     if (initial_start_date && initial_end_date) {
-      input_value = `${formatDateTime(initial_start_date)} ~ ${formatDateTime(initial_end_date)}`;
+      input_value = `${formatDate(initial_start_date)} ~ ${formatDate(initial_end_date)}`;
     }
   });
 

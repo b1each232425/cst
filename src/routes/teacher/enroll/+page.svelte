@@ -372,7 +372,7 @@
                 >
                 <td>{item.register.Name ? item.register.Name : '--'}</td>
                 <td>{item.register.CourseText ? item.register.CourseText : '--'}</td>
-                <td>{item.studentCount}/{item.register.MaxNumber ? item.register.MaxNumber : '∞'}</td>
+                <td>{item.studentCount}/{item.register.MaxNumber ? item.register.MaxNumber : '不限'}</td>
                 <td>{item.register.ReviewEndTimeText ? item.register.ReviewEndTimeText : '--'}</td>
                 <td
                   >{item.register.StartTimeText ? item.register.StartTimeText : '--'} ~ {item.register.EndTimeText
