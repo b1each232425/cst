@@ -10,16 +10,19 @@
  */ 
  -->
 <script>
-    import Pagination from "./Pagination.svelte";
-    import SearchInput from "./SearchInput.svelte";
+    import Pagination from '$lib/components/Pagination/Pagination.svelte';
+    import InputBox from '$lib/components/Input/InputBox.svelte';
+
+    let total_num = $state(0);
+    let page_size = $state(10);
 
     let {
         show_panel = false,
         is_single = true,
         ids = [
             {
-                id: 0,
-                name: "",
+                ID: 0,
+                OfficialName: "",
             },
         ],
         onCancel = () => {
@@ -51,6 +54,21 @@
 
     let current_page = $state(1);
 
+    // 页码切换事件
+    function handlePageChange(event) {
+        current_page = event.detail;
+        console.log("当前页：", current_page);
+        getExamSites(current_page, page_size)
+    }
+
+    // 每页条数切换事件
+    function handlePageSizeChange(event) {
+        page_size = event.detail;
+        current_page = 1; // 每次改条数最好回到第一页
+        console.log("每页条数：", page_size);
+        getExamSites(current_page, page_size)
+    }
+
     //是否加载中
     let loading = $state(false);
 
@@ -77,8 +95,8 @@
 
     let selected_ids = $state([
         {
-            id: 0,
-            name: "",
+            ID: 0,
+            OfficialName: "",
         },
     ]);
 
@@ -138,6 +156,8 @@
      * @param {string} value
      * 搜索
      */
+
+    let search_text = $state("");
     function onSearch(value) {
         search_params.name = value;
 
@@ -151,63 +171,65 @@
         }, 300);
     }
 
-    async function searchTeacher() {
+    function searchTeacher() {
         loading = true;
         error = "";
 
         // 构建查询参数
         let query_params = new URLSearchParams();
-
-        // 添加基础参数
         query_params.append("page", search_params.page.toString());
         query_params.append("pageSize", search_params.pageSize.toString());
-        query_params.append("roles", "examSiteSupervisor");
 
-        // 添加可选参数
+        // 固定 domain
+        query_params.append("domain", "assess^examSiteAdmin");
+
+        // 模糊搜索条件
         if (search_params.name) {
-            query_params.append("name", search_params.name);
+            query_params.append("fuzzyCondition", search_params.name);
         }
 
-        const response = await fetch(
-            `/api/teacher/exam/searchGraders?${query_params.toString()}`,
-            {
-                method: "GET",
-                credentials: 'include',
-                headers: {
-                    "Content-Type": "application/json",
-                },
+        fetch(`/api/user?${query_params.toString()}`, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
             },
-        );
+        })
+            .then((response) => response.json())
+            .then((result) => {
+                if (result.status !== 0) {
+                    console.log(result);
+                    error = result.msg || "搜索失败";
+                    graders_list = [];
+                    totals = 0;
+                    console.error(error);
+                    search_params.page = current_page;
+                } else {
+                    // 这里 result.data 是数组
+                    graders_list = result.data || [];
+                    totals = result.rowCount || 0;
+                    current_page = search_params.page;
 
-        const result = await response.json();
-
-        if (result.Status != 0) {
-            error = result.Msg || "搜索失败";
-            graders_list = [];
-            totals = 0;
-            console.error(error);
-            search_params.page = current_page;
-        } else {
-            graders_list = result.Data.teacher_list;
-            totals = result.Data.total;
-            current_page = search_params.page;
-
-            if (graders_list !== null) {
-
-                //更新选中状态
-                let selected_id_set = new Set(selected_ids.map((item) => item.id));
-                graders_list.forEach((grader) => {
-                    if (!selected_id_set.has(grader.id)) {
-                        grader.selected = false;
-                    } else {
-                        grader.selected = true;
+                    if (graders_list.length > 0) {
+                        // 更新选中状态
+                        let selected_id_set = new Set(selected_ids.map((item) => item.ID));
+                        graders_list.forEach((grader) => {
+                            grader.selected = selected_id_set.has(grader.ID);
+                        });
                     }
-                });
-            }
 
-            is_all_selected = isAllSelected();
-        }
-        loading = false;
+                    is_all_selected = isAllSelected();
+                }
+            })
+            .catch((err) => {
+                console.error("Error searching teacher:", err);
+                error = "搜索请求失败";
+                graders_list = [];
+                totals = 0;
+            })
+            .finally(() => {
+                loading = false;
+            });
     }
 
     // 切换全选状态
@@ -231,15 +253,15 @@
                 /** @param {{ id: number, name: string, account: string }} grader */
                 (grader) => {
                     const exists = selected_ids.find(
-                        (item) => item.id === grader.id,
+                        (item) => item.ID === grader.ID,
                     );
                     if (!exists) {
                         selected_ids.push({
-                            id: grader.id,
-                            name:
-                                grader.name === null
-                                    ? grader.account
-                                    : grader.name,
+                            ID: grader.ID,
+                            OfficialName:
+                                grader.OfficialName === null
+                                    ? grader.Account
+                                    : grader.OfficialName,
                         });
                     }
                 },
@@ -249,7 +271,7 @@
                 /** @param {{ id: number }} grader */
                 (grader) => {
                     const index = selected_ids.findIndex(
-                        (item) => item.id === grader.id,
+                        (item) => item.ID === grader.ID,
                     );
                     if (index !== -1) {
                         selected_ids.splice(index, 1);
@@ -270,8 +292,8 @@
             selected_ids = [];
             ids.forEach((element) => {
                 let selected_id = {
-                    id: element.id,
-                    name: element.name,
+                    ID: element.ID,
+                    OfficialName: element.OfficialName,
                 };
                 selected_ids.push(selected_id);
             });
@@ -305,11 +327,16 @@
             class="graders-search-container"
             style="height: 32px;width:350px;margin-left:auto;margin-right:auto"
         >
-            <SearchInput
-                purpose_text={"搜索"}
-                place_holder={"请输入手机号、账号或姓名"}
-                onSearchFunc={onSearch}
-            ></SearchInput>
+            <InputBox
+                label="搜索:"
+                type="text"
+                placeholder="请输入手机号、账号或姓名"
+                bind:value={search_text}
+                onInput={(val) => {
+                    search_text = val;
+                    onSearch(); // 保留原本的搜索逻辑
+                }}
+            />
         </div>
         <div class="graders-selection-table-container">
             <table class="table">
@@ -353,31 +380,31 @@
                                                 // 单选模式：清空 selected_ids，只保留当前选中项
                                                 selected_ids.length = 0;
                                                 selected_ids.push({
-                                                    id: grader.id,
-                                                    name:
-                                                        grader.name === null
-                                                            ? grader.account
-                                                            : grader.name,
+                                                    ID: grader.ID,
+                                                    OfficialName:
+                                                        grader.OfficialName === null
+                                                            ? grader.Account
+                                                            : grader.OfficialName,
                                                 });
 
                                                 // 清空其他 grader 的选中状态
                                                 graders_list.forEach((g) => {
                                                     g.selected =
-                                                        g.id === grader.id;
+                                                        g.ID === grader.ID;
                                                 });
                                             } else {
                                                 if (
                                                     !selected_ids.find(
                                                         (g) =>
-                                                            g.id === grader.id,
+                                                            g.ID === grader.ID,
                                                     )
                                                 ) {
                                                     selected_ids.push({
-                                                        id: grader.id,
-                                                        name:
-                                                            grader.name === null
-                                                                ? grader.account
-                                                                : grader.name,
+                                                        ID: grader.ID,
+                                                        OfficialName:
+                                                            grader.OfficialName === null
+                                                                ? grader.Account
+                                                                : grader.OfficialName,
                                                     });
                                                 }
                                                 grader.selected = true;
@@ -388,7 +415,7 @@
                                             // 取消选中：从 selected_ids 中移除
                                             const index =
                                                 selected_ids.findIndex(
-                                                    (g) => g.id === grader.id,
+                                                    (g) => g.ID === grader.ID,
                                                 );
                                             if (index !== -1) {
                                                 selected_ids.splice(index, 1);
@@ -399,10 +426,10 @@
                                     }}
                                 /></td
                             >
-                            <td>{grader.mobile_phone === null || grader.mobile_phone === "" ? "--" : grader.mobile_phone}</td>
-                            <td>{grader.account === null || grader.account === "" ? "--" : grader.account}</td>
-                            <td>{grader.name === null || grader.name === "" ? "--" : grader.name}</td>
-                            <td>{grader.gender === null || grader.gender === "" ? "--" : grader.gender}</td>
+                            <td>{grader.MobilePhone === null || grader.MobilePhone === "" ? "--" : grader.MobilePhone}</td>
+                            <td>{grader.Account === null || grader.Account === "" ? "--" : grader.Account}</td>
+                            <td>{grader.OfficialName === null || grader.OfficialName === "" ? "--" : grader.OfficialName}</td>
+                            <td>{grader.Gender === null || grader.Gender === "" ? "--" : grader.Gender}</td>
                         </tr>
                     {/each}
                 </tbody>
@@ -413,17 +440,18 @@
         </div>
         <div class="pagination-container">
             <span style="font-size: 12px; margin-right:10px">
-                已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_ids.length}</span> 条
+                已选 
+                <span style="color: #00A870; margin:0 5px 0 5px;">{selected_ids.length}</span> 条
             </span>
+
             <Pagination
-                show_per_page={false}
-                total_data_num={totals}
-                total_page_num={total_page}
-                current_page_num={current_page}
-                onPageChangeFunc={onNextOrLastPage}
-                onPageSearchFunc={onSearchPageFunc}
-                {onPageChooseFunc}
-            ></Pagination>
+                total_items={totals}
+                page_size={page_size}
+                current_page={current_page}
+                page_size_options={[10, 15, 20]}
+                on:pageChange={handlePageChange}
+                on:pageSizeChange={handlePageSizeChange}
+            />
         </div>
         <div class="graders-selection-button-container">
             <button
@@ -434,8 +462,8 @@
                     selected_ids = [];
                     ids.forEach((element) => {
                         let selected_id = {
-                            id: element.id,
-                            name: element.name,
+                            ID: element.ID,
+                            OfficialName: element.OfficialName,
                         };
                         selected_ids.push(selected_id);
                     });
