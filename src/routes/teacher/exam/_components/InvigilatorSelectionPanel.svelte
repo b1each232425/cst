@@ -61,7 +61,7 @@ let invigilator_list = $state([
     const query_params = new URLSearchParams({
       page: search_params.page.toString(),
       pageSize: search_params.pageSize.toString(),
-      domain:'cst.school^examSupervisor'
+      domain:'assess^examSupervisor'
     }).toString();
     fetch(`/api/user?${query_params}`,{
       method:'GET',

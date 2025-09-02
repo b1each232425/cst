@@ -190,7 +190,7 @@
     const queryParams = new URLSearchParams();
     queryParams.append('page', search_params.page.toString());
     queryParams.append('pageSize', search_params.pageSize.toString());
-    queryParams.append('domain', 'cst.school^student');
+    queryParams.append('domain', 'assess^student');
     if(search_params.fuzzyCondition)
     {
       queryParams.append('fuzzyCondition',search_params.fuzzyCondition);
