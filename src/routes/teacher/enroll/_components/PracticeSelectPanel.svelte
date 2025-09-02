@@ -134,12 +134,11 @@
           return {
             ...item,
             assembly_type:
-              item.AssemblyType === '00'
+              item.Type === '00'
                 ? '自定义组卷（经典巩固）'
-                : item.AssemblyType === '02'
+                : item.Type === '02'
                   ? '随机组卷（随机组卷）'
                   : '智能刷题（智能提升）',
-            level: item.Level === '00' ? '简单' : item.Level === '02' ? '中等' : '困难',
             correct_mode: item.CorrectMode === '00' ? 'AI批改' : item.CorrectMode === '10' ? '手动批改' : '未知',
 
             // 格式化后的时间
@@ -230,7 +229,7 @@
                 <th style="width: 15%">试卷名称</th>
                 <th style="width: 20%">组卷方式(练习类型)</th>
                 <th style="width: 10%">批改方式</th>
-                <th style="width: 10%">试卷难度</th>
+                <th style="width: 10%">创建教师</th>
                 <th style="width: 20%">更新时间</th>
                 <th style="width: 20%">创建日期</th>
               </tr>
@@ -255,11 +254,7 @@
                     <td>{test.assembly_type}</td>
                     <td>{test.correct_mode}</td>
                     <td>
-                      <span
-                        class={`level ${test.level === '简单' ? 'easy' : test.level === '中等' ? 'medium' : 'hard'}`}
-                      >
-                        {test.level}
-                      </span>
+                      {test.TeacherName}
                     </td>
                     <td>
                       {test.update_time}

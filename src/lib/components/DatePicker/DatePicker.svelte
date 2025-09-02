@@ -286,6 +286,26 @@
     }
   };
 
+  // 上一年
+  const prevStartYear = () => {
+    start_year--;
+  };
+
+  // 下一年
+  const nextStartYear = () => {
+    start_year++;
+  };
+
+  // 上一年
+  const prevEndYear = () => {
+    end_year--;
+  };
+
+  // 下一年
+  const nextEndYear = () => {
+    end_year++;
+  };
+
   // 更新输入框的显示值
   const updateInputValue = () => {
     if (is_single_date_selection) {
@@ -480,6 +500,29 @@
     dispatch('end_date_selected', { date: internal_end_date });
   };
 
+  // 时间格式化函数
+  function formatDateTime(date) {
+    if (!date) return null;
+    const pad = (n) => String(n).padStart(2, '0');
+    const year = date.getFullYear();
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+  }
+
+  $effect(() => {
+    // 如果有初始值就转成字符串
+    if (initial_start_date) {
+      input_value = formatDateTime(initial_start_date);
+    }
+
+    if (initial_start_date && initial_end_date) {
+      input_value = `${formatDateTime(initial_start_date)} ~ ${formatDateTime(initial_end_date)}`;
+    }
+  });
+
   // 初始化日期选择器
   onMount(() => {
     date_input_element.style.setProperty('--date-picker-width', input_width);
@@ -512,9 +555,20 @@
       <div class="dual-calendar-popup" class:single-calendar-mode={is_single_date_selection}>
         <div class="calendar">
           <div class="calendar-header">
-            <button onclick={prevStartMonth} data-testid="start-pre-month">«</button>
+            <button onclick={prevStartYear} data-testid="start-pre-month">
+              <img class="img-year" src="/datepicker/pre_year.svg" alt="" />
+            </button>
+            <button onclick={prevStartMonth} data-testid="start-pre-month">
+              <img class="img-month" src="/datepicker/pre_month.svg" alt="" />
+            </button>
+
             <span data-testid="start-current-date">{`${start_year}年 ${month_names[start_month]}`}</span>
-            <button onclick={nextStartMonth} data-testid="start-next-month">»</button>
+            <button onclick={nextStartMonth} data-testid="start-next-month">
+              <img class="img-month" src="/datepicker/next_month.svg" alt="" />
+            </button>
+            <button onclick={nextStartYear} data-testid="start-pre-month">
+              <img class="img-year" src="/datepicker/next_year.svg" alt="" />
+            </button>
           </div>
           <div class="calendar-days">
             {#each ['日', '一', '二', '三', '四', '五', '六'] as day}
@@ -571,9 +625,19 @@
         {#if !is_single_date_selection}
           <div class="calendar">
             <div class="calendar-header">
-              <button onclick={prevEndMonth} data-testid="end-pre-month">«</button>
+              <button onclick={prevEndYear} data-testid="start-pre-month">
+                <img class="img-year" src="/datepicker/pre_year.svg" alt="" />
+              </button>
+              <button onclick={prevEndMonth} data-testid="start-pre-month">
+                <img class="img-month" src="/datepicker/pre_month.svg" alt="" />
+              </button>
               <span data-testid="end-current-date">{`${end_year}年 ${month_names[end_month]}`}</span>
-              <button onclick={nextEndMonth} data-testid="end-next-month">»</button>
+              <button onclick={nextEndMonth} data-testid="start-next-month">
+                <img class="img-month" src="/datepicker/next_month.svg" alt="" />
+              </button>
+              <button onclick={nextEndYear} data-testid="start-pre-month">
+                <img class="img-year" src="/datepicker/next_year.svg" alt="" />
+              </button>
             </div>
             <div class="calendar-days">
               {#each ['日', '一', '二', '三', '四', '五', '六'] as day}
@@ -692,6 +756,14 @@
             align-items: center;
             padding: 8px;
             border-bottom: 1px solid #eee;
+
+            .img-month {
+              width: 10px;
+            }
+
+            .img-year {
+              width: 16px;
+            }
           }
 
           .calendar-header button {

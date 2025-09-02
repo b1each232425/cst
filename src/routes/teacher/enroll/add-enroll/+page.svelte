@@ -68,7 +68,7 @@
 
   // 把时间转化成数字格式
   function toTimestamp(date) {
-    return date ? Math.floor(new Date(date).getTime() / 1000) : null;
+    return date ? Math.floor(new Date(date).getTime()) : null;
   }
 
   // 处理选择练习按钮点击事件

@@ -5,6 +5,7 @@
   import { toast } from '$lib/components/Toast/Toast.js';
   import { baseNavItems } from '$lib/stores/modules/permission.js';
   import { onMount } from 'svelte';
+
   let { children, data } = $props();
 
   let nav_map = $state([]); // 导航数据

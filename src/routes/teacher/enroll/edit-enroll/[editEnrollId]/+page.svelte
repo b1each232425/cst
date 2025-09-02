@@ -7,10 +7,17 @@
   import divisions from 'china-division/dist/pcas-code.json';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
+  import { formatDateTime } from '../../_utils/handleFileInput';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
 
   const { data } = $props();
+
+  const ASSEMBLY_TYPE_MAP = {
+    '00': '自定义组卷（经典巩固）',
+    '02': '随机组卷（随机组卷）',
+    '04': '智能刷题（智能提升）',
+  };
 
   let plan_name = $state(''); // 计划名称
   let people_limit = $state('unlimited'); // 是否限制报名人数
@@ -64,7 +71,7 @@
           return '';
         })(),
         ExamPlanLocation: exam_plan_location(),
-        ReviewerIds: audit_data ? audit_data.map((item) => item.ID) : [],
+        ReviewerIds: audit_data ? audit_data.map((item) => item.ID || item.id) : [],
       },
       practice_ids: [practice_initial_id],
     };
@@ -72,7 +79,7 @@
 
   // 把时间转化成数字格式
   function toTimestamp(date) {
-    return date ? Math.floor(new Date(date).getTime() / 1000) : null;
+    return date ? Math.floor(new Date(date).getTime()) : null;
   }
 
   // 处理选择练习按钮点击事件
@@ -126,7 +133,7 @@
         return response.json();
       })
       .then((data) => {
-        console.log(data);
+        // console.log(data);
       })
       .catch((e) => {
         console.log(e);
@@ -231,6 +238,8 @@
         }
 
         let register = res.data.register;
+        let reviewers = res.data.reviewers;
+        let practices = res.data.practices;
         let practice_ids = res.data.practice_ids;
 
         // ====== 把后端数据填充到前端状态 ======
@@ -244,10 +253,10 @@
           practice: register.Course === '00' || register.Course === '04',
         };
 
-        // ====== 把时间戳转成 Date 对象 ======
-        start_date = register.StartTime ? new Date(register.StartTime) : null;
-        end_date = register.EndTime ? new Date(register.EndTime) : null;
-        deadline = register.ReviewEndTime ? new Date(register.ReviewEndTime) : null;
+        // ====== 把时间戳转成 yyyy-mm-dd HH:MM:SS 字符串 ======
+        start_date = register.StartTime ? formatDateTime(new Date(register.StartTime)) : null;
+        end_date = register.EndTime ? formatDateTime(new Date(register.EndTime)) : null;
+        deadline = register.ReviewEndTime ? formatDateTime(new Date(register.ReviewEndTime)) : null;
 
         // ====== 考试地点（省市区 + 详细地址） ======
         if (register.ExamPlanLocation) {
@@ -261,18 +270,22 @@
           district = '';
         }
 
-        detail_exam_location = register.ExamPlanLocation || '';
+        detail_exam_location = register.ExamPlanLocation ? register.ExamPlanLocation.split(' ').slice(3).join(' ') : '';
 
         // 审核员
-        audit_id_data = register.ReviewerIds
-          ? register.ReviewerIds.replace(/{|}/g, '') // 去掉大括号 → "1817,57,71"
-              .split(',') // 分割成数组 → ["1817","57","71"]
-              .filter(Boolean) // 过滤空字符串
-              .map((id) => Number(id)) // 转成数字数组 → [1817, 57, 71]
-          : [];
+        audit_data = reviewers;
 
-        // 练习 ID
-        practice_initial_id = practice_ids?.length ? practice_ids[0] : null;
+        // 练习
+        practice_initial_id = practices.ID;
+
+        practice_data =
+          practices.length > 0
+            ? {
+                id: practices[0].ID,
+                name: practices[0].Name,
+                assembly_type: ASSEMBLY_TYPE_MAP[practices[0].Type] || '未知类型',
+              }
+            : null;
       })
       .catch((e) => {
         console.error('加载报名计划失败:', e);
@@ -302,8 +315,8 @@
         is_single_date_selection={false}
         is_time_selection={true}
         input_width={'350px'}
-        initial_start_date={start_date}
-        initial_end_date={end_date}
+        initial_start_date={new Date(start_date)}
+        initial_end_date={new Date(end_date)}
         on:start_date_selected={handleStartDateChange}
         on:end_date_selected={handleEndDateChange}
       ></DatePicker>
@@ -319,7 +332,7 @@
         bind:this={date_picker02}
         is_time_selection={true}
         input_width={'350px'}
-        initial_start_date={deadline}
+        initial_start_date={new Date(deadline)}
         on:start_date_selected={handleDeadlineChange}
       ></DatePicker>
     </div>
@@ -388,7 +401,7 @@
           <div class="audit-info-container">
             <div class="audit-info-row">
               <span class="audit-name" title={audit_data.map((a) => a.OfficialName).join('、')}>
-                {audit_data.map((a) => a.OfficialName).join('、')}
+                {audit_data.map((a) => a.OfficialName || a.official_name).join('、')}
               </span>
             </div>
           </div>

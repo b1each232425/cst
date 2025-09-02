@@ -36,7 +36,7 @@
 
   // 查询审核员数据
   function getAuditData() {
-    fetch(`/api/user?page=${current_page}&pageSize=${page_size}&domain=cst.school^teacher`, {
+    fetch(`/api/user?page=${current_page}&pageSize=${page_size}&domain=assess^teacher`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

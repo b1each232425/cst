@@ -6,6 +6,9 @@
   import Upload from '$lib/components/Upload/UploadImage.svelte';
   import divisions from 'china-division/dist/pcas-code.json';
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+
+  const { data } = $props();
 
   // 性别映射
   const GENDER_MAP = {
@@ -50,6 +53,11 @@
     idCardBack: '',
   });
 
+  // 考试预定地点
+  let exam_plan_location = $derived(() => {
+    return `${province || ''} ${city || ''} ${district || ''} ${detail.address}`.trim();
+  });
+
   function validateForm() {
     formErrors = {
       name: detail.name ? '' : '请输入姓名',
@@ -59,22 +67,12 @@
       idNumber: detail.idNumber ? '' : '请输入证件号码',
       email: detail.email ? '' : '请输入邮箱',
       phone: detail.phone ? '' : '请输入电话',
-      idCardFront: detail.idCardFront ? '' : '请上传身份证人像面',
-      idCardBack: detail.idCardBack ? '' : '请上传身份证国徽面',
     };
   }
 
-  function handleFrontUpload(file) {
-    idCardFrontFile = file;
-    idCardFrontOk = true;
-    formErrors.idCardFront = '';
-  }
+  function handleFrontUpload(file) {}
 
-  function handleBackUpload(file) {
-    idCardBackFile = file;
-    idCardBackOk = true;
-    formErrors.idCardBack = '';
-  }
+  function handleBackUpload(file) {}
 
   // 监听出身日期变化
   function handleBirthDateChance(e) {
@@ -82,17 +80,73 @@
     console.log(detail.birthDate);
   }
 
-  function handleSubmit() {
+  // 报名请求函数
+  function enrollReq(status) {
+    fetch('/api/registration', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: { register_id: data.enroll_id, status: status },
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((data) => {})
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
+  function handleSubmit(status) {
     validateForm();
     const hasError = Object.values(formErrors).some((msg) => msg !== '');
     if (!hasError) {
-      alert('表单通过，可以提交:', detail);
+      enrollReq(status);
     }
   }
 
   // 处理取消按钮点击事件
   function handleCancle() {
     goto('/student/enroll-plan');
+  }
+
+  // 获取当前用户信息
+  function getUserInfo() {
+    fetch('/api/user/me', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((res) => {
+        const user = res.data;
+        if (!user) throw new Error('用户数据为空');
+
+        // 映射后端数据到 detail
+        detail.name = user.OfficialName || '';
+        detail.gender = user.Gender === '男' ? 'male' : user.Gender === '女' ? 'female' : '';
+        detail.idType = user.IDCardType || '';
+        detail.idNumber = user.IDCardNo || '';
+        detail.birthDate = user.Birthday || '';
+        detail.email = user.Email || '';
+        detail.phone = user.MobilePhone || '';
+        detail.address = user.Addr || '';
+      })
+      .catch((e) => {
+        console.log(e);
+      });
   }
 
   // ====== 处理地址选择 ======
@@ -122,21 +176,25 @@
   // 当选择省份时，更新城市
   $effect(() => {
     if (province) {
-      const selectedProvince = provinces.find((p) => p.value === province);
+      const selectedProvince = provinces.find((p) => p.label === province);
       cities = selectedProvince ? selectedProvince.children : [];
-      city = '';
-      district = '';
-      districts = [];
+      // city = '';
+      // district = '';
+      // districts = [];
     }
   });
 
   // 当选择城市时，更新区县
   $effect(() => {
     if (city) {
-      const selectedCity = cities.find((c) => c.value === city);
+      const selectedCity = cities.find((c) => c.label === city);
       districts = selectedCity ? selectedCity.children : [];
-      district = '';
+      // district = '';
     }
+  });
+
+  onMount(() => {
+    getUserInfo();
   });
 </script>
 
@@ -220,12 +278,11 @@
           <div class="value">
             <div class="address-setting">
               <!-- 省份 -->
-
               <div class="select-address-setting">
                 <Select bind:value={province}>
                   <Option value="" label="请选择省" />
                   {#each provinces as p}
-                    <Option value={p.value} label={p.label} />
+                    <Option value={p.label} label={p.label} />
                   {/each}
                 </Select>
               </div>
@@ -235,7 +292,7 @@
                 <Select bind:value={city} disabled={!province}>
                   <Option value="" label="请选择市" />
                   {#each cities as c}
-                    <Option value={c.value} label={c.label} />
+                    <Option value={c.label} label={c.label} />
                   {/each}
                 </Select>
               </div>
@@ -245,7 +302,7 @@
                 <Select bind:value={district} disabled={!city}>
                   <Option value="" label="请选择区" />
                   {#each districts as d}
-                    <Option value={d.value} label={d.label} />
+                    <Option value={d.label} label={d.label} />
                   {/each}
                 </Select>
               </div>
@@ -267,14 +324,14 @@
           <span class="label">身份证人像面</span>
           <div class="value">
             <Upload show_label={false} accept="image/*" limit_size="10" onfile={handleFrontUpload}></Upload>
-            <div class="error-message">{formErrors.idCardFront}</div>
+            <!-- <div class="error-message">{formErrors.idCardFront}</div> -->
           </div>
         </div>
         <div class="info-item idcard-item required">
           <span class="label">身份证国徽面</span>
           <div class="value">
             <Upload show_label={false} accept="image/*" limit_size="10" onfile={handleFrontUpload}></Upload>
-            <div class="error-message">{formErrors.idCardBack}</div>
+            <!-- <div class="error-message">{formErrors.idCardBack}</div> -->
           </div>
         </div>
       </div>
@@ -283,7 +340,7 @@
     <div class="action-row">
       <button class="btn cancel" onclick={handleCancle}>取消</button>
       <button class="btn save" onclick={handleSave}>保存</button>
-      <button class="btn submit" onclick={handleSubmit}>提交</button>
+      <button class="btn submit" onclick={() => handleSubmit('02')}>提交</button>
     </div>
   </div>
 </div>
