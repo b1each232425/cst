@@ -1,6 +1,19 @@
+  <!--
+ * @Author: yeweixuan t051521@163.com
+ * @Date: 2025-07-24 
+ * @LastEditors: yeweixuan t051521@163.com
+ * @LastEditTime: 2025-08-29 13:55:31
+ * @FilePath: \exam\src\routes\teacher\exam\addExam\+page@.svelte
+ * @Description: 考试列表页面 
+ * @Copyright (c) 2025 by yeweixuan t051521@163.com, All Rights Reserved. 
+-->
 <script>
   //@ts-nocheck
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+  import { writable,get } from 'svelte/store';
+  import { createXXHash64 } from 'hash-wasm';
+  import { filesize } from 'filesize';
   import SmartEditor from '@3min/smart-edit';
   import RequiredLabel from '../_components/RequiredLabel.svelte';
   import PaperSelectionPanel from '../_components/PaperSelectionPanel.svelte';
@@ -20,9 +33,13 @@
     tusInit,
     encodeMetadata,
   } from '../_utils/createExam';
-  import { onMount } from 'svelte';
-  import { createXXHash64 } from 'hash-wasm';
-  import { filesize } from 'filesize';
+  import { 
+    fileStore,
+    clearSelectedFiles,
+    queryFiles,
+    fastdigest
+  } from '../_stores/FileUpload.svelte'
+
   const TIP_TEXT = {
     final_exam: '当一门考试的考试性质为期末成绩考试时，它将决定学生在此课程的最终期末成绩',
     qualifying_exams: '当一门考试是资格证考试时，学生需要以真实身份进入考试',
@@ -44,7 +61,6 @@
     '02': '随机组卷',
     '04': '智能刷题',
   };
-
   const DEFAULT_RULES = `在即将开始的考试之前，请各位考生务必仔细阅读并遵守以下详细规则：
     1. 请确保您的网络连接稳定，建议使用有线网络连接，并使用支持最新版本浏览器的电脑参加考试。
     2. 提前30分钟登录考试平台，完成身份验证和设备检查，以保证准时开考。准备好有效的身份证件以备核查。
@@ -56,7 +72,7 @@
     8. 考试期间严禁录屏、录音或以任何形式记录考试内容。违反此规定将被视为作弊行为处理。
     9. 如有任何技术问题或遇到不可抗力因素影响考试进行，请立即联系在线技术支持或监考老师寻求帮助。
     请严格遵守上述规则，祝您考试顺利，取得满意的成绩！`;
-
+  /*富文本编辑器*/
   const EDITOR_OPTIONS = {
     editable: true,
     content: DEFAULT_RULES,
@@ -73,135 +89,99 @@
     },
     menuBarExcludeKeys: ['attachment', 'audio', 'image', 'video'],
   };
+
   let tus;
-  let criteria = $state('.*');
-  let fileApi = '/api/file';
-  let endpoint = $state('/api/file');
-  const CHUNKSIZE = 1024 * 1024 * 4;
-  let chunkSize = $state(CHUNKSIZE);
-  let parallelUploads = $state(1);
-  let jobs = $state(new Map());
-  let uploadedFiles = $state([]);
-  let selectedFiles = $state();
-  let clearSelectedFiles = () => {
-    selectedFiles = new DataTransfer().files;
-  };
-  let queryFiles = () => {
-    let v = encodeURIComponent(criteria);
-    fetch(fileApi + `/nonexistence?q=${v}`)
-      .then((v) => {
-        let size = v.headers.get('content-length');
-        if (!v || size === '0') {
-          return [];
-        }
+  let {
+  selectedFiles,
+  criteria,
+  fileApi,
+  endpoint,
+  chunkSize,
+  parallelUploads,
+  jobs,
+  uploadedFiles
+} = $derived(get(fileStore));
+  //let selectedFiles = $state();
+  // let criteria = $state('.*');
+  // let fileApi = '/api/file';
+  // let endpoint = $state('/api/file');
+  // const CHUNKSIZE = 1024 * 1024 * 4;
+  // let chunkSize = $state(CHUNKSIZE);
+  // let parallelUploads = $state(1);
+  // let jobs = $state(new Map());
+  // let uploadedFiles = $state([]);
+  // let selectedFiles = $state();
+  
+  
+  // let fastdigest = (job) => {
+  //   return new Promise(async (resolve, reject) => {
+  //     if (!job || !job.file) {
+  //       reject('invalid/null job');
+  //       return;
+  //     }
 
-        return v.json();
-      })
-      .then((v) => {
-        if (!v || v.length == 0) {
-          console.log('empty file list');
-          return;
-        }
+  //     let md = await createXXHash64();
+  //     md.init();
 
-        let d = [];
-        for (let i = 0; i < v.length; i++) {
-          let metadata = v[i].MetaData;
+  //     let fileReader = new FileReader();
 
-          // metadata.full = v[i];
-          metadata.url = `${fileApi}/${v[i].ID}`;
-          if (!metadata.filename) {
-            metadata.filename = v[i].ID;
-          }
+  //     let read = 0;
+  //     fileReader.onload = (e) => {
+  //       if (!e || !e.target || !e.target.result) {
+  //         let err = new Error('invalid event.target.result');
+  //         console.log(err);
+  //         jobs.delete(job.id);
+  //         reject(err);
+  //         return;
+  //       }
 
-          if (!metadata.filesize) {
-            metadata.filesize = v[i].Size;
-          }
+  //       read += e.target.result.byteLength;
+  //       let buf = new Uint8Array(e.target.result);
+  //       md.update(buf);
+  //       seek();
+  //     };
 
-          if (!metadata.checksum) {
-            metadata.checksum = v[i].ID;
-          }
+  //     let fileSize = job.file.size;
+  //     let start = 0,
+  //       end = 0;
 
-          d.push(metadata);
-        }
-        uploadedFiles = d;
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-  let fastdigest = (job) => {
-    return new Promise(async (resolve, reject) => {
-      if (!job || !job.file) {
-        reject('invalid/null job');
-        return;
-      }
+  //     let seek = () => {
+  //       let now = new Date();
+  //       job.sumPerformance = (((read * 1.0) / (now.getTime() - beginTime.getTime())) * 1000) / (1024 * 1024);
 
-      let md = await createXXHash64();
-      md.init();
+  //       job.sumProgress = (((read * 1.0) / fileSize) * 100).toFixed(2);
+  //       if (read >= fileSize) {
+  //         let hex = md.digest();
+  //         resolve(hex);
+  //         return;
+  //       }
 
-      let fileReader = new FileReader();
+  //       end += CHUNKSIZE;
+  //       end = end < fileSize ? end : fileSize + 1;
+  //       let slice = job.file.slice(start, end);
 
-      let read = 0;
-      fileReader.onload = (e) => {
-        if (!e || !e.target || !e.target.result) {
-          let err = new Error('invalid event.target.result');
-          console.log(err);
-          jobs.delete(job.id);
-          reject(err);
-          return;
-        }
+  //       fileReader.readAsArrayBuffer(slice);
+  //       start = end;
+  //     };
 
-        read += e.target.result.byteLength;
-        let buf = new Uint8Array(e.target.result);
-        md.update(buf);
-        seek();
-      };
+  //     let beginTime = new Date();
+  //     seek();
+  //   });
+  // };
 
-      let fileSize = job.file.size;
-      let start = 0,
-        end = 0;
-
-      let seek = () => {
-        let now = new Date();
-        job.sumPerformance = (((read * 1.0) / (now.getTime() - beginTime.getTime())) * 1000) / (1024 * 1024);
-
-        job.sumProgress = (((read * 1.0) / fileSize) * 100).toFixed(2);
-        if (read >= fileSize) {
-          let hex = md.digest();
-          resolve(hex);
-          return;
-        }
-
-        end += CHUNKSIZE;
-        end = end < fileSize ? end : fileSize + 1;
-        let slice = job.file.slice(start, end);
-
-        fileReader.readAsArrayBuffer(slice);
-        start = end;
-      };
-
-      let beginTime = new Date();
-      seek();
-    });
-  };
-
+  /* 新增的考试信息 */
   let examID = $state();
-  //考试名称
-  let exam_name = $state('');
-  //考试规则
-  let exam_rules = $state(DEFAULT_RULES);
-  //考试类型
-  let exam_type = $state('00');
-  //考试方式
-  let exam_method = $state('00'); //00线上 02线下
-  let exam_examinee = $state([]);
-  //考生数量
-  let examineeNum = $derived(exam_examinee.length);
-  let uploadedFileList = $state([]); // 附件
-  let RichTextEditor; //富文本编辑器
-  let exam_rooms = $state([]); //考试场地
-  let invigilators = $state([]); //监考人员
-  let date_picker = $state(); //日期选择器
+  let exam_name = $state('');   //考试名称
+  let exam_rules = $state(DEFAULT_RULES);   //考试规则
+  let exam_type = $state('00');   //考试类型
+  let exam_method = $state('00'); //考试方式 00线上 02线下
+  let exam_examinee = $state([]); //参加的考生
+  let examineeNum = $derived(exam_examinee.length);   //考生数量
+  let uploadedFileList = $state([]); // 附件列表
+  let RichTextEditor; // 富文本编辑器
+  let exam_rooms = $state([]); // 考试场地
+  let invigilators = $state([]); // 监考人员
+  let date_picker = $state(); // 日期选择器
   //考试场次数组
   let paper_configs = $state([
     {
@@ -237,12 +217,15 @@
     },
   ]);
 
-  //总时长计算
-  let total_duration = $derived(paper_configs.reduce((sum, p) => sum + p.duration, 0));
+
+  let total_duration = $derived(paper_configs.reduce((sum, p) => sum + p.duration, 0));   //总时长计算
+
+  /*******************  面板显示控制  ********************/
   let show_paper_selection_panel = $state(false);
   let show_examinee_panel = $state(false);
   let show_rooms_panel = $state(false);
   let show_invigilator_panel = $state(false);
+
   let files = $state([]);
   let start_time = $derived(paper_configs.length > 0 
         ? new Date(Math.min(...paper_configs.map(config => new Date(config.startTime).getTime())))
@@ -252,15 +235,11 @@
         ? new Date(Math.max(...paper_configs.map(config => new Date(config.endTime).getTime())))
         : new Date());
   
-//   let exam_start_time = $state();
-//   let exam_end_time = $state();
-//   $effect(() => {
-//   exam_start_time = start_time;
-//   exam_end_time = end_time;
-//   console.log("start",exam_start_time);
-// });
   // 计算所有考场容量的总和
   let total_capacity = $derived(exam_rooms.reduce((sum, room) => sum + (room.capacity || 0), 0));
+
+  /*******************  函数区  ********************/
+
   function addNewPaper() {
     let default_paper_config = {
       paperID: 0, //试卷ID
@@ -359,6 +338,7 @@
   }
 
   async function uploadFiles(files = selectedFiles) {
+    console.log("files",files);
     let promises = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -368,10 +348,19 @@
 
       let id = `${file.name}#${file.size}#${file.lastModified}`;
       let job = { id, file };
-      jobs.set(id, job);
+      // jobs.set(id, job);
+      // const p = singles(job);
+      // promises.push(p);
+       // 更新 jobs 到 store
+      fileStore.update(s => {
+        const newJobs = new Map(s.jobs);
+        newJobs.set(id, job);
+        return { ...s, jobs: newJobs };
+      });
 
       const p = singles(job);
       promises.push(p);
+      
     }
     let results;
     try {
@@ -414,7 +403,7 @@
                 // url: r.url || `${fileApi}/${r.checksum}` // 可选：下载地址
               },
             ];
-            reset();
+            clearSelectedFiles();
           }
         })
         .catch((error) => {
@@ -477,9 +466,6 @@
     });
   }
 
-  function reset() {
-    clearSelectedFiles();
-  }
 
   // 获取已选择的试卷ID列表（排除当前索引）
   function getSelectedPaperIDs(excludeIndex = -1) {
@@ -706,7 +692,8 @@
         </div>
       </div>
     </div>
-
+<!-- bind:files={selectedFiles} -->  
+ <!-- 暂存 -->
     <div class="file-container">
       <RequiredLabel text="考试说明" colon={false} Asterisk={false} />
       <div class="file-button-container">
@@ -716,8 +703,15 @@
             class="file-input-hidden"
             type="file"
             multiple
-            bind:files={selectedFiles}
-            onchange={() => uploadFiles()}
+             onchange={(e) => {
+          const files = e.target.files;
+          if (files && files.length > 0) {
+            // 更新 selectedFiles 到 store
+            fileStore.update(s => ({ ...s, selectedFiles: files }));
+            uploadFiles(files);
+          }
+        }}
+            
           />
         </label>
       </div>

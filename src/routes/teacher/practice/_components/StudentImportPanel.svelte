@@ -95,7 +95,7 @@
             IDCardNo: item['身份证号'],
             IDCardType: '居民身份证',
             serial_number: item['编号'],
-            Domains: ['cst.school^student'],
+            Domains: ['assess^student'],
             Email: null,
           })),
         }),
@@ -151,7 +151,7 @@
               IDCardType: '居民身份证',
               errorMsg: item.errorType,
               isOk: item.isOk,
-              Domains: ['cst.school^student'],
+              Domains: ['assess^student'],
             }));
             failure_student_list = convertedData;
           } else {
@@ -256,7 +256,7 @@
           IDCardNo: item.idCardNo,
           IDCardType: '居民身份证',
           serial_number: item.serial_number,
-          Domains: ['cst.school^student'],
+          Domains: ['assess^student'],
         })),
       }),
       credentials: 'include', // 添加凭证以处理跨域Cookie
@@ -406,7 +406,7 @@
               officialName: student.officialName?.trim() || null,
               MobilePhone: student.mobilePhone?.trim() || null,
               Account: json.data,
-              Domains: ['cst.school^student'],
+              Domains: ['assess^student'],
               Gender: null,
               Email: null,
               IDCardType: '居民身份证',
