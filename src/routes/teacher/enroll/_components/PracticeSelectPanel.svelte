@@ -10,7 +10,7 @@
   let {
     show = $bindable(false), // 是否展示选择练习面板
     onTestSelectFunc = () => {}, // 处理练习选择事件
-    selected_test_id = $bindable(null), // 试卷id
+    selected_test_id = $bindable([]), // 试卷id
     paper_list = [], // 试卷列表数据
   } = $props();
 
@@ -26,7 +26,15 @@
 
   // 选择试卷
   function selectTest(test_id) {
-    selected_test_id = test_id === selected_test_id ? null : test_id;
+    if (!Array.isArray(selected_test_id)) {
+      selected_test_id = [];
+    }
+    const index = selected_test_id.indexOf(test_id);
+    if (index === -1) {
+      selected_test_id = [...selected_test_id, test_id];
+    } else {
+      selected_test_id = selected_test_id.filter((id) => id !== test_id);
+    }
   }
 
   // 搜索试卷
@@ -42,18 +50,18 @@
 
   // 确认选择
   function confirmSelection() {
-    const selected = paper_list.find(
-      (/** @type {{ID: number, Name: string, assembly_type: string}} */ test) => test.ID === selected_test_id,
+    const selected = paper_list.filter((test) => selected_test_id.includes(test.ID));
+
+    // 传递选中试卷数组给父组件
+    onTestSelectFunc(
+      selected.map((test) => ({
+        id: test.ID,
+        name: test.Name,
+        assembly_type: test.assembly_type,
+        suggest_duration: test.SuggestedDuration,
+      })),
     );
-    if (selected) {
-      // 确保传递正确的数据结构给父组件
-      onTestSelectFunc({
-        id: selected.ID,
-        name: selected.Name,
-        assembly_type: selected.assembly_type,
-        suggest_duration: selected.SuggestedDuration,
-      });
-    }
+
     closeModal();
   }
 
@@ -133,12 +141,7 @@
 
           return {
             ...item,
-            assembly_type:
-              item.Type === '00'
-                ? '自定义组卷（经典巩固）'
-                : item.Type === '02'
-                  ? '随机组卷（随机组卷）'
-                  : '智能刷题（智能提升）',
+            assembly_type: item.Type === '00' ? '经典巩固' : item.Type === '02' ? '随机组卷' : '智能刷题',
             correct_mode: item.CorrectMode === '00' ? 'AI批改' : item.CorrectMode === '10' ? '手动批改' : '未知',
 
             // 格式化后的时间
@@ -225,9 +228,9 @@
           <table class="test-table">
             <thead>
               <tr>
-                <th style="width: 5%"></th>
+                <th style="width: 10%"></th>
                 <th style="width: 15%">试卷名称</th>
-                <th style="width: 20%">组卷方式(练习类型)</th>
+                <th style="width: 15%">练习类型</th>
                 <th style="width: 10%">批改方式</th>
                 <th style="width: 10%">创建教师</th>
                 <th style="width: 20%">更新时间</th>
@@ -237,28 +240,24 @@
             <tbody>
               {#if current_page_tests.length > 0}
                 {#each current_page_tests as test (test.ID)}
-                  <tr class:selected={selected_test_id === test.ID} onclick={() => selectTest(test.ID)}>
+                  <tr class:selected={selected_test_id.includes(test.ID)} onclick={() => selectTest(test.ID)}>
                     <td>
-                      <label class="custom-radio">
+                      <label class="custom-checkbox">
                         <input
-                          type="radio"
+                          type="checkbox"
                           name="test-selection"
                           value={test.ID}
-                          checked={selected_test_id === test.ID}
+                          checked={selected_test_id.includes(test.ID)}
                           onclick={() => selectTest(test.ID)}
                         />
-                        <span class="radio-checkmark"></span>
+                        <span class="checkbox-checkmark"></span>
                       </label>
                     </td>
                     <td>{test.Name}</td>
                     <td>{test.assembly_type}</td>
                     <td>{test.correct_mode}</td>
-                    <td>
-                      {test.TeacherName}
-                    </td>
-                    <td>
-                      {test.update_time}
-                    </td>
+                    <td>{test.TeacherName}</td>
+                    <td>{test.update_time}</td>
                     <td>{test.create_time}</td>
                   </tr>
                 {/each}
@@ -419,105 +418,6 @@
 
         tbody tr:nth-child(even) {
           background: #f9f9f9;
-        }
-
-        .level.easy {
-          color: green;
-        }
-        .level.medium {
-          color: orange;
-        }
-        .level.hard {
-          color: red;
-        }
-
-        .select-cell {
-          width: 20px;
-          padding: 12px 0px;
-          justify-content: left;
-        }
-
-        .level {
-          padding: 2px 8px;
-          border-radius: 2px;
-
-          &.easy {
-            color: #008000;
-          }
-
-          &.medium {
-            color: #ffa500;
-          }
-
-          &.hard {
-            color: #ff0000;
-          }
-        }
-
-        .standard-tag {
-          display: inline-block;
-          background-color: #ecf5ff;
-          color: #409eff;
-          padding: 0 5px;
-          height: 22px;
-          line-height: 22px;
-          font-size: 12px;
-          border-radius: 2px;
-          margin-right: 5px;
-          margin-bottom: 3px;
-        }
-
-        /* 自定义单选按钮 */
-        .custom-radio {
-          position: relative;
-          display: inline-block;
-          width: 12px;
-          height: 12px;
-          cursor: pointer;
-
-          input {
-            position: absolute;
-            opacity: 0;
-            cursor: pointer;
-            height: 0;
-            width: 0;
-          }
-
-          .radio-checkmark {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 10px; /* 去掉边框的实际尺寸 */
-            width: 10px; /* 去掉边框的实际尺寸 */
-            background-color: white;
-            border: 1px solid #0336ff;
-            border-radius: 50%;
-            box-sizing: content-box; /* 确保边框不计入尺寸 */
-
-            &:after {
-              content: '';
-              position: absolute;
-              display: none;
-              top: 2px; /* 精确居中位置: (10px - 6px)/2 = 2px */
-              left: 2px; /* 精确居中位置: (10px - 6px)/2 = 2px */
-              width: 6px;
-              height: 6px;
-              border-radius: 50%;
-              background: #0336ff;
-            }
-          }
-
-          &:hover input ~ .radio-checkmark {
-            background-color: #f0f7ff;
-          }
-
-          input:checked ~ .radio-checkmark {
-            background-color: white;
-
-            &:after {
-              display: block;
-            }
-          }
         }
 
         .empty-wrapper {

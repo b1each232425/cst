@@ -9,18 +9,21 @@
   import { sineIn } from 'svelte/easing';
 
   // 考试科目映射
-  const SUBJECT_MAP = {
-    '': '全部',
-    theory: '理论',
-    practice: '实操',
-  };
-
-  // 科目映射
   const COURSE_MAP = {
-    '00': '理论+实操',
+    '00': '理论、实操',
     '02': '理论',
     '04': '实操',
   };
+
+  // 考试科目下拉框选项
+  let exam_subject = $state(''); // 默认传空，表示全部
+  let exam_subject_options = [
+    { value: '', label: '全部' },
+    ...Object.entries(COURSE_MAP).map(([code, text]) => ({
+      value: code,
+      label: text,
+    })),
+  ];
 
   // 状态码映射
   const STATUS_MAP = {
@@ -32,7 +35,7 @@
   };
 
   // 筛选条件
-  let signup_name = $state('');
+  let input_value = $state('');
   let subject = $state('');
   let status = $state('');
   let current_page = 1;
@@ -53,7 +56,7 @@
   // 时间戳转 yyyy-MM-dd HH:mm:ss
   function formatTime(ts) {
     if (!ts) return '—';
-    const d = new Date(ts * 1000); // 后端是秒戳
+    const d = new Date(ts);
     const pad = (n) => String(n).padStart(2, '0');
     return (
       `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
@@ -61,11 +64,16 @@
     );
   }
 
-  function getEnrollData() {
-    fetch(`/api/registration?page=${current_page}&pageSize=${page_size}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    })
+  function getEnrollData(name = '', status = '', course = '') {
+    fetch(
+      `/api/registration?page=${current_page}&pageSize=${page_size}&name=${name}&status=${status}&course=${course}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
       .then((response) => {
         if (!response.ok) throw new Error('网络错误');
         return response.json();
@@ -88,7 +96,6 @@
 
         signup_list = list;
 
-        console.log(signup_list);
         total_count = res.data.total;
       })
       .catch((e) => {
@@ -118,6 +125,16 @@
     is_show_message_box = false;
   }
 
+  // 处理输入框回调
+  function handleInputChange() {
+    getEnrollData(input_value);
+  }
+
+  // 处理考试科目选择事件
+  function handleChangeSubject() {
+    getEnrollData(input_value, '', exam_subject);
+  }
+
   onMount(() => {
     getEnrollData();
   });
@@ -132,14 +149,20 @@
   <div class="options">
     <div class="signup-input">
       <div class="label">计划名称：</div>
-      <input type="text" placeholder="计划名称 / 知识点" bind:value={signup_name} class="input" />
+      <input
+        type="text"
+        placeholder="计划名称 / 知识点"
+        bind:value={input_value}
+        class="input"
+        oninput={handleInputChange}
+      />
     </div>
 
     <div class="select">
       <div class="label">考试科目：</div>
-      <Select bind:value={subject}>
-        {#each Object.entries(SUBJECT_MAP) as [key, val]}
-          <Option value={key} label={val} />
+      <Select bind:value={exam_subject} filterable changeValue={handleChangeSubject}>
+        {#each exam_subject_options as option}
+          <Option value={option.value} label={option.label}></Option>
         {/each}
       </Select>
     </div>
@@ -200,7 +223,7 @@
                   <button class="option blue" onclick={handleEnroll}>继续报名</button>
                 {:else if item.status === '待审核'}
                   <button class="option blue" onclick={handleEnroll}>查看报名信息</button>
-                {:else if item.status === '审核通过待考试'}
+                {:else if item.status === '通过'}
                   <button class="option blue">请到达考试列表等待考试开始</button>
                 {:else if item.status === '审核不通过'}
                   <button class="option blue" onclick={handleEnroll}>重新提交</button>
@@ -369,5 +392,17 @@
   .pagination {
     display: flex;
     justify-content: right;
+  }
+
+  .input {
+    border: 1px solid #dcdfe6; /* 默认灰色边框 */
+    border-radius: 4px;
+    padding: 6px 10px;
+    outline: none; /* 去掉默认 outline */
+    transition: border-color 0.2s;
+  }
+
+  .input:focus {
+    border-color: #409eff; /* 聚焦时边框变蓝 */
   }
 </style>
