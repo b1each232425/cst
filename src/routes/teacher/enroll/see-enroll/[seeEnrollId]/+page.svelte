@@ -20,7 +20,7 @@
     '02': '补考',
   };
 
-  // 状态映射
+  // 审核状态映射
   const statusMap = {
     '00': '报名中',
     '02': '待审核',
@@ -29,19 +29,37 @@
     '08': '已迁移',
   };
 
+  // 审核状态下拉框选项
+  let audit_status = $state(''); // 默认传空，表示全部
+  let audit_status_options = [
+    { value: '', label: '全部' },
+    ...Object.entries(statusMap).map(([code, text]) => ({
+      value: code,
+      label: text,
+    })),
+  ];
+
+  // 报名方式映射
+  const REGISTER_WAY_MAP = {
+    '00': '自报名',
+    '02': '人工导入',
+  };
+
+  // 报名方式下拉框选项
+  let register_way = $state(''); // 默认传空，表示全部
+  let register_way_options = [
+    { value: '', label: '全部' },
+    ...Object.entries(REGISTER_WAY_MAP).map(([code, text]) => ({
+      value: code,
+      label: text,
+    })),
+  ];
+
   // 报名人员数据
   let person_list = $state([]);
 
   // 批量导入数据
   let candidate_list = $state([]);
-
-  // 审核状态
-  let audit_status = $state('全部');
-  let audit_status_options = ['全部', '未审核', '通过', '未通过'];
-
-  // 报名方式
-  let register_way = $state('全部');
-  let register_way_options = ['全部', '自报名', '人工导入'];
 
   // 是否展示迁移模板
   let is_show_move_panel = $state(false);
@@ -50,6 +68,7 @@
   let is_show_import_panel = $state(false);
 
   let file_input = $state(null); // 文件输入框
+  let input_value = $state(''); // 输入框双向绑定数值
 
   // 选中的待操作 id
   let select_approve_id = $state([]); // 待通过
@@ -78,11 +97,14 @@
   const { data } = $props();
 
   // 查看单个报名计划考生
-  function getEnrollPersonData() {
+  function getEnrollPersonData(message = '', status = '', register_type = '') {
     const searchParams = new URLSearchParams({
       id: data.see_enroll_id,
       page: current_page,
       pageSize: page_size,
+      message: message,
+      status: status,
+      register_type: register_type,
     });
 
     fetch(`/api/registration?${searchParams}`, {
@@ -115,7 +137,35 @@
         }));
 
         total_items = res.data.total;
-        console.log(person_list);
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
+  // 批量通过或不通过学生审核以及撤销操作
+  function handleApproveOrReject(ids, status) {
+    const searchParams = new URLSearchParams({
+      ids: ids,
+      status: status,
+      register_id: data.see_enroll_id,
+      fail_reason: reject_reason,
+    });
+
+    fetch(`/api/registrationStudent?${searchParams}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((res) => {
+        getEnrollPersonData();
       })
       .catch((e) => {
         console.log(e);
@@ -170,6 +220,7 @@
   // 关闭导入报考人员弹窗
   function closeImportPanel() {
     is_show_import_panel = false;
+    getEnrollPersonData();
   }
 
   // 处理批量移动按钮点击事件
@@ -227,7 +278,7 @@
   // 单个不通过
   function openRejectPanel(id) {
     select_reject_id = [id];
-    current_reject_id = id;
+    current_reject_id = [id];
     current_action = 'reject';
     is_show_reject_panel = true; // 直接弹输入框
   }
@@ -276,14 +327,10 @@
 
     if (current_reject_id) {
       // 单个不通过
-      person_list = person_list.map((item) =>
-        item.id === current_reject_id ? { ...item, status: '未通过', rejectReason: reject_reason } : item,
-      );
+      handleApproveOrReject(current_reject_id, '06');
     } else {
       // 批量不通过
-      person_list = person_list.map((item) =>
-        select_reject_id.includes(item.id) ? { ...item, status: '未通过', rejectReason: reject_reason } : item,
-      );
+      handleApproveOrReject(select_reject_id, '06');
     }
 
     // 清空选择
@@ -303,7 +350,7 @@
   // ---------- 撤销事件 ----------
   // 处理撤销通过按钮点击事件
   function handleRevokeApprove(id) {
-    select_revoke_approve_id = id;
+    select_revoke_approve_id = [id];
     current_action = 'revoke_approve';
     messagebox_title = '确认撤销通过';
     messagebox_content = '撤销通过后，该名人员将被取消录用，确定要继续吗？';
@@ -312,7 +359,7 @@
 
   // 处理撤销不通过按钮点击事件
   function handleRevokeReject(id) {
-    select_revoke_reject_id = id;
+    select_revoke_reject_id = [id];
     current_action = 'revoke_reject';
     messagebox_title = '确认撤销不通过';
     messagebox_content = '撤销不通过后，该名人员将被取消不通过状态，确定要继续吗？';
@@ -344,23 +391,17 @@
     }
 
     if (current_action === 'approve' && select_approve_id.length > 0) {
-      person_list = person_list.map((item) =>
-        select_approve_id.includes(item.id) ? { ...item, status: '通过' } : item,
-      );
+      handleApproveOrReject(select_approve_id, '04');
       select_reject_id = [];
       select_approve_id = [];
     }
 
     if (current_action === 'revoke_approve') {
-      person_list = person_list.map((item) =>
-        item.id === select_revoke_approve_id ? { ...item, status: '未审核' } : item,
-      );
+      handleApproveOrReject(select_revoke_approve_id, '02');
     }
 
     if (current_action === 'revoke_reject') {
-      person_list = person_list.map((item) =>
-        item.id === select_revoke_reject_id ? { ...item, status: '未审核' } : item,
-      );
+      handleApproveOrReject(select_revoke_reject_id, '02');
     }
 
     current_action = '';
@@ -396,6 +437,21 @@
     document.body.removeChild(a);
   }
 
+  // 处理输入框回调事件
+  function handleInput() {
+    getEnrollPersonData(input_value);
+  }
+
+  // 处理审核状态变化
+  function handleAuditStatusChange() {
+    getEnrollPersonData(input_value, audit_status);
+  }
+
+  // 处理报名方式变化
+  function handleRegisterWayChange() {
+    getEnrollPersonData(input_value, audit_status, register_way);
+  }
+
   onMount(() => {
     getEnrollPersonData();
   });
@@ -408,15 +464,21 @@
     <div class="search-and-add-button-container">
       <div class="search-bar">
         <div class="search-box">
-          <InputBox label="查找人员" type="text" placeholder="请输入关键词" />
+          <InputBox
+            bind:value={input_value}
+            label="查找人员"
+            type="text"
+            placeholder="请输入关键词"
+            onInput={handleInput}
+          />
         </div>
 
         <div class="filter-box">
           <span class="filter-label">审核状态</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={audit_status} filterable>
+            <Select bind:value={audit_status} filterable changeValue={handleAuditStatusChange}>
               {#each audit_status_options as option}
-                <Option value={option} label={option}></Option>
+                <Option value={option.value} label={option.label}></Option>
               {/each}
             </Select>
           </div>
@@ -425,9 +487,9 @@
         <div class="filter-box">
           <span class="filter-label">报名方式</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={register_way} filterable>
+            <Select bind:value={register_way} filterable changeValue={handleRegisterWayChange}>
               {#each register_way_options as option}
-                <Option value={option} label={option}></Option>
+                <Option value={option.value} label={option.label}></Option>
               {/each}
             </Select>
           </div>
@@ -490,36 +552,38 @@
                     }}
                   /></td
                 >
-                <td>{item.name}</td>
-                <td>{item.phone}</td>
-                <td>{item.email}</td>
-                <td>{item.gender}</td>
-                <td>{item.idNumber}</td>
-                <td>{item.idType}</td>
-                <td>{item.enrollTime}</td>
-                <td>{item.enrollMethod}</td>
-                <td>{item.examType}</td>
-                <td>{item.auditor}</td>
+                <td>{item.name ? item.name : '--'}</td>
+                <td>{item.phone ? item.phone : '--'}</td>
+                <td>{item.email ? item.email : '--'}</td>
+                <td>{item.gender ? item.gender : '--'}</td>
+                <td>{item.idNumber ? item.idNumber : '--'}</td>
+                <td>{item.idType ? item.idType : '--'}</td>
+                <td>{item.enrollTime ? item.enrollTime : '--'}</td>
+                <td>{item.enrollMethod ? item.enrollMethod : '--'}</td>
+                <td>{item.examType ? item.examType : '--'}</td>
+                <td>{item.auditor ? item.auditor : '--'}</td>
                 <td>
                   <span
                     class="Status-tag {item.status === '通过'
                       ? 'published'
-                      : item.status === '未审核'
+                      : item.status === '待审核'
                         ? 'unpublished'
                         : 'invalidated'}">{item.status}</span
                   >
                 </td>
                 <td>
-                  {#if item.status === '未审核'}
+                  {#if item.status === '待审核'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item.id)}>查看详情</button>
                     <button class="via-btn" onclick={() => handleApprove(item.id)}>通过</button>
                     <button class="de-btn" onclick={() => openRejectPanel(item.id)}>不通过</button>
                   {:else if item.status === '通过'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item.id)}>查看详情</button>
                     <button class="de-btn" onclick={() => handleRevokeApprove(item.id)}>撤销通过</button>
-                  {:else if item.status === '未通过'}
+                  {:else if item.status === '不通过'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item.id)}>查看详情</button>
                     <button class="de-btn" onclick={() => handleRevokeReject(item.id)}>撤销不通过</button>
+                  {:else}
+                    --
                   {/if}
                 </td>
               </tr>
@@ -583,7 +647,7 @@
   .enroll-management {
     background-color: #fff;
     height: 100%;
-    overflow: hidden;
+    overflow: auto;
 
     .table-action-container {
       display: flex;
@@ -679,7 +743,7 @@
       .enroll-table {
         margin-top: 20px;
         width: 100%;
-        height: calc(87vh - 200px);
+        height: calc(85vh - 200px);
         overflow: auto;
 
         table {
@@ -779,11 +843,8 @@
       .pagination-container {
         display: flex;
         justify-content: flex-end;
-        position: fixed;
-        bottom: 50px;
-        right: 10px;
-        z-index: 10;
-        padding: 0 40px 0 0;
+        margin-top: 10px;
+        padding: 0 10px 0 0;
       }
     }
   }

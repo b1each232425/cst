@@ -163,6 +163,59 @@
   async function getStudentAnswer() {
     if (ifPreview) return;
 
+    // 先尝试从 localStorage 读取（优先使用考试专用 key，其次使用练习 key）
+    try {
+      // 尝试考试 key：exam_answers_{exam_id}_{exam_session_id}_{examinee_id}
+      let exam_id_from_url = 'preview';
+      let exam_session_id_from_url = 'preview';
+      let examinee_id_from_url = 'preview';
+      try {
+        const pageParams = new URLSearchParams(window.location.search);
+        exam_id_from_url = pageParams.get('exam-id') || exam_id_from_url;
+        exam_session_id_from_url = pageParams.get('exam-session-id') || exam_session_id_from_url;
+        examinee_id_from_url = pageParams.get('examinee-id') || examinee_id_from_url;
+      } catch (e) {}
+
+      const examStorageKey = `exam_answers_${exam_id_from_url}_${exam_session_id_from_url}_${examinee_id_from_url}`;
+      let raw = localStorage.getItem(examStorageKey);
+
+      // 若考试 key 未命中，再尝试 practice key（兼容练习页面）
+      if (!raw) {
+        let practice_id = 'preview';
+        let practice_submission_id = 'preview';
+        try {
+          const pageParams2 = new URLSearchParams(window.location.search);
+          practice_id = pageParams2.get('practice-id') || pageParams2.get('practice_id') || practice_id;
+          practice_submission_id = pageParams2.get('practice_submission_id') || practice_submission_id;
+        } catch (e) {}
+        if ((practice_id === 'preview' || practice_submission_id === 'preview') && query_url) {
+          const params = new URLSearchParams((query_url || '').split('?')[1] || '');
+          practice_submission_id = params.get('practice_submission_id') || practice_submission_id;
+          practice_id = params.get('practice_id') || practice_id;
+        }
+        const practiceStorageKey = `practice_answers_${practice_id}_${practice_submission_id}`;
+        raw = localStorage.getItem(practiceStorageKey);
+      }
+
+      if (raw) {
+        const storedAnswers = JSON.parse(raw || '{}');
+        const entry = storedAnswers[String(question.ID)];
+        if (entry && entry.answer !== undefined) {
+          // 确保 answer 为数组（与题型初始化一致），避免后续 .includes 报错
+          student_answer.answer = Array.isArray(entry.answer) ? entry.answer : initialAnswer(question);
+          // 对于富文本编辑器题型，更新编辑器内容
+          if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {
+            await updateRichTextEditors();
+          }
+          return; // 找到本地答案，直接返回，不再调用接口
+        }
+      }
+    } catch (e) {
+      console.warn('读取本地答案失败，继续请求后端', e);
+    }
+
+    console.log('尝试从后端获取答案2');
+
     try {
       const res = await fetch(`${query_url}&question_id=${question.ID}`, {
         method: 'GET',
@@ -187,8 +240,8 @@
       const answer = data.data.Answer;
 
       if (Object.keys(answer).length !== 0) {
-        // 有答案数据，更新状态
-        student_answer.answer = answer.answer;
+  // 有答案数据，更新状态（保证为数组或题型期望的初始值）
+  student_answer.answer = Array.isArray(answer.answer) ? answer.answer : initialAnswer(question);
 
         // 对于填空题和简答题，需要更新富文本编辑器内容
         if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {

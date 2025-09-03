@@ -17,11 +17,12 @@
   let end_date = $state(null); // 报名结束时间
   let deadline = $state(null); // 审核截止时间
   let show_audit_panel = $state(false); // 是否展示选择审核员面板
-  let audit_data = $state(null); // 审核员数据
+  let audit_data = $state([]); // 审核员数据
   let show_practice_panel = $state(false); // 是否展示选择练习面板
-  let practice_initial_id = $state(null); // 当前选择试卷id
-  let practice_data = $state(null); // 试卷数据
+  let practice_initial_id = $state([]); // 当前选择试卷id
+  let practice_data = $state([]); // 试卷数据
   let detail_exam_location = $state(''); // 考试详细地点
+  let audit_id_data = $state([]); // 审核员id数据
 
   // 考试预定地点
   let exam_plan_location = $derived(() => {
@@ -62,13 +63,13 @@
         ExamPlanLocation: exam_plan_location(),
         ReviewerIds: audit_data ? audit_data.map((item) => item.ID) : [],
       },
-      practice_ids: [practice_initial_id],
+      practice_ids: practice_initial_id,
     };
   });
 
   // 把时间转化成数字格式
   function toTimestamp(date) {
-    return date ? Math.floor(new Date(date).getTime() / 1000) : null;
+    return date ? Math.floor(new Date(date).getTime()) : null;
   }
 
   // 处理选择练习按钮点击事件
@@ -78,7 +79,7 @@
 
   // 更新选择的试卷
   function updateTestSelection(data) {
-    practice_data = data;
+    practice_data = Array.isArray(data) ? data : [];
   }
 
   // 处理选择审核人按钮点击事件
@@ -88,7 +89,7 @@
 
   // 更新选中的审核员
   function updateAuditSelection(data) {
-    audit_data = data;
+    audit_data = Array.isArray(data) ? data : [];
   }
 
   // 处理开始日期变化
@@ -132,18 +133,18 @@
 
   // 处理保存按钮点击事件
   function handleSave() {
-    // 简单的校验示例
+    // 校验
     errors.plan_name = plan_name.trim() === '' ? '计划名称不能为空' : '';
     errors.plan_period = start_date && end_date ? '' : '请选择计划报名时段';
     errors.audit_deadline = deadline ? '' : '请选择截止日期';
-    errors.auditor = audit_data ? '' : '请选择审核员';
+    errors.auditor = audit_data.length > 0 ? '' : '请选择审核员';
     errors.people_limit = people_limit === '' ? '请选择人数限制' : '';
     if (people_limit === 'limited' && !limited_number) {
       errors.people_limit = '请输入限制人数';
     }
     errors.exam_plan_location = exam_plan_location() ? '' : '请输入考试地点';
     errors.subjects = !subjects.theory && !subjects.practice ? '请至少选择一个考试科目' : '';
-    errors.practice = practice_data ? '' : '请选择练习';
+    errors.practice = practice_data.length > 0 ? '' : '请选择练习';
 
     // 校验通过后可以提交逻辑
     if (
@@ -152,7 +153,9 @@
       !errors.audit_deadline &&
       !errors.auditor &&
       !errors.people_limit &&
-      !errors.subjects
+      !errors.exam_plan_location &&
+      !errors.subjects &&
+      !errors.practice
     ) {
       addEnrollReq();
       goto('/teacher/enroll');
@@ -294,7 +297,7 @@
   <div class="form-row">
     <div class="label required">审核员：</div>
     <div class="input-wrapper">
-      {#if !audit_data}
+      {#if audit_data.length === 0}
         <!-- 还未选择审核人 -->
         <div class="select-wrapper">
           <button class="btn" onclick={handleSelectAudit}>选择审核员</button>
@@ -354,7 +357,7 @@
   <div class="form-row">
     <div class="label required">练习：</div>
     <div class="input-wrapper">
-      {#if !practice_data}
+      {#if practice_data.length === 0}
         <!-- 还未选择练习 -->
         <div class="select-wrapper">
           <button id="test-select" class="btn" onclick={handlePracticeSelect}>选择练习</button>
@@ -364,11 +367,16 @@
         <div class="selected-test-display">
           <div class="test-info-container">
             <div class="test-info-row">
-              <span class="test-type">{practice_data.assembly_type} :</span>
-              <span class="test-name" title={practice_data.name}>{practice_data.name}</span>
+              {#each practice_data as test, idx}
+                <span class="test-type">{test.assembly_type} :</span>
+                <span class="test-name" title={test.name}>{test.name}</span>
+                {#if !(idx === practice_data.length - 1)}
+                  、
+                {/if}
+              {/each}
             </div>
           </div>
-          <button id="test-select" class="btn change-test-btn" onclick={handlePracticeSelect}> 更换练习 </button>
+          <button id="test-select" class="btn change-test-btn" onclick={handlePracticeSelect}>更换练习</button>
         </div>
       {/if}
     </div>
@@ -391,7 +399,7 @@
   bind:selected_test_id={practice_initial_id}
 />
 
-<AuditSelectPanel bind:show={show_audit_panel} onSelectAudit={updateAuditSelection} />
+<AuditSelectPanel bind:show={show_audit_panel} audit_id_list={audit_id_data} onSelectAudit={updateAuditSelection} />
 
 <style>
   .create-plan {

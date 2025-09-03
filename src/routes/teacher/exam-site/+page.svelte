@@ -6,7 +6,7 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { toast } from "$lib/components/Toast/Toast";
-    import ExamSiteAdminSelectionPanel from "./ExamSiteAdminSelectionPanel.svelte";
+    import ExamSiteAdminSelectionPanel from "./_component/ExamSiteAdminSelectionPanel.svelte";
     
     
     /**
@@ -18,9 +18,7 @@
      * @property {string} link - 考点服务链接
      * @property {string} [status] - 考点服务器状态，"00"表示正常，其他值表示异常
      * @property {string} [error_msg] - 如果状态异常，包含错误信息
-     * @property {boolean} [can_delete] - 是否可以删除该考点
      * @property {string} [admin] - 考点负责人ID
-     * @property {string} [adminName] - 考点负责人姓名
      *
     
     
@@ -29,7 +27,6 @@
      * @property {string} address - 新增考点地址
      * @property {string} link - 新增考点服务链接
      * @property {number} admin - 新增考点负责人ID
-     * @property {string} [adminName] - 新增考点负责人姓名
      *
     
     
@@ -48,7 +45,6 @@
      *   link: string,
      *   status: string,
      *   error_msg: string,
-     *   can_delete: boolean
      * }>}
      * 
      *
@@ -110,7 +106,10 @@
      * @description 设置当前要删除的考点ID并打开确认对话框
      */
 
-    let examSites = $state([]); // 考点列表
+     // 简单的IP地址正则表达式
+    const SERVER_IP_REGEX = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])(?::(?:[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?$/;
+    
+    let exam_sites = $state([]); // 考点列表
     let current_page = $state(1); // 当前页码
     let total_num = $state(0); // 总记录数
     let total_pages = $state(1); // 总页数
@@ -124,7 +123,7 @@
         address: "",
         server_host: "",
         admin: 0,
-        adminName: "",
+        OfficialName : "",
     });
     let show_add_room_dialog = $state(false); // 显示添加考场对话框
     let new_room = $state({ // 新增考场信息
@@ -135,11 +134,8 @@
     let deleteDialogOpen = $state(false); // 显示删除考点对话框
     let current_delete_site_id = $state(0); // 当前删除的考点ID
     let current_site_id_for_room = $state(0); // 新增状态变量，存储要添加考场的考点ID
-    let show_action_toast = $state(false); // 显示操作提示框
-    let action_toast = $state(null); // 操作提示框
     let _searchTimeout = null; // 搜索去抖定时器
-    // 简单的IP地址正则表达式
-    const SERVER_IP_REGEX = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])(?::(?:[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?$/;
+    
 
     //按钮控制类
     function openAddDialog() { // 打开新增考点对话框
@@ -165,7 +161,6 @@
         }
 
         const reqProto = {
-            // action: "addExamSite",
             data: {
                 name: new_site.name,
                 address: new_site.address,
@@ -187,14 +182,12 @@
             },
         )
         .then(response => {
-            if (response.status != 200) {
+            if (!response.ok) {
                 throw new Error(`新增考点请求失败:, ${response.status}, ${response.statusText}`);
             }
             return response.json();
         })
         .then(data => {
-            console.log("新增考点响应数据:", data);
-
             if (data.status !== 0) {
                 console.error("新增考点失败:", data.msg);
                 toast.error("新增考点失败，请稍后重试");
@@ -302,27 +295,19 @@
         new_room = { name: "", capacity: 0 }; // 重置表单
     }
     function openDeleteDialog(id) { // 打开删除考点确认对话框
-        current_delete_site_id = id;
         MessageBox({
             title: '请问是否要删除考点？',
             content: '删除后将无法恢复此考点',
             onConfirm: () => {
-                deleteExamSite();
+                deleteExamSite(id);
             },
         });
     }
-    function deleteExamSite() { // 删除考点的函数
+    function deleteExamSite(id) { // 删除考点的函数
         const reqProto = {
-            action: "deleteExamSite",
-            sets: [],
-            orderBy: [],
-            page: 1,
-            pageSize: 10,
             data: {
-                id: current_delete_site_id,
+                id: id,
             },
-            filter: {},
-            authFilter: {},
         };
 
         fetch("/api/exam-site", {
@@ -437,17 +422,17 @@
             }
 
             if (!responseData.data) {
-                examSites = [];
+                exam_sites = [];
                 total_num = 0;
                 total_pages = 1;
                 return;
             }
 
-            examSites = responseData.data;
+            exam_sites = responseData.data;
             total_num = responseData.rowCount;
             total_pages = isNaN(Math.ceil(total_num / page_size)) ? 1 : Math.ceil(total_num / page_size);
 
-            for (let site of examSites) {
+            for (let site of exam_sites) {
                 site.status = "";
                 site.error_msg = "";
                 // 发起状态检测（不阻塞主链）
@@ -466,7 +451,7 @@
             console.error("获取考点列表失败:", err);
             toast.error("获取考点列表失败，请稍后重试");
             // 失败时重置列表显示
-            examSites = [];
+            exam_sites = [];
             total_num = 0;
             total_pages = 1;
         });
@@ -489,6 +474,56 @@
     onMount(() => {
         getExamSites(current_page, page_size, search_text, sortAsc);
     });
+
+
+    //测试用
+    // Expose some internals for tests when requested.
+    // Tests can set `globalThis.__TEST__ = true` before importing/rendering the component
+    // and then access these helpers to call functions directly or inspect state.
+    try {
+        if (typeof globalThis !== 'undefined' && globalThis.__TEST__) {
+            globalThis.__confirmAddDialog = confirmAddDialog;
+            globalThis.__closeAddDialog = closeAddDialog;
+            globalThis.__openAddDialog = openAddDialog;
+            globalThis.__getNewSite = () => new_site;
+            // room helpers
+            globalThis.__confirmAddRoomDialog = confirmAddRoomDialog;
+            globalThis.__openAddRoomDialog = openAddRoomDialog;
+            globalThis.__getNewRoom = () => new_room;
+            globalThis.__setNewRoom = (val) => { new_room = val; };
+            globalThis.__setCurrentSiteIdForRoom = (id) => { current_site_id_for_room = id; };
+            // expose sort helper and accessor for tests
+            globalThis.__sortByCount = sortByCount;
+            globalThis.__getSortAsc = () => sortAsc;
+            // expose page handler and current page for tests
+            globalThis.__handlePageChange = handlePageChange;
+            globalThis.__getCurrentPage = () => current_page;
+            // expose page size handler and accessor for tests
+            globalThis.__handlePageSizeChange = handlePageSizeChange;
+            globalThis.__getPageSize = () => page_size;
+            // expose delete dialog opener for tests
+            globalThis.__openDeleteDialog = openDeleteDialog;
+            // expose delete dialog open flag for tests
+            globalThis.__getDeleteDialogOpen = () => deleteDialogOpen;
+            // expose getExamSites and a read-only snapshot of list state for tests
+            globalThis.__getExamSites = getExamSites;
+            globalThis.__getExamSitesState = () => ({ exam_sites, total_num, total_pages });
+            // expose admin selection panel controls for tests
+            globalThis.__openAdminPanel = () => { show_admin_select_panel = true; };
+            globalThis.__closeAdminPanel = () => { show_admin_select_panel = false; };
+            globalThis.__getAdminPanelVisible = () => show_admin_select_panel;
+            globalThis.__getSelectedAdminIds = () => selected_admin_ids;
+            // helper to simulate the onConfirm handler of ExamSiteAdminSelectionPanel
+            globalThis.__simulateAdminConfirm = (selected_ids) => {
+                show_admin_select_panel = false;
+                selected_admin_ids = selected_ids;
+                new_site.admin = selected_admin_ids.length > 0 ? selected_admin_ids[0].ID : new_site.admin;
+                new_site.OfficialName = selected_admin_ids.length > 0 ? selected_admin_ids[0].OfficialName : new_site.OfficialName;
+            };
+        }
+    } catch (e) {
+        // ignore in non-browser/test envs
+    }
 </script>
 
 <Title title="考点列表" />
@@ -559,7 +594,7 @@
                 </thead>
                 <tbody>
 
-                    {#if examSites.length === 0}
+                    {#if exam_sites.length === 0}
                         <tr>
                             <td colspan="6" style="text-align: center;">
                                 暂无考点数据
@@ -567,7 +602,7 @@
                         </tr>
                     {/if}
 
-                    {#each examSites as site}
+                    {#each exam_sites as site}
                         <tr>
                             <td class="exam-site-name" title={site.name}
                                 >{site.name}</td
@@ -634,19 +669,9 @@
                                         >
 
                                         <button
-                                            class="operation {site.can_delete
-                                                ? 'disabled'
-                                                : ''}"
-                                            onclick={() =>
-                                                !site.can_delete
-                                                    ? openDeleteDialog(site.id)
-                                                    : null}
+                                            class="operation"
+                                            onclick={() =>  openDeleteDialog(site.id) }
                                             >删除考点
-                                            {#if site.can_delete}
-                                                <div class="delete-error-tip">
-                                                    该考点下的考场正在使用中，无法删除
-                                                </div>
-                                            {/if}
                                         </button>
                                     </div>
                                 </div>
