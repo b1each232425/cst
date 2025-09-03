@@ -148,14 +148,18 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
       MarkMode: cfg.markMode,
       SessionNum: cfg.sessionNum,
     }));
-    const invalid_examinee = exam_examinee.filter(e => !e.id )
-    const valid_examinee = exam_examinee?.length
-  ? exam_examinee.filter(e => e && e.id).map(item => item.id)
-  : [];
+    // console.log("examinee",exam_examinee);
+    const invalid_examinee = exam_examinee.filter(
+  e => (!e.student || e.student == null) && (!e.ID || e.ID ==null)
+);
+    const valid_examinee = exam_examinee.filter(
+  e => (e.student && e.student.ID != null) || (e.ID && e.ID !=null)
+);
+  console.log("invalide",invalid_examinee);
     //导入新学生
     if (invalid_examinee.length > 0)
     {
-      fetch('/api/user', {
+     await fetch('/api/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -173,10 +177,10 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
           if (result.status !== 0) {
             throw new Error(result.msg || '导入失败');
           }
-          let studentIds = result.data.map((item) => item.ID);
-          console.log("valid_examinee:",valid_examinee);
-          console.log("studentIds",studentIds);
-          exam_examinee = [...valid_examinee,...studentIds];
+          let new_student = result.data;
+           console.log("valid_examinee:",valid_examinee);
+           console.log("new_student",new_student);
+          exam_examinee = [...valid_examinee,...new_student];
           console.log("exam_examinee:",exam_examinee);
         })
         .catch((error) => {
@@ -184,7 +188,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
           toast.error(error.message || '导入学生异常');
         });
 }
-
+  // console.log("exam_student",exam_examinee);
     const exam_data = {
       data: {
         examInfo: {
@@ -196,8 +200,11 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
           Files: uploadedFileList
         },
         examSessions: examSessionsdata,
-        examinee: exam_examinee.map((e) => e.id ), // 用户选中的考生 id 数组
-        invigilators: invigilators.map((i) => i.id), // 监考员 id 数组
+        examinee: exam_examinee.map(e => ({
+          id: e.student?.ID ?? e.ID,
+          exam_plan_student_id: (e.student &&e.detail.StudentID)!=null ? e.detail.StudentID :0
+        })), // 用户选中的考生 id 数组
+        invigilators: invigilators.map((i) => i.ID), // 监考员 id 数组
         examRoomConfigs: exam_rooms.map((r) => ({
           examRoomID: r.id,
           invigilators_count: r.invigilators_count
@@ -205,7 +212,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
       },
     };
 
-    console.log('exam_data', exam_data.invigilators);
+    console.log('exam_data', exam_data);
    // console.log('paperconfig',paper_configs);
     fetch('/api/exam', {
       method: 'PUT',
