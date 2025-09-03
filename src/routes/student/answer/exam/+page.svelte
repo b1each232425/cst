@@ -249,13 +249,60 @@
       toast.warning('当前为预览模式！', 2000);
       return;
     }
+    // 本地存储 key（考试场景多维区分）
+    function _storageKeyForAnswers() {
+      const eid = exam_id || 'preview';
+      const sessionPart = exam_session_id || 'preview';
+      const examineePart = examinee_id || 'preview';
+      return `exam_answers_${eid}_${sessionPart}_${examineePart}`;
+    }
+
+    // 读取本地已有答案
+    let storedAnswers = {};
+    try {
+      const raw = localStorage.getItem(_storageKeyForAnswers());
+      if (raw) {
+        storedAnswers = JSON.parse(raw) || {};
+      }
+    } catch (e) {
+      console.warn('读取本地答案失败', e);
+      storedAnswers = {};
+    }
+
+    // 比较旧答案与新答案（使用 JSON.stringify 做深度比较）
+    const oldEntry = storedAnswers[String(question.ID)] || {};
+    const oldAnswer = oldEntry.answer === undefined ? null : oldEntry.answer;
+    // 归一化 newAnswer：如果传入的是 { answer: [...] } 这样的包装对象，则取其 .answer
+    const newAnswerRaw = stu_answer === undefined ? null : stu_answer;
+    const normalizedNewAnswer = newAnswerRaw && newAnswerRaw.answer !== undefined ? newAnswerRaw.answer : newAnswerRaw;
+    const changed = JSON.stringify(oldAnswer) !== JSON.stringify(normalizedNewAnswer) ||
+      JSON.stringify(oldEntry.attachment_paths || []) !== JSON.stringify(attachment_paths || []);
+
+    // 若发生变化则先保存到 localStorage
+    if (changed) {
+      try {
+        storedAnswers[String(question.ID)] = {
+          answer: normalizedNewAnswer,
+          attachment_paths: attachment_paths || [],
+          updated_at: Date.now(),
+        };
+        localStorage.setItem(_storageKeyForAnswers(), JSON.stringify(storedAnswers));
+      } catch (e) {
+        console.warn('保存本地答案失败', e);
+      }
+    }
+
+    // 若未变化则不用再调用后端接口
+    if (!changed) {
+      return;
+    }
 
     const data = {
       // 构建数据部分
       examinee_id: Number(examinee_id) || 0, // 从上下文获取考试ID
       question_id: question.ID, //题目id
       type: '00', //00说明是考试
-      answer: stu_answer, //该题答案
+      answer: stu_answer, //该题答案（发送原始传入值，后端兼容包装或原始）
       attachment_paths: attachment_paths, //附件
     };
     const requestBody = {
@@ -341,6 +388,20 @@
       })
       .then((resp_data) => {
         if (resp_data.status === 0) {
+          // 提交成功后，清除本地保存的答案与标记，避免下次进入仍显示旧数据
+          try {
+            const ansKey = `exam_answers_${exam_id || 'preview'}_${exam_session_id || 'preview'}_${examinee_id || 'preview'}`;
+            localStorage.removeItem(ansKey);
+          } catch (e) {
+            console.warn('清除本地答案失败', e);
+          }
+          try {
+            const markKey = `exam_marked_${exam_id || 'preview'}_${exam_session_id || 'preview'}_${examinee_id || 'preview'}`;
+            localStorage.removeItem(markKey);
+          } catch (e) {
+            console.warn('清除本地标记失败', e);
+          }
+
           toast.success('考试结束，提交成功！', 2000);
           goto(`/student/answer/exam-detail?exam-id=${exam_id}&exam-session-id=${exam_session_id}`); //跳转到考试详情页
         } else {

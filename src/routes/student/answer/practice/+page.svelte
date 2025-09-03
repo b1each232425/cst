@@ -354,6 +354,14 @@
       })
       .then((resp_data) => {
         if (resp_data.status === 0) {
+          // 提交成功后，清除本地保存的答案（避免下次进入仍显示旧答案）
+          try {
+            const key = `practice_answers_${practice_id || 'preview'}_${practice_submission_id || 'preview'}`;
+            localStorage.removeItem(key);
+          } catch (e) {
+            console.warn('清除本地答案失败', e);
+          }
+
           toast.success('练习结束，提交成功！', 2000);
           goto(`/student/practice`);
         } else {
@@ -378,6 +386,58 @@
       toast.warning('当前为预览模式！', 2000);
       return;
     }
+
+
+    
+    // 本地存储 key（与标记使用类似的命名规则）
+    function _storageKeyForAnswers() {
+      const pid = practice_id || 'preview';
+      const sessionPart = practice_submission_id || 'preview';
+      return `practice_answers_${pid}_${sessionPart}`;
+    }
+
+    // 读取本地已有答案
+    let storedAnswers = {};
+    try {
+      const raw = localStorage.getItem(_storageKeyForAnswers());
+      if (raw) {
+        storedAnswers = JSON.parse(raw) || {};
+      }
+    } catch (e) {
+      console.warn('读取本地答案失败', e);
+      storedAnswers = {};
+    }
+
+    // 比较旧答案与新答案（使用 JSON.stringify 做深度比较）
+    const oldEntry = storedAnswers[String(question.ID)] || {};
+    const oldAnswer = oldEntry.answer === undefined ? null : oldEntry.answer;
+    // 归一化 newAnswer：如果传入的是 { answer: [...] } 这样的包装对象，则取其 .answer
+    const newAnswerRaw = stu_answer === undefined ? null : stu_answer;
+    const normalizedNewAnswer = newAnswerRaw && newAnswerRaw.answer !== undefined ? newAnswerRaw.answer : newAnswerRaw;
+    const changed = JSON.stringify(oldAnswer) !== JSON.stringify(normalizedNewAnswer) ||
+      JSON.stringify(oldEntry.attachment_paths || []) !== JSON.stringify(attachment_paths || []);
+
+    // 若发生变化则先保存到 localStorage
+    if (changed) {
+      try {
+        // 存储时也使用归一化后的值，保证 localStorage 中 answer 字段为数组（或期望的原始类型）
+        storedAnswers[String(question.ID)] = {
+          answer: normalizedNewAnswer,
+          attachment_paths: attachment_paths || [],
+          updated_at: Date.now(),
+        };
+        localStorage.setItem(_storageKeyForAnswers(), JSON.stringify(storedAnswers));
+      } catch (e) {
+        console.warn('保存本地答案失败', e);
+      }
+    }
+
+    
+    // 若未变化则不用再调用后端接口
+    if (!changed) {
+      return;
+    }
+
 
     const data = {
       // 构建数据部分

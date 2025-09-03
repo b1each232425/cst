@@ -28,6 +28,58 @@
     if (!contentWrapper) {
       return;
     }
+
+    // 先尝试从 localStorage 读取本题答案（优先使用考试专用 key，其次使用练习 key）
+    try {
+      // 尝试考试 key
+      let exam_id_from_url = 'preview';
+      let exam_session_id_from_url = 'preview';
+      let examinee_id_from_url = 'preview';
+      try {
+        const pageParams = new URLSearchParams(window.location.search);
+        exam_id_from_url = pageParams.get('exam-id') || exam_id_from_url;
+        exam_session_id_from_url = pageParams.get('exam-session-id') || exam_session_id_from_url;
+        examinee_id_from_url = pageParams.get('examinee-id') || examinee_id_from_url;
+      } catch (e) {}
+
+      const examStorageKey = `exam_answers_${exam_id_from_url}_${exam_session_id_from_url}_${examinee_id_from_url}`;
+      let raw = localStorage.getItem(examStorageKey);
+
+      // 若未命中考试 key，再尝试 practice key
+      if (!raw) {
+        let practice_id = 'preview';
+        let practice_submission_id = 'preview';
+        try {
+          const pageParams2 = new URLSearchParams(window.location.search);
+          practice_id = pageParams2.get('practice-id') || pageParams2.get('practice_id') || practice_id;
+          practice_submission_id = pageParams2.get('practice_submission_id') || practice_submission_id;
+        } catch (e) {}
+        if ((practice_id === 'preview' || practice_submission_id === 'preview') && query_url) {
+          const params = new URLSearchParams((query_url || '').split('?')[1] || '');
+          practice_submission_id = params.get('practice_submission_id') || practice_submission_id;
+          practice_id = params.get('practice_id') || practice_id;
+        }
+        const practiceStorageKey = `practice_answers_${practice_id}_${practice_submission_id}`;
+        raw = localStorage.getItem(practiceStorageKey);
+      }
+
+      if (raw) {
+        const storedAnswers = JSON.parse(raw || '{}');
+        const entry = storedAnswers[String(question.ID)];
+        if (entry && Array.isArray(entry.answer)) {
+          const inputs = contentWrapper.querySelectorAll('input.blank-item-input');
+          inputs.forEach((input, idx) => {
+            if (entry.answer[idx] !== undefined) input.value = entry.answer[idx];
+          });
+          question.Answer = entry.answer;
+          return; // 有本地答案则直接返回
+        }
+      }
+    } catch (e) {
+      console.warn('读取本地答案失败，继续请求后端', e);
+    }
+    console.log('尝试从后端获取答案');
+
     const inputs = contentWrapper.querySelectorAll('input.blank-item-input');
     try {
       const res = await fetch(`${query_url}&question_id=${question.ID}`, {
