@@ -3,7 +3,7 @@
    * @Author: 彭海峰 1614818457@qq.com
    * @Date: 2025-08-8 10:56:09
  * @LastEditors: lly 3102128343@qq.com
- * @LastEditTime: 2025-08-31 14:38:31
+ * @LastEditTime: 2025-09-03 16:33:26
    * @FilePath: \src\routes\student\answer\result\exam\+page@.svelte
    * @Description:
    */
@@ -439,7 +439,7 @@
   //开启错题练习
   function startPracticeError() {
    //传给作答界面
-    goto(`/student/answer/practice?practice-id=${practice_id}`);
+    goto(`/student/answer/practice?practice-id=${practice_id}&wrong-mode=true`);
   }
 </script>
 

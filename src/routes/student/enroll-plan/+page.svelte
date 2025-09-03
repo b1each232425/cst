@@ -6,106 +6,43 @@
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
+  import { sineIn } from 'svelte/easing';
 
   // 考试科目映射
-  const SUBJECT_MAP = {
-    '': '全部',
-    theory: '理论',
-    practice: '实操',
+  const COURSE_MAP = {
+    '00': '理论、实操',
+    '02': '理论',
+    '04': '实操',
   };
 
-  // 报名状态映射
+  // 考试科目下拉框选项
+  let exam_subject = $state(''); // 默认传空，表示全部
+  let exam_subject_options = [
+    { value: '', label: '全部' },
+    ...Object.entries(COURSE_MAP).map(([code, text]) => ({
+      value: code,
+      label: text,
+    })),
+  ];
+
+  // 状态码映射
   const STATUS_MAP = {
-    '': '全部',
-    registering: '报名中',
-    pending: '待审核',
-    not_registered: '未报名',
-    rejected: '审核不通过',
-    not_started: '报名未开始',
-    ended: '报名已结束',
-    approved: '审核通过待考试',
+    '00': '报名中',
+    '02': '待审核',
+    '04': '通过',
+    '06': '不通过',
+    '08': '已迁移',
   };
 
   // 筛选条件
-  let signup_name = $state('');
+  let input_value = $state('');
   let subject = $state('');
   let status = $state('');
   let current_page = 1;
   let page_size = 10;
 
   // 模拟报名计划数据
-  let signup_list = [
-    {
-      id: 1,
-      name: '2025年上半年技能提升计划',
-      start: '2025-03-01 00:00:00',
-      end: '2025-05-01 00:00:00',
-      people: 50,
-      subject: '理论',
-      type: '统一考试',
-      status: '报名中',
-    },
-    {
-      id: 2,
-      name: '2025年电工实操考核',
-      start: '2025-04-15 00:00:00',
-      end: '2025-06-01 00:00:00',
-      people: 30,
-      subject: '实操',
-      type: '统一考试',
-      status: '审核通过待考试',
-    },
-    {
-      id: 3,
-      name: '安全法规理论培训',
-      start: '2025-02-01 00:00:00',
-      end: '2025-02-28 00:00:00',
-      people: 80,
-      subject: '理论',
-      type: '培训考核',
-      status: '待审核',
-    },
-    {
-      id: 4,
-      name: '2025年高压电工进阶班',
-      start: '2025-01-10 00:00:00',
-      end: '2025-03-10 00:00:00',
-      people: 40,
-      subject: '实操',
-      type: '统一考试',
-      status: '未报名',
-    },
-    {
-      id: 5,
-      name: '2025年安全生产考核',
-      start: '2025-07-01 00:00:00',
-      end: '2025-08-01 00:00:00',
-      people: 100,
-      subject: '理论',
-      type: '统一考试',
-      status: '审核不通过',
-    },
-    {
-      id: 6,
-      name: '2025年机械操作培训',
-      start: '2025-09-01 00:00:00',
-      end: '2025-10-01 00:00:00',
-      people: 60,
-      subject: '实操',
-      type: '培训考核',
-      status: '报名未开始',
-    },
-    {
-      id: 7,
-      name: '2025年特种设备安全考核',
-      start: '2025-03-01 00:00:00',
-      end: '2025-03-15 00:00:00',
-      people: 25,
-      subject: '理论',
-      type: '统一考试',
-      status: '报名已结束',
-    },
-  ];
+  let signup_list = $state([]);
 
   // 审核不通过理由
   let rejected_reason = $state('身份证模糊');
@@ -114,27 +51,55 @@
   let is_show_message_box = $state(false);
 
   // 总数据数
-  let total_count = signup_list.length;
+  let total_count = $state(0);
 
-  // 获取报名计划列表数据
-  function getEnrollData() {
-    fetch(`/api/registration?page=${current_page}&pageSize=${page_size}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+  // 时间戳转 yyyy-MM-dd HH:mm:ss
+  function formatTime(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    const pad = (n) => String(n).padStart(2, '0');
+    return (
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
+      `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+    );
+  }
+
+  function getEnrollData(name = '', status = '', course = '') {
+    fetch(
+      `/api/registration?page=${current_page}&pageSize=${page_size}&name=${name}&status=${status}&course=${course}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-    })
+    )
       .then((response) => {
-        if (!response.ok) {
-          throw new Error('网络错误');
-        }
+        if (!response.ok) throw new Error('网络错误');
         return response.json();
       })
-      .then((data) => {
-        // 处理数据
+      .then((res) => {
+        const list = res.data.registers.map((item) => {
+          const reg = item.register;
+          return {
+            id: reg.ID,
+            name: reg.Name,
+            start: formatTime(reg.StartTime),
+            end: formatTime(reg.EndTime),
+            people: reg.MaxNumber || '不限',
+            subject: COURSE_MAP[reg.Course] || '未知',
+            status: STATUS_MAP[item.student.Status] || '未报名',
+            type: '正考', // 默认正考
+            location: reg.ExamPlanLocation || '—',
+          };
+        });
+
+        signup_list = list;
+
+        total_count = res.data.total;
       })
       .catch((e) => {
-        console.log(e);
+        console.error(e);
       });
   }
 
@@ -147,8 +112,8 @@
   }
 
   // 处理报名按钮点击事件
-  function handleEnroll() {
-    goto('/student/enroll-plan/enroll-message');
+  function handleEnroll(id) {
+    goto(`/student/enroll-plan/${id}`);
   }
 
   // 处理查看原因按钮点击事件
@@ -158,6 +123,16 @@
 
   function handleComfirmMessageBox() {
     is_show_message_box = false;
+  }
+
+  // 处理输入框回调
+  function handleInputChange() {
+    getEnrollData(input_value);
+  }
+
+  // 处理考试科目选择事件
+  function handleChangeSubject() {
+    getEnrollData(input_value, '', exam_subject);
   }
 
   onMount(() => {
@@ -174,14 +149,20 @@
   <div class="options">
     <div class="signup-input">
       <div class="label">计划名称：</div>
-      <input type="text" placeholder="计划名称 / 知识点" bind:value={signup_name} class="input" />
+      <input
+        type="text"
+        placeholder="计划名称 / 知识点"
+        bind:value={input_value}
+        class="input"
+        oninput={handleInputChange}
+      />
     </div>
 
     <div class="select">
       <div class="label">考试科目：</div>
-      <Select bind:value={subject}>
-        {#each Object.entries(SUBJECT_MAP) as [key, val]}
-          <Option value={key} label={val} />
+      <Select bind:value={exam_subject} filterable changeValue={handleChangeSubject}>
+        {#each exam_subject_options as option}
+          <Option value={option.value} label={option.label}></Option>
         {/each}
       </Select>
     </div>
@@ -202,13 +183,14 @@
       <table>
         <thead>
           <tr>
-            <th>报名计划名称</th>
-            <th>开始时间-结束时间</th>
-            <th>计划人数</th>
-            <th>考试科目</th>
-            <th>考试类型</th>
-            <th>报名状态</th>
-            <th>操作</th>
+            <th style="width: 10%">报名计划名称</th>
+            <th style="width: 25%">开始时间-结束时间</th>
+            <th style="width: 10%">计划人数</th>
+            <th style="width: 10%">考试科目</th>
+            <th style="width: 10%">考试类型</th>
+            <th style="width: 10%">考试地点</th>
+            <th style="width: 10%">报名状态</th>
+            <th style="width: 15%">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -219,16 +201,15 @@
               <td>{item.people}</td>
               <td>{item.subject}</td>
               <td>{item.type}</td>
+              <td>{item.location}</td>
 
               <!-- 报名状态样式 -->
               <td>
                 <span
-                  class:status-gray={item.status === '未报名' || item.status === '报名已结束'}
-                  class:status-blue={item.status === '报名中' ||
-                    item.status === '待审核' ||
-                    item.status === '报名未开始'}
-                  class:status-green={item.status === '审核通过待考试'}
-                  class:status-red={item.status === '审核不通过'}
+                  class:status-gray={item.status === '未报名' || item.status === '已迁移'}
+                  class:status-blue={item.status === '报名中' || item.status === '待审核'}
+                  class:status-green={item.status === '通过'}
+                  class:status-red={item.status === '不通过'}
                 >
                   {item.status}
                 </span>
@@ -237,18 +218,20 @@
               <!-- 操作按钮 -->
               <td>
                 {#if item.status === '未报名'}
-                  <button class="option blue" onclick={handleEnroll}>开始报名</button>
+                  <button class="option blue" onclick={() => handleEnroll(item.id)}>开始报名</button>
                 {:else if item.status === '报名中'}
                   <button class="option blue" onclick={handleEnroll}>继续报名</button>
                 {:else if item.status === '待审核'}
                   <button class="option blue" onclick={handleEnroll}>查看报名信息</button>
-                {:else if item.status === '审核通过待考试'}
+                {:else if item.status === '通过'}
                   <button class="option blue">请到达考试列表等待考试开始</button>
                 {:else if item.status === '审核不通过'}
                   <button class="option blue" onclick={handleEnroll}>重新提交</button>
                   <button class="option red" onclick={handleSeeReason}>查看原因</button>
                 {:else if item.status === '报名未开始' || item.status === '报名已结束'}
-                  <span class="option gray">----</span>
+                  <span class="option gray">--</span>
+                {:else}
+                  --
                 {/if}
               </td>
             </tr>
@@ -409,5 +392,17 @@
   .pagination {
     display: flex;
     justify-content: right;
+  }
+
+  .input {
+    border: 1px solid #dcdfe6; /* 默认灰色边框 */
+    border-radius: 4px;
+    padding: 6px 10px;
+    outline: none; /* 去掉默认 outline */
+    transition: border-color 0.2s;
+  }
+
+  .input:focus {
+    border-color: #409eff; /* 聚焦时边框变蓝 */
   }
 </style>

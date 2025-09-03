@@ -131,9 +131,9 @@
     if (all_valid) {
       // 全部正确，返回原 candidate_list
       await Promise.all(candidate_list.map((item) => searchStudentData(item.name)));
-
       importStudentData(import_req_data);
-      // closePanel();
+
+      closePanel();
     } else {
       // 存在错误，只返回正确的数据
       messagebox_title = '存在错误数据';
@@ -149,8 +149,10 @@
   }
 
   // ---------- 消息提示框：确认/取消 ----------
-  function handleMessageBoxConfirm() {
+  async function handleMessageBoxConfirm() {
     let valid_data = candidate_list.filter((item) => !item.error);
+    await Promise.all(valid_data.map((item) => searchStudentData(item.name)));
+    importStudentData(import_req_data);
     closePanel();
     messagebox_title = '';
     messagebox_content = '';

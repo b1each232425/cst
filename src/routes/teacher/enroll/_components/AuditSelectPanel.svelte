@@ -7,12 +7,12 @@
   import Empty from '$lib/components/Table/Empty.svelte';
   import AuditImportPanel from './AuditImportPanel.svelte';
 
-  let { show = $bindable(false), onSelectAudit = () => {} } = $props();
+  let { audit_id_list = [], show = $bindable(false), onSelectAudit = () => {} } = $props();
 
   let search_text = $state(''); // 查询审核员文本内容
   let show_all_audit = $state(false); // 是否展示所有审查员
 
-  let audit_id_list = $state([]); // 已选审核员id
+  // let audit_id_list = $state([]); // 已选审核员id
   let audit_list = $state([]); // 已选审查员数据
 
   let is_show_import_panel = $state(false); // 是否展示批量导入审查员面板
@@ -36,11 +36,9 @@
 
   // 查询审核员数据
   function getAuditData() {
-    fetch(`/api/user?page=${current_page}&pageSize=${page_size}&domain=cst.school^teacher`, {
+    fetch(`/api/user?page=${current_page}&pageSize=${page_size}&domain=assess^teacher`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
     })
       .then((response) => response.json())
@@ -50,6 +48,11 @@
         }
         all_audit_list = res.data;
         total_items = res.rowCount;
+
+        // 初始化 audit_list
+        if (audit_id_list.length > 0 && audit_list.length === 0) {
+          audit_list = all_audit_list.filter((item) => audit_id_list.includes(item.ID));
+        }
       })
       .catch((err) => {
         console.error('Fetch users error:', err);

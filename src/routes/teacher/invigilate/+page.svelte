@@ -149,15 +149,15 @@
   // 搜索
   function handleSearch() {
     const q = JSON.stringify({
-      orderBy: [{ Duration: 'DESC', Time: 'DESC' }],
-      filter: {
+      OrderBy: [{ Duration: 'DESC', Time: 'DESC' }],
+      Filter: {
         ExamSessionName: exam_session_name,
         ExamStatus: status,
         StartTime: start_time,
         EndTime: end_time,
       },
-      page,
-      pageSize: page_size,
+      Page: page,
+      PageSize: page_size,
     });
 
     // 获取考试列表
