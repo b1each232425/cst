@@ -7,19 +7,49 @@
   import Option from '$lib/components/Select/Option.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
   import { isTemplateMiddle } from 'typescript';
+  import { formatDateTime } from './_utils/handleFileInput';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
 
-  // 模拟数据
-  let enroll_list = $state([]);
+  // 考试科目映射
+  const COURSE_MAP = {
+    '00': '理论、实操',
+    '02': '理论',
+    '04': '实操',
+  };
+
+  // 考试科目下拉框选项
+  let exam_subject = $state(''); // 默认传空，表示全部
+  let exam_subject_options = [
+    { value: '', label: '全部' },
+    ...Object.entries(COURSE_MAP).map(([code, text]) => ({
+      value: code,
+      label: text,
+    })),
+  ];
+
+  // 计划状态映射
+  const STATUS_MAP = {
+    '00': '已发布',
+    '02': '未发布',
+    '04': '已结束',
+    '06': '审核截止',
+    '08': '已作废',
+    '10': '已删除',
+    '12': '已取消',
+  };
 
   // 计划状态
-  let plan_status = $state('全部');
-  let plan_status_options = ['全部', '发布', '未发布', '作废'];
+  let plan_status = $state(''); // 默认传空，表示全部
+  let plan_status_options = [
+    { value: '', label: '全部' },
+    ...Object.entries(STATUS_MAP).map(([code, text]) => ({
+      value: code,
+      label: text,
+    })),
+  ];
 
-  // 考试科目
-  let exam_subject = $state('全部');
-  let exam_subject_options = ['全部', '理论', '实操'];
+  let enroll_list = $state([]); // 计划列表数据
 
   // 选中的待操作 id
   let select_delete_id = $state([]); // 待删除
@@ -37,51 +67,19 @@
   let current_page = $state(1); // 当前页数
   let page_size = $state(10); // 当前页面大小
 
-  // ---------------- 映射表 ----------------
-  const COURSE_MAP = {
-    '00': '理论、实操',
-    '02': '理论',
-    '04': '实操',
-  };
-
-  const STATUS_MAP = {
-    '00': '已发布',
-    '02': '未发布',
-    '04': '已结束',
-    '06': '审核截止',
-    '08': '已作废',
-    '10': '已删除',
-    '12': '已取消',
-  };
-
-  // 格式化时间
-  function formatDate(timestamp) {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    const pad = (n) => (n < 10 ? '0' + n : n);
-    return (
-      date.getFullYear() +
-      '-' +
-      pad(date.getMonth() + 1) +
-      '-' +
-      pad(date.getDate()) +
-      ' ' +
-      pad(date.getHours()) +
-      ':' +
-      pad(date.getMinutes()) +
-      ':' +
-      pad(date.getSeconds())
-    );
-  }
+  let input_value = $state('');
 
   // 获取报名列表数据
-  function getEnrollData() {
-    fetch(`/api/registration?page=${current_page}&pageSize=${page_size}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+  function getEnrollData(name = '', status = '', course = '') {
+    fetch(
+      `/api/registration?page=${current_page}&pageSize=${page_size}&name=${name}&status=${status}&course=${course}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-    })
+    )
       .then((response) => {
         if (!response.ok) {
           throw new Error('网络错误');
@@ -98,9 +96,9 @@
               ...r,
               CourseText: COURSE_MAP[r.Course] || r.Course,
               StatusText: STATUS_MAP[r.Status] || r.Status,
-              ReviewEndTimeText: formatDate(r.ReviewEndTime),
-              StartTimeText: formatDate(r.StartTime),
-              EndTimeText: formatDate(r.EndTime),
+              ReviewEndTimeText: formatDateTime(r.ReviewEndTime),
+              StartTimeText: formatDateTime(r.StartTime),
+              EndTimeText: formatDateTime(r.EndTime),
             },
           };
         });
@@ -233,6 +231,7 @@
     }
   }
 
+  // 是否选中该条数据
   function isChecked(id) {
     return select_delete_id.includes(id) || select_repeal_id.includes(id);
   }
@@ -282,6 +281,21 @@
     page_size = event.detail;
   }
 
+  // 处理输入框回调事件
+  function handleInput() {
+    getEnrollData(input_value, plan_status, exam_subject);
+  }
+
+  // 处理选择计划状态回调事件
+  function handleChangePlan() {
+    getEnrollData(input_value, plan_status, exam_subject);
+  }
+
+  // 处理考试科目选择事件
+  function handleChangeSubject() {
+    getEnrollData(input_value, plan_status, exam_subject);
+  }
+
   onMount(() => {
     getEnrollData();
   });
@@ -294,15 +308,21 @@
     <div class="search-and-add-button-container">
       <div class="search-bar">
         <div class="search-box">
-          <InputBox label="计划名称" type="text" placeholder="请输入关键词" />
+          <InputBox
+            bind:value={input_value}
+            onInput={handleInput}
+            label="计划名称"
+            type="text"
+            placeholder="请输入关键词"
+          />
         </div>
 
         <div class="filter-box">
           <span class="filter-label">计划状态</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={plan_status} filterable>
+            <Select bind:value={plan_status} filterable changeValue={handleChangePlan}>
               {#each plan_status_options as option}
-                <Option value={option} label={option}></Option>
+                <Option value={option.value} label={option.label}></Option>
               {/each}
             </Select>
           </div>
@@ -311,9 +331,9 @@
         <div class="filter-box">
           <span class="filter-label">考试科目</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={exam_subject} filterable>
+            <Select bind:value={exam_subject} filterable changeValue={handleChangeSubject}>
               {#each exam_subject_options as option}
-                <Option value={option} label={option}></Option>
+                <Option value={option.value} label={option.label}></Option>
               {/each}
             </Select>
           </div>
@@ -445,7 +465,7 @@
   .enroll-management {
     background-color: #fff;
     height: 100%;
-    overflow: hidden;
+    overflow: auto;
 
     .table-action-container {
       display: flex;
@@ -536,7 +556,7 @@
       .enroll-table {
         margin-top: 20px;
         width: 100%;
-        height: calc(87vh - 200px);
+        height: calc(85vh - 200px);
         overflow: auto;
 
         table {
@@ -626,11 +646,8 @@
       .pagination-container {
         display: flex;
         justify-content: flex-end;
-        position: fixed;
-        bottom: 50px;
-        right: 10px;
-        z-index: 10;
-        padding: 0 40px 0 0;
+        margin-top: 10px;
+        padding: 0 10px 0 0;
       }
     }
   }
