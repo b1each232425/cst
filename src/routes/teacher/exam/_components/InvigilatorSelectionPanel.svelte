@@ -32,7 +32,7 @@ let invigilator_list = $state([
   let is_total_selected = $derived(
   invigilator_list.length > 0 &&
   invigilator_list.every(r => r.selected)
-    );
+);
   //搜索参数
   let search_params = $state({
     page: 1,

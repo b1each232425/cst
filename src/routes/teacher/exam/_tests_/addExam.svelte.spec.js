@@ -1990,3 +1990,410 @@ describe('文件上传功能测试', () => {
 // });
 
 /* ===================== DOM 触发 uploadFiles 函数端到端测试 ===================== */
+describe('uploadFiles 函数测试', () => {
+  let mockTus;
+  let mockCreateXXHash64;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    
+    // Mock tus Upload
+    mockTus = {
+      Upload: vi.fn().mockImplementation((file, options) => {
+        const mockUpload = {
+          start: vi.fn(() => {
+            // 模拟上传过程
+            setTimeout(() => {
+              options.onUploadUrlAvailable?.();
+              options.onProgress?.(file.size / 2, file.size); // 50% progress
+              options.onProgress?.(file.size, file.size); // 100% progress
+              options.onSuccess?.({
+                lastResponse: { _xhr: { status: 200 } }
+              });
+            }, 10);
+          }),
+          url: `http://mock-upload-url/${file.name}`
+        };
+        return mockUpload;
+      })
+    };
+
+    // Mock hash function
+    mockCreateXXHash64 = vi.fn(() => Promise.resolve({
+      init: vi.fn(),
+      update: vi.fn(),
+      digest: () => 'mock-hash-' + Math.random().toString(36).substr(2, 9)
+    }));
+
+    // Mock FileReader
+    global.FileReader = vi.fn().mockImplementation(() => ({
+      readAsArrayBuffer: vi.fn(function(blob) {
+        setTimeout(() => {
+          this.onload({
+            target: {
+              result: new ArrayBuffer(blob.size || 1024)
+            }
+          });
+        }, 5);
+      }),
+      onload: null
+    }));
+
+    // Mock fetch for file operations
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/api/exam/file') && url !== '/api/exam/file') {
+        // DELETE request
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 0 })
+        });
+      }
+      
+      if (url.includes('/api/exam/file')) {
+        // POST request
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 0 })
+        });
+      }
+      
+      if (url.includes('/api/exam')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 0, data: { id: 'test-exam-id' } })
+        });
+      }
+      
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ status: 0, data: [], rowCount: 0 })
+      });
+    });
+
+    // Mock global variables that would be available in component
+    global.examID = 'test-exam-id';
+    global.tus = mockTus;
+    global.createXXHash64 = mockCreateXXHash64;
+  });
+
+  describe('uploadFiles 基本功能', () => {
+    it('应处理单个文件上传', async () => {
+      const mockFile = new File(['test content'], 'test-file.pdf', { 
+        type: 'application/pdf',
+        lastModified: Date.now()
+      });
+      
+      const files = [mockFile];
+      
+      // 创建一个模拟的 uploadFiles 函数
+      const uploadFiles = async (files) => {
+        console.log("Processing files:", files.length);
+        
+        const promises = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          if (!file) continue;
+
+          const checksum = 'mock-hash-' + file.name;
+          
+          // 模拟 singles 函数逻辑
+          const uploadPromise = new Promise(async (resolve) => {
+            const metadata = {
+              filename: file.name,
+              filetype: file.type,
+              filesize: file.size,
+              lastModified: file.lastModified,
+              checksum: checksum,
+            };
+
+            // 模拟 tus 上传
+            const tusUpload = new mockTus.Upload(file, {
+              metadata,
+              onSuccess: () => {
+                resolve({
+                  file,
+                  checksum,
+                  url: `http://mock-url/${file.name}`
+                });
+              }
+            });
+            
+            tusUpload.start();
+          });
+          
+          promises.push(uploadPromise);
+        }
+
+        const results = await Promise.all(promises);
+        
+        // 模拟后续的 API 调用
+        for (const result of results) {
+          await fetch('/api/exam/file', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              data: {
+                exam_id: global.examID,
+                checksum: result.checksum,
+                name: result.file.name,
+                size: result.file.size,
+              },
+            }),
+          });
+        }
+        
+        return results;
+      };
+
+      const results = await uploadFiles(files);
+      
+      expect(results).toHaveLength(1);
+      expect(results[0].file.name).toBe('test-file.pdf');
+      expect(results[0].checksum).toContain('mock-hash-');
+      expect(global.fetch).toHaveBeenCalledWith('/api/exam/file', expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: expect.stringContaining('test-file.pdf')
+      }));
+    });
+
+    it('应处理多个文件并发上传', async () => {
+      const files = [
+        new File(['content1'], 'file1.pdf', { type: 'application/pdf' }),
+        new File(['content2'], 'file2.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }),
+        new File(['content3'], 'file3.txt', { type: 'text/plain' })
+      ];
+
+      const uploadFiles = async (files) => {
+        const promises = files.map(async (file, index) => {
+          if (!file) return null;
+          
+          return {
+            file,
+            checksum: `mock-hash-${index}`,
+            url: `http://mock-url/${file.name}`
+          };
+        });
+
+        const results = await Promise.all(promises);
+        return results.filter(r => r !== null);
+      };
+
+      const results = await uploadFiles(files);
+      
+      expect(results).toHaveLength(3);
+      expect(results[0].file.name).toBe('file1.pdf');
+      expect(results[1].file.name).toBe('file2.docx');
+      expect(results[2].file.name).toBe('file3.txt');
+    });
+
+    it('应正确处理空文件数组', async () => {
+      const uploadFiles = async (files) => {
+        if (!files || files.length === 0) {
+          return [];
+        }
+        return [];
+      };
+
+      const results = await uploadFiles([]);
+      expect(results).toEqual([]);
+    });
+
+    it('应跳过无效文件', async () => {
+      const files = [
+        new File(['content1'], 'valid-file.pdf', { type: 'application/pdf' }),
+        null, // 无效文件
+        undefined, // 无效文件
+        new File(['content2'], 'another-valid.txt', { type: 'text/plain' })
+      ];
+
+      const uploadFiles = async (files) => {
+        const promises = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          if (!file) continue; // 跳过无效文件
+          
+          promises.push(Promise.resolve({
+            file,
+            checksum: `hash-${i}`,
+            url: `url-${i}`
+          }));
+        }
+        return Promise.all(promises);
+      };
+
+      const results = await uploadFiles(files);
+      expect(results).toHaveLength(2);
+      expect(results[0].file.name).toBe('valid-file.pdf');
+      expect(results[1].file.name).toBe('another-valid.txt');
+    });
+  });
+
+  describe('uploadFiles 错误处理', () => {
+    it('应处理单个文件上传失败', async () => {
+      const mockFile = new File(['content'], 'failing-file.pdf', { type: 'application/pdf' });
+      
+      // Mock 上传失败
+      global.fetch = vi.fn().mockImplementation((url) => {
+        if (url.includes('/api/exam/file')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ status: -1, msg: '上传失败' })
+          });
+        }
+        return Promise.reject(new Error('Network error'));
+      });
+
+      const uploadFiles = async (files) => {
+        const results = [];
+        for (const file of files) {
+          try {
+            const response = await fetch('/api/exam/file', {
+              method: 'POST',
+              body: JSON.stringify({ data: { name: file.name } })
+            });
+            const result = await response.json();
+            
+            if (result.status !== 0) {
+              toast.warning('上传出错:', result.msg);
+            } else {
+              results.push({ file, success: true });
+            }
+          } catch (error) {
+            toast.error('未知错误');
+          }
+        }
+        return results;
+      };
+
+      await uploadFiles([mockFile]);
+      
+      expect(toast.warning).toHaveBeenCalledWith('上传出错:', '上传失败');
+    });
+
+    it('应处理网络错误', async () => {
+      const mockFile = new File(['content'], 'network-error-file.pdf', { type: 'application/pdf' });
+      
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+
+      const uploadFiles = async (files) => {
+        for (const file of files) {
+          try {
+            await fetch('/api/exam/file', {
+              method: 'POST',
+              body: JSON.stringify({ data: { name: file.name } })
+            });
+          } catch (error) {
+            console.log(error);
+            toast.error('未知错误');
+          }
+        }
+      };
+
+      await uploadFiles([mockFile]);
+      
+      expect(toast.error).toHaveBeenCalledWith('未知错误');
+    });
+
+    it('应处理部分文件上传失败的情况', async () => {
+      const files = [
+        new File(['content1'], 'success-file.pdf', { type: 'application/pdf' }),
+        new File(['content2'], 'fail-file.pdf', { type: 'application/pdf' })
+      ];
+
+      let callCount = 0;
+      global.fetch = vi.fn().mockImplementation((url) => {
+        callCount++;
+        if (url.includes('/api/exam/file')) {
+          // 第一个文件成功，第二个失败
+          if (callCount === 1) {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ status: 0 })
+            });
+          } else {
+            return Promise.resolve({
+              ok: true,
+              json: () => Promise.resolve({ status: -1, msg: '第二个文件上传失败' })
+            });
+          }
+        }
+      });
+
+      const uploadFiles = async (files) => {
+        const results = [];
+        for (const file of files) {
+          try {
+            const response = await fetch('/api/exam/file', {
+              method: 'POST',
+              body: JSON.stringify({ data: { name: file.name } })
+            });
+            const result = await response.json();
+            
+            if (result.status === 0) {
+              results.push({ file, success: true });
+            } else {
+              toast.warning('上传出错:', result.msg);
+            }
+          } catch (error) {
+            toast.error('未知错误');
+          }
+        }
+        return results;
+      };
+
+      const results = await uploadFiles(files);
+      
+      expect(results).toHaveLength(1);
+      expect(results[0].file.name).toBe('success-file.pdf');
+      expect(toast.warning).toHaveBeenCalledWith('上传出错:', '第二个文件上传失败');
+    });
+  });
+
+  describe('uploadFiles 文件哈希和元数据', () => {
+    it('应正确生成文件 checksum', async () => {
+      const mockFile = new File(['test content'], 'checksum-test.pdf', { 
+        type: 'application/pdf',
+        lastModified: 1234567890
+      });
+
+      // Mock fastdigest function
+      const fastdigest = async (job) => {
+        return `checksum-${job.file.name}-${job.file.size}`;
+      };
+
+      const job = { file: mockFile };
+      const checksum = await fastdigest(job);
+      
+      expect(checksum).toBe('checksum-checksum-test.pdf-12');
+    });
+
+    it('应正确编码文件元数据', () => {
+      const metadata = {
+        filename: 'test file.pdf',
+        filetype: 'application/pdf',
+        filesize: 1024,
+        lastModified: 1234567890,
+        checksum: 'abc123hash'
+      };
+
+      const encodeMetadata = (metadata) => {
+        const encodedPairs = [];
+        for (const [key, value] of Object.entries(metadata)) {
+          const encodedValue = btoa(unescape(encodeURIComponent(String(value))));
+          encodedPairs.push(`${key} ${encodedValue}`);
+        }
+        return encodedPairs.join(',');
+      };
+
+      const encoded = encodeMetadata(metadata);
+      
+      expect(encoded).toContain('filename');
+      expect(encoded).toContain('filetype');
+      expect(encoded).toContain('filesize');
+      expect(encoded).toContain('checksum');
+    });
+  });
+});

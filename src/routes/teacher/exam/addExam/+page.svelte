@@ -1105,11 +1105,11 @@
         show_examinee_panel = false;
         exam_examinee = selected;
       }}
-      onCancel={(/** @type {boolean} */ load_new_file) => {
+      onCancel={() => {
         show_examinee_panel = false;
-        if (load_new_file) {
-          exam_examinee = [];
-        }
+        console.log(exam_examinee);
+        //exam_examinee = [];
+        
       }}
       ids={exam_examinee}
     ></ExamineeSelectionPanel>

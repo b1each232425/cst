@@ -753,7 +753,9 @@ function getSelectedPaperIDs(excludeIndex = -1) {
   async function fetchSelectedStudents() {
      const query = encodeURIComponent(JSON.stringify({
     data: {
-      IDs: examinee_ID, // 必须是数组，例如 [123, 456, 789]
+      Type:"02",
+      // UserIDs: examinee_ID, // 必须是数组，例如 [123, 456, 789]
+      Examinees:examinee_ID
     },
   }));
     fetch(`/api/exam/user?q=${query}`,
@@ -766,7 +768,15 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         })
         .then((response) => response.json())
         .then((data)=>{
-           exam_examinee=data.data;
+           exam_examinee=data.data.map((examinee,index)=>{
+              return{
+                ID:examinee.id,
+                OfficialName:examinee.name,
+                MobilePhone:examinee.mobile_phone,
+                IDCardNo:examinee.id_card_no,
+                Gender:examinee.gender
+              }
+           });
         })
       }
   
@@ -777,7 +787,8 @@ function getSelectedPaperIDs(excludeIndex = -1) {
          tus= await import('tus-js-client');
         tusInit();
         queryFiles();
-         await fetchExamInfo();
+        await fetchExamInfo();
+        console.log(exam_examinee);
     })
 
 
