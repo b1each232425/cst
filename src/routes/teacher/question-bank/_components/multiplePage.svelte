@@ -557,7 +557,7 @@
     };
 </script>
 
-<div class="editorContainer {show ? '' : 'hide'}">
+<div class="editorContainer {show ? '' : 'hide'} multiplePage">
     <div class="topBar">
         <span>{is_new_question ? `新增` : `编辑`}多选题</span>
 
