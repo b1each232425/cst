@@ -20,7 +20,7 @@
     '02': '补考',
   };
 
-  // 状态映射
+  // 审核状态映射
   const statusMap = {
     '00': '报名中',
     '02': '待审核',
@@ -29,19 +29,37 @@
     '08': '已迁移',
   };
 
+  // 审核状态下拉框选项
+  let audit_status = $state(''); // 默认传空，表示全部
+  let audit_status_options = [
+    { value: '', label: '全部' },
+    ...Object.entries(statusMap).map(([code, text]) => ({
+      value: code,
+      label: text,
+    })),
+  ];
+
+  // 报名方式映射
+  const REGISTER_WAY_MAP = {
+    '00': '自报名',
+    '02': '人工导入',
+  };
+
+  // 报名方式下拉框选项
+  let register_way = $state(''); // 默认传空，表示全部
+  let register_way_options = [
+    { value: '', label: '全部' },
+    ...Object.entries(REGISTER_WAY_MAP).map(([code, text]) => ({
+      value: code,
+      label: text,
+    })),
+  ];
+
   // 报名人员数据
   let person_list = $state([]);
 
   // 批量导入数据
   let candidate_list = $state([]);
-
-  // 审核状态
-  let audit_status = $state('全部');
-  let audit_status_options = ['全部', '未审核', '通过', '未通过'];
-
-  // 报名方式
-  let register_way = $state('全部');
-  let register_way_options = ['全部', '自报名', '人工导入'];
 
   // 是否展示迁移模板
   let is_show_move_panel = $state(false);
@@ -50,6 +68,7 @@
   let is_show_import_panel = $state(false);
 
   let file_input = $state(null); // 文件输入框
+  let input_value = $state(''); // 输入框双向绑定数值
 
   // 选中的待操作 id
   let select_approve_id = $state([]); // 待通过
@@ -78,11 +97,14 @@
   const { data } = $props();
 
   // 查看单个报名计划考生
-  function getEnrollPersonData() {
+  function getEnrollPersonData(message = '', status = '', register_type = '') {
     const searchParams = new URLSearchParams({
       id: data.see_enroll_id,
       page: current_page,
       pageSize: page_size,
+      message: message,
+      status: status,
+      register_type: register_type,
     });
 
     fetch(`/api/registration?${searchParams}`, {
@@ -198,6 +220,7 @@
   // 关闭导入报考人员弹窗
   function closeImportPanel() {
     is_show_import_panel = false;
+    getEnrollPersonData();
   }
 
   // 处理批量移动按钮点击事件
@@ -414,6 +437,21 @@
     document.body.removeChild(a);
   }
 
+  // 处理输入框回调事件
+  function handleInput() {
+    getEnrollPersonData(input_value);
+  }
+
+  // 处理审核状态变化
+  function handleAuditStatusChange() {
+    getEnrollPersonData(input_value, audit_status);
+  }
+
+  // 处理报名方式变化
+  function handleRegisterWayChange() {
+    getEnrollPersonData(input_value, audit_status, register_way);
+  }
+
   onMount(() => {
     getEnrollPersonData();
   });
@@ -426,15 +464,21 @@
     <div class="search-and-add-button-container">
       <div class="search-bar">
         <div class="search-box">
-          <InputBox label="查找人员" type="text" placeholder="请输入关键词" />
+          <InputBox
+            bind:value={input_value}
+            label="查找人员"
+            type="text"
+            placeholder="请输入关键词"
+            onInput={handleInput}
+          />
         </div>
 
         <div class="filter-box">
           <span class="filter-label">审核状态</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={audit_status} filterable>
+            <Select bind:value={audit_status} filterable changeValue={handleAuditStatusChange}>
               {#each audit_status_options as option}
-                <Option value={option} label={option}></Option>
+                <Option value={option.value} label={option.label}></Option>
               {/each}
             </Select>
           </div>
@@ -443,9 +487,9 @@
         <div class="filter-box">
           <span class="filter-label">报名方式</span>
           <div class="dropdown-wrapper">
-            <Select bind:value={register_way} filterable>
+            <Select bind:value={register_way} filterable changeValue={handleRegisterWayChange}>
               {#each register_way_options as option}
-                <Option value={option} label={option}></Option>
+                <Option value={option.value} label={option.label}></Option>
               {/each}
             </Select>
           </div>
@@ -603,7 +647,7 @@
   .enroll-management {
     background-color: #fff;
     height: 100%;
-    overflow: hidden;
+    overflow: auto;
 
     .table-action-container {
       display: flex;
@@ -699,7 +743,7 @@
       .enroll-table {
         margin-top: 20px;
         width: 100%;
-        height: calc(87vh - 200px);
+        height: calc(85vh - 200px);
         overflow: auto;
 
         table {
@@ -799,11 +843,8 @@
       .pagination-container {
         display: flex;
         justify-content: flex-end;
-        position: fixed;
-        bottom: 50px;
-        right: 10px;
-        z-index: 10;
-        padding: 0 40px 0 0;
+        margin-top: 10px;
+        padding: 0 10px 0 0;
       }
     }
   }

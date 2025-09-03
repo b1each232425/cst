@@ -52,17 +52,15 @@
   function confirmSelection() {
     const selected = paper_list.filter((test) => selected_test_id.includes(test.ID));
 
-    if (selected.length > 0) {
-      // 传递选中试卷数组给父组件
-      onTestSelectFunc(
-        selected.map((test) => ({
-          id: test.ID,
-          name: test.Name,
-          assembly_type: test.assembly_type,
-          suggest_duration: test.SuggestedDuration,
-        })),
-      );
-    }
+    // 传递选中试卷数组给父组件
+    onTestSelectFunc(
+      selected.map((test) => ({
+        id: test.ID,
+        name: test.Name,
+        assembly_type: test.assembly_type,
+        suggest_duration: test.SuggestedDuration,
+      })),
+    );
 
     closeModal();
   }

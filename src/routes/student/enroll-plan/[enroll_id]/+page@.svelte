@@ -17,6 +17,15 @@
     female: '女',
   };
 
+  // 状态码映射
+  const STATUS_MAP = {
+    '00': '报名中',
+    '02': '待审核',
+    '04': '通过',
+    '06': '不通过',
+    '08': '已迁移',
+  };
+
   // 证件类型映射
   const CARD_TYPE_MAP = {
     id_card: '居民身份证',
@@ -197,6 +206,8 @@
       enrollReq(status);
     }
   }
+
+  function handleSave(status) {}
 
   // 处理取消按钮点击事件
   function handleCancle() {

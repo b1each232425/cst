@@ -17,7 +17,7 @@
   let end_date = $state(null); // 报名结束时间
   let deadline = $state(null); // 审核截止时间
   let show_audit_panel = $state(false); // 是否展示选择审核员面板
-  let audit_data = $state(null); // 审核员数据
+  let audit_data = $state([]); // 审核员数据
   let show_practice_panel = $state(false); // 是否展示选择练习面板
   let practice_initial_id = $state([]); // 当前选择试卷id
   let practice_data = $state([]); // 试卷数据
@@ -79,8 +79,7 @@
 
   // 更新选择的试卷
   function updateTestSelection(data) {
-    practice_data = data;
-    console.log(practice_data);
+    practice_data = Array.isArray(data) ? data : [];
   }
 
   // 处理选择审核人按钮点击事件
@@ -90,7 +89,7 @@
 
   // 更新选中的审核员
   function updateAuditSelection(data) {
-    audit_data = data;
+    audit_data = Array.isArray(data) ? data : [];
   }
 
   // 处理开始日期变化
@@ -134,11 +133,11 @@
 
   // 处理保存按钮点击事件
   function handleSave() {
-    // 简单的校验示例
+    // 校验
     errors.plan_name = plan_name.trim() === '' ? '计划名称不能为空' : '';
     errors.plan_period = start_date && end_date ? '' : '请选择计划报名时段';
     errors.audit_deadline = deadline ? '' : '请选择截止日期';
-    errors.auditor = audit_data ? '' : '请选择审核员';
+    errors.auditor = audit_data.length > 0 ? '' : '请选择审核员';
     errors.people_limit = people_limit === '' ? '请选择人数限制' : '';
     if (people_limit === 'limited' && !limited_number) {
       errors.people_limit = '请输入限制人数';
@@ -154,7 +153,9 @@
       !errors.audit_deadline &&
       !errors.auditor &&
       !errors.people_limit &&
-      !errors.subjects
+      !errors.exam_plan_location &&
+      !errors.subjects &&
+      !errors.practice
     ) {
       addEnrollReq();
       goto('/teacher/enroll');
@@ -296,7 +297,7 @@
   <div class="form-row">
     <div class="label required">审核员：</div>
     <div class="input-wrapper">
-      {#if !audit_data}
+      {#if audit_data.length === 0}
         <!-- 还未选择审核人 -->
         <div class="select-wrapper">
           <button class="btn" onclick={handleSelectAudit}>选择审核员</button>

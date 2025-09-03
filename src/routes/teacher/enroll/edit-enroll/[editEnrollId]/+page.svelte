@@ -27,12 +27,14 @@
   let end_date = $state(null); // 报名结束时间
   let deadline = $state(null); // 审核截止时间
   let show_audit_panel = $state(false); // 是否展示选择审核员面板
-  let audit_data = $state(null); // 审核员数据
+  let audit_data = $state([]); // 审核员数据
   let audit_id_data = $state([]); // 审核员id数据
   let show_practice_panel = $state(false); // 是否展示选择练习面板
   let practice_initial_id = $state([]); // 选择的练习 id 数组
   let practice_data = $state([]); // 选择的练习数组
   let detail_exam_location = $state(''); // 考试详细地点
+
+  let clear_audit_practice = $state(''); // 当审核员或者练习数组为空请求时需要发送对应action字段
 
   // 考试预定地点
   let exam_plan_location = $derived(() => {
@@ -86,7 +88,7 @@
 
   // 更新选择的试卷
   function updateTestSelection(data) {
-    practice_data = data;
+    practice_data = Array.isArray(data) ? data : [];
   }
 
   // 处理选择审核人按钮点击事件
@@ -96,7 +98,7 @@
 
   // 更新选中的审核员
   function updateAuditSelection(data) {
-    audit_data = data;
+    audit_data = Array.isArray(data) ? data : [];
   }
 
   // 处理开始日期变化
@@ -121,7 +123,7 @@
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ action: 'edit', data: edit_enroll_req() }),
+      body: JSON.stringify({ action: clear_audit_practice, data: edit_enroll_req() }),
     })
       .then((response) => {
         if (!response.ok) {
@@ -137,13 +139,29 @@
       });
   }
 
+  // 检测练习、审核员数组是否为空
+  function checkClearAction() {
+    const reviewerEmpty = !practice_initial_id.length;
+    const practiceEmpty = !audit_data.length;
+
+    if (reviewerEmpty && practiceEmpty) {
+      clear_audit_practice = 'clear';
+    } else if (reviewerEmpty) {
+      clear_audit_practice = 'clearr';
+    } else if (practiceEmpty) {
+      clear_audit_practice = 'clearp';
+    } else {
+      clear_audit_practice = ''; // 没有清空情况
+    }
+  }
+
   // 处理保存按钮点击事件
-  function handleSave() {
-    // 简单的校验示例
+  async function handleSave() {
+    // 校验
     errors.plan_name = plan_name.trim() === '' ? '计划名称不能为空' : '';
     errors.plan_period = start_date && end_date ? '' : '请选择计划报名时段';
     errors.audit_deadline = deadline ? '' : '请选择截止日期';
-    errors.auditor = audit_data ? '' : '请选择审核员';
+    errors.auditor = audit_data.length > 0 ? '' : '请选择审核员';
     errors.people_limit = people_limit === '' ? '请选择人数限制' : '';
     if (people_limit === 'limited' && !limited_number) {
       errors.people_limit = '请输入限制人数';
@@ -159,8 +177,11 @@
       !errors.audit_deadline &&
       !errors.auditor &&
       !errors.people_limit &&
-      !errors.subjects
+      !errors.exam_plan_location &&
+      !errors.subjects &&
+      !errors.practice
     ) {
+      await checkClearAction();
       editEnrollReq();
       goto('/teacher/enroll');
     }
@@ -269,17 +290,19 @@
         detail_exam_location = register.ExamPlanLocation ? register.ExamPlanLocation.split(' ').slice(3).join(' ') : '';
 
         // 审核员
-        audit_data = reviewers;
+        audit_data = Array.isArray(reviewers) ? reviewers : [];
         audit_id_data = audit_data.map((item) => item.id);
 
         // 练习
-        practice_initial_id = practices.map((item) => item.ID);
+        practice_initial_id = Array.isArray(practices) ? practices.map((item) => item.ID) : [];
 
-        practice_data = practices.map((item) => ({
-          id: item.ID,
-          name: item.Name,
-          assembly_type: ASSEMBLY_TYPE_MAP[item.Type] || '未知类型',
-        }));
+        practice_data = Array.isArray(practices)
+          ? practices.map((item) => ({
+              id: item.ID,
+              name: item.Name,
+              assembly_type: ASSEMBLY_TYPE_MAP[item.Type] || '未知类型',
+            }))
+          : [];
       })
       .catch((e) => {
         console.error('加载报名计划失败:', e);
@@ -382,7 +405,7 @@
   <div class="form-row">
     <div class="label required">审核员：</div>
     <div class="input-wrapper">
-      {#if !audit_data}
+      {#if audit_data.length === 0}
         <!-- 还未选择审核人 -->
         <div class="select-wrapper">
           <button class="btn" onclick={handleSelectAudit}>选择审核员</button>
@@ -467,10 +490,6 @@
     </div>
   </div>
   <div class="error-text">{errors.practice}</div>
-
-  <div class="error-text">
-    {errors.practice}
-  </div>
 
   <!-- 底部按钮 -->
   <div class="form-actions">
