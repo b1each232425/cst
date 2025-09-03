@@ -24,9 +24,7 @@ export const fileStore = writable({
 // export let clearSelectedFiles = () => {
 //     selectedFiles = new DataTransfer().files;
 //   };
-fileStore.subscribe(value => {
-  console.log('fileStore updated:', value);
-});
+
 
 export function tusInit(tus) {
 		if (!tus || !tus.isSupported) {

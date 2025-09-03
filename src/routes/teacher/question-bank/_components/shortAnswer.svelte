@@ -516,7 +516,7 @@
   };
 </script>
 
-<div class="editorContainer {show ? '' : 'hide'}">
+<div class="editorContainer {show ? '' : 'hide'} shortAnswer">
   <div class="topBar">
     <span>{is_new_question ? `新增` : `编辑`}简答题</span>
 

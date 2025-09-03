@@ -35,7 +35,6 @@
     '04': '已结束',
     '06': '审核截止',
     '08': '已作废',
-    '10': '已删除',
     '12': '已取消',
   };
 
@@ -144,8 +143,17 @@
   }
 
   // 处理查看考生按钮点击事件
-  function handleSeeStudent(id) {
-    goto(`/teacher/enroll/see-enroll/${id}`);
+  function handleSeeStudent(item) {
+    // 将item数据存储到localStorage
+    localStorage.setItem(
+      'enrollItemData',
+      JSON.stringify({
+        courseText: item.register.CourseText,
+        statusText: item.register.StatusText,
+      }),
+    );
+
+    goto(`/teacher/enroll/see-enroll/${item.register.ID}`);
   }
 
   // ---------- 发布 ----------
@@ -342,8 +350,8 @@
 
       <div>
         <button class="new-enroll-btn" onclick={handleNewEnroll}>新增</button>
-        <button class="delete-enroll-btn" onclick={handleBatchDelete}>删除</button>
-        <button class="invalid-enroll-btn" onclick={handleBatchRepeal}>作废</button>
+        <button class="delete-enroll-btn" onclick={handleBatchDelete}>批量删除</button>
+        <button class="invalid-enroll-btn" onclick={handleBatchRepeal}>批量作废</button>
       </div>
     </div>
 
@@ -418,13 +426,17 @@
                     <button class="op-btn" onclick={() => handleEdit(item.register.ID)}>编辑</button>
                     <button class="de-btn" onclick={() => handleDelete(item.register.ID)}>删除</button>
                   {:else if item.register.StatusText === '已发布'}
-                    <button class="op-btn" onclick={() => handleSeeStudent(item.register.ID)}>查看考生</button>
+                    <button class="op-btn" onclick={() => handleSeeStudent(item)}>查看考生</button>
                     <button class="op-btn" onclick={() => handleEdit(item.register.ID)}>编辑</button>
                     <button class="de-btn" onclick={() => handleRepeal(item.register.ID)}>作废</button>
                   {:else if item.register.StatusText === '已作废'}
                     --
                   {:else if item.register.StatusText === '审核截止'}
-                    <button class="op-btn">查看考生</button>
+                    <button class="op-btn" onclick={() => handleSeeStudent(item)}>查看考生</button>
+                  {:else if item.register.StatusText === '已结束'}
+                    <button class="op-btn" onclick={() => handleSeeStudent(item)}>查看考生</button>
+                  {:else}
+                    --
                   {/if}
                 </td>
               </tr>
