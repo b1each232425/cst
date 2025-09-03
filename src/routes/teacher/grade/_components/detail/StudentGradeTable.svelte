@@ -176,9 +176,10 @@
 
       if (examSessionIds.length > 0) {
         console.log('当前考试中的exam_session_id:', examSessionIds);
+        console.log('选中的学生id:', student.stu_id);
 
         const examSessionIdStr = examSessionIds.join(',');
-        window.location.href = `/student/answer/result/exam?exam-session-id-arr=[${examSessionIdStr}]`;
+        window.location.href = `/student/answer/result/exam?exam-session-id-arr=[${examSessionIdStr}]&student-id=${student.stu_id}`;
       } else {
         console.log('未找到exam_session_id');
       }
