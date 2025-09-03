@@ -111,6 +111,9 @@
   let markedQuestions = $state(Array(examQuestions.length).fill(false)); // 添加标记题目的数组
   let answeredCount = $state(0); // 已答题数量
 
+  let wrong_mode = $state(false); // 错题作答模式开关
+  let wrong_submission_id = $state(''); // 错题练习的 submission id
+
   //按钮控制类逻辑
   function submitMessageBox() {
     if (ifPreview) {
@@ -323,9 +326,10 @@
     //倒计时结束后的提交逻辑
     const body_data = {
       //请求体
-      type: '02',
+      type: wrong_mode ? '04' : '02',
       practice_submission_id: Number(practice_submission_id), //题目id
       practice_id: Number(practice_id),
+      wrong_submission_id: Number(wrong_submission_id),
     };
     const requestBody = {
       data: body_data,
@@ -350,6 +354,14 @@
       })
       .then((resp_data) => {
         if (resp_data.status === 0) {
+          // 提交成功后，清除本地保存的答案（避免下次进入仍显示旧答案）
+          try {
+            const key = `practice_answers_${practice_id || 'preview'}_${practice_submission_id || 'preview'}`;
+            localStorage.removeItem(key);
+          } catch (e) {
+            console.warn('清除本地答案失败', e);
+          }
+
           toast.success('练习结束，提交成功！', 2000);
           goto(`/student/practice`);
         } else {
@@ -374,6 +386,58 @@
       toast.warning('当前为预览模式！', 2000);
       return;
     }
+
+
+    
+    // 本地存储 key（与标记使用类似的命名规则）
+    function _storageKeyForAnswers() {
+      const pid = practice_id || 'preview';
+      const sessionPart = practice_submission_id || 'preview';
+      return `practice_answers_${pid}_${sessionPart}`;
+    }
+
+    // 读取本地已有答案
+    let storedAnswers = {};
+    try {
+      const raw = localStorage.getItem(_storageKeyForAnswers());
+      if (raw) {
+        storedAnswers = JSON.parse(raw) || {};
+      }
+    } catch (e) {
+      console.warn('读取本地答案失败', e);
+      storedAnswers = {};
+    }
+
+    // 比较旧答案与新答案（使用 JSON.stringify 做深度比较）
+    const oldEntry = storedAnswers[String(question.ID)] || {};
+    const oldAnswer = oldEntry.answer === undefined ? null : oldEntry.answer;
+    // 归一化 newAnswer：如果传入的是 { answer: [...] } 这样的包装对象，则取其 .answer
+    const newAnswerRaw = stu_answer === undefined ? null : stu_answer;
+    const normalizedNewAnswer = newAnswerRaw && newAnswerRaw.answer !== undefined ? newAnswerRaw.answer : newAnswerRaw;
+    const changed = JSON.stringify(oldAnswer) !== JSON.stringify(normalizedNewAnswer) ||
+      JSON.stringify(oldEntry.attachment_paths || []) !== JSON.stringify(attachment_paths || []);
+
+    // 若发生变化则先保存到 localStorage
+    if (changed) {
+      try {
+        // 存储时也使用归一化后的值，保证 localStorage 中 answer 字段为数组（或期望的原始类型）
+        storedAnswers[String(question.ID)] = {
+          answer: normalizedNewAnswer,
+          attachment_paths: attachment_paths || [],
+          updated_at: Date.now(),
+        };
+        localStorage.setItem(_storageKeyForAnswers(), JSON.stringify(storedAnswers));
+      } catch (e) {
+        console.warn('保存本地答案失败', e);
+      }
+    }
+
+    
+    // 若未变化则不用再调用后端接口
+    if (!changed) {
+      return;
+    }
+
 
     const data = {
       // 构建数据部分
@@ -429,6 +493,8 @@
   onMount(async () => {
     // 获取url中的考试参数
     practice_id = page.url.searchParams.get('practice-id');
+    wrong_mode = page.url.searchParams.get('wrong-mode') === 'true';
+    console.log('wrong_mode:', wrong_mode);
 
     //如果practice-id为空则从local store中取题目
     if (!practice_id) {
@@ -483,7 +549,7 @@
         credentials: 'include',
         body: JSON.stringify({
           data: {
-            type: '02',
+            type: wrong_mode ? '04' : '02',
             practice_id: Number(practice_id),
           },
         }),
@@ -504,6 +570,7 @@
             toast.error(`服务器错误！${data.msg || ''}`, 2000);
             throw new Error(data.msg);
           }
+           console.log('接口返回数据:', data);
 
           // 赋值到变量
           //题目
@@ -516,6 +583,8 @@
           title = sget(data, 'data.Info.PaperName', '无标题');
           totalscore = sget(data, 'data.Info.TotalScore', 0);
           practice_submission_id = sget(data, 'data.Info.PracticeSubmissionID', '');
+          wrong_submission_id = sget(data, 'data.Info.WrongSubmissionID', '');
+
 
           load_success = true;
           ifPreview = false;

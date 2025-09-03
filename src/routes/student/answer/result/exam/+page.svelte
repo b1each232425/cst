@@ -145,7 +145,7 @@
 
   let is_full_examMode = $state(true); // 是否为全卷模式
   let student_name = '邹德伦'; //学生名字
-  let student_id = '15920422045'; // 学生的学号
+  let student_id = $state(''); // 学生的学号
   let avatar_url = '/user_icons/defaultAvatar.svg'; // 头像url
   let userID = $state(''); // 考生当前的用户ID
   let exam_paper = $state([]); // 考试试卷 + 学生作答 题目数组 包括很多信息；需要从里面拿
@@ -399,7 +399,13 @@
     }
   }
   function locationBack() { // 提交考试后返回到考试列表
-    window.location.href = '/student/exam';
+    if (student_id) {
+      // 当有 student_id 时返回上一级
+      window.history.back();
+    } else {
+      // 否则回到考试列表
+      window.location.href = '/student/exam';
+    }
   }
   function showScore() { // 显示分数徽章
     showBadge = true;
@@ -449,6 +455,7 @@
 
   onMount(async () => {
     exam_session_id_arr = page.url.searchParams.get('exam-session-id-arr');
+    student_id = page.url.searchParams.get('student-id');
 
     if (exam_session_id_arr) {
       // 移除方括号并拆分
@@ -459,7 +466,16 @@
       return;
     }
 
-    fetch(`/api/grades?category=exam&examSessionID=${exam_session_id_arr[0]}`, {
+    let geturl;
+
+    if(!student_id) {
+      geturl = `/api/grades?category=exam&examSessionID=${exam_session_id_arr[0]}`;
+    }
+    else {
+      geturl = `/api/grades?category=exam&examSessionID=${exam_session_id_arr[0]}&studentID=${student_id}`;
+    }
+
+    fetch(geturl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
