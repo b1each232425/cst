@@ -6,6 +6,9 @@
   import Button from '$lib/components/Button/Button.svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
+  import { createEventDispatcher } from 'svelte';
+
+  const dispatch = createEventDispatcher();
 
   let {
     show = $bindable(false), // 是否展示选择练习面板
@@ -53,7 +56,8 @@
     const selected = paper_list.filter((test) => selected_test_id.includes(test.ID));
 
     // 传递选中试卷数组给父组件
-    onTestSelectFunc(
+    dispatch(
+      'select-practice',
       selected.map((test) => ({
         id: test.ID,
         name: test.Name,
@@ -183,7 +187,7 @@
 </script>
 
 {#if show}
-  <div class="modal-overlay" tabindex="0" role="dialog" aria-modal="true">
+  <div class="modal-overlay" tabindex="0" role="dialog" aria-modal="true" data-testid="practice-select-panel">
     <div
       class="modal-content"
       onclick={(e) => e.stopPropagation()}
