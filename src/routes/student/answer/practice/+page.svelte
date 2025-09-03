@@ -111,6 +111,9 @@
   let markedQuestions = $state(Array(examQuestions.length).fill(false)); // 添加标记题目的数组
   let answeredCount = $state(0); // 已答题数量
 
+  let wrong_mode = $state(false); // 错题作答模式开关
+  let wrong_submission_id = $state(''); // 错题练习的 submission id
+
   //按钮控制类逻辑
   function submitMessageBox() {
     if (ifPreview) {
@@ -323,9 +326,10 @@
     //倒计时结束后的提交逻辑
     const body_data = {
       //请求体
-      type: '02',
+      type: wrong_mode ? '04' : '02',
       practice_submission_id: Number(practice_submission_id), //题目id
       practice_id: Number(practice_id),
+      wrong_submission_id: Number(wrong_submission_id),
     };
     const requestBody = {
       data: body_data,
@@ -429,6 +433,8 @@
   onMount(async () => {
     // 获取url中的考试参数
     practice_id = page.url.searchParams.get('practice-id');
+    wrong_mode = page.url.searchParams.get('wrong-mode') === 'true';
+    console.log('wrong_mode:', wrong_mode);
 
     //如果practice-id为空则从local store中取题目
     if (!practice_id) {
@@ -483,7 +489,7 @@
         credentials: 'include',
         body: JSON.stringify({
           data: {
-            type: '02',
+            type: wrong_mode ? '04' : '02',
             practice_id: Number(practice_id),
           },
         }),
@@ -504,6 +510,7 @@
             toast.error(`服务器错误！${data.msg || ''}`, 2000);
             throw new Error(data.msg);
           }
+           console.log('接口返回数据:', data);
 
           // 赋值到变量
           //题目
@@ -516,6 +523,8 @@
           title = sget(data, 'data.Info.PaperName', '无标题');
           totalscore = sget(data, 'data.Info.TotalScore', 0);
           practice_submission_id = sget(data, 'data.Info.PracticeSubmissionID', '');
+          wrong_submission_id = sget(data, 'data.Info.WrongSubmissionID', '');
+
 
           load_success = true;
           ifPreview = false;

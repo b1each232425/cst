@@ -123,7 +123,6 @@
   }
 
   onMount(async () => {
-    console.log('question', question);
     if (question.Type !== '06') return;
     question.Content = replaceSpansWithLines(question.Content); // 替换括号为输入框
 
