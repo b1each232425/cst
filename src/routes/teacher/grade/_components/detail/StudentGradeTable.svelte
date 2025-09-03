@@ -4,6 +4,7 @@
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import { debounce } from '../../_utils/debounce.js';
+  import { toast } from '$lib/components/Toast/Toast.js';
 
   /**
    * @typedef {Object} Props
@@ -182,9 +183,15 @@
         window.location.href = `/student/answer/result/exam?exam-session-id-arr=[${examSessionIdStr}]&student-id=${student.stu_id}`;
       } else {
         console.log('未找到exam_session_id');
+        toast.error('未找到学生的考试记录，无法查看详情');
       }
     } else {
-      console.log('练习类型，无exam_session_id');
+      // 练习类型，跳转到练习详情页面，传递练习id和学生id
+      if (resource_id && student.stu_id) {
+        window.location.href = `/student/answer/result/practice?practice-id=${resource_id}&student-id=${student.stu_id}`;
+      } else {
+        toast.error('未找到练习ID或学生ID，无法查看详情');
+      }
     }
   }
 
