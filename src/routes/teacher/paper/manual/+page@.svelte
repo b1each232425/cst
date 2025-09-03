@@ -1119,13 +1119,10 @@
                 for (let i = 0; i < Math.abs(remainderSteps) && i < subScoreCount; i++) {
                     if (remainderSteps > 0) {
                         sub_score[i] += 0.5;
-                    } else {
-                        sub_score[i] -= 0.5;
                     }
                 }
                 
                 updateData.sub_score = sub_score;
-                
             }
 
             return updateData;
@@ -1370,7 +1367,7 @@
 
         const QUESTION_IDS = GROUP_IDS.flatMap(groupId => {
             const group = paper_groups.find(g => g.id === groupId);
-            return group ? group.questions.map(q => q.id) : [];
+            return group.questions.map(q => q.id);
         });
 
         const ACTIONS = [
@@ -1391,7 +1388,6 @@
         
         savePaper(paperID, ACTIONS)
             .then(result1 => {
-                console.log(result1);
                 fetchPaper(paperID)
                     .then((result) => {
                         if(result) {

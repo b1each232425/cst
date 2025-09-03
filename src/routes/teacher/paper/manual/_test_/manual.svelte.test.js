@@ -8,7 +8,7 @@
  * Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
  */
 
-import { render, screen, fireEvent, waitFor, cleanup, container } from '@testing-library/svelte';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/svelte';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 
 import { goto } from '$app/navigation';
@@ -18,7 +18,6 @@ import { FILL_BLANK_QUESTION, MULTIPLE_CHOICE_QUESTION, PAPER_INFO, SHORT_ANSWER
 import { CURRENT_PAPER_ID, GROUP_OPEN_STATE, QUESTION_OPEN_STATE, SIDEBAR_COLLAPSED } from '../../_stores/store';
 import { toast } from "$lib/components/Toast/Toast";
 import { get } from 'svelte/store';
-import { isAwaitKeyword } from 'typescript';
 
 // Mock $app/navigation
 vi.mock('$app/navigation', () => ({
@@ -1427,7 +1426,9 @@ describe('自定义组卷页面', () => {
                                             id: 1196,
                                             name: "移动题组1",
                                             order: 1,
-                                            questions: [],
+                                            questions: [
+                                                SINGLE_CHOICE_QUESTION
+                                            ],
                                         },
                                         {
                                             id: 1197,
@@ -1474,7 +1475,7 @@ describe('自定义组卷页面', () => {
                                 const group2 = groupList.querySelectorAll('.single-group')[1];
         
                                 // 验证第一个题组是"移动题组1"
-                                expect(group1.textContent).toContain('移动题组1（共0题，共0分）');
+                                expect(group1.textContent).toContain('移动题组1（共1题，共2分）');
         
                                 // 验证第二个题组是"移动题组2"
                                 expect(group2.textContent).toContain('移动题组2（共0题，共0分）');
@@ -1512,7 +1513,9 @@ describe('自定义组卷页面', () => {
                                             id: 1196,
                                             name: "移动题组1",
                                             order: 2,
-                                            questions: [],
+                                            questions: [
+                                                SINGLE_CHOICE_QUESTION
+                                            ],
                                         },
                                     ]
                                 };
@@ -1545,13 +1548,74 @@ describe('自定义组卷页面', () => {
                                 // 验证第一个题组是"移动题组2"
                                 await waitFor(() => {
                                     expect(group1After.textContent).toContain('移动题组2（共0题，共0分）');
-                                    expect(group2After.textContent).toContain('移动题组1（共0题，共0分）');
+                                    expect(group2After.textContent).toContain('移动题组1（共1题，共2分）');
                                 });
                             });
                         });
+                        
+                        it('拖拽到自身', async () => {
+                            // 使用独立的测试数据
+                            const SINGLE_PAPER_INFO = {
+                                ID: 230,
+                                Name: "测试试卷",
+                                Category: "00",
+                                Level: "00",
+                                SuggestedDuration: 66,
+                                Description: "我是试卷的说明",
+                                Tags: ["测试", "简答", "填空"],
+                                TotalScore: 15,
+                                QuestionCount: 5,
+                                GroupsData: [
+                                    {
+                                        id: 1196,
+                                        name: "移动题组1",
+                                        order: 1,
+                                        questions: [
+                                            SINGLE_CHOICE_QUESTION,
+                                        ],
+                                    },
+                                    {
+                                        id: 1197,
+                                        name: "移动题组2",
+                                        order: 2,
+                                        questions: [],
+                                    },
+                                ]
+                            };
 
-                        describe('异常情况', () => {
-                            
+                            // 临时mock试卷信息
+                            global.fetch.mockResolvedValueOnce({
+                                ok: true,
+                                json: () => Promise.resolve({
+                                    status: 0,
+                                    msg: "success",
+                                    API: "/api/paper/manual",
+                                    method: "GET",
+                                    data: SINGLE_PAPER_INFO,
+                                })
+                            });
+
+                            const { container } = render(Manual);
+
+                            // 等待页面渲染完成（有题组说明渲染完成）
+                            await waitFor(() => {
+                                expect(screen.getAllByText(/移动题组1/)).toHaveLength(2);
+                            });
+
+                            // 定位到题组列表的div
+                            const groupList = container.querySelector('.question-groups-outer-box');
+                            const group1 = groupList.querySelectorAll('.single-group')[0];
+
+                            const dataTransfer = {
+                                effectAllowed: "",
+                                setData: vi.fn(),
+                                getData: vi.fn(),
+                            };
+
+                            // 拖拽第一个题组到自身
+                            fireEvent.dragStart(group1, { dataTransfer });
+                            fireEvent.dragOver(group1, { dataTransfer });
+                            fireEvent.drop(group1, { dataTransfer });
                         });
                     });
                 });
@@ -3395,6 +3459,447 @@ describe('自定义组卷页面', () => {
                         // });
                     });
                 });
+
+                describe('拖拽题目', async () => {
+                    it('正常上移', async () => {
+                        // 使用独立的测试数据
+                        const SINGLE_PAPER_INFO = {
+                            ID: 230,
+                            Name: "测试试卷",
+                            Category: "00",
+                            Level: "00",
+                            SuggestedDuration: 66,
+                            Description: "我是试卷的说明",
+                            Tags: ["测试", "简答", "填空"],
+                            TotalScore: 15,
+                            QuestionCount: 5,
+                            GroupsData: [
+                                {
+                                    id: 1196,
+                                    name: "测试题组",
+                                    order: 1,
+                                    questions: [
+                                        SINGLE_CHOICE_QUESTION,
+                                        MULTIPLE_CHOICE_QUESTION,
+                                        TRUE_FALSE_QUESTION,
+                                        FILL_BLANK_QUESTION,
+                                        SHORT_ANSWER_QUESTION
+                                    ]
+                                }
+                            ]
+                        };
+
+                        // 临时mock试卷信息
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                status: 0,
+                                msg: "success",
+                                API: "/api/paper/manual",
+                                method: "GET",
+                                data: SINGLE_PAPER_INFO,
+                            })
+                        });
+
+                        // 渲染页面
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+                        
+                        // 获取第一个和第二个question-header类
+                        const questionHeader1 = container.querySelectorAll('.question-header')[0];
+                        const questionHeader2 = container.querySelectorAll('.question-header')[1];
+
+                        const dataTransfer = {
+                            effectAllowed: "",
+                            setData: vi.fn(),
+                            getData: vi.fn(),
+                        };
+
+                        // 拖拽第二个题目到第一个题目上方
+                        fireEvent.dragStart(questionHeader2, { dataTransfer });
+                        fireEvent.dragOver(questionHeader1, {
+                            clientY: questionHeader1.getBoundingClientRect().top + questionHeader1.getBoundingClientRect().height * 0.1,
+                            dataTransfer
+                        });
+                        fireEvent.drop(questionHeader1, { dataTransfer });
+                    });
+                    
+                    it('正常下移', async () => {
+                        // 使用独立的测试数据
+                        const SINGLE_PAPER_INFO = {
+                            ID: 230,
+                            Name: "测试试卷",
+                            Category: "00",
+                            Level: "00",
+                            SuggestedDuration: 66,
+                            Description: "我是试卷的说明",
+                            Tags: ["测试", "简答", "填空"],
+                            TotalScore: 15,
+                            QuestionCount: 5,
+                            GroupsData: [
+                                {
+                                    id: 1196,
+                                    name: "测试题组",
+                                    order: 1,
+                                    questions: [
+                                        SINGLE_CHOICE_QUESTION,
+                                        MULTIPLE_CHOICE_QUESTION,
+                                        TRUE_FALSE_QUESTION,
+                                        FILL_BLANK_QUESTION,
+                                        SHORT_ANSWER_QUESTION
+                                    ]
+                                }
+                            ]
+                        };
+
+                        // 临时mock试卷信息
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                status: 0,
+                                msg: "success",
+                                API: "/api/paper/manual",
+                                method: "GET",
+                                data: SINGLE_PAPER_INFO,
+                            })
+                        });
+
+                        // 渲染页面
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+                        
+                        // 获取第一个和第二个question-header类
+                        const questionHeader1 = container.querySelectorAll('.question-header')[0];
+                        const questionHeader2 = container.querySelectorAll('.question-header')[1];
+
+                        const dataTransfer = {
+                            effectAllowed: "",
+                            setData: vi.fn(),
+                            getData: vi.fn(),
+                        };
+
+                        // 拖拽第一个题目到第二个题目下方
+                        fireEvent.dragStart(questionHeader1, { dataTransfer });
+                        fireEvent.dragOver(questionHeader2, {
+                            clientY: questionHeader2.getBoundingClientRect().top + questionHeader2.getBoundingClientRect().height * 0.9,
+                            dataTransfer
+                        });
+                        fireEvent.drop(questionHeader2, { dataTransfer });
+                    });
+
+                    it('拖拽到自身', async () => {
+                        // 使用独立的测试数据
+                        const SINGLE_PAPER_INFO = {
+                            ID: 230,
+                            Name: "测试试卷",
+                            Category: "00",
+                            Level: "00",
+                            SuggestedDuration: 66,
+                            Description: "我是试卷的说明",
+                            Tags: ["测试", "简答", "填空"],
+                            TotalScore: 15,
+                            QuestionCount: 5,
+                            GroupsData: [
+                                {
+                                    id: 1196,
+                                    name: "测试题组",
+                                    order: 1,
+                                    questions: [
+                                        SINGLE_CHOICE_QUESTION,
+                                        MULTIPLE_CHOICE_QUESTION,
+                                        TRUE_FALSE_QUESTION,
+                                        FILL_BLANK_QUESTION,
+                                        SHORT_ANSWER_QUESTION
+                                    ]
+                                }
+                            ]
+                        };
+
+                        // 临时mock试卷信息
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                status: 0,
+                                msg: "success",
+                                API: "/api/paper/manual",
+                                method: "GET",
+                                data: SINGLE_PAPER_INFO,
+                            })
+                        });
+
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+
+                        // 获取第一个question-header类
+                        const questionHeader = container.querySelectorAll('.question-header')[0];
+
+                        const dataTransfer = {
+                            effectAllowed: "",
+                            setData: vi.fn(),
+                            getData: vi.fn(),
+                        };
+
+                        // 拖拽第一个题目到自身
+                        fireEvent.dragStart(questionHeader, { dataTransfer });
+                        fireEvent.dragOver(questionHeader, { dataTransfer });
+                        fireEvent.drop(questionHeader, { dataTransfer });
+                    });
+
+                    it('拖拽到空题组', async () => {
+                        // 使用独立的测试数据
+                        const SINGLE_PAPER_INFO = {
+                            ID: 230,
+                            Name: "测试试卷",
+                            Category: "00",
+                            Level: "00",
+                            SuggestedDuration: 66,
+                            Description: "我是试卷的说明",
+                            Tags: ["测试", "简答", "填空"],
+                            TotalScore: 15,
+                            QuestionCount: 5,
+                            GroupsData: [
+                                {
+                                    id: 1196,
+                                    name: "测试题组",
+                                    order: 1,
+                                    questions: [
+                                        SINGLE_CHOICE_QUESTION,
+                                    ]
+                                },
+                                {
+                                    id: 1197,
+                                    name: "空白题组",
+                                    order: 2,
+                                    questions: []
+                                }
+                            ]
+                        };
+
+                        // 临时mock试卷信息
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                status: 0,
+                                msg: "success",
+                                API: "/api/paper/manual",
+                                method: "GET",
+                                data: SINGLE_PAPER_INFO,
+                            })
+                        });
+
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+
+                        // 点击"一键展开"
+                        fireEvent.click(screen.getByText('一键展开'));
+
+                        // 获取第一个question-header类
+                        const questionHeader = container.querySelectorAll('.question-header')[0];
+
+                        // 获取no-questions-container类
+                        const noQuestionsContainer = container.querySelector('.no-questions-container');
+
+                        const dataTransfer = {
+                            effectAllowed: "",
+                            setData: vi.fn(),
+                            getData: vi.fn(),
+                        };
+
+                        // 拖拽第一个题目到第二个题组里面
+                        fireEvent.dragStart(questionHeader, { dataTransfer });
+                        fireEvent.dragOver(noQuestionsContainer, {
+                            clientY: noQuestionsContainer.getBoundingClientRect().top + noQuestionsContainer.getBoundingClientRect().height * 0.5,
+                            dataTransfer
+                        });
+                        fireEvent.drop(noQuestionsContainer, { dataTransfer });
+                    });
+                });
+
+                describe('修改每题分值', async () => {
+                    it('空题组', async () => {
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+
+                        // 获取第一个group-header
+                        const groupHeader = container.querySelectorAll('.group-header')[0];
+                        
+                        // 获取里面的input
+                        const input = groupHeader.querySelector('input');
+
+                        // 输入1
+                        fireEvent.change(input, { target: { value: '1' } });
+
+                        // 等待500ms
+                        await new Promise(resolve => setTimeout(resolve, 500));
+
+                        // 验证toast.error
+                        await waitFor(() => {
+                            expect(toast.error).toHaveBeenCalledWith('请先添加题目', 1000);
+                        });
+                        
+                    });
+
+                    it('分值小于最小分值', async () => {
+                        // 使用独立的测试数据
+                        const SINGLE_PAPER_INFO = {
+                            ID: 230,
+                            Name: "测试试卷",
+                            Category: "00",
+                            Level: "00",
+                            SuggestedDuration: 66,
+                            Description: "我是试卷的说明",
+                            Tags: ["测试", "简答", "填空"],
+                            TotalScore: 15,
+                            QuestionCount: 5,
+                            GroupsData: [
+                                {
+                                    id: 1196,
+                                    name: "测试题组",
+                                    order: 1,
+                                    questions: [
+                                        SINGLE_CHOICE_QUESTION,
+                                        MULTIPLE_CHOICE_QUESTION,
+                                        TRUE_FALSE_QUESTION,
+                                        FILL_BLANK_QUESTION,
+                                        SHORT_ANSWER_QUESTION
+                                    ]
+                                }
+                            ]
+                        };
+
+                        // 临时mock试卷信息
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                status: 0,
+                                msg: "success",
+                                API: "/api/paper/manual",
+                                method: "GET",
+                                data: SINGLE_PAPER_INFO,
+                            })
+                        });
+
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+                        
+                        // 获取第一个group-header
+                        const groupHeader = container.querySelectorAll('.group-header')[0];
+                        
+                        // 获取里面的input
+                        const input = groupHeader.querySelector('input');
+
+                        // 输入1
+                        fireEvent.change(input, { target: { value: '1' } });
+
+                        // 等待500ms
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // 验证toast.error
+                        await waitFor(() => {
+                            expect(toast.error).toHaveBeenCalledWith('每题分值至少为1.5分', 1000);
+                        });
+                    });
+
+                    it('正常情况', async () => {
+                        // 使用独立的测试数据
+                        const SINGLE_PAPER_INFO = {
+                            ID: 230,
+                            Name: "测试试卷",
+                            Category: "00",
+                            Level: "00",
+                            SuggestedDuration: 66,
+                            Description: "我是试卷的说明",
+                            Tags: ["测试", "简答", "填空"],
+                            TotalScore: 15,
+                            QuestionCount: 5,
+                            GroupsData: [
+                                {
+                                    id: 1196,
+                                    name: "测试题组",
+                                    order: 1,
+                                    questions: [
+                                        SINGLE_CHOICE_QUESTION,
+                                        MULTIPLE_CHOICE_QUESTION,
+                                        TRUE_FALSE_QUESTION,
+                                        FILL_BLANK_QUESTION,
+                                        SHORT_ANSWER_QUESTION
+                                    ]
+                                }
+                            ]
+                        };
+
+                        // 临时mock试卷信息
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                status: 0,
+                                msg: "success",
+                                API: "/api/paper/manual",
+                                method: "GET",
+                                data: SINGLE_PAPER_INFO,
+                            })
+                        });
+
+                        const { container } = render(Manual);
+
+                        // 等待页面渲染完成（有题组说明渲染完成）
+                        await waitFor(() => {
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+                        
+                        // 获取第一个group-header
+                        const groupHeader = container.querySelectorAll('.group-header')[0];
+                        
+                        // 获取里面的input
+                        const input = groupHeader.querySelector('input');
+                        
+                        // 输入2
+                        fireEvent.input(input, { target: { value: '2' } });
+
+                        // blur
+                        fireEvent.blur(input);
+
+                        // 等待600ms
+                        await new Promise(resolve => setTimeout(resolve, 600));
+
+                        // 输入2.5
+                        fireEvent.input(input, { target: { value: '2.5' } });
+
+                        // blur
+                        fireEvent.blur(input);
+
+                        // 等待600ms
+                        await new Promise(resolve => setTimeout(resolve, 600));
+                    });
+                });
+
+                // describe('更新子题分数', async () => {
+                    
+                // });
             });
         });
     });
