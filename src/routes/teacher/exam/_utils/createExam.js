@@ -189,6 +189,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
         });
 }
   // console.log("exam_student",exam_examinee);
+  //console.log("examrooms",exam_rooms);
     const exam_data = {
       data: {
         examInfo: {
@@ -205,9 +206,10 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
           exam_plan_student_id: (e.student &&e.detail.StudentID)!=null ? e.detail.StudentID :0
         })), // 用户选中的考生 id 数组
         invigilators: invigilators.map((i) => i.ID), // 监考员 id 数组
-        examRoomConfigs: exam_rooms.map((r) => ({
-          examRoomID: r.id,
-          invigilators_count: r.invigilators_count
+        examRooms: exam_rooms.map((r) => ({
+          roomID: r.id,
+          capacity:r.capacity,
+          invigilator_count: r.invigilator_count
         })), // 考场配置 id 数组
       },
     };

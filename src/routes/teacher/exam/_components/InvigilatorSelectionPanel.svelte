@@ -39,9 +39,11 @@ let invigilator_list = $state([
     pageSize: 10,
     orderBy:[{ "capacity": "DESC"}],
     data:{},
-    filter:{}
+    filter:{},
+    fuzzyCondition:''
   });
 
+  let fuzzyCondition =$state();
   let pagination_params = $state({
     page: 1,
     pageSize: 10
@@ -61,9 +63,10 @@ let invigilator_list = $state([
     const query_params = new URLSearchParams({
       page: search_params.page.toString(),
       pageSize: search_params.pageSize.toString(),
-      domain:'assess^examSupervisor'
+      domain:'assess^examSupervisor',
+      fuzzyCondition:search_params.fuzzyCondition
     }).toString();
-    fetch(`/api/user?${query_params}`,{
+    fetch(`/api/user?${query_params}`,{ 
       method:'GET',
       credentials: 'include',
       headers: {
@@ -87,6 +90,11 @@ let invigilator_list = $state([
       })
   }
 
+  async function searchInvigilators(value){
+    search_params.fuzzyCondition = value;
+    search_params.page = 1; 
+    fetchExaminvigilators();
+  }
   onMount(async()=>{
     await fetchExaminvigilators();
   })
@@ -115,6 +123,7 @@ let invigilator_list = $state([
               <InputBox
               label={'搜索监考员'} 
               placeholder={'请输入手机号或姓名'}
+              onInput={searchInvigilators}
               
               clearable={true}
               >
@@ -141,7 +150,7 @@ let invigilator_list = $state([
               <tbody>
                 {#each selected_invigilator_list as selected_invigilator, index}
                   <tr class="exam_invigilator">
-                    <td>{selected_invigilator.MobilePhone}</td>
+                    <td>{selected_invigilator.MobilePhone || "--"}</td>
                     <td>{selected_invigilator.Account}</td>
                     <td>{selected_invigilator.OfficialName}</td>
                     <td>{selected_invigilator.Gender || "--"}</td>
@@ -186,7 +195,7 @@ let invigilator_list = $state([
                         checked={invigilator.selected}
                         />
                     </td>
-                    <td>{invigilator.MobilePhone}</td>
+                    <td>{invigilator.MobilePhone || "--"}</td>
                     <td>{invigilator.Account}</td>
                     <td>{invigilator.OfficialName}</td>
                     <td>{invigilator.Gender || "--"}</td>
