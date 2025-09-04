@@ -163,7 +163,6 @@
                 question_difficulties
             ).then( result => {
                 if(result) {
-                    console.log(result)
                     question_list = result.data || [];
                     total_questions = result.rowCount;
                 }
@@ -502,7 +501,6 @@
     onMount(() => {
         fetchQuestionBankList(bank_key_word, "", "", "")
             .then(result => {
-                console.log(result);
                 bank_list = result.data || [];
             });
 
