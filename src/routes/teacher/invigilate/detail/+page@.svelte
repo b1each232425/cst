@@ -51,7 +51,7 @@
   //   {
   //     ExamineeID: 5001,
   //     ExamCard: '20250822001',
-  //     IdentityID: '440101199001011234',
+  //     IDCardNo: '440101199001011234',
   //     Name: '张三',
   //     Status: '02',
   //     Remark: '缺考',
@@ -59,7 +59,7 @@
   //   {
   //     ExamineeID: 5002,
   //     ExamCard: '20250822002',
-  //     IdentityID: '440101199002022345',
+  //     IDCardNo: '440101199002022345',
   //     Name: '李四',
   //     Status: '02',
   //     Remark: '',
@@ -67,7 +67,7 @@
   //   {
   //     ExamineeID: 5003,
   //     ExamCard: '20250822003',
-  //     IdentityID: '440101199003033456',
+  //     IDCardNo: '440101199003033456',
   //     Name: '王五',
   //     Status: '06',
   //     Remark: '正常参加考试',
@@ -75,7 +75,7 @@
   //   {
   //     ExamineeID: 5004,
   //     ExamCard: '20250822004',
-  //     IdentityID: '440101199004044567',
+  //     IDCardNo: '440101199004044567',
   //     Name: '赵六',
   //     Status: '06',
   //     Remark: '提前交卷',
@@ -83,7 +83,7 @@
   //   {
   //     ExamineeID: 5005,
   //     ExamCard: '20250822005',
-  //     IdentityID: '440101199005055678',
+  //     IDCardNo: '440101199005055678',
   //     Name: '钱七',
   //     Status: '14',
   //     Remark: '作弊嫌疑',
@@ -91,7 +91,7 @@
   //   {
   //     ExamineeID: 5006,
   //     ExamCard: '20250822006',
-  //     IdentityID: '440101199006066789',
+  //     IDCardNo: '440101199006066789',
   //     Name: '孙八',
   //     Status: '14',
   //     Remark: '身体不适中途退场',
@@ -99,7 +99,7 @@
   //   {
   //     ExamineeID: 5007,
   //     ExamCard: '20250822007',
-  //     IdentityID: '440101199007077890',
+  //     IDCardNo: '440101199007077890',
   //     Name: '周九',
   //     Status: '02',
   //     Remark: '缺考',
@@ -107,7 +107,7 @@
   //   {
   //     ExamineeID: 5008,
   //     ExamCard: '20250822008',
-  //     IdentityID: '440101199008088901',
+  //     IDCardNo: '440101199008088901',
   //     Name: '吴十',
   //     Status: '14',
   //     Remark: '忘记带身份证',
@@ -115,7 +115,7 @@
   //   {
   //     ExamineeID: 5009,
   //     ExamCard: '20250822009',
-  //     IdentityID: '440101199009099012',
+  //     IDCardNo: '440101199009099012',
   //     Name: '郑十一',
   //     Status: '06',
   //     Remark: '正常参加考试',
@@ -123,7 +123,7 @@
   //   {
   //     ExamineeID: 5010,
   //     ExamCard: '20250822010',
-  //     IdentityID: '440101199010101123',
+  //     IDCardNo: '440101199010101123',
   //     Name: '王十二',
   //     Status: '11',
   //     Remark: '表现优秀',
@@ -171,7 +171,6 @@
   let search_text = $state('');
   let exam_session_id = $state('');
   let exam_room_id = $state('');
-  let exam_session_name = $state('');
   let status = $state('');
   let remark = $state('');
   let page = $state(1);
@@ -293,12 +292,14 @@
   function updateBasicEval(basic_eval) {
     updateInfos('00', {
       BasicEval: basic_eval,
+      Record: invigilation_info.Record,
     });
   }
 
   function updateRecord(record) {
     updateInfos('00', {
       Record: record,
+      BasicEval: invigilation_info.BasicEval,
     });
   }
 
@@ -307,16 +308,16 @@
   // 更新一个学生的状态
   function updateSingleExamineeStatus(examinee_id, status) {
     updateInfos('02', {
-      ExamineeIDs: [examinee_id],
-      Status: status,
+      Examinees: [examinee_id],
+      ExamineeStatus: status,
     });
   }
 
   // 更新一个学生的备注
   function updateSingleExamineeRemark(examinee_id, remark) {
     updateInfos('04', {
-      ExamineeIDs: [examinee_id],
-      Remark: remark,
+      Examinees: [examinee_id],
+      ExamineeRemark: remark,
     });
   }
 
@@ -327,8 +328,8 @@
     updateInfos(
       '02',
       {
-        Status: status,
-        ExamineeIDs: Array.from(selected_examinee_id_set),
+        ExamineeStatus: status,
+        Examinees: Array.from(selected_examinee_id_set),
       },
       () => {
         examinee_list.forEach((e) => {
@@ -343,8 +344,8 @@
     updateInfos(
       '04',
       {
-        Remark: remark,
-        ExamineeIDs: Array.from(selected_examinee_id_set),
+        ExamineeRemark: remark,
+        Examinees: Array.from(selected_examinee_id_set),
       },
       () => {
         examinee_list.forEach((e) => {
@@ -466,10 +467,10 @@
           <div class="label">考试异常人数：</div>
           <div class="data number">{invigilation_info.AbnormalExamineeNum}</div>
         </div>
-        <div class="info-item">
+        <!-- <div class="info-item">
           <div class="label">已延长时间人数：</div>
           <div class="data number">{invigilation_info.ExtendedTimeNum}</div>
-        </div>
+        </div> -->
         <div class="info-item record">
           <div class="label">考场记录：</div>
           {#if is_invigilating}
@@ -502,7 +503,7 @@
             <input
               type="text"
               placeholder="姓名、身份证号或准考证号"
-              bind:value={exam_session_name}
+              bind:value={search_text}
               class="input"
               oninput={debounceGetInvigilateDetail}
             />
@@ -516,9 +517,9 @@
                 changeValue={(val) => batchUpdateExamineeStatus(val)}
               >
                 <Option value="" label="无" />
-                <Option value="02" label={EXAMINEE_STATUE_MAP['02']} />
-                <Option value="06" label={EXAMINEE_STATUE_MAP['06']} />
-                <Option value="14" label={EXAMINEE_STATUE_MAP['14']} />
+                {#each Object.entries(EXAMINEE_STATUE_MAP) as [key, value]}
+                  <Option value={key} label={value} />
+                {/each}
               </Select>
             </div>
             <div class="batch-remark-input">
@@ -567,7 +568,7 @@
               </tr>
             </thead>
             <tbody data-testid="examinee-tbody">
-              {#each examinee_list as { ExamineeID, IdentityID, Name, ExamCard, Status, Remark } (ExamineeID)}
+              {#each examinee_list as { ExamineeID, IDCardNo, Name, ExamCard, Status, Remark } (ExamineeID)}
                 <tr>
                   {#if is_invigilating}
                     <!-- 单选框 -->
@@ -584,27 +585,33 @@
                     >
                   {/if}
                   <td>{Name}</td>
-                  <td>{IdentityID}</td>
+                  <td>{IDCardNo}</td>
                   <td>{ExamCard}</td>
                   {#if is_invigilating}
                     <td>
                       <div class="select" data-testid="single-select">
-                        <Select value={Status} changeValue={(val) => updateSingleExamineeStatus(ExamineeID, val)}>
+                        <Select
+                          value={Status}
+                          changeValue={(val) => updateSingleExamineeStatus(ExamineeID, val)}
+                          placeholder="无"
+                        >
                           <Option value="" label="无" />
-                          <Option value="02" label={EXAMINEE_STATUE_MAP['02']} />
-                          <Option value="06" label={EXAMINEE_STATUE_MAP['06']} />
-                          <Option value="14" label={EXAMINEE_STATUE_MAP['14']} />
+                          {#each Object.entries(EXAMINEE_STATUE_MAP) as [key, value]}
+                            <Option value={key} label={value} />
+                          {/each}
                         </Select>
                       </div></td
                     >
                   {:else}
                     <td
+                      data-testid="single-select"
                       class="status"
                       class:absent={Status === '02'}
                       class:cheat={Status === '06'}
                       class:abnormal={Status === '14'}
-                      class:unknown={!EXAMINEE_STATUE_MAP[Status]}>{EXAMINEE_STATUE_MAP[Status] ?? '未知状态'}</td
-                    >
+                      class:unknown={Status !== '00' && Status !== '10' && !EXAMINEE_STATUE_MAP[Status]}
+                      >{EXAMINEE_STATUE_MAP[Status] ?? (Status !== '00' && Status !== '10' ? '未知状态' : '无')}
+                    </td>
                   {/if}
                   <td class="remark"
                     >{#if is_invigilating}

@@ -44,7 +44,7 @@ const MOCK_EXAMINEES = [
   {
     ExamineeID: 5001,
     ExamCard: '20250822001',
-    IdentityID: '440101199001011234',
+    IDCardNo: '440101199001011234',
     Name: '张三',
     Status: '02',
     Remark: '缺考',
@@ -52,7 +52,7 @@ const MOCK_EXAMINEES = [
   {
     ExamineeID: 5002,
     ExamCard: '20250822002',
-    IdentityID: '440101199002022345',
+    IDCardNo: '440101199002022345',
     Name: '李四',
     Status: '02',
     Remark: '',
@@ -60,7 +60,7 @@ const MOCK_EXAMINEES = [
   {
     ExamineeID: 5003,
     ExamCard: '20250822003',
-    IdentityID: '440101199003033456',
+    IDCardNo: '440101199003033456',
     Name: '王五',
     Status: '06',
     Remark: '正常参加考试',
@@ -68,7 +68,7 @@ const MOCK_EXAMINEES = [
   {
     ExamineeID: 5004,
     ExamCard: '20250822004',
-    IdentityID: '440101199004044567',
+    IDCardNo: '440101199004044567',
     Name: '赵六',
     Status: '06',
     Remark: '提前交卷',
@@ -76,7 +76,7 @@ const MOCK_EXAMINEES = [
   {
     ExamineeID: 5005,
     ExamCard: '20250822005',
-    IdentityID: '440101199005055678',
+    IDCardNo: '440101199005055678',
     Name: '钱七',
     Status: '14',
     Remark: '作弊嫌疑',
@@ -84,7 +84,7 @@ const MOCK_EXAMINEES = [
   {
     ExamineeID: 5006,
     ExamCard: '20250822006',
-    IdentityID: '440101199006066789',
+    IDCardNo: '440101199006066789',
     Name: '孙八',
     Status: '14',
     Remark: '身体不适中途退场',
@@ -92,7 +92,7 @@ const MOCK_EXAMINEES = [
   {
     ExamineeID: 5007,
     ExamCard: '20250822007',
-    IdentityID: '440101199007077890',
+    IDCardNo: '440101199007077890',
     Name: '周九',
     Status: '02',
     Remark: '缺考',
@@ -100,7 +100,7 @@ const MOCK_EXAMINEES = [
   {
     ExamineeID: 5008,
     ExamCard: '20250822008',
-    IdentityID: '440101199008088901',
+    IDCardNo: '440101199008088901',
     Name: '吴十',
     Status: '14',
     Remark: '忘记带身份证',
@@ -108,7 +108,7 @@ const MOCK_EXAMINEES = [
   {
     ExamineeID: 5009,
     ExamCard: '20250822009',
-    IdentityID: '440101199009099012',
+    IDCardNo: '440101199009099012',
     Name: '郑十一',
     Status: '06',
     Remark: '正常参加考试',
@@ -116,7 +116,7 @@ const MOCK_EXAMINEES = [
   {
     ExamineeID: 5010,
     ExamCard: '20250822010',
-    IdentityID: '440101199010101123',
+    IDCardNo: '440101199010101123',
     Name: '王十二',
     Status: '06',
     Remark: '表现优秀',
@@ -159,7 +159,7 @@ describe('教师端监考详情页测试', () => {
         expect(screen.getByText('缺考人数：')).toBeInTheDocument();
         expect(screen.getByText('作弊人数：')).toBeInTheDocument();
         expect(screen.getByText('考试异常人数：')).toBeInTheDocument();
-        expect(screen.getByText('已延长时间人数：')).toBeInTheDocument();
+        // expect(screen.getByText('已延长时间人数：')).toBeInTheDocument();
         expect(screen.getByText('考场记录：')).toBeInTheDocument();
         expect(screen.getByText('考生名单')).toBeInTheDocument();
         expect(screen.getByText('搜索：')).toBeInTheDocument();
@@ -341,6 +341,80 @@ describe('教师端监考详情页测试', () => {
     await waitFor(() => {
       const record = screen.getByTestId('record');
       expect(record).toHaveTextContent('无');
+    });
+  });
+
+  describe("异常状态status返回'00'或者'10'时，显示“无”", () => {
+    it("监考模式下，异常状态status返回'00'或者'10'时，显示“无”", async () => {
+      mockFetch({
+        status: 0,
+        data: {
+          info: MOCK_INFO,
+          examinees: [
+            {
+              ExamineeID: 5010,
+              ExamCard: '20250822010',
+              IDCardNo: '440101199010101123',
+              Name: '王十二',
+              Status: '00',
+              Remark: '表现优秀',
+            },
+            {
+              ExamineeID: 5011,
+              ExamCard: '20250822010',
+              IDCardNo: '440101199010101123',
+              Name: '王十二',
+              Status: '10',
+              Remark: '表现优秀',
+            },
+          ],
+        },
+        rowCount: MOCK_EXAMINEES.length,
+      });
+
+      render(InvigilateDetail);
+
+      await waitFor(() => {
+        const records = screen.getAllByTestId('single-select');
+        expect(records[0]).toHaveTextContent('无');
+        expect(records[1]).toHaveTextContent('无');
+      });
+    });
+
+    it("非监考模式下异常状态status返回'00'或者'10'时，显示“无”", async () => {
+      mockFetch({
+        status: 0,
+        data: {
+          info: { ...MOCK_INFO, Status: '02' },
+          examinees: [
+            {
+              ExamineeID: 5010,
+              ExamCard: '20250822010',
+              IDCardNo: '440101199010101123',
+              Name: '王十二',
+              Status: '00',
+              Remark: '表现优秀',
+            },
+            {
+              ExamineeID: 5011,
+              ExamCard: '20250822010',
+              IDCardNo: '440101199010101123',
+              Name: '王十二',
+              Status: '10',
+              Remark: '表现优秀',
+            },
+          ],
+        },
+        rowCount: MOCK_EXAMINEES.length,
+      });
+
+      render(InvigilateDetail);
+
+      await waitFor(() => {
+        const records = screen.getAllByTestId('single-select');
+        expect(records[0]).toHaveTextContent('无');
+        expect(records[1]).toHaveTextContent('无');
+      });
     });
   });
 
