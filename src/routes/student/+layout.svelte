@@ -58,7 +58,7 @@
   function handleLogout() {
     MessageBox({
       title: '确认操作',
-      content: '你确定要执行这个操作吗？',
+      content: '你确定要退出登录吗？',
       onConfirm: () => logout(),
     });
   }
@@ -116,7 +116,8 @@
         padding-bottom: 0.5rem;
 
         &.selected {
-          border-bottom: 2px solid blue;
+          color: var(--blue);
+          border-bottom: 2px solid var(--blue);
         }
       }
     }
