@@ -1119,7 +1119,7 @@
         onConfirm={(selected) =>{
           show_rooms_panel=false;
           exam_rooms=selected;
-          
+          console.log("ex",exam_rooms);
         }}
         onCancel={()=>{
           show_rooms_panel=false;

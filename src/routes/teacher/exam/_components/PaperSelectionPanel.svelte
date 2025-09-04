@@ -639,7 +639,7 @@
   .paper-selection-table-container {
     margin: 10px 0px 0 0px;
     flex: 1;
-    min-height: 0px;
+    min-height: 250px;
     position: relative;
     display: flex;
     flex-direction: column;

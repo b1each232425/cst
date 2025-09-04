@@ -32,7 +32,7 @@
     OfficialName: '',
     page: 1,
     pageSize: 10,
-    fuzzyCondition:'',
+    name:'',
   });
 
   // 已选择学生的分页参数
@@ -179,9 +179,17 @@
 
 
   function searchSelectedExaminee(value) {
-    console.log(selected_search_params)
-    selected_search_params.fuzzyCondition = value;
-    selected_search_params.page = 1;
+    search_params.name = value;
+    search_params.page = 1;
+     if (name_search_timer) {
+    clearTimeout(name_search_timer);
+  }
+  
+  name_search_timer = setTimeout(() => {
+    searchExaminee();
+    name_search_timer = null;
+  }, 500);
+
 }
 
   async function searchExaminee() {
@@ -193,10 +201,10 @@
     queryParams.append('page', search_params.page.toString());
     queryParams.append('pageSize', search_params.pageSize.toString());
    // queryParams.append('domain', 'assess^student');
-    // if(search_params.fuzzyCondition)
-    // {
-    //   queryParams.append('fuzzyCondition',search_params.fuzzyCondition);
-    // }
+    if(search_params.name)
+    {
+      queryParams.append('name',search_params.name);
+    }
 
     await fetch(`/api/registration?${queryParams.toString()}`, {
       method: 'GET',
@@ -493,10 +501,17 @@ function handleCheckboxChange(examinee, event) {
         <!-- 选择模式 -->
         <div class="action-container">
           <div class="examinee-search-container">
-
+            <InputBox
+              label={'搜索报名计划'} 
+              placeholder={'请输入名称'}
+              onInput={searchSelectedExaminee}
+              bind:value={search_params.name}
+              clearable={true}
+              >
+            </InputBox>
           </div>
           <div class="button-group">
-            <button class="back-btn" onclick={backToViewMode}>返回考生列表</button>
+            <button class="btn btn--info is-plain" onclick={backToViewMode}>返回考生列表</button>
 
             <!-- <Button type="primary" >下载模板</Button> -->
              <button class="btn btn--primary " onclick={downloadTemplate}>下载导入模板</button>
@@ -508,18 +523,6 @@ function handleCheckboxChange(examinee, event) {
           <table class="table">
             <thead class="student-table-head">
               <tr class="table-head-row">
-                <!-- <th class="table-head" style="width: 30px;">
-                  <input
-                    type="checkbox"
-                    class="custom-checkbox"
-                    onchange={toggleSelectAll}
-                    checked={is_total_selected}
-                  />
-                </th> -->
-                <!-- <th class="table-head">姓名</th>
-                <th class="table-head">性别</th>
-                <th class="table-head">手机号</th>
-                <th class="table-head">身份证号</th> -->
                 <th class = "table-head">名称</th>
                 <th class = "table-head">考试科目</th>
                 <th class = "table-head">考生人数</th>
@@ -540,14 +543,7 @@ function handleCheckboxChange(examinee, event) {
                       
                     />
                   </td>
-                  <td
-                    >{examinee.OfficialName === null || examinee.OfficialName === '' ? '--' : examinee.OfficialName}</td
-                  >
-                  <td>{examinee.Gender === null || examinee.Gender === '' ? '--' : examinee.Gender}</td>
-                  <td>{examinee.MobilePhone === null || examinee.MobilePhone === '' ? '--' : examinee.MobilePhone}</td>
-                  <td>{examinee.IDCardNo === null || examinee.IDCardNo === '' ? '--' : examinee.IDCardNo}</td>
-                </tr>
-              {/each} -->
+                  -->
               {#each registration_list as registration,index}
               <tr>
                  <!-- <td>
@@ -708,7 +704,7 @@ function handleCheckboxChange(examinee, event) {
     <div class="panel-footer">
       
       <button
-        class="btn"
+        class="btn btn--info is-plain"
         onclick={() => {
           show_panel = false;
           search_params.page = 1;
@@ -719,7 +715,7 @@ function handleCheckboxChange(examinee, event) {
       >
 
       <button
-        class="btn save"
+        class="btn btn--primary is-plain"
         onclick={() => {
           confirm_student_list = selected_registration_student_list;
           onConfirm(confirm_student_list);
@@ -883,7 +879,7 @@ function handleCheckboxChange(examinee, event) {
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    margin-left: -5%; //维持组件位置在行左侧对齐
+    margin-left: -2%; //维持组件位置在行左侧对齐
   }
 
   .button-group {
@@ -939,41 +935,41 @@ function handleCheckboxChange(examinee, event) {
     flex-direction: column;
   }
 
-  .btn {
-    min-width: 80px;
-    padding: 7px 18px;
-    border-radius: 5px;
-    border: 1.5px solid #d9d9d9;
-    background: #fff;
-    color: var(--blue);
-    font-size: 15px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s;
+  // .btn {
+  //   min-width: 80px;
+  //   padding: 7px 18px;
+  //   border-radius: 5px;
+  //   border: 1.5px solid #d9d9d9;
+  //   background: #fff;
+  //   color: var(--blue);
+  //   font-size: 15px;
+  //   cursor: pointer;
+  //   font-weight: 500;
+  //   transition: all 0.2s;
 
-    @media (max-width: 768px) {
-      min-width: 70px;
-      padding: 6px 16px;
-      font-size: 14px;
-    }
+  //   @media (max-width: 768px) {
+  //     min-width: 70px;
+  //     padding: 6px 16px;
+  //     font-size: 14px;
+  //   }
 
-    &:hover {
-      background: #f0f6ff;
-    }
-    &.save {
-      background: var(--blue);
-      color: #fff;
-      border-color: var(--blue);
-      &:hover {
-        background: var(--primary-hover);
-        border-color: var(--primary-hover);
-      }
-    }
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  }
+  //   &:hover {
+  //     background: #f0f6ff;
+  //   }
+  //   &.save {
+  //     background: var(--blue);
+  //     color: #fff;
+  //     border-color: var(--blue);
+  //     &:hover {
+  //       background: var(--primary-hover);
+  //       border-color: var(--primary-hover);
+  //     }
+  //   }
+  //   &:disabled {
+  //     opacity: 0.6;
+  //     cursor: not-allowed;
+  //   }
+  // }
 
   .panel-footer {
     display: flex;
