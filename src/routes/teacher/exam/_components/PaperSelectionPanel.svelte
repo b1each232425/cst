@@ -158,7 +158,7 @@
       queryParams.append('tags', search_params.tag);
     }
 
-    const response = await fetch(`/api/paper?${queryParams.toString()}`, {
+    const response = await fetch(`/api/paper?${queryParams.toString()}&published=true`, {
       method: 'GET',
       credentials: 'include',
       headers: {
