@@ -1,25 +1,102 @@
 <script>
   import Title from '$lib/components/Title/Title.svelte';
+  import { formatDateTime } from '../../../../_utils/handleFileInput';
+  import { onMount } from 'svelte';
 
-  // 假数据（模拟后端传递）
-  let detail = {
-    name: '张三',
-    idType: '居民身份证',
-    idNumber: '42011119850212589X',
-    birthDate: '1985-02-12',
-    phone: '189250551453',
-    email: '123478@qq.com',
-    address: '广东省广州市番禺区外环西路230号广州大学大学城校区',
-    gender: '男',
-    applyMethod: '人工导入',
-    subjects: '理论、实操',
-    examType: '正考',
-    applyTime: '2025-08-18 15:46',
-    idCardFront: '',
-    idCardBack: '',
-    reviewer: '王彬',
-    reviewStatus: '未审核',
+  // 考试类型映射
+  const examTypeMap = {
+    '00': '正考',
+    '02': '补考',
   };
+
+  // 报名方式映射
+  const REGISTER_WAY_MAP = {
+    '00': '自报名',
+    '02': '人工导入',
+  };
+
+  // 审核状态映射
+  const statusMap = {
+    '00': '报名中',
+    '02': '待审核',
+    '04': '通过',
+    '06': '不通过',
+    '08': '已迁移',
+  };
+
+  let { data } = $props();
+
+  let person_detail = $state({}); // 基础用户信息
+  let person_enroll_info = $state({}); // 用户报名信息
+
+  let course_text = $state('');
+
+  // 获取用户基础信息
+  function getUserInro() {
+    // 请求获取我的角色信息
+    fetch(`/api/user?page=1&pageSize=10&fuzzyCondition=${data.idCardNo}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        person_detail = data.data[0];
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
+  // 获取用户报名信息
+  function getUserEnrollInfo() {
+    fetch(`/api/registration?page=1&pageSize=10&message=${data.idCardNo}&id=${data.enrollId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((res) => {
+        let raw = res.data.student[0];
+
+        // 转换字段
+        person_enroll_info = {
+          ...raw,
+          detail: {
+            ...raw.detail,
+            Type: REGISTER_WAY_MAP[raw.detail.Type] || raw.detail.Type,
+            ExamType: examTypeMap[raw.detail.ExamType] || raw.detail.ExamType,
+            RegisterTime: raw.detail.RegisterTime ? formatDateTime(new Date(raw.detail.RegisterTime)) : null,
+            Status: statusMap[raw.detail.Status] || raw.detail.Status,
+          },
+        };
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
+  onMount(() => {
+    getUserInro();
+    getUserEnrollInfo();
+
+    // 从 localStorage 读取
+    const savedData = localStorage.getItem('enrollItemData');
+    if (savedData) {
+      const parsed = JSON.parse(savedData);
+      course_text = parsed.courseText;
+    }
+  });
 </script>
 
 <div class="student-detail-container">
@@ -29,30 +106,58 @@
     <div class="info-container">
       <!-- 第一行 -->
       <div class="info-row">
-        <div class="info-item"><span class="label">姓名：</span>{detail.name}</div>
-        <div class="info-item"><span class="label">证件类型：</span>{detail.idType}</div>
-        <div class="info-item"><span class="label">身份证号：</span>{detail.idNumber}</div>
+        <div class="info-item">
+          <span class="label">姓名：</span>{person_detail.OfficialName ? person_detail.OfficialName : '暂无'}
+        </div>
+        <div class="info-item">
+          <span class="label">证件类型：</span>{person_detail.IDCardType ? person_detail.IDCardType : '暂无'}
+        </div>
+        <div class="info-item">
+          <span class="label">身份证号：</span>{person_detail.IDCardNo ? person_detail.IDCardNo : '暂无'}
+        </div>
       </div>
 
       <!-- 第二行 -->
       <div class="info-row">
-        <div class="info-item"><span class="label">出生日期：</span>{detail.birthDate}</div>
-        <div class="info-item"><span class="label">电话：</span>{detail.phone}</div>
-        <div class="info-item"><span class="label">邮箱：</span>{detail.email}</div>
+        <div class="info-item">
+          <span class="label">出生日期：</span>{person_detail.Birthday ? person_detail.Birthday : '暂无'}
+        </div>
+        <div class="info-item">
+          <span class="label">电话：</span>{person_detail.MobilePhone ? person_detail.MobilePhone : '暂无'}
+        </div>
+        <div class="info-item">
+          <span class="label">邮箱：</span>{person_detail.Email ? person_detail.Email : '暂无'}
+        </div>
       </div>
 
       <!-- 第三行（报名方式挪到这里） -->
       <div class="info-row">
-        <div class="info-item"><span class="label">住址：</span>{detail.address}</div>
-        <div class="info-item"><span class="label">性别：</span>{detail.gender}</div>
-        <div class="info-item"><span class="label">报名方式：</span>{detail.applyMethod}</div>
+        <div class="info-item"><span class="label">住址：</span>{person_detail.Addr ? person_detail.Addr : '暂无'}</div>
+        <div class="info-item">
+          <span class="label">性别：</span>{person_detail.Gender ? person_detail.Gender : '暂无'}
+        </div>
+        <div class="info-item">
+          <span class="label">报名方式：</span>{person_enroll_info.detail?.Type
+            ? person_enroll_info.detail.Type
+            : '暂无'}
+        </div>
       </div>
 
       <!-- 第四行 -->
       <div class="info-row">
-        <div class="info-item"><span class="label">考试科目：</span>{detail.subjects}</div>
-        <div class="info-item"><span class="label">考试类型：</span>{detail.examType}</div>
-        <div class="info-item"><span class="label">报名时间：</span>{detail.applyTime}</div>
+        <div class="info-item">
+          <span class="label">考试科目：</span>{course_text ? course_text : '暂无'}
+        </div>
+        <div class="info-item">
+          <span class="label">考试类型：</span>{person_enroll_info.detail?.ExamType
+            ? person_enroll_info.detail.ExamType
+            : '暂无'}
+        </div>
+        <div class="info-item">
+          <span class="label">报名时间：</span>{person_enroll_info.detail?.RegisterTime
+            ? person_enroll_info.detail.RegisterTime
+            : '暂无'}
+        </div>
       </div>
 
       <!-- 第五行 -->
@@ -60,13 +165,13 @@
         <div class="info-item idcard-item">
           <span class="label">身份证人像面：</span>
           <div class="idcard-image">
-            <img src={detail.idCardFront} alt="身份证人像面" />
+            <img src={person_detail.idCardFront} alt="身份证人像面" />
           </div>
         </div>
         <div class="info-item idcard-item">
           <span class="label">身份证国徽面：</span>
           <div class="idcard-image">
-            <img src={detail.idCardBack} alt="身份证国徽面" />
+            <img src={person_detail.idCardBack} alt="身份证国徽面" />
           </div>
         </div>
       </div>
@@ -78,14 +183,16 @@
     <Title title="审核信息" />
     <div class="info-container">
       <div class="info-row">
-        <div class="info-item"><span class="label">审核人：</span>{detail.reviewer}</div>
+        <div class="info-item">
+          <span class="label">审核人：</span>{person_enroll_info.reviewer ? person_enroll_info.reviewer : '暂无'}
+        </div>
         <div class="info-item">
           <span class="label">审核状态：</span><span
-            class="Status-tag {detail.reviewStatus === '通过'
+            class="Status-tag {person_enroll_info.Status === '通过'
               ? 'published'
-              : detail.reviewStatus === '未审核'
+              : person_enroll_info.Status === '未审核'
                 ? 'unpublished'
-                : 'invalidated'}">{detail.reviewStatus}</span
+                : 'invalidated'}">{person_enroll_info.Status ? person_enroll_info.Status : '暂无'}</span
           >
         </div>
       </div>

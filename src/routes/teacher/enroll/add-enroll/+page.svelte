@@ -78,8 +78,8 @@
   }
 
   // 更新选择的试卷
-  function updateTestSelection(data) {
-    practice_data = Array.isArray(data) ? data : [];
+  function updateTestSelection(e) {
+    practice_data = Array.isArray(e.detail) ? e.detail : [];
   }
 
   // 处理选择审核人按钮点击事件
@@ -88,8 +88,8 @@
   }
 
   // 更新选中的审核员
-  function updateAuditSelection(data) {
-    audit_data = Array.isArray(data) ? data : [];
+  function updateAuditSelection(e) {
+    audit_data = Array.isArray(e.detail) ? e.detail : [];
   }
 
   // 处理开始日期变化
@@ -395,11 +395,12 @@
 <!-- 试卷选择弹窗 -->
 <PracticeSelectPanel
   bind:show={show_practice_panel}
-  onTestSelectFunc={updateTestSelection}
+  on:select-practice={updateTestSelection}
   bind:selected_test_id={practice_initial_id}
 />
 
-<AuditSelectPanel bind:show={show_audit_panel} audit_id_list={audit_id_data} onSelectAudit={updateAuditSelection} />
+<!-- 审核员选择弹窗 -->
+<AuditSelectPanel bind:show={show_audit_panel} audit_id_list={audit_id_data} on:select-audit={updateAuditSelection} />
 
 <style>
   .create-plan {

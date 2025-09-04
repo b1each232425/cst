@@ -19,6 +19,7 @@ export const PAPER_ONE = {
     UpdateTime: 1755398401708,  // 更新时间：Unix时间戳
     TotalScore: 36,             // 试卷总分
     QuestionCount: 10,          // 题目数量
+    Status: "00",               // 状态：00-未发布 02-已删除 04-异常 06-已发布
 }
 
 export const PAPER_TWO = {
@@ -33,6 +34,7 @@ export const PAPER_TWO = {
     UpdateTime: 1755398374447,
     TotalScore: 10,
     QuestionCount: 2,
+    Status: "02",               // 状态：00-未发布 02-已删除 04-异常 06-已发布
 }
 
 export const PAPER_THREE = {
@@ -47,4 +49,20 @@ export const PAPER_THREE = {
     UpdateTime: 1755398374447,
     TotalScore: 20,
     QuestionCount: 5,
+    Status: "04",               // 状态：00-未发布 02-已删除 04-异常 06-已发布
+}
+
+export const PAPER_FOUR = {
+    ID: 262,
+    Name: "测试试卷4",
+    AssemblyType: "04",
+    Category: "00",
+    Level: "04",
+    SuggestedDuration: 120,
+    Tags: [],
+    CreateTime: 1755395658022,
+    UpdateTime: 1755398374447,
+    TotalScore: 20,
+    QuestionCount: 5,
+    Status: "06",               // 状态：00-未发布 02-已删除 04-异常 06-已发布
 }

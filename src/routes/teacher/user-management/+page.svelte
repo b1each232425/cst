@@ -80,15 +80,15 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   };
 
   const ROLELABELMAP = {
-    'cst.school^superAdmin': '超级管理员',
-    'cst.school^admin': '普通管理员',
-    'cst.school.academicAffair^admin': '教务员',
-    'cst.school^teacher': '教师',
-    'cst.school^examGrader': '批阅员',
-    'cst.school.examSite^admin': '考点负责人',
-    'cst.school^scoreChecker': '核分员',
-    'cst.school^examSupervisor': '监考员',
-    'cst.school^student': '学生',
+    'assess^superAdmin': '超级管理员',
+    'assess^admin': '普通管理员',
+    'assess.academicAffair^admin': '教务员',
+    'assess^teacher': '教师',
+    'assess^examGrader': '批阅员',
+    'assess.examSite^admin': '考点负责人',
+    'assess^scoreChecker': '核分员',
+    'assess^examSupervisor': '监考员',
+    'assess^student': '学生',
   };
 
   // 角色下拉选项(用于筛选)

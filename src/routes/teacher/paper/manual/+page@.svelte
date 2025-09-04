@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 15:21:42
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-23 17:51:56
+ * @LastEditTime: 2025-09-03 15:31:35
  * @FilePath: \exam\src\routes\teacher\paper\manual\+page@.svelte
  * @Description: 自定义组卷页面
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -118,7 +118,7 @@
             method: "GET",
             credentials: "include"
         })
-            .then(response => {
+        .then(response => {
                 if (!response.ok) {
                     throw new Error(`请求失败，状态码：${response.status}`);
                 }
@@ -145,13 +145,13 @@
             Type: question.type,
             Difficulty: question.difficulty,
             Content: question.content,
-            Tags: question.tags || [],
-            Options: question.options || [],
-            Answers: question.answers || [],
+            Tags: question.tags,
+            Options: question.options,
+            Answers: question.answers,
             Analysis: question.analysis || "",
-            Score: question.score || 0,
-            QuestionAttachmentsPath: question.question_attachments_path || "",
-            BelongTO: question.belong_to || -1
+            Score: question.score,
+            QuestionAttachmentsPath: question.question_attachments_path,
+            BelongTO: question.belong_to
         };
 
         // 调用题库管理的更新接口
@@ -173,11 +173,12 @@
                 if (data.status !== 0){
                     throw new Error(data.msg);  
                 }
+                console.log(data);
                 return data;
             })
             .catch(error => {
                 toast.error(error.message, 1000);
-                console.error('编辑题目出错：', error);
+                console.error('保存编辑题目失败：', error);
                 return null;
             });
     }
@@ -337,16 +338,18 @@
             }
         ];
         savePaper(paperID, ACTIONS)
-            .then(async () => {
-                if(is_saving) {
-                    is_saving = false;
-                    toast.success("试卷内容已保存", 1000);
-                }
-                if(is_exiting) {
-                    is_exiting = false;
-                    await goto("/teacher/paper");
-                    toast.success("试卷内容已保存", 1000);
-                    return;
+            .then(async result1 => {
+                if(result1) {
+                    if(is_saving) {
+                        is_saving = false;
+                        toast.success("试卷内容已保存", 1000);
+                    }
+                    if(is_exiting) {
+                        is_exiting = false;
+                        await goto("/teacher/paper");
+                        toast.success("试卷内容已保存", 1000);
+                        return;
+                    }
                 }
             });
     }
@@ -553,15 +556,19 @@
                 }
 
                 savePaper(paperID, ACTIONS)
-                    .then(() => {
-                        fetchPaper(paperID)
-                        .then(result => {
-                            paper_groups = result.data.GroupsData;
-                            paper_info = result.data;
-                            total_score = paper_info.TotalScore;
-                            question_count = paper_info.QuestionCount;
+                    .then(result1 => {
+                        if(result1) {
                             toast.success("删除成功", 1000);
-                        });
+                            fetchPaper(paperID)
+                                .then(result => {
+                                    if(result) {
+                                        paper_groups = result.data.GroupsData;
+                                        paper_info = result.data;
+                                        total_score = paper_info.TotalScore;
+                                        question_count = paper_info.QuestionCount;
+                                    }
+                                });
+                        }
                     });
             }
         });
@@ -602,26 +609,30 @@
             ];
             
             savePaper(paperID, ACTIONS)
-                .then(result => {
-                    fetchPaper(paperID)
-                        .then(result => {
-                            // 获取旧题组的 ID 数组
-                            const OLD_GROUP_IDS = paper_groups.map(group => group.id);
-                            paper_groups = result.data.GroupsData;
-                            // 获取新题组的 ID 数组
-                            const NEW_GROUP_IDS = result.data.GroupsData.map(group => group.id);
-                            // 获取新题组和旧题组的差集
-                            const ADDED_GROUP_IDS = NEW_GROUP_IDS.filter(id => !OLD_GROUP_IDS.includes(id));
-                            // 将新题组展开
-                            const NEW_GROUP_STATE = { ...get(GROUP_OPEN_STATE) };
-                            ADDED_GROUP_IDS.forEach(id => NEW_GROUP_STATE[id] = true);
-                            GROUP_OPEN_STATE.set(NEW_GROUP_STATE);
-                            
-                            paper_info = result.data;
-                            is_adding_group = false;
-                            to_add_group_name = "";
-                            toast.success("添加成功", 1000);
-                    });
+                .then(result1 => {
+                    if(result1) {
+                        toast.success("添加成功", 1000);
+                        fetchPaper(paperID)
+                            .then(result => {
+                                if(result) {
+                                    // 获取旧题组的 ID 数组
+                                    const OLD_GROUP_IDS = paper_groups.map(group => group.id);
+                                    paper_groups = result.data.GroupsData;
+                                    // 获取新题组的 ID 数组
+                                    const NEW_GROUP_IDS = result.data.GroupsData.map(group => group.id);
+                                    // 获取新题组和旧题组的差集
+                                    const ADDED_GROUP_IDS = NEW_GROUP_IDS.filter(id => !OLD_GROUP_IDS.includes(id));
+                                    // 将新题组展开
+                                    const NEW_GROUP_STATE = { ...get(GROUP_OPEN_STATE) };
+                                    ADDED_GROUP_IDS.forEach(id => NEW_GROUP_STATE[id] = true);
+                                    GROUP_OPEN_STATE.set(NEW_GROUP_STATE);
+                                    
+                                    paper_info = result.data;
+                                    is_adding_group = false;
+                                    to_add_group_name = "";
+                                }
+                        });
+                    }
                 });
         }
     }
@@ -661,16 +672,20 @@
                     }
                 }
             ];
-            
+                
             savePaper(paperID, ACTIONS)
-                .then(() => {
-                    fetchPaper(paperID)
-                        .then(result => {
-                            paper_groups = result.data.GroupsData;
-                            paper_info = result.data;
-                            to_edit_groupID = null;
-                            toast.success("编辑成功", 1000);
-                        });
+                .then(result1 => {
+                    if(result1) {
+                        toast.success("编辑成功", 1000);
+                        fetchPaper(paperID)
+                            .then(result => {
+                                if(result) {
+                                    paper_groups = result.data.GroupsData;
+                                    paper_info = result.data;
+                                    to_edit_groupID = null;
+                                }
+                            });
+                    }
                 });
         }
     }
@@ -715,15 +730,19 @@
                 ];
 
                 savePaper(paperID, ACTIONS)
-                    .then(() => {
-                        fetchPaper(paperID)
-                            .then(result => {
-                                paper_groups = result.data.GroupsData;
-                                paper_info = result.data;
-                                total_score = paper_info.TotalScore;
-                                question_count = paper_info.QuestionCount;
-                                toast.success("删除成功", 1000);
-                            });
+                    .then(result1 => {
+                        if(result1) {
+                        toast.success("删除成功", 1000);
+                            fetchPaper(paperID)
+                                .then(result => {
+                                    if(result) {
+                                        paper_groups = result.data.GroupsData;
+                                        paper_info = result.data;
+                                        total_score = paper_info.TotalScore;
+                                        question_count = paper_info.QuestionCount;
+                                    }
+                                });
+                        }
                     });
             }
         });
@@ -855,14 +874,20 @@
         ];
         
         savePaper(paperID, ACTIONS)
-            .then(() => fetchPaper(paperID))
-            .then((result) => {
-                paper_groups = result.data.GroupsData;
-                paper_info = result.data;
-                total_score = paper_info.TotalScore;
-                question_count = paper_info.QuestionCount;
-                // 移动成功后高亮题组
-                highlightGroup(group.id);
+            .then(result1 => {
+                if(result1) {
+                    fetchPaper(paperID)
+                        .then(result => {
+                            if(result) {
+                                paper_groups = result.data.GroupsData;
+                                paper_info = result.data;
+                                total_score = paper_info.TotalScore;
+                                question_count = paper_info.QuestionCount;
+                                // 移动成功后高亮题组
+                                highlightGroup(group.id);
+                            }
+                        });
+                    }
             });
     }
 
@@ -947,16 +972,20 @@
         ];
 
         savePaper(paperID, ACTIONS)
-            .then(() => {
-                return fetchPaper(paperID);
-            })
-            .then(result => {
-                paper_groups = result.data.GroupsData;
-                paper_info = result.data;
-                total_score = paper_info.TotalScore;
-                question_count = paper_info.QuestionCount;
-                // 移动成功后高亮题目
-                highlightQuestion(question.id);
+            .then(result1 => {
+                if(result1) {
+                    fetchPaper(paperID)
+                        .then(result => {
+                            if(result) {
+                                paper_groups = result.data.GroupsData;
+                                paper_info = result.data;
+                                total_score = paper_info.TotalScore;
+                                question_count = paper_info.QuestionCount;
+                                // 移动成功后高亮题目
+                                highlightQuestion(question.id);
+                            }
+                        });
+                }
             });
     }
 
@@ -1013,19 +1042,23 @@
         }
 
         savePaper(paperID, ACTIONS)
-            .then(() => {
-                return fetchPaper(paperID);
-            })
-            .then(result => {
-                paper_groups = result.data.GroupsData;
-                paper_info = result.data;
-                total_score = paper_info.TotalScore;
-                question_count = result.data.QuestionCount;
-                
-                // 检查题组是否还保持统一的每题分值，如果不一致则清空每题分值输入框
-                const group = paper_groups.find(g => g.id === question.group_id);
-                if (group && !checkGroupScoreConsistency(group)) {
-                    clearGroupAverageScore(group);
+            .then(result1 => {
+                if(result1) {
+                    fetchPaper(paperID)
+                        .then(result => {
+                            if(result) {
+                                paper_groups = result.data.GroupsData;
+                                paper_info = result.data;
+                                total_score = paper_info.TotalScore;
+                                question_count = result.data.QuestionCount;
+                                
+                                // 检查题组是否还保持统一的每题分值，如果不一致则清空每题分值输入框
+                                const group = paper_groups.find(g => g.id === question.group_id);
+                                if (group && !checkGroupScoreConsistency(group)) {
+                                    clearGroupAverageScore(group);
+                                }
+                            }
+                        });
                 }
             });
     }
@@ -1086,13 +1119,10 @@
                 for (let i = 0; i < Math.abs(remainderSteps) && i < subScoreCount; i++) {
                     if (remainderSteps > 0) {
                         sub_score[i] += 0.5;
-                    } else {
-                        sub_score[i] -= 0.5;
                     }
                 }
                 
                 updateData.sub_score = sub_score;
-                
             }
 
             return updateData;
@@ -1106,15 +1136,19 @@
         ];
 
         savePaper(paperID, ACTIONS)
-            .then(() => {
-                return fetchPaper(paperID);
+            .then(result1 => {
+                if(result1) {
+                    fetchPaper(paperID)
+                        .then(result => {
+                            if(result) {
+                                paper_groups = result.data.GroupsData;
+                                paper_info = result.data;
+                                total_score = paper_info.TotalScore;
+                                question_count = paper_info.QuestionCount;
+                            }
+                        });
+                }
             })
-            .then(result => {
-                paper_groups = result.data.GroupsData;
-                paper_info = result.data;
-                total_score = paper_info.TotalScore;
-                question_count = paper_info.QuestionCount;
-            });
     }
 
     // 更新子题分数
@@ -1142,19 +1176,23 @@
         ];
 
         savePaper(paperID, ACTIONS)
-            .then(() => {
-                return fetchPaper(paperID);
-            })
-            .then(result => {
-                paper_groups = result.data.GroupsData;
-                paper_info = result.data;
-                total_score = paper_info.TotalScore;
-                question_count = paper_info.QuestionCount;
-                
-                // 检查题组是否还保持统一的每题分值，如果不一致则清空每题分值输入框
-                const group = paper_groups[groupIndex];
-                if (group && !checkGroupScoreConsistency(group)) {
-                    clearGroupAverageScore(group);
+            .then(result1 => {
+                if(result1) {
+                    fetchPaper(paperID)
+                        .then(result => {
+                            if(result) {
+                                paper_groups = result.data.GroupsData;
+                                paper_info = result.data;
+                                total_score = paper_info.TotalScore;
+                                question_count = paper_info.QuestionCount;
+                                
+                                // 检查题组是否还保持统一的每题分值，如果不一致则清空每题分值输入框
+                                const group = paper_groups[groupIndex];
+                                if (group && !checkGroupScoreConsistency(group)) {
+                                    clearGroupAverageScore(group);
+                                }
+                            }
+                        });
                 }
             });
     }
@@ -1163,48 +1201,63 @@
     function editQuestion(question) {
         fetchQuestion(question)
             .then(result => {
-                const QUESTION = result.data;
+                if(result) {
+                    const QUESTION = result.data;
+    
+                    console.log(QUESTION)
 
-                // 转换数据格式以匹配编辑组件的期望
-                const convertedQuestion = {
-                    id: QUESTION.ID,
-                    content: QUESTION.Content,
-                    type: QUESTION.Type,
-                    options: QUESTION.Options || [],
-                    answers: QUESTION.Answers || [],
-                    analysis: QUESTION.Analysis || "",
-                    difficulty: QUESTION.Difficulty || 1,
-                    tags: QUESTION.Tags || [],
-                    score: QUESTION.Score || 0,
-                    question_attachments_path: QUESTION.QuestionAttachmentsPath || "",
-                    belong_to: question.belong_to || QUESTION.BelongTO || -1
-                };
-                
-                // 使用转换后的数据
-                editing_question = convertedQuestion;
-                is_editing_question = true;
-                
-                switch (question.type) {
-                    case '00': // 单选题
-                        single_select_edit_panel_component.initPanel();
-                        show_single_select_edit_panel = true;
-                        break;
-                    case '02': // 多选题
-                        multiple_select_edit_panel_component.initPanel();
-                        show_multiple_select_edit_panel = true;
-                        break;
-                    case '04': // 判断题
-                        judge_select_edit_panel_component.initPanel();
-                        show_judge_select_edit_panel = true;
-                        break;
-                    case '06': // 填空题
-                        fill_bank_edit_panel_component.initPanel();
-                        show_fill_bank_edit_panel = true;
-                        break;
-                    case '08': // 简答题
-                        short_answer_edit_panel_component.initPanel();
-                        show_short_answer_edit_panel = true;
-                        break;
+                    // 转换数据格式以匹配编辑组件的期望
+                    const convertedQuestion = {
+                        id: QUESTION.ID,
+                        content: QUESTION.Content,
+                        type: QUESTION.Type,
+                        options: QUESTION.Options,
+                        answers: QUESTION.Answers,
+                        analysis: QUESTION.Analysis,
+                        difficulty: QUESTION.Difficulty,
+                        tags: QUESTION.Tags,
+                        score: QUESTION.Score,
+                        question_attachments_path: QUESTION.QuestionAttachmentsPath,
+                        belong_to: QUESTION.BelongTo
+                    };
+
+    
+                    // 使用转换后的数据
+                    editing_question = convertedQuestion;
+                    is_editing_question = true;
+                    
+                    switch (question.type) {
+                        case '00': // 单选题
+                            if (single_select_edit_panel_component) {
+                                single_select_edit_panel_component.initPanel();
+                                show_single_select_edit_panel = true;
+                            }
+                            break;
+                        case '02': // 多选题
+                            if (multiple_select_edit_panel_component) {
+                                multiple_select_edit_panel_component.initPanel();
+                                show_multiple_select_edit_panel = true;
+                            }
+                            break;
+                        case '04': // 判断题
+                            if (judge_select_edit_panel_component) {
+                                judge_select_edit_panel_component.initPanel();
+                                show_judge_select_edit_panel = true;
+                            }
+                            break;
+                        case '06': // 填空题
+                            if (fill_bank_edit_panel_component) {
+                                fill_bank_edit_panel_component.initPanel();
+                                show_fill_bank_edit_panel = true;
+                            }
+                            break;
+                        case '08': // 简答题
+                            if (short_answer_edit_panel_component) {
+                                short_answer_edit_panel_component.initPanel();
+                                show_short_answer_edit_panel = true;
+                            }
+                            break;
+                    }
                 }
             });
     }
@@ -1219,16 +1272,18 @@
 
         // 调用更新题目接口
         updateQuestion(updatedQuestion)
-            .then(() => fetchPaper(paperID))
-            .then((result) => {
-                paper_groups = result.data.GroupsData;
-                paper_info = result.data;
-                total_score = paper_info.TotalScore;
-                question_count = paper_info.QuestionCount;
-                toast.success("题目更新成功", 1000);
-            })
-            .finally(() => {
-                closeAllEditPanels();
+            .then(result1 => {
+                if(result1) {
+                    toast.success("编辑成功", 1000);
+                    closeAllEditPanels();
+                    fetchPaper(paperID)
+                        .then((result) => {
+                            paper_groups = result.data.GroupsData;
+                            paper_info = result.data;
+                            total_score = paper_info.TotalScore;
+                            question_count = paper_info.QuestionCount;
+                        });
+                }
             });
     }
 
@@ -1312,7 +1367,7 @@
 
         const QUESTION_IDS = GROUP_IDS.flatMap(groupId => {
             const group = paper_groups.find(g => g.id === groupId);
-            return group ? group.questions.map(q => q.id) : [];
+            return group.questions.map(q => q.id);
         });
 
         const ACTIONS = [
@@ -1328,16 +1383,22 @@
                 payload: QUESTION_IDS
             });
         }
+
+        const DRAGGED_GROUP_ID = dragged_group.id;
         
         savePaper(paperID, ACTIONS)
-            .then(() => fetchPaper(paperID))
-            .then((result) => {
-                paper_groups = result.data.GroupsData;
-                paper_info = result.data;
-                total_score = paper_info.TotalScore;
-                question_count = paper_info.QuestionCount;
-                // 拖拽移动成功后高亮题组
-                highlightGroup(dragged_group.id);
+            .then(result1 => {
+                fetchPaper(paperID)
+                    .then((result) => {
+                        if(result) {
+                            paper_groups = result.data.GroupsData;
+                            paper_info = result.data;
+                            total_score = paper_info.TotalScore;
+                            question_count = paper_info.QuestionCount;
+                            // 拖拽移动成功后高亮题组
+                            highlightGroup(DRAGGED_GROUP_ID);
+                        }
+                    })
             })
             .finally(() => {
                 handleDragEnd();
@@ -1449,15 +1510,23 @@
         ];
 
         savePaper(paperID, ACTIONS)
-            .then(() => fetchPaper(paperID))
-            .then((result) => {
-                paper_groups = result.data.GroupsData;
-                paper_info = result.data;
-                total_score = paper_info.TotalScore;
-                question_count = paper_info.QuestionCount;
-                
-                // 使用保存的数据进行高亮
-                highlightQuestion(draggedQuestion.id);
+            .then(result1 => {
+                if(result1) {
+                    fetchPaper(paperID)
+                        .then((result) => {
+                            if(result) {
+                                paper_groups = result.data.GroupsData;
+                                paper_info = result.data;
+                                total_score = paper_info.TotalScore;
+                                question_count = paper_info.QuestionCount;
+                                
+                                // 使用保存的数据进行高亮
+                                highlightQuestion(draggedQuestion.id);
+                            }
+                        });
+                }
+            })
+            .finally(() => {
                 handleDragEnd();
             });
     }

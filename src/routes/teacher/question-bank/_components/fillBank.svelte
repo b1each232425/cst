@@ -1020,7 +1020,7 @@ title_editor?.setContent(newContent);
   };
 </script>
 
-<div class="editorContainer {show ? '' : 'hide'}">
+<div class="editorContainer {show ? '' : 'hide'} fillBank">
   <div class="topBar">
 
     <span>{is_new_question ? `新增` : `编辑`}填空题</span>

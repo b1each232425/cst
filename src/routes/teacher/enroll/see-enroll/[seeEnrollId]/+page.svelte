@@ -94,6 +94,8 @@
   let total_items = $state(0); // 数据总数
   let current_page = $state(1); // 当前页数
   let page_size = $state(10); // 当前页面大小
+
+  let status_text = $state('');
   const { data } = $props();
 
   // 查看单个报名计划考生
@@ -212,9 +214,9 @@
   }
 
   // 处理查看人员详情按钮点击事件
-  function handleSeePersonDetail(id) {
+  function handleSeePersonDetail(item) {
     const current_url_path = page.url.pathname;
-    goto(`${current_url_path}/person-detail/${id}`);
+    goto(`${current_url_path}/person-detail/${item.idNumber}`);
   }
 
   // 关闭导入报考人员弹窗
@@ -454,6 +456,13 @@
 
   onMount(() => {
     getEnrollPersonData();
+
+    // 从 localStorage 读取
+    const savedData = localStorage.getItem('enrollItemData');
+    if (savedData) {
+      const parsed = JSON.parse(savedData);
+      status_text = parsed.statusText;
+    }
   });
 </script>
 
@@ -572,18 +581,20 @@
                   >
                 </td>
                 <td>
-                  {#if item.status === '待审核'}
-                    <button class="op-btn" onclick={() => handleSeePersonDetail(item.id)}>查看详情</button>
+                  {#if status_text === '已结束'}
+                    <button class="op-btn" onclick={() => handleSeePersonDetail(item)}>查看详情</button>
+                  {:else if item.status === '待审核'}
+                    <button class="op-btn" onclick={() => handleSeePersonDetail(item)}>查看详情</button>
                     <button class="via-btn" onclick={() => handleApprove(item.id)}>通过</button>
                     <button class="de-btn" onclick={() => openRejectPanel(item.id)}>不通过</button>
                   {:else if item.status === '通过'}
-                    <button class="op-btn" onclick={() => handleSeePersonDetail(item.id)}>查看详情</button>
+                    <button class="op-btn" onclick={() => handleSeePersonDetail(item)}>查看详情</button>
                     <button class="de-btn" onclick={() => handleRevokeApprove(item.id)}>撤销通过</button>
                   {:else if item.status === '不通过'}
-                    <button class="op-btn" onclick={() => handleSeePersonDetail(item.id)}>查看详情</button>
+                    <button class="op-btn" onclick={() => handleSeePersonDetail(item)}>查看详情</button>
                     <button class="de-btn" onclick={() => handleRevokeReject(item.id)}>撤销不通过</button>
                   {:else}
-                    --
+                    <button class="op-btn" onclick={() => handleSeePersonDetail(item)}>查看详情</button>
                   {/if}
                 </td>
               </tr>

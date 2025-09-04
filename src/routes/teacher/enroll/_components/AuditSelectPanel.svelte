@@ -6,8 +6,11 @@
   import Select from '$lib/components/Select/Select.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import AuditImportPanel from './AuditImportPanel.svelte';
+  import { createEventDispatcher } from 'svelte';
 
-  let { audit_id_list = [], show = $bindable(false), onSelectAudit = () => {} } = $props();
+  const dispatch = createEventDispatcher();
+
+  let { audit_id_list = [], show = $bindable(false) } = $props();
 
   let search_text = $state(''); // 查询审核员文本内容
   let show_all_audit = $state(false); // 是否展示所有审查员
@@ -169,13 +172,13 @@
 
   // 处理确定按钮点击事件
   function handleConfirmSelect() {
-    onSelectAudit(audit_list);
+    dispatch('select-audit', audit_list);
     closeModal();
   }
 </script>
 
 {#if show}
-  <div class="modal-overlay" tabindex="0" role="dialog" aria-modal="true">
+  <div class="modal-overlay" tabindex="0" role="dialog" aria-modal="true" data-testid="audit-select-panel">
     <div
       class="modal-content"
       onclick={(e) => e.stopPropagation()}
