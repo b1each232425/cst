@@ -1126,6 +1126,7 @@
         }}
         exam_start_time = {start_time}
         exam_end_time = {end_time}
+        selectedRooms = {exam_rooms}
     ></ExaminationRoomSelectionPanel>
 
     <InvigilatorSelectionPanel

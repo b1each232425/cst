@@ -19,14 +19,12 @@
     show_panel = false,
     onConfirm=(seleted_exam_invigilators) =>{},
     onCancel=()=>{},
+    selectedInvigilators=[],
   }=$props();
   
   let is_selection_mode=$state(false);
 //let invigilator_list = $state([]);
-let invigilator_list = $state([
-  { id: 1, name: '监考员A', exam_site_name: '考点1', capacity: 30, invigilator_count: 2, selected: false },
-  { id: 2, name: '监考员B', exam_site_name: '考点2', capacity: 25, invigilator_count: 1, selected: true },
-]);
+let invigilator_list = $state([]);
   let selected_invigilator_list = $derived(invigilator_list.filter(r => r.selected));
   /** 当前页是否已全部选中 */
   let is_total_selected = $derived(
@@ -47,6 +45,12 @@ let invigilator_list = $state([
   let pagination_params = $state({
     page: 1,
     pageSize: 10
+  });
+
+  $effect(() => {
+    if (show_panel ) {
+      selected_invigilator_list = selectedInvigilators;
+    }
   });
 
   function toggleSelectAll(e) {

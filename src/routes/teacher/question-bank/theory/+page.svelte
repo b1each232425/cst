@@ -29,7 +29,8 @@ o.  )88b 888   .o8  888      888   888   888   888 .
   import { selection} from '../store';
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
   	import Title from '$lib/components/Title/Title.svelte';
-import '$lib/components/Input/index.scss';
+import '$lib/components/Input/index.scss'
+import {deepCopy} from '../utils/utils'
   import { Value } from 'sass';
   /**
    * @typedef BankCardItemData
@@ -333,7 +334,7 @@ import '$lib/components/Input/index.scss';
     let bank_index = bank_list.findIndex((bank) => bank.ID === item.ID);
 
    
-    let origin_item =origin_bank_list[bank_index];
+    let origin_item =deepCopy(origin_bank_list[bank_index]);
 
    
 
