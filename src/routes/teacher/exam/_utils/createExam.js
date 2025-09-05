@@ -154,8 +154,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
 );
     const valid_examinee = exam_examinee.filter(
   e => (e.student && e.student.ID != null) || (e.ID && e.ID !=null)
-);
-  console.log("invalide",invalid_examinee);
+)
     //导入新学生
     if (invalid_examinee.length > 0)
     {
@@ -203,7 +202,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
         examSessions: examSessionsdata,
         examinee: exam_examinee.map(e => ({
           id: e.student?.ID ?? e.ID,
-          exam_plan_student_id: (e.student &&e.detail.StudentID)!=null ? e.detail.StudentID :0
+          exam_plan_student_id: (e.student &&e.detail.ID)!=null ? e.detail.ID :0
         })), // 用户选中的考生 id 数组
         invigilators: invigilators.map((i) => i.ID), // 监考员 id 数组
         examRooms: exam_rooms.map((r) => ({
@@ -214,7 +213,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
       },
     };
 
-    console.log('exam_data', exam_data);
+    //console.log('exam_data', exam_data);
    // console.log('paperconfig',paper_configs);
     fetch('/api/exam', {
       method: 'PUT',

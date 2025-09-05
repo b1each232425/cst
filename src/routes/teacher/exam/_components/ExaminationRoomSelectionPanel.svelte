@@ -58,10 +58,13 @@
   let name_filter = $state("");
 
   $effect(() => {
-    if (show_panel ) {
-      selected_room_list = selectedRooms;
-    }
-  });
+  if (show_panel && selectedRooms.length > 0) {
+    // 将监考员数量保存到映射中
+    selectedRooms.forEach(room => {
+      invigilatorCountMap.set(room.id, room.invigilator_count ?? 1);
+    });
+  }
+});
 
   function toggleSelectAll(e) {
   const checked = e.target.checked;
@@ -92,7 +95,7 @@
     if (search_params.filter && Object.keys(search_params.filter).length > 0) {
       query_params.append('filter', JSON.stringify(search_params.filter));
     }
-    console.log(query_params.toString());
+    //console.log(query_params.toString());
     const q = {
                 page: search_params.page,
                 pageSize: search_params.pageSize,
@@ -109,7 +112,6 @@
       })
       .then((response)=>response.json())
       .then((result => {
-        console.log(result);
         if(result.status === 0)
         {
           const selectedIds = new Set(
@@ -117,7 +119,7 @@
           );
           exam_room_list = result.data.map(r => ({
           ...r,
-          selected: selectedIds.has(r.id), // 如果你用 selected 控制勾选
+          selected: selectedIds.has(r.id) || selectedRooms.some(selected => selected.id === r.id),
           invigilator_count: invigilatorCountMap.get(r.id) ?? r.invigilator_count ?? 1
           })
         );
@@ -150,7 +152,7 @@
     name_filter=value;
   }
   onMount(async()=>{
-    
+    await fetchExamRooms();
   })
 </script>
 
@@ -363,7 +365,6 @@
                     show_panel = false;
                     is_selection_mode = false;
                     onConfirm(selected_room_list);
-                    console.log(selected_room_list);
                 }}>确定</button>
         </div>
     </div>
