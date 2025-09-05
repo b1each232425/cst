@@ -2,38 +2,36 @@
   import { goto } from '$app/navigation';
   import { toast } from '$lib/components/Toast/Toast';
 
-  let email = $state(''); // 邮箱
-  let password = $state(''); /// 密码
-  let confirm_password = $state(''); // 二次确认密码
-  let code = $state(''); // 验证码
+  let email = $state('');
+  let password = $state('');
+  let confirm_password = $state('');
+  let code = $state('');
 
-  let password_hidden = $state(true); // 默认隐藏
-  let confirm_password_hidden = $state(true); // 默认隐藏
+  let password_hidden = $state(true);
+  let confirm_password_hidden = $state(true);
 
-  // 错误信息
   let email_error = $state('');
   let password_error = $state('');
   let confirm_password_error = $state('');
   let code_error = $state('');
 
-  // 处理返回登录页面按钮点击事件
+  // 倒计时状态
+  let countdown = $state(0);
+  let timer = null;
+
   function handleReturn() {
     goto('/login');
   }
 
-  // 处理获取验证码按钮点击事件
   function handleGetCode() {
-    // 请求获取验证码信息
+    if (countdown > 0) return; // 已在倒计时中，禁止重复点击
+
     fetch(`/api/user/verification-code/email?recipient=${email}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     })
       .then((response) => {
-        if (!response.ok) {
-          throw new Error('网络错误');
-        }
+        if (!response.ok) throw new Error('网络错误');
         return response.json();
       })
       .then((res) => {
@@ -41,6 +39,7 @@
           toast.error('获取验证码失败，请检查邮箱是否正确');
         } else {
           toast.success('获取验证码成功，请及时查看');
+          startCountdown(); // 成功后开始倒计时
         }
       })
       .catch((e) => {
@@ -49,7 +48,17 @@
       });
   }
 
-  // 处理注册按钮点击事件
+  function startCountdown() {
+    countdown = 60;
+    timer = setInterval(() => {
+      countdown -= 1;
+      if (countdown <= 0) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }, 1000);
+  }
+
   async function handleRegister() {
     // 清空错误
     email_error = '';
@@ -57,42 +66,24 @@
     confirm_password_error = '';
     code_error = '';
 
-    // 前端校验
     if (!email) email_error = '请输入邮箱';
-
     if (!password) password_error = '请输入密码';
-
     if (!confirm_password) confirm_password_error = '请再次输入密码';
-
     if (!code) code_error = '请输入验证码';
-
     if (password && confirm_password && password !== confirm_password) {
-      password_error = '两次输入的密码不一致';
-      confirm_password_error = '两次输入的密码不一致';
+      password_error = confirm_password_error = '两次输入的密码不一致';
     }
+    if (email_error || password_error || confirm_password_error || code_error) return;
 
-    // 如果有错误就返回
-    if (email_error || password_error || confirm_password_error || code_error) {
-      return;
-    }
-
-    // 发送注册请求
     fetch(`/api/user/register/email?verification-code=${code}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        Data: {
-          Email: email,
-          UserToken: password,
-        },
+        Data: { Email: email, UserToken: password },
       }),
     })
       .then((response) => {
-        if (!response.ok) {
-          throw new Error('网络错误');
-        }
+        if (!response.ok) throw new Error('网络错误');
         return response.json();
       })
       .then((res) => {
@@ -205,7 +196,13 @@
                 placeholder="请输入验证码"
                 class="form-input"
               />
-              <button type="button" class="code-btn" onclick={handleGetCode}>获取验证码</button>
+              <button type="button" class="code-btn" onclick={handleGetCode} disabled={countdown > 0}>
+                {#if countdown > 0}
+                  重新获取({countdown}s)
+                {:else}
+                  获取验证码
+                {/if}
+              </button>
             </div>
             <div class="error-text">{code_error}</div>
           </div>
@@ -383,11 +380,6 @@
 
   .code-btn:disabled {
     color: #ccc;
-    cursor: not-allowed;
-  }
-
-  .code-btn:disabled {
-    background: #ccc;
     cursor: not-allowed;
   }
 

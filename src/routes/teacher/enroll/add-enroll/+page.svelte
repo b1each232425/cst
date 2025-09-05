@@ -8,6 +8,7 @@
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
   import { goto } from '$app/navigation';
+  import { toast } from '$lib/components/Toast/Toast';
 
   let plan_name = $state(''); // 计划名称
   let people_limit = $state('unlimited'); // 是否限制报名人数
@@ -124,7 +125,11 @@
         return response.json();
       })
       .then((data) => {
-        console.log(data);
+        if (data.status !== 0) {
+          toast.error('添加失败，请重试');
+        } else {
+          goto('/teacher/enroll');
+        }
       })
       .catch((e) => {
         console.log(e);
@@ -158,7 +163,6 @@
       !errors.practice
     ) {
       addEnrollReq();
-      goto('/teacher/enroll');
     }
   }
 
