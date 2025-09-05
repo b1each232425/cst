@@ -452,7 +452,7 @@
     };
 </script>
 
-<div class="editorContainer {show ? '' : 'hide'}">
+<div class="editorContainer {show ? '' : 'hide'} judgePage">
     <div class="topBar">
         <span>{is_new_question ? `新增` : `编辑`}判断题</span>
 

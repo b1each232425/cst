@@ -87,6 +87,7 @@
   let jobs = $state(new Map());
   let uploadedFiles = $state([]);
   let selectedFiles = $state();
+  let invigilator_ID = $state();
 	let clearSelectedFiles = () => {
 		selectedFiles = new DataTransfer().files;
 	};
@@ -310,8 +311,8 @@
     paper_configs = [...paper_configs, default_paper_config];
     if(paper_configs.length>=1) {updateDuration(paper_configs.length-1,paper_configs);}
     // 清空考场选择
-    // exam_rooms = [];
-    // invigilators = [];
+    exam_rooms = [];
+    invigilators = [];
   }
 
   function resetTime(index) {
@@ -700,13 +701,18 @@ function getSelectedPaperIDs(excludeIndex = -1) {
             if(data.status === 0)
             {
                 const examData = data.data;
+                console.log("examData",examData);
                 exam_name = examData.examInfo.Name;
                 exam_rules = examData.examInfo.Rules;
                 exam_type = examData.examInfo.Type;
                 exam_method = examData.examInfo.Mode;
-                examinee_ID = examData.examinee||[];
+                examinee_ID = examData.examinee || [];
+                invigilator_ID = examData.invigilators || [];
                 uploadedFileList = examData.files || [];
-                exam_rooms = examData.examRooms || [];
+                exam_rooms = (examData.examRooms || []).map(({roomID,...rest})=>({
+                  id:roomID,
+                  ...rest
+                }));
                 invigilators = examData.invigilators || [];
                 // invigilators = examData.invigilators.map(i => ({ id: i }));
                 paper_configs = examData.examSessions.map((s, idx) => {
@@ -747,13 +753,15 @@ function getSelectedPaperIDs(excludeIndex = -1) {
           loading=false;
           checkShuffledMode();
           fetchSelectedStudents();
+          //fetchSelectedInvigilators();
         })
     }
-
-  async function fetchSelectedStudents() {
-     const query = encodeURIComponent(JSON.stringify({
+  
+  async function fetchSelectedInvigilators(){
+    const query = encodeURIComponent(JSON.stringify({
     data: {
-      IDs: examinee_ID, // 必须是数组，例如 [123, 456, 789]
+      Type:"00",
+      UserIDs: invigilator_ID, // 必须是数组，例如 [123, 456, 789]
     },
   }));
     fetch(`/api/exam/user?q=${query}`,
@@ -766,7 +774,46 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         })
         .then((response) => response.json())
         .then((data)=>{
-           exam_examinee=data.data;
+           invigilators=data.map((invigilator,index)=>{
+              return{
+                ID:invigilator.id,
+                OfficialName:invigilator.name,
+                MobilePhone:invigilator.mobile_phone,
+                IDCardNo:invigilator.id_card_no,
+                Gender:invigilator.gender
+              }
+           });
+           console.log("invi",invigilators);
+        })
+  }
+
+  async function fetchSelectedStudents() {
+     const query = encodeURIComponent(JSON.stringify({
+    data: {
+      Type:"02",
+      // UserIDs: examinee_ID, // 必须是数组，例如 [123, 456, 789]
+      Examinees:examinee_ID
+    },
+  }));
+    fetch(`/api/exam/user?q=${query}`,
+      {
+        method:"GET",
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+          },
+        })
+        .then((response) => response.json())
+        .then((data)=>{
+           exam_examinee=data.data.map((examinee,index)=>{
+              return{
+                ID:examinee.id,
+                OfficialName:examinee.name,
+                MobilePhone:examinee.mobile_phone,
+                IDCardNo:examinee.id_card_no,
+                Gender:examinee.gender
+              }
+           });
         })
       }
   
@@ -777,7 +824,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
          tus= await import('tus-js-client');
         tusInit();
         queryFiles();
-         await fetchExamInfo();
+        await fetchExamInfo();
     })
 
 
@@ -1392,6 +1439,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         }}
         exam_start_time = {start_time}
         exam_end_time = {end_time}
+        selectedRooms = {exam_rooms}
     ></ExaminationRoomSelectionPanel>
 
     <InvigilatorSelectionPanel
@@ -1403,6 +1451,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
       onCancel={() => {
         show_invigilator_panel = false;
       }}
+      selectedInivigilators={invigilators}
     ></InvigilatorSelectionPanel>
 
   </div>

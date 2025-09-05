@@ -20,15 +20,20 @@
     onConfirm=(seleted_exam_rooms) =>{},
     onCancel=()=>{},
     exam_start_time = new Date(),
-    exam_end_time = new Date()
+    exam_end_time = new Date(),
+    selectedRooms = [] //打开面板时已选考场
   }=$props();
   
   let is_selection_mode=$state(false);
-//let exam_room_list = $state([]);
-let exam_room_list = $state([
-  { id: 1, name: '考场A', exam_site_name: '考点1', capacity: 30, invigilators_count: 2, selected: false },
-  { id: 2, name: '考场B', exam_site_name: '考点2', capacity: 25, invigilators_count: 1, selected: true },
-]);
+  let exam_room_list = $state([]);
+  let invigilatorCountMap = new Map(); // key: room.id, value: invigilator_count
+  let filter_room_list = $derived(
+  is_selection_mode
+    ? selected_room_list            // 选择模式不前端过滤（走后端）
+    : selected_room_list.filter(r =>
+        !name_filter_view || r.name.toLowerCase().includes(name_filter_view.toLowerCase())
+      )
+);
   let selected_room_list = $derived(exam_room_list.filter(r => r.selected));
   /** 当前页是否已全部选中 */
   let is_total_selected = $derived(
@@ -39,23 +44,30 @@ let exam_room_list = $state([
   let search_params = $state({
     page: 1,
     pageSize: 10,
-    orderBy:[{ "roomCount": "DESC"}],
-    data:{},
-    filter:{},
+    orderBy:[{ "capacity": "DESC"}],
+    data:{"examSiteID":'35'},
+    filter:{"name":""},
   });
-
+//""available":true,"startTime":exam_start_time.getTime(),"endTime":exam_end_time.getTime(),
   let pagination_params = $state({
     page: 1,
     pageSize: 10
   });
 
   let name_search_timer = null;
+  let name_filter = $state("");
+
+  $effect(() => {
+    if (show_panel ) {
+      selected_room_list = selectedRooms;
+    }
+  });
 
   function toggleSelectAll(e) {
   const checked = e.target.checked;
   exam_room_list.forEach(r => (r.selected = checked));
   }
-
+  let name_filter_view = $state("");   // 仅查看模式用
   function handleCheckBoxChange(room,event){
     if (event.target.type === 'checkbox') return;
     room.selected = !room.selected;
@@ -65,18 +77,30 @@ let exam_room_list = $state([
     const query_params = new URLSearchParams();
     query_params.append('page', search_params.page.toString());
     query_params.append('pageSize', search_params.pageSize.toString());
-    
+    query_params.append('data',JSON.stringify(search_params.data)); 
     // 添加 orderBy 参数（JSON 格式）
     if (search_params.orderBy && search_params.orderBy.length > 0) {
       query_params.append('orderBy', JSON.stringify(search_params.orderBy));
     }
-    
+     search_params.filter = {
+    ...search_params.filter,
+    startTime: exam_start_time?.getTime?.() ?? 0,
+    endTime: exam_end_time?.getTime?.() ?? 0
+  };
+
     // 添加 filter 参数（JSON 格式）
     if (search_params.filter && Object.keys(search_params.filter).length > 0) {
       query_params.append('filter', JSON.stringify(search_params.filter));
     }
     console.log(query_params.toString());
-    fetch(`/api/exam-room/list?${query_params}`,{
+    const q = {
+                page: search_params.page,
+                pageSize: search_params.pageSize,
+                orderBy: [{ capacity: "DESC" }],
+                data: { examSiteID: 0 },
+                filter: search_params.filter
+            };
+    fetch(`/api/exam-room/list?q=${encodeURIComponent(JSON.stringify(q))}`,{
       method:'GET',
       credentials: 'include',
       headers: {
@@ -88,8 +112,16 @@ let exam_room_list = $state([
         console.log(result);
         if(result.status === 0)
         {
-          exam_room_list = result.data;
-        }
+          const selectedIds = new Set(
+            exam_room_list.filter(r => r.selected).map(r => r.id)
+          );
+          exam_room_list = result.data.map(r => ({
+          ...r,
+          selected: selectedIds.has(r.id), // 如果你用 selected 控制勾选
+          invigilator_count: invigilatorCountMap.get(r.id) ?? r.invigilator_count ?? 1
+          })
+        );
+      }
         else{
           toast.error("获取列表失败"+result.msg);
           console.log("获取失败:",result.msg);
@@ -114,8 +146,11 @@ let exam_room_list = $state([
     }, 300);
   }
 
+  function filterRoomName(value){
+    name_filter=value;
+  }
   onMount(async()=>{
-    await fetchExamRooms();
+    
   })
 </script>
 
@@ -150,18 +185,38 @@ let exam_room_list = $state([
         <!-- 查看选择后的列表 -->
         <div class="selected-exam-room-container">
           <div class="action-container">
-            <div class="exam-room-search-container">
+            <div class="exam-room-search-container {!is_selection_mode?' ':'hideButton'}">
               <InputBox
               label={'搜索考场'} 
-              placeholder={'请输入考场或考点名'}
-              onInput={searchRoomName}
+              placeholder={'请输入考场名'}
+              
+              bind:value={name_filter_view}
               clearable={true}
               >
             </InputBox>
 
             </div>
+
+            <div class="exam-room-search-container {is_selection_mode?' ':'hideButton'}">
+              <InputBox
+              label={'搜索考场'} 
+              placeholder={'请输入考场名'}
+              clearable={true}
+              onInput={searchRoomName}
+              >
+            </InputBox>
+
+            </div>
             <div class="button-group">
-                <button class="{is_selection_mode ? 'btn btn--info' : 'btn btn--primary'} " onclick={()=>is_selection_mode=!is_selection_mode}>{is_selection_mode ? '返回考场列表' : '添加考场'}</button>
+                <button class="{is_selection_mode ? 'btn btn--info' : 'btn btn--primary'} " 
+                onclick={()=>{
+                  is_selection_mode=!is_selection_mode
+                  if(is_selection_mode)
+                  {
+                    fetchExamRooms();
+                  }
+                  }}>
+                {is_selection_mode ? '返回考场列表' : '添加考场'}</button>
             </div>
           </div>
 
@@ -172,18 +227,36 @@ let exam_room_list = $state([
               <thead class="exam-room-table-head">
                 <tr class="table-head-row">
                   <th>考场</th>
-                  <th>所属考点</th>
+                  <!-- <th>所属考点</th> -->
                   <th>考场容量</th>
                   <th>监考员数量</th>
                 </tr>
               </thead>
               <tbody>
-                {#each selected_room_list as selected_room, index}
+                {#each filter_room_list as selected_room, index}
                   <tr class="exam_room">
                     <td>{selected_room.name}</td>
-                    <td>{selected_room.exam_site_name}</td>
+                    <!-- <td>{selected_room.exam_site_name}</td> -->
                     <td>{selected_room.capacity}</td>
-                    <td>{selected_room.invigilator_count || "--"}</td>
+                    <td>
+              <input
+                type="number"
+                min="0"
+                bind:value={selected_room.invigilator_count}
+                oninput={(e) => {
+                  const val = Number(e.target.value);
+                  selected_room.invigilator_count = isNaN(val) ? 1 : val;
+                  invigilatorCountMap.set(selected_room.id, selected_room.invigilator_count);
+                }}
+                style="
+                  width: 60px;
+                  text-align: center;
+                  border: 1px solid #ccc;
+                  border-radius: 4px;
+                  padding: 2px;
+                "
+              />
+            </td>
                   </tr>
                   {/each}
               </tbody>
@@ -208,7 +281,7 @@ let exam_room_list = $state([
                     checked={is_total_selected}
                   /></th>
                   <th>考场</th>
-                  <th>所属考点</th>
+                  <!-- <th>所属考点</th> -->
                   <th>考场容量</th>
                   <th>监考员数量</th>
                 </tr>
@@ -226,7 +299,7 @@ let exam_room_list = $state([
                         />
                     </td>
                     <td>{room.name}</td>
-                    <td>{room.exam_site_name}</td>
+                    <!-- <td>{room.exam_site_name}</td> -->
                     <td>{room.capacity}</td>
                     <td>{room.invigilator_count || "--"}</td>
                   </tr>
@@ -290,6 +363,7 @@ let exam_room_list = $state([
                     show_panel = false;
                     is_selection_mode = false;
                     onConfirm(selected_room_list);
+                    console.log(selected_room_list);
                 }}>确定</button>
         </div>
     </div>

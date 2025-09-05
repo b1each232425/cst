@@ -19,32 +19,38 @@
     show_panel = false,
     onConfirm=(seleted_exam_invigilators) =>{},
     onCancel=()=>{},
+    selectedInvigilators=[],
   }=$props();
   
   let is_selection_mode=$state(false);
 //let invigilator_list = $state([]);
-let invigilator_list = $state([
-  { id: 1, name: '监考员A', exam_site_name: '考点1', capacity: 30, invigilator_count: 2, selected: false },
-  { id: 2, name: '监考员B', exam_site_name: '考点2', capacity: 25, invigilator_count: 1, selected: true },
-]);
+let invigilator_list = $state([]);
   let selected_invigilator_list = $derived(invigilator_list.filter(r => r.selected));
   /** 当前页是否已全部选中 */
   let is_total_selected = $derived(
   invigilator_list.length > 0 &&
   invigilator_list.every(r => r.selected)
-    );
+);
   //搜索参数
   let search_params = $state({
     page: 1,
     pageSize: 10,
     orderBy:[{ "capacity": "DESC"}],
     data:{},
-    filter:{}
+    filter:{},
+    fuzzyCondition:''
   });
 
+  let fuzzyCondition =$state();
   let pagination_params = $state({
     page: 1,
     pageSize: 10
+  });
+
+  $effect(() => {
+    if (show_panel ) {
+      selected_invigilator_list = selectedInvigilators;
+    }
   });
 
   function toggleSelectAll(e) {
@@ -61,9 +67,10 @@ let invigilator_list = $state([
     const query_params = new URLSearchParams({
       page: search_params.page.toString(),
       pageSize: search_params.pageSize.toString(),
-      domain:'assess^examSupervisor'
+      domain:'assess^examSupervisor',
+      fuzzyCondition:search_params.fuzzyCondition
     }).toString();
-    fetch(`/api/user?${query_params}`,{
+    fetch(`/api/user?${query_params}`,{ 
       method:'GET',
       credentials: 'include',
       headers: {
@@ -87,6 +94,11 @@ let invigilator_list = $state([
       })
   }
 
+  async function searchInvigilators(value){
+    search_params.fuzzyCondition = value;
+    search_params.page = 1; 
+    fetchExaminvigilators();
+  }
   onMount(async()=>{
     await fetchExaminvigilators();
   })
@@ -115,6 +127,7 @@ let invigilator_list = $state([
               <InputBox
               label={'搜索监考员'} 
               placeholder={'请输入手机号或姓名'}
+              onInput={searchInvigilators}
               
               clearable={true}
               >
@@ -141,7 +154,7 @@ let invigilator_list = $state([
               <tbody>
                 {#each selected_invigilator_list as selected_invigilator, index}
                   <tr class="exam_invigilator">
-                    <td>{selected_invigilator.MobilePhone}</td>
+                    <td>{selected_invigilator.MobilePhone || "--"}</td>
                     <td>{selected_invigilator.Account}</td>
                     <td>{selected_invigilator.OfficialName}</td>
                     <td>{selected_invigilator.Gender || "--"}</td>
@@ -186,7 +199,7 @@ let invigilator_list = $state([
                         checked={invigilator.selected}
                         />
                     </td>
-                    <td>{invigilator.MobilePhone}</td>
+                    <td>{invigilator.MobilePhone || "--"}</td>
                     <td>{invigilator.Account}</td>
                     <td>{invigilator.OfficialName}</td>
                     <td>{invigilator.Gender || "--"}</td>

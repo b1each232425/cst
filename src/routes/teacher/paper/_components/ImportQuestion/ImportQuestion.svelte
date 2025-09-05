@@ -162,8 +162,10 @@
                 question_types,
                 question_difficulties
             ).then( result => {
-                question_list = result.data || [];
-                total_questions = result.rowCount;
+                if(result) {
+                    question_list = result.data || [];
+                    total_questions = result.rowCount;
+                }
             });
 
             // 获取题库的标签
@@ -336,11 +338,13 @@
             .then(() => {
                 fetchPaper(paperID)
                     .then(result => {
-                        paper_info = result.data;
-                        paper_groups = result.data.GroupsData;
-                        update(paper_groups, paper_info);
-                        onclose();
-                        toast.success("导入成功", 1000);
+                        if(result){
+                            paper_info = result.data;
+                            paper_groups = result.data.GroupsData;
+                            update(paper_groups, paper_info);
+                            onclose();
+                            toast.success("导入成功", 1000);
+                        }
                     });
             });
     }
@@ -503,12 +507,14 @@
         paperID = get(CURRENT_PAPER_ID);
         fetchPaper(paperID)
             .then(result => {
-                paper_info = result.data;
-                paper_groups = result.data.GroupsData;
-
-                existing_question_ids = paper_groups.flatMap(group => 
-                group.questions.map(question => question.bank_question_id)
-            ).filter(Boolean);
+                if(result) {
+                    paper_info = result.data;
+                    paper_groups = result.data.GroupsData;
+    
+                    existing_question_ids = paper_groups.flatMap(group => 
+                    group.questions.map(question => question.bank_question_id)
+                    ).filter(Boolean);
+                }
         });
     })
 

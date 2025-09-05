@@ -99,7 +99,7 @@ describe('学生端 Layout 组件测试', () => {
       await fireEvent.click(screen.getByRole('button', { name: '退出登录' }));
       expect(MessageBox).toHaveBeenCalledWith({
         title: '确认操作',
-        content: '你确定要执行这个操作吗？',
+        content: '你确定要退出登录吗？',
         onConfirm: expect.any(Function),
       });
     });

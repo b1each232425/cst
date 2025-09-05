@@ -1,4 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
+import { tick } from 'svelte';
+import userEvent from '@testing-library/user-event';
 import {fireEvent, render, screen, waitFor} from '@testing-library/svelte';
 import bankPage from  '../+page.svelte'
 import { goto } from '$app/navigation';
@@ -11,10 +13,7 @@ vi.mock('$app/navigation', () => ({
   invalidate: vi.fn(),
 }));
 
-// Mock element.animate for JSDOM
-if (!HTMLElement.prototype.animate) {
-  HTMLElement.prototype.animate = function () { return { finished: Promise.resolve(), cancel: () => {} }; };
-}
+
 
 
 //题库管理页面单元测试
@@ -582,6 +581,7 @@ const disbtn1=disbtn[disbtn.length - 1];
 const button = screen.getAllByRole('button', { name: '确定' });
 const confirmBtn = button[button.length - 1]; // 获取最后一个“确定”按钮
 expect(confirmBtn).toBeInTheDocument();
+  await fireEvent.click(confirmBtn);
 
 
 });
@@ -615,68 +615,110 @@ it('选中题库与取消选中测试', async () => {
 
 
 it('题库名字修改', async () => {
- // mock fetch 返回一个题库
+  const user = userEvent.setup();
+  // Mock fetch
   global.fetch = vi.fn().mockResolvedValue({
     ok: true,
     json: async () => ({
       status: 0,
       msg: "success",
       rowCount: 1,
-      data: [
-        { ID: 101, Name: "题库X", Tags: [], CreateTime: "", UpdateTime: "" }
-      ]
-    }),
-  });
-
-  await render(bankPage);
-  expect(await screen.findByText('题库X')).toBeInTheDocument();
-    const input = document.querySelector('.bank-name-input');
-    
-    // 初始 title 应该是 bank_name 的初始值
-    expect(input).toHaveAttribute('title', '题库X');
-
-  await fireEvent.change(input, { target: { value: '新题库名称' } });
- await fireEvent.input(input); 
-  // 5. 验证修改后的状态
-  expect(input).toHaveValue('新题库名称');
-    expect(input).toHaveAttribute('title', '新题库名称');
-
-      await fireEvent.change(input, { target: { value: '' } });
- await fireEvent.input(input); 
-});
-
-it('题库标签调用', async () => {
-  // mock fetch 返回一个题库
-  global.fetch = vi.fn().mockResolvedValue({
-    ok: true,
-    json: async () => ({
-      status: 0,
-      msg: "success",
-      rowCount: 1,
-      data: [
-        { ID: 101, Name: "题库X", Tags: ["1"], CreateTime: "", UpdateTime: "" }
-      ]
+      data: [{ ID: 101, Name: "题库X" }]
     }),
   });
  
   await render(bankPage);
+  const input = await screen.findByPlaceholderText('在此输入题库名称'); // 改用 screen 方法
+ 
+  // 1. 检查初始状态
+  expect(input).toHaveValue('题库X');
+  expect(input).toHaveAttribute('title', '题库X');
+ 
+  // 2. 修改题库名称
+  fireEvent.input(input, { target: { value: '新题库名称' } });
+  await tick(); // 等待 Svelte 更新
+  expect(input).toHaveValue('新题库名称');
+ 
+  // 3. 触发“放弃修改”按钮显示
+const bankCard =  document.querySelector('.bank-normal-card');
+  fireEvent.mouseOver(bankCard);
+  const discardButton = await screen.findByText('放弃修改'); // 确保按钮出现
+   const emptyInputs = screen.getAllByPlaceholderText('+标签');
+  const newTagInput = emptyInputs[0]; // 取最后一个空输入框
 
-  expect(await screen.findByText('题库X')).toBeInTheDocument();
-  // 找到添加标签的输入框（通常是第一个没有内容的标签输入框）
-  const tagInputs = await screen.findAllByPlaceholderText('+标签'); // 改用 findAllBy 等待所有匹配元素
-  const newTagInput = tagInputs[0];
+  // 添加新标签
+  await user.type(newTagInput, '新标签');
+  await user.keyboard('{Enter}');
+ 
 
-  await fireEvent.input(newTagInput, { target: { value: "新标签" } });
-  await fireEvent.blur(newTagInput);
-  const secondTagInput = tagInputs[1];
-expect(secondTagInput).toHaveValue("1");
-await fireEvent.input(secondTagInput, { target: { value: "12" } });
- const disbtn=await screen.findAllByText('放弃修改'); 
-await fireEvent.click(disbtn[0]);
+  expect(await screen.findByTitle('新标签')).toBeInTheDocument();
+ 
 
+  const updatedInputs = screen.getAllByPlaceholderText('+标签');
+  const newTagElement = updatedInputs.find(input => input.value === '新标签');
+  expect(newTagElement).toBeInTheDocument();
+  // 4. 点击“放弃修改”，验证按钮消失
+  fireEvent.click(discardButton);
+    await tick();
+
+ 
+  fireEvent.mouseLeave(bankCard); // 触发鼠标移入以显示按钮
+  await tick();
+ expect(screen.queryByText('题库X')).toBeInTheDocument();
 });
 
+it('题库标签调用', async () => {
+  const user = userEvent.setup();
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      status: 0,
+      msg: "success",
+      rowCount: 1,
+      data: [{ ID: 101, Name: "题库X", Tags: ["1"], CreateTime: "", UpdateTime: "" }]
+    }),
+  });
+ 
+  await render(bankPage);
+  expect(await screen.findByText('题库X')).toBeInTheDocument();
+ 
+  // 方法1：通过title属性查找标签输入框（更可靠）
+  const tagInputs = screen.getAllByTitle('1'); // 先获取现有标签
+  expect(tagInputs.length).toBe(1); // 初始应该只有1个标签
+ 
+  // 找到空的标签输入框（通过placeholder）
+  const emptyInputs = screen.getAllByPlaceholderText('+标签');
+  const newTagInput = emptyInputs[0]; // 取最后一个空输入框
 
+  // 添加新标签
+  await user.type(newTagInput, '新标签');
+  await user.keyboard('{Enter}');
+ 
+
+  expect(await screen.findByTitle('新标签')).toBeInTheDocument();
+ 
+
+  const updatedInputs = screen.getAllByPlaceholderText('+标签');
+  const newTagElement = updatedInputs.find(input => input.value === '新标签');
+  expect(newTagElement).toBeInTheDocument();
+ 
+  // 编辑现有标签
+  const existingTagInput = screen.getByDisplayValue('1'); // 获取值为"1"的输入框
+  await user.clear(existingTagInput);
+  await user.type(existingTagInput, '修改后的标签');
+  await user.keyboard('{Enter}');
+ 
+  // 验证编辑后的标签
+  expect(await screen.findByTitle('修改后的标签')).toBeInTheDocument();
+  // 或者检查输入框的值
+  expect(screen.getByDisplayValue('修改后的标签')).toBeInTheDocument();  
+ await fireEvent.mouseOver(existingTagInput);
+expect(await document.querySelector('.tag__clear-btn'));
+ const disbtn =document.querySelector('.tag__clear-btn');
+
+ await fireEvent.click(disbtn);
+  expect(screen.queryByTitle('修改后的标签')).not.toBeInTheDocument();
+});
 
 
 });
