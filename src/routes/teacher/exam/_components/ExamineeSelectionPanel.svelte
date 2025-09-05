@@ -188,7 +188,7 @@
   name_search_timer = setTimeout(() => {
     searchExaminee();
     name_search_timer = null;
-  }, 500);
+  }, 300);
 
 }
 
@@ -200,6 +200,7 @@
     const queryParams = new URLSearchParams();
     queryParams.append('page', search_params.page.toString());
     queryParams.append('pageSize', search_params.pageSize.toString());
+    queryParams.append('search_type',"02");
    // queryParams.append('domain', 'assess^student');
     if(search_params.name)
     {
@@ -263,7 +264,7 @@
   name_search_timer = setTimeout(() => {
     searchExaminee();
     name_search_timer = null;
-  }, 500);
+  }, 300);
 }
   // 重新计算所有selected_examinee的serialNumber
   function recalculateSerialNumbers() {
@@ -391,6 +392,7 @@ function handleCheckboxChange(examinee, event) {
     queryParams.append('page', search_params.page.toString());
     queryParams.append('pageSize', search_params.pageSize.toString());
     queryParams.append('id',registration_list[index].register.ID);
+    queryParams.append('search_type',"02");
     fetch(`/api/registration?${queryParams}`,{
       method: 'GET',
       credentials: 'include',
