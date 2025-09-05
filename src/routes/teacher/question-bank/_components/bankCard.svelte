@@ -23,8 +23,9 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 	import EditableTag from "$lib/components/Tag/EditableTag.svelte";
 	import { fade, slide } from "svelte/transition";
 	 import { selection } from '../store';
-
+import {formatTimeToSecond}from"../utils/utils"
     import '$lib/styles/global.css';
+
 	/**
 	 * @typedef BankData
 	 * @property {string}           ID              - 题库ID
@@ -222,7 +223,12 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 					bind:value={bank_name}
 					onchange={() => {
 						normal_handle_funcs?.name_change?.(
-							old_bank_name,
+						
+							bank_name
+						);
+					}}
+					oninput={()=>{
+						normal_handle_funcs?.name_change?.(
 							bank_name
 						);
 					}}
@@ -233,11 +239,11 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 				<!-- 题库操作时间 -->
 				<div class="bank-time">
 					<div class="bank-create-time">
-						<span>{new Date(data?.CreateTime).toLocaleString()} 创建</span>
+						<span>{formatTimeToSecond(data?.CreateTime)} 创建</span>
 					</div>
 
 					<div class="bank-update-time">
-						<span>{new Date(data?.UpdateTime).toLocaleString()} 更新</span>
+						<span>{formatTimeToSecond(data?.UpdateTime)} 更新</span>
 					</div>
 				</div>
 

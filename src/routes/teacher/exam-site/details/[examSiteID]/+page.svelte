@@ -96,6 +96,13 @@
         await fetchExamRoomsAndSiteName();
     }
 
+// expose test hooks when running in test mode so unit tests can call internal handlers
+if (typeof window !== 'undefined' && import.meta.env && import.meta.env.MODE === 'test') {
+    window.__TEST__ = window.__TEST__ || {};
+    window.__TEST__.handlePageSelect = (p) => handlePageSelect(p);
+    window.__TEST__.handlePageSizeChange = (v) => handlePageSizeChange(v);
+}
+
     // 数据获取类
     function fetchSiteName() {  // 获取考点名称
         const queryParams = new URLSearchParams({
@@ -368,7 +375,7 @@
         </div>
 
         <div class="pagination-container">
-            <div class="pagination-container">
+            <div class="pagination-container" data-testid="pagination">
                 <Pagination
                     total_items={total_num}
                     page_size={page_size}

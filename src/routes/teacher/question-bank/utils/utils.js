@@ -307,3 +307,64 @@ export const compareBankMsg = (old_bank_data, new_bank_data) => {
         })
     );
 };
+
+/**
+ * 验证对象是否为Json对象
+ * @param {any} obj 
+ * @returns {boolean}
+ */
+export function verify(obj) {
+    if (typeof obj !== 'object' || obj === null) {
+        return false;
+    }
+    if (Array.isArray(obj)) {
+        return obj.every(item => verify(item));
+    }
+    return true;
+}
+
+
+/**
+ * 深拷贝Json对象
+ * @template T extends object
+ * @param {T} obj 
+ * @returns {T} 
+ */
+export function deepCopy(obj) {
+
+    if(!verify(obj)) {
+        throw new Error('Invalid JSON object');
+    }
+
+    return JSON.parse(JSON.stringify(obj));
+}
+
+
+export function formatTimeToSecond(timestamp, options) {
+    if (!options) {
+        options = {
+            show_date: true,
+            show_time: true,
+        };
+    }
+
+    if (options?.show_date == null) {
+        options.show_date = true;
+    }
+
+    if (options?.show_time == null) {
+        options.show_time = true;
+    }
+
+    const date = new Date(timestamp);
+
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+
+    return `${options?.show_date ? `${year}-${month}-${day} ` : ""}${options?.show_time ? `${hours}:${minutes}:${seconds}` : ""}`;
+}
