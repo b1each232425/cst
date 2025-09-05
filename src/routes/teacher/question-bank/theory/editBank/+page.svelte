@@ -39,7 +39,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
  	import Button from '$lib/components/Button/Button.svelte';
   import BatchImportQuestionPanel from '../../_components/BatchImportQuestionPanel.svelte';
   import{selectQuestion}from'../../store.js'
-  import {formatTimeToSecond}from"../utils/utils"
+  import {formatTimeToSecond}from"../../utils/utils"
 import '$lib/components/Input/index.scss';
  
 
