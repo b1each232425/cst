@@ -107,6 +107,7 @@
       message: message,
       status: status,
       register_type: register_type,
+      search_type: '00',
     });
 
     fetch(`/api/registration?${searchParams}`, {
@@ -251,7 +252,7 @@
 
     const validIds = select_approve_id.filter((id) => {
       const item = person_list.find((i) => i.id === id);
-      return item && item.status === '未审核';
+      return item && item.status === '待审核';
     });
 
     if (validIds.length === 0) {
@@ -291,7 +292,7 @@
 
     const validIds = select_reject_id.filter((id) => {
       const item = person_list.find((i) => i.id === id);
-      return item && item.status === '未审核';
+      return item && item.status === '待审核';
     });
 
     if (validIds.length === 0) {
@@ -585,8 +586,12 @@
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item)}>查看详情</button>
                   {:else if item.status === '待审核'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item)}>查看详情</button>
-                    <button class="via-btn" onclick={() => handleApprove(item.id)}>通过</button>
-                    <button class="de-btn" onclick={() => openRejectPanel(item.id)}>不通过</button>
+                    <button class="via-btn" data-testid="approve-btn" onclick={() => handleApprove(item.id)}
+                      >通过</button
+                    >
+                    <button class="de-btn" data-testid="reject-btn" onclick={() => openRejectPanel(item.id)}
+                      >不通过</button
+                    >
                   {:else if item.status === '通过'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item)}>查看详情</button>
                     <button class="de-btn" onclick={() => handleRevokeApprove(item.id)}>撤销通过</button>
@@ -629,7 +634,8 @@
   closePanel={closeImportPanel}
 ></PersonImportPanel>
 
-<PersonMovePanel {is_show_move_panel} closePanel={closeMovePanel}></PersonMovePanel>
+<PersonMovePanel {person_list} {is_show_move_panel} from_enroll_id={data.see_enroll_id} closePanel={closeMovePanel}
+></PersonMovePanel>
 
 <!-- 消息提示框 -->
 <MessageBox

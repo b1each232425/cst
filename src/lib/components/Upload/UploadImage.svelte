@@ -5,7 +5,7 @@
  * @LastEditTime: 2025-08-19 18:00:00
  * @FilePath: src\lib\components\Upload\UploadImage.svelte
  * @Description: UploadImage-组件
- * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved. 
+ * @Copyright (c) 2025 by 广州近邻信息有限公司, All Rights Reserved.
 -->
 <script>
   /**
@@ -60,8 +60,13 @@
       <label class="label" for="upload-image">{label}</label>
     </div>
   {/if}
-  <div class="upload__inner" style:background-image={previewUrl ? `url(${previewUrl})` : 'none'} style:background-size="cover" style:background-position="center">
-    <input type="file" {accept} onchange={handleChange} {disabled} />
+  <div
+    class="upload__inner"
+    style:background-image={previewUrl ? `url(${previewUrl})` : 'none'}
+    style:background-size="cover"
+    style:background-position="center"
+  >
+    <input title="" type="file" {accept} onchange={handleChange} {disabled} />
     {#if !previewUrl}
       <div class="upload__inner-plus">+</div>
       {#if mode == 'upload'}

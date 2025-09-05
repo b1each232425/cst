@@ -10,6 +10,7 @@
   import { formatDateTime } from '../../_utils/handleFileInput';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
+  import { toast } from '$lib/components/Toast/Toast';
 
   const { data } = $props();
 
@@ -132,7 +133,11 @@
         return response.json();
       })
       .then((data) => {
-        // console.log(data);
+        if (data.status !== 0) {
+          toast.error('编辑失败，请重试');
+        } else {
+          goto('/teacher/enroll');
+        }
       })
       .catch((e) => {
         console.log(e);
@@ -183,7 +188,6 @@
     ) {
       await checkClearAction();
       editEnrollReq();
-      goto('/teacher/enroll');
     }
   }
 
