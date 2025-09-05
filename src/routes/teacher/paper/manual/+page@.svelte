@@ -173,7 +173,6 @@
                 if (data.status !== 0){
                     throw new Error(data.msg);  
                 }
-                console.log(data);
                 return data;
             })
             .catch(error => {
@@ -1017,8 +1016,6 @@
             for (let i = 0; i < Math.abs(remainderSteps) && i < subScoreCount; i++) {
                 if (remainderSteps > 0) {
                     sub_score[i] += 0.5;
-                } else {
-                    sub_score[i] -= 0.5;
                 }
             }
         }
@@ -1158,7 +1155,7 @@
         
         // 修改题目总分
         paper_groups[groupIndex].questions[questionIndex].score =
-            new_sub_score.reduce((sum, val) => sum + (Number(val) || 0), 0);
+            new_sub_score.reduce((sum, val) => sum + (Number(val)), 0);
 
         const ACTIONS = [
             {
@@ -1203,8 +1200,6 @@
             .then(result => {
                 if(result) {
                     const QUESTION = result.data;
-    
-                    console.log(QUESTION)
 
                     // 转换数据格式以匹配编辑组件的期望
                     const convertedQuestion = {
@@ -1618,64 +1613,66 @@
 
 </script>
 
-<!-- 导入题目弹窗 -->
-{#if import_modal_is_open}
-    <ImportQuestion
-        onclose={closeImportModal}
-        update={updateAfterImport}
-        to_import_group={to_import_group}
-        fetchPaper={fetchPaper}
-        savePaper={savePaper}
-    />
-{/if}
-
-<!-- 编辑题目弹窗 -->
-<SingleSelectEditPanel
-    bind:this={single_select_edit_panel_component}
-    show={show_single_select_edit_panel}
-    question_data={editing_question}
-    is_new_question={false}
-    onCancel={onEditPanelCancel}
-    onConfirm={onEditPanelConfirm}
-/>
-
-<MultipleSelectEditPanel
-    bind:this={multiple_select_edit_panel_component}
-    show={show_multiple_select_edit_panel}
-    question_data={editing_question}
-    is_new_question={false}
-    onCancel={onEditPanelCancel}
-    onConfirm={onEditPanelConfirm}
-/>
-
-<JudgeSelectEditPanel
-    bind:this={judge_select_edit_panel_component}
-    show={show_judge_select_edit_panel}
-    question_data={editing_question}
-    is_new_question={false}
-    onCancel={onEditPanelCancel}
-    onConfirm={onEditPanelConfirm}
-/>
-
-<FillBlankEditPanel
-    bind:this={fill_bank_edit_panel_component}
-    show={show_fill_bank_edit_panel}
-    question_data={editing_question}
-    is_new_question={false}
-    onCancel={onEditPanelCancel}
-    onConfirm={onEditPanelConfirm}
-/>
-
-<ShortAnswerEditPanel
-    bind:this={short_answer_edit_panel_component}
-    show={show_short_answer_edit_panel}
-    question_data={editing_question}
-    is_new_question={false}
-    onCancel={onEditPanelCancel}
-    onConfirm={onEditPanelConfirm}
-/>
 
 {#if page_is_ready}
+
+    <!-- 导入题目弹窗 -->
+    {#if import_modal_is_open}
+        <ImportQuestion
+            onclose={closeImportModal}
+            update={updateAfterImport}
+            to_import_group={to_import_group}
+            fetchPaper={fetchPaper}
+            savePaper={savePaper}
+        />
+    {/if}
+
+    <!-- 编辑题目弹窗 -->
+    <SingleSelectEditPanel
+        bind:this={single_select_edit_panel_component}
+        show={show_single_select_edit_panel}
+        question_data={editing_question}
+        is_new_question={false}
+        onCancel={onEditPanelCancel}
+        onConfirm={onEditPanelConfirm}
+    />
+
+    <MultipleSelectEditPanel
+        bind:this={multiple_select_edit_panel_component}
+        show={show_multiple_select_edit_panel}
+        question_data={editing_question}
+        is_new_question={false}
+        onCancel={onEditPanelCancel}
+        onConfirm={onEditPanelConfirm}
+    />
+
+    <JudgeSelectEditPanel
+        bind:this={judge_select_edit_panel_component}
+        show={show_judge_select_edit_panel}
+        question_data={editing_question}
+        is_new_question={false}
+        onCancel={onEditPanelCancel}
+        onConfirm={onEditPanelConfirm}
+    />
+
+    <FillBlankEditPanel
+        bind:this={fill_bank_edit_panel_component}
+        show={show_fill_bank_edit_panel}
+        question_data={editing_question}
+        is_new_question={false}
+        onCancel={onEditPanelCancel}
+        onConfirm={onEditPanelConfirm}
+    />
+
+    <ShortAnswerEditPanel
+        bind:this={short_answer_edit_panel_component}
+        show={show_short_answer_edit_panel}
+        question_data={editing_question}
+        is_new_question={false}
+        onCancel={onEditPanelCancel}
+        onConfirm={onEditPanelConfirm}
+    />
+
     <div class="add-paper">
         <!-- 顶部栏 -->
         <div class="header">

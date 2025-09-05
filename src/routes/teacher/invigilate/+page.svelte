@@ -124,8 +124,8 @@
   let exam_session_list = $state([]);
 
   let exam_session_name = $state('');
-  let start_time = $state(0);
-  let end_time = $state(0);
+  let start_time = $state(-1);
+  let end_time = $state(-1);
   let status = $state('');
   let total_count = $state(0);
   let page = $state(1);
@@ -149,10 +149,9 @@
   // 搜索
   function handleSearch() {
     const q = JSON.stringify({
-      OrderBy: [{ Duration: 'DESC', Time: 'DESC' }],
       Filter: {
         ExamSessionName: exam_session_name,
-        ExamStatus: status,
+        ExamSessionStatus: status,
         StartTime: start_time,
         EndTime: end_time,
       },

@@ -529,8 +529,8 @@
           padding-bottom: 5px;
 
           &.selected {
-            color: blue;
-            border-bottom: 1px solid blue;
+            color: var(--blue);
+            border-bottom: 1px solid var(--blue);
           }
         }
       }
