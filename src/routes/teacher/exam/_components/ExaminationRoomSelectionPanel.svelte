@@ -20,25 +20,12 @@
     onConfirm=(seleted_exam_rooms) =>{},
     onCancel=()=>{},
     exam_start_time = new Date(),
-    exam_end_time = new Date()
+    exam_end_time = new Date(),
+    selectedRooms = [] //打开面板时已选考场
   }=$props();
   
   let is_selection_mode=$state(false);
-//let exam_room_list = $state([]);
-  let exam_room_list = $state([
-//    {
-//     "id": 101,
-//     "name": "第一教学楼 301",
-//     "capacity": 30,
-//     "invigilator_count": 1
-//   },
-//   {
-//     "id": 102,
-//     "name": "实验楼 502",
-//     "capacity": 45,
-// "invigilator_count": 1
-//   }
-]);
+  let exam_room_list = $state([]);
   let invigilatorCountMap = new Map(); // key: room.id, value: invigilator_count
   let filter_room_list = $derived(
   is_selection_mode
@@ -59,9 +46,9 @@
     pageSize: 10,
     orderBy:[{ "capacity": "DESC"}],
     data:{"examSiteID":'35'},
-    filter:{"startTime":exam_start_time.getTime(),"endTime":exam_end_time.getTime(),"name":""},
+    filter:{"name":""},
   });
-//"startTime":exam_start_time.getTime(),"endTime":exam_end_time.getTime(),
+//""available":true,"startTime":exam_start_time.getTime(),"endTime":exam_end_time.getTime(),
   let pagination_params = $state({
     page: 1,
     pageSize: 10
@@ -69,6 +56,13 @@
 
   let name_search_timer = null;
   let name_filter = $state("");
+
+  $effect(() => {
+    if (show_panel ) {
+      selected_room_list = selectedRooms;
+    }
+  });
+
   function toggleSelectAll(e) {
   const checked = e.target.checked;
   exam_room_list.forEach(r => (r.selected = checked));
@@ -119,14 +113,15 @@
         if(result.status === 0)
         {
           const selectedIds = new Set(
-  exam_room_list.filter(r => r.selected).map(r => r.id)
-);
+            exam_room_list.filter(r => r.selected).map(r => r.id)
+          );
           exam_room_list = result.data.map(r => ({
-  ...r,
-  selected: selectedIds.has(r.id), // 如果你用 selected 控制勾选
-  invigilator_count: invigilatorCountMap.get(r.id) ?? r.invigilator_count ?? 1
-}));
-        }
+          ...r,
+          selected: selectedIds.has(r.id), // 如果你用 selected 控制勾选
+          invigilator_count: invigilatorCountMap.get(r.id) ?? r.invigilator_count ?? 1
+          })
+        );
+      }
         else{
           toast.error("获取列表失败"+result.msg);
           console.log("获取失败:",result.msg);
