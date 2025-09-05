@@ -8,10 +8,10 @@
   import PersonImportPanel from '../../_components/PersonImportPanel.svelte';
   import PersonMovePanel from '../../_components/PersonMovePanel.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
+  import { page } from '$app/stores';
   import { checkFileData, formatDateTime } from '../../_utils/handleFileInput';
   import { toast } from '$lib/components/Toast/Toast';
   import { goto } from '$app/navigation';
-  import { page } from '$app/state';
   import { onMount } from 'svelte';
 
   // 考试类型映射
@@ -96,12 +96,12 @@
   let page_size = $state(10); // 当前页面大小
 
   let status_text = $state('');
-  const { data } = $props();
+  let see_enroll_id = $page.params.seeEnrollId;
 
   // 查看单个报名计划考生
   function getEnrollPersonData(message = '', status = '', register_type = '') {
     const searchParams = new URLSearchParams({
-      id: data.see_enroll_id,
+      id: see_enroll_id,
       page: current_page,
       pageSize: page_size,
       message: message,
@@ -151,7 +151,7 @@
     const searchParams = new URLSearchParams({
       ids: ids,
       status: status,
-      register_id: data.see_enroll_id,
+      register_id: see_enroll_id,
       fail_reason: reject_reason,
     });
 
@@ -216,7 +216,7 @@
 
   // 处理查看人员详情按钮点击事件
   function handleSeePersonDetail(item) {
-    const current_url_path = page.url.pathname;
+    const current_url_path = $page.url.pathname;
     goto(`${current_url_path}/person-detail/${item.idNumber}`);
   }
 
@@ -628,13 +628,13 @@
 
 <PersonImportPanel
   bind:this={person_import_panel}
-  enroll_id={data.see_enroll_id}
+  enroll_id={see_enroll_id}
   {is_show_import_panel}
   {candidate_list}
   closePanel={closeImportPanel}
 ></PersonImportPanel>
 
-<PersonMovePanel {person_list} {is_show_move_panel} from_enroll_id={data.see_enroll_id} closePanel={closeMovePanel}
+<PersonMovePanel {person_list} {is_show_move_panel} from_enroll_id={see_enroll_id} closePanel={closeMovePanel}
 ></PersonMovePanel>
 
 <!-- 消息提示框 -->

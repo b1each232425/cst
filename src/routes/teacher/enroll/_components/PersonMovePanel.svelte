@@ -45,7 +45,7 @@
   // 获取报名列表数据
   function getEnrollData(name = '', status = '', course = '') {
     fetch(
-      `/api/registration?page=${current_page}&pageSize=${page_size}&name=${name}&status=${status}&course=${course}`,
+      `/api/registration?page=${current_page}&pageSize=${page_size}&name=${name}&status=${status}&course=${course}&search_type=00`,
       {
         method: 'GET',
         headers: {
@@ -79,7 +79,7 @@
         total_items = data.data.total;
       })
       .catch((e) => {
-        console.log(e);
+        console.error(e);
       });
   }
 
