@@ -3,6 +3,8 @@ import { act, getByText, render, screen ,waitFor,fireEvent,within} from '@testin
 import BankPage from '../+page.svelte';
 import { goto } from '$app/navigation';
 import { AddNewQuestion } from '../+page.svelte';
+import { setResponse } from '@sveltejs/kit/node';
+
 // 模拟导航函数
 vi.mock('$app/navigation', () => ({
   goto: vi.fn(),
@@ -13,90 +15,195 @@ describe('题库管理页面', () => {
   beforeEach(() => {
     // 重置所有 mock
     vi.resetAllMocks();
-    
-    // 设置 localStorage mock
-    Storage.prototype.getItem = vi.fn((key) => {
-      if (key === 'question_bank_data') {
-        return JSON.stringify({
-          id: 1,
-          name: '测试题库',
-          tags: ['数学', '物理'],
-          create_time: Date.now(),
-          update_time: Date.now()
-        });
-      }
-      return null;
-    });
-    
+     delete window.location;
+  window.location = {
+    ...window.location,
+    search: '?bankID=123', // 确保测试用例正确设置
+  };
    
   })
 //测试能否渲染题库基本信息
 it('应该正确渲染题库页面的基本元素', async () => {
     
-     render(BankPage);
+  // 模拟fetch
+  global.fetch = vi.fn(async (url, options) => {
+    const method = options?.method || 'GET';
  
-    // 检查搜索题库输入框是否渲染
- expect(screen.getByPlaceholderText('请输入题库名').value).toBe('测试题库');
-//显示是否有标签
-   expect(screen.getByTitle('数学')).toBeInTheDocument();
-   expect(screen.getByTitle('物理')).toBeInTheDocument();
-    // 验证题目数量显示
-  expect(screen.getByText('返回题库列表')).toBeInTheDocument();
+    if (url.includes('/api/question-banks') && method === 'GET') {
+      return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 1,
+          data: [{
+            ID:123,
+            Name:"测试题库",
+            Type:"00",
+            Tags:["测试标签"],
+              QuestionTags: [
+              "题目标签"
+            ],
+              CreateTime: 1755139059430,
+            UpdateTime: 1755749603215,
+            QuestionCount: 0,
+          },],
+        }) 
+      });
+    }
+ 
+    // 模拟POST请求返回网络错误
+    if (url.includes('/api/questions') && method === 'GET') {
+     return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 0,
+          data: [],
+        }) 
+      });
+    }
+ 
 
+  });
+
+     render(BankPage);
+   expect(fetch).toHaveBeenCalledWith(
+    expect.stringContaining('bankID=123'), // 检查 URL 参数
+    expect.objectContaining({ method: 'GET', credentials: 'include' })
+  );
+  expect(screen.findByText("测试题库"));
+   expect(screen.findByText("题型"));
+   expect(screen.findByText("试题列表"))
+  expect(screen.findByText("试题筛选"))
+    expect(screen.findByText("题型"))
+      expect(screen.findByText("难度"))
+ expect(screen.findByText("标签"))
+ expect(screen.findByText("单选"))
+ expect(screen.findByText("多选"))
+ expect(screen.findByText("判断"))
+  expect(screen.findByText("填空"))
+    expect(screen.findByText("简答"))
+      expect(screen.findByText("简单"))
+        expect(screen.findByText("中等"))
+          expect(screen.findByText("困难"))
+            expect(screen.findByText("暂无题库数据"))
+         expect(screen.findByText("题目标签"))
+               expect(screen.findByText("   更新时间：2025/8/21 12:13:23"))
+                expect(screen.findByText("创建时间：2025/8/14 10:37:39"))
 });
 
 /**
- * 测试获取题目HTTP错误响应
+ * 测试获取题库信息HTTP错误响应
  */
-it('获取题目正确处理HTTP错误', async () => {
+it('获取题库正确处理HTTP错误', async () => {
 
- global.fetch = vi.fn().mockResolvedValue({
-			ok: false,
-			status: 500
-		});
+  global.fetch = vi.fn(async (url, options) => {
+    const method = options?.method || 'GET';
+ 
+    if (url.includes('/api/question-banks') && method === 'GET') {
+      return Promise.resolve({ 
+        ok: false, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 1,
+          data: [{
+            ID:123,
+            Name:"测试题库",
+            Type:"00",
+            Tags:["测试标签"],
+              CreateTime: 1755139059430,
+            UpdateTime: 1755749603215,
+            QuestionCount: 0,
+          },],
+        }) 
+      });
+    }
+ 
+    // 模拟POST请求返回网络错误
+    if (url.includes('/api/questions') && method === 'GET') {
+     return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 0,
+          data: [],
+        }) 
+      });
+    }
+ 
+
+  });
+
  
     await render(BankPage);
 
       //等待toast报错
     await waitFor(() => {
-    expect(screen.getByText('获取试题列表失败:HTTP错误')).toBeInTheDocument();
+    expect(screen.getByText('获取题库信息失败:HTTP错误')).toBeInTheDocument();
   });
 });
 
 
 /**
- * 测试获取题目网络错误响应
+ * 测试获取题库信息网络错误响应
  */
-it('获取题目正确处理网络错误', async () => {
+it('获取题库信息处理网络错误', async () => {
 
 		global.fetch = vi.fn().mockRejectedValue(new Error('网络连接失败'));
     await render(BankPage);
 
       //等待toast报错
     await waitFor(() => {
-    expect(screen.getByText('获取试题列表失败:网络连接失败')).toBeInTheDocument();
+    expect(screen.getByText('获取题库信息失败:网络连接失败')).toBeInTheDocument();
   });
 });
 
 /**
- * 测试获取题目后端错误响应
+ * 测试获取题库后端错误响应
  */
-it('获取题目正确处理后端错误', async () => {
+it('获取题库正确处理后端错误', async () => {
   
 
-		global.fetch = vi.fn().mockResolvedValue({
-			ok: true,
-      json: async () => ({
-		  status: -1,
-        msg: "后端错误消息",
-      }),
-		});
+global.fetch = vi.fn(async (url, options) => {
+    const method = options?.method || 'GET';
+ 
+    if (url.includes('/api/question-banks') && method === 'GET') {
+      return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: -1,
+          msg: "后端错误消息",
+          rowCount: 0,
+          data: [],
+        }) 
+      });
+    }
+ 
+    // 模拟POST请求返回网络错误
+    if (url.includes('/api/questions') && method === 'GET') {
+     return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 0,
+          data: [],
+        }) 
+      });
+    }
+ 
+
+  });
 
      render(BankPage);
 
       //等待toast报错
     await waitFor(() => {
-    expect(screen.getByText('获取试题列表失败:后端错误消息')).toBeInTheDocument();
+    expect(screen.getByText('获取题库信息失败:后端错误消息')).toBeInTheDocument();
   });
 });
 

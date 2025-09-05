@@ -39,6 +39,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
  	import Button from '$lib/components/Button/Button.svelte';
   import BatchImportQuestionPanel from '../../_components/BatchImportQuestionPanel.svelte';
   import{selectQuestion}from'../../store.js'
+  import {formatTimeToSecond}from"../utils/utils"
 import '$lib/components/Input/index.scss';
  
 
@@ -440,8 +441,8 @@ import '$lib/components/Input/index.scss';
          bank_name=data.data[0].Name;
          bank_tags=data.data[0].Tags;
          origin_bank_data.bank_name=data.data[0].Name;
-        origin_bank_data.bank_tags=data.data[0].Tags;
-        all_question_tags=data.data[0].QuestionTags;
+        origin_bank_data.bank_tags=data.data[0].Tags||[];
+        all_question_tags=data.data[0].QuestionTags||[];
         bank_update_time=data.data[0].UpdateTime;
         bank_create_time=data.data[0].CreateTime;
        question_count=data.data[0].QuestionCount;
@@ -955,8 +956,8 @@ o888o o888o   "888" o888o o888o o888o o888o
         </div>
 
         <div class="bankTimeContainer">
-          <span class="timeText">更新时间：{new Date(bank_update_time).toLocaleString()}</span>
-          <span class="timeText">创建时间：{new Date(bank_create_time).toLocaleString()}</span>
+          <span class="timeText">更新时间：{formatTimeToSecond(bank_update_time)}</span>
+          <span class="timeText">创建时间：{formatTimeToSecond(bank_create_time)}</span>
         </div>
       </div>
       <div class="rightContent">
