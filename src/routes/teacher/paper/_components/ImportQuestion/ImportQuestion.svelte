@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 21:09:59
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-21 21:52:14
+ * @LastEditTime: 2025-09-05 18:38:54
  * @FilePath: \exam\src\routes\teacher\paper\_components\ImportQuestion\ImportQuestion.svelte
  * @Description: 从题库导入题目组件
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -26,17 +26,11 @@
 
     // 获取题库列表
     function fetchQuestionBankList(
-        bankKeyWord = "", 
-        bankPage = "",
-        bankPageSize = "",
-        bankBankID = ""
+        bankKeyWord = ""
     ){
         const PARAMS = new URLSearchParams();
 
         if (bankKeyWord) PARAMS.append("keyword", bankKeyWord);
-        if (bankPage) PARAMS.append("page", bankPage);
-        if (bankPageSize) PARAMS.append("pageSize", bankPageSize);
-        if (bankBankID) PARAMS.append("bankID", bankBankID);
 
         return fetch(`/api/question-banks?${PARAMS.toString()}`, {
             method: "GET",
@@ -49,10 +43,13 @@
                 return response.json();
             })
             .then(data => {
-                if (data.status !== 0) toast.error(data.msg, 1000);
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
                 return data;
             })
             .catch(error => {
+                toast.error(error.message, 1000);
                 console.error('获取题库列表出错：', error);
                 return null;
             });
@@ -82,17 +79,20 @@
             method: "GET",
             credentials: "include"
         })
-            .then(response => {
+        .then(response => {
                 if (!response.ok) {
                     throw new Error(`请求失败，状态码：${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
-                if (data.status !== 0) toast.error(data.msg, 1000);
+                if (data.status !== 0){
+                    throw new Error(data.msg);  
+                }
                 return data;
             })
             .catch(error => {
+                toast.error(error.message, 1000);
                 console.error('获取题库题目列表出错：', error);
                 return null;
             });
@@ -138,7 +138,7 @@
 
     // 防抖搜索题库列表
     const debouncedFetchQuestionBankList = debounce(() => {
-        fetchQuestionBankList(bank_key_word, "", "", "")
+        fetchQuestionBankList(bank_key_word)
             .then(result => {
                 bank_list = result.data || [];
             });
@@ -165,13 +165,19 @@
                 if(result) {
                     question_list = result.data || [];
                     total_questions = result.rowCount;
+                } else {
+                    question_list = [];
+                    total_questions = 0;
                 }
             });
 
+            // 通过to_add_bankID获取题库的index
+            const bank_index = bank_list.findIndex(bank => bank.ID === to_add_bankID);
+
             // 获取题库的标签
-            tag_list = bank_list[index].QuestionTags;
-            difficulty_list = bank_list[index].QuestionDifficulties;
-            type_list = bank_list[index].QuestionTypes;
+            tag_list = bank_list[bank_index].QuestionTags;
+            difficulty_list = bank_list[bank_index].QuestionDifficulties;
+            type_list = bank_list[bank_index].QuestionTypes;
 
         } else {
             question_list = [];
@@ -218,9 +224,12 @@
                 question_list = result.data || [];
                 total_questions = result.rowCount;
 
-                tag_list = bank_list[index].QuestionTags;
-                difficulty_list = bank_list[index].QuestionDifficulties;
-                type_list = bank_list[index].QuestionTypes;
+                // 通过to_add_bankID获取题库的index
+                const bank_index = bank_list.findIndex(bank => bank.ID === to_add_bankID);
+
+                tag_list = bank_list[bank_index].QuestionTags;
+                difficulty_list = bank_list[bank_index].QuestionDifficulties;
+                type_list = bank_list[bank_index].QuestionTypes;
             });
         } else {
             question_list = [];
@@ -401,20 +410,18 @@
         }
 
         // 搜索题库内的题目
-        if(to_add_bankID !== "") {
-            fetchBankQuestionList(
-                to_add_bankID,
-                question_page,
-                question_page_size,
-                question_name,
-                question_tags,
-                question_types,
-                question_difficulties
-            ).then( result => {
-                question_list = result.data || [];
-                total_questions = result.rowCount;
-            });
-        } else { question_list = []; }
+        fetchBankQuestionList(
+            to_add_bankID,
+            question_page,
+            question_page_size,
+            question_name,
+            question_tags,
+            question_types,
+            question_difficulties
+        ).then( result => {
+            question_list = result.data;
+            total_questions = result.rowCount;
+        });
     }
 
     // 筛选题目难度
@@ -426,20 +433,18 @@
         }
 
         // 搜索题库内的题目
-        if(to_add_bankID !== "") {
-            fetchBankQuestionList(
-                to_add_bankID,
-                question_page,
-                question_page_size,
-                question_name,
-                question_tags,
-                question_types,
-                question_difficulties
-            ).then( result => {
-                question_list = result.data || [];
-                total_questions = result.rowCount;
-            });
-        } else { question_list = []; }
+        fetchBankQuestionList(
+            to_add_bankID,
+            question_page,
+            question_page_size,
+            question_name,
+            question_tags,
+            question_types,
+            question_difficulties
+        ).then( result => {
+            question_list = result.data;
+            total_questions = result.rowCount;
+        });
     }
 
     // 筛选题目标签
@@ -451,20 +456,18 @@
         }
 
         // 搜索题库内的题目
-        if(to_add_bankID !== "") {
-            fetchBankQuestionList(
-                to_add_bankID,
-                question_page,
-                question_page_size,
-                question_name,
-                question_tags,
-                question_types,
-                question_difficulties
-            ).then( result => {
-                question_list = result.data || [];
-                total_questions = result.rowCount;
-            });
-        } else { question_list = []; }
+        fetchBankQuestionList(
+            to_add_bankID,
+            question_page,
+            question_page_size,
+            question_name,
+            question_tags,
+            question_types,
+            question_difficulties
+        ).then( result => {
+            question_list = result.data;
+            total_questions = result.rowCount;
+        });
     }
 
     // 清空筛选条件
@@ -499,9 +502,11 @@
 
     // 挂载区
     onMount(() => {
-        fetchQuestionBankList(bank_key_word, "", "", "")
+        fetchQuestionBankList(bank_key_word)
             .then(result => {
-                bank_list = result.data || [];
+                if(result) {
+                    bank_list = result.data || [];
+                }
             });
 
         paperID = get(CURRENT_PAPER_ID);
@@ -526,7 +531,7 @@
     <div class="modal-container">
         <!-- 头部 -->
         <div class="container-header">
-            <span class="title">从题库导入题目</span>
+            <span class="title">从题库中导入题目</span>
             <button onclick={onclose} class="close-import-btn">✖</button>
         </div>
 
@@ -551,8 +556,15 @@
                         >
                         <!-- svelte-ignore a11y_consider_explicit_label -->
                         <button data-name="clear"
-                            class={bank_key_word===""?"hide-clear":""}
-                            onclick={()=>{bank_key_word=""}}
+                            class="clear-btn"
+                            class:hide-clear={bank_key_word===""}
+                            onclick={()=>{
+                                bank_key_word="";
+                                fetchQuestionBankList(bank_key_word)
+                                    .then(result => {
+                                        bank_list = result.data || [];
+                                    });
+                            }}
                         ></button>
                     </div>
                 </div>
@@ -588,8 +600,37 @@
                         >
                         <!-- svelte-ignore a11y_consider_explicit_label -->
                         <button data-name="clear"
-                            class={question_name===""?"hide-clear":""}
-                            onclick={()=>{question_name=""}}
+                            class="clear-btn"
+                            class:hide-clear={question_name===""}
+                            onclick={()=>{
+                                question_name="";
+                                if(to_add_bankID !== "") {
+                                    fetchBankQuestionList(
+                                        to_add_bankID,
+                                        question_page,
+                                        question_page_size,
+                                        question_name,
+                                        question_tags,
+                                        question_types,
+                                        question_difficulties
+                                    ).then( result => {
+                                        question_list = result.data || [];
+                                        total_questions = result.rowCount;
+
+                                        // 通过to_add_bankID获取题库的index
+                                        const bank_index = bank_list.findIndex(bank => bank.ID === to_add_bankID);
+
+                                        tag_list = bank_list[bank_index].QuestionTags;
+                                        difficulty_list = bank_list[bank_index].QuestionDifficulties;
+                                        type_list = bank_list[bank_index].QuestionTypes;
+                                    });
+                                } else {
+                                    question_list = [];
+                                    tag_list = [];
+                                    difficulty_list = [];
+                                    type_list = [];
+                                }
+                            }}
                         ></button>
                     </div>
 
@@ -631,14 +672,16 @@
 
                                 <!-- 清空条件 -->
                                 <div class="clear-condition">
-                                    <button onclick={()=>clearCondition()}>清空条件</button>
+                                    <button 
+                                        onclick={()=>clearCondition()}
+                                        class="clear-condition-btn"
+                                    >清空条件</button>
                                 </div>
                             </div>
                         {/if}
                         <span class="filter-prompt">筛选</span>
                         <button class="dropdown-btn">{filter_is_open?"∨":"∧"}</button>
                     </div>
-
                     
                 </div>
 
@@ -684,7 +727,7 @@
                                         <td class="checkbox">
                                             {#if existing_question_ids.includes(question.ID)}
                                                 <div class="imported-container">
-                                                    <Tag type="info" size="middles">已导入</Tag>
+                                                    <Tag type="info" size="middle">已导入</Tag>
                                                 </div>
                                             {:else}
                                             <input type="checkbox"
