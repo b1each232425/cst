@@ -20,6 +20,8 @@ function setRightPath() {
 }
 
 const MOCK_INFO = {
+  ExamSessionID: 1005,
+  ExamRoomID: 2005,
   ExamSessionName: '2025年春季期末考试',
   ExamSiteName: '广州天河分校',
   ExamRoomName: '101多媒体教室',
@@ -434,6 +436,19 @@ describe('教师端监考详情页测试', () => {
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledTimes(1);
 
+        const q = JSON.stringify({
+          Filter: {
+            SearchText: '',
+          },
+          Data: {
+            ExamSessionID: MOCK_INFO.ExamSessionID,
+            ExamRoomID: MOCK_INFO.ExamRoomID,
+          },
+          Page: 1,
+          PageSize: 10,
+        });
+        expect(global.fetch).toHaveBeenCalledWith(`/api/invigilation?q=${q}`);
+
         expect(screen.getByText('2025年春季期末考试')).toBeInTheDocument();
         expect(screen.getByText(/2025-08-22 09:00/)).toBeInTheDocument();
         expect(screen.getByText(/2025-08-22 11:30/)).toBeInTheDocument();
@@ -609,7 +624,7 @@ describe('教师端监考详情页测试', () => {
     });
   });
 
-  it('输入页号和页大小获取数据', async () => {
+  it('搜索功能测试', async () => {
     mockFetch({
       status: 0,
       data: {
@@ -625,8 +640,60 @@ describe('教师端监考详情页测试', () => {
 
     render(InvigilateDetail);
 
+    mockFetch({ status: 0 });
+
+    const input = screen.getByPlaceholderText('姓名、身份证号或准考证号');
+    await fireEvent.input(input, { target: { value: '考生123' } });
+
+    expect(input).toHaveValue('考生123');
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+      const q = JSON.stringify({
+        Filter: {
+          SearchText: '考生123',
+        },
+        Data: {
+          ExamSessionID: MOCK_INFO.ExamSessionID,
+          ExamRoomID: MOCK_INFO.ExamRoomID,
+        },
+        Page: 1,
+        PageSize: 10,
+      });
+      expect(global.fetch).toHaveBeenCalledWith(`/api/invigilation?q=${q}`);
+    });
+  });
+
+  it('输入页号和页大小获取数据', async () => {
+    mockFetch({
+      status: 0,
+      data: {
+        info: MOCK_INFO,
+        examinees: [...Array(15)].map((_, i) => ({
+          ...MOCK_EXAMINEES[0],
+          ExamineeID: i + 1,
+          Name: `考生 ${i + 1}`,
+        })),
+      },
+      rowCount: 15,
+    });
+
+    render(InvigilateDetail);
+    vi.clearAllMocks();
+
+    // 第二页只有 5 条
+    mockFetch({
+      status: 0,
+      data: {
+        info: MOCK_INFO,
+        examinees: [...Array(5)].map((_, i) => ({
+          ...MOCK_EXAMINEES[0],
+          ExamineeID: i + 1,
+          Name: `考生 ${i + 1}`,
+        })),
+      },
+      rowCount: 5,
     });
 
     const input = screen.getByRole('spinbutton');
@@ -634,14 +701,40 @@ describe('教师端监考详情页测试', () => {
     await fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', charCode: 13 }); // 发送一次请求
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+
+      const q = JSON.stringify({
+        Filter: {
+          SearchText: '',
+        },
+        Data: {
+          ExamSessionID: MOCK_INFO.ExamSessionID,
+          ExamRoomID: MOCK_INFO.ExamRoomID,
+        },
+        Page: 2,
+        PageSize: 10,
+      });
+      expect(global.fetch).toHaveBeenCalledWith(`/api/invigilation?q=${q}`);
     });
 
     const select = screen.getAllByRole('button', { name: 'Toggle dropdown' })[1];
     await screen.findByText('20条/页').then(fireEvent.click); // 发送一次请求
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(3);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+
+      const q = JSON.stringify({
+        Filter: {
+          SearchText: '',
+        },
+        Data: {
+          ExamSessionID: MOCK_INFO.ExamSessionID,
+          ExamRoomID: MOCK_INFO.ExamRoomID,
+        },
+        Page: 1,
+        PageSize: 20,
+      });
+      expect(global.fetch).toHaveBeenCalledWith(`/api/invigilation?q=${q}`);
     });
   });
 
@@ -768,6 +861,18 @@ describe('教师端监考详情页测试', () => {
 
         await waitFor(() => {
           expect(global.fetch).toHaveBeenCalledTimes(1);
+
+          const q = JSON.stringify({
+            Data: {
+              ExamSessionID: MOCK_INFO.ExamSessionID,
+              ExamRoomID: MOCK_INFO.ExamRoomID,
+              UpdateType: '00',
+              BasicEval: '00',
+              Record: MOCK_INFO.Record,
+            },
+          });
+          expect(global.fetch).toHaveBeenCalledWith(`/api/invigilation?q=${q}`, { method: 'PATCH' });
+
           expect(toast.error).not.toHaveBeenCalled();
         });
       });
@@ -782,7 +887,20 @@ describe('教师端监考详情页测试', () => {
 
         await waitFor(() => {
           expect(textarea).toHaveValue('模拟考场记录');
+
           expect(global.fetch).toHaveBeenCalledTimes(1);
+
+          const q = JSON.stringify({
+            Data: {
+              ExamSessionID: MOCK_INFO.ExamSessionID,
+              ExamRoomID: MOCK_INFO.ExamRoomID,
+              UpdateType: '00',
+              Record: '模拟考场记录',
+              BasicEval: '02',
+            },
+          });
+          expect(global.fetch).toHaveBeenCalledWith(`/api/invigilation?q=${q}`, { method: 'PATCH' });
+
           expect(toast.error).not.toHaveBeenCalled();
         });
       });
@@ -796,6 +914,18 @@ describe('教师端监考详情页测试', () => {
 
         await waitFor(() => {
           expect(global.fetch).toHaveBeenCalledTimes(1);
+
+          const q = JSON.stringify({
+            Data: {
+              ExamSessionID: MOCK_INFO.ExamSessionID,
+              ExamRoomID: MOCK_INFO.ExamRoomID,
+              UpdateType: '02',
+              Examinees: [MOCK_EXAMINEES[0].ExamineeID],
+              ExamineeStatus: '14',
+            },
+          });
+          expect(global.fetch).toHaveBeenCalledWith(`/api/invigilation?q=${q}`, { method: 'PATCH' });
+
           expect(toast.error).not.toHaveBeenCalled();
         });
       });
@@ -819,6 +949,18 @@ describe('教师端监考详情页测试', () => {
 
         await waitFor(() => {
           expect(global.fetch).toHaveBeenCalledTimes(1);
+
+          const q = JSON.stringify({
+            Data: {
+              ExamSessionID: MOCK_INFO.ExamSessionID,
+              ExamRoomID: MOCK_INFO.ExamRoomID,
+              UpdateType: '02',
+              ExamineeStatus: '02',
+              Examinees: MOCK_EXAMINEES.map((examinee) => examinee.ExamineeID),
+            },
+          });
+          expect(global.fetch).toHaveBeenCalledWith(`/api/invigilation?q=${q}`, { method: 'PATCH' });
+
           expect(toast.error).not.toHaveBeenCalled();
 
           // 获取所有显示"缺考"的元素
@@ -848,6 +990,18 @@ describe('教师端监考详情页测试', () => {
 
         await waitFor(() => {
           expect(global.fetch).toHaveBeenCalledTimes(1);
+
+          const q = JSON.stringify({
+            Data: {
+              ExamSessionID: MOCK_INFO.ExamSessionID,
+              ExamRoomID: MOCK_INFO.ExamRoomID,
+              UpdateType: '04',
+              ExamineeRemark: '全部通过',
+              Examinees: MOCK_EXAMINEES.map((examinee) => examinee.ExamineeID),
+            },
+          });
+          expect(global.fetch).toHaveBeenCalledWith(`/api/invigilation?q=${q}`, { method: 'PATCH' });
+
           expect(toast.error).not.toHaveBeenCalled();
 
           // 获取所有显示"全部通过"的元素
