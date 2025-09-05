@@ -11,8 +11,9 @@
   import { toast } from '$lib/components/Toast/Toast';
   import { fastdigest, encodeMetadata } from '$lib/utils/file_upload.svelte.js';
   import { createXXHash64 } from 'hash-wasm';
+  import { page } from '$app/stores';
 
-  const { data } = $props();
+  let enroll_id = $page.params.enroll_id;
 
   // 性别映射
   const GENDER_MAP = {
@@ -450,7 +451,7 @@
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        data: { register_id: data.enroll_id, status: status },
+        data: { register_id: enroll_id, status: status },
       }),
     })
       .then((response) => {

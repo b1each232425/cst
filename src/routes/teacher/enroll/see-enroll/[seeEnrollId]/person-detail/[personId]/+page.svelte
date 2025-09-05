@@ -2,6 +2,8 @@
   import Title from '$lib/components/Title/Title.svelte';
   import { formatDateTime } from '../../../../_utils/handleFileInput';
   import { onMount } from 'svelte';
+  import { page } from '$app/stores';
+  import { toast } from '$lib/components/Toast/Toast';
 
   // 考试类型映射
   const examTypeMap = {
@@ -24,17 +26,20 @@
     '08': '已迁移',
   };
 
-  let { data } = $props();
+  let id_card_no = $page.params.personId;
+  let see_enroll_id = $page.params.seeEnrollId;
 
   let person_detail = $state({}); // 基础用户信息
   let person_enroll_info = $state({}); // 用户报名信息
 
   let course_text = $state('');
+  let reject_reason = $state(''); // 不通过理由
+  let is_show_reject_panel = $state(false); // 是否显示不通过理由输入框
 
   // 获取用户基础信息
   function getUserInro() {
     // 请求获取我的角色信息
-    fetch(`/api/user?page=1&pageSize=10&fuzzyCondition=${data.idCardNo}`, {
+    fetch(`/api/user?page=1&pageSize=10&fuzzyCondition=${id_card_no}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -50,13 +55,21 @@
         person_detail = data.data[0];
       })
       .catch((e) => {
-        console.log(e);
+        console.error(e);
       });
   }
 
   // 获取用户报名信息
   function getUserEnrollInfo() {
-    fetch(`/api/registration?page=1&pageSize=10&message=${data.idCardNo}&id=${data.enrollId}`, {
+    const searchParams = new URLSearchParams({
+      id: see_enroll_id,
+      page: 1,
+      pageSize: 10,
+      message: id_card_no,
+      search_type: '00',
+    });
+
+    fetch(`/api/registration?${searchParams}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     })
@@ -82,8 +95,58 @@
         };
       })
       .catch((e) => {
+        console.error(e);
+      });
+  }
+
+  // 通过或不通过学生审核以及撤销操作
+  function handleApproveOrReject(ids, status) {
+    const searchParams = new URLSearchParams({
+      ids: ids,
+      status: status,
+      register_id: see_enroll_id,
+      fail_reason: reject_reason,
+    });
+
+    fetch(`/api/registrationStudent?${searchParams}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((res) => {
+        getUserEnrollInfo();
+        closeRejectPanel();
+      })
+      .catch((e) => {
         console.log(e);
       });
+  }
+
+  // 打开不通过理由输入框
+  function openRejectPanel() {
+    is_show_reject_panel = true;
+  }
+
+  // 关闭不通过理由输入框
+  function closeRejectPanel() {
+    is_show_reject_panel = false;
+    reject_reason = '';
+  }
+
+  // 确认不通过
+  function confirmReject() {
+    if (!reject_reason.trim()) {
+      toast.warning('请输入不通过理由');
+      return;
+    }
+    handleApproveOrReject([person_enroll_info.student.ID], '06');
   }
 
   onMount(() => {
@@ -120,7 +183,9 @@
       <!-- 第二行 -->
       <div class="info-row">
         <div class="info-item">
-          <span class="label">出生日期：</span>{person_detail.Birthday ? person_detail.Birthday : '暂无'}
+          <span class="label">出生日期：</span>{person_detail.Birthday
+            ? formatDateTime(person_detail.Birthday, 'yyyy-mm-dd')
+            : '暂无'}
         </div>
         <div class="info-item">
           <span class="label">电话：</span>{person_detail.MobilePhone ? person_detail.MobilePhone : '暂无'}
@@ -161,20 +226,22 @@
       </div>
 
       <!-- 第五行 -->
-      <div class="info-row idcard-row">
-        <div class="info-item idcard-item">
-          <span class="label">身份证人像面：</span>
-          <div class="idcard-image">
-            <img src={person_detail.idCardFront} alt="身份证人像面" />
+      {#if person_detail.IDCardFile}
+        <div class="info-row idcard-row">
+          <div class="info-item idcard-item">
+            <span class="label">身份证人像面：</span>
+            <div class="idcard-image">
+              <img src={person_detail.IDCardFile.frontImgID} alt="身份证人像面" />
+            </div>
+          </div>
+          <div class="info-item idcard-item">
+            <span class="label">身份证国徽面：</span>
+            <div class="idcard-image">
+              <img src={person_detail.IDCardFile.backImgID} alt="身份证国徽面" />
+            </div>
           </div>
         </div>
-        <div class="info-item idcard-item">
-          <span class="label">身份证国徽面：</span>
-          <div class="idcard-image">
-            <img src={person_detail.idCardBack} alt="身份证国徽面" />
-          </div>
-        </div>
-      </div>
+      {/if}
     </div>
   </div>
 
@@ -188,21 +255,47 @@
         </div>
         <div class="info-item">
           <span class="label">审核状态：</span><span
-            class="Status-tag {person_enroll_info.Status === '通过'
+            class="Status-tag {person_enroll_info.detail?.Status === '通过'
               ? 'published'
-              : person_enroll_info.Status === '未审核'
+              : person_enroll_info.detail?.Status === '待审核'
                 ? 'unpublished'
-                : 'invalidated'}">{person_enroll_info.Status ? person_enroll_info.Status : '暂无'}</span
+                : 'invalidated'}">{person_enroll_info.detail?.Status ? person_enroll_info.detail?.Status : '暂无'}</span
           >
         </div>
       </div>
       <div class="action-row">
-        <button class="btn pass">通过</button>
-        <button class="btn reject">不通过</button>
+        {#if person_enroll_info.detail?.Status === '待审核'}
+          <button class="btn pass" onclick={() => handleApproveOrReject([person_enroll_info.student.ID], '04')}
+            >通过</button
+          >
+          <button class="btn reject" onclick={() => openRejectPanel()}>不通过</button>
+        {:else if person_enroll_info.detail?.Status === '通过'}
+          <button class="btn revoke" onclick={() => handleApproveOrReject([person_enroll_info.student.ID], '02')}
+            >撤销通过</button
+          >
+        {:else if person_enroll_info.detail?.Status === '不通过'}
+          <button class="btn revoke" onclick={() => handleApproveOrReject([person_enroll_info.student.ID], '02')}
+            >撤销不通过</button
+          >
+        {/if}
       </div>
     </div>
   </div>
 </div>
+
+<!-- 不通过理由弹窗 -->
+{#if is_show_reject_panel}
+  <div class="modal-overlay">
+    <div class="modal">
+      <h3 class="modal-title">请输入不通过理由</h3>
+      <textarea bind:value={reject_reason} placeholder="请输入理由"></textarea>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick={closeRejectPanel}>取消</button>
+        <button class="btn-confirm" onclick={confirmReject}>确认</button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style lang="scss" scoped>
   $primary-color: #0052d9;
@@ -288,11 +381,12 @@
     justify-content: center;
     background: #fafafa;
     margin-top: 8px;
+    overflow: hidden;
 
     img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
   }
 
@@ -319,6 +413,92 @@
     .btn.reject {
       background: #e34d59;
       color: #fff;
+    }
+
+    .btn.revoke {
+      background: #ff9800;
+      color: #fff;
+    }
+  }
+
+  /* 弹窗样式 */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .modal {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    min-width: 400px;
+    max-width: 500px;
+  }
+
+  .modal-title {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 500;
+    color: #333;
+  }
+
+  .modal textarea {
+    width: 100%;
+    height: 100px;
+    padding: 12px;
+    border: 1px solid $border-color;
+    border-radius: 4px;
+    font-size: $normal-font-size;
+    resize: vertical;
+    box-sizing: border-box;
+    margin-bottom: 16px;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+    }
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  .btn-cancel {
+    padding: 8px 16px;
+    border: 1px solid $border-color;
+    background: white;
+    color: #666;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: $normal-font-size;
+
+    &:hover {
+      background: #f5f5f5;
+    }
+  }
+
+  .btn-confirm {
+    padding: 8px 16px;
+    border: none;
+    background: $primary-color;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: $normal-font-size;
+
+    &:hover {
+      background: #003db8;
     }
   }
 </style>
