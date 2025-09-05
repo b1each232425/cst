@@ -556,7 +556,11 @@
           </span>
         </label>
         <label class="label">
-          <input type="radio" bind:group={exam_type} value={'04'} class="choice-radio-input" />
+          <input type="radio" bind:group={exam_type} value={'04'} class="choice-radio-input"
+          onchange={() => {
+          exam_method = '02'; // 选择资格证考试时自动设置为线下
+        }}
+     />
           资格证考试
           <span class="tip-wrapper">
             <img class="tip" alt="提示" src="/exam_list/tip.png" />

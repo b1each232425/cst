@@ -613,7 +613,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         })
         .then((response) => response.json())
         .then((data)=>{
-           invigilators=data.data.map((invigilator,index)=>{
+           invigilators=(data?.data || []).map((invigilator,index)=>{
               return{
                 ID:invigilator.id,
                 OfficialName:invigilator.name,
@@ -643,7 +643,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         })
         .then((response) => response.json())
         .then((data)=>{
-           exam_examinee=data.data.map((examinee,index)=>{
+           exam_examinee=(data?.data || []).map((examinee,index)=>{
               return{
                 ID:examinee.id,
                 OfficialName:examinee.name,
@@ -728,7 +728,11 @@ function getSelectedPaperIDs(excludeIndex = -1) {
           </span>
         </label>
         <label class="label">
-          <input type="radio" bind:group={exam_type} value={'04'} class="choice-radio-input" />
+          <input type="radio" bind:group={exam_type} value={'04'} class="choice-radio-input"
+          onchange={() => {
+          exam_method = '02'; // 选择资格证考试时自动设置为线下
+        }}
+         />
           资格证考试
           <span class="tip-wrapper">
             <img class="tip" alt="提示" src="/exam_list/tip.png" />

@@ -148,12 +148,12 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
       MarkMode: cfg.markMode,
       SessionNum: cfg.sessionNum,
     }));
-    // console.log("examinee",exam_examinee);
+     console.log("examinee",exam_examinee);
     const invalid_examinee = exam_examinee.filter(
   e => (!e.student || e.student == null) && (!e.ID || e.ID ==null)
 );
     const valid_examinee = exam_examinee.filter(
-  e => (e.student && e.student.ID != null) || (e.ID && e.ID !=null)
+  e => (e.student && e.student.ID != null) || (e.ID && e.ID !=null) || (e.id && e.id !=null)
 )
     //导入新学生
     if (invalid_examinee.length > 0)
@@ -179,7 +179,13 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
           let new_student = result.data;
            console.log("valid_examinee:",valid_examinee);
            console.log("new_student",new_student);
-          exam_examinee = [...valid_examinee,...new_student];
+           if(new_student!== null)
+          {
+            exam_examinee = [...valid_examinee,...new_student];
+          }
+          else{
+            exam_examinee=valid_examinee;
+          }
           console.log("exam_examinee:",exam_examinee);
         })
         .catch((error) => {
@@ -201,7 +207,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
         },
         examSessions: examSessionsdata,
         examinee: exam_examinee.map(e => ({
-          id: e.student?.ID ?? e.ID,
+          id: e.student?.ID ?? e.ID ?? e.id,
           exam_plan_student_id: (e.student &&e.detail.ID)!=null ? e.detail.ID :0
         })), // 用户选中的考生 id 数组
         invigilators: invigilators.map((i) => i.ID), // 监考员 id 数组
