@@ -208,7 +208,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
         examSessions: examSessionsdata,
         examinee: exam_examinee.map(e => ({
           id: e.student?.ID ?? e.ID ?? e.id,
-          exam_plan_student_id: (e.student &&e.detail.ID)!=null ? e.detail.ID :0
+          exam_plan_student_id: (e.student &&e.detail.ID)!=null ? e.detail.ID : e.exam_plan_student_id!=null ? e.exam_plan_student_id : 0
         })), // 用户选中的考生 id 数组
         invigilators: invigilators.map((i) => i.ID), // 监考员 id 数组
         examRooms: exam_rooms.map((r) => ({
