@@ -474,20 +474,25 @@ export function validateDuplicates(data) {
 }
 
 // 工具函数：时间格式化
-export function formatDateTime(dateString) {
+export function formatDateTime(dateString, format = 'yyyy-mm-dd HH:MM:SS') {
   const d = new Date(dateString);
   const pad = (n) => (n < 10 ? '0' + n : n);
-  return (
-    d.getFullYear() +
-    '-' +
-    pad(d.getMonth() + 1) +
-    '-' +
-    pad(d.getDate()) +
-    ' ' +
-    pad(d.getHours()) +
-    ':' +
-    pad(d.getMinutes()) +
-    ':' +
-    pad(d.getSeconds())
-  );
+
+  // 如果传入的是时间戳，需要转换
+  const date = typeof dateString === 'number' ? new Date(dateString) : d;
+
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const seconds = pad(date.getSeconds());
+
+  return format
+    .replace('yyyy', year)
+    .replace('mm', month)
+    .replace('dd', day)
+    .replace('HH', hours)
+    .replace('MM', minutes)
+    .replace('SS', seconds);
 }

@@ -28,11 +28,11 @@
   /**
    * @param {{ practice_name: any; grading_method: any; test: { id: any;suggest_duration?:number }; students: any[];allowed_attempts:any}} practiceData
    */
-  async function handleSubmit(practiceData, newStudents,selectedStudents,is_deleted_all) {
+  async function handleSubmit(practiceData, newStudents, selectedStudents, is_deleted_all) {
     const EDIT_PRACTICE = () => {
       // 准备请求数据
       const requestData = {
-        Action: is_deleted_all?'clear':'POST',
+        Action: is_deleted_all ? 'clear' : 'POST',
         Data: {
           practice: {
             ID: practice.data.practice.ID,
@@ -43,7 +43,7 @@
             AllowedAttempts: practiceData.allowed_attempts,
             duration: practiceData.test.suggest_duration,
           },
-          student: is_deleted_all?[]: practiceStudentIds,
+          student: is_deleted_all ? [] : practiceStudentIds,
         },
       };
 
@@ -117,12 +117,12 @@
           if (result.status !== 0) {
             throw new Error(result.msg || '导入失败');
           }
-           //获取新增之后的学生ID
+          //获取新增之后的学生ID
           let studentIds = result.data.map((item) => item.ID);
           //获取已经有账号的学生的ID
-         let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
+          let existStudentIds = selectedStudents.filter((item) => item.id).map((item) => item.id);
           //创建需要关联的学生ID
-          practiceStudentIds = [...practiceStudentIds,...studentIds,...existStudentIds]
+          practiceStudentIds = [...practiceStudentIds, ...studentIds, ...existStudentIds];
           // 导入成功后执行创建练习
           return EDIT_PRACTICE();
         })
@@ -132,10 +132,10 @@
         });
     } else {
       //获取已经有账号的学生的ID
-          let existStudentIds = selectedStudents.filter(item=>item.id).map(item=>item.id)
-          console.log('existStudentIds',existStudentIds)
-          //创建需要关联的学生ID
-          practiceStudentIds = [...practiceStudentIds,...existStudentIds]
+      let existStudentIds = selectedStudents.filter((item) => item.id).map((item) => item.id);
+      console.log('existStudentIds', existStudentIds);
+      //创建需要关联的学生ID
+      practiceStudentIds = [...practiceStudentIds, ...existStudentIds];
 
       EDIT_PRACTICE().catch((error) => {
         console.error('编辑练习请求异常:', error);
@@ -143,7 +143,7 @@
       });
     }
   }
-  
+
   // 处理取消
   function handleCancel() {
     isDialogOpen = true;
