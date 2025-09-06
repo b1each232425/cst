@@ -119,6 +119,15 @@ describe('试卷管理页面测试', () => {
 
                         // 输入试卷名称
                         fireEvent.input(screen.getByPlaceholderText('搜索试卷名称'), { target: { value: '测试名称' } });
+                        fireEvent.input(screen.getByPlaceholderText('搜索试卷标签'), { target: { value: '测试标签' } });
+                        
+                        fireEvent.change(screen.getByPlaceholderText('搜索试卷名称'), { target: { value: '测试名称' } });
+                        fireEvent.change(screen.getByPlaceholderText('搜索试卷标签'), { target: { value: '测试标签' } });
+
+                        // 点击clear-name-btn
+                        fireEvent.click(container.querySelector('.clear-name-btn'));
+                        // 点击clear-tags-btn
+                        fireEvent.click(container.querySelector('.clear-tags-btn'));
 
                         // 等待防抖延迟（真的等了600ms）
                         await new Promise(resolve => setTimeout(resolve, 600));
@@ -875,7 +884,6 @@ describe('试卷管理页面测试', () => {
                     });
                 });
             });
-
 
             describe('预览', () => {
 

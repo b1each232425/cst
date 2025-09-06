@@ -23,14 +23,14 @@
   }=$props();
   
   let is_selection_mode=$state(false);
-//let invigilator_list = $state([]);
-let invigilator_list = $state([]);
+  let invigilator_list = $state([]);
   let selected_invigilator_list = $derived(invigilator_list.filter(r => r.selected));
   /** 当前页是否已全部选中 */
   let is_total_selected = $derived(
   invigilator_list.length > 0 &&
   invigilator_list.every(r => r.selected)
 );
+  let initial_list = $state([]);
   //搜索参数
   let search_params = $state({
     page: 1,
@@ -49,7 +49,7 @@ let invigilator_list = $state([]);
 
   $effect(() => {
     if (show_panel ) {
-      selected_invigilator_list = selectedInvigilators;
+      //selected_invigilator_list = selectedInvigilators;
     }
   });
 
@@ -81,7 +81,13 @@ let invigilator_list = $state([]);
       .then((result => {
         if(result.status === 0)
         {
-          invigilator_list = result.data;
+          invigilator_list = result.data.map(invigilator => ({
+        ...invigilator,
+        // 如果在外部传入的列表中，标记为选中
+        selected: selectedInvigilators.some(
+          selected => selected.ID === invigilator.ID
+        )
+        }));
         }
         else{
           toast.error("获取列表失败"+result.msg);
@@ -257,8 +263,12 @@ let invigilator_list = $state([]);
                 <button class="btn btn--info is-plain" onclick={() => {
                     show_panel = false;
                     search_params.page = 1;
-                    selected_invigilator_list = [];
                     is_selection_mode = false;
+                    invigilator_list.forEach(invigilator => {
+                    invigilator.selected = selectedInvigilators.some(
+                      selected => selected.ID === invigilator.ID
+                    );
+                  });           
                     onCancel();
                 }}>取消</button>
                 <button class="btn btn--primary is-plain" onclick={() => {

@@ -119,14 +119,50 @@
       serialNumber: 0, // 后续重新编号
     }));
 
-    // 合并已选、新导入、已存在的学生
-    selected_registration_student_list = [...selected_registration_student_list, ...newStudents, ...existingStudents];
-    //console.log(selected_registration_student_list);
+    // 去重逻辑：过滤掉已存在的学生
+    const filteredNewStudents = newStudents.filter(newStudent => {
+      return !selected_registration_student_list.some(existingStudent => {
+        // 通过身份证号和手机号进行去重判断
+        const isSameIdCard = existingStudent.IDCardNo === newStudent.IDCardNo;
+        const isSamePhone = existingStudent.MobilePhone === newStudent.MobilePhone || 
+                           existingStudent.MobilePhone === '+86' + newStudent.MobilePhone ||
+                           '+86' + existingStudent.MobilePhone === newStudent.MobilePhone;
+        return isSameIdCard && isSamePhone;
+      });
+    });
+
+    const filteredExistingStudents = existingStudents.filter(existStudent => {
+      return !selected_registration_student_list.some(existingStudent => {
+        // 通过 ID 进行去重判断（存在ID的情况）
+        if (existStudent.id && existingStudent.id) {
+          return existingStudent.id === existStudent.id;
+        }
+        // 通过身份证号和手机号进行去重判断
+        const isSameIdCard = existingStudent.IDCardNo === existStudent.IDCardNo;
+        const isSamePhone = existingStudent.MobilePhone === existStudent.MobilePhone || 
+                           existingStudent.MobilePhone === '+86' + existStudent.MobilePhone ||
+                           '+86' + existingStudent.MobilePhone === existStudent.MobilePhone;
+        return isSameIdCard && isSamePhone;
+      });
+    });
+
+    // 合并已选、新导入（去重后）、已存在（去重后）的学生
+    selected_registration_student_list = [...selected_registration_student_list, ...filteredNewStudents, ...filteredExistingStudents];
+    
+    // 显示导入结果提示
+    const importedCount = filteredNewStudents.length + filteredExistingStudents.length;
+    const duplicateCount = (newStudents.length + existingStudents.length) - importedCount;
+    
+    if (importedCount > 0) {
+      // toast.success(`成功导入 ${importedCount} 名学生${duplicateCount > 0 ? `，跳过 ${duplicateCount} 名重复学生` : ''}`);
+    } else if (duplicateCount > 0) {
+      toast.warning(`所有学生均已存在，跳过 ${duplicateCount} 名重复学生`);
+    }
+    
     // 重新编号
     recalculateSerialNumbers();
   }
   show_import_panel = false;
-  
 }
 
   function getFilteredSelectedExaminee() {
@@ -387,6 +423,16 @@ function handleCheckboxChange(examinee, event) {
   is_total_selected = isAllSelected();
 }
 
+function removeSelectedExaminee(examinee) {
+  // 统一用 student.ID 作为唯一键
+  const targetId = examinee.student?.ID ?? examinee.ID;
+  selected_registration_student_list = selected_registration_student_list.filter(
+    s => (s.student?.ID ?? s.ID) !== targetId
+  );
+  // 重新编号（如果你后面需要 serialNumber 连续）
+  recalculateSerialNumbers();
+}
+
   function ViewRegistrationStudent(index){
     const queryParams = new URLSearchParams();
     queryParams.append('page', search_params.page.toString());
@@ -478,6 +524,8 @@ function handleCheckboxChange(examinee, event) {
                   <th class="table-head">性别</th>
                   <th class="table-head">手机号</th>
                   <th class="table-head">身份证号</th>
+                  <th class="table-head">来源</th>
+                  <th class="table-head">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -487,6 +535,8 @@ function handleCheckboxChange(examinee, event) {
                     <td>{examinee.student?.Gender || examinee.Gender || '--'}</td>
                     <td>{examinee.student?.MobilePhone || examinee.MobilePhone || '--'}</td>
                     <td>{examinee.student?.IDCardNo || examinee.IDCardNo || '--'}</td>
+                    <td>{examinee.detail?.ID || examinee?.exam_plan_student_id ? "报名计划" : "手动导入"}</td>
+                    <td><button class="view-btn" onclick={()=>removeSelectedExaminee(examinee)}>移除</button></td>
                   </tr>
                 {/each}
               </tbody>
@@ -532,20 +582,6 @@ function handleCheckboxChange(examinee, event) {
               </tr>
             </thead>
             <tbody>
-              <!-- {#each examinee_list as examinee, index}
-                <tr 
-                class={`examinee ${examinee.selected ? 'selected' : ''}`}
-                onclick= {(event) => handleCheckboxChange(examinee, event)}
-                >
-                  <td>
-                    <input
-                      type="checkbox"
-                      class="custom-checkbox"
-                      checked={examinee.selected}
-                      
-                    />
-                  </td>
-                  -->
               {#each registration_list as registration,index}
               <tr>
                  <!-- <td>
@@ -660,9 +696,7 @@ function handleCheckboxChange(examinee, event) {
           </div>
 
     <div class="pagination-container {is_selection_mode && !is_view_mode ? ' ' : 'hideButton'}">
-          <span style="font-size: 12px; margin-right:10px">
-            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_examinee.length}</span> 条
-          </span>
+          
           <Pagination
             total_items={total_registration}
             current_page={search_params.page}
