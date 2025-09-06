@@ -649,7 +649,8 @@ function getSelectedPaperIDs(excludeIndex = -1) {
                 OfficialName:examinee.name,
                 MobilePhone:examinee.mobile_phone,
                 IDCardNo:examinee.id_card_no,
-                Gender:examinee.gender
+                Gender:examinee.gender,
+                exam_plan_student_id:examinee.exam_plan_student_id
               }
            });
         })

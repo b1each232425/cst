@@ -30,6 +30,7 @@
   invigilator_list.length > 0 &&
   invigilator_list.every(r => r.selected)
 );
+  let initial_list = $state([]);
   //搜索参数
   let search_params = $state({
     page: 1,
@@ -262,8 +263,12 @@
                 <button class="btn btn--info is-plain" onclick={() => {
                     show_panel = false;
                     search_params.page = 1;
-                    selected_invigilator_list = [];
                     is_selection_mode = false;
+                    invigilator_list.forEach(invigilator => {
+                    invigilator.selected = selectedInvigilators.some(
+                      selected => selected.ID === invigilator.ID
+                    );
+                  });           
                     onCancel();
                 }}>取消</button>
                 <button class="btn btn--primary is-plain" onclick={() => {

@@ -535,7 +535,7 @@ function removeSelectedExaminee(examinee) {
                     <td>{examinee.student?.Gender || examinee.Gender || '--'}</td>
                     <td>{examinee.student?.MobilePhone || examinee.MobilePhone || '--'}</td>
                     <td>{examinee.student?.IDCardNo || examinee.IDCardNo || '--'}</td>
-                    <td>{examinee.student?.ID ? "报名计划" : "手动导入"}</td>
+                    <td>{examinee.detail?.ID || examinee?.exam_plan_student_id ? "报名计划" : "手动导入"}</td>
                     <td><button class="view-btn" onclick={()=>removeSelectedExaminee(examinee)}>移除</button></td>
                   </tr>
                 {/each}
