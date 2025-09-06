@@ -134,15 +134,16 @@
           idType: item.student.IDCardType,
           enrollTime: formatDateTime(item.detail.RegisterTime), // 格式化时间
           enrollMethod: item.detail.Type === '02' ? '人工导入' : '自报名', // 报名方式
-          examType: examTypeMap[item.detail.ExamType] || '正考', // 默认正考
-          auditor: item.reviewer || '--',
-          status: statusMap[item.detail.Status] || '未知',
+          examType: examTypeMap[item.detail.ExamType],
+          auditor: item.reviewer,
+          status: statusMap[item.detail.Status],
         }));
 
         total_items = res.data.total;
       })
       .catch((e) => {
-        console.log(e);
+        toast.error('网络错误');
+        console.error(e);
       });
   }
 
@@ -168,10 +169,16 @@
         return response.json();
       })
       .then((res) => {
-        getEnrollPersonData();
+        if (res.status === 0) {
+          getEnrollPersonData();
+          toast.success('审核成功');
+        } else {
+          toast.error('审核失败');
+        }
       })
       .catch((e) => {
         console.log(e);
+        toast.error('网络错误');
       });
   }
 
@@ -187,8 +194,7 @@
       let result = await checkFileData(file);
 
       if (result.error) {
-        error = result.error;
-        toast.error(error);
+        toast.error(result.error);
         return;
       }
 
@@ -339,6 +345,8 @@
     // 清空选择
     select_approve_id = [];
     select_reject_id = [];
+
+    toast.success('审核成功');
 
     closeRejectPanel();
   }
@@ -654,7 +662,7 @@
       <textarea bind:value={reject_reason} placeholder="请输入理由"></textarea>
       <div class="modal-actions">
         <button class="btn-cancel" onclick={closeRejectPanel}>取消</button>
-        <button class="btn-confirm" onclick={confirmReject}>确认</button>
+        <button class="btn-confirm" onclick={confirmReject}>确定</button>
       </div>
     </div>
   </div>
