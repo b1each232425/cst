@@ -866,17 +866,17 @@ describe('导入题目组件', () => {
                             method: "GET",
                             status: 0,
                             msg: "success",
-                            rowCount: 2,
-                            data: [SINGLE_CHOICE_QUESTION, MULTIPLE_CHOICE_QUESTION],
+                            rowCount: 0,
+                            data: null,
                         })
                     });
 
                     // 再次点击button类
                     fireEvent.click(button);
 
-                    // 验证表格有2行
+                    // 验证表格为空
                     await waitFor(() => {
-                        expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                        expect(container.querySelectorAll('tbody tr').length).toBe(0);
                     });
                 });
 
@@ -996,17 +996,17 @@ describe('导入题目组件', () => {
                             method: "GET",
                             status: 0,
                             msg: "success",
-                            rowCount: 2,
-                            data: [SINGLE_CHOICE_QUESTION, MULTIPLE_CHOICE_QUESTION],
+                            rowCount: 0,
+                            data: null,
                         })
                     });
 
                     // 再次点击button类
                     fireEvent.click(button);
 
-                    // 验证表格有2行
+                    // 验证表格为空
                     await waitFor(() => {
-                        expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                        expect(container.querySelectorAll('tbody tr').length).toBe(0);
                     });
                 });
 
@@ -1126,17 +1126,17 @@ describe('导入题目组件', () => {
                             method: "GET",
                             status: 0,
                             msg: "success",
-                            rowCount: 2,
-                            data: [SINGLE_CHOICE_QUESTION, MULTIPLE_CHOICE_QUESTION],
+                            rowCount: 0,
+                            data: null,
                         })
                     });
 
                     // 再次点击button类
                     fireEvent.click(button);
 
-                    // 验证表格有2行
+                    // 验证表格为空
                     await waitFor(() => {
-                        expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                        expect(container.querySelectorAll('tbody tr').length).toBe(0);
                     });
                 });
 
@@ -1353,6 +1353,488 @@ describe('导入题目组件', () => {
                         });
                     });
                 });
+            });
+
+            describe('表格', () => {
+                it('全选', async () => {
+                    const { container } = render(Manual);
+
+                    // 等待页面渲染完成
+                    await waitFor(() => {
+                        expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                    });
+
+                    // mock 题库列表
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            API: "/api/question-banks",
+                            method: "GET",
+                            msg: "success",
+                            rowCount: 1,
+                            status: 0,
+                            data: [
+                                {
+                                    Name: "测试题库",
+                                    ID: 1,
+                                    QuestionCount: 2,
+                                    QuestionTags: ["单选题的标签"],
+                                    QuestionTypes: ["00","02"],
+                                    QuestionDifficulties: [2,3],
+                                    CreateTime: 1722100200000,
+                                    UpdateTime: 1722100200000,
+                                    Type: "00",
+                                    Status: "00",
+                                }
+                            ]
+                        })
+                    });
+
+                    // 点击从题库中导入按钮
+                    fireEvent.click(screen.getByText('从题库中导入'));
+
+                    // 验证标题
+                    await waitFor(() => {
+                        expect(screen.getByText('从题库中导入题目')).toBeInTheDocument();
+                    });
+
+                    // 获取body-left类
+                    const bodyLeft = container.querySelector('.body-left');
+
+                    // 获取question-bank-list类
+                    const questionBankList = bodyLeft.querySelector('.question-bank-list');
+
+                    // 验证有single-bank
+                    await waitFor(() => {
+                        expect(questionBankList.querySelectorAll('.single-bank').length).toBe(1);
+                    });
+
+                    // mock 题目列表
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            API: "/api/questions",
+                            method: "GET",
+                            status: 0,
+                            msg: "success",
+                            rowCount: 1,
+                            data: [SINGLE_CHOICE_QUESTION, MULTIPLE_CHOICE_QUESTION],
+                        })
+                    });
+
+                    // 点击single-bank类（用类选择器）
+                    fireEvent.click(questionBankList.querySelector('.single-bank'));
+
+                    // 获取body-right类
+                    const bodyRight = container.querySelector('.body-right');
+                    
+                    // 获取questions-table-container类
+                    const questionsTableContainer = bodyRight.querySelector('.questions-table-container');
+
+                    // 验证表格有2行
+                    await waitFor(() => {
+                        expect(questionsTableContainer.querySelectorAll('tbody tr').length).toBe(2);
+                    });
+
+                    // 获取thead类
+                    const thead = questionsTableContainer.querySelector('thead');
+                    
+                    // 点击全选框
+                    fireEvent.click(thead.querySelector('input[type="checkbox"]'));
+
+                    // 再次点击全选框
+                    fireEvent.click(thead.querySelector('input[type="checkbox"]'));
+
+                    // 验证全选框是未选中状态
+                    await waitFor(() => {
+                        expect(thead.querySelector('input[type="checkbox"]').checked).toBe(false);
+                    });
+
+                    // 点击表格两条数据的勾选框
+                    fireEvent.click(questionsTableContainer.querySelectorAll('tbody tr')[0].querySelector('input[type="checkbox"]'));
+                    fireEvent.click(questionsTableContainer.querySelectorAll('tbody tr')[1].querySelector('input[type="checkbox"]'));
+
+                    // 验证全选框是选中状态
+                    await waitFor(() => {
+                        expect(thead.querySelector('input[type="checkbox"]').checked).toBe(true);
+                    });
+
+                    // 取消勾选第一条数据
+                    fireEvent.click(questionsTableContainer.querySelectorAll('tbody tr')[0].querySelector('input[type="checkbox"]'));
+
+                    // 验证全选框是未选中状态
+                    await waitFor(() => {
+                        expect(thead.querySelector('input[type="checkbox"]').checked).toBe(false);
+                    });
+
+                });
+
+                describe('分页器', () => {
+                    it('正常情况', async () => {
+                        const { container } = render(Manual);
+    
+                        // 等待页面渲染完成
+                        await waitFor(() => {
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+    
+                        // mock 题库列表
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                API: "/api/question-banks",
+                                method: "GET",
+                                msg: "success",
+                                rowCount: 1,
+                                status: 0,
+                                data: [
+                                    {
+                                        Name: "测试题库",
+                                        ID: 1,
+                                        QuestionCount: 2,
+                                        QuestionTags: ["单选题的标签"],
+                                        QuestionTypes: ["00","02"],
+                                        QuestionDifficulties: [2,3],
+                                        CreateTime: 1722100200000,
+                                        UpdateTime: 1722100200000,
+                                        Type: "00",
+                                        Status: "00",
+                                    }
+                                ]
+                            })
+                        });
+    
+                        // 点击从题库中导入按钮
+                        fireEvent.click(screen.getByText('从题库中导入'));
+    
+                        // 验证标题
+                        await waitFor(() => {
+                            expect(screen.getByText('从题库中导入题目')).toBeInTheDocument();
+                        });
+    
+                        // 获取body-left类
+                        const bodyLeft = container.querySelector('.body-left');
+    
+                        // 获取question-bank-list类
+                        const questionBankList = bodyLeft.querySelector('.question-bank-list');
+    
+                        // 验证有single-bank
+                        await waitFor(() => {
+                            expect(questionBankList.querySelectorAll('.single-bank').length).toBe(1);
+                        });
+    
+                        // mock 题目列表
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                API: "/api/questions",
+                                method: "GET",
+                                status: 0,
+                                msg: "success",
+                                rowCount: 11,
+                                // 共11条
+                                data: [
+                                    {
+                                        ID: 101,
+                                        Type: "00",
+                                        Content: "<p><span style=\"font-size: 12pt\">我是一道单选题</span></p>",
+                                        Score: 2,
+                                        Difficulty: 3,
+                                        Tags: ["单选题的标签"],
+                                        BelongTo: 106,
+                                        UpdateTime: 1755918425852
+                                    },
+                                    {
+                                        ID: 102,
+                                        Type: "00",
+                                        Content: "<p><span style=\"font-size: 12pt\">我是一道单选题</span></p>",
+                                        Score: 2,
+                                        Difficulty: 3,
+                                        Tags: ["单选题的标签"],
+                                        BelongTo: 106,
+                                        UpdateTime: 1755918425852
+                                    },
+                                    {
+                                        ID: 103,
+                                        Type: "00",
+                                        Content: "<p><span style=\"font-size: 12pt\">我是一道单选题</span></p>",
+                                        Score: 2,
+                                        Difficulty: 3,
+                                        Tags: ["单选题的标签"],
+                                        BelongTo: 106,
+                                        UpdateTime: 1755918425852
+                                    },
+                                    {
+                                        ID: 104,
+                                        Type: "00",
+                                        Content: "<p><span style=\"font-size: 12pt\">我是一道单选题</span></p>",
+                                        Score: 2,
+                                        Difficulty: 3,
+                                        Tags: ["单选题的标签"],
+                                        BelongTo: 106,
+                                        UpdateTime: 1755918425852
+                                    },
+                                    {
+                                        ID: 105,
+                                        Type: "00",
+                                        Content: "<p><span style=\"font-size: 12pt\">我是一道单选题</span></p>",
+                                        Score: 2,
+                                        Difficulty: 3,
+                                        Tags: ["单选题的标签"],
+                                        BelongTo: 106,
+                                        UpdateTime: 1755918425852
+                                    },
+                                    {
+                                        ID: 106,
+                                        Type: "00",
+                                        Content: "<p><span style=\"font-size: 12pt\">我是一道单选题</span></p>",
+                                        Score: 2,
+                                        Difficulty: 3,
+                                        Tags: ["单选题的标签"],
+                                        BelongTo: 106,
+                                        UpdateTime: 1755918425852
+                                    },
+                                    {
+                                        ID: 107,
+                                        Type: "00",
+                                        Content: "<p><span style=\"font-size: 12pt\">我是一道单选题</span></p>",
+                                        Score: 2,
+                                        Difficulty: 3,
+                                        Tags: ["单选题的标签"],
+                                        BelongTo: 106,
+                                        UpdateTime: 1755918425852
+                                    },
+                                    {
+                                        ID: 108,
+                                        Type: "00",
+                                        Content: "<p><span style=\"font-size: 12pt\">我是一道单选题</span></p>",
+                                        Score: 2,
+                                        Difficulty: 3,
+                                        Tags: ["单选题的标签"],
+                                        BelongTo: 106,
+                                        UpdateTime: 1755918425852
+                                    },
+                                    {
+                                        ID: 109,
+                                        Type: "00",
+                                        Content: "<p><span style=\"font-size: 12pt\">我是一道单选题</span></p>",
+                                        Score: 2,
+                                        Difficulty: 3,
+                                        Tags: ["单选题的标签"],
+                                        BelongTo: 106,
+                                        UpdateTime: 1755918425852
+                                    },
+                                    {
+                                        ID: 110,
+                                        Type: "00",
+                                        Content: "<p><span style=\"font-size: 12pt\">我是一道单选题</span></p>",
+                                        Score: 2,
+                                        Difficulty: 3,
+                                        Tags: ["单选题的标签"],
+                                        BelongTo: 106,
+                                        UpdateTime: 1755918425852
+                                    },
+                                    {
+                                        ID: 111,
+                                        Type: "00",
+                                        Content: "<p><span style=\"font-size: 12pt\">我是一道单选题</span></p>",
+                                        Score: 2,
+                                        Difficulty: 3,
+                                        Tags: ["单选题的标签"],
+                                        BelongTo: 106,
+                                        UpdateTime: 1755918425852
+                                    },
+                                ],
+                            })
+                        });
+    
+                        // 点击single-bank类（用类选择器）
+                        fireEvent.click(questionBankList.querySelector('.single-bank'));
+    
+                        // 获取body-right类
+                        const bodyRight = container.querySelector('.body-right');
+                        
+                        // 获取questions-table-container类
+                        const questionsTableContainer = bodyRight.querySelector('.questions-table-container');
+    
+                        // 验证表格有11行
+                        await waitFor(() => {
+                            expect(questionsTableContainer.querySelectorAll('tbody tr').length).toBe(11);
+                        });
+    
+                        // 获取page-control-container类
+                        const pageControlContainer = bodyRight.querySelector('.page-control-container');
+    
+                        // 验证“共 11 条”
+                        await waitFor(() => {
+                            expect(screen.getByText('共 11 条')).toBeInTheDocument();
+                        });
+    
+                        // 点击select__input类
+                        fireEvent.click(pageControlContainer.querySelector('.select__input'));
+    
+                        // 验证下拉框的选项
+                        await waitFor(() => {
+                            expect(screen.getByText('5条/页')).toBeInTheDocument();
+                            expect(screen.getByText('10条/页')).toBeInTheDocument();
+                            expect(screen.getByText('20条/页')).toBeInTheDocument();
+                        });
+    
+                        // 获取下拉栏
+                        const select = pageControlContainer.querySelector('.select__options');
+                        
+                        // 验证有3个button  
+                        await waitFor(() => {
+                            expect(select.querySelectorAll('button').length).toBe(3);
+                        });
+                        
+                        // mock 题目列表
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                API: "/api/questions",
+                                method: "GET",
+                                status: 0,
+                                msg: "success",
+                                rowCount: 0,
+                                data: null,
+                            })
+                        });
+    
+                        // mock 题目列表
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                API: "/api/questions",
+                                method: "GET",
+                                status: 0,
+                                msg: "success",
+                                rowCount: 0,
+                                data: null,
+                            })
+                        });
+                        
+                        // 点击第三个button
+                        fireEvent.click(select.querySelectorAll('button')[2]);
+    
+                        // 验证表格为空
+                        await waitFor(() => {
+                            expect(questionsTableContainer.querySelectorAll('tbody tr').length).toBe(0);
+                        });
+                    });
+
+                    it('失败情况', async () => {
+                        const { container } = render(Manual);
+    
+                        // 等待页面渲染完成
+                        await waitFor(() => {
+                            expect(screen.getAllByText(/测试题组/)).toHaveLength(2);
+                        });
+    
+                        // mock 题库列表
+                        global.fetch.mockResolvedValueOnce({
+                            ok: true,
+                            json: () => Promise.resolve({
+                                API: "/api/question-banks",
+                                method: "GET",
+                                msg: "success",
+                                rowCount: 1,
+                                status: 0,
+                                data: [
+                                    {
+                                        Name: "测试题库",
+                                        ID: 1,
+                                        QuestionCount: 2,
+                                        QuestionTags: ["单选题的标签"],
+                                        QuestionTypes: ["00","02"],
+                                        QuestionDifficulties: [2,3],
+                                        CreateTime: 1722100200000,
+                                        UpdateTime: 1722100200000,
+                                        Type: "00",
+                                        Status: "00",
+                                    }
+                                ]
+                            })
+                        });
+    
+                        // 点击从题库中导入按钮
+                        fireEvent.click(screen.getByText('从题库中导入'));
+    
+                        // 验证标题
+                        await waitFor(() => {
+                            expect(screen.getByText('从题库中导入题目')).toBeInTheDocument();
+                        });
+    
+                        // 获取body-left类
+                        const bodyLeft = container.querySelector('.body-left');
+    
+                        // 获取question-bank-list类
+                        const questionBankList = bodyLeft.querySelector('.question-bank-list');
+    
+                        // 验证有single-bank
+                        await waitFor(() => {
+                            expect(questionBankList.querySelectorAll('.single-bank').length).toBe(1);
+                        });
+    
+                        // 获取body-right类
+                        const bodyRight = container.querySelector('.body-right');
+                        
+                        // 获取questions-table-container类
+                        const questionsTableContainer = bodyRight.querySelector('.questions-table-container');
+    
+                        // 验证表格为空
+                        await waitFor(() => {
+                            expect(questionsTableContainer.querySelectorAll('tbody tr').length).toBe(0);
+                        });
+    
+                        // 获取page-control-container类
+                        const pageControlContainer = bodyRight.querySelector('.page-control-container');
+    
+                        // 验证“共 0 条”
+                        await waitFor(() => {
+                            expect(screen.getByText('共 0 条')).toBeInTheDocument();
+                        });
+    
+                        // 点击select__input类
+                        fireEvent.click(pageControlContainer.querySelector('.select__input'));
+    
+                        // 验证下拉框的选项
+                        await waitFor(() => {
+                            expect(screen.getByText('5条/页')).toBeInTheDocument();
+                            expect(screen.getByText('10条/页')).toBeInTheDocument();
+                            expect(screen.getByText('20条/页')).toBeInTheDocument();
+                        });
+    
+                        // 获取下拉栏
+                        const select = pageControlContainer.querySelector('.select__options');
+                        
+                        // 验证有3个button  
+                        await waitFor(() => {
+                            expect(select.querySelectorAll('button').length).toBe(3);
+                        });
+                        
+                        // mock 失败情况
+                        global.fetch.mockResolvedValueOnce({
+                            ok: false,
+                            status: 400
+                        });
+    
+                        // mock 失败情况
+                        global.fetch.mockResolvedValueOnce({
+                            ok: false,
+                            status: 400
+                        });
+                        
+                        // 点击第三个button
+                        fireEvent.click(select.querySelectorAll('button')[2]);
+
+                        // 验证表格为空
+                        await waitFor(() => {
+                            expect(questionsTableContainer.querySelectorAll('tbody tr').length).toBe(0);
+                        });
+                    });
+                });
+
             });
         });
     });

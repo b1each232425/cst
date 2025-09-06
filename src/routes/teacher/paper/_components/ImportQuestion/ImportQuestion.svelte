@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 21:09:59
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-09-05 18:38:54
+ * @LastEditTime: 2025-09-06 17:07:57
  * @FilePath: \exam\src\routes\teacher\paper\_components\ImportQuestion\ImportQuestion.svelte
  * @Description: 从题库导入题目组件
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -419,7 +419,7 @@
             question_types,
             question_difficulties
         ).then( result => {
-            question_list = result.data;
+            question_list = result.data || [];
             total_questions = result.rowCount;
         });
     }
@@ -442,7 +442,7 @@
             question_types,
             question_difficulties
         ).then( result => {
-            question_list = result.data;
+            question_list = result.data || [];
             total_questions = result.rowCount;
         });
     }
@@ -465,7 +465,7 @@
             question_types,
             question_difficulties
         ).then( result => {
-            question_list = result.data;
+            question_list = result.data || [];
             total_questions = result.rowCount;
         });
     }
