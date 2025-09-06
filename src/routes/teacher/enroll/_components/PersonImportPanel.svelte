@@ -15,7 +15,7 @@
   let failure_count = $state(0); // 失败识别条数
   let editing_row = $state(null); // 当前编辑行副本
 
-  let import_req_data = $state({ register_id: enroll_id, student: [] });
+  let import_req_data = $state({ register_id: Number(enroll_id), student: [] });
 
   // 消息提示框数据
   let is_show_messagebox = $state(false);
