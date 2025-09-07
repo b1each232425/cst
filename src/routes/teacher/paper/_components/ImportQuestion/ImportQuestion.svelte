@@ -162,7 +162,6 @@
                 if(result) {
                     question_list = result.data || [];
                     total_questions = result.rowCount;
-                    console.log(question_list);
                 } else {
                     question_list = [];
                     total_questions = 0;
