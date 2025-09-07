@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-01 21:09:59
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-09-05 18:38:54
+ * @LastEditTime: 2025-09-06 17:07:57
  * @FilePath: \exam\src\routes\teacher\paper\_components\ImportQuestion\ImportQuestion.svelte
  * @Description: 从题库导入题目组件
  * @Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -106,10 +106,7 @@
 
     let {
         onclose, update,
-        to_import_group = {
-            id: 0,
-            name: "",
-        },
+        to_import_group,
         fetchPaper, savePaper
     } = $props();                 // 关闭弹窗
     let drop_up_toggle_is_open = $state(false);     // 上拉题组栏
@@ -293,7 +290,7 @@
     function confirmImport() {
         // 要通过paper_groups获取原来题目的ID数组
         const originalQuestionIDs = paper_groups.flatMap(group => 
-            group.questions.map(question => question.id || question.ID)
+            group.questions.map(question => question.id)
         ).filter(Boolean);
         
         // 找到目标题组在原始题目数组中的位置
@@ -419,7 +416,7 @@
             question_types,
             question_difficulties
         ).then( result => {
-            question_list = result.data;
+            question_list = result.data || [];
             total_questions = result.rowCount;
         });
     }
@@ -442,7 +439,7 @@
             question_types,
             question_difficulties
         ).then( result => {
-            question_list = result.data;
+            question_list = result.data || [];
             total_questions = result.rowCount;
         });
     }
@@ -465,7 +462,7 @@
             question_types,
             question_difficulties
         ).then( result => {
-            question_list = result.data;
+            question_list = result.data || [];
             total_questions = result.rowCount;
         });
     }
@@ -792,17 +789,17 @@
                         {#each paper_groups as group}
                             <!-- svelte-ignore a11y_click_events_have_key_events -->
                             <div class="menu-option {group.id===to_import_group.id?"selected":""}" onclick={()=>{to_import_group=group}}>
-                                <span>
-                                    {group.name}（共{group.questions.length}题，共{
-                                        group.questions.reduce((sum,question)=>sum+(question.score||0),0)
-                                    }分）
+                                <span>{group.name}</span>
+                                <span>{"（共"+group.questions.length+"题，共"+
+                                        group.questions.reduce((sum,question)=>sum+(question.score),0)
+                                    +"分）"}
                                 </span>
                             </div>
                         {/each}
                     </div>  
                 {/if}
                 <span class="selected-group">{to_import_group.id===0?"请选择题组":to_import_group.name+`（共${to_import_group.questions.length}题，共${
-                    to_import_group.questions.reduce((sum,question)=>sum+(question.score||0),0) 
+                    to_import_group.questions.reduce((sum,question)=>sum+(question.score),0) 
                 }分）`}</span>
                 <button class="toggle-btn">∨</button>
             </div>
