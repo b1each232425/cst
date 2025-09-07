@@ -13,13 +13,10 @@
   import { createXXHash64 } from 'hash-wasm';
   import { page } from '$app/stores';
 
-  let enroll_id = $page.params.enroll_id;
+  let enroll_id = Number($page.params.enroll_id);
 
-  // 性别映射
-  const GENDER_MAP = {
-    男: '男',
-    女: '女',
-  };
+  // 性别选项
+  const GENDER_OPTIONS = ['男', '女'];
 
   // 状态码映射
   const STATUS_MAP = {
@@ -30,14 +27,14 @@
     '08': '已迁移',
   };
 
-  // 证件类型映射
-  const CARD_TYPE_MAP = {
-    居民身份证: '居民身份证',
-    临时居民身份证: '临时居民身份证',
-    外国人永久居留身份证: '外国人永久居留身份证',
-    港澳居民来往内地通行证: '港澳居民来往内地通行证',
-    台湾居民来往大陆通信证: '台湾居民来往大陆通信证',
-  };
+  // 证件类型选项
+  const CARD_TYPE_OPTIONS = [
+    '居民身份证',
+    '临时居民身份证',
+    '外国人永久居留身份证',
+    '港澳居民来往内地通行证',
+    '台湾居民来往大陆通信证',
+  ];
 
   // 身份证信息
   let id_card_front_file = $state(null); // 身份证正面图片
@@ -182,6 +179,9 @@
         detail.email = user.Email || '';
         detail.phone = user.MobilePhone || '';
         detail.address = user.Addr || '';
+        province = user.Province || '';
+        city = user.City || '';
+        district = user.District || '';
 
         // 处理身份证文件路径
         id_card_front_path = user.IDCardFile?.frontImgID || '';
@@ -216,6 +216,10 @@
             frontImgID: id_card_front_path || '',
             backImgID: id_card_back_path || '',
           },
+          Province: province,
+          City: city,
+          District: district,
+          Addr: detail.address,
           Category: user_info.Category,
           Domains: user_info.Domains,
         },
@@ -269,7 +273,7 @@
         if (response.status === 204) {
           console.log('删除文件成功');
         } else {
-          console.log('删除文件失败');
+          console.error('删除文件失败');
         }
       })
       .catch((e) => {
@@ -339,8 +343,7 @@
       formErrors.idCardFront = '正在识别身份证信息...';
     } catch (err) {
       console.error('身份证正面处理失败:', err);
-      formErrors.idCardFront = '处理失败，请重试';
-      toast.error('身份证正面处理失败');
+      formErrors.idCardFront = '身份证正面识别失败，请重试';
     }
   }
 
@@ -355,8 +358,7 @@
       id_card_back_file = file;
     } catch (err) {
       console.error('身份证反面处理失败:', err);
-      formErrors.idCardBack = '处理失败，请重试';
-      toast.error('身份证反面处理失败');
+      formErrors.idCardBack = '身份证反面识别失败，请重试';
     }
   }
 
@@ -606,8 +608,8 @@
           <div class="value">
             <div class="gender-setting">
               <Select bind:value={detail.gender}>
-                {#each Object.entries(GENDER_MAP) as [key, val]}
-                  <Option value={key} label={val} />
+                {#each GENDER_OPTIONS as option}
+                  <Option value={option} label={option} />
                 {/each}
               </Select>
             </div>
@@ -622,8 +624,8 @@
           <div class="value">
             <div class="card-type-setting">
               <Select bind:value={detail.idType}>
-                {#each Object.entries(CARD_TYPE_MAP) as [key, val]}
-                  <Option value={key} label={val} />
+                {#each CARD_TYPE_OPTIONS as option}
+                  <Option value={option} label={option} />
                 {/each}
               </Select>
             </div>

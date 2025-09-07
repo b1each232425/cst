@@ -166,7 +166,12 @@ export async function checkFileData(file) {
       }
 
       let workbook = new Workbook();
-      workbook = await workbook.xlsx.load(fileBuffer);
+      try {
+        workbook = await workbook.xlsx.load(fileBuffer);
+      } catch (error) {
+        resultData.error = '文件格式错误，请确保上传的是有效的 Excel 文件';
+        return resultData;
+      }
 
       // 读取sheet的数量
       let readNum = 1;

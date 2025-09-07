@@ -4530,9 +4530,49 @@ describe('自定义组卷页面', () => {
                 QuestionCount: 5,
                 GroupsData: [
                     {
+                        id: 1195,
+                        name: "空白题组",
+                        order: 1,
+                        questions: [
+                            {
+                                id: 994, // 题目ID（标识试卷中的题目）
+                                tags: ["数据结构", "基础"],
+                                type: "00", // 题目类型: 00-单选题 02-多选题 04-判断题 06-填空题 08-简答题
+                                order: 1, // 题目序号（在整张试卷中的序号）
+                                score: 1, // 题目分数
+                                answers: ["B"],
+                                content: "<p><span style=\"font-size: 12pt\">以下哪一种数据结构最适合用于实现先进先出（FIFO）逻辑？</span></p>",
+                                options: [
+                                    {
+                                        label: "A",
+                                        value: "<p><span style=\"font-size: 12pt\">栈</span></p>"
+                                    },
+                                    {
+                                        label: "B",
+                                        value: "<p><span style=\"font-size: 12pt\">队列</span></p>"
+                                    },
+                                    {
+                                        label: "C",
+                                        value: "<p><span style=\"font-size: 12pt\">树</span></p>"
+                                    },
+                                    {
+                                        label: "D",
+                                        value: "<p><span style=\"font-size: 12pt\">图</span></p>"
+                                    }
+                                ],
+                                analysis: "<p>队列（Queue）遵循先进先出（FIFO）的顺序，而栈（Stack）是先进后出（LIFO）。</p>",
+                                group_id: 1196,
+                                sub_score: null, // 子分数：只有简答题和填空题有子分数，其他题目没有子分数（null）
+                                difficulty: 1, // 难度: 1-简单 2-中等 3-困难
+                                bank_question_id: 340, // 题库题目ID
+                                belong_to: 84,
+                            },
+                        ],
+                    },
+                    {
                         id: 1196,
                         name: "测试题组",
-                        order: 1,
+                        order: 2,
                         questions: [
                             {
                                 id: 995, // 题目ID（标识试卷中的题目）
@@ -4661,8 +4701,8 @@ describe('自定义组卷页面', () => {
                 })
             });
 
-            // 点击"导入题目"
-            fireEvent.click(screen.getByText('导入题目'));
+            // 点击第二个"导入题目"
+            fireEvent.click(screen.getAllByText('导入题目')[1]);
 
             // 等待页面渲染完成
             await waitFor(() => {
@@ -4680,50 +4720,44 @@ describe('自定义组卷页面', () => {
                     status: 0,
                     data: [
                         {
-                            ID: 530,
-                            Type: "00",
-                            Content: "<p><span style=\"font-size: 12pt\">无标签题目</span></p>",
-                            Options: [
+                            ID: 527,
+                            Type: "08",
+                            Content: "无标签题目",
+                            "Options": null,
+                            "Answers": [
                                 {
-                                    label: "A",
-                                    value: "<p><span style=\"font-size: 12pt\">1</span></p>"
+                                    "index": 1,
+                                    "score": 3,
+                                    "answer": "与客户沟通并收集客户需求的方式（3分）：\n可以通过售前在线咨询，与客户详细沟通；也可以通过电话回访或电子邮件发送调查问卷，了解客户的需求；同时还可以通过平台上的用户反馈和社交媒体互动，收集客户对现有产品使用体验的评价，并分析他们的潜在需求。（每点1分）",
+                                    "grading_rule": "与客户沟通并收集客户需求的方式（3分）\n学生答案只要涵盖以下核心意思，即可得分：\n学生需说明可以通过与客户进行直接或间接的沟通来收集需求。直接或间接的沟通方式可以包括但不限于：售前在线咨询、电话回访、电子邮件发送调查问卷、平台用户反馈、社交媒体互动等。学生答案中只要提到其中任意三种方式，且表述清晰，逻辑合理，即可得满分3分。若提到的方式少于三种，但表述清晰，逻辑合理，则酌情扣分。",
+                                    "alternative_answers": []
                                 },
                                 {
-                                    label: "B",
-                                    value: "<p><span style=\"font-size: 12pt\">2</span></p>"
-                                },
-                                {
-                                    label: "C",
-                                    value: "<p><span style=\"font-size: 12pt\">3</span></p>"
-                                },
-                                {
-                                    label: "D",
-                                    value: "<p><span style=\"font-size: 12pt\">4</span></p>"
+                                    "index": 2,
+                                    "score": 6,
+                                    "answer": "客户分类与差异化营销服务（6分）：\n客户A分类：北方高寒地区用户（1分）\n营销建议： 推荐保温性强、防风性能卓越的帐篷，能够应对极寒天气，附赠防寒睡袋或加厚保温垫，提升户外露营体验。（1分）\n客户B分类：南方湿热地区用户（1分）\n营销建议： 推荐防水透气性能优越的帐篷，能够快速搭建并保持内部干燥，附送防潮垫和便携式帐篷风扇，帮助客户应对湿热天气。（1分）\n客户C分类：沿海城市用户（1分）\n营销建议： 推荐具有抗风能力和遮阳效果的帐篷，能够抵挡强风并有效遮阳，附赠沙滩帐篷钉和抗UV遮阳篷，满足海边露营需求。（1分）",
+                                    grading_rule: "客户分类与差异化营销服务（6分）\n学生答案需要按照客户的居住地区进行分类，并针对每类客户提出相应的差异化营销服务建议。具体批改规则如下：\n\n1. 客户分类（3分）：\n 学生需将客户A、B、C分别归类为北方高寒地区用户、南方湿热地区用户和沿海城市用户。学生答案中只要正确归类了三类客户，即可得满分3分。若归类有误，则酌情扣分。\n2. 差异化营销服务建议（3分）：\n 针对每类客户，学生需提出相应的差异化营销服务建议。建议需与客户的实际需求相匹配，且具有一定的针对性和实用性。具体建议可以包括但不限于：推荐特定性能的帐篷、附赠相关配件或服务等。学生答案中只要针对每类客户都提出了合理的建议，且表述清晰，逻辑合理，即可得满分3分。若建议与客户需求不匹配，或表述不清，逻辑不合理，则酌情扣分。",
+                                    alternative_answers: []
                                 }
                             ],
-                            Answers: [
-                                "A"
+                            Score: 9,
+                            Difficulty: 2,
+                            Tags: [
+                                "电子商务"
                             ],
-                            Score: 2,
-                            Difficulty: 3,
-                            Tags: [],
-                            Analysis: "",
+                            Analysis: "略，请见答案",
                             Title: null,
-                            AnswerFilePath: {},
-                            TestFilePath: {},
                             Input: null,
                             Output: null,
-                            Example: {},
-                            Repo: {},
                             Order: null,
                             Creator: 1626,
-                            CreateTime: 1756866576063,
-                            UpdatedBy: 1756884857165,
-                            UpdateTime: 1756884857165,
-                            Addi: {},
+                            CreateTime: 1756437327313,
+                            UpdatedBy: null,
+                            UpdateTime: 1756437327313,
                             Status: "00",
-                            QuestionAttachmentsPath: {},
-                            BelongTo: 106
+                            QuestionAttachmentsPath: [],
+                            AccessMode: "00",
+                            BelongTo: 160
                         },
                         {
                             ID: 517,
@@ -4773,7 +4807,7 @@ describe('自定义组卷页面', () => {
                 })
             });
 
-            // 点击single-bank类（用类选择器）
+            // 点击single-bank类的（用类选择器）
             fireEvent.click(container.querySelector('.single-bank'));
 
             // 等待页面渲染完成
