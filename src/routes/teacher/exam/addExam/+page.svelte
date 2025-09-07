@@ -922,7 +922,7 @@
       </div>
 
       <div
-        class="exam-duration-container config-row {paper_configs[paperConfigIndex].periodMode === '02' ? 'hideButton'  : ''}"
+        class="exam-duration-container config-row {paper_configs[paperConfigIndex].periodMode === '02' || exam_method === '02' ? 'hideButton'  : ''}"
       >
         <RequiredLabel text="考场规则" />
 
