@@ -143,7 +143,7 @@
     }
     function closeAddDialog() { // 关闭新增考点对话框
         show_add_dialog = false;
-        new_site = { name: "", address: "", server_host: "", admin: 0 };
+        new_site = { name: "", address: "", server_host: "", admin: 0 ,OfficialName: ""};
     }
     function confirmAddDialog() { // 确认新增考点对话框
         // 校验必填字段
@@ -153,10 +153,6 @@
         }
         if (!new_site.address) {
             toast.error("考点地址不能为空");
-            return Promise.resolve();
-        }
-        if (!new_site.server_host) {
-            toast.error("考点服务链接不能为空");
             return Promise.resolve();
         }
 
@@ -436,7 +432,7 @@
                 site.status = "";
                 site.error_msg = "";
                 // 发起状态检测（不阻塞主链）
-                checkServerStatus(site.serverHost).then((err_msg) => {
+          /*      checkServerStatus(site.serverHost).then((err_msg) => {
                     if (err_msg === "") {
                         site.status = "00"; // 正常
                         site.error_msg = "";
@@ -444,7 +440,7 @@
                         site.status = "01"; // 异常
                         site.error_msg = err_msg;
                     }
-                });
+                });*/
             }
         })
         .catch(err => {
@@ -588,7 +584,6 @@
                             </span>
                         </th>
                         <th>考点服务链接</th>
-                        <th>考点链接状态</th>
                         <th>操作</th>
                     </tr>
                 </thead>
@@ -615,33 +610,9 @@
                                     ? "-"
                                     : `${site.roomCount}个`}</td
                             >
-                            <td class="exam-site-link" title={site.serverHost}
-                                >{site.serverHost}</td
-                            >
-                            <td>
-                                <div
-                                    class={`status exam-site-status ${
-                                        site.status == "" ? "status-checking" : 
-                                            site.status == "00"
-                                                ? ""
-                                                : "status-abnormal"
-                                    }`}
-                                >
-                                    {#if site.status != "" && site.status != "00"}
-                                        <div
-                                            class="error-tip"
-                                            style="display: none;"
-                                        >
-                                            {site.error_msg}
-                                        </div>
-                                    {/if}
-
-                                    {site.status == "" ? "检测中" : 
-                                        site.status == "00"
-                                            ? "正常"
-                                            : "异常"}
-                                </div></td
-                            >
+                            <td class="exam-site-link" title={(site.serverHost || "").trim() || "-"}>
+                                {(site.serverHost || "").trim() || "-"}
+                            </td>
                             <td class="exam-site-operation">
                                 <div class="operation-group">
                                     <div class="operation-row">
@@ -746,7 +717,7 @@
                     </span>
                     <div class="input hideBorder">
                         
-                        {#if new_site.admin == 0}
+                        {#if new_site.admin === 0}
                             <button
                                 class="select-admin-btn"
                                 onclick={() => {
@@ -772,6 +743,7 @@
                             >
                                 重新选择
                             </button>
+
                         {/if}
                     </div>
 
