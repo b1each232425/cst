@@ -7,7 +7,11 @@ import { page } from '$app/state';
 
 vi.mock('$lib/components/Toast/Toast.js', () => ({ toast: { error: vi.fn() } }));
 vi.mock('$lib/components/MessageBox/MessageBox.js', () => ({
-  default: vi.fn(() => {}),
+  default: vi.fn(({ onConfirm, onCancel }) => {
+    // 存储回调函数，但不自动调用
+    // 测试时可以手动调用 MessageBox.mock.calls[0][0].onConfirm() 或 onCancel()
+    return null;
+  }),
 }));
 vi.mock('$app/state', () => ({
   page: {
@@ -56,7 +60,7 @@ const MOCK_EXAMINEES = [
     ExamCard: '20250822002',
     IDCardNo: '440101199002022345',
     Name: '李四',
-    Status: '02',
+    Status: '10',
     Remark: '',
   },
   {
@@ -141,7 +145,7 @@ describe('教师端监考详情页测试', () => {
   });
 
   describe('应渲染页面基本元素', () => {
-    it('处于监考模式中的页面', async () => {
+    it('进行中的考试，允许更新', async () => {
       mockFetch({
         status: 0,
         data: { info: MOCK_INFO, examinees: MOCK_EXAMINEES },
@@ -172,7 +176,7 @@ describe('教师端监考详情页测试', () => {
         expect(screen.getByPlaceholderText('请输入对选中考生的备注')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: '取消选中' })).toBeInTheDocument();
         const countTip = screen.getByTestId('selected-count-tip');
-        expect(countTip).toHaveTextContent('当前已选中 0 人');
+        expect(countTip).toHaveTextContent('已选中 0 人');
 
         // 验证表头
         const tableHeaders = screen.getAllByRole('columnheader');
@@ -186,7 +190,7 @@ describe('教师端监考详情页测试', () => {
       });
     });
 
-    it('处于非监考模式中的页面', async () => {
+    it('考试不在进行中，且返回的 canUpdate 字段为 false，允许更新', async () => {
       mockFetch({
         status: 0,
         data: {
@@ -195,6 +199,7 @@ describe('教师端监考详情页测试', () => {
             Status: '02',
           },
           examinees: MOCK_EXAMINEES,
+          canUpdate: false,
         },
         rowCount: MOCK_EXAMINEES.length,
       });
@@ -206,17 +211,47 @@ describe('教师端监考详情页测试', () => {
         expect(screen.queryByText('批量备注：')).not.toBeInTheDocument();
         expect(screen.queryByPlaceholderText('请输入对选中考生的备注')).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: '取消选中' })).not.toBeInTheDocument();
-        expect(screen.queryByText(/当前已选中 0 人/)).not.toBeInTheDocument();
+        expect(screen.queryByTestId('selected-count-tip')).not.toBeInTheDocument();
 
         // 验证表头
         const tableHeaders = screen.getAllByRole('columnheader');
         expect(tableHeaders).toHaveLength(5); // 不存在选择框
       });
     });
+
+    it('考试不在进行中，但返回的 canUpdate 字段为 true，允许更新', async () => {
+      mockFetch({
+        status: 0,
+        data: {
+          info: {
+            ...MOCK_INFO,
+            Status: '06',
+          },
+          examinees: MOCK_EXAMINEES,
+          canUpdate: true,
+        },
+        rowCount: MOCK_EXAMINEES.length,
+      });
+
+      render(InvigilateDetail);
+
+      await waitFor(() => {
+        expect(screen.getByText('批量标记：')).toBeInTheDocument();
+        expect(screen.getByText('批量备注：')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('请输入对选中考生的备注')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '取消选中' })).toBeInTheDocument();
+        const countTip = screen.getByTestId('selected-count-tip');
+        expect(countTip).toHaveTextContent('已选中 0 人');
+
+        // 验证表头
+        const tableHeaders = screen.getAllByRole('columnheader');
+        expect(tableHeaders).toHaveLength(6); // 存在选择框
+      });
+    });
   });
 
   describe('未知状态，应该显示红色警告提醒', () => {
-    it('非监考模式下出现未知状态的考生，应爆红提醒', async () => {
+    it('不允许更新的情况出现未知状态的考生，应爆红提醒', async () => {
       mockFetch({
         status: 0,
         data: {
@@ -331,7 +366,7 @@ describe('教师端监考详情页测试', () => {
     expect(window.history.back).toHaveBeenCalledTimes(1);
   });
 
-  it('非监考模式下考场记录字段为空的时候，显示“无”', async () => {
+  it('不允许更新的情况考场记录字段为空的时候，显示“无”', async () => {
     mockFetch({
       status: 0,
       data: { info: { ...MOCK_INFO, Record: '', Status: '02' }, examinees: MOCK_EXAMINEES },
@@ -347,7 +382,7 @@ describe('教师端监考详情页测试', () => {
   });
 
   describe("异常状态status返回'00'或者'10'时，显示“无”", () => {
-    it("监考模式下，异常状态status返回'00'或者'10'时，显示“无”", async () => {
+    it("允许更新的情况下，异常状态status返回'00'或者'10'时，显示“无”", async () => {
       mockFetch({
         status: 0,
         data: {
@@ -383,7 +418,7 @@ describe('教师端监考详情页测试', () => {
       });
     });
 
-    it("非监考模式下异常状态status返回'00'或者'10'时，显示“无”", async () => {
+    it("不允许更新的情况异常状态status返回'00'或者'10'时，显示“无”", async () => {
       mockFetch({
         status: 0,
         data: {
@@ -769,7 +804,7 @@ describe('教师端监考详情页测试', () => {
 
         // 验证选中数量提示正确（应等于考生总数）
         const countTip = screen.getByTestId('selected-count-tip');
-        expect(countTip).toHaveTextContent(`当前已选中 ${MOCK_EXAMINEES.length} 人`);
+        expect(countTip).toHaveTextContent(`已选中 ${MOCK_EXAMINEES.length} 人`);
       });
     });
 
@@ -781,7 +816,7 @@ describe('教师端监考详情页测试', () => {
       await waitFor(() => {
         // 验证选中数量提示正确
         const countTip = screen.getByTestId('selected-count-tip');
-        expect(countTip).toHaveTextContent(`当前已选中 2 人`);
+        expect(countTip).toHaveTextContent(`已选中 2 人`);
       });
     });
 
@@ -801,7 +836,7 @@ describe('教师端监考详情页测试', () => {
 
       // 4. 同样的原则：下面这句同步就能拿到，不需要再包 waitFor
       const countTip = screen.getByTestId('selected-count-tip');
-      expect(countTip).toHaveTextContent('当前已选中 9 人');
+      expect(countTip).toHaveTextContent('已选中 9 人');
     });
 
     it('全选后，再次点击全选，所有的选中都会取消', async () => {
@@ -819,7 +854,7 @@ describe('教师端监考详情页测试', () => {
 
         // 验证选中数量提示正确（应等于考生总数）
         const countTip = screen.getByTestId('selected-count-tip');
-        expect(countTip).toHaveTextContent(`当前已选中 0 人`);
+        expect(countTip).toHaveTextContent(`已选中 0 人`);
       });
     });
 
@@ -835,7 +870,7 @@ describe('教师端监考详情页测试', () => {
 
         // 验证选中数量提示正确
         const countTip = screen.getByTestId('selected-count-tip');
-        expect(countTip).toHaveTextContent(`当前已选中 0 人`);
+        expect(countTip).toHaveTextContent(`已选中 0 人`);
       });
     });
   });
@@ -850,8 +885,8 @@ describe('教师端监考详情页测试', () => {
       await screen.findByTestId('examinee-tbody');
     });
 
-    describe('成功单个更新监考场/考生信息', () => {
-      it('成功更新监考场基本情况', async () => {
+    describe('更新考试情况', () => {
+      it('点击保存，成功更新监考场基本情况', async () => {
         mockFetch({ status: 0 });
 
         await fireEvent.click(screen.getAllByRole('button', { name: 'Toggle dropdown' })[0]);
@@ -859,35 +894,12 @@ describe('教师端监考详情页测试', () => {
         await within(evalSelect).findByText('良好').then(fireEvent.click);
         expect(evalSelect).toHaveTextContent('良好');
 
-        await waitFor(() => {
-          expect(global.fetch).toHaveBeenCalledTimes(1);
-
-          const q = JSON.stringify({
-            Data: {
-              ExamSessionID: MOCK_INFO.ExamSessionID,
-              ExamRoomID: MOCK_INFO.ExamRoomID,
-              UpdateType: '00',
-              BasicEval: '00',
-              Record: MOCK_INFO.Record,
-            },
-          });
-          expect(global.fetch).toHaveBeenCalledWith(`/api/invigilation?q=${q}`, { method: 'PATCH' });
-
-          expect(toast.error).not.toHaveBeenCalled();
-        });
-      });
-
-      it('成功更新考场记录', async () => {
-        mockFetch({ status: 0 });
-
         const textarea = screen.getByPlaceholderText('请输入考场记录...');
         await fireEvent.input(textarea, { target: { value: '模拟考场记录' } });
 
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await fireEvent.click(screen.getByRole('button', { name: '保存' }));
 
         await waitFor(() => {
-          expect(textarea).toHaveValue('模拟考场记录');
-
           expect(global.fetch).toHaveBeenCalledTimes(1);
 
           const q = JSON.stringify({
@@ -896,7 +908,7 @@ describe('教师端监考详情页测试', () => {
               ExamRoomID: MOCK_INFO.ExamRoomID,
               UpdateType: '00',
               Record: '模拟考场记录',
-              BasicEval: '02',
+              BasicEval: '00',
             },
           });
           expect(global.fetch).toHaveBeenCalledWith(`/api/invigilation?q=${q}`, { method: 'PATCH' });
@@ -905,12 +917,48 @@ describe('教师端监考详情页测试', () => {
         });
       });
 
-      it('成功更新一个考生的状态', async () => {
+      it('点击取消，考试情况恢复原样', async () => {
+        mockFetch({ status: 0 });
+
+        await fireEvent.click(screen.getAllByRole('button', { name: 'Toggle dropdown' })[0]);
+        const evalSelect = screen.getByTestId('basic-eval-select');
+        await within(evalSelect).findByText('良好').then(fireEvent.click);
+        expect(evalSelect).toHaveTextContent('良好');
+
+        const textarea = screen.getByPlaceholderText('请输入考场记录...');
+        await fireEvent.input(textarea, { target: { value: '模拟考场记录' } });
+        expect(screen.getByDisplayValue('模拟考场记录')).toBeInTheDocument();
+
+        await fireEvent.click(screen.getByRole('button', { name: '取消' }));
+
+        await waitFor(() => {
+          expect(global.fetch).not.toHaveBeenCalled(); // 未调用更新接口
+          expect(screen.getByText('一般')).toBeInTheDocument();
+          expect(
+            screen.getByDisplayValue(
+              '考试过程记录：发卷时间（8:55）、考试正式开始（9:00）、考生提问记录（张某询问答题卡填涂规范/10:15、刘某申请更换草稿纸/10:40）、中途离场记录（赵某因身体不适/11:00离场/由监考陪同）、收卷开始时间（11:25）、收卷完成时间（11:35）、试卷份数核对（实收28份/无遗漏）',
+            ),
+          ).toBeInTheDocument();
+        });
+      });
+    });
+
+    describe('更新一个考生信息', () => {
+      it('选择第一个考生的异常标记，选中其中一个，点击弹窗的确认按钮，成功更新考生的状态', async () => {
         mockFetch({ status: 0 });
 
         const tbody = await screen.findByTestId('examinee-tbody');
         await fireEvent.click(within(tbody).getAllByRole('button', { name: 'Toggle dropdown' })[0]);
         await fireEvent.click(within(screen.getAllByTestId('single-select')[0]).getAllByText('考试异常')[0]);
+
+        expect(MessageBox).toHaveBeenCalledWith({
+          title: '确认操作',
+          content: '你确定要该考生的异常状态标记为“考试异常”吗？',
+          onConfirm: expect.any(Function),
+          onCancel: expect.any(Function),
+        });
+
+        MessageBox.mock.calls[0][0].onConfirm();
 
         await waitFor(() => {
           expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -929,10 +977,71 @@ describe('教师端监考详情页测试', () => {
           expect(toast.error).not.toHaveBeenCalled();
         });
       });
+
+      it('选择第一个考生的异常标记，选中其中一个，点击弹窗的取消按钮，没有更新考生的状态', async () => {
+        mockFetch({ status: 0 });
+
+        const tbody = await screen.findByTestId('examinee-tbody');
+        await fireEvent.click(within(tbody).getAllByRole('button', { name: 'Toggle dropdown' })[0]);
+        await fireEvent.click(within(screen.getAllByTestId('single-select')[0]).getAllByText('考试异常')[0]);
+
+        MessageBox.mock.calls[0][0].onCancel();
+
+        await waitFor(() => {
+          expect(global.fetch).not.toHaveBeenCalled();
+
+          // 考生的状态没有变化
+          // 获取表格的第一行的状态
+          const firstRowStatus = within(tbody).getAllByTestId('single-select')[0];
+          expect(firstRowStatus).toHaveTextContent('缺考'); // 依旧是缺考
+        });
+      });
+
+      it('选择第二个考生的异常标记，选中已有的标记，没有弹出弹窗，也没有更新', async () => {
+        mockFetch({ status: 0 });
+
+        const tbody = await screen.findByTestId('examinee-tbody');
+        await fireEvent.click(within(tbody).getAllByRole('button', { name: 'Toggle dropdown' })[1]);
+        await fireEvent.click(within(screen.getAllByTestId('single-select')[1]).getAllByText('无')[0]);
+
+        await waitFor(() => {
+          expect(MessageBox).not.toHaveBeenCalled();
+          expect(global.fetch).not.toHaveBeenCalled();
+        });
+      });
+
+      it('输入单个备注的输入框，成功更新', async () => {
+        mockFetch({ status: 0 });
+
+        const input = screen.getAllByPlaceholderText('暂无备注')[0];
+
+        await fireEvent.input(input, { target: { value: '考生表现良好' } });
+
+        expect(input).toHaveValue('考生表现良好');
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        await waitFor(() => {
+          expect(global.fetch).toHaveBeenCalledTimes(1);
+
+          const q = JSON.stringify({
+            Data: {
+              ExamSessionID: MOCK_INFO.ExamSessionID,
+              ExamRoomID: MOCK_INFO.ExamRoomID,
+              UpdateType: '04',
+              Examinees: [MOCK_EXAMINEES[0].ExamineeID],
+              ExamineeRemark: '考生表现良好',
+            },
+          });
+          expect(global.fetch).toHaveBeenCalledWith(`/api/invigilation?q=${q}`, { method: 'PATCH' });
+
+          expect(toast.error).not.toHaveBeenCalled();
+        });
+      });
     });
 
     describe('成功批量更新监考场/考生信息', () => {
-      it('点击全选后，成功批量标记为“缺考”', async () => {
+      it('点击全选后，批量标记为“缺考”，点击弹窗的确认按钮，成功更新', async () => {
         mockFetch({ status: 0 });
 
         // 点击全选
@@ -943,6 +1052,15 @@ describe('教师端监考详情页测试', () => {
         const statusSelect = screen.getByTestId('batch-select');
         await within(statusSelect).findByText('缺考').then(fireEvent.click);
         expect(statusSelect).toHaveTextContent('缺考');
+
+        expect(MessageBox).toHaveBeenCalledWith({
+          title: '确认操作',
+          content: '你确定要批量标记为“缺考”吗？',
+          onConfirm: expect.any(Function),
+          onCancel: expect.any(Function),
+        });
+
+        MessageBox.mock.calls[0][0].onConfirm();
 
         // 等待表格加载完成
         const tbody = await screen.findByTestId('examinee-tbody');
@@ -968,6 +1086,28 @@ describe('教师端监考详情页测试', () => {
 
           // 验证数量与考生数据一致
           expect(absentOptions.length).toBe(MOCK_EXAMINEES.length);
+        });
+      });
+
+      it('点击全选后，批量标记为“缺考”，点击弹窗的取消按钮，没有更新', async () => {
+        mockFetch({ status: 0 });
+
+        // 点击全选
+        await fireEvent.click(screen.getByTestId('select-all'));
+
+        // 批量标记
+        await fireEvent.click(screen.getAllByRole('button', { name: 'Toggle dropdown' })[1]);
+        const statusSelect = screen.getByTestId('batch-select');
+        await within(statusSelect).findByText('缺考').then(fireEvent.click);
+        expect(statusSelect).toHaveTextContent('缺考');
+
+        MessageBox.mock.calls[0][0].onCancel();
+
+        // 等待表格加载完成
+        const tbody = await screen.findByTestId('examinee-tbody');
+
+        await waitFor(() => {
+          expect(global.fetch).not.toHaveBeenCalled();
         });
       });
 
@@ -1030,6 +1170,11 @@ describe('教师端监考详情页测试', () => {
       await within(evalSelect).findByText('良好').then(fireEvent.click);
       expect(evalSelect).toHaveTextContent('良好');
 
+      const textarea = screen.getByPlaceholderText('请输入考场记录...');
+      await fireEvent.input(textarea, { target: { value: '模拟考场记录' } });
+
+      await fireEvent.click(screen.getByRole('button', { name: '保存' }));
+
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('请求失败：400 Bad Request-请求失败');
       });
@@ -1050,6 +1195,11 @@ describe('教师端监考详情页测试', () => {
       await within(evalSelect).findByText('良好').then(fireEvent.click);
       expect(evalSelect).toHaveTextContent('良好');
 
+      const textarea = screen.getByPlaceholderText('请输入考场记录...');
+      await fireEvent.input(textarea, { target: { value: '模拟考场记录' } });
+
+      await fireEvent.click(screen.getByRole('button', { name: '保存' }));
+
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('请求失败：400 Bad Request');
       });
@@ -1063,6 +1213,11 @@ describe('教师端监考详情页测试', () => {
       await within(evalSelect).findByText('良好').then(fireEvent.click);
       expect(evalSelect).toHaveTextContent('良好');
 
+      const textarea = screen.getByPlaceholderText('请输入考场记录...');
+      await fireEvent.input(textarea, { target: { value: '模拟考场记录' } });
+
+      await fireEvent.click(screen.getByRole('button', { name: '保存' }));
+
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('模拟失败消息');
       });
@@ -1075,6 +1230,11 @@ describe('教师端监考详情页测试', () => {
       const evalSelect = screen.getByTestId('basic-eval-select');
       await within(evalSelect).findByText('良好').then(fireEvent.click);
       expect(evalSelect).toHaveTextContent('良好');
+
+      const textarea = screen.getByPlaceholderText('请输入考场记录...');
+      await fireEvent.input(textarea, { target: { value: '模拟考场记录' } });
+
+      await fireEvent.click(screen.getByRole('button', { name: '保存' }));
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('更新监考信息失败');
@@ -1090,21 +1250,6 @@ describe('教师端监考详情页测试', () => {
 
       // 等待 render
       await screen.findByTestId('examinee-tbody');
-    });
-
-    it('输入考场记录，防抖成功', async () => {
-      mockFetch({ status: 0 });
-
-      const textarea = screen.getByPlaceholderText('请输入考场记录...');
-      await fireEvent.input(textarea, { target: { value: '模拟 ' } });
-      await fireEvent.input(textarea, { target: { value: '模拟考场 ' } });
-      await fireEvent.input(textarea, { target: { value: '模拟考场记录' } });
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledTimes(1);
-      });
     });
 
     it('输入搜索框，防抖成功', async () => {
