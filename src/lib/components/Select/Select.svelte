@@ -19,7 +19,7 @@
    * @property {boolean} [disabled=false] - 是否禁用选择器。
    * @property {boolean} [multiple=false] - 是否启用多选模式。
    * @property {boolean} [filterable=false] - 是否允许输入搜索。
-   * @property {functino} [changeValue] - 选中值变化的回调函数。
+   * @property {function} [changeValue] - 选中值变化的回调函数。
    *
    * @example
    * <Select value="1" placeholder="请选择" multiple filterable >
@@ -43,6 +43,9 @@
   } = $props();
 
   const DIRECTIONS = ['top', 'bottom'];
+
+  // 旧值
+  let old_value = value;
 
   /**
    *   /**
@@ -105,19 +108,22 @@
           // 创建新数组进行修改
           value = value.filter((v) => v !== selectValue);
           selectedLabel = selectedLabel.filter((l) => l !== selectLabel);
-          changeValue(value);
+          changeValue(value, old_value);
+          old_value = value;
           return false;
         } else {
           // 创建新数组进行修改
           value = [...value, selectValue];
           selectedLabel = [...selectedLabel, selectLabel];
-          changeValue(value);
+          changeValue(value, old_value);
+          old_value = value;
           return true;
         }
       } else {
         value = selectValue;
         selectedLabel = [selectLabel];
-        changeValue(value);
+        changeValue(value, old_value);
+        old_value = value;
         closeSelect();
         return true;
       }
@@ -163,7 +169,8 @@
     const concelData = OptionData.find((child) => child.selectLabel == selectedLabel[index]);
     value = value.filter((v) => v !== concelData.selectValue);
     selectedLabel = selectedLabel.filter((l) => l !== selectedLabel[index]);
-    changeValue(value);
+    changeValue(value, old_value);
+    old_value = value;
     closeSelect();
   }
 

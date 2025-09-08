@@ -319,7 +319,11 @@
     if (domain.includes('student')) {
       goto('/student/practice');
     } else {
-      goto('/teacher/question-bank/theory');
+      if (domain === 'assess^examSupervisor') {
+        goto('/teacher/invigilate');
+      } else {
+        goto('/teacher/question-bank/theory');
+      }
     }
   }
 

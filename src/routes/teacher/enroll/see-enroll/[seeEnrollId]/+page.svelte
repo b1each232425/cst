@@ -590,7 +590,7 @@
                   >
                 </td>
                 <td>
-                  {#if status_text === '已结束'}
+                  {#if status_text === '审核截止'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item)}>查看详情</button>
                   {:else if item.status === '待审核'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item)}>查看详情</button>
