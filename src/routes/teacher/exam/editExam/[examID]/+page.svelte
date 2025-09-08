@@ -1084,7 +1084,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         </div>
       </div>
 
-      <div class="exam-duration-container config-row {paper_configs[paperConfigIndex].periodMode === '02' ? 'hideButton'  : ''}">
+      <div class="exam-duration-container config-row {paper_configs[paperConfigIndex].periodMode === '02' || exam_method === '02' ? 'hideButton'  : ''}">
         <RequiredLabel text="考场规则" />
 
         <div class="config-row-content">
