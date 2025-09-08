@@ -39,9 +39,14 @@
   let isfolded = $state(false);
   let currentPaperId = $state('');
 
-  // 响应式计算选项列表
+  // 响应式计算选项列表，按照 session_id 升序排序
   let options = $derived(() => {
-    return availablePapers.map((session, index) => ({
+    // session_id 可能是 id 字段
+    const sorted = [...availablePapers].sort((a, b) => {
+      // 兼容字符串和数字
+      return Number(a.id) - Number(b.id);
+    });
+    return sorted.map((session, index) => ({
       value: String(session.id),
       label: session.name || `试卷${index + 1}`,
     }));
@@ -260,7 +265,6 @@
   function updateData() {
     if (currentPaperId) {
       // 根据当前选中的试卷ID查找对应的试卷信息
-      // 注意：currentPaperId是字符串，session.id是数字，需要类型转换
       const selectedSession = availablePapers.find((session) => String(session.id) === currentPaperId);
 
       if (selectedSession) {
@@ -290,10 +294,10 @@
   // 组件挂载时的初始化
   onMount(() => {
     if (type === 'exam' && availablePapers.length > 0) {
-      // 设置默认选中的试卷
+      // 设置默认选中的试卷为id最小的那个
       if (!currentPaperId && availablePapers.length > 0) {
-        currentPaperId = String(availablePapers[0].id);
-        // 加载初始数据
+        const minIdSession = [...availablePapers].reduce((min, cur) => Number(cur.id) < Number(min.id) ? cur : min, availablePapers[0]);
+        currentPaperId = String(minIdSession.id);
         updateData();
       }
     } else if (type === 'practice') {
