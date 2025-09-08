@@ -8,10 +8,10 @@
   import PersonImportPanel from '../../_components/PersonImportPanel.svelte';
   import PersonMovePanel from '../../_components/PersonMovePanel.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
+  import { page } from '$app/stores';
   import { checkFileData, formatDateTime } from '../../_utils/handleFileInput';
   import { toast } from '$lib/components/Toast/Toast';
   import { goto } from '$app/navigation';
-  import { page } from '$app/state';
   import { onMount } from 'svelte';
 
   // 考试类型映射
@@ -96,17 +96,18 @@
   let page_size = $state(10); // 当前页面大小
 
   let status_text = $state('');
-  const { data } = $props();
+  let see_enroll_id = $page.params.seeEnrollId;
 
   // 查看单个报名计划考生
   function getEnrollPersonData(message = '', status = '', register_type = '') {
     const searchParams = new URLSearchParams({
-      id: data.see_enroll_id,
+      id: see_enroll_id,
       page: current_page,
       pageSize: page_size,
       message: message,
       status: status,
       register_type: register_type,
+      search_type: '00',
     });
 
     fetch(`/api/registration?${searchParams}`, {
@@ -133,15 +134,16 @@
           idType: item.student.IDCardType,
           enrollTime: formatDateTime(item.detail.RegisterTime), // 格式化时间
           enrollMethod: item.detail.Type === '02' ? '人工导入' : '自报名', // 报名方式
-          examType: examTypeMap[item.detail.ExamType] || '正考', // 默认正考
-          auditor: item.reviewer || '--',
-          status: statusMap[item.detail.Status] || '未知',
+          examType: examTypeMap[item.detail.ExamType],
+          auditor: item.reviewer,
+          status: statusMap[item.detail.Status],
         }));
 
         total_items = res.data.total;
       })
       .catch((e) => {
-        console.log(e);
+        toast.error('网络错误');
+        console.error(e);
       });
   }
 
@@ -150,7 +152,7 @@
     const searchParams = new URLSearchParams({
       ids: ids,
       status: status,
-      register_id: data.see_enroll_id,
+      register_id: see_enroll_id,
       fail_reason: reject_reason,
     });
 
@@ -167,10 +169,16 @@
         return response.json();
       })
       .then((res) => {
-        getEnrollPersonData();
+        if (res.status === 0) {
+          getEnrollPersonData();
+          toast.success('审核成功');
+        } else {
+          toast.error('审核失败');
+        }
       })
       .catch((e) => {
         console.log(e);
+        toast.error('网络错误');
       });
   }
 
@@ -186,8 +194,7 @@
       let result = await checkFileData(file);
 
       if (result.error) {
-        error = result.error;
-        toast.error(error);
+        toast.error(result.error);
         return;
       }
 
@@ -215,7 +222,7 @@
 
   // 处理查看人员详情按钮点击事件
   function handleSeePersonDetail(item) {
-    const current_url_path = page.url.pathname;
+    const current_url_path = $page.url.pathname;
     goto(`${current_url_path}/person-detail/${item.idNumber}`);
   }
 
@@ -251,7 +258,7 @@
 
     const validIds = select_approve_id.filter((id) => {
       const item = person_list.find((i) => i.id === id);
-      return item && item.status === '未审核';
+      return item && item.status === '待审核';
     });
 
     if (validIds.length === 0) {
@@ -291,7 +298,7 @@
 
     const validIds = select_reject_id.filter((id) => {
       const item = person_list.find((i) => i.id === id);
-      return item && item.status === '未审核';
+      return item && item.status === '待审核';
     });
 
     if (validIds.length === 0) {
@@ -338,6 +345,8 @@
     // 清空选择
     select_approve_id = [];
     select_reject_id = [];
+
+    toast.success('审核成功');
 
     closeRejectPanel();
   }
@@ -581,12 +590,16 @@
                   >
                 </td>
                 <td>
-                  {#if status_text === '已结束'}
+                  {#if status_text === '审核截止'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item)}>查看详情</button>
                   {:else if item.status === '待审核'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item)}>查看详情</button>
-                    <button class="via-btn" onclick={() => handleApprove(item.id)}>通过</button>
-                    <button class="de-btn" onclick={() => openRejectPanel(item.id)}>不通过</button>
+                    <button class="via-btn" data-testid="approve-btn" onclick={() => handleApprove(item.id)}
+                      >通过</button
+                    >
+                    <button class="de-btn" data-testid="reject-btn" onclick={() => openRejectPanel(item.id)}
+                      >不通过</button
+                    >
                   {:else if item.status === '通过'}
                     <button class="op-btn" onclick={() => handleSeePersonDetail(item)}>查看详情</button>
                     <button class="de-btn" onclick={() => handleRevokeApprove(item.id)}>撤销通过</button>
@@ -623,13 +636,14 @@
 
 <PersonImportPanel
   bind:this={person_import_panel}
-  enroll_id={data.see_enroll_id}
+  enroll_id={see_enroll_id}
   {is_show_import_panel}
   {candidate_list}
   closePanel={closeImportPanel}
 ></PersonImportPanel>
 
-<PersonMovePanel {is_show_move_panel} closePanel={closeMovePanel}></PersonMovePanel>
+<PersonMovePanel {person_list} {is_show_move_panel} from_enroll_id={see_enroll_id} closePanel={closeMovePanel}
+></PersonMovePanel>
 
 <!-- 消息提示框 -->
 <MessageBox
@@ -648,7 +662,7 @@
       <textarea bind:value={reject_reason} placeholder="请输入理由"></textarea>
       <div class="modal-actions">
         <button class="btn-cancel" onclick={closeRejectPanel}>取消</button>
-        <button class="btn-confirm" onclick={confirmReject}>确认</button>
+        <button class="btn-confirm" onclick={confirmReject}>确定</button>
       </div>
     </div>
   </div>

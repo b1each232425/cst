@@ -34,10 +34,19 @@
     '08': '已迁移',
   };
 
+  // 状态筛选选项
+  let enroll_status = $state('');
+  let status_options = [
+    { value: '', label: '全部' },
+    ...Object.entries(STATUS_MAP).map(([code, text]) => ({
+      value: code,
+      label: text,
+    })),
+  ];
+
   // 筛选条件
   let input_value = $state('');
   let subject = $state('');
-  let status = $state('');
   let current_page = 1;
   let page_size = 10;
 
@@ -66,7 +75,7 @@
 
   function getEnrollData(name = '', status = '', course = '') {
     fetch(
-      `/api/registration?page=${current_page}&pageSize=${page_size}&name=${name}&status=${status}&course=${course}`,
+      `/api/registration?page=${current_page}&pageSize=${page_size}&name=${name}&status=${status}&course=${course}&search_type=00`,
       {
         method: 'GET',
         headers: {
@@ -132,7 +141,12 @@
 
   // 处理考试科目选择事件
   function handleChangeSubject() {
-    getEnrollData(input_value, '', exam_subject);
+    getEnrollData(input_value, enroll_status, exam_subject);
+  }
+
+  // 处理报名状态选择事件
+  function handleChangeStatus() {
+    getEnrollData(input_value, enroll_status, exam_subject);
   }
 
   onMount(() => {
@@ -169,9 +183,9 @@
 
     <div class="select">
       <div class="label">报名状态：</div>
-      <Select bind:value={status}>
-        {#each Object.entries(STATUS_MAP) as [key, val]}
-          <Option value={key} label={val} />
+      <Select bind:value={enroll_status} changeValue={handleChangeStatus}>
+        {#each status_options as option}
+          <Option value={option.value} label={option.label} />
         {/each}
       </Select>
     </div>

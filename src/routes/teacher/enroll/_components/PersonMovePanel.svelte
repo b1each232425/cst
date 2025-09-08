@@ -3,195 +3,161 @@
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Button from '$lib/components/Button/Button.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
+  import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
   import { onMount } from 'svelte';
+  import { formatDateTime } from '../_utils/handleFileInput';
 
-  let { is_show_move_panel = false, closePanel = () => {} } = $props();
+  // 考试科目映射
+  const COURSE_MAP = {
+    '00': '理论、实操',
+    '02': '理论',
+    '04': '实操',
+  };
+
+  // 计划状态映射
+  const STATUS_MAP = {
+    '00': '已发布',
+    '02': '未发布',
+    '04': '已结束',
+    '06': '审核截止',
+    '08': '已作废',
+    '12': '已取消',
+  };
+
+  let { person_list = [], is_show_move_panel = false, from_enroll_id = 0, closePanel = () => {} } = $props();
   let search_keyword = $state(''); // 搜索关键词
 
   // 模拟数据
-  let candidate_list = $state([
-    {
-      name: 'H3C考证',
-      subject: '数学',
-      current: 50,
-      plan: 60,
-      review_deadline: '2025-09-01',
-      start_time: '2025-09-05',
-      end_time: '2025-09-10',
-      practice_binding: '',
-      status: '已发布',
-    },
-    {
-      name: '英语四级',
-      subject: '英语',
-      current: 60,
-      plan: 60,
-      review_deadline: '2025-08-20',
-      start_time: '2025-08-22',
-      end_time: '2025-08-30',
-      practice_binding: '',
-      status: '未发布',
-    },
-    {
-      name: 'H3C考证',
-      subject: '数学',
-      current: 50,
-      plan: 60,
-      review_deadline: '2025-09-01',
-      start_time: '2025-09-05',
-      end_time: '2025-09-10',
-      practice_binding: '',
-      status: '已发布',
-    },
-    {
-      name: '英语四级',
-      subject: '英语',
-      current: 60,
-      plan: 60,
-      review_deadline: '2025-08-20',
-      start_time: '2025-08-22',
-      end_time: '2025-08-30',
-      practice_binding: '',
-      status: '未发布',
-    },
-    {
-      name: 'H3C考证',
-      subject: '数学',
-      current: 50,
-      plan: 60,
-      review_deadline: '2025-09-01',
-      start_time: '2025-09-05',
-      end_time: '2025-09-10',
-      practice_binding: '',
-      status: '已发布',
-    },
-    {
-      name: '英语四级',
-      subject: '英语',
-      current: 60,
-      plan: 60,
-      review_deadline: '2025-08-20',
-      start_time: '2025-08-22',
-      end_time: '2025-08-30',
-      practice_binding: '',
-      status: '未发布',
-    },
-    {
-      name: 'H3C考证',
-      subject: '数学',
-      current: 50,
-      plan: 60,
-      review_deadline: '2025-09-01',
-      start_time: '2025-09-05',
-      end_time: '2025-09-10',
-      practice_binding: '',
-      status: '已发布',
-    },
-    {
-      name: '英语四级',
-      subject: '英语',
-      current: 60,
-      plan: 60,
-      review_deadline: '2025-08-20',
-      start_time: '2025-08-22',
-      end_time: '2025-08-30',
-      practice_binding: '',
-      status: '未发布',
-    },
-    {
-      name: 'H3C考证',
-      subject: '数学',
-      current: 50,
-      plan: 60,
-      review_deadline: '2025-09-01',
-      start_time: '2025-09-05',
-      end_time: '2025-09-10',
-      practice_binding: '',
-      status: '已发布',
-    },
-    {
-      name: '英语四级',
-      subject: '英语',
-      current: 60,
-      plan: 60,
-      review_deadline: '2025-08-20',
-      start_time: '2025-08-22',
-      end_time: '2025-08-30',
-      practice_binding: '',
-      status: '未发布',
-    },
-    {
-      name: 'H3C考证',
-      subject: '数学',
-      current: 50,
-      plan: 60,
-      review_deadline: '2025-09-01',
-      start_time: '2025-09-05',
-      end_time: '2025-09-10',
-      practice_binding: '',
-      status: '已发布',
-    },
-    {
-      name: '英语四级',
-      subject: '英语',
-      current: 60,
-      plan: 60,
-      review_deadline: '2025-08-20',
-      start_time: '2025-08-22',
-      end_time: '2025-08-30',
-      practice_binding: '',
-      status: '未发布',
-    },
-    {
-      name: 'H3C考证',
-      subject: '数学',
-      current: 50,
-      plan: 60,
-      review_deadline: '2025-09-01',
-      start_time: '2025-09-05',
-      end_time: '2025-09-10',
-      practice_binding: '',
-      status: '已发布',
-    },
-    {
-      name: '英语四级',
-      subject: '英语',
-      current: 60,
-      plan: 60,
-      review_deadline: '2025-08-20',
-      start_time: '2025-08-22',
-      end_time: '2025-08-30',
-      practice_binding: '',
-      status: '未发布',
-    },
-    {
-      name: 'H3C考证',
-      subject: '数学',
-      current: 50,
-      plan: 60,
-      review_deadline: '2025-09-01',
-      start_time: '2025-09-05',
-      end_time: '2025-09-10',
-      practice_binding: '',
-      status: '已发布',
-    },
-    {
-      name: '英语四级',
-      subject: '英语',
-      current: 60,
-      plan: 60,
-      review_deadline: '2025-08-20',
-      start_time: '2025-08-22',
-      end_time: '2025-08-30',
-      practice_binding: '',
-      status: '未发布',
-    },
-  ]);
+  let candidate_list = $state([]);
+
+  let current_page = $state(1); // 当前页数
+  let page_size = $state(10); // 当前页面大小
+  let total_items = $state(0); //数据总数
+
+  let to_enroll_id = $state(0); // 迁移目标计划id
+  let enroll_status = $state(''); // 当前计划状态
+
+  // 消息提示框数据
+  let is_show_messagebox = $state(false);
+  let messagebox_title = $state('');
+  let messagebox_content = $state('');
+
+  // 获取报名列表数据
+  function getEnrollData(name = '', status = '', course = '') {
+    fetch(
+      `/api/registration?page=${current_page}&pageSize=${page_size}&name=${name}&status=${status}&course=${course}&search_type=00`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // 处理数据
+        candidate_list = data.data.registers.map((item) => {
+          const r = item.register;
+          return {
+            ...item,
+            register: {
+              ...r,
+              CourseText: COURSE_MAP[r.Course] || r.Course,
+              StatusText: STATUS_MAP[r.Status] || r.Status,
+              ReviewEndTimeText: formatDateTime(r.ReviewEndTime),
+              StartTimeText: formatDateTime(r.StartTime),
+              EndTimeText: formatDateTime(r.EndTime),
+            },
+          };
+        });
+
+        total_items = data.data.total;
+      })
+      .catch((e) => {
+        console.error(e);
+      });
+  }
+
+  // 迁移计划
+  function moveEnrollPlan() {
+    // 构造请求体
+    const payload = {
+      from_register_id: from_enroll_id,
+      to_register_id: to_enroll_id,
+      status: enroll_status,
+      student: person_list.map((person) => ({
+        student_id: person.id,
+        exam_type: person.examType === '正考' ? '00' : person.examType === '补考' ? '02' : '',
+      })),
+    };
+
+    fetch('/api/registrationStudent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'move', data: payload }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.status !== 0) {
+          toast.error('迁移失败，请重试');
+        } else {
+          toast.success('迁移成功');
+          closePanel();
+        }
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+
+  // 父组件控制分页器的行为
+  function handlePageChange(event) {
+    current_page = event.detail;
+    getEnrollData();
+  }
+
+  function handlePageSizeChange(event) {
+    page_size = event.detail;
+  }
 
   // 迁移按钮点击事件
   function handleMove(row) {
-    alert(`迁移 ${row.name}`);
+    to_enroll_id = row.register.ID;
+    enroll_status = row.register.Status;
+    messagebox_title = '确认迁移';
+    messagebox_content = '你确定要继续迁移吗？';
+    is_show_messagebox = true;
   }
+
+  // ---------- 确认/取消 ----------
+  function handleMessageBoxConfirm() {
+    moveEnrollPlan();
+    messagebox_title = '';
+    messagebox_content = '';
+    is_show_messagebox = false;
+  }
+
+  function handleMessageBoxCancel() {
+    messagebox_title = '';
+    messagebox_content = '';
+    is_show_messagebox = false;
+  }
+
+  onMount(() => {
+    getEnrollData();
+  });
 </script>
 
 <div class={is_show_move_panel ? 'move-list-container' : 'hide'}>
@@ -228,31 +194,35 @@
             {:else}
               {#each candidate_list as c}
                 <tr>
-                  <td>{c.name}</td>
-                  <td>{c.subject}</td>
-                  <td>{c.current}/{c.plan}</td>
-                  <td>{c.review_deadline}</td>
-                  <td>{c.start_time} ~ {c.end_time}</td>
+                  <td>{c.register.Name}</td>
+                  <td>{c.register.CourseText}</td>
+                  <td>{c.studentCount}/{c.register.MaxNumber ? c.register.MaxNumber : '不限'}</td>
+                  <td>{c.register.ReviewEndTimeText}</td>
+                  <td>{c.register.StartTimeText} ~ {c.register.EndTimeText}</td>
                   <td>
-                    {#if c.practice_binding}
-                      {c.practice_binding}
+                    {#if c.practiceName}
+                      {c.practiceName}
                     {:else}
                       --
                     {/if}
                   </td>
                   <td>
                     <span
-                      class="Status-tag {c.status === '已发布'
+                      class="Status-tag {c.register.StatusText === '已发布'
                         ? 'published'
-                        : c.status === '未发布'
+                        : c.register.StatusText === '未发布'
                           ? 'unpublished'
                           : 'invalidated'}"
                     >
-                      {c.status}
+                      {c.register.StatusText}
                     </span>
                   </td>
                   <td>
-                    <button onclick={() => handleMove(c)}>选择</button>
+                    {#if c.register.ID === from_enroll_id}
+                      --
+                    {:else}
+                      <button onclick={() => handleMove(c)}>选择</button>
+                    {/if}
                   </td>
                 </tr>
               {/each}
@@ -262,7 +232,7 @@
       </div>
 
       <div class="move-list-pagination">
-        <Pagination />
+        <Pagination {total_items} on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} />
       </div>
     </div>
 
@@ -273,6 +243,15 @@
   </div>
 </div>
 
+<!-- 消息提示框 -->
+<MessageBox
+  visible={is_show_messagebox}
+  title={messagebox_title}
+  content={messagebox_content}
+  onConfirm={handleMessageBoxConfirm}
+  onCancel={handleMessageBoxCancel}
+></MessageBox>
+
 <style lang="scss" scoped>
   .move-list-container {
     position: fixed;
@@ -281,7 +260,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
+    z-index: 999;
 
     .move-list-panel {
       width: 1200px;

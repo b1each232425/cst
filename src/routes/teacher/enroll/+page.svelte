@@ -65,13 +65,14 @@
 
   let current_page = $state(1); // 当前页数
   let page_size = $state(10); // 当前页面大小
+  let total_items = $state(0); //数据总数
 
   let input_value = $state('');
 
   // 获取报名列表数据
   function getEnrollData(name = '', status = '', course = '') {
     fetch(
-      `/api/registration?page=${current_page}&pageSize=${page_size}&name=${name}&status=${status}&course=${course}`,
+      `/api/registration?page=${current_page}&pageSize=${page_size}&name=${name}&status=${status}&course=${course}&search_type=00`,
       {
         method: 'GET',
         headers: {
@@ -101,6 +102,8 @@
             },
           };
         });
+
+        total_items = data.data.total;
       })
       .catch((e) => {
         console.log(e);
@@ -455,11 +458,7 @@
     </div>
 
     <div class="pagination-container">
-      <Pagination
-        on:pageChange={handlePageChange}
-        on:pageSizeChange={handlePageSizeChange}
-        total_items={enroll_list.length}
-      />
+      <Pagination on:pageChange={handlePageChange} on:pageSizeChange={handlePageSizeChange} {total_items} />
     </div>
   </div>
 </div>

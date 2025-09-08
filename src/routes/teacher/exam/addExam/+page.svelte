@@ -556,7 +556,11 @@
           </span>
         </label>
         <label class="label">
-          <input type="radio" bind:group={exam_type} value={'04'} class="choice-radio-input" />
+          <input type="radio" bind:group={exam_type} value={'04'} class="choice-radio-input"
+          onchange={() => {
+          exam_method = '02'; // 选择资格证考试时自动设置为线下
+        }}
+     />
           资格证考试
           <span class="tip-wrapper">
             <img class="tip" alt="提示" src="/exam_list/tip.png" />
@@ -918,7 +922,7 @@
       </div>
 
       <div
-        class="exam-duration-container config-row {paper_configs[paperConfigIndex].periodMode === '02' ? 'hideButton'  : ''}"
+        class="exam-duration-container config-row {paper_configs[paperConfigIndex].periodMode === '02' || exam_method === '02' ? 'hideButton'  : ''}"
       >
         <RequiredLabel text="考场规则" />
 
@@ -1119,13 +1123,14 @@
         onConfirm={(selected) =>{
           show_rooms_panel=false;
           exam_rooms=selected;
-          
+          console.log("ex",exam_rooms);
         }}
         onCancel={()=>{
           show_rooms_panel=false;
         }}
         exam_start_time = {start_time}
         exam_end_time = {end_time}
+        selectedRooms = {exam_rooms}
     ></ExaminationRoomSelectionPanel>
 
     <InvigilatorSelectionPanel

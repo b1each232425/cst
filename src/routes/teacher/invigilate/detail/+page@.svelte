@@ -22,6 +22,7 @@
   import { formatTimestamp } from '$lib/utils/time_utils';
   import { page as appPage } from '$app/state';
   import { debounce } from '$lib/utils/optimize';
+
   // import Upload from '$lib/components/Upload/Upload.svelte';
 
   // TODO 监考员姓名
@@ -51,7 +52,7 @@
   //   {
   //     ExamineeID: 5001,
   //     ExamCard: '20250822001',
-  //     IdentityID: '440101199001011234',
+  //     IDCardNo: '440101199001011234',
   //     Name: '张三',
   //     Status: '02',
   //     Remark: '缺考',
@@ -59,7 +60,7 @@
   //   {
   //     ExamineeID: 5002,
   //     ExamCard: '20250822002',
-  //     IdentityID: '440101199002022345',
+  //     IDCardNo: '440101199002022345',
   //     Name: '李四',
   //     Status: '02',
   //     Remark: '',
@@ -67,7 +68,7 @@
   //   {
   //     ExamineeID: 5003,
   //     ExamCard: '20250822003',
-  //     IdentityID: '440101199003033456',
+  //     IDCardNo: '440101199003033456',
   //     Name: '王五',
   //     Status: '06',
   //     Remark: '正常参加考试',
@@ -75,7 +76,7 @@
   //   {
   //     ExamineeID: 5004,
   //     ExamCard: '20250822004',
-  //     IdentityID: '440101199004044567',
+  //     IDCardNo: '440101199004044567',
   //     Name: '赵六',
   //     Status: '06',
   //     Remark: '提前交卷',
@@ -83,7 +84,7 @@
   //   {
   //     ExamineeID: 5005,
   //     ExamCard: '20250822005',
-  //     IdentityID: '440101199005055678',
+  //     IDCardNo: '440101199005055678',
   //     Name: '钱七',
   //     Status: '14',
   //     Remark: '作弊嫌疑',
@@ -91,7 +92,7 @@
   //   {
   //     ExamineeID: 5006,
   //     ExamCard: '20250822006',
-  //     IdentityID: '440101199006066789',
+  //     IDCardNo: '440101199006066789',
   //     Name: '孙八',
   //     Status: '14',
   //     Remark: '身体不适中途退场',
@@ -99,7 +100,7 @@
   //   {
   //     ExamineeID: 5007,
   //     ExamCard: '20250822007',
-  //     IdentityID: '440101199007077890',
+  //     IDCardNo: '440101199007077890',
   //     Name: '周九',
   //     Status: '02',
   //     Remark: '缺考',
@@ -107,7 +108,7 @@
   //   {
   //     ExamineeID: 5008,
   //     ExamCard: '20250822008',
-  //     IdentityID: '440101199008088901',
+  //     IDCardNo: '440101199008088901',
   //     Name: '吴十',
   //     Status: '14',
   //     Remark: '忘记带身份证',
@@ -115,7 +116,7 @@
   //   {
   //     ExamineeID: 5009,
   //     ExamCard: '20250822009',
-  //     IdentityID: '440101199009099012',
+  //     IDCardNo: '440101199009099012',
   //     Name: '郑十一',
   //     Status: '06',
   //     Remark: '正常参加考试',
@@ -123,7 +124,7 @@
   //   {
   //     ExamineeID: 5010,
   //     ExamCard: '20250822010',
-  //     IdentityID: '440101199010101123',
+  //     IDCardNo: '440101199010101123',
   //     Name: '王十二',
   //     Status: '11',
   //     Remark: '表现优秀',
@@ -151,6 +152,7 @@
     '02': '缺考',
     '06': '作弊',
     '14': '考试异常',
+    '': '无',
   };
 
   // 考试类型
@@ -167,11 +169,9 @@
     '04': '较差',
   };
 
-  let total_count = $state(0);
   let search_text = $state('');
   let exam_session_id = $state('');
   let exam_room_id = $state('');
-  let exam_session_name = $state('');
   let status = $state('');
   let remark = $state('');
   let page = $state(1);
@@ -179,13 +179,32 @@
 
   let invigilation_info = $state({});
   let examinee_list = $state([]);
+  let can_update = $state(false); // 考试结束后是否可以更新
+  let total_count = $state(0);
 
-  let is_invigilating = $derived(invigilation_info?.Status === '04');
+  // 临时数据
+  // 目的：更改数据后，需要点击保存才会真正的更改，取消则需要回到原来的状态
+  let temp_exam_session_basic_eval = $state('');
+  let temp_exam_session_record = $state('');
+
+  // 考试情况是否有所变化
+  let is_changed = $derived(
+    invigilation_info?.BasicEval !== temp_exam_session_basic_eval ||
+      invigilation_info?.Record !== temp_exam_session_record,
+  );
+
+  // 是否允许更新
+  let allow_updating = $derived(invigilation_info?.Status === '04' || can_update);
 
   let selected_examinee_id_set = $state(new Set());
 
   function goBack() {
     history.back();
+  }
+
+  function initTempData() {
+    temp_exam_session_basic_eval = invigilation_info?.BasicEval;
+    temp_exam_session_record = invigilation_info?.Record;
   }
 
   function showErrorDialog(content) {
@@ -228,6 +247,10 @@
           invigilation_info = res.data?.info ?? {};
           examinee_list = res.data?.examinees ?? [];
           total_count = res.rowCount ?? 0;
+          can_update = res.data?.canUpdate ?? false;
+
+          // 初始化临时数据
+          initTempData();
 
           if (Object.prototype.toString.call(invigilation_info) !== '[object Object]') {
             invigilation_info = {};
@@ -289,53 +312,76 @@
       });
   }
 
-  // 更新考场情况
-  function updateBasicEval(basic_eval) {
+  // 更新考试情况
+  function updateRecord() {
     updateInfos('00', {
-      BasicEval: basic_eval,
-    });
-  }
-
-  function updateRecord(record) {
-    updateInfos('00', {
-      Record: record,
+      Record: temp_exam_session_record,
+      BasicEval: temp_exam_session_basic_eval,
     });
   }
 
   const debounceUpdateRecord = debounce(updateRecord, 1000);
 
   // 更新一个学生的状态
-  function updateSingleExamineeStatus(examinee_id, status) {
-    updateInfos('02', {
-      ExamineeIDs: [examinee_id],
-      Status: status,
+  function updateSingleExamineeStatus(examinee_id, status, old_status) {
+    if (status === old_status || (status === '' && old_status === '00') || (status === '' && old_status === '10'))
+      return;
+
+    MessageBox({
+      title: '确认操作',
+      content: '你确定要该考生的异常状态标记为“' + EXAMINEE_STATUE_MAP[status] + '”吗？',
+      onConfirm: () =>
+        updateInfos('02', {
+          Examinees: [examinee_id],
+          ExamineeStatus: status,
+        }),
+      onCancel: () => {
+        // 回滚
+        examinee_list.find((e) => e.ExamineeID === examinee_id).Status =
+          old_status === '00' || old_status === '10' ? '' : old_status;
+      },
     });
   }
 
   // 更新一个学生的备注
   function updateSingleExamineeRemark(examinee_id, remark) {
     updateInfos('04', {
-      ExamineeIDs: [examinee_id],
-      Remark: remark,
+      Examinees: [examinee_id],
+      ExamineeRemark: remark,
     });
+  }
+
+  // 取消对考试情况的修改
+  function cancelUpdateRecord() {
+    temp_exam_session_record = invigilation_info?.Record;
+    temp_exam_session_basic_eval = invigilation_info?.BasicEval;
   }
 
   const debounceUpdateSingleExamineeRemark = debounce(updateSingleExamineeRemark, 500);
 
   // 批量更新学生的状态
-  function batchUpdateExamineeStatus(status) {
-    updateInfos(
-      '02',
-      {
-        Status: status,
-        ExamineeIDs: Array.from(selected_examinee_id_set),
+  function batchUpdateExamineeStatus(new_status) {
+    MessageBox({
+      title: '确认操作',
+      content: '你确定要批量标记为“' + EXAMINEE_STATUE_MAP[new_status] + '”吗？',
+      onConfirm: () =>
+        updateInfos(
+          '02',
+          {
+            ExamineeStatus: new_status,
+            Examinees: Array.from(selected_examinee_id_set),
+          },
+          () => {
+            examinee_list.forEach((e) => {
+              if (selected_examinee_id_set.has(e.ExamineeID)) e.Status = new_status;
+            });
+          },
+        ),
+      onCancel: () => {
+        // 回滚
+        status = '';
       },
-      () => {
-        examinee_list.forEach((e) => {
-          if (selected_examinee_id_set.has(e.ExamineeID)) e.Status = status;
-        });
-      },
-    );
+    });
   }
 
   // 批量更新学生的备注
@@ -343,8 +389,8 @@
     updateInfos(
       '04',
       {
-        Remark: remark,
-        ExamineeIDs: Array.from(selected_examinee_id_set),
+        ExamineeRemark: remark,
+        Examinees: Array.from(selected_examinee_id_set),
       },
       () => {
         examinee_list.forEach((e) => {
@@ -436,9 +482,9 @@
       <div class="total-info">
         <div class="info-item">
           <div class="label">考场情况：</div>
-          {#if is_invigilating}
+          {#if allow_updating}
             <div class="data" data-testid="basic-eval-select">
-              <Select value={invigilation_info.BasicEval} changeValue={updateBasicEval}>
+              <Select bind:value={temp_exam_session_basic_eval}>
                 {#each Object.entries(EVAL_MAP) as [key, value]}
                   <Option value={key} label={value} />
                 {/each}
@@ -466,19 +512,18 @@
           <div class="label">考试异常人数：</div>
           <div class="data number">{invigilation_info.AbnormalExamineeNum}</div>
         </div>
-        <div class="info-item">
+        <!-- <div class="info-item">
           <div class="label">已延长时间人数：</div>
           <div class="data number">{invigilation_info.ExtendedTimeNum}</div>
-        </div>
+        </div> -->
         <div class="info-item record">
           <div class="label">考场记录：</div>
-          {#if is_invigilating}
+          {#if allow_updating}
             <textarea
               type="text "
               class="data record"
               placeholder="请输入考场记录..."
-              value={invigilation_info.Record}
-              oninput={(e) => debounceUpdateRecord(e.target.value)}
+              bind:value={temp_exam_session_record}
             ></textarea>
           {:else}
             <div class="data number record" data-testid="record">
@@ -490,6 +535,12 @@
           <Upload><a href="javascript:void(0);">附件上传</a></Upload>
         </div> -->
       </div>
+      {#if allow_updating && is_changed}
+        <div class="options">
+          <button class="btn btn--info is-plain" onclick={cancelUpdateRecord}>取消</button>
+          <button class="btn btn--primary" onclick={updateRecord}>保存</button>
+        </div>
+      {/if}
     </div>
 
     <!-- 考生名单 -->
@@ -502,23 +553,22 @@
             <input
               type="text"
               placeholder="姓名、身份证号或准考证号"
-              bind:value={exam_session_name}
+              bind:value={search_text}
               class="input"
               oninput={debounceGetInvigilateDetail}
             />
           </div>
-          {#if is_invigilating}
+          {#if allow_updating}
             <div class="select" data-testid="batch-select">
               <div class="label">批量标记：</div>
               <Select
-                value={status}
+                bind:value={status}
                 disabled={selected_examinee_id_set.size === 0}
                 changeValue={(val) => batchUpdateExamineeStatus(val)}
               >
-                <Option value="" label="无" />
-                <Option value="02" label={EXAMINEE_STATUE_MAP['02']} />
-                <Option value="06" label={EXAMINEE_STATUE_MAP['06']} />
-                <Option value="14" label={EXAMINEE_STATUE_MAP['14']} />
+                {#each Object.entries(EXAMINEE_STATUE_MAP) as [key, value]}
+                  <Option value={key} label={value} />
+                {/each}
               </Select>
             </div>
             <div class="batch-remark-input">
@@ -539,7 +589,7 @@
               onclick={() => (selected_examinee_id_set = new Set())}>取消选中</button
             >
             <div class="tip" data-testid="selected-count-tip">
-              当前已选中 <span class="data">{selected_examinee_id_set.size}</span> 人
+              已选中 <span class="data">{selected_examinee_id_set.size}</span> 人
             </div>
           {/if}
         </div>
@@ -549,7 +599,7 @@
           <table>
             <thead>
               <tr>
-                {#if is_invigilating}
+                {#if allow_updating}
                   <!-- 全选框 -->
                   <th class="select">
                     <button class="square-container" onclick={toggleSelectAll} data-testid="select-all">
@@ -567,9 +617,9 @@
               </tr>
             </thead>
             <tbody data-testid="examinee-tbody">
-              {#each examinee_list as { ExamineeID, IdentityID, Name, ExamCard, Status, Remark } (ExamineeID)}
+              {#each examinee_list as { ExamineeID, IDCardNo, Name, ExamCard, Status, Remark } (ExamineeID)}
                 <tr>
-                  {#if is_invigilating}
+                  {#if allow_updating}
                     <!-- 单选框 -->
                     <td class="select">
                       <button
@@ -584,30 +634,35 @@
                     >
                   {/if}
                   <td>{Name}</td>
-                  <td>{IdentityID}</td>
+                  <td>{IDCardNo}</td>
                   <td>{ExamCard}</td>
-                  {#if is_invigilating}
+                  {#if allow_updating}
                     <td>
                       <div class="select" data-testid="single-select">
-                        <Select value={Status} changeValue={(val) => updateSingleExamineeStatus(ExamineeID, val)}>
-                          <Option value="" label="无" />
-                          <Option value="02" label={EXAMINEE_STATUE_MAP['02']} />
-                          <Option value="06" label={EXAMINEE_STATUE_MAP['06']} />
-                          <Option value="14" label={EXAMINEE_STATUE_MAP['14']} />
+                        <Select
+                          value={Status}
+                          changeValue={(val, old) => updateSingleExamineeStatus(ExamineeID, val, old)}
+                          placeholder="无"
+                        >
+                          {#each Object.entries(EXAMINEE_STATUE_MAP) as [key, value]}
+                            <Option value={key} label={value} />
+                          {/each}
                         </Select>
                       </div></td
                     >
                   {:else}
                     <td
+                      data-testid="single-select"
                       class="status"
                       class:absent={Status === '02'}
                       class:cheat={Status === '06'}
                       class:abnormal={Status === '14'}
-                      class:unknown={!EXAMINEE_STATUE_MAP[Status]}>{EXAMINEE_STATUE_MAP[Status] ?? '未知状态'}</td
-                    >
+                      class:unknown={Status !== '00' && Status !== '10' && !EXAMINEE_STATUE_MAP[Status]}
+                      >{EXAMINEE_STATUE_MAP[Status] ?? (Status !== '00' && Status !== '10' ? '未知状态' : '无')}
+                    </td>
                   {/if}
                   <td class="remark"
-                    >{#if is_invigilating}
+                    >{#if allow_updating}
                       <div class="remark-input">
                         <input
                           type="text"
@@ -645,6 +700,12 @@
 </div>
 
 <style lang="scss">
+  @mixin scrollbar {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
+  }
+
   .unknown {
     color: var(--red);
   }
@@ -752,7 +813,8 @@
           display: flex;
           flex-direction: column;
           gap: 1rem;
-          margin-top: 2rem;
+          height: 52vh;
+          @include scrollbar;
 
           .info-item {
             display: flex;
@@ -765,7 +827,7 @@
             }
 
             .label {
-              width: 8rem;
+              width: 7rem;
               text-align: right;
             }
 
@@ -782,10 +844,8 @@
               }
 
               &.record {
-                height: 10rem;
-                overflow-y: auto;
-                scrollbar-width: thin;
-                scrollbar-color: #ccc transparent;
+                height: 16vh;
+                @include scrollbar;
               }
             }
 
@@ -804,10 +864,21 @@
             }
           }
         }
+
+        .options {
+          // height: 2rem;
+          margin: 1rem 0 0 0;
+          display: flex;
+          gap: 1rem;
+          justify-content: center;
+          align-items: center;
+          position: sticky;
+          bottom: 0;
+        }
       }
 
       .right-content {
-        flex: 7;
+        flex: 8;
         position: relative;
 
         .body {
@@ -931,7 +1002,7 @@
 
                     &.status {
                       &.absent {
-                        color: #666; /* 灰色表示缺考 */
+                        color: #8a9ba8; /* 灰色表示缺考 */
                       }
                       &.cheat {
                         color: var(--red); /* 红色表示作弊 */

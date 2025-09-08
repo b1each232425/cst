@@ -87,6 +87,7 @@
   let jobs = $state(new Map());
   let uploadedFiles = $state([]);
   let selectedFiles = $state();
+  let invigilator_ID = $state();
 	let clearSelectedFiles = () => {
 		selectedFiles = new DataTransfer().files;
 	};
@@ -259,6 +260,7 @@
   
   // 计算所有考场容量的总和
   let total_capacity = $derived(exam_rooms.reduce((sum, room) => sum + (room.capacity || 0), 0));
+
   function addNewPaper() {
     let default_paper_config = {
       paperID: 0, //试卷ID
@@ -310,8 +312,8 @@
     paper_configs = [...paper_configs, default_paper_config];
     if(paper_configs.length>=1) {updateDuration(paper_configs.length-1,paper_configs);}
     // 清空考场选择
-    // exam_rooms = [];
-    // invigilators = [];
+    exam_rooms = [];
+    invigilators = [];
   }
 
   function resetTime(index) {
@@ -330,167 +332,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
     .map(item => item.id);
 }
 
-//   async function handleSubmit() {
-//     /* 1. 必填字段校验（保持原逻辑） */
-//     if (exam_name === '') {
-//       toast.warning('请输入考试名称');
-//       return;
-//     }
-//     if (exam_name.length > 50) {
-//       toast.warning('考试名称不得超过五十个字符');
-//       return;
-//     }
-//     if (exam_rules === '') {
-//       toast.warning('请输入考试规则');
-//       return;
-//     }
-//     if (exam_rules.length > 1000) {
-//       toast.warning('考试规则不得超过1000个字符');
-//       return;
-//     }
 
-//     for (let i = 0; i < paper_configs.length; i++) {
-//       if (paper_configs[i].paperID === 0) {
-//         toast.warning(`第${i + 1}个场次未选择试卷`);
-//         return;
-//       }
-//     }
-//     /* 2. 场次级校验（保持原逻辑） */
-//     for (let i = 0; i < paper_configs.length; i++) {
-//       const session = paper_configs[i];
-
-//       if (!session.startTime || session.startTime === '') {
-//         toast.warning(`第${i + 1}个场次未设置时间段`);
-//         return;
-//       }
-//       if (!session.endTime || session.endTime === '') {
-//         toast.warning(`第${i + 1}个场次未设置时间段`);
-//         return;
-//       }
-
-//       const startTime = new Date(session.startTime);
-//       const endTime = new Date(session.endTime);
-//       const now = new Date();
-
-//       if (startTime < now) {
-//         toast.warning(`第${i + 1}个场次的开始时间不能早于当前时间`);
-//         return;
-//       }
-//       if (endTime <= startTime) {
-//         toast.warning(`第${i + 1}个场次的结束时间必须晚于开始时间`);
-//         return;
-//       }
-//     }
-
-//     /* 3. 预处理场次数据（保持原逻辑） */
-//     for (let i = 0; i < paper_configs.length; i++) {
-//       paper_configs[i].sessionNum = i + 1;
-
-//       if (paper_configs[i].isOptionShuffled && paper_configs[i].isQuestionShuffled) {
-//         paper_configs[i].questionShuffledMode = '00';
-//       } else if (paper_configs[i].isOptionShuffled && !paper_configs[i].isQuestionShuffled) {
-//         paper_configs[i].questionShuffledMode = '02';
-//       } else if (!paper_configs[i].isOptionShuffled && paper_configs[i].isQuestionShuffled) {
-//         paper_configs[i].questionShuffledMode = '04';
-//       } else {
-//         paper_configs[i].questionShuffledMode = '06';
-//       }
-
-//       if (paper_configs[i].markMethod === '02') {
-//         paper_configs[i].markConfig.teacher_mark_configs = [];
-//         paper_configs[i].markMode = '00';
-//       }
-
-//       paper_configs[i].lateEntryTime = paper_configs[i].lateEntryTime <= 0 ? 1 : paper_configs[i].lateEntryTime;
-//       paper_configs[i].earlySubmissionTime =
-//         paper_configs[i].earlySubmissionTime <= 0 ? 0 : paper_configs[i].earlySubmissionTime;
-//     }
-
-//     const examSessionsdata = paper_configs.map((cfg) => ({
-//       PaperID: cfg.paperID,
-//       PeriodMode: cfg.periodMode,
-//       StartTime: cfg.startTime ? new Date(cfg.startTime).getTime() : 0,
-//       EndTime: cfg.endTime ? new Date(cfg.endTime).getTime() : 0,
-//       Duration: Number(cfg.duration) || 0,
-//       LateEntryTime: Number(cfg.lateEntryTime) || 0,
-//       EarlySubmissionTime: Number(cfg.earlySubmissionTime) || 0,
-//       QuestionShuffledMode: cfg.questionShuffledMode,
-//       MarkMethod: cfg.markMethod,
-//       NameVisibilityIn: !!cfg.nameVisibility,
-//       ReviewerIds:
-//       cfg.markConfig && cfg.markConfig.teacher_mark_configs ? cfg.markConfig.teacher_mark_configs.map((t) => t.id) : [],
-//       MarkMode: cfg.markMode,
-//       SessionNum: cfg.sessionNum,
-//     }));
-
-
-//      const invalid_examinee = exam_examinee.filter(e => !e.id )
-//     const valid_examinee = exam_examinee.filter(e => e && e.id).map((item) => item.ID);
-//     //导入新学生
-//     if (invalid_examinee.length > 0)
-//     {
-//       fetch('/api/user', {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         credentials: 'include',
-//         body: JSON.stringify({ data: invalid_examinee }),
-//       })
-//         .then((res) => {
-//           if (!res.ok) {
-//             return res.text().then((msg) => {
-//               throw new Error(`导入失败: ${res.status} ${res.statusText} - ${msg}`);
-//             });
-//           }
-//           return res.json();
-//         })
-//         .then((result) => {
-//           if (result.status !== 0) {
-//             throw new Error(result.msg || '导入失败');
-//           }
-//           let studentIds = result.data.map((item) => item.ID);
-//           exam_examinee = [...valid_examinee,...studentIds];
-//         })
-//         .catch((error) => {
-//           console.error('导入学生异常:', error);
-//           toast.error(error.message || '导入学生异常');
-//         });
-// }
-
-//     const exam_data = {
-//       data: {
-//         examInfo: {
-//           id:examID,
-//           Name: exam_name,
-//           Rules: exam_rules,
-//           Type: exam_type,
-//           Mode: exam_method,
-//           Files:uploadedFileList, // 附件列表
-//         },
-//         examSessions: examSessionsdata,
-//         examinee: exam_examinee.map((e) => e.id ?? e), // 用户选中的考生 id 数组
-//         invigilators: invigilators.map((i) => i.id), // 监考员 id 数组
-//       },
-//     };
-
-
-//     fetch('/api/exam', {
-//       method: 'PUT',
-//       credentials: 'include',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify(exam_data),
-//     })
-//       .then((response) => response.json())
-//       .then((result) => {
-//         if (result.status === 0) {
-//           goto('/teacher/exam');
-//         } else {
-//           toast.warning('用户没有创建考试的权限');
-//         }
-//       })
-//       .catch((error) => {
-//         toast.error('未知错误');
-//       });
-//   }
 
   function checkShuffledMode(){
     for(let i = 0; i < paper_configs.length; i++)
@@ -700,15 +542,18 @@ function getSelectedPaperIDs(excludeIndex = -1) {
             if(data.status === 0)
             {
                 const examData = data.data;
+                console.log("examData",examData);
                 exam_name = examData.examInfo.Name;
                 exam_rules = examData.examInfo.Rules;
                 exam_type = examData.examInfo.Type;
                 exam_method = examData.examInfo.Mode;
-                examinee_ID = examData.examinee||[];
+                examinee_ID = examData.examinee || [];
+                invigilator_ID = examData.invigilators || [];
                 uploadedFileList = examData.files || [];
-                exam_rooms = examData.examRooms || [];
-                invigilators = examData.invigilators || [];
-                // invigilators = examData.invigilators.map(i => ({ id: i }));
+                exam_rooms = (examData.examRooms || []).map(({roomID,...rest})=>({
+                  id:roomID,
+                  ...rest
+                }));
                 paper_configs = examData.examSessions.map((s, idx) => {
                 
                 const mappedConfig = {
@@ -744,11 +589,41 @@ function getSelectedPaperIDs(excludeIndex = -1) {
             console.error("获取考试信息失败", e);
         })
         .finally(() =>{
-          loading=false;
           checkShuffledMode();
           fetchSelectedStudents();
+          fetchSelectedInvigilators();
+          loading=false;
         })
     }
+  
+  async function fetchSelectedInvigilators(){
+    const query = encodeURIComponent(JSON.stringify({
+    data: {
+      Type:"00",
+      UserIDs: invigilator_ID, // 必须是数组，例如 [123, 456, 789]
+    },
+  }));
+    fetch(`/api/exam/user?q=${query}`,
+      {
+        method:"GET",
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+          },
+        })
+        .then((response) => response.json())
+        .then((data)=>{
+           invigilators=(data?.data || []).map((invigilator,index)=>{
+              return{
+                ID:invigilator.id,
+                OfficialName:invigilator.name,
+                MobilePhone:invigilator.mobile_phone,
+                IDCardNo:invigilator.id_card_no,
+                Gender:invigilator.gender
+              }
+           });
+        })
+  }
 
   async function fetchSelectedStudents() {
      const query = encodeURIComponent(JSON.stringify({
@@ -768,13 +643,14 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         })
         .then((response) => response.json())
         .then((data)=>{
-           exam_examinee=data.data.map((examinee,index)=>{
+           exam_examinee=(data?.data || []).map((examinee,index)=>{
               return{
                 ID:examinee.id,
                 OfficialName:examinee.name,
                 MobilePhone:examinee.mobile_phone,
                 IDCardNo:examinee.id_card_no,
-                Gender:examinee.gender
+                Gender:examinee.gender,
+                exam_plan_student_id:examinee.exam_plan_student_id
               }
            });
         })
@@ -788,7 +664,6 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         tusInit();
         queryFiles();
         await fetchExamInfo();
-        console.log(exam_examinee);
     })
 
 
@@ -854,7 +729,11 @@ function getSelectedPaperIDs(excludeIndex = -1) {
           </span>
         </label>
         <label class="label">
-          <input type="radio" bind:group={exam_type} value={'04'} class="choice-radio-input" />
+          <input type="radio" bind:group={exam_type} value={'04'} class="choice-radio-input"
+          onchange={() => {
+          exam_method = '02'; // 选择资格证考试时自动设置为线下
+        }}
+         />
           资格证考试
           <span class="tip-wrapper">
             <img class="tip" alt="提示" src="/exam_list/tip.png" />
@@ -1205,7 +1084,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         </div>
       </div>
 
-      <div class="exam-duration-container config-row {paper_configs[paperConfigIndex].periodMode === '02' ? 'hideButton'  : ''}">
+      <div class="exam-duration-container config-row {paper_configs[paperConfigIndex].periodMode === '02' || exam_method === '02' ? 'hideButton'  : ''}">
         <RequiredLabel text="考场规则" />
 
         <div class="config-row-content">
@@ -1403,6 +1282,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         }}
         exam_start_time = {start_time}
         exam_end_time = {end_time}
+        selectedRooms = {exam_rooms}
     ></ExaminationRoomSelectionPanel>
 
     <InvigilatorSelectionPanel
@@ -1414,6 +1294,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
       onCancel={() => {
         show_invigilator_panel = false;
       }}
+      selectedInvigilators={invigilators}
     ></InvigilatorSelectionPanel>
 
   </div>

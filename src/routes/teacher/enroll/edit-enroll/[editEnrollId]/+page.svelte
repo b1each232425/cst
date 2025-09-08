@@ -7,11 +7,13 @@
   import divisions from 'china-division/dist/pcas-code.json';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
+  import { page } from '$app/stores';
   import { formatDateTime } from '../../_utils/handleFileInput';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
+  import { toast } from '$lib/components/Toast/Toast';
 
-  const { data } = $props();
+  let edit_enroll_id = $page.params.editEnrollId;
 
   const ASSEMBLY_TYPE_MAP = {
     '00': '经典巩固',
@@ -57,7 +59,7 @@
   let edit_enroll_req = $derived(() => {
     return {
       registration: {
-        ID: data.edit_enroll_id,
+        ID: edit_enroll_id,
         Name: plan_name,
         StartTime: toTimestamp(start_date),
         EndTime: toTimestamp(end_date),
@@ -132,7 +134,11 @@
         return response.json();
       })
       .then((data) => {
-        // console.log(data);
+        if (data.status !== 0) {
+          toast.error('编辑失败，请重试');
+        } else {
+          goto('/teacher/enroll');
+        }
       })
       .catch((e) => {
         console.log(e);
@@ -183,7 +189,6 @@
     ) {
       await checkClearAction();
       editEnrollReq();
-      goto('/teacher/enroll');
     }
   }
 
@@ -238,7 +243,7 @@
 
   // 查看报名计划信息
   function getEnrollPlanData() {
-    fetch(`/api/registration?id=${data.edit_enroll_id}`, {
+    fetch(`/api/registration?id=${edit_enroll_id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

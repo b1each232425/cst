@@ -119,6 +119,15 @@ describe('试卷管理页面测试', () => {
 
                         // 输入试卷名称
                         fireEvent.input(screen.getByPlaceholderText('搜索试卷名称'), { target: { value: '测试名称' } });
+                        fireEvent.input(screen.getByPlaceholderText('搜索试卷标签'), { target: { value: '测试标签' } });
+                        
+                        fireEvent.change(screen.getByPlaceholderText('搜索试卷名称'), { target: { value: '测试名称' } });
+                        fireEvent.change(screen.getByPlaceholderText('搜索试卷标签'), { target: { value: '测试标签' } });
+
+                        // 点击clear-name-btn
+                        fireEvent.click(container.querySelector('.clear-name-btn'));
+                        // 点击clear-tags-btn
+                        fireEvent.click(container.querySelector('.clear-tags-btn'));
 
                         // 等待防抖延迟（真的等了600ms）
                         await new Promise(resolve => setTimeout(resolve, 600));
@@ -875,7 +884,6 @@ describe('试卷管理页面测试', () => {
                     });
                 });
             });
-
 
             describe('预览', () => {
 
@@ -1714,6 +1722,354 @@ describe('试卷管理页面测试', () => {
 
             // 验证输入框内容（超出50个字符，但被截断）
             expect(screen.getByPlaceholderText('搜索试卷名称').value).toBe('12345678901234567890123456789012345678901234567890');
+        });
+
+        describe('其他状态的试卷', async () => {
+            describe('异常', () => {
+                it('删除', async () => {
+                    global.fetch = vi.fn().mockResolvedValue({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            API: "/api/paper",
+                            data: [PAPER_ONE, PAPER_TWO, PAPER_THREE, PAPER_FOUR],
+                            method: "GET",
+                            msg: "success",
+                            rowCount: 4,
+                            status: 0
+                        })
+                    });
+
+                    const { container } = render(Paper);
+
+                    // 等待表格渲染四条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(4);
+                    });
+
+                    // 获取第三条数据
+                    const thirdRow = container.querySelectorAll('tbody tr')[2];
+                    expect(thirdRow.querySelector('td:nth-child(10)')).toHaveTextContent('异常');
+
+                    // 点击删除按钮
+                    fireEvent.click(thirdRow.querySelector('td:nth-child(13) button:nth-child(2)'));
+                });
+
+                it('预览', async () => {
+                    // Mock window.location
+                    const originalLocation = window.location;
+                    delete window.location;
+                    window.location = {
+                        href: '',
+                        assign: vi.fn(),
+                        replace: vi.fn()
+                    };
+
+                    global.fetch = vi.fn().mockResolvedValue({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            API: "/api/paper",
+                            data: [PAPER_ONE, PAPER_TWO, PAPER_THREE, PAPER_FOUR],
+                            method: "GET",
+                            msg: "success",
+                            rowCount: 4,
+                            status: 0
+                        })
+                    });
+
+                    const { container } = render(Paper);
+
+                    // 等待表格渲染四条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(4);
+                    });
+
+                    // 临时mock数据
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            status: 0,
+                            msg: "success",
+                            API: "/api/paper/manual",
+                            method: "GET",
+                            data: {
+                                Paper: {
+                                    ID: 143,
+                                    DomainID: null,
+                                    Name: "新建试卷",
+                                    AssemblyType: "00",
+                                    Category: "00",
+                                    Level: "00",
+                                    SuggestedDuration: 120,
+                                    Description: null,
+                                    Tags: [],
+                                    Creator: 1626,
+                                    CreateTime: 1755419884114,
+                                    UpdatedBy: null,
+                                    UpdateTime: 1755419884114,
+                                    Status: "00",
+                                    TotalScore: 0,
+                                    QuestionCount: 0,
+                                    GroupCount: 5
+                                },
+                                QuestionGroupInfo: {
+                                    517: {
+                                        ID: 517,
+                                        PaperID: null,
+                                        Name: "一、单选题",
+                                        Order: 1,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    518: {
+                                        ID: 518,
+                                        PaperID: null,
+                                        Name: "二、多选题",
+                                        Order: 2,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    519: {
+                                        ID: 519,
+                                        PaperID: null,
+                                        Name: "三、判断题",
+                                        Order: 3,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    520: {
+                                        ID: 520,
+                                        PaperID: null,
+                                        Name: "四、填空题",
+                                        Order: 4,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    521: {
+                                        ID: 521,
+                                        PaperID: null,
+                                        Name: "五、简答题",
+                                        Order: 5,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    }
+                                },
+                                Questions: {
+                                    517: [],
+                                    518: [],
+                                    519: [],
+                                    520: [],
+                                    521: []
+                                }
+                            }
+                        })
+                    });
+
+                    // 点击第三条数据的预览按钮
+                    const fourthRow = container.querySelectorAll('tbody tr')[2];
+                    fireEvent.click(fourthRow.querySelector('td:nth-child(13) button:nth-child(1)'));
+
+                    // 验证window.location.href被调用
+                    await waitFor(() => {
+                        expect(window.location.href).toBe('/student/answer/exam');
+                    });
+
+                    // 恢复原始 location
+                    window.location = originalLocation;
+                });
+            });
+
+            describe('已发布', () => {
+                it('删除', async () => {
+                    global.fetch = vi.fn().mockResolvedValue({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            API: "/api/paper",
+                            data: [PAPER_ONE, PAPER_TWO, PAPER_THREE, PAPER_FOUR],
+                            method: "GET",
+                            msg: "success",
+                            rowCount: 4,
+                            status: 0
+                        })
+                    });
+
+                    const { container } = render(Paper);
+
+                    // 等待表格渲染四条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(4);
+                    });
+
+                    // 获取第四条数据
+                    const thirdRow = container.querySelectorAll('tbody tr')[3];
+                    expect(thirdRow.querySelector('td:nth-child(10)')).toHaveTextContent('已发布');
+
+                    // 点击删除按钮
+                    fireEvent.click(thirdRow.querySelector('td:nth-child(13) button:nth-child(2)'));
+                });
+
+                it('预览', async () => {
+                    // Mock window.location
+                    const originalLocation = window.location;
+                    delete window.location;
+                    window.location = {
+                        href: '',
+                        assign: vi.fn(),
+                        replace: vi.fn()
+                    };
+
+                    global.fetch = vi.fn().mockResolvedValue({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            API: "/api/paper",
+                            data: [PAPER_ONE, PAPER_TWO, PAPER_THREE, PAPER_FOUR],
+                            method: "GET",
+                            msg: "success",
+                            rowCount: 4,
+                            status: 0
+                        })
+                    });
+
+                    const { container } = render(Paper);
+
+                    // 等待表格渲染四条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(4);
+                    });
+
+                    // 临时mock数据
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            status: 0,
+                            msg: "success",
+                            API: "/api/paper/manual",
+                            method: "GET",
+                            data: {
+                                Paper: {
+                                    ID: 143,
+                                    DomainID: null,
+                                    Name: "新建试卷",
+                                    AssemblyType: "00",
+                                    Category: "00",
+                                    Level: "00",
+                                    SuggestedDuration: 120,
+                                    Description: null,
+                                    Tags: [],
+                                    Creator: 1626,
+                                    CreateTime: 1755419884114,
+                                    UpdatedBy: null,
+                                    UpdateTime: 1755419884114,
+                                    Status: "00",
+                                    TotalScore: 0,
+                                    QuestionCount: 0,
+                                    GroupCount: 5
+                                },
+                                QuestionGroupInfo: {
+                                    517: {
+                                        ID: 517,
+                                        PaperID: null,
+                                        Name: "一、单选题",
+                                        Order: 1,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    518: {
+                                        ID: 518,
+                                        PaperID: null,
+                                        Name: "二、多选题",
+                                        Order: 2,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    519: {
+                                        ID: 519,
+                                        PaperID: null,
+                                        Name: "三、判断题",
+                                        Order: 3,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    520: {
+                                        ID: 520,
+                                        PaperID: null,
+                                        Name: "四、填空题",
+                                        Order: 4,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    521: {
+                                        ID: 521,
+                                        PaperID: null,
+                                        Name: "五、简答题",
+                                        Order: 5,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    }
+                                },
+                                Questions: {
+                                    517: [],
+                                    518: [],
+                                    519: [],
+                                    520: [],
+                                    521: []
+                                }
+                            }
+                        })
+                    });
+
+                    // 点击第四条数据的预览按钮
+                    const fourthRow = container.querySelectorAll('tbody tr')[3];
+                    fireEvent.click(fourthRow.querySelector('td:nth-child(13) button:nth-child(1)'));
+
+                    // 验证window.location.href被调用
+                    await waitFor(() => {
+                        expect(window.location.href).toBe('/student/answer/exam');
+                    });
+
+                    // 恢复原始 location
+                    window.location = originalLocation;
+                });
+            });
         });
     });
 });

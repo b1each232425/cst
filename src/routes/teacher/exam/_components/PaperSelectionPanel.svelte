@@ -158,7 +158,7 @@
       queryParams.append('tags', search_params.tag);
     }
 
-    const response = await fetch(`/api/paper?${queryParams.toString()}`, {
+    const response = await fetch(`/api/paper?${queryParams.toString()}&published=true`, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -307,7 +307,7 @@
                 <td class="body-row">{paper.QuestionCount}</td>
                 <td class="body-row">{paper.TotalScore}</td>
                 <td class="body-row">{paper.SuggestedDuration}</td>
-                <td class="body-row">
+                <td class="body-row-tag">
                   {#if paper.Tags && paper?.Tags.length > 0}
                     {#each paper?.Tags ?? [] as tag, index}
                       <div class="paper-tags-item">
@@ -498,7 +498,7 @@
     word-wrap: break-word;
     word-break: break-all;
   }
-
+  
   // 自定义复选框
   .custom-checkbox {
     accent-color: var(--blue);
@@ -639,7 +639,7 @@
   .paper-selection-table-container {
     margin: 10px 0px 0 0px;
     flex: 1;
-    min-height: 0px;
+    min-height: 300px;
     position: relative;
     display: flex;
     flex-direction: column;

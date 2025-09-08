@@ -32,7 +32,7 @@
     OfficialName: '',
     page: 1,
     pageSize: 10,
-    fuzzyCondition:'',
+    name:'',
   });
 
   // 已选择学生的分页参数
@@ -119,14 +119,50 @@
       serialNumber: 0, // 后续重新编号
     }));
 
-    // 合并已选、新导入、已存在的学生
-    selected_registration_student_list = [...selected_registration_student_list, ...newStudents, ...existingStudents];
-    //console.log(selected_registration_student_list);
+    // 去重逻辑：过滤掉已存在的学生
+    const filteredNewStudents = newStudents.filter(newStudent => {
+      return !selected_registration_student_list.some(existingStudent => {
+        // 通过身份证号和手机号进行去重判断
+        const isSameIdCard = existingStudent.IDCardNo === newStudent.IDCardNo;
+        const isSamePhone = existingStudent.MobilePhone === newStudent.MobilePhone || 
+                           existingStudent.MobilePhone === '+86' + newStudent.MobilePhone ||
+                           '+86' + existingStudent.MobilePhone === newStudent.MobilePhone;
+        return isSameIdCard && isSamePhone;
+      });
+    });
+
+    const filteredExistingStudents = existingStudents.filter(existStudent => {
+      return !selected_registration_student_list.some(existingStudent => {
+        // 通过 ID 进行去重判断（存在ID的情况）
+        if (existStudent.id && existingStudent.id) {
+          return existingStudent.id === existStudent.id;
+        }
+        // 通过身份证号和手机号进行去重判断
+        const isSameIdCard = existingStudent.IDCardNo === existStudent.IDCardNo;
+        const isSamePhone = existingStudent.MobilePhone === existStudent.MobilePhone || 
+                           existingStudent.MobilePhone === '+86' + existStudent.MobilePhone ||
+                           '+86' + existingStudent.MobilePhone === existStudent.MobilePhone;
+        return isSameIdCard && isSamePhone;
+      });
+    });
+
+    // 合并已选、新导入（去重后）、已存在（去重后）的学生
+    selected_registration_student_list = [...selected_registration_student_list, ...filteredNewStudents, ...filteredExistingStudents];
+    
+    // 显示导入结果提示
+    const importedCount = filteredNewStudents.length + filteredExistingStudents.length;
+    const duplicateCount = (newStudents.length + existingStudents.length) - importedCount;
+    
+    if (importedCount > 0) {
+      // toast.success(`成功导入 ${importedCount} 名学生${duplicateCount > 0 ? `，跳过 ${duplicateCount} 名重复学生` : ''}`);
+    } else if (duplicateCount > 0) {
+      toast.warning(`所有学生均已存在，跳过 ${duplicateCount} 名重复学生`);
+    }
+    
     // 重新编号
     recalculateSerialNumbers();
   }
   show_import_panel = false;
-  
 }
 
   function getFilteredSelectedExaminee() {
@@ -179,9 +215,17 @@
 
 
   function searchSelectedExaminee(value) {
-    console.log(selected_search_params)
-    selected_search_params.fuzzyCondition = value;
-    selected_search_params.page = 1;
+    search_params.name = value;
+    search_params.page = 1;
+     if (name_search_timer) {
+    clearTimeout(name_search_timer);
+  }
+  
+  name_search_timer = setTimeout(() => {
+    searchExaminee();
+    name_search_timer = null;
+  }, 300);
+
 }
 
   async function searchExaminee() {
@@ -192,11 +236,12 @@
     const queryParams = new URLSearchParams();
     queryParams.append('page', search_params.page.toString());
     queryParams.append('pageSize', search_params.pageSize.toString());
+    queryParams.append('search_type',"02");
    // queryParams.append('domain', 'assess^student');
-    // if(search_params.fuzzyCondition)
-    // {
-    //   queryParams.append('fuzzyCondition',search_params.fuzzyCondition);
-    // }
+    if(search_params.name)
+    {
+      queryParams.append('name',search_params.name);
+    }
 
     await fetch(`/api/registration?${queryParams.toString()}`, {
       method: 'GET',
@@ -255,7 +300,7 @@
   name_search_timer = setTimeout(() => {
     searchExaminee();
     name_search_timer = null;
-  }, 500);
+  }, 300);
 }
   // 重新计算所有selected_examinee的serialNumber
   function recalculateSerialNumbers() {
@@ -378,11 +423,22 @@ function handleCheckboxChange(examinee, event) {
   is_total_selected = isAllSelected();
 }
 
+function removeSelectedExaminee(examinee) {
+  // 统一用 student.ID 作为唯一键
+  const targetId = examinee.student?.ID ?? examinee.ID;
+  selected_registration_student_list = selected_registration_student_list.filter(
+    s => (s.student?.ID ?? s.ID) !== targetId
+  );
+  // 重新编号（如果你后面需要 serialNumber 连续）
+  recalculateSerialNumbers();
+}
+
   function ViewRegistrationStudent(index){
     const queryParams = new URLSearchParams();
     queryParams.append('page', search_params.page.toString());
     queryParams.append('pageSize', search_params.pageSize.toString());
     queryParams.append('id',registration_list[index].register.ID);
+    queryParams.append('search_type',"02");
     fetch(`/api/registration?${queryParams}`,{
       method: 'GET',
       credentials: 'include',
@@ -468,6 +524,8 @@ function handleCheckboxChange(examinee, event) {
                   <th class="table-head">性别</th>
                   <th class="table-head">手机号</th>
                   <th class="table-head">身份证号</th>
+                  <th class="table-head">来源</th>
+                  <th class="table-head">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -477,6 +535,8 @@ function handleCheckboxChange(examinee, event) {
                     <td>{examinee.student?.Gender || examinee.Gender || '--'}</td>
                     <td>{examinee.student?.MobilePhone || examinee.MobilePhone || '--'}</td>
                     <td>{examinee.student?.IDCardNo || examinee.IDCardNo || '--'}</td>
+                    <td>{examinee.detail?.ID || examinee?.exam_plan_student_id ? "报名计划" : "手动导入"}</td>
+                    <td><button class="view-btn" onclick={()=>removeSelectedExaminee(examinee)}>移除</button></td>
                   </tr>
                 {/each}
               </tbody>
@@ -493,10 +553,17 @@ function handleCheckboxChange(examinee, event) {
         <!-- 选择模式 -->
         <div class="action-container">
           <div class="examinee-search-container">
-
+            <InputBox
+              label={'搜索报名计划'} 
+              placeholder={'请输入名称'}
+              onInput={searchSelectedExaminee}
+              bind:value={search_params.name}
+              clearable={true}
+              >
+            </InputBox>
           </div>
           <div class="button-group">
-            <button class="back-btn" onclick={backToViewMode}>返回考生列表</button>
+            <button class="btn btn--info is-plain" onclick={backToViewMode}>返回考生列表</button>
 
             <!-- <Button type="primary" >下载模板</Button> -->
              <button class="btn btn--primary " onclick={downloadTemplate}>下载导入模板</button>
@@ -508,18 +575,6 @@ function handleCheckboxChange(examinee, event) {
           <table class="table">
             <thead class="student-table-head">
               <tr class="table-head-row">
-                <!-- <th class="table-head" style="width: 30px;">
-                  <input
-                    type="checkbox"
-                    class="custom-checkbox"
-                    onchange={toggleSelectAll}
-                    checked={is_total_selected}
-                  />
-                </th> -->
-                <!-- <th class="table-head">姓名</th>
-                <th class="table-head">性别</th>
-                <th class="table-head">手机号</th>
-                <th class="table-head">身份证号</th> -->
                 <th class = "table-head">名称</th>
                 <th class = "table-head">考试科目</th>
                 <th class = "table-head">考生人数</th>
@@ -527,27 +582,6 @@ function handleCheckboxChange(examinee, event) {
               </tr>
             </thead>
             <tbody>
-              <!-- {#each examinee_list as examinee, index}
-                <tr 
-                class={`examinee ${examinee.selected ? 'selected' : ''}`}
-                onclick= {(event) => handleCheckboxChange(examinee, event)}
-                >
-                  <td>
-                    <input
-                      type="checkbox"
-                      class="custom-checkbox"
-                      checked={examinee.selected}
-                      
-                    />
-                  </td>
-                  <td
-                    >{examinee.OfficialName === null || examinee.OfficialName === '' ? '--' : examinee.OfficialName}</td
-                  >
-                  <td>{examinee.Gender === null || examinee.Gender === '' ? '--' : examinee.Gender}</td>
-                  <td>{examinee.MobilePhone === null || examinee.MobilePhone === '' ? '--' : examinee.MobilePhone}</td>
-                  <td>{examinee.IDCardNo === null || examinee.IDCardNo === '' ? '--' : examinee.IDCardNo}</td>
-                </tr>
-              {/each} -->
               {#each registration_list as registration,index}
               <tr>
                  <!-- <td>
@@ -662,9 +696,7 @@ function handleCheckboxChange(examinee, event) {
           </div>
 
     <div class="pagination-container {is_selection_mode && !is_view_mode ? ' ' : 'hideButton'}">
-          <span style="font-size: 12px; margin-right:10px">
-            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_examinee.length}</span> 条
-          </span>
+          
           <Pagination
             total_items={total_registration}
             current_page={search_params.page}
@@ -708,7 +740,7 @@ function handleCheckboxChange(examinee, event) {
     <div class="panel-footer">
       
       <button
-        class="btn"
+        class="btn btn--info is-plain"
         onclick={() => {
           show_panel = false;
           search_params.page = 1;
@@ -719,7 +751,7 @@ function handleCheckboxChange(examinee, event) {
       >
 
       <button
-        class="btn save"
+        class="btn btn--primary is-plain"
         onclick={() => {
           confirm_student_list = selected_registration_student_list;
           onConfirm(confirm_student_list);
@@ -883,7 +915,7 @@ function handleCheckboxChange(examinee, event) {
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    margin-left: -5%; //维持组件位置在行左侧对齐
+    margin-left: -2%; //维持组件位置在行左侧对齐
   }
 
   .button-group {
@@ -939,41 +971,41 @@ function handleCheckboxChange(examinee, event) {
     flex-direction: column;
   }
 
-  .btn {
-    min-width: 80px;
-    padding: 7px 18px;
-    border-radius: 5px;
-    border: 1.5px solid #d9d9d9;
-    background: #fff;
-    color: var(--blue);
-    font-size: 15px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s;
+  // .btn {
+  //   min-width: 80px;
+  //   padding: 7px 18px;
+  //   border-radius: 5px;
+  //   border: 1.5px solid #d9d9d9;
+  //   background: #fff;
+  //   color: var(--blue);
+  //   font-size: 15px;
+  //   cursor: pointer;
+  //   font-weight: 500;
+  //   transition: all 0.2s;
 
-    @media (max-width: 768px) {
-      min-width: 70px;
-      padding: 6px 16px;
-      font-size: 14px;
-    }
+  //   @media (max-width: 768px) {
+  //     min-width: 70px;
+  //     padding: 6px 16px;
+  //     font-size: 14px;
+  //   }
 
-    &:hover {
-      background: #f0f6ff;
-    }
-    &.save {
-      background: var(--blue);
-      color: #fff;
-      border-color: var(--blue);
-      &:hover {
-        background: var(--primary-hover);
-        border-color: var(--primary-hover);
-      }
-    }
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  }
+  //   &:hover {
+  //     background: #f0f6ff;
+  //   }
+  //   &.save {
+  //     background: var(--blue);
+  //     color: #fff;
+  //     border-color: var(--blue);
+  //     &:hover {
+  //       background: var(--primary-hover);
+  //       border-color: var(--primary-hover);
+  //     }
+  //   }
+  //   &:disabled {
+  //     opacity: 0.6;
+  //     cursor: not-allowed;
+  //   }
+  // }
 
   .panel-footer {
     display: flex;
