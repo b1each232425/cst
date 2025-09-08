@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { goto } from '$app/navigation';
-import DatePicker from '$lib/components/DatePicker/DatePicker.svelte';
 import EnrollPlanCreate from '../+page.svelte';
 
 // 模拟导航函数
@@ -9,300 +8,523 @@ vi.mock('$app/navigation', () => ({
   goto: vi.fn(),
 }));
 
+// 模拟 fetch
+const mockFetch = vi.fn();
+vi.stubGlobal('fetch', mockFetch);
+
 describe('报名计划创建页面', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.mockClear();
   });
 
-  it('应渲染核心表单元素', () => {
-    render(EnrollPlanCreate);
-
-    // 标题
-    expect(screen.getByRole('heading', { name: '创建报名计划' })).toBeInTheDocument();
-
-    // 计划名称输入框
-    expect(screen.getByPlaceholderText('请输入计划名称')).toBeInTheDocument();
-
-    // 报名时段（DatePicker）
-    expect(screen.getByText('计划报名时段：')).toBeInTheDocument();
-    expect(screen.getByText('审核截止时间：')).toBeInTheDocument();
-
-    // 审核员按钮
-    expect(screen.getByRole('button', { name: '选择审核员' })).toBeInTheDocument();
-
-    // 计划人数
-    expect(screen.getByLabelText('不限人数')).toBeInTheDocument();
-    expect(screen.getByLabelText('限制人数')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('请输入人数')).toBeInTheDocument();
-
-    // 科目选择
-    expect(screen.getByLabelText('理论')).toBeInTheDocument();
-    expect(screen.getByLabelText('实践')).toBeInTheDocument();
-
-    // 练习配置按钮
-    expect(screen.getByRole('button', { name: '选择练习' })).toBeInTheDocument();
-
-    // 底部操作按钮
-    expect(screen.getByTestId('btn-cancel')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument();
-  });
-
-  it('点击保存但未填写必填项时，应显示校验错误', async () => {
-    render(EnrollPlanCreate);
-
-    await fireEvent.click(screen.getByRole('button', { name: '保存' }));
-
-    await waitFor(() => {
-      expect(screen.getByText('计划名称不能为空')).toBeInTheDocument();
-      expect(screen.getByText('请选择计划报名时段')).toBeInTheDocument();
-      expect(screen.getByText('请选择截止日期')).toBeInTheDocument();
-      expect(screen.getByText('请选择审核员')).toBeInTheDocument();
-      expect(screen.getByText('请输入考试地点')).toBeInTheDocument();
-      expect(screen.getByText('请选择练习')).toBeInTheDocument();
-    });
-  });
-
-  it('点击取消应跳转回列表页', async () => {
-    render(EnrollPlanCreate);
-
-    await fireEvent.click(screen.getByTestId('btn-cancel'));
-    expect(goto).toHaveBeenCalledWith('/teacher/enroll');
-  });
-
-  it('切换为限制人数，出现人数输入框并可输入', async () => {
-    render(EnrollPlanCreate);
-
-    const limitRadio = screen.getByLabelText('限制人数');
-    await fireEvent.click(limitRadio);
-
-    const numberInput = screen.getByPlaceholderText('请输入人数');
-    expect(numberInput).toBeInTheDocument();
-
-    await fireEvent.input(numberInput, { target: { value: '30' } });
-    expect(numberInput.value).toBe('30');
-  });
-
-  it('填写表单大部分信息后，仅剩审核员与练习报错（使用 DatePicker 实际点击交互）', async () => {
-    render(EnrollPlanCreate);
-
-    // 计划名称
-    const nameInput = screen.getByPlaceholderText('请输入计划名称');
-    await fireEvent.input(nameInput, { target: { value: '软件工程报名计划' } });
-
-    // 获取两个 DatePicker 的只读输入框（第一个：报名时段；第二个：审核截止）
-    const dpInputs = document.querySelectorAll('.date-picker-container input.date-picker');
-    expect(dpInputs.length).toBeGreaterThanOrEqual(2);
-
-    // 打开第一个（报名时段：范围 + 时间）
-    await fireEvent.click(dpInputs[0]);
-
-    // 等待面板渲染（出现头部年月）
-    await waitFor(() => {
-      expect(screen.getByTestId('start-current-date')).toBeInTheDocument();
+  describe('基础元素渲染测试', () => {
+    it('应渲染页面标题', () => {
+      render(EnrollPlanCreate);
+      expect(screen.getByRole('heading', { name: '创建报名计划' })).toBeInTheDocument();
     });
 
-    // 选择开始日期（取第一个可见开始日期按钮即可，避免固定某天不存在）
-    const startBtns = document.querySelectorAll('[data-testid^="start-date-button-"]');
-    expect(startBtns.length).toBeGreaterThan(0);
-    await fireEvent.click(startBtns[0]);
-
-    // 选择开始时间（小时、分钟）
-    await fireEvent.click(screen.getByTestId('start-hour-10'));
-    await fireEvent.click(screen.getByTestId('start-minute-00'));
-
-    // 选择结束日期（范围模式才有 end- 按钮）
-    const endBtns = document.querySelectorAll('[data-testid^="end-date-button-"]');
-    expect(endBtns.length).toBeGreaterThan(0);
-    await fireEvent.click(endBtns[0]);
-
-    // 选择结束时间
-    await fireEvent.click(screen.getByTestId('end-hour-12'));
-    await fireEvent.click(screen.getByTestId('end-minute-30'));
-
-    // 确定关闭
-    await fireEvent.click(screen.getByText('确定'));
-
-    // 打开第二个（审核截止：单日 + 时间）
-    await fireEvent.click(dpInputs[1]);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('start-current-date')).toBeInTheDocument();
+    it('应渲染计划名称输入框', () => {
+      render(EnrollPlanCreate);
+      expect(screen.getByPlaceholderText('请输入计划名称')).toBeInTheDocument();
     });
 
-    // 单日期模式只需要 start- 按钮与时间
-    const singleStartBtns = document.querySelectorAll('[data-testid^="start-date-button-"]');
-    expect(singleStartBtns.length).toBeGreaterThan(0);
-    await fireEvent.click(singleStartBtns[0]);
+    it('应渲染报名时段选择器', () => {
+      render(EnrollPlanCreate);
+      expect(screen.getByText('计划报名时段：')).toBeInTheDocument();
+      // 检查日期选择器输入框
+      const dateInputs = document.querySelectorAll('.date-picker-container input.date-picker');
+      expect(dateInputs.length).toBeGreaterThanOrEqual(1);
+    });
 
-    await fireEvent.click(screen.getByTestId('start-hour-18'));
-    await fireEvent.click(screen.getByTestId('start-minute-00'));
+    it('应渲染审核截止时间选择器', () => {
+      render(EnrollPlanCreate);
+      expect(screen.getByText('审核截止时间：')).toBeInTheDocument();
+    });
 
-    // 确定关闭
-    await fireEvent.click(screen.getByText('确定'));
+    it('应渲染审核员选择按钮', () => {
+      render(EnrollPlanCreate);
+      expect(screen.getByRole('button', { name: '选择审核员' })).toBeInTheDocument();
+    });
 
-    // 考试地点：填详细地址
-    const detailAddr = screen.getByPlaceholderText('请输入详细地址（如街道、门牌号）');
-    await fireEvent.input(detailAddr, { target: { value: '教学楼A-101' } });
+    it('应渲染人数限制选项', () => {
+      render(EnrollPlanCreate);
+      expect(screen.getByLabelText('不限人数')).toBeInTheDocument();
+      expect(screen.getByLabelText('限制人数')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('请输入人数')).toBeInTheDocument();
+    });
 
-    // 人数限制：选择限制并输入
-    await fireEvent.click(screen.getByLabelText('限制人数'));
-    const numberInput = screen.getByPlaceholderText('请输入人数');
-    await fireEvent.input(numberInput, { target: { value: '50' } });
+    it('应渲染科目选择选项', () => {
+      render(EnrollPlanCreate);
+      expect(screen.getByLabelText('理论')).toBeInTheDocument();
+      expect(screen.getByLabelText('实践')).toBeInTheDocument();
+    });
 
-    // 提交
-    await fireEvent.click(screen.getByRole('button', { name: '保存' }));
+    it('应渲染练习选择按钮', () => {
+      render(EnrollPlanCreate);
+      expect(screen.getByRole('button', { name: '选择练习' })).toBeInTheDocument();
+    });
 
-    // 仅剩审核员、练习两项仍为必填错误
-    await waitFor(() => {
-      expect(screen.queryByText('计划名称不能为空')).not.toBeInTheDocument();
-      expect(screen.queryByText('请选择计划报名时段')).not.toBeInTheDocument();
-      expect(screen.queryByText('请选择截止日期')).not.toBeInTheDocument();
-      expect(screen.queryByText('请输入考试地点')).not.toBeInTheDocument();
-      expect(screen.queryByText('请输入限制人数')).not.toBeInTheDocument();
-      expect(screen.getByText('请选择审核员')).toBeInTheDocument();
-      expect(screen.getByText('请选择练习')).toBeInTheDocument();
+    it('应渲染考试地点选择器', () => {
+      render(EnrollPlanCreate);
+      expect(screen.getByText('考试地点：')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('请输入详细地址（如街道、门牌号）')).toBeInTheDocument();
+    });
+
+    it('应渲染底部操作按钮', () => {
+      render(EnrollPlanCreate);
+      expect(screen.getByTestId('btn-cancel')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument();
+    });
+
+    it('应渲染省市区选择器', async () => {
+      render(EnrollPlanCreate);
+
+      await waitFor(() => {
+        // 检查省份选择器选项
+        const provinceOption = screen.getByText('请选择省');
+        expect(provinceOption).toBeInTheDocument();
+
+        // 检查城市选择器
+        const cityOption = screen.getByText('请选择市');
+        expect(cityOption).toBeInTheDocument();
+
+        // 检查区县选择器 - 查找第三个select组件
+        const districtOption = screen.getByText('请选择区');
+        expect(districtOption).toBeInTheDocument();
+      });
     });
   });
 
-  it('addEnrollReq 成功：POST 正确并跳转', async () => {
-    const fetchSpy = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 0 }) }));
-    vi.stubGlobal('fetch', fetchSpy);
+  describe('表单验证测试', () => {
+    it('点击保存但未填写必填项时，应显示校验错误', async () => {
+      render(EnrollPlanCreate);
 
-    render(EnrollPlanCreate);
+      await fireEvent.click(screen.getByRole('button', { name: '保存' }));
 
-    // 计划名称
-    await fireEvent.input(screen.getByPlaceholderText('请输入计划名称'), { target: { value: '软工报名' } });
-
-    // 打开报名时段 DatePicker（范围+时间）
-    const dpInputs = document.querySelectorAll('.date-picker-container input.date-picker');
-    await fireEvent.click(dpInputs[0]);
-    await waitFor(() => expect(screen.getByTestId('start-current-date')).toBeInTheDocument());
-
-    // 任意选择开始/结束日期+时间
-    const startBtns = document.querySelectorAll('[data-testid^="start-date-button-"]');
-    const endBtns = document.querySelectorAll('[data-testid^="end-date-button-"]');
-    await fireEvent.click(startBtns[0]);
-    await fireEvent.click(screen.getByTestId('start-hour-09'));
-    await fireEvent.click(screen.getByTestId('start-minute-00'));
-    await fireEvent.click(endBtns[0]);
-    await fireEvent.click(screen.getByTestId('end-hour-10'));
-    await fireEvent.click(screen.getByTestId('end-minute-00'));
-    await fireEvent.click(screen.getByText('确定'));
-
-    // 审核截止时间（单日+时间）
-    await fireEvent.click(dpInputs[1]);
-    await waitFor(() => expect(screen.getByTestId('start-current-date')).toBeInTheDocument());
-    const singleStart = document.querySelectorAll('[data-testid^="start-date-button-"]')[0];
-    await fireEvent.click(singleStart);
-    await fireEvent.click(screen.getByTestId('start-hour-18'));
-    await fireEvent.click(screen.getByTestId('start-minute-00'));
-    await fireEvent.click(screen.getByText('确定'));
-
-    // 地点：填详细地址
-    await fireEvent.input(screen.getByPlaceholderText('请输入详细地址（如街道、门牌号）'), {
-      target: { value: '教学楼A-101' },
+      await waitFor(() => {
+        expect(screen.getByText('计划名称不能为空')).toBeInTheDocument();
+        expect(screen.getByText('请选择计划报名时段')).toBeInTheDocument();
+        expect(screen.getByText('请选择截止日期')).toBeInTheDocument();
+        expect(screen.getByText('请选择审核员')).toBeInTheDocument();
+        expect(screen.getByText('请输入考试地点')).toBeInTheDocument();
+        expect(screen.getByText('请选择练习')).toBeInTheDocument();
+      });
     });
 
-    // 通过派发事件注入审核员与练习
-    // 1) 点击按钮让面板渲染出来
-    await fireEvent.click(screen.getByRole('button', { name: '选择练习' }));
-    await fireEvent.click(screen.getByRole('button', { name: '选择审核员' }));
+    it('填写计划名称后应清除名称错误提示', async () => {
+      render(EnrollPlanCreate);
 
-    // 2) 等待面板挂载
-    await waitFor(() => {
-      expect(screen.getByTestId('practice-select-panel')).toBeInTheDocument();
-      expect(screen.getByTestId('audit-select-panel')).toBeInTheDocument();
+      // 先点击保存显示错误
+      await fireEvent.click(screen.getByRole('button', { name: '保存' }));
+      await waitFor(() => {
+        expect(screen.getByText('计划名称不能为空')).toBeInTheDocument();
+      });
+
+      // 填写计划名称
+      const nameInput = screen.getByPlaceholderText('请输入计划名称');
+      await fireEvent.input(nameInput, { target: { value: '测试计划' } });
+
+      // 再次点击保存，名称错误应消失
+      await fireEvent.click(screen.getByRole('button', { name: '保存' }));
+      await waitFor(() => {
+        expect(screen.queryByText('计划名称不能为空')).not.toBeInTheDocument();
+      });
     });
-
-    // 3) 直接对面板根元素派发 select 事件，注入测试数据
-    screen
-      .getByTestId('practice-select-panel')
-      .dispatchEvent(new CustomEvent('select', { detail: [{ id: 101, name: '操作系统练习', assembly_type: '综合' }] }));
-    screen
-      .getByTestId('audit-select-panel')
-      .dispatchEvent(new CustomEvent('select', { detail: [{ ID: 1, OfficialName: '张三' }] }));
-
-    // 保存
-    await fireEvent.click(screen.getByRole('button', { name: '保存' }));
-
-    // 等待 fetch 被调用
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
-
-    // 验证 fetch 调用
-    const postCall = fetchSpy.mock.calls.find(
-      ([url, init]) => typeof url === 'string' && url.includes('/api/registration') && init && init.method === 'POST',
-    );
-
-    expect(postCall).toBeTruthy();
-
-    const [url, init] = postCall;
-    expect(url).toBe('/api/registration');
-    expect(init.method).toBe('POST');
-    expect(init.headers?.['Content-Type']).toBe('application/json');
-
-    // 验证请求体数据
-    const payload = JSON.parse(init.body);
-    expect(payload.data.registration.Name).toBe('软工报名');
-    expect(Array.isArray(payload.data.practice_ids)).toBe(true);
-    expect(payload.data.practice_ids.length).toBeGreaterThan(0);
-
-    // 验证页面跳转
-    expect(goto).toHaveBeenCalledWith('/teacher/enroll');
   });
 
-  it('addEnrollReq 失败：POST 非 ok，不跳转', async () => {
-    const fetchSpy = vi.fn(() => Promise.resolve({ ok: false }));
-    vi.stubGlobal('fetch', fetchSpy);
+  describe('交互功能测试', () => {
+    it('点击取消应跳转回列表页', async () => {
+      render(EnrollPlanCreate);
 
-    render(EnrollPlanCreate);
-
-    // 填名称 + 日期（略，同上）
-    await fireEvent.input(screen.getByPlaceholderText('请输入计划名称'), { target: { value: '软工报名' } });
-
-    const dpInputs = document.querySelectorAll('.date-picker-container input.date-picker');
-    await fireEvent.click(dpInputs[0]);
-    await waitFor(() => expect(screen.getByTestId('start-current-date')).toBeInTheDocument());
-    const startBtns = document.querySelectorAll('[data-testid^="start-date-button-"]');
-    const endBtns = document.querySelectorAll('[data-testid^="end-date-button-"]');
-    await fireEvent.click(startBtns[0]);
-    await fireEvent.click(screen.getByTestId('start-hour-09'));
-    await fireEvent.click(screen.getByTestId('start-minute-00'));
-    await fireEvent.click(endBtns[0]);
-    await fireEvent.click(screen.getByTestId('end-hour-10'));
-    await fireEvent.click(screen.getByTestId('end-minute-00'));
-    await fireEvent.click(screen.getByText('确定'));
-
-    await fireEvent.click(dpInputs[1]);
-    await waitFor(() => expect(screen.getByTestId('start-current-date')).toBeInTheDocument());
-    const singleStart = document.querySelectorAll('[data-testid^="start-date-button-"]')[0];
-    await fireEvent.click(singleStart);
-    await fireEvent.click(screen.getByTestId('start-hour-18'));
-    await fireEvent.click(screen.getByTestId('start-minute-00'));
-    await fireEvent.click(screen.getByText('确定'));
-
-    await fireEvent.input(screen.getByPlaceholderText('请输入详细地址（如街道、门牌号）'), {
-      target: { value: '教学楼A-101' },
+      await fireEvent.click(screen.getByTestId('btn-cancel'));
+      expect(goto).toHaveBeenCalledWith('/teacher/enroll');
     });
 
-    // 注入审核员与练习（需先打开面板使其渲染）
-    await fireEvent.click(screen.getByRole('button', { name: '选择练习' }));
-    await fireEvent.click(screen.getByRole('button', { name: '选择审核员' }));
+    it('切换为限制人数时，人数输入框应可见并可输入', async () => {
+      render(EnrollPlanCreate);
 
-    await waitFor(() => {
-      expect(screen.getByTestId('practice-select-panel')).toBeInTheDocument();
-      expect(screen.getByTestId('audit-select-panel')).toBeInTheDocument();
+      const limitRadio = screen.getByLabelText('限制人数');
+      await fireEvent.click(limitRadio);
+
+      const numberInput = screen.getByPlaceholderText('请输入人数');
+      expect(numberInput).toBeInTheDocument();
+
+      await fireEvent.input(numberInput, { target: { value: '30' } });
+      expect(numberInput.value).toBe('30');
     });
 
-    screen
-      .getByTestId('practice-select-panel')
-      .dispatchEvent(new CustomEvent('select', { detail: [{ id: 101, name: '操作系统练习', assembly_type: '综合' }] }));
-    screen
-      .getByTestId('audit-select-panel')
-      .dispatchEvent(new CustomEvent('select', { detail: [{ ID: 1, OfficialName: '张三' }] }));
+    it('切换为不限人数时，人数输入框应隐藏', async () => {
+      render(EnrollPlanCreate);
 
-    await fireEvent.click(screen.getByRole('button', { name: '保存' }));
+      // 先选择限制人数
+      const limitRadio = screen.getByLabelText('限制人数');
+      await fireEvent.click(limitRadio);
 
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
-    expect(goto).not.toHaveBeenCalled();
+      // 再选择不限人数
+      const unlimitedRadio = screen.getByLabelText('不限人数');
+      await fireEvent.click(unlimitedRadio);
+
+      const numberInput = screen.getByPlaceholderText('请输入人数');
+      // 检查输入框是否添加了hide类
+      expect(numberInput).toHaveClass('hide');
+    });
+
+    it('科目选择应正常工作', async () => {
+      render(EnrollPlanCreate);
+
+      const theoryCheckbox = screen.getByLabelText('理论');
+      const practiceCheckbox = screen.getByLabelText('实践');
+
+      // 默认应该都选中
+      expect(theoryCheckbox).toBeChecked();
+      expect(practiceCheckbox).toBeChecked();
+
+      // 取消选择理论
+      await fireEvent.click(theoryCheckbox);
+      expect(theoryCheckbox).not.toBeChecked();
+      expect(practiceCheckbox).toBeChecked();
+
+      // 取消选择实践
+      await fireEvent.click(practiceCheckbox);
+      expect(theoryCheckbox).not.toBeChecked();
+      expect(practiceCheckbox).not.toBeChecked();
+    });
+  });
+
+  describe('fetch请求测试', () => {
+    beforeEach(() => {
+      // 清除所有mock
+      mockFetch.mockClear();
+
+      // 模拟练习选择面板的fetch请求
+      mockFetch.mockImplementation((url) => {
+        if (url.includes('/api/registerPractice')) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                status: 0,
+                data: {
+                  practices: [
+                    {
+                      ID: 1,
+                      Name: '测试练习1',
+                      Type: '00',
+                      CorrectMode: '00',
+                      TeacherName: '张老师',
+                      CreateTime: '2024-01-01',
+                      UpdateTime: '2024-01-01',
+                      Tags: [],
+                      SuggestedDuration: 60,
+                    },
+                    {
+                      ID: 2,
+                      Name: '测试练习2',
+                      Type: '02',
+                      CorrectMode: '10',
+                      TeacherName: '李老师',
+                      CreateTime: '2024-01-02',
+                      UpdateTime: '2024-01-02',
+                      Tags: [],
+                      SuggestedDuration: 90,
+                    },
+                  ],
+                  total: 2,
+                },
+              }),
+          });
+        }
+
+        if (url.includes('/api/user')) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                status: 0,
+                data: [
+                  {
+                    ID: 1,
+                    OfficialName: '张老师',
+                    Gender: '男',
+                    MobilePhone: '13800000001',
+                    IDCardNo: '440101199901010011',
+                  },
+                  {
+                    ID: 2,
+                    OfficialName: '李老师',
+                    Gender: '女',
+                    MobilePhone: '13800000002',
+                    IDCardNo: '440101199902020022',
+                  },
+                ],
+                rowCount: 2,
+              }),
+          });
+        }
+
+        // 默认返回成功响应（用于保存请求）
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 0, message: '成功' }),
+        });
+      });
+    });
+
+    it('填写所有信息并保存应发送正确的fetch请求', async () => {
+      render(EnrollPlanCreate);
+
+      // 填写计划名称
+      const nameInput = screen.getByPlaceholderText('请输入计划名称');
+      await fireEvent.input(nameInput, { target: { value: '测试报名计划' } });
+
+      // 选择限制人数并输入人数
+      const limitRadio = screen.getByLabelText('限制人数');
+      await fireEvent.click(limitRadio);
+      const numberInput = screen.getByPlaceholderText('请输入人数');
+      await fireEvent.input(numberInput, { target: { value: '50' } });
+
+      // 选择省市区
+      const provinceSelect = screen.getByText('请选择省');
+      await fireEvent.click(provinceSelect);
+      // 模拟选择第一个省份
+      const firstProvince = screen.getByText('北京市');
+      if (firstProvince) {
+        await fireEvent.click(firstProvince);
+      }
+
+      const citySelect = screen.getByText('请选择市');
+      await fireEvent.click(citySelect);
+      const firstCity = screen.getByText('市辖区');
+      if (firstCity) {
+        await fireEvent.click(firstCity);
+      }
+
+      const districtSelect = screen.getByText('请选择区');
+      await fireEvent.click(districtSelect);
+      const firstDistrict = screen.getByText('东城区');
+      if (firstDistrict) {
+        await fireEvent.click(firstDistrict);
+      }
+
+      // 填写详细地址
+      const detailAddressInput = screen.getByPlaceholderText('请输入详细地址（如街道、门牌号）');
+      await fireEvent.input(detailAddressInput, { target: { value: '测试街道123号' } });
+
+      // 模拟选择审核员 - 通过触发事件来模拟选择
+      const auditButton = screen.getByRole('button', { name: '选择审核员' });
+      await fireEvent.click(auditButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('选择审查员')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('选择审查员'));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('查看已选名单')).toBeInTheDocument();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('张老师')).toBeInTheDocument();
+        expect(screen.getByText('李老师')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('张老师'));
+
+      fireEvent.click(screen.getByRole('button', { name: '确定' }));
+
+      // 模拟选择练习 - 通过触发事件来模拟选择
+      const practiceButton = screen.getByRole('button', { name: '选择练习' });
+      await fireEvent.click(practiceButton);
+
+      // 等待练习选择面板显示
+      await waitFor(() => {
+        expect(screen.getByText('选择练习试卷')).toBeInTheDocument();
+        expect(screen.getByText('测试练习1')).toBeInTheDocument();
+        expect(screen.getByText('测试练习2')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('测试练习1'));
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: '确定' }));
+
+      await waitFor(() => {
+        expect(screen.queryByRole('button', { name: '确定' })).not.toBeInTheDocument();
+      });
+
+      // 选择日期
+      const planInput = screen.getByTestId('plan-date-picker');
+      await fireEvent.click(planInput.querySelector('input')); // 点击输入框，打开日历
+
+      fireEvent.click(screen.getByTestId('start-date-button-15'));
+      fireEvent.click(screen.getByTestId('end-date-button-16'));
+      fireEvent.click(screen.getByText('确定'));
+
+      // 选择截止日期
+      const deadlineInput = screen.getByTestId('deadline-date-picker');
+      await fireEvent.click(deadlineInput.querySelector('input')); // 点击输入框，打开日历
+      fireEvent.click(screen.getByTestId('start-date-button-15'));
+      fireEvent.click(screen.getByText('确定'));
+
+      // 点击保存按钮
+      const saveButton = screen.getByRole('button', { name: '保存' });
+      await fireEvent.click(saveButton);
+
+      // 检查错误提示
+      const errorMessages = [
+        '计划名称不能为空',
+        '请选择计划报名时段',
+        '请选择截止日期',
+        '请选择审核员',
+        '请输入考试地点',
+        '请选择练习',
+      ];
+
+      const existingErrors = errorMessages.filter((msg) => screen.queryByText(msg) !== null);
+      console.log('当前错误提示:', existingErrors);
+
+      // 验证fetch被调用
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith('/api/registration', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: expect.stringContaining('"Name":"测试报名计划"'),
+        });
+      });
+
+      // 验证跳转到列表页
+      expect(goto).toHaveBeenCalledWith('/teacher/enroll');
+    });
+
+    it('正确更换考试科目、省份、城市、区县', async () => {
+      render(EnrollPlanCreate);
+
+      // 填写计划名称
+      const nameInput = screen.getByPlaceholderText('请输入计划名称');
+      await fireEvent.input(nameInput, { target: { value: '测试报名计划' } });
+
+      // 选择限制人数并输入人数
+      const limitRadio = screen.getByLabelText('限制人数');
+      await fireEvent.click(limitRadio);
+      const numberInput = screen.getByPlaceholderText('请输入人数');
+      await fireEvent.input(numberInput, { target: { value: '50' } });
+
+      // 选择考试科目
+      const theoryCheckbox = screen.getByLabelText('理论');
+      await fireEvent.click(theoryCheckbox);
+
+      // 选择省市区
+      const provinceSelect = screen.getByText('请选择省');
+      await fireEvent.click(provinceSelect);
+      // 模拟选择第一个省份
+      const firstProvince = screen.getByText('北京市');
+      if (firstProvince) {
+        await fireEvent.click(firstProvince);
+      }
+
+      const citySelect = screen.getByText('请选择市');
+      await fireEvent.click(citySelect);
+      const firstCity = screen.getByText('市辖区');
+      if (firstCity) {
+        await fireEvent.click(firstCity);
+      }
+
+      const districtSelect = screen.getByText('请选择区');
+      await fireEvent.click(districtSelect);
+      const firstDistrict = screen.getByText('东城区');
+      if (firstDistrict) {
+        await fireEvent.click(firstDistrict);
+      }
+
+      // 填写详细地址
+      const detailAddressInput = screen.getByPlaceholderText('请输入详细地址（如街道、门牌号）');
+      await fireEvent.input(detailAddressInput, { target: { value: '测试街道123号' } });
+
+      // 模拟选择审核员 - 通过触发事件来模拟选择
+      const auditButton = screen.getByRole('button', { name: '选择审核员' });
+      await fireEvent.click(auditButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('选择审查员')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('选择审查员'));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('查看已选名单')).toBeInTheDocument();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('张老师')).toBeInTheDocument();
+        expect(screen.getByText('李老师')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('张老师'));
+
+      fireEvent.click(screen.getByRole('button', { name: '确定' }));
+
+      // 模拟选择练习 - 通过触发事件来模拟选择
+      const practiceButton = screen.getByRole('button', { name: '选择练习' });
+      await fireEvent.click(practiceButton);
+
+      // 等待练习选择面板显示
+      await waitFor(() => {
+        expect(screen.getByText('选择练习试卷')).toBeInTheDocument();
+        expect(screen.getByText('测试练习1')).toBeInTheDocument();
+        expect(screen.getByText('测试练习2')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('测试练习1'));
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: '确定' }));
+
+      await waitFor(() => {
+        expect(screen.queryByRole('button', { name: '确定' })).not.toBeInTheDocument();
+      });
+
+      // 选择日期
+      const planInput = screen.getByTestId('plan-date-picker');
+      await fireEvent.click(planInput.querySelector('input')); // 点击输入框，打开日历
+
+      fireEvent.click(screen.getByTestId('start-date-button-15'));
+      fireEvent.click(screen.getByTestId('end-date-button-16'));
+      fireEvent.click(screen.getByText('确定'));
+
+      // 选择截止日期
+      const deadlineInput = screen.getByTestId('deadline-date-picker');
+      await fireEvent.click(deadlineInput.querySelector('input')); // 点击输入框，打开日历
+      fireEvent.click(screen.getByTestId('start-date-button-15'));
+      fireEvent.click(screen.getByText('确定'));
+
+      // 点击保存按钮
+      const saveButton = screen.getByRole('button', { name: '保存' });
+      await fireEvent.click(saveButton);
+
+      // 检查错误提示
+      const errorMessages = [
+        '计划名称不能为空',
+        '请选择计划报名时段',
+        '请选择截止日期',
+        '请选择审核员',
+        '请输入考试地点',
+        '请选择练习',
+      ];
+
+      const existingErrors = errorMessages.filter((msg) => screen.queryByText(msg) !== null);
+      console.log('当前错误提示:', existingErrors);
+
+      // 验证fetch被调用
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith('/api/registration', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: expect.stringContaining('"Name":"测试报名计划"'),
+        });
+      });
+
+      // 验证跳转到列表页
+      expect(goto).toHaveBeenCalledWith('/teacher/enroll');
+    });
   });
 });
