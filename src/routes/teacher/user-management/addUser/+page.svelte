@@ -72,7 +72,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
     2: 'assess.academicAffair^admin', // 教务员
     3: 'assess^teacher', // 教师
     4: 'assess^examGrader', // 批阅员
-    5: 'assess.examSite^admin', // 考点负责人
+    5: 'assess^examSiteAdmin', // 考点负责人
     6: 'assess^scoreChecker', // 核分员
     7: 'assess^examSupervisor', // 监考员
     8: 'assess^student', // 学生
