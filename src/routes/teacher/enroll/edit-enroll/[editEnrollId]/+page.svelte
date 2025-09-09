@@ -55,29 +55,6 @@
     exam_plan_location: '',
   });
 
-  // 添加报名计划请求数据
-  let edit_enroll_req = $derived(() => {
-    return {
-      registration: {
-        ID: edit_enroll_id,
-        Name: plan_name,
-        StartTime: toTimestamp(start_date),
-        EndTime: toTimestamp(end_date),
-        ReviewEndtime: toTimestamp(deadline),
-        MaxNumber: people_limit === 'limited' ? Number(limited_number) : 0,
-        Course: (function () {
-          if (subjects.theory && subjects.practice) return '00';
-          if (subjects.theory) return '02';
-          if (subjects.practice) return '04';
-          return '';
-        })(),
-        ExamPlanLocation: exam_plan_location(),
-        ReviewerIds: audit_data ? audit_data.map((item) => item.ID || item.id) : [],
-      },
-      practice_ids: practice_initial_id,
-    };
-  });
-
   // 把时间转化成数字格式
   function toTimestamp(date) {
     return date ? Math.floor(new Date(date).getTime()) : null;
@@ -120,12 +97,32 @@
 
   // 编辑报名计划请求
   function editEnrollReq() {
+    const requestData = {
+      registration: {
+        ID: edit_enroll_id,
+        Name: plan_name,
+        StartTime: toTimestamp(start_date),
+        EndTime: toTimestamp(end_date),
+        ReviewEndtime: toTimestamp(deadline),
+        MaxNumber: people_limit === 'limited' ? Number(limited_number) : 0,
+        Course: (function () {
+          if (subjects.theory && subjects.practice) return '00';
+          if (subjects.theory) return '02';
+          if (subjects.practice) return '04';
+          return '';
+        })(),
+        ExamPlanLocation: exam_plan_location(),
+        ReviewerIds: audit_data ? audit_data.map((item) => item.ID || item.id) : [],
+      },
+      practice_ids: practice_initial_id,
+    };
+
     fetch('/api/registration', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ action: clear_audit_practice, data: edit_enroll_req() }),
+      body: JSON.stringify({ action: clear_audit_practice, data: requestData }),
     })
       .then((response) => {
         if (!response.ok) {

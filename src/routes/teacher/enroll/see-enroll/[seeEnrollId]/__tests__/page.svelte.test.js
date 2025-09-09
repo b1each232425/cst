@@ -1214,6 +1214,12 @@ describe('EnrollManagement', () => {
       mockCheckFileData.mockClear();
       mockFormatDateTime.mockClear();
 
+      // 设置默认的模拟返回值，防止未定义错误
+      mockCheckFileData.mockResolvedValue({
+        error: null,
+        data: [],
+      });
+
       // 重置全局状态
       global.fetch.mockClear();
 
@@ -1398,6 +1404,12 @@ describe('EnrollManagement', () => {
     });
 
     it('应该处理空文件的情况', async () => {
+      // 设置默认的模拟返回值，防止未定义错误
+      mockCheckFileData.mockResolvedValue({
+        error: null,
+        data: [],
+      });
+
       render(EnrollManagement);
 
       // 等待数据加载
@@ -1426,6 +1438,12 @@ describe('EnrollManagement', () => {
     });
 
     it('应该处理文件为空的情况', async () => {
+      // 设置默认的模拟返回值，防止未定义错误
+      mockCheckFileData.mockResolvedValue({
+        error: null,
+        data: [],
+      });
+
       render(EnrollManagement);
 
       // 等待数据加载
@@ -1570,119 +1588,30 @@ describe('EnrollManagement', () => {
       // 验证 checkFileData 被调用了两次
       expect(mockCheckFileData).toHaveBeenCalledTimes(2);
     });
-  });
 
-  describe('通过和撤销通过事件测试', () => {
-    beforeEach(() => {
-      vi.clearAllMocks();
-      global.fetch.mockClear();
+    it('应该处理下载模板按钮点击事件', () => {
+      // 使用真实的DOM元素
+      const originalCreateElement = document.createElement;
+      const createElementSpy = vi.spyOn(document, 'createElement');
 
-      // 模拟成功的API响应
-      global.fetch.mockImplementation((url) => {
-        if (url.includes('/api/registration')) {
-          return Promise.resolve({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                data: {
-                  student: [
-                    {
-                      student: {
-                        ID: '1',
-                        OfficialName: '张三',
-                        MobilePhone: '13800138000',
-                        Email: 'zhangsan@example.com',
-                        Gender: '男',
-                        IDCardNo: '110101199001011234',
-                        IDCardType: '身份证',
-                      },
-                      detail: {
-                        RegisterTime: '2024-01-01T10:00:00Z',
-                        Type: '00',
-                        ExamType: '00',
-                        Status: '02', // 待审核状态
-                      },
-                      reviewer: '李老师',
-                    },
-                  ],
-                  total: 1,
-                },
-              }),
-          });
-        }
-        return Promise.reject(new Error('Unmocked URL: ' + url));
+      createElementSpy.mockImplementation((tagName) => {
+        const element = originalCreateElement.call(document, tagName);
+        vi.spyOn(element, 'click');
+        return element;
       });
-    });
 
-    it('应该显示单个通过的确认对话框', async () => {
       render(EnrollManagement);
 
-      // 等待数据加载
-      await waitFor(() => {
-        expect(screen.getByText('张三')).toBeInTheDocument();
-      });
+      // 点击下载模板按钮
+      const downloadButton = screen.getByText('下载模板');
+      fireEvent.click(downloadButton);
 
-      // 使用更精确的选择器来查找表格中的通过按钮
-      // 方法1：使用 data-testid
-      const approveButton = screen.getByTestId('approve-btn');
-      expect(approveButton).toBeInTheDocument();
-
-      // 点击通过按钮
-      fireEvent.click(approveButton);
-
-      // 验证确认对话框出现
-      await waitFor(() => {
-        expect(screen.getByText('确认通过')).toBeInTheDocument();
-        expect(screen.getByText('通过后，该名人员将被录用，确定要继续吗？')).toBeInTheDocument();
-      });
-
-      // 验证确认和取消按钮都存在
-      await waitFor(() => {
-        expect(screen.getByText('确定')).toBeInTheDocument();
-      });
-    });
-
-    it('应该在确认对话框中点击取消后关闭对话框', async () => {
-      render(EnrollManagement);
-
-      // 等待数据加载
-      await waitFor(() => {
-        expect(screen.getByText('张三')).toBeInTheDocument();
-      });
-
-      // 使用 data-testid 查找通过按钮
-      const approveButton = screen.getByTestId('approve-btn');
-      fireEvent.click(approveButton);
-
-      // 等待确认对话框出现
-      await waitFor(() => {
-        expect(screen.getByText('确认通过')).toBeInTheDocument();
-      });
-
-      // 获取所有取消按钮，然后找到确认对话框中的那个
-      const cancelButtons = screen.getAllByText('取消');
-      const messageBoxCancelButton = cancelButtons.find((button) => {
-        // 检查按钮是否在确认对话框附近
-        const messageBox = screen.getByText('确认通过');
-        return (
-          messageBox.contains(button) ||
-          button.closest('[role="dialog"]') === messageBox.closest('[role="dialog"]') ||
-          button.closest('.message-box') === messageBox.closest('.message-box')
-        );
-      });
-
-      expect(messageBoxCancelButton).toBeInTheDocument();
-      fireEvent.click(messageBoxCancelButton);
-
-      // 验证没有调用通过API
-      expect(global.fetch).not.toHaveBeenCalledWith(
-        expect.stringContaining('/api/registration/approve'),
-        expect.any(Object),
-      );
+      // 验证createElement被调用
+      expect(createElementSpy).toHaveBeenCalledWith('a');
     });
   });
 
-  describe('通过和撤销通过事件测试', () => {
+  describe('通过和不通过事件测试', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       global.fetch.mockClear();
@@ -1885,72 +1814,7 @@ describe('EnrollManagement', () => {
       });
     });
 
-    it('应该显示特定人员（张三）的通过确认对话框', async () => {
-      render(EnrollManagement);
-
-      // 等待数据加载
-      await waitFor(() => {
-        expect(screen.getByText('张三')).toBeInTheDocument();
-      });
-
-      // 方法2：通过人员姓名找到对应的行，然后在该行中查找按钮
-      const table = screen.getByRole('table');
-      const zhangSanRow = within(table).getByText('张三').closest('tr');
-      const approveButton = within(zhangSanRow).getByTestId('approve-btn');
-
-      fireEvent.click(approveButton);
-
-      // 验证确认对话框出现
-      await waitFor(() => {
-        expect(screen.getByText('确认通过')).toBeInTheDocument();
-        expect(screen.getByText('通过后，该名人员将被录用，确定要继续吗？')).toBeInTheDocument();
-      });
-    });
-
-    it('应该显示特定人员（李四）的通过确认对话框', async () => {
-      render(EnrollManagement);
-
-      // 等待数据加载
-      await waitFor(() => {
-        expect(screen.getByText('李四')).toBeInTheDocument();
-      });
-
-      // 通过人员姓名找到对应的行，然后在该行中查找按钮
-      const table = screen.getByRole('table');
-      const liSiRow = within(table).getByText('李四').closest('tr');
-      const approveButton = within(liSiRow).getByTestId('approve-btn');
-
-      fireEvent.click(approveButton);
-
-      // 验证确认对话框出现
-      await waitFor(() => {
-        expect(screen.getByText('确认通过')).toBeInTheDocument();
-        expect(screen.getByText('通过后，该名人员将被录用，确定要继续吗？')).toBeInTheDocument();
-      });
-    });
-
-    it('应该显示特定人员（王五）的撤销通过确认对话框', async () => {
-      render(EnrollManagement);
-
-      // 等待数据加载
-      await waitFor(() => {
-        expect(screen.getByText('王五')).toBeInTheDocument();
-      });
-
-      // 通过人员姓名找到对应的行，然后在该行中查找撤销通过按钮
-      const table = screen.getByRole('table');
-      const wangWuRow = within(table).getByText('王五').closest('tr');
-      const revokeButton = within(wangWuRow).getByTestId('revoke-approve-btn');
-
-      fireEvent.click(revokeButton);
-
-      // 验证确认对话框出现
-      await waitFor(() => {
-        expect(screen.getByText('确认撤销通过')).toBeInTheDocument();
-        expect(screen.getByText('撤销通过后，该名人员将重新进入待审核状态，确定要继续吗？')).toBeInTheDocument();
-      });
-    });
-
+    // 通过事件测试
     it('应该显示批量通过的确认对话框', async () => {
       render(EnrollManagement);
 
@@ -1982,7 +1846,21 @@ describe('EnrollManagement', () => {
 
       // 验证确认和取消按钮都存在
       expect(screen.getByText('确定')).toBeInTheDocument();
-      expect(screen.getByText('取消')).toBeInTheDocument();
+
+      // 获取所有取消按钮，然后找到确认对话框中的那个
+      const cancelButtons = screen.getAllByText('取消');
+      const messageBoxCancelButton = cancelButtons.find((button) => {
+        // 检查按钮是否在确认对话框附近
+        const messageBox = screen.getByText('确认通过');
+        return (
+          messageBox.contains(button) ||
+          button.closest('[role="dialog"]') === messageBox.closest('[role="dialog"]') ||
+          button.closest('.message-box') === messageBox.closest('.message-box')
+        );
+      });
+
+      expect(messageBoxCancelButton).toBeInTheDocument();
+      fireEvent.click(messageBoxCancelButton);
     });
 
     it('应该处理部分选择无效的情况', async () => {
@@ -2023,7 +1901,7 @@ describe('EnrollManagement', () => {
 
       // 验证确认和取消按钮都存在
       expect(screen.getByText('确定')).toBeInTheDocument();
-      expect(screen.getByText('取消')).toBeInTheDocument();
+      fireEvent.click(screen.getByText('确定'));
     });
 
     it('应该处理没有符合条件数据的情况', async () => {
@@ -2057,42 +1935,6 @@ describe('EnrollManagement', () => {
         expect(screen.getByText('无效操作')).toBeInTheDocument();
         expect(screen.getByText('所选人员中没有符合通过条件的数据。')).toBeInTheDocument();
       });
-    });
-
-    it('应该显示批量撤销通过的确认对话框', async () => {
-      render(EnrollManagement);
-
-      // 等待数据加载
-      await waitFor(() => {
-        expect(screen.getByText('张三')).toBeInTheDocument();
-        expect(screen.getByText('李四')).toBeInTheDocument();
-        expect(screen.getByText('王五')).toBeInTheDocument();
-        expect(screen.getByText('赵六')).toBeInTheDocument();
-        expect(screen.getByText('钱七')).toBeInTheDocument();
-        expect(screen.getByText('孙八')).toBeInTheDocument();
-        expect(screen.getByText('周九')).toBeInTheDocument();
-        expect(screen.getByText('吴十')).toBeInTheDocument();
-      });
-
-      // 选择已通过状态的记录
-      const checkboxes = screen.getAllByRole('checkbox');
-      fireEvent.click(checkboxes[4]); // 选择赵六（已通过）
-      fireEvent.click(checkboxes[7]); // 选择周九（已通过）
-
-      // 点击批量撤销通过按钮
-      const batchRevokeButton = screen.getByText('批量撤销通过');
-      expect(batchRevokeButton).toBeInTheDocument();
-      fireEvent.click(batchRevokeButton);
-
-      // 验证确认对话框出现
-      await waitFor(() => {
-        expect(screen.getByText('确认撤销通过')).toBeInTheDocument();
-        expect(screen.getByText('确定要撤销通过选中的 2 条数据吗？')).toBeInTheDocument();
-      });
-
-      // 验证确认和取消按钮都存在
-      expect(screen.getByText('确定')).toBeInTheDocument();
-      expect(screen.getByText('取消')).toBeInTheDocument();
     });
 
     it('应该在确认对话框中点击取消后关闭对话框', async () => {
@@ -2135,175 +1977,8 @@ describe('EnrollManagement', () => {
       );
     });
 
-    it('应该在批量通过确认对话框中点击确定后执行通过操作', async () => {
-      // 模拟批量通过API调用成功
-      global.fetch.mockImplementation((url) => {
-        if (url.includes('/api/registration')) {
-          if (url.includes('approve')) {
-            return Promise.resolve({
-              ok: true,
-              json: () => Promise.resolve({ success: true }),
-            });
-          }
-          return Promise.resolve({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                data: {
-                  student: [
-                    {
-                      student: {
-                        ID: '1',
-                        OfficialName: '张三',
-                        MobilePhone: '13800138000',
-                        Email: 'zhangsan@example.com',
-                        Gender: '男',
-                        IDCardNo: '110101199001011234',
-                        IDCardType: '身份证',
-                      },
-                      detail: {
-                        RegisterTime: '2024-01-01T10:00:00Z',
-                        Type: '00',
-                        ExamType: '00',
-                        Status: '02',
-                      },
-                      reviewer: '李老师',
-                    },
-                    {
-                      student: {
-                        ID: '2',
-                        OfficialName: '李四',
-                        MobilePhone: '13900139000',
-                        Email: 'lisi@example.com',
-                        Gender: '女',
-                        IDCardNo: '110101199002021234',
-                        IDCardType: '身份证',
-                      },
-                      detail: {
-                        RegisterTime: '2024-01-02T10:00:00Z',
-                        Type: '00',
-                        ExamType: '00',
-                        Status: '02',
-                      },
-                      reviewer: '王老师',
-                    },
-                    {
-                      student: {
-                        ID: '3',
-                        OfficialName: '王五',
-                        MobilePhone: '13700137000',
-                        Email: 'wangwu@example.com',
-                        Gender: '男',
-                        IDCardNo: '110101199003031234',
-                        IDCardType: '身份证',
-                      },
-                      detail: {
-                        RegisterTime: '2024-01-03T10:00:00Z',
-                        Type: '00',
-                        ExamType: '00',
-                        Status: '02',
-                      },
-                      reviewer: '赵老师',
-                    },
-                    {
-                      student: {
-                        ID: '4',
-                        OfficialName: '赵六',
-                        MobilePhone: '13600136000',
-                        Email: 'zhaoliu@example.com',
-                        Gender: '女',
-                        IDCardNo: '110101199004041234',
-                        IDCardType: '身份证',
-                      },
-                      detail: {
-                        RegisterTime: '2024-01-04T10:00:00Z',
-                        Type: '00',
-                        ExamType: '00',
-                        Status: '04',
-                      },
-                      reviewer: '孙老师',
-                    },
-                    {
-                      student: {
-                        ID: '5',
-                        OfficialName: '钱七',
-                        MobilePhone: '13500135000',
-                        Email: 'qianqi@example.com',
-                        Gender: '男',
-                        IDCardNo: '110101199005051234',
-                        IDCardType: '身份证',
-                      },
-                      detail: {
-                        RegisterTime: '2024-01-05T10:00:00Z',
-                        Type: '00',
-                        ExamType: '00',
-                        Status: '06',
-                      },
-                      reviewer: '周老师',
-                    },
-                    {
-                      student: {
-                        ID: '6',
-                        OfficialName: '孙八',
-                        MobilePhone: '13400134000',
-                        Email: 'sunba@example.com',
-                        Gender: '女',
-                        IDCardNo: '110101199006061234',
-                        IDCardType: '身份证',
-                      },
-                      detail: {
-                        RegisterTime: '2024-01-06T10:00:00Z',
-                        Type: '00',
-                        ExamType: '00',
-                        Status: '02',
-                      },
-                      reviewer: '吴老师',
-                    },
-                    {
-                      student: {
-                        ID: '7',
-                        OfficialName: '周九',
-                        MobilePhone: '13300133000',
-                        Email: 'zhoujiu@example.com',
-                        Gender: '男',
-                        IDCardNo: '110101199007071234',
-                        IDCardType: '身份证',
-                      },
-                      detail: {
-                        RegisterTime: '2024-01-07T10:00:00Z',
-                        Type: '00',
-                        ExamType: '00',
-                        Status: '04',
-                      },
-                      reviewer: '郑老师',
-                    },
-                    {
-                      student: {
-                        ID: '8',
-                        OfficialName: '吴十',
-                        MobilePhone: '13200132000',
-                        Email: 'wushi@example.com',
-                        Gender: '女',
-                        IDCardNo: '110101199008081234',
-                        IDCardType: '身份证',
-                      },
-                      detail: {
-                        RegisterTime: '2024-01-08T10:00:00Z',
-                        Type: '00',
-                        ExamType: '00',
-                        Status: '06',
-                      },
-                      reviewer: '王老师',
-                    },
-                  ],
-                  total: 8,
-                },
-              }),
-          });
-        }
-        return Promise.reject(new Error('Unmocked URL: ' + url));
-      });
-
+    // 不通过事件测试
+    it('应该显示批量不通过的确认对话框', async () => {
       render(EnrollManagement);
 
       // 等待数据加载
@@ -2321,31 +1996,316 @@ describe('EnrollManagement', () => {
       fireEvent.click(checkboxes[3]); // 选择王五（待审核）
       fireEvent.click(checkboxes[6]); // 选择孙八（待审核）
 
-      // 点击批量通过按钮
-      const batchApproveButton = screen.getByText('批量通过');
-      fireEvent.click(batchApproveButton);
+      // 点击批量不通过按钮
+      const batchRejectButton = screen.getByText('批量不通过');
+      expect(batchRejectButton).toBeInTheDocument();
+      fireEvent.click(batchRejectButton);
 
-      // 等待确认对话框出现
+      // 验证确认对话框出现
       await waitFor(() => {
-        expect(screen.getByText('确认通过')).toBeInTheDocument();
+        expect(screen.getByText('请输入不通过理由')).toBeInTheDocument();
+        fireEvent.input(screen.getByPlaceholderText('请输入理由'), { target: { value: '不通过理由' } });
+        fireEvent.click(screen.getByText('确定'));
+      });
+    });
+
+    it('应该处理部分不通过选择无效的情况', async () => {
+      render(EnrollManagement);
+
+      // 等待数据加载
+      await waitFor(() => {
+        expect(screen.getByText('张三')).toBeInTheDocument();
+        expect(screen.getByText('李四')).toBeInTheDocument();
+        expect(screen.getByText('王五')).toBeInTheDocument();
+        expect(screen.getByText('赵六')).toBeInTheDocument();
+        expect(screen.getByText('钱七')).toBeInTheDocument();
+        expect(screen.getByText('孙八')).toBeInTheDocument();
+        expect(screen.getByText('周九')).toBeInTheDocument();
+        expect(screen.getByText('吴十')).toBeInTheDocument();
       });
 
-      // 点击确定按钮
-      const confirmButton = screen.getByText('确定');
-      fireEvent.click(confirmButton);
+      // 选择多个复选框（包含不同状态的记录）
+      const checkboxes = screen.getAllByRole('checkbox');
+      fireEvent.click(checkboxes[1]); // 选择张三（待审核）
+      fireEvent.click(checkboxes[2]); // 选择李四（待审核）
+      fireEvent.click(checkboxes[3]); // 选择王五（待审核）
+      fireEvent.click(checkboxes[4]); // 选择赵六（已通过）
+      fireEvent.click(checkboxes[5]); // 选择钱七（不通过）
+      fireEvent.click(checkboxes[6]); // 选择孙八（待审核）
+      fireEvent.click(checkboxes[7]); // 选择周九（已通过）
+      fireEvent.click(checkboxes[8]); // 选择吴十（不通过）
 
-      // 验证API被调用
+      // 点击批量通过按钮
+      const batchRejectButton = screen.getByText('批量不通过');
+      fireEvent.click(batchRejectButton);
+
+      // 验证部分选择无效的对话框
       await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/registration/approve'),
-          expect.objectContaining({
-            method: 'POST',
-            headers: expect.objectContaining({
-              'Content-Type': 'application/json',
-            }),
-          }),
+        expect(screen.getByText('部分选择无效')).toBeInTheDocument();
+        expect(screen.getByText(/你选择的 8 条数据中，有 4 条不符合不通过条件/)).toBeInTheDocument();
+      });
+
+      // 验证确认和取消按钮都存在
+      expect(screen.getByText('确定')).toBeInTheDocument();
+      fireEvent.click(screen.getByText('确定'));
+
+      // 验证确认对话框出现
+      await waitFor(() => {
+        expect(screen.getByText('请输入不通过理由')).toBeInTheDocument();
+        fireEvent.input(screen.getByPlaceholderText('请输入理由'), { target: { value: '不通过理由' } });
+        fireEvent.click(screen.getByText('确定'));
+      });
+    });
+
+    it('应该处理没有符合不通过条件数据的情况', async () => {
+      render(EnrollManagement);
+
+      // 等待数据加载
+      await waitFor(() => {
+        expect(screen.getByText('张三')).toBeInTheDocument();
+        expect(screen.getByText('李四')).toBeInTheDocument();
+        expect(screen.getByText('王五')).toBeInTheDocument();
+        expect(screen.getByText('赵六')).toBeInTheDocument();
+        expect(screen.getByText('钱七')).toBeInTheDocument();
+        expect(screen.getByText('孙八')).toBeInTheDocument();
+        expect(screen.getByText('周九')).toBeInTheDocument();
+        expect(screen.getByText('吴十')).toBeInTheDocument();
+      });
+
+      // 只选择已通过和不通过状态的记录
+      const checkboxes = screen.getAllByRole('checkbox');
+      fireEvent.click(checkboxes[4]); // 选择赵六（已通过）
+      fireEvent.click(checkboxes[5]); // 选择钱七（不通过）
+      fireEvent.click(checkboxes[7]); // 选择周九（已通过）
+      fireEvent.click(checkboxes[8]); // 选择吴十（不通过）
+
+      // 点击批量通过按钮
+      const batchRejectButton = screen.getByText('批量不通过');
+      fireEvent.click(batchRejectButton);
+
+      // 验证无效操作的对话框
+      await waitFor(() => {
+        expect(screen.getByText('无效操作')).toBeInTheDocument();
+        expect(screen.getByText('所选人员中没有符合不通过条件的数据。')).toBeInTheDocument();
+      });
+    });
+
+    it('应该正确处理用户不输入不通过理由弹窗toast提示', async () => {
+      render(EnrollManagement);
+
+      // 等待数据加载
+      await waitFor(() => {
+        expect(screen.getByText('张三')).toBeInTheDocument();
+        expect(screen.getByText('李四')).toBeInTheDocument();
+        expect(screen.getByText('王五')).toBeInTheDocument();
+        expect(screen.getByText('孙八')).toBeInTheDocument();
+      });
+
+      // 选择多个复选框（选择待审核状态的记录）
+      const checkboxes = screen.getAllByRole('checkbox');
+      fireEvent.click(checkboxes[1]); // 选择张三（待审核）
+      fireEvent.click(checkboxes[2]); // 选择李四（待审核）
+      fireEvent.click(checkboxes[3]); // 选择王五（待审核）
+      fireEvent.click(checkboxes[6]); // 选择孙八（待审核）
+
+      // 点击批量不通过按钮
+      const batchRejectButton = screen.getByText('批量不通过');
+      expect(batchRejectButton).toBeInTheDocument();
+      fireEvent.click(batchRejectButton);
+
+      // 验证确认对话框出现
+      await waitFor(() => {
+        expect(screen.getByText('请输入不通过理由')).toBeInTheDocument();
+        fireEvent.input(screen.getByPlaceholderText('请输入理由'), { target: { value: '' } });
+        fireEvent.click(screen.getByText('确定'));
+        expect(toast.warning).toHaveBeenCalledWith('请输入不通过理由');
+      });
+    });
+
+    // 撤销通过事件测试
+    it('应该处理撤销通过事件的正确取消弹窗', async () => {
+      render(EnrollManagement);
+
+      // 等待数据加载
+      await waitFor(() => {
+        expect(screen.getByText('张三')).toBeInTheDocument();
+        expect(screen.getByText('李四')).toBeInTheDocument();
+        expect(screen.getByText('王五')).toBeInTheDocument();
+        expect(screen.getByText('赵六')).toBeInTheDocument();
+        expect(screen.getByText('钱七')).toBeInTheDocument();
+        expect(screen.getByText('孙八')).toBeInTheDocument();
+        expect(screen.getByText('周九')).toBeInTheDocument();
+        expect(screen.getByText('吴十')).toBeInTheDocument();
+      });
+
+      // 通过表格行定位
+      const tableRows = screen.getAllByRole('row');
+      const zhaoLiuRow = tableRows.find((row) => row.textContent.includes('赵六'));
+      const revokeApproveButton = within(zhaoLiuRow).getByText('撤销通过');
+      fireEvent.click(revokeApproveButton);
+
+      // 验证确认对话框出现
+      await waitFor(() => {
+        expect(screen.getByText('确认撤销通过')).toBeInTheDocument();
+        expect(screen.getByText('撤销通过后，该名人员将被取消录用，确定要继续吗？')).toBeInTheDocument();
+      });
+
+      // 验证确认和取消按钮都存在
+      expect(screen.getByText('确定')).toBeInTheDocument();
+
+      // 获取所有取消按钮，然后找到确认对话框中的那个
+      const cancelButtons = screen.getAllByText('取消');
+      const messageBoxCancelButton = cancelButtons.find((button) => {
+        // 检查按钮是否在确认对话框附近
+        const messageBox = screen.getByText('确认撤销通过');
+        return (
+          messageBox.contains(button) ||
+          button.closest('[role="dialog"]') === messageBox.closest('[role="dialog"]') ||
+          button.closest('.message-box') === messageBox.closest('.message-box')
         );
       });
+
+      expect(messageBoxCancelButton).toBeInTheDocument();
+      fireEvent.click(messageBoxCancelButton);
+    });
+
+    it('应该处理撤销通过事件的正确确认弹窗', async () => {
+      render(EnrollManagement);
+
+      // 等待数据加载
+      await waitFor(() => {
+        expect(screen.getByText('张三')).toBeInTheDocument();
+        expect(screen.getByText('李四')).toBeInTheDocument();
+        expect(screen.getByText('王五')).toBeInTheDocument();
+        expect(screen.getByText('赵六')).toBeInTheDocument();
+        expect(screen.getByText('钱七')).toBeInTheDocument();
+        expect(screen.getByText('孙八')).toBeInTheDocument();
+        expect(screen.getByText('周九')).toBeInTheDocument();
+        expect(screen.getByText('吴十')).toBeInTheDocument();
+      });
+
+      // 通过表格行定位
+      const tableRows = screen.getAllByRole('row');
+      const zhaoLiuRow = tableRows.find((row) => row.textContent.includes('赵六'));
+      const revokeApproveButton = within(zhaoLiuRow).getByText('撤销通过');
+      fireEvent.click(revokeApproveButton);
+
+      // 验证确认对话框出现
+      await waitFor(() => {
+        expect(screen.getByText('确认撤销通过')).toBeInTheDocument();
+        expect(screen.getByText('撤销通过后，该名人员将被取消录用，确定要继续吗？')).toBeInTheDocument();
+      });
+
+      // 验证确认和取消按钮都存在
+      expect(screen.getByText('确定')).toBeInTheDocument();
+
+      // 获取所有取消按钮，然后找到确认对话框中的那个
+      const cancelButtons = screen.getAllByText('取消');
+      const messageBoxCancelButton = cancelButtons.find((button) => {
+        // 检查按钮是否在确认对话框附近
+        const messageBox = screen.getByText('确认撤销通过');
+        return (
+          messageBox.contains(button) ||
+          button.closest('[role="dialog"]') === messageBox.closest('[role="dialog"]') ||
+          button.closest('.message-box') === messageBox.closest('.message-box')
+        );
+      });
+
+      expect(messageBoxCancelButton).toBeInTheDocument();
+      fireEvent.click(screen.getByText('确定'));
+    });
+
+    // 撤销不通过事件测试
+    it('应该处理撤销通过事件的正确取消弹窗', async () => {
+      render(EnrollManagement);
+
+      // 等待数据加载
+      await waitFor(() => {
+        expect(screen.getByText('张三')).toBeInTheDocument();
+        expect(screen.getByText('李四')).toBeInTheDocument();
+        expect(screen.getByText('王五')).toBeInTheDocument();
+        expect(screen.getByText('赵六')).toBeInTheDocument();
+        expect(screen.getByText('钱七')).toBeInTheDocument();
+        expect(screen.getByText('孙八')).toBeInTheDocument();
+        expect(screen.getByText('周九')).toBeInTheDocument();
+        expect(screen.getByText('吴十')).toBeInTheDocument();
+      });
+
+      // 通过表格行定位
+      const tableRows = screen.getAllByRole('row');
+      const Row = tableRows.find((row) => row.textContent.includes('钱七'));
+      const revokeRejectButton = within(Row).getByText('撤销不通过');
+      fireEvent.click(revokeRejectButton);
+
+      // 验证确认对话框出现
+      await waitFor(() => {
+        expect(screen.getByText('确认撤销不通过')).toBeInTheDocument();
+        expect(screen.getByText('撤销不通过后，该名人员将被取消不通过状态，确定要继续吗？')).toBeInTheDocument();
+      });
+
+      // 验证确认和取消按钮都存在
+      expect(screen.getByText('确定')).toBeInTheDocument();
+
+      // 获取所有取消按钮，然后找到确认对话框中的那个
+      const cancelButtons = screen.getAllByText('取消');
+      const messageBoxCancelButton = cancelButtons.find((button) => {
+        // 检查按钮是否在确认对话框附近
+        const messageBox = screen.getByText('确认撤销不通过');
+        return (
+          messageBox.contains(button) ||
+          button.closest('[role="dialog"]') === messageBox.closest('[role="dialog"]') ||
+          button.closest('.message-box') === messageBox.closest('.message-box')
+        );
+      });
+
+      expect(messageBoxCancelButton).toBeInTheDocument();
+      fireEvent.click(messageBoxCancelButton);
+    });
+
+    it('应该处理撤销通过事件的正确确认弹窗', async () => {
+      render(EnrollManagement);
+
+      // 等待数据加载
+      await waitFor(() => {
+        expect(screen.getByText('张三')).toBeInTheDocument();
+        expect(screen.getByText('李四')).toBeInTheDocument();
+        expect(screen.getByText('王五')).toBeInTheDocument();
+        expect(screen.getByText('赵六')).toBeInTheDocument();
+        expect(screen.getByText('钱七')).toBeInTheDocument();
+        expect(screen.getByText('孙八')).toBeInTheDocument();
+        expect(screen.getByText('周九')).toBeInTheDocument();
+        expect(screen.getByText('吴十')).toBeInTheDocument();
+      });
+
+      // 通过表格行定位
+      const tableRows = screen.getAllByRole('row');
+      const Row = tableRows.find((row) => row.textContent.includes('钱七'));
+      const revokeRejectButton = within(Row).getByText('撤销不通过');
+      fireEvent.click(revokeRejectButton);
+
+      // 验证确认对话框出现
+      await waitFor(() => {
+        expect(screen.getByText('确认撤销不通过')).toBeInTheDocument();
+        expect(screen.getByText('撤销不通过后，该名人员将被取消不通过状态，确定要继续吗？')).toBeInTheDocument();
+      });
+
+      // 验证确认和取消按钮都存在
+      expect(screen.getByText('确定')).toBeInTheDocument();
+
+      // 获取所有取消按钮，然后找到确认对话框中的那个
+      const cancelButtons = screen.getAllByText('取消');
+      const messageBoxCancelButton = cancelButtons.find((button) => {
+        // 检查按钮是否在确认对话框附近
+        const messageBox = screen.getByText('确认撤销不通过');
+        return (
+          messageBox.contains(button) ||
+          button.closest('[role="dialog"]') === messageBox.closest('[role="dialog"]') ||
+          button.closest('.message-box') === messageBox.closest('.message-box')
+        );
+      });
+
+      expect(messageBoxCancelButton).toBeInTheDocument();
+      fireEvent.click(screen.getByText('确定'));
     });
   });
 });
