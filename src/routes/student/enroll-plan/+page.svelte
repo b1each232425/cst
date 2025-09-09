@@ -112,7 +112,7 @@
       });
   }
 
-  // 分页事件（这里只是示例）
+  // 分页事件
   function handlePageChange(e) {
     current_page = e.detail;
   }
@@ -234,14 +234,14 @@
                 {#if item.status === '未报名'}
                   <button class="option blue" onclick={() => handleEnroll(item.id)}>开始报名</button>
                 {:else if item.status === '报名中'}
-                  <button class="option blue" onclick={handleEnroll}>继续报名</button>
+                  <button class="option blue" onclick={() => handleEnroll(item.id)}>继续报名</button>
                 {:else if item.status === '待审核'}
-                  <button class="option blue" onclick={handleEnroll}>查看报名信息</button>
+                  <button class="option blue" onclick={() => handleEnroll(item.id)}>查看报名信息</button>
                 {:else if item.status === '通过'}
                   <button class="option blue">请到达考试列表等待考试开始</button>
-                {:else if item.status === '审核不通过'}
-                  <button class="option blue" onclick={handleEnroll}>重新提交</button>
-                  <button class="option red" onclick={handleSeeReason}>查看原因</button>
+                {:else if item.status === '不通过'}
+                  <button class="option blue" onclick={() => handleEnroll(item.id)}>重新提交</button>
+                  <button class="option red" onclick={() => handleSeeReason()}>查看原因</button>
                 {:else if item.status === '报名未开始' || item.status === '报名已结束'}
                   <span class="option gray">--</span>
                 {:else}

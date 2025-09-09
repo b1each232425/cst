@@ -2,6 +2,8 @@
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
   import { goto } from '$app/navigation';
   import { isValidPhoneNumber, parsePhoneNumberWithError } from 'libphonenumber-js';
+  import { toast } from '$lib/components/Toast/Toast.js';
+  import { baseNavItems } from '$lib/stores/modules/permission.js';
 
   // 登录页面组件
   let credential = $state('');
@@ -302,7 +304,7 @@
         } else {
           roleSelectVisible = false;
           // 根据角色跳转到对应页面
-          redirectByRole(targetDomain);
+          redirectByRole();
         }
       })
       .catch((e) => {
@@ -315,16 +317,72 @@
   /**
    * 根据角色跳转页面
    */
-  function redirectByRole(domain) {
-    if (domain.includes('student')) {
-      goto('/student/practice');
-    } else if (domain === 'assess^examSupervisor') {
-      goto('/teacher/invigilate');
-    } else if (domain === 'assess^examSiteAdmin') {
-      goto('/teacher/exam-site');
-    } else {
-      goto('/teacher/question-bank/theory');
+  function redirectByRole() {
+    fetch('/api/auth/authority/me')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then(async (data) => {
+        if (data.status !== 0) {
+          toast.error('获取用户权限失败');
+          return;
+        } else {
+          const targetPath = getFirstValidPath(data.data.accessibleAPIs);
+          targetPath === 'failed' ? toast.error('获取用户权限失败') : goto(targetPath);
+        }
+      })
+      .catch((error) => {
+        console.error('获取用户权限失败:', error);
+        toast.error('获取用户权限失败：', error);
+      });
+  }
+
+  /**
+   * 获取第一个有效的路径
+   * 遍历所有accessibleAPIs，找到第一个不以/api开头的路径
+   * 如果该路径有isFilter: true，则返回第一个子路径
+   */
+  function getFirstValidPath(accessibleAPIs) {
+    // 如果没有权限数组则是学生账号
+    if (!accessibleAPIs) {
+      return '/student/practice';
     }
+
+    // 遍历所有accessibleAPIs，找到第一个不以/api开头的路径
+    let targetExposePath = null;
+    for (const api of accessibleAPIs) {
+      if (!api.ExposePath.startsWith('/api')) {
+        targetExposePath = api.ExposePath;
+        break;
+      }
+    }
+
+    // 如果没有找到不以/api开头的路径，返回错误
+    if (!targetExposePath) {
+      targetExposePath = 'failed';
+      return targetExposePath;
+    }
+
+    // 从权限store中查找匹配的导航项
+    const navItems = $baseNavItems;
+
+    // 循环遍历查找匹配的父组件
+    for (const item of navItems) {
+      if (item.path === targetExposePath) {
+        // 如果找到匹配的父组件且有isFilter: true，返回第一个子路径
+        if (item.isFilter && item.children && item.children.length > 0) {
+          return item.children[0].path;
+        }
+        // 如果没有isFilter或没有子路径，直接返回原路径
+        return targetExposePath;
+      }
+    }
+
+    // 如果没有找到匹配的路径，直接返回原路径
+    return targetExposePath;
   }
 
   /**
