@@ -2,7 +2,7 @@
     import Title from '$lib/components/Title/Title.svelte';
     import Pagination from '$lib/components/Pagination/Pagination.svelte';
     import InputBox from '$lib/components/Input/InputBox.svelte';
-    import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+    import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { toast } from "$lib/components/Toast/Toast";
@@ -135,7 +135,13 @@
     let current_delete_site_id = $state(0); // 当前删除的考点ID
     let current_site_id_for_room = $state(0); // 新增状态变量，存储要添加考场的考点ID
     let _searchTimeout = null; // 搜索去抖定时器
-    
+
+    let show_site_message = $state(false); // 显示考点信息提示
+
+    let savedName = $state("");
+    let savedAddress = $state("");
+    let savedAccount = $state("");
+    let savedAccessToken = $state("");
 
     //按钮控制类
     function openAddDialog() { // 打开新增考点对话框
@@ -143,7 +149,7 @@
     }
     function closeAddDialog() { // 关闭新增考点对话框
         show_add_dialog = false;
-        new_site = { name: "", address: "", server_host: "", admin: 0 };
+        new_site = { name: "", address: "", server_host: "", admin: 0 ,OfficialName: ""};
     }
     function confirmAddDialog() { // 确认新增考点对话框
         // 校验必填字段
@@ -153,10 +159,6 @@
         }
         if (!new_site.address) {
             toast.error("考点地址不能为空");
-            return Promise.resolve();
-        }
-        if (!new_site.server_host) {
-            toast.error("考点服务链接不能为空");
             return Promise.resolve();
         }
 
@@ -193,6 +195,11 @@
                 toast.error("新增考点失败，请稍后重试");
                 return;
             } else {
+                savedName = new_site.name;
+                savedAddress = new_site.address;
+                savedAccount = data?.data?.account || "";
+                savedAccessToken = data?.data?.accessToken || "";
+
                 // 成功处理
                 closeAddDialog(); // 关闭弹窗并重置表单
                 // 刷新考点列表
@@ -203,6 +210,7 @@
                     sortAsc,
                 ).then(() => {
                     toast.success("新增考点成功");
+                    show_site_message = true;
                 });
             }
         })
@@ -436,7 +444,7 @@
                 site.status = "";
                 site.error_msg = "";
                 // 发起状态检测（不阻塞主链）
-                checkServerStatus(site.serverHost).then((err_msg) => {
+          /*      checkServerStatus(site.serverHost).then((err_msg) => {
                     if (err_msg === "") {
                         site.status = "00"; // 正常
                         site.error_msg = "";
@@ -444,7 +452,7 @@
                         site.status = "01"; // 异常
                         site.error_msg = err_msg;
                     }
-                });
+                });*/
             }
         })
         .catch(err => {
@@ -588,7 +596,6 @@
                             </span>
                         </th>
                         <th>考点服务链接</th>
-                        <th>考点链接状态</th>
                         <th>操作</th>
                     </tr>
                 </thead>
@@ -615,33 +622,9 @@
                                     ? "-"
                                     : `${site.roomCount}个`}</td
                             >
-                            <td class="exam-site-link" title={site.serverHost}
-                                >{site.serverHost}</td
-                            >
-                            <td>
-                                <div
-                                    class={`status exam-site-status ${
-                                        site.status == "" ? "status-checking" : 
-                                            site.status == "00"
-                                                ? ""
-                                                : "status-abnormal"
-                                    }`}
-                                >
-                                    {#if site.status != "" && site.status != "00"}
-                                        <div
-                                            class="error-tip"
-                                            style="display: none;"
-                                        >
-                                            {site.error_msg}
-                                        </div>
-                                    {/if}
-
-                                    {site.status == "" ? "检测中" : 
-                                        site.status == "00"
-                                            ? "正常"
-                                            : "异常"}
-                                </div></td
-                            >
+                            <td class="exam-site-link" title={(site.serverHost || "").trim() || "-"}>
+                                {(site.serverHost || "").trim() || "-"}
+                            </td>
                             <td class="exam-site-operation">
                                 <div class="operation-group">
                                     <div class="operation-row">
@@ -746,7 +729,7 @@
                     </span>
                     <div class="input hideBorder">
                         
-                        {#if new_site.admin == 0}
+                        {#if new_site.admin === 0}
                             <button
                                 class="select-admin-btn"
                                 onclick={() => {
@@ -772,6 +755,7 @@
                             >
                                 重新选择
                             </button>
+
                         {/if}
                     </div>
 
@@ -844,13 +828,30 @@
         show_admin_select_panel = false;
     }}
     onConfirm = {(/** @type {Array<admin_selection>}  */ selected_ids) => {
-        console.log("选中的考点负责人:", selected_ids);
         show_admin_select_panel = false;
         selected_admin_ids = selected_ids;
         new_site.admin = selected_admin_ids.length > 0 ? selected_admin_ids[0].ID : new_site.admin;
         new_site.OfficialName = selected_admin_ids.length > 0 ? selected_admin_ids[0].OfficialName : new_site.OfficialName;
     }}
 />
+
+<div>
+    <MessageBox
+        visible={show_site_message}
+        title="考点秘钥"
+        show_cancel_button={false}
+        onConfirm={() => { show_site_message = false; }}
+    >
+        <!-- slot 内直接写模板，变量可以加粗并换行 -->
+        <div style="text-align:left; line-height:1.6;">
+            已新增考点：<strong>{savedName}</strong><br/>
+            考点地址：<strong>{savedAddress}</strong><br/><br/>
+            以下为考点秘钥（仅显示一次，请复制保存）：<br/>
+            account：<strong>{savedAccount}</strong><br/>
+            accessToken：<strong>{savedAccessToken}</strong>
+        </div>
+    </MessageBox>
+</div>
 
 
 <style lang="scss" scoped>
@@ -1147,7 +1148,7 @@
         width: 100vw;
         height: 100vh;
         background: rgba(23, 23, 23, 0.5);
-        z-index: 50;
+        z-index: 8888;
         display: flex;
         align-items: center;
         justify-content: center;
