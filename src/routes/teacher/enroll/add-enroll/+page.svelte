@@ -46,28 +46,6 @@
     exam_plan_location: '',
   });
 
-  // 添加报名计划请求数据
-  let add_enroll_req = $derived(() => {
-    return {
-      registration: {
-        Name: plan_name,
-        StartTime: toTimestamp(start_date),
-        EndTime: toTimestamp(end_date),
-        ReviewEndtime: toTimestamp(deadline),
-        MaxNumber: people_limit === 'limited' ? Number(limited_number) : 0,
-        Course: (function () {
-          if (subjects.theory && subjects.practice) return '00';
-          if (subjects.theory) return '02';
-          if (subjects.practice) return '04';
-          return '';
-        })(),
-        ExamPlanLocation: exam_plan_location(),
-        ReviewerIds: audit_data ? audit_data.map((item) => item.ID) : [],
-      },
-      practice_ids: practice_initial_id,
-    };
-  });
-
   // 把时间转化成数字格式
   function toTimestamp(date) {
     return date ? Math.floor(new Date(date).getTime()) : null;
@@ -96,7 +74,6 @@
   // 处理开始日期变化
   function handleStartDateChange(event) {
     start_date = event.detail.date;
-    console.log(start_date);
   }
 
   // 处理终止日期变化
@@ -111,12 +88,31 @@
 
   // 添加报名计划请求
   function addEnrollReq() {
+    const requestData = {
+      registration: {
+        Name: plan_name,
+        StartTime: toTimestamp(start_date),
+        EndTime: toTimestamp(end_date),
+        ReviewEndtime: toTimestamp(deadline),
+        MaxNumber: people_limit === 'limited' ? Number(limited_number) : 0,
+        Course: (function () {
+          if (subjects.theory && subjects.practice) return '00';
+          if (subjects.theory) return '02';
+          if (subjects.practice) return '04';
+          return '';
+        })(),
+        ExamPlanLocation: exam_plan_location(),
+        ReviewerIds: audit_data ? audit_data.map((item) => item.ID) : [],
+      },
+      practice_ids: practice_initial_id,
+    };
+
     fetch('/api/registration', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ data: add_enroll_req() }),
+      body: JSON.stringify({ data: requestData }),
     })
       .then((response) => {
         if (!response.ok) {
@@ -228,7 +224,7 @@
   <!-- 计划报名时段 -->
   <div class="form-row">
     <div class="label required">计划报名时段：</div>
-    <div class="date-picker">
+    <div class="date-picker" data-testid="plan-date-picker">
       <DatePicker
         is_single_date_selection={false}
         is_time_selection={true}
@@ -243,7 +239,7 @@
   <!-- 审核截止时间 -->
   <div class="form-row">
     <div class="label required">审核截止时间：</div>
-    <div class="date-picker">
+    <div class="date-picker" data-testid="deadline-date-picker">
       <DatePicker is_time_selection={true} input_width={'350px'} on:start_date_selected={handleDeadlineChange}
       ></DatePicker>
     </div>

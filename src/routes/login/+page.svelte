@@ -318,12 +318,12 @@
   function redirectByRole(domain) {
     if (domain.includes('student')) {
       goto('/student/practice');
+    } else if (domain === 'assess^examSupervisor') {
+      goto('/teacher/invigilate');
+    } else if (domain === 'assess^examSiteAdmin') {
+      goto('/teacher/exam-site');
     } else {
-      if (domain === 'assess^examSupervisor') {
-        goto('/teacher/invigilate');
-      } else {
-        goto('/teacher/question-bank/theory');
-      }
+      goto('/teacher/question-bank/theory');
     }
   }
 

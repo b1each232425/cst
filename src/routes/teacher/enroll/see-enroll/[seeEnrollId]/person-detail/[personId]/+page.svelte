@@ -93,6 +93,8 @@
             Status: statusMap[raw.detail.Status] || raw.detail.Status,
           },
         };
+
+        console.log(person_enroll_info);
       })
       .catch((e) => {
         console.error(e);
