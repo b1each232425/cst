@@ -712,7 +712,6 @@
 
                 <div class="form-row">
                     <span class="label-group">
-                        <span class="required">*</span>
                         <span class="add-label">考点服务链接：</span>
                     </span>
                     <input
