@@ -328,7 +328,7 @@
   <!-- 计划报名时段 -->
   <div class="form-row">
     <div class="label required">计划报名时段：</div>
-    <div class="date-picker">
+    <div class="date-picker" data-testid="plan-date-picker">
       <DatePicker
         is_single_date_selection={false}
         is_time_selection={true}
@@ -345,7 +345,7 @@
   <!-- 审核截止时间 -->
   <div class="form-row">
     <div class="label required">审核截止时间：</div>
-    <div class="date-picker">
+    <div class="date-picker" data-testid="deadline-date-picker">
       <DatePicker
         is_time_selection={true}
         input_width={'350px'}

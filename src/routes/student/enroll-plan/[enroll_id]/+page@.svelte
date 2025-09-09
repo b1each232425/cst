@@ -98,7 +98,10 @@
 
   // 根据身份证计算出生日期
   function getBirthDateFromIdCard(idCard) {
-    if (!idCard) return null;
+    if (!idCard) {
+      formErrors.idCardFront = `身份证识别失败，请重新上传。`;
+      return null;
+    }
 
     let birthStr = '';
     if (idCard.length === 18) {
@@ -107,6 +110,7 @@
       const year = birthStr.slice(0, 4);
       const month = birthStr.slice(4, 6);
       const day = birthStr.slice(6, 8);
+      formErrors.idCardFront = '已成功识别身份证信息';
       return `${year}-${month}-${day}`;
     } else if (idCard.length === 15) {
       // 15位：第7到12位是出生日期 yyMMdd，前面加上19
@@ -114,8 +118,10 @@
       const year = '19' + birthStr.slice(0, 2);
       const month = birthStr.slice(2, 4);
       const day = birthStr.slice(4, 6);
+      formErrors.idCardFront = '已成功识别身份证信息';
       return `${year}-${month}-${day}`;
     } else {
+      formErrors.idCardFront = `身份证识别失败，请重新上传。`;
       return null; // 非法身份证号
     }
   }
@@ -142,7 +148,6 @@
           detail.idNumber = data.data.id_number;
           detail.idType = '居民身份证';
           detail.birthDate = getBirthDateFromIdCard(data.data.id_number);
-          formErrors.idCardFront = '已成功识别身份证信息';
         } else {
           formErrors.idCardFront = `身份证识别失败，请重新上传。`;
         }
@@ -171,28 +176,28 @@
         if (!user) throw new Error('用户数据为空');
 
         // 获取用户基础信息
-        detail.name = user.OfficialName || '';
+        detail.name = user.OfficialName;
         detail.gender = user.Gender;
-        detail.idType = user.IDCardType || '';
-        detail.idNumber = user.IDCardNo || '';
-        detail.birthDate = user.Birthday || '';
-        detail.email = user.Email || '';
-        detail.phone = user.MobilePhone || '';
-        detail.address = user.Addr || '';
-        province = user.Province || '';
-        city = user.City || '';
-        district = user.District || '';
+        detail.idType = user.IDCardType;
+        detail.idNumber = user.IDCardNo;
+        detail.birthDate = user.Birthday;
+        detail.email = user.Email;
+        detail.phone = user.MobilePhone;
+        detail.address = user.Addr;
+        province = user.Province;
+        city = user.City;
+        district = user.District;
 
         // 处理身份证文件路径
-        id_card_front_path = user.IDCardFile?.frontImgID || '';
-        id_card_back_path = user.IDCardFile?.backImgID || '';
+        id_card_front_path = user.IDCardFile?.frontImgID;
+        id_card_back_path = user.IDCardFile?.backImgID;
 
         // 获取用户权限信息
         user_info.Category = user.Category;
         user_info.Domains = user.Domains;
       })
       .catch((e) => {
-        console.log(e);
+        console.error(e);
       });
   }
 
@@ -244,7 +249,7 @@
           } else if (message === '提交') {
             enrollReq(enroll_status);
           } else if (message === '保存') {
-            toast.success(`${message}成功`);
+            enrollReq(enroll_status);
             goto('/student/enroll-plan');
           }
         })
@@ -464,9 +469,9 @@
       })
       .then((data) => {
         if (data.status !== 0) {
-          toast.error(`报名失败：${data.msg}`);
+          toast.error(`${status}失败：${data.msg}`);
         } else {
-          toast.success(`报名成功`);
+          toast.success(`${status}成功`);
           goto('/student/enroll-plan');
         }
       })
@@ -563,7 +568,7 @@
       <div class="info-row">
         <div class="info-item idcard-item required">
           <span class="label">身份证人像面</span>
-          <div class="value">
+          <div class="value" data-testid="idcard-front">
             <Upload
               previewUrl={id_card_front_path}
               show_label={false}
@@ -582,7 +587,7 @@
         </div>
         <div class="info-item idcard-item required">
           <span class="label">身份证国徽面</span>
-          <div class="value">
+          <div class="value" data-testid="idcard-back">
             <Upload
               previewUrl={id_card_back_path}
               show_label={false}
@@ -719,7 +724,7 @@
 
     <div class="action-row">
       <button class="btn cancel" onclick={handleCancle}>取消</button>
-      <button class="btn save" onclick={handleSave}>保存</button>
+      <button class="btn save" onclick={() => handleSave('00')}>保存</button>
       <button class="btn submit" onclick={() => handleSubmit('02')}>提交</button>
     </div>
   </div>
