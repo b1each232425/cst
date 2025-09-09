@@ -42,10 +42,10 @@
     children,
   } = $props();
 
-  const DIRECTIONS = ['top', 'bottom'];
+  const DIRECTIONS = ['top', 'bottom']; // 旧值
 
   // 旧值
-  let old_value = value;
+  let old_value;
 
   /**
    *   /**
@@ -105,30 +105,60 @@
     handerSelectValue: ({ selectValue, selectLabel }) => {
       if (multiple) {
         if (value.includes(selectValue)) {
-          // 创建新数组进行修改
+          old_value = JSON.parse(JSON.stringify(value));
           value = value.filter((v) => v !== selectValue);
           selectedLabel = selectedLabel.filter((l) => l !== selectLabel);
           changeValue(value, old_value);
-          old_value = value;
           return false;
         } else {
-          // 创建新数组进行修改
+          old_value = JSON.parse(JSON.stringify(value));
           value = [...value, selectValue];
           selectedLabel = [...selectedLabel, selectLabel];
           changeValue(value, old_value);
-          old_value = value;
           return true;
         }
       } else {
         value = selectValue;
         selectedLabel = [selectLabel];
         changeValue(value, old_value);
-        old_value = value;
         closeSelect();
+        old_value = value;
         return true;
       }
     },
   });
+
+  export const setValue = (v) => {
+    if (multiple) {
+      if (Array.isArray(v)) {
+        value = v;
+        selectedLabel = v
+          .map((item) => {
+            const option = OptionData.find((child) => child.selectValue == item);
+            return option ? option.selectLabel : '';
+          })
+          .filter(Boolean);
+      } else {
+        value = [v];
+        const option = OptionData.find((child) => child.selectValue == v);
+        selectedLabel = [option ? option.selectLabel : ''];
+      }
+      old_value = JSON.parse(JSON.stringify(value));
+    } else {
+      if (v === '') {
+        if (OptionData.some((item) => item.selectValue === '')) {
+          selectedLabel = OptionData.filter((item) => item.selectValue === '').map((item) => item.selectLabel);
+        } else {
+          selectedLabel = [placeholder];
+        }
+      } else {
+        value = v;
+        const option = OptionData.find((child) => child.selectValue == v);
+        selectedLabel = [option ? option.selectLabel : ''];
+      }
+      old_value = value;
+    }
+  };
 
   // 处理外部传入value
   $effect(() => {
@@ -166,11 +196,11 @@
    *  @param {number} index 取消选择的选项的索引
    * */
   function handleConcelOption(index) {
+    old_value = JSON.parse(JSON.stringify(value));
     const concelData = OptionData.find((child) => child.selectLabel == selectedLabel[index]);
     value = value.filter((v) => v !== concelData.selectValue);
     selectedLabel = selectedLabel.filter((l) => l !== selectedLabel[index]);
     changeValue(value, old_value);
-    old_value = value;
     closeSelect();
   }
 

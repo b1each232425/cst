@@ -954,6 +954,7 @@ describe('教师端监考详情页测试', () => {
         expect(MessageBox).toHaveBeenCalledWith({
           title: '确认操作',
           content: '你确定要该考生的异常状态标记为“考试异常”吗？',
+          on_close_by_click_outside: false,
           onConfirm: expect.any(Function),
           onCancel: expect.any(Function),
         });
@@ -1056,6 +1057,7 @@ describe('教师端监考详情页测试', () => {
         expect(MessageBox).toHaveBeenCalledWith({
           title: '确认操作',
           content: '你确定要批量标记为“缺考”吗？',
+          on_close_by_click_outside: false,
           onConfirm: expect.any(Function),
           onCancel: expect.any(Function),
         });
