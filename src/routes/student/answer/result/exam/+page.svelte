@@ -548,7 +548,13 @@
             title: '出错了，请回到考试列表刷新重新进入',
             show_cancel_button: false,
             onConfirm: () => {
-              window.location.href = '/student/exam';
+              if (student_id) {
+                // 当有 student_id 时返回上一级
+                window.history.back();
+              } else {
+                // 否则回到考试列表
+                window.location.href = '/student/exam';
+              }
             },
           });
         }
