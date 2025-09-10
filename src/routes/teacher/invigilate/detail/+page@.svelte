@@ -22,7 +22,6 @@
   import { formatTimestamp } from '$lib/utils/time_utils';
   import { page as appPage } from '$app/state';
   import { debounce } from '$lib/utils/optimize';
-
   // import Upload from '$lib/components/Upload/Upload.svelte';
 
   // TODO 监考员姓名
@@ -169,6 +168,8 @@
     '04': '较差',
   };
 
+  let select = null;
+
   let search_text = $state('');
   let exam_session_id = $state('');
   let exam_room_id = $state('');
@@ -313,14 +314,18 @@
   }
 
   // 更新考试情况
-  function updateRecord() {
+  function updateExamSessionStatus() {
     updateInfos('00', {
       Record: temp_exam_session_record,
       BasicEval: temp_exam_session_basic_eval,
     });
   }
 
-  const debounceUpdateRecord = debounce(updateRecord, 1000);
+  // 取消对考试情况的修改
+  function cancelUpdateExamSessionStatus() {
+    temp_exam_session_record = invigilation_info?.Record;
+    temp_exam_session_basic_eval = invigilation_info?.BasicEval;
+  }
 
   // 更新一个学生的状态
   function updateSingleExamineeStatus(examinee_id, status, old_status) {
@@ -330,6 +335,7 @@
     MessageBox({
       title: '确认操作',
       content: '你确定要该考生的异常状态标记为“' + EXAMINEE_STATUE_MAP[status] + '”吗？',
+      on_close_by_click_outside: false,
       onConfirm: () =>
         updateInfos('02', {
           Examinees: [examinee_id],
@@ -337,8 +343,7 @@
         }),
       onCancel: () => {
         // 回滚
-        examinee_list.find((e) => e.ExamineeID === examinee_id).Status =
-          old_status === '00' || old_status === '10' ? '' : old_status;
+        select?.setValue(old_status === '00' || old_status === '10' ? '' : old_status);
       },
     });
   }
@@ -351,12 +356,6 @@
     });
   }
 
-  // 取消对考试情况的修改
-  function cancelUpdateRecord() {
-    temp_exam_session_record = invigilation_info?.Record;
-    temp_exam_session_basic_eval = invigilation_info?.BasicEval;
-  }
-
   const debounceUpdateSingleExamineeRemark = debounce(updateSingleExamineeRemark, 500);
 
   // 批量更新学生的状态
@@ -364,6 +363,7 @@
     MessageBox({
       title: '确认操作',
       content: '你确定要批量标记为“' + EXAMINEE_STATUE_MAP[new_status] + '”吗？',
+      on_close_by_click_outside: false,
       onConfirm: () =>
         updateInfos(
           '02',
@@ -443,7 +443,7 @@
 <div class="detail">
   <!-- 顶部信息 -->
   <div class="header card">
-    <button onclick={goBack}>返回</button>
+    <button onclick={goBack}></button>
     <div class="info">
       <span class="exam-session-name">{invigilation_info.ExamSessionName}</span>
       <span class="number"
@@ -532,13 +532,13 @@
           {/if}
         </div>
         <!-- <div class="info-item">
-          <Upload><a href="javascript:void(0);">附件上传</a></Upload>
+          <Upload accept="image/*"><a href="javascript:void(0);">证明图片上传</a></Upload>
         </div> -->
       </div>
       {#if allow_updating && is_changed}
         <div class="options">
-          <button class="btn btn--info is-plain" onclick={cancelUpdateRecord}>取消</button>
-          <button class="btn btn--primary" onclick={updateRecord}>保存</button>
+          <button class="btn btn--info is-plain" onclick={cancelUpdateExamSessionStatus}>取消</button>
+          <button class="btn btn--primary" onclick={updateExamSessionStatus}>保存</button>
         </div>
       {/if}
     </div>
@@ -640,6 +640,7 @@
                     <td>
                       <div class="select" data-testid="single-select">
                         <Select
+                          bind:this={select}
                           value={Status}
                           changeValue={(val, old) => updateSingleExamineeStatus(ExamineeID, val, old)}
                           placeholder="无"
@@ -802,7 +803,7 @@
 
     .content {
       display: flex;
-      height: 70vh;
+      height: 75vh;
       justify-content: space-between;
       gap: 1rem;
 
@@ -827,7 +828,7 @@
             }
 
             .label {
-              width: 7rem;
+              width: 8rem;
               text-align: right;
             }
 

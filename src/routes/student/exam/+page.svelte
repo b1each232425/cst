@@ -608,6 +608,7 @@
                   }
 
                   &.score {
+                    white-space: nowrap;
                     &.pass {
                       color: green;
                       &.is-pass {
