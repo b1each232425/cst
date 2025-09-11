@@ -215,10 +215,10 @@
   // 操作映射表
   const ACTION_MAP = {
     '00': ['进入练习'],
-    '02': ['重新作答', '查看上次作答'],
-    '04': ['继续作答', '查看上次作答'],
+    '02': ['重新作答', '查看上次作答','错题练习'],
+    '04': ['继续作答', '查看上次作答','错题练习'],
     '06': ['等待批改完成'],
-    '08': ['查看上次作答'],
+    '08': ['查看上次作答','错题练习'],
     '10': ['继续作答'],
     '12': ['操作异常'],
   };
@@ -226,11 +226,11 @@
   // 操作码对应的事件
   const ACTION_HANDLERS = {
     '00': (index, id) => gotoPracticeDetail(id),
-    '02': (index, id) => (index === 0 ? gotoPracticeDetail(id) : gotoPracticeResult(id)),
-    '04': (index, id) => (index === 0 ? gotoPracticeDetail(id) : gotoPracticeResult(id)),
+    '02': (index, id) => (index === 0 ? gotoPracticeDetail(id) : (index === 1? gotoPracticeResult(id) : gotoPracticeError(id))),
+    '04': (index, id) => (index === 0 ? gotoPracticeDetail(id) : (index === 1? gotoPracticeResult(id) : gotoPracticeError(id))),
     '06': () => {},
     '08': (index, id) => gotoPracticeResult(id),
-    '10': (index, id) => gotoPracticeDetail(id),
+    '10': (index, id) => (index === 0 ? gotoPracticeDetail(id) : gotoPracticeError(id)),
     '12': () => {},
   };
 
@@ -250,6 +250,12 @@
   // 前往练习详情页进行作答
   function gotoPracticeDetail(practice_id) {
     goto(`/student/answer/practice?practice-id=${practice_id}`);
+  }
+
+  //前往错题界面
+  function gotoPracticeError(practice_id) {
+    //传给作答界面
+    goto(`/student/answer/practice?practice-id=${practice_id}&wrong-mode=true`);
   }
 
   // 判断练习的操作
@@ -427,7 +433,7 @@
               {#if current_practice_type === '00'}
                 <td>{practice.QuestionCount}</td>
                 <td>{hasLastRecord(practice.Action) ? practice.WrongCount : '--'}</td>
-                <td>{hasLastRecord(practice.Action) ? practice.TotalScore : '--'}</td>
+                <td>{hasLastRecord(practice.Action) ? (practice.TotalScore === null ? '--' : practice.TotalScore) : '--'}</td>
                 <td
                   >{practice.Action !== '00' &&
                   !(
@@ -438,7 +444,7 @@
                     ? practice.HighestScore
                     : '--'}</td
                 >
-                <td>{practice.PaperTotalScore}</td>
+                <td>{practice.PaperTotalScore ===null ? '--' : practice.PaperTotalScore}</td>
               {:else if current_practice_type === '02'}
                 <td> </td>
                 <td> </td>
@@ -458,7 +464,7 @@
                       practice.Action !== '06' &&
                       practice.Action !== '12'}
                     class:error={practice.Action === '12'}
-                    onclick={() => handleAction(practice.Action, index, practice.ID)}>{action}</button
+                    onclick={() => handleAction(practice.Action, index, practice.ID)}>{action === '错题练习'? (practice.WrongCount === 0 ? '': action): action}</button
                   >
                 {/each}</td
               >
