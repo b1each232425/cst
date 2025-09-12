@@ -19,18 +19,38 @@
     show_panel = false,
     onConfirm=(seleted_exam_invigilators) =>{},
     onCancel=()=>{},
-    selectedInvigilators=[],
+    selectedInvigilators = [], // 打开面板时已选监考员
   }=$props();
   
   let is_selection_mode=$state(false);
   let invigilator_list = $state([]);
-  let selected_invigilator_list = $derived(invigilator_list.filter(r => r.selected));
+  let selected_invigilators = $state([]); // 统一管理选中的监考员
+  
+  let filter_invigilator_list = $derived(
+    is_selection_mode
+      ? selected_invigilators            // 选择模式不前端过滤（走后端）
+      : selected_invigilators.filter(i =>
+          !name_filter_view || 
+          i.OfficialName.toLowerCase().includes(name_filter_view.toLowerCase()) ||
+          (i.MobilePhone && i.MobilePhone.includes(name_filter_view)) ||
+          (i.Account && i.Account.toLowerCase().includes(name_filter_view.toLowerCase()))
+        )
+  );
+  
+  // 查看模式前端分页切片
+let view_mode_paginated_invigilators = $derived(
+  filter_invigilator_list.slice(
+    (pagination_params.page - 1) * pagination_params.pageSize,
+    pagination_params.page * pagination_params.pageSize
+  )
+);
+
   /** 当前页是否已全部选中 */
   let is_total_selected = $derived(
-  invigilator_list.length > 0 &&
-  invigilator_list.every(r => r.selected)
-);
-  let initial_list = $state([]);
+    invigilator_list.length > 0 &&
+    invigilator_list.every(invigilator => selected_invigilators.some(i => i.ID === invigilator.ID))
+  );
+
   //搜索参数
   let search_params = $state({
     page: 1,
@@ -41,26 +61,97 @@
     fuzzyCondition:''
   });
 
-  let fuzzyCondition =$state();
   let pagination_params = $state({
     page: 1,
     pageSize: 10
   });
 
+  let invigilator_count = $state(0);
+  let name_search_timer = null;
+  let name_filter = $state("");
+  let name_filter_view = $state("");   // 仅查看模式用
+
   $effect(() => {
-    if (show_panel ) {
-      //selected_invigilator_list = selectedInvigilators;
+    if (show_panel && selectedInvigilators.length > 0) {
+      // 初始化选中的监考员列表
+      selected_invigilators = selectedInvigilators.map((invigilator, index) => ({
+        ...invigilator,
+        serialNumber: index + 1,
+      }));
     }
   });
 
-  function toggleSelectAll(e) {
-  const checked = e.target.checked;
-  invigilator_list.forEach(r => (r.selected = checked));
+  // 统一的添加监考员方法
+  function addToSelectedInvigilators(invigilator) {
+    if (!selected_invigilators.some(i => i.ID === invigilator.ID)) {
+      selected_invigilators.push({
+        ...invigilator
+      });
+    }
   }
 
-  function handleCheckBoxChange(invigilator,event){
-    if (event.target.type === 'checkbox') return;
-    invigilator.selected = !invigilator.selected;
+  // 统一的移除监考员方法
+  function removeFromSelectedInvigilators(invigilatorId) {
+    selected_invigilators = selected_invigilators.filter(i => i.ID !== invigilatorId);
+  }
+
+  // 切换单个监考员选择状态
+  function toggleSelectInvigilator(invigilator) {
+    const isSelected = selected_invigilators.some(i => i.ID === invigilator.ID);
+    
+    if (isSelected) {
+      removeFromSelectedInvigilators(invigilator.ID);
+    } else {
+      addToSelectedInvigilators(invigilator);
+    }
+    
+    // 更新invigilator_list中的selected状态
+    const invigilatorInList = invigilator_list.find(i => i.ID === invigilator.ID);
+    if (invigilatorInList) {
+      invigilatorInList.selected = !isSelected;
+    }
+  }
+
+  // 改进的全选/取消全选逻辑
+  function toggleSelectAll(e) {
+    const checked = e.target.checked;
+    
+    if (checked) {
+      invigilator_list.forEach((invigilator) => {
+        if (!selected_invigilators.some(i => i.ID === invigilator.ID)) {
+          addToSelectedInvigilators(invigilator);
+        }
+      });
+    } else {
+      invigilator_list.forEach((invigilator) => {
+        removeFromSelectedInvigilators(invigilator.ID);
+      });
+    }
+    
+    // 更新invigilator_list中的selected状态
+    invigilator_list.forEach(invigilator => {
+      invigilator.selected = selected_invigilators.some(i => i.ID === invigilator.ID);
+    });
+  }
+
+  function handleCheckBoxChange(invigilator, event) {
+    if (event.target.type === 'checkbox') {
+      event.stopPropagation();
+      return;
+    }
+    toggleSelectInvigilator(invigilator);
+  }
+
+  // 移除已选监考员
+  function removeSelectedInvigilator(invigilator) {
+    const targetId = invigilator.ID;
+    removeFromSelectedInvigilators(targetId);
+    
+    // 同时更新invigilator_list中对应项的selected状态
+    const invigilatorInList = invigilator_list.find(i => i.ID === targetId);
+    if (invigilatorInList) {
+      invigilatorInList.selected = false;
+    }
   }
 
   async function fetchExaminvigilators(){
@@ -68,7 +159,7 @@
       page: search_params.page.toString(),
       pageSize: search_params.pageSize.toString(),
       domain:'assess^examSupervisor',
-      fuzzyCondition:search_params.fuzzyCondition
+      fuzzyCondition: search_params.fuzzyCondition || ''
     }).toString();
     fetch(`/api/user?${query_params}`,{ 
       method:'GET',
@@ -81,13 +172,11 @@
       .then((result => {
         if(result.status === 0)
         {
-          invigilator_list = result.data.map(invigilator => ({
-        ...invigilator,
-        // 如果在外部传入的列表中，标记为选中
-        selected: selectedInvigilators.some(
-          selected => selected.ID === invigilator.ID
-        )
-        }));
+          invigilator_count = result.rowCount || result.data.length;
+          invigilator_list = result.data.map(i => ({
+            ...i,
+            selected: selected_invigilators.some(selected => selected.ID === i.ID)
+          }));
         }
         else{
           toast.error("获取列表失败"+result.msg);
@@ -100,11 +189,20 @@
       })
   }
 
-  async function searchInvigilators(value){
-    search_params.fuzzyCondition = value;
-    search_params.page = 1; 
-    fetchExaminvigilators();
+  function searchInvigilatorName(value){
+    search_params.fuzzyCondition = value || '';
+    if(name_search_timer)
+      clearTimeout(name_search_timer);
+    name_search_timer = setTimeout(() => {
+      fetchExaminvigilators();
+      name_search_timer = null;
+    }, 300);
   }
+
+  function filterInvigilatorName(value){
+    name_filter = value;
+  }
+
   onMount(async()=>{
     await fetchExaminvigilators();
   })
@@ -129,19 +227,37 @@
         <!-- 查看选择后的列表 -->
         <div class="selected-exam-invigilator-container">
           <div class="action-container">
-            <div class="exam-invigilator-search-container">
+            <div class="exam-invigilator-search-container {!is_selection_mode?' ':'hideButton'}">
               <InputBox
               label={'搜索监考员'} 
               placeholder={'请输入手机号或姓名'}
-              onInput={searchInvigilators}
-              
+              bind:value={name_filter_view}
               clearable={true}
               >
             </InputBox>
 
             </div>
+
+            <div class="exam-invigilator-search-container {is_selection_mode?' ':'hideButton'}">
+              <InputBox
+              label={'搜索监考员'} 
+              placeholder={'请输入手机号或姓名'}
+              clearable={true}
+              onInput={searchInvigilatorName}
+              >
+            </InputBox>
+
+            </div>
             <div class="button-group">
-                <button class="{is_selection_mode ? 'btn btn--info' : 'btn btn--primary'} " onclick={() => is_selection_mode=!is_selection_mode}>{is_selection_mode ? '返回监考员列表' : '添加监考员'}</button>
+                <button class="{is_selection_mode ? 'btn btn--info' : 'btn btn--primary'} " 
+                onclick={()=>{
+                  is_selection_mode=!is_selection_mode
+                  if(is_selection_mode)
+                  {
+                    fetchExaminvigilators();
+                  }
+                  }}>
+                {is_selection_mode ? '返回监考员列表' : '添加监考员'}</button>
             </div>
           </div>
 
@@ -155,21 +271,23 @@
                   <th>账号</th>
                   <th>姓名</th>
                   <th>性别</th>
+                  <th>操作</th>
                 </tr>
               </thead>
               <tbody>
-                {#each selected_invigilator_list as selected_invigilator, index}
+                {#each view_mode_paginated_invigilators as selected_invigilator, index}
                   <tr class="exam_invigilator">
                     <td>{selected_invigilator.MobilePhone || "--"}</td>
                     <td>{selected_invigilator.Account}</td>
                     <td>{selected_invigilator.OfficialName}</td>
                     <td>{selected_invigilator.Gender || "--"}</td>
+                    <td><button class="view-btn" onclick={()=>removeSelectedInvigilator(selected_invigilator)}>移除</button></td>
                   </tr>
                   {/each}
               </tbody>
             </table>
 
-            <div class ="{selected_invigilator_list.length === 0 ? 'no-data-text' : 'hideButton'}" > 
+            <div class ="{selected_invigilators.length === 0 ? 'no-data-text' : 'hideButton'}" > 
               <Empty text = "暂无数据"/>
             </div>
           </div>
@@ -203,6 +321,10 @@
                         type="checkbox"
                         class="custom-checkbox"
                         checked={invigilator.selected}
+                        onchange={(e) => {
+                          e.stopPropagation();
+                          toggleSelectInvigilator(invigilator);
+                        }}
                         />
                     </td>
                     <td>{invigilator.MobilePhone || "--"}</td>
@@ -225,7 +347,7 @@
     <div class="pagination-container {!is_selection_mode ? ' ' : 'hideButton'}">
 
             <Pagination
-              total_items={selected_invigilator_list.length}
+              total_items={filter_invigilator_list.length}
               current_page={pagination_params.page}
               page_size_options={[10, 20, 50]}
               on:pageChange={(e) => {
@@ -240,20 +362,20 @@
     
     <div class="pagination-container {is_selection_mode ? ' ' : 'hideButton'}">
           <span style="font-size: 12px; margin-right:10px">
-            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_invigilator_list.length}</span> 条
+            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_invigilators.length}</span> 条
           </span>
           <Pagination
-            total_items={invigilator_list.length}
-            current_page={pagination_params.page}
+            total_items={invigilator_count}
+            current_page={search_params.page}
             page_size_options={[10, 20, 50]}
             on:pageChange={(e) => {
-              pagination_params.page = e.detail;
-              is_total_selected = false;
+              search_params.page = e.detail;
+              fetchExaminvigilators();
             }}
             on:pageSizeChange={(e) => {
-              pagination_params.pageSize = e.detail;
-              pagination_params.page = 1; // 重置到第一页
-              is_total_selected = false;;
+             search_params.pageSize = e.detail;
+             search_params.page = 1; // 重置到第一页
+             fetchExaminvigilators();
             }}
           ></Pagination>
         </div>
@@ -264,17 +386,13 @@
                     show_panel = false;
                     search_params.page = 1;
                     is_selection_mode = false;
-                    invigilator_list.forEach(invigilator => {
-                    invigilator.selected = selectedInvigilators.some(
-                      selected => selected.ID === invigilator.ID
-                    );
-                  });           
+                     selected_invigilators = [];
                     onCancel();
                 }}>取消</button>
                 <button class="btn btn--primary is-plain" onclick={() => {
                     show_panel = false;
                     is_selection_mode = false;
-                    onConfirm(selected_invigilator_list);
+                    onConfirm(selected_invigilators);
                 }}>确定</button>
         </div>
     </div>
@@ -524,6 +642,12 @@
     align-items: center;
     margin: 16px 0;
     padding: 0 16px;
+  }
+
+  .view-btn{
+    all:unset;
+    color:var(--blue);
+    cursor: pointer;
   }
     
 </style>

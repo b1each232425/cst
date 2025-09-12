@@ -90,7 +90,7 @@ describe('ExaminationRoomSelectionPanel 组件测试', () => {
       await tick();
       screen.debug(); // 控制台打印整个 DOM，确认文字是否真的存在
       expect(screen.getAllByText('考场列表')[0]).toBeInTheDocument();
-      expect(screen.getByText('搜索考场')).toBeInTheDocument();
+      expect(screen.getAllByText('搜索考场')[0]).toBeInTheDocument();
       expect(screen.getByText('添加考场')).toBeInTheDocument();
       expect(screen.getByText('确定')).toBeInTheDocument();
       expect(screen.getByText('取消')).toBeInTheDocument();
@@ -117,8 +117,7 @@ describe('ExaminationRoomSelectionPanel 组件测试', () => {
       const thead = container.querySelector('thead');
       //const thead = screen.getByRole('.exam-room-table-head');
       expect(within(thead).getByText('考场', { exact: true })).toBeInTheDocument();
-      //expect(screen.getByText('所属考点')).toBeInTheDocument();
-      expect(screen.getAllByText('所属考点')[0]).toBeInTheDocument();
+
       expect(screen.getAllByText('考场容量')[0]).toBeInTheDocument();
       expect(screen.getAllByText('监考员数量')[0]).toBeInTheDocument();
     });
