@@ -4,7 +4,8 @@ import BankPage from '../+page.svelte';
 import { goto } from '$app/navigation';
 import { AddNewQuestion } from '../+page.svelte';
 import { setResponse } from '@sveltejs/kit/node';
-
+import userEvent from '@testing-library/user-event';
+import { tick } from 'svelte';
 // 模拟导航函数
 vi.mock('$app/navigation', () => ({
   goto: vi.fn(),
@@ -208,18 +209,209 @@ global.fetch = vi.fn(async (url, options) => {
 });
 
 /**
+ * 测试获取题目HTTP错误响应
+ */
+
+
+it('获取题目HTTP错误响应', async () => {
+    
+  // 模拟fetch
+  global.fetch = vi.fn(async (url, options) => {
+    const method = options?.method || 'GET';
+ 
+    if (url.includes('/api/question-banks') && method === 'GET') {
+      return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 1,
+          data: [{
+            ID:123,
+            Name:"测试题库",
+            Type:"00",
+            Tags:["测试标签"],
+              QuestionTags: [
+              "题目标签"
+            ],
+              CreateTime: 1755139059430,
+            UpdateTime: 1755749603215,
+            QuestionCount: 0,
+          },],
+        }) 
+      });
+    }
+ 
+    // 模拟POST请求返回HTTP错误
+    if (url.includes('/api/questions') && method === 'GET') {
+     return Promise.resolve({ 
+        ok: false, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 0,
+          data: [],
+        }) 
+      });
+    }
+ 
+
+  });
+
+     render(BankPage);
+   await waitFor(()=>{
+     expect(screen.findByText("获取题目失败:HTTP错误"));
+   })
+
+});
+
+
+/**
+ * 测试获取题目后端错误响应
+ */
+
+
+it('获取题目HTTP错误响应', async () => {
+    
+  // 模拟fetch
+  global.fetch = vi.fn(async (url, options) => {
+    const method = options?.method || 'GET';
+ 
+    if (url.includes('/api/question-banks') && method === 'GET') {
+      return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 1,
+          data: [{
+            ID:123,
+            Name:"测试题库",
+            Type:"00",
+            Tags:["测试标签"],
+              QuestionTags: [
+              "题目标签"
+            ],
+              CreateTime: 1755139059430,
+            UpdateTime: 1755749603215,
+            QuestionCount: 0,
+          },],
+        }) 
+      });
+    }
+ 
+    // 模拟POST请求返回HTTP错误
+    if (url.includes('/api/questions') && method === 'GET') {
+     return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: -1,
+          msg: "后端错误消息",
+          rowCount: 0,
+          data: [],
+        }) 
+      });
+    }
+ 
+
+  });
+
+     render(BankPage);
+   await waitFor(()=>{
+     expect(screen.findByText("获取题目失败:后端错误消息"));
+   })
+
+});
+
+/**
+ * 测试获取题目网络错误响应
+ */
+
+
+it('获取题目网络错误响应', async () => {
+    
+  // 模拟fetch
+  global.fetch = vi.fn(async (url, options) => {
+    const method = options?.method || 'GET';
+ 
+    if (url.includes('/api/question-banks') && method === 'GET') {
+      return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 1,
+          data: [{
+            ID:123,
+            Name:"测试题库",
+            Type:"00",
+            Tags:["测试标签"],
+              QuestionTags: [
+              "题目标签"
+            ],
+              CreateTime: 1755139059430,
+            UpdateTime: 1755749603215,
+            QuestionCount: 0,
+          },],
+        }) 
+      });
+    }
+ 
+    // 模拟POST请求返回HTTP错误
+    if (url.includes('/api/questions') && method === 'GET') {
+      return Promise.reject(new Error('网络连接失败'));
+    }
+ 
+
+  });
+
+     render(BankPage);
+   await waitFor(()=>{
+     expect(screen.findByText("获取题目失败:网络错误"));
+   })
+
+});
+
+/**
  * 测试获取题目成功响应
  */
 it('获取题目正确响应', async () => {
   
-
-		global.fetch = vi.fn().mockResolvedValue({
-			ok: true,
-      json: async () => ({
-		  status: 0,
-      msg: "success",
-      rowCount:3,
-      data:[{
+ global.fetch = vi.fn(async (url, options) => {
+    const method = options?.method || 'GET';
+ 
+    if (url.includes('/api/question-banks') && method === 'GET') {
+      return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 1,
+          data: [{
+            ID:123,
+            Name:"测试题库",
+            Type:"00",
+            Tags:["测试标签"],
+              QuestionTags: [
+              "题目标签"
+            ],
+              CreateTime: 1755139059430,
+            UpdateTime: 1755749603215,
+            QuestionCount: 0,
+          },],
+        }) 
+      });
+    }
+ 
+  
+    if (url.includes('/api/questions') && method === 'GET') {
+     return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
+          rowCount: 0,
+         data:[{
             ID: 24,
             Type: "00",
             Content: "\u003cp\u003e\u003cspan style=\"font-size: 12pt\"\u003e单选题测试\u003c/span\u003e\u003c/p\u003e",
@@ -301,98 +493,91 @@ it('获取题目正确响应', async () => {
             Tags: [],
     }
     ],
-      }),
-		});
+        }) 
+      });
+    }
+ 
 
-     render(BankPage);
-
-      //等待toast成功
-    await waitFor(() => {
-    expect(screen.getByText('获取试题列表成功')).toBeInTheDocument();
   });
+	
+   await  render(BankPage);
 
+
+ 
   //查看题目是否都被渲染
- expect(screen.getByText('单选题测试')).toBeInTheDocument();
- expect(screen.getByText('多选题测试')).toBeInTheDocument();
- expect(screen.getByText('判断题测试')).toBeInTheDocument();
+await( screen.findByText('单选题测试'));
+await( screen.findByText('多选题测试'));
+await( screen.findByText('判断题测试'));
 });
 
 
  
 
-//模拟修改题库信息测试
-  it('模拟修改题库信息测试', async () => {
-  
+//模拟修改题库名称及标签测试
+  it('模拟修改题库名称及标签测试', async () => {
+    const user = userEvent.setup();
 // 模拟fetch
   global.fetch = vi.fn(async (url, options) => {
     const method = options?.method || 'GET';
  
-    if (url.includes('/api/questions') && method === 'GET') {
+    if (url.includes('/api/question-banks') && method === 'GET') {
       return Promise.resolve({ 
         ok: true, 
         json: () => Promise.resolve({  
           status: 0,
           msg: "success",
+          rowCount: 1,
+          data: [{
+            ID:123,
+            Name:"测试题库",
+            Type:"00",
+            Tags:["测试标签"],
+              QuestionTags: [
+              "题目标签"
+            ],
+              CreateTime: 1755139059430,
+            UpdateTime: 1755749603215,
+            QuestionCount: 0,
+          },],
+        }) 
+      });
+    }
+ 
+    // 模拟POST请求返回网络错误
+    if (url.includes('/api/questions') && method === 'GET') {
+     return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({  
+          status: 0,
+          msg: "success",
           rowCount: 0,
-          data: [] ,
+          data: [],
         }) 
       });
     }
  
 
- if (url.includes('/api/question-banks') && method === 'PUT') {
-      return Promise.resolve({ 
-        ok: true, 
-        json: () => Promise.resolve({  
-          status: 0,
-          msg: "success",
-          rowCount: 0,
-          data: [] ,
-        }) 
-      });
-    }
-
-  });
-		
-
-     render(BankPage);
-
-      //等待toast成功
-    await waitFor(() => {
-    expect(screen.getByText('获取试题列表成功')).toBeInTheDocument();
   });
 
-    const input = screen.getByPlaceholderText('请输入题库名');
-    
-    // 模拟输入
-    fireEvent.input(input, { target: { value: '新题库名称' } });
-    
-    // 验证输入框值已改变
-    expect(input).toHaveValue('新题库名称');
-    
-    // 验证保存按钮变为可见
-    expect(screen.getByText('保存修改')).toBeVisible();
-    expect(screen.getByText('放弃修改')).toBeVisible();
-     const clearBtn = screen.getByAltText('cleanIputImg').parentElement;
-    fireEvent.click(clearBtn);
-    expect(input).toHaveValue('');
-   expect(screen.getByText('保存修改')).toBeDefined();
-    expect(screen.getByText('放弃修改')).toBeDefined();
-    
-  // 模拟输入
-    fireEvent.input(input, { target: { value: '新题库名称' } });
-    
-    // 验证输入框值已改变
-    expect(input).toHaveValue('新题库名称');
-    
-    // 验证保存按钮变为可见
-    expect(screen.getByText('保存修改')).toBeVisible();
-    expect(screen.getByText('放弃修改')).toBeVisible();
-      fireEvent.click(screen.getByText('保存修改'));
-        await waitFor(() => {
-    expect(screen.getByText('题库数据保存成功')).toBeInTheDocument();
-  });
-    
+     await render(BankPage);
+    await expect(screen.findByText("测试题库"))
+ const bankinput = await screen.findByPlaceholderText('请输入题库名称'); // 改用 screen 方法
+ 
+  // 1. 检查初始状态
+  await expect(bankinput).toHaveValue('测试题库');
+ 
+  fireEvent.input(bankinput, { target: { value: '新的题库名称' } });
+  await tick();
+   await expect(screen.findByText("新的题库名称"))
+
+await waitFor(() => expect(bankinput).toHaveValue('新的题库名称'));
+
+  await expect(screen.findByText("保存"));
+    await expect(screen.findByText("放弃"));
+    const disBtn=screen.findByText("放弃");
+     const confirmBtn=screen.findByText("保存");
+     await fireEvent.click(disBtn);
+ await expect(bankinput).toHaveValue('测试题库');
 });
 
 

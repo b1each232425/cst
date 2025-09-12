@@ -575,7 +575,7 @@ import '$lib/components/Input/index.scss';
         // 更新题库原始数据
         origin_bank_data.name = bank_name;
         origin_bank_data.tags = bank_tags;
-        bank_update_time = new Date(new Date().getTime()).toLocaleString;
+        bank_update_time = new Date().getTime()
 
         // 隐藏保存按钮
         if (bank_data_save_btn && bank_data_not_save_btn) {
@@ -909,7 +909,7 @@ o888o o888o   "888" o888o o888o o888o o888o
             <input
               type="input"
               class="bankNameInput"
-              placeholder="请输入题库名"
+              placeholder="请输入题库名称"
               bind:this={bank_name_input}
               bind:value={bank_name}
               oninput={onQuestionBankDataChange}
