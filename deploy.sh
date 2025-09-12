@@ -3,7 +3,7 @@
  # @Author: Zpekii 3156752796@qq.com
  # @Date: 2025-04-05 22:41:06
  # @LastEditors: Zpekii 3156752796@qq.com
- # @LastEditTime: 2025-07-27 03:45:19
+ # @LastEditTime: 2025-09-12 07:24:01
  # @FilePath: /exam/deploy.sh
  # @Description: 
  # 
@@ -25,8 +25,13 @@ export PNPM_HOME=/var/data/pnpm
 
 mkdir -p $PNPM_HOME
 
+APP_NAME=$1
+if [ -z "$APP_NAME" ]; then
+  APP_NAME=devmentor
+fi
+
 DEPLOY_ROOT_PATH=/var/deploy/
-DEPLOY_TARGET_PATH=/var/deploy/devmentor/fe
+DEPLOY_TARGET_PATH=/var/deploy/$APP_NAME/fe
 
 export PATH="$GOPATH/bin:$GOROOT/bin:$NODE_HOME/bin:$PNPM_HOME:$BIN_PATH/bin:$BIN_PATH/docker:$PATH"
 

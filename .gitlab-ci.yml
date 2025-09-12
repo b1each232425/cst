@@ -1,7 +1,7 @@
 stages: # List of stages for jobs, and their order of execution
   - deploy
 
-deploy-3min-fe:
+deploy-3min-release-fe:
   only:
     refs:
       - main
@@ -14,14 +14,14 @@ deploy-3min-fe:
     - nodejs-build
   environment: production
   script:
-    - chmod +x deploy_p.sh
-    - ./deploy_p.sh
+    - chmod +x deploy.sh
+    - ./deploy.sh 3min
 
-
-deploy-devmentor-fe:
+deploy-3min-pre-release-fe:
   only:
     refs:
-      - /^v\d+\.\d+\.\d+$/
+      - main
+      - master
   stage: deploy
 
   when: manual
@@ -31,4 +31,20 @@ deploy-devmentor-fe:
   environment: production
   script:
     - chmod +x deploy.sh
-    - ./deploy.sh
+    - ./deploy.sh 3min_p
+
+
+deploy-devmentor-fe:
+  only:
+    refs:
+      - /^release/v\d+\.\d+\.\d+.*$/
+  stage: deploy
+
+  when: manual
+
+  tags:
+    - nodejs-build
+  environment: production
+  script:
+    - chmod +x deploy.sh
+    - ./deploy.sh devmentor
