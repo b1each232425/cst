@@ -4,6 +4,8 @@
   import { isValidPhoneNumber, parsePhoneNumberWithError } from 'libphonenumber-js';
   import { toast } from '$lib/components/Toast/Toast.js';
   import { baseNavItems } from '$lib/stores/modules/permission.js';
+  import Select from '$lib/components/Select/Select.svelte';
+  import Option from '$lib/components/Select/Option.svelte';
 
   // 登录页面组件
   let credential = $state('');
@@ -254,7 +256,7 @@
         }
 
         const myDomains = data.data.DomainObjects;
-        availableRoles = myDomains;
+        availableRoles = myDomains.filter((domain) => domain.Domain.includes('^'));
 
         switch (myDomains.length) {
           case 0:
@@ -448,7 +450,7 @@
             <div class="input-wrapper">
               <div class="phone-input-container" class:error={!isPhoneValid}>
                 <div class="country-code-wrapper">
-                  <select
+                  <!-- <select
                     bind:value={selectedCountryCode}
                     class="country-code-select-hidden"
                     onchange={handleCountryCodeChange}
@@ -456,9 +458,16 @@
                     {#each countryCodes as country}
                       <option value={country.code}>{country.code}{country.name}</option>
                     {/each}
-                  </select>
-                  <span class="country-code-display">{selectedCountryCode}</span>
-                  <img src="/common/arrow-down.svg" alt="下拉箭头" class="country-code-arrow" />
+                  </select> -->
+                  <!-- <span class="country-code-display">{selectedCountryCode}</span> -->
+                  <!-- <img src="/common/arrow-down.svg" alt="下拉箭头" class="country-code-arrow" /> -->
+                  <div class="country-code-select-wrapper">
+                    <Select value={selectedCountryCode} onchange={handleCountryCodeChange}>
+                      {#each countryCodes as country}
+                        <Option value={country.code} label={country.code + country.name}></Option>
+                      {/each}
+                    </Select>
+                  </div>
                 </div>
                 <div class="input-divider"></div>
                 <input
@@ -487,11 +496,18 @@
           {#if activeTab === 'id'}
             <div class="input-wrapper">
               <div class="id-input-container">
-                <select bind:value={selectedIdType} class="id-type-select">
+                <!-- <select bind:value={selectedIdType} class="id-type-select">
                   {#each idTypes as idType}
                     <option value={idType}>{idType}</option>
                   {/each}
-                </select>
+                </select> -->
+                <div class="id-type-select-wrapper">
+                  <Select value={selectedIdType}>
+                    {#each idTypes as idType}
+                      <Option value={idType} label={idType}></Option>
+                    {/each}
+                  </Select>
+                </div>
                 <div class="input-divider"></div>
                 <input type="text" bind:value={idNumber} placeholder="请输入证件号" class="id-input" />
               </div>
@@ -736,6 +752,16 @@
     font-size: 1rem;
   }
 
+  .country-code-select-wrapper {
+    width: 8rem;
+    height: 100%;
+  }
+
+  .id-type-select-wrapper {
+    width: 8rem;
+    height: 100%;
+  }
+
   /* 手机号输入容器 */
   .phone-input-container {
     display: flex;
@@ -751,40 +777,6 @@
     height: 100%;
     display: flex;
     align-items: center;
-  }
-
-  .country-code-select-hidden {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    border: none;
-    outline: none;
-    background: transparent;
-    font-size: 1rem;
-  }
-
-  .country-code-display {
-    pointer-events: none;
-    font-size: 1rem;
-    color: #333;
-    padding-right: 0.5rem;
-    white-space: nowrap;
-  }
-
-  .country-code-arrow {
-    pointer-events: none;
-    width: 1.3rem;
-    height: 1.3rem;
-    margin-left: 0.5rem;
-    transition: opacity 0.2s;
-  }
-
-  .country-code-wrapper:hover .country-code-arrow {
-    opacity: 0.8;
   }
 
   .input-divider {
@@ -816,18 +808,6 @@
     align-items: center;
     gap: 0;
     width: 100%;
-    height: 100%;
-  }
-
-  .id-type-select {
-    border: none;
-    outline: none;
-    background: transparent;
-    font-size: 1rem;
-    color: #333;
-    cursor: pointer;
-    padding-right: 0.5rem;
-    min-width: 4rem;
     height: 100%;
   }
 
@@ -1105,11 +1085,6 @@
       min-width: 2.8rem;
     }
 
-    .country-code-display,
-    .id-type-select {
-      font-size: 0.9rem;
-    }
-
     .input-divider {
       height: 1.2rem;
       margin: 0 0.5rem;
@@ -1135,14 +1110,8 @@
       gap: 0;
     }
 
-    .country-code-wrapper,
-    .id-type-select {
+    .country-code-wrapper {
       min-width: 2.2rem;
-    }
-
-    .country-code-display,
-    .id-type-select {
-      font-size: 0.85rem;
     }
 
     .form-input,
