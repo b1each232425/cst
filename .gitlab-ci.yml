@@ -20,8 +20,7 @@ deploy-3min-release-fe:
 deploy-3min-pre-release-fe:
   only:
     refs:
-      - main
-      - master
+      - /^release/v\d+\.\d+\.\d+.*$/
   stage: deploy
 
   when: manual
@@ -37,7 +36,7 @@ deploy-3min-pre-release-fe:
 deploy-devmentor-fe:
   only:
     refs:
-      - /^release/v\d+\.\d+\.\d+.*$/
+      - develop
   stage: deploy
 
   when: manual
