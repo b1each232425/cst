@@ -163,6 +163,18 @@
   async function getStudentAnswer() {
     if (ifPreview) return;
 
+
+    // --- 新增：如果外层已经把 StudentAnswer 放到 question.Answer，优先使用它（避免后端请求）
+    if (question && Array.isArray(question.Answer)) {
+      console.log('已有答案');
+      student_answer.answer = Array.isArray(question.Answer) ? question.Answer : initialAnswer(question);
+      if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {
+        await updateRichTextEditors();
+      }
+      return;
+    }
+
+
     // 先尝试从 localStorage 读取（优先使用考试专用 key，其次使用练习 key）
     try {
       // 尝试考试 key：exam_answers_{exam_id}_{exam_session_id}_{examinee_id}
@@ -213,8 +225,11 @@
     } catch (e) {
       console.warn('读取本地答案失败，继续请求后端', e);
     }
-
-    console.log('尝试从后端获取答案2');
+    
+    if (!query_url) {
+      // query_url 为空时不发请求
+      return;
+    }
 
     try {
       const res = await fetch(`${query_url}&question_id=${question.ID}`, {

@@ -291,10 +291,22 @@
       }
 
       groupQuestions.forEach((q) => {
+        // 优先使用后端返回的 StudentAnswer 字段；兼容旧的 Answer 字段
+        const studentAns = q.StudentAnswer?.answer ?? q.Answer ?? null;
+        // 规范为数组（Question 组件和页面其它逻辑依赖 Answer 为数组判断）
+        const normalizedAnswer = Array.isArray(studentAns)
+          ? studentAns
+          : studentAns === null || studentAns === undefined
+          ? []
+          : [studentAns];
+
+
         result.push({
           ...q,
           group_name: groupInfo.Name,
           group_score: totalScore,
+          // 保证字段名为页面和组件期望的 Answer
+          Answer: normalizedAnswer,
         });
       });
     });
@@ -494,7 +506,6 @@
     // 获取url中的考试参数
     practice_id = page.url.searchParams.get('practice-id');
     wrong_mode = page.url.searchParams.get('wrong-mode') === 'true';
-    console.log('wrong_mode:', wrong_mode);
 
     //如果practice-id为空则从local store中取题目
     if (!practice_id) {
@@ -570,7 +581,7 @@
             toast.error(`服务器错误！${data.msg || ''}`, 2000);
             throw new Error(data.msg);
           }
-           console.log('接口返回数据:', data);
+       //    console.log('接口返回数据:', data);
 
           // 赋值到变量
           //题目
@@ -588,7 +599,11 @@
 
           load_success = true;
           ifPreview = false;
-          query_url = `/api/respondent?practice_submission_id=${encodeURIComponent(practice_submission_id || '')}`;
+          if (!wrong_mode) {
+            query_url = `/api/respondent?practice_submission_id=${encodeURIComponent(practice_submission_id || '')}`;
+          } else {
+            query_url = ''; // 传空字符串或 null 给 Question 组件，避免触发额外拉取
+          }
 
           //加载题目
           examQuestions.length = 0;
