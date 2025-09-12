@@ -36,7 +36,7 @@
   const uploadHandler = createUploadHandler('/exam_answer');
 
   // 组件属性
-  let { question = $bindable(), ifPreview, query_url, saveAnswer, editor_height } = $props();
+  let { question = $bindable(), ifPreview, query_url, saveAnswer, editor_height ,exam_id,exam_session_id,examinee_id,practice_id,practice_submission_id} = $props();
 
   // 状态管理
   let question_id = $state(question.ID);
@@ -163,69 +163,85 @@
   async function getStudentAnswer() {
     if (ifPreview) return;
 
+    
+    // 1. 先尝试从 localStorage 读取（优先考试 key，其次 practice key）
+    try {
+      const examId = exam_id || 'preview';
+      const examSession = exam_session_id || 'preview';
+      // examinee id 不从 URL 获取，默认为 preview
+      const examinee = examinee_id || 'preview';
+      const examStorageKey = `exam_answers_${examId}_${examSession}_${examinee}`;
 
-    // --- 新增：如果外层已经把 StudentAnswer 放到 question.Answer，优先使用它（避免后端请求）
+      let raw = localStorage.getItem(examStorageKey);
+
+      // practice key：仅使用传入的 props，不再从 URL 回退
+      const pid = practice_id || 'preview';
+      const psid = practice_submission_id || 'preview';
+      const practiceStorageKey = `practice_answers_${pid}_${psid}`;
+
+      if (!raw) raw = localStorage.getItem(practiceStorageKey);
+
+      if (raw) {
+        const storedAnswers = JSON.parse(raw || '{}');
+        const entry = storedAnswers[String(question.ID)];
+        if (entry && entry.answer !== undefined) {
+          student_answer.answer = Array.isArray(entry.answer) ? entry.answer : initialAnswer(question);
+          if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {
+            await updateRichTextEditors();
+          }
+          return; // 命中 localStorage，直接返回
+        }
+      }
+    } catch (e) {
+      console.warn('读取本地答案失败，继续后续逻辑', e);
+    }
+
+    // 2. 父组件已把后端 StudentAnswer 放到 question.Answer 时，优先写入 localStorage 并初始化组件
     if (question && Array.isArray(question.Answer)) {
-      console.log('已有答案');
-      student_answer.answer = Array.isArray(question.Answer) ? question.Answer : initialAnswer(question);
+      const ansArr = Array.isArray(question.Answer) ? question.Answer : initialAnswer(question);
+      const hasRealValue = ansArr.length > 0 && !ansArr.every((v) => v === '' || v === null || v === undefined);
+
+      try {
+        const finalPid = practice_id || 'preview';
+        const finalPsid = practice_submission_id || 'preview';
+        const storageKey = `practice_answers_${finalPid}_${finalPsid}`;
+
+        // 读取并合并写回 localStorage（只写本地，不触发后端保存）
+        let stored = {};
+        try {
+          const raw = localStorage.getItem(storageKey);
+          stored = raw ? JSON.parse(raw) : {};
+        } catch (e) {
+          stored = {};
+        }
+
+        // 如果本地已有非空答案且后端返回为空，则不覆盖本地答案
+        const existing = stored[String(question.ID)];
+        const existingHasValue =
+          existing &&
+          Array.isArray(existing.answer) &&
+          !(existing.answer.length === 0 || existing.answer.every((v) => v === '' || v === null || v === undefined));
+
+        if (!existingHasValue || hasRealValue) {
+          stored[String(question.ID)] = {
+            answer: ansArr,
+            attachment_paths: existing?.attachment_paths || [],
+            updated_at: Date.now(),
+          };
+          localStorage.setItem(storageKey, JSON.stringify(stored));
+        }
+      } catch (e) {
+        console.warn('写入本地答案失败', e);
+      }
+
+      // 初始化组件状态并更新编辑器
+      student_answer.answer = ansArr;
       if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {
         await updateRichTextEditors();
       }
       return;
     }
 
-
-    // 先尝试从 localStorage 读取（优先使用考试专用 key，其次使用练习 key）
-    try {
-      // 尝试考试 key：exam_answers_{exam_id}_{exam_session_id}_{examinee_id}
-      let exam_id_from_url = 'preview';
-      let exam_session_id_from_url = 'preview';
-      let examinee_id_from_url = 'preview';
-      try {
-        const pageParams = new URLSearchParams(window.location.search);
-        exam_id_from_url = pageParams.get('exam-id') || exam_id_from_url;
-        exam_session_id_from_url = pageParams.get('exam-session-id') || exam_session_id_from_url;
-        examinee_id_from_url = pageParams.get('examinee-id') || examinee_id_from_url;
-      } catch (e) {}
-
-      const examStorageKey = `exam_answers_${exam_id_from_url}_${exam_session_id_from_url}_${examinee_id_from_url}`;
-      let raw = localStorage.getItem(examStorageKey);
-
-      // 若考试 key 未命中，再尝试 practice key（兼容练习页面）
-      if (!raw) {
-        let practice_id = 'preview';
-        let practice_submission_id = 'preview';
-        try {
-          const pageParams2 = new URLSearchParams(window.location.search);
-          practice_id = pageParams2.get('practice-id') || pageParams2.get('practice_id') || practice_id;
-          practice_submission_id = pageParams2.get('practice_submission_id') || practice_submission_id;
-        } catch (e) {}
-        if ((practice_id === 'preview' || practice_submission_id === 'preview') && query_url) {
-          const params = new URLSearchParams((query_url || '').split('?')[1] || '');
-          practice_submission_id = params.get('practice_submission_id') || practice_submission_id;
-          practice_id = params.get('practice_id') || practice_id;
-        }
-        const practiceStorageKey = `practice_answers_${practice_id}_${practice_submission_id}`;
-        raw = localStorage.getItem(practiceStorageKey);
-      }
-
-      if (raw) {
-        const storedAnswers = JSON.parse(raw || '{}');
-        const entry = storedAnswers[String(question.ID)];
-        if (entry && entry.answer !== undefined) {
-          // 确保 answer 为数组（与题型初始化一致），避免后续 .includes 报错
-          student_answer.answer = Array.isArray(entry.answer) ? entry.answer : initialAnswer(question);
-          // 对于富文本编辑器题型，更新编辑器内容
-          if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {
-            await updateRichTextEditors();
-          }
-          return; // 找到本地答案，直接返回，不再调用接口
-        }
-      }
-    } catch (e) {
-      console.warn('读取本地答案失败，继续请求后端', e);
-    }
-    
     if (!query_url) {
       // query_url 为空时不发请求
       return;

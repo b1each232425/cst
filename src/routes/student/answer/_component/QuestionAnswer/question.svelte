@@ -14,7 +14,7 @@
 
   const max_input_len = 100;
 
-  let { question = $bindable(), index, ifPreview, saveAnswer, query_url, editor_height } = $props();
+  let { question = $bindable(), index, ifPreview, saveAnswer, query_url, editor_height, exam_id, exam_session_id, examinee_id, practice_id, practice_submission_id } = $props();
 
   // 绑定当前题干容器，用于局部查找 input
   let contentWrapper;
@@ -29,63 +29,81 @@
       return;
     }
 
-    if (question && Array.isArray(question.Answer)) {
-      console.log('已有答案，无需获取');
-      student_answer.answer = Array.isArray(question.Answer) ? question.Answer : initialAnswer(question);
-      if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {
-        await updateRichTextEditors();
-      }
-      return;
-    }
-
-    // 先尝试从 localStorage 读取本题答案（优先使用考试专用 key，其次使用练习 key）
+    // 1. 先尝试从 localStorage 读取（优先考试 key，其次 practice key）
     try {
-      // 尝试考试 key
-      let exam_id_from_url = 'preview';
-      let exam_session_id_from_url = 'preview';
-      let examinee_id_from_url = 'preview';
-      try {
-        const pageParams = new URLSearchParams(window.location.search);
-        exam_id_from_url = pageParams.get('exam-id') || exam_id_from_url;
-        exam_session_id_from_url = pageParams.get('exam-session-id') || exam_session_id_from_url;
-        examinee_id_from_url = pageParams.get('examinee-id') || examinee_id_from_url;
-      } catch (e) {}
-
-      const examStorageKey = `exam_answers_${exam_id_from_url}_${exam_session_id_from_url}_${examinee_id_from_url}`;
+      const examId = exam_id || 'preview';
+      const examSession = exam_session_id || 'preview';
+      // examinee id 不从 URL 获取，默认为 preview
+      const examinee = examinee_id || 'preview';
+      const examStorageKey = `exam_answers_${examId}_${examSession}_${examinee}`;
       let raw = localStorage.getItem(examStorageKey);
 
-      // 若未命中考试 key，再尝试 practice key
-      if (!raw) {
-        let practice_id = 'preview';
-        let practice_submission_id = 'preview';
-        try {
-          const pageParams2 = new URLSearchParams(window.location.search);
-          practice_id = pageParams2.get('practice-id') || pageParams2.get('practice_id') || practice_id;
-          practice_submission_id = pageParams2.get('practice_submission_id') || practice_submission_id;
-        } catch (e) {}
-        if ((practice_id === 'preview' || practice_submission_id === 'preview') && query_url) {
-          const params = new URLSearchParams((query_url || '').split('?')[1] || '');
-          practice_submission_id = params.get('practice_submission_id') || practice_submission_id;
-          practice_id = params.get('practice_id') || practice_id;
-        }
-        const practiceStorageKey = `practice_answers_${practice_id}_${practice_submission_id}`;
-        raw = localStorage.getItem(practiceStorageKey);
-      }
+      // practice key：仅使用传入的 props，不再从 URL 回退
+      const pid = practice_id || 'preview';
+      const psid = practice_submission_id || 'preview';
+      const practiceStorageKey = `practice_answers_${pid}_${psid}`;
+
+      if (!raw) raw = localStorage.getItem(practiceStorageKey);
 
       if (raw) {
         const storedAnswers = JSON.parse(raw || '{}');
         const entry = storedAnswers[String(question.ID)];
-        if (entry && Array.isArray(entry.answer)) {
-          const inputs = contentWrapper.querySelectorAll('input.blank-item-input');
-          inputs.forEach((input, idx) => {
-            if (entry.answer[idx] !== undefined) input.value = entry.answer[idx];
-          });
-          question.Answer = entry.answer;
-          return; // 有本地答案则直接返回
+        if (entry && entry.answer !== undefined) {
+          student_answer.answer = Array.isArray(entry.answer) ? entry.answer : initialAnswer(question);
+          if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {
+            await updateRichTextEditors();
+          }
+          return; // 命中 localStorage，直接返回
         }
       }
     } catch (e) {
-      console.warn('读取本地答案失败，继续请求后端', e);
+      console.warn('读取本地答案失败，继续后续逻辑', e);
+    }
+
+    // 2. 父组件已把后端 StudentAnswer 放到 question.Answer 时，优先写入 localStorage 并初始化组件
+    if (question && Array.isArray(question.Answer)) {
+      const ansArr = Array.isArray(question.Answer) ? question.Answer : initialAnswer(question);
+      const hasRealValue = ansArr.length > 0 && !ansArr.every((v) => v === '' || v === null || v === undefined);
+
+      try {
+        const finalPid = practice_id || 'preview';
+        const finalPsid = practice_submission_id || 'preview';
+        const storageKey = `practice_answers_${finalPid}_${finalPsid}`;
+
+        // 读取并合并写回 localStorage（只写本地，不触发后端保存）
+        let stored = {};
+        try {
+          const raw = localStorage.getItem(storageKey);
+          stored = raw ? JSON.parse(raw) : {};
+        } catch (e) {
+          stored = {};
+        }
+
+        // 如果本地已有非空答案且后端返回为空，则不覆盖本地答案
+        const existing = stored[String(question.ID)];
+        const existingHasValue =
+          existing &&
+          Array.isArray(existing.answer) &&
+          !(existing.answer.length === 0 || existing.answer.every((v) => v === '' || v === null || v === undefined));
+
+        if (!existingHasValue || hasRealValue) {
+          stored[String(question.ID)] = {
+            answer: ansArr,
+            attachment_paths: existing?.attachment_paths || [],
+            updated_at: Date.now(),
+          };
+          localStorage.setItem(storageKey, JSON.stringify(stored));
+        }
+      } catch (e) {
+        console.warn('写入本地答案失败', e);
+      }
+
+      // 初始化组件状态并更新编辑器
+      student_answer.answer = ansArr;
+      if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {
+        await updateRichTextEditors();
+      }
+      return;
     }
 
 
@@ -257,7 +275,7 @@
   </div>
 
   {#if question.Type !== '06'}
-    <Answer bind:question {ifPreview} {saveAnswer} {query_url} {editor_height} />
+    <Answer bind:question {ifPreview} {saveAnswer} {query_url} {editor_height} {exam_id} {exam_session_id} {examinee_id} {practice_id} {practice_submission_id} />
   {/if}
 </div>
 

@@ -771,6 +771,9 @@
                       {ifPreview}
                       {saveAnswer}
                       {query_url}
+                      {exam_id}
+                      {exam_session_id}
+                      {examinee_id}
                       editor_height="200px"
                     ></Question>
                     {#if !ifPreview}
@@ -803,6 +806,9 @@
                     {ifPreview}
                     {saveAnswer}
                     {query_url}
+                    {exam_id}
+                    {exam_session_id}
+                    {examinee}
                     editor_height="400px"
                   ></Question>
                   <div class="question-mark-btn-container">

@@ -334,6 +334,30 @@
   });
 
   //练习提交类逻辑
+  function clearPracticeLocalStorage() {
+    try {
+      const pid = practice_id || 'preview';
+      const sid = practice_submission_id || 'preview';
+      // 精确删除当前练习／场次的答案和标记
+      localStorage.removeItem(`practice_answers_${pid}_${sid}`);
+      localStorage.removeItem(`practice_marked_${pid}_${sid}`);
+
+      // 如果有可能留下以 pid 为前缀的备用 key，也一并清理（防止历史残留）
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        if (key.startsWith(`practice_answers_${pid}_`) || key.startsWith(`practice_marked_${pid}_`)) {
+          localStorage.removeItem(key);
+        }
+      }
+
+      // 视情况清理 preview 专用 key（仅在需要时取消注释）
+      // localStorage.removeItem('practiceQuestions');
+      // localStorage.removeItem('practiceTitle');
+    } catch (e) {
+      console.warn('清除本地练习数据失败', e);
+    }
+  }
   function submitPractice() {
     //倒计时结束后的提交逻辑
     const body_data = {
@@ -367,12 +391,8 @@
       .then((resp_data) => {
         if (resp_data.status === 0) {
           // 提交成功后，清除本地保存的答案（避免下次进入仍显示旧答案）
-          try {
-            const key = `practice_answers_${practice_id || 'preview'}_${practice_submission_id || 'preview'}`;
-            localStorage.removeItem(key);
-          } catch (e) {
-            console.warn('清除本地答案失败', e);
-          }
+          clearPracticeLocalStorage();
+
 
           toast.success('练习结束，提交成功！', 2000);
           goto(`/student/practice`);
@@ -576,6 +596,7 @@
           return response.json();
         })
         .then((data) => {
+
           if (data.status !== 0) {
             console.error(`接口错误: ${data.msg}`);
             toast.error(`服务器错误！${data.msg || ''}`, 2000);
@@ -752,6 +773,8 @@
                     {query_url}
                     {saveAnswer}
                     editor_height="200px"
+                    {practice_id}
+                    {practice_submission_id}
                   ></Question>
                   {#if !ifPreview}
                     <div class="question-mark-btn-container">
@@ -784,6 +807,8 @@
                   {query_url}
                   {saveAnswer}
                   editor_height="400px"
+                  {practice_id}
+                  {practice_submission_id}
                 ></Question>
                 <div class="question-mark-btn-container">
                   <button
