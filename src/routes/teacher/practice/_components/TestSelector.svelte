@@ -12,6 +12,7 @@
   import Button from '$lib/components/Button/Button.svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
+  import {formatDateTime} from '../utils'
 
   let {
     show = $bindable(false),
@@ -169,11 +170,6 @@
             hour: '2-digit',
             minute: '2-digit',
           });
-
-          // 创建日期只取年月日
-          let createTimeObj = new Date(item.CreateTime || item.UpdateTime);
-          let createDate = createTimeObj.toISOString().split('T')[0];
-
           return {
             ...item,
             assembly_type:
@@ -184,8 +180,8 @@
                   : '智能刷题（智能提升）',
             level: item.Level === '00' ? '简单' : item.Level === '02' ? '中等' : '困难',
             // 添加格式化后的时间
-            update_time: `${updateDate} ${updateTime}`,
-            create_time: createDate,
+            update_time: formatDateTime(item.UpdateTime),
+            create_time: formatDateTime(item.CreateTime),
             // 确保有tags属性
             tags: item.Tags || [],
             duration: item.SuggestedDuration,
@@ -238,7 +234,6 @@
       <div class="modal-header">
         <h2>选择试卷</h2>
       </div>
-
       <div class="search-container">
         <div class="search-items">
           <div class="search-item">
@@ -325,16 +320,11 @@
                   </div>
                   <div class="cell update-cell">
                     <div class="date-time">
-                      <div class="date">
-                        {test.update_time.split(' ')[0]}
-                      </div>
-                      <div class="time">
-                        {test.update_time.split(' ')[1]}
-                      </div>
+                      {(test.update_time)}
                     </div>
                   </div>
-                  <div class="cell create-cell">
-                    {test.create_time}
+                  <div class="cell create-cell" >
+                    {(test.create_time)}
                   </div>
                 </button>
               {/each}
@@ -540,17 +530,17 @@
     .table-row {
       display: flex;
       cursor: pointer;
-      margin: 0;
   background: none;
   border: none;
   outline: none;
   box-shadow: none;
   text-align: left;
   padding: 0; /* 添加这行以重置默认padding */
-  
+  // 明确设置默认背景色
+  background-color: #fdfefe;
 
       &:nth-child(even) {
-        background-color: #f9f9f9;
+        background-color: #fdfefe;
       }
 
       &:hover {
@@ -565,6 +555,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+    
     }
   }
 
@@ -650,7 +641,7 @@
   }
 
   .standard-cell {
-    width: 150px;
+    width: 130px;
     flex-wrap: wrap;
   }
 
