@@ -482,7 +482,7 @@
       })
       .then((res) => {
         if (!res.status) {
-          toast.success('提交成功'); // 考试需要提示；练习不需要，直接提交即可
+          toast.success('提交成功');
           if (is_exam_mode) goBack();
         } else throw new Error(res.msg ?? '提交失败');
       })
