@@ -36,14 +36,15 @@
       })
       .then((res) => {
         if (res.status !== 0) {
-          toast.error('获取验证码失败，请检查邮箱是否正确');
+          const errorMessage = res.data.ErrorMsg.forEach((msg) => msg);
+          toast.error(errorMessage);
         } else {
           toast.success('获取验证码成功，请及时查看');
           startCountdown(); // 成功后开始倒计时
         }
       })
       .catch((e) => {
-        console.log(e);
+        console.error(e);
         toast.error('获取验证码失败', '网络错误，请检查网络连接后重试');
       });
   }
@@ -88,7 +89,11 @@
       })
       .then((res) => {
         if (res.status !== 0) {
-          toast.error('注册失败，请重新注册');
+          let errorMessage = '';
+          res.data.ErrorMsg.forEach((msg) => {
+            errorMessage += msg;
+          });
+          toast.error(errorMessage);
         } else {
           toast.success('注册成功！');
           goto('/login');
