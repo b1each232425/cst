@@ -298,23 +298,16 @@
 
   .question-content {
     display: flex;
-    align-items: center;
     padding-bottom: 10px;
 
     h2 {
       font-weight: 500;
+      margin-right: 10px;
       font-size: 16px;
     }
-
-    .question-score-inline {
-      color: #ff7e08;
-      font-weight: bold;
-      font-size: 15px;
-    }
-
-    .piptap-content {
-      width: 80%;
-      text-align: justify;
-    }
+  }
+    .quesion-answer {
+    max-width: 100%;
+    width: 100%;
   }
 </style>
