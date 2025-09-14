@@ -75,7 +75,6 @@ let view_mode_paginated_rooms = $derived(
       // 初始化选中的考场列表
       selected_exam_rooms = selectedRooms.map((room, index) => ({
         ...room,
-        serialNumber: index + 1,
       }));
       
       // 将监考员数量保存到映射中
@@ -85,7 +84,7 @@ let view_mode_paginated_rooms = $derived(
     }
   });
 
-  // 统一的添加考场方法
+  // 添加考场方法
   function addToSelectedRooms(room) {
     if (!selected_exam_rooms.some(r => r.id === room.id)) {
       selected_exam_rooms.push({
@@ -95,7 +94,7 @@ let view_mode_paginated_rooms = $derived(
     }
   }
 
-  // 统一的移除考场方法
+  // 移除考场方法
   function removeFromSelectedRooms(roomId) {
     selected_exam_rooms = selected_exam_rooms.filter(r => r.id !== roomId);
   }
@@ -319,7 +318,6 @@ let view_mode_paginated_rooms = $derived(
                 {#each view_mode_paginated_rooms as selected_room, index}
                   <tr class="exam_room">
                     <td>{selected_room.name}</td>
-                    <!-- <td>{selected_room.exam_site_name}</td> -->
                     <td>{selected_room.capacity}</td>
                     <td>
               <input

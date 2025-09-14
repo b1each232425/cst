@@ -4,7 +4,7 @@
  * @LastEditors: yeweixuan t051521@163.com
  * @LastEditTime: 2025-08-11 14:55:31
  * @FilePath: \exam\src\routes\teacher\exam\components\ExamineeSelectionPanel
- * @Description: 用于查看选中的监考员以及为考试挑选监考员的面板
+ * @Description: 用于查看选中的批阅员以及为考试挑选批阅员的面板
  * @Copyright (c) 2025 by yeweixuan t051521@163.com, All Rights Reserved. 
 -->
  <script>
@@ -17,19 +17,19 @@
   import {onMount} from 'svelte';
   let{
     show_panel = false,
-    onConfirm=(seleted_exam_invigilators) =>{},
+    onConfirm=(seleted_reviewers) =>{},
     onCancel=()=>{},
-    selectedInvigilators = [], // 打开面板时已选监考员
+    selectedReviewers = [], // 打开面板时已选批阅员
   }=$props();
   
   let is_selection_mode=$state(false);
-  let invigilator_list = $state([]);
-  let selected_invigilators = $state([]); // 统一管理选中的监考员
+  let reviewer_list = $state([]);
+  let selected_reviewers = $state([]); // 统一管理选中的批阅员
   
-  let filter_invigilator_list = $derived(
+  let filter_reviewer_list = $derived(
     is_selection_mode
-      ? selected_invigilators            // 选择模式不前端过滤（走后端）
-      : selected_invigilators.filter(i =>
+      ? selected_reviewers            // 选择模式不前端过滤（走后端）
+      : selected_reviewers.filter(i =>
           !name_filter_view || 
           i.OfficialName.toLowerCase().includes(name_filter_view.toLowerCase()) ||
           (i.MobilePhone && i.MobilePhone.includes(name_filter_view)) ||
@@ -38,8 +38,8 @@
   );
   
   // 查看模式前端分页切片
-let view_mode_paginated_invigilators = $derived(
-  filter_invigilator_list.slice(
+let view_mode_paginated_reviewers = $derived(
+  filter_reviewer_list.slice(
     (pagination_params.page - 1) * pagination_params.pageSize,
     pagination_params.page * pagination_params.pageSize
   )
@@ -47,8 +47,8 @@ let view_mode_paginated_invigilators = $derived(
 
   /** 当前页是否已全部选中 */
   let is_total_selected = $derived(
-    invigilator_list.length > 0 &&
-    invigilator_list.every(invigilator => selected_invigilators.some(i => i.ID === invigilator.ID))
+    reviewer_list.length > 0 &&
+    reviewer_list.every(reviewer => selected_reviewers.some(i => i.ID === reviewer.ID))
   );
 
   //搜索参数
@@ -66,49 +66,49 @@ let view_mode_paginated_invigilators = $derived(
     pageSize: 10
   });
 
-  let invigilator_count = $state(0);
+  let reviewer_count = $state(0);
   let name_search_timer = null;
   let name_filter = $state("");
   let name_filter_view = $state("");   // 仅查看模式用
 
   $effect(() => {
-    if (show_panel && selectedInvigilators.length > 0) {
-      // 初始化选中的监考员列表
-      selected_invigilators = selectedInvigilators.map((invigilator, index) => ({
-        ...invigilator,
+    if (show_panel && selectedReviewers.length > 0) {
+      // 初始化选中的批阅员列表
+      selected_reviewers = selectedReviewers.map((reviewer, index) => ({
+        ...reviewer,
         serialNumber: index + 1,
       }));
     }
   });
 
-  // 统一的添加监考员方法
-  function addToSelectedInvigilators(invigilator) {
-    if (!selected_invigilators.some(i => i.ID === invigilator.ID)) {
-      selected_invigilators.push({
-        ...invigilator
+  // 统一的添加批阅员方法
+  function addToSelectedReviewers(reviewer) {
+    if (!selected_reviewers.some(i => i.ID === reviewer.ID)) {
+      selected_reviewers.push({
+        ...reviewer
       });
     }
   }
 
-  // 统一的移除监考员方法
-  function removeFromSelectedInvigilators(invigilatorId) {
-    selected_invigilators = selected_invigilators.filter(i => i.ID !== invigilatorId);
+  // 统一的移除批阅员方法
+  function removeFromSelectedReviewers(reviewerId) {
+    selected_reviewers = selected_reviewers.filter(i => i.ID !== reviewerId);
   }
 
-  // 切换单个监考员选择状态
-  function toggleSelectInvigilator(invigilator) {
-    const isSelected = selected_invigilators.some(i => i.ID === invigilator.ID);
+  // 切换单个批阅员选择状态
+  function toggleSelectReviewer(reviewer) {
+    const isSelected = selected_reviewers.some(i => i.ID === reviewer.ID);
     
     if (isSelected) {
-      removeFromSelectedInvigilators(invigilator.ID);
+      removeFromSelectedreviewers(reviewer.ID);
     } else {
-      addToSelectedInvigilators(invigilator);
+      addToSelectedReviewers(reviewer);
     }
     
-    // 更新invigilator_list中的selected状态
-    const invigilatorInList = invigilator_list.find(i => i.ID === invigilator.ID);
-    if (invigilatorInList) {
-      invigilatorInList.selected = !isSelected;
+    // 更新reviewer_list中的selected状态
+    const reviewerInList = reviewer_list.find(i => i.ID === reviewer.ID);
+    if (reviewerInList) {
+      reviewerInList.selected = !isSelected;
     }
   }
 
@@ -117,48 +117,48 @@ let view_mode_paginated_invigilators = $derived(
     const checked = e.target.checked;
     
     if (checked) {
-      invigilator_list.forEach((invigilator) => {
-        if (!selected_invigilators.some(i => i.ID === invigilator.ID)) {
-          addToSelectedInvigilators(invigilator);
+      reviewer_list.forEach((reviewer) => {
+        if (!selected_reviewers.some(i => i.ID === reviewer.ID)) {
+          addToSelectedReviewers(reviewer);
         }
       });
     } else {
-      invigilator_list.forEach((invigilator) => {
-        removeFromSelectedInvigilators(invigilator.ID);
+      reviewer_list.forEach((reviewer) => {
+        removeFromSelectedReviewers(reviewer.ID);
       });
     }
     
-    // 更新invigilator_list中的selected状态
-    invigilator_list.forEach(invigilator => {
-      invigilator.selected = selected_invigilators.some(i => i.ID === invigilator.ID);
+    // 更新reviewer_list中的selected状态
+    reviewer_list.forEach(reviewer => {
+      reviewer.selected = selected_reviewers.some(i => i.ID === reviewer.ID);
     });
   }
 
-  function handleCheckBoxChange(invigilator, event) {
+  function handleCheckBoxChange(reviewer, event) {
     if (event.target.type === 'checkbox') {
       event.stopPropagation();
       return;
     }
-    toggleSelectInvigilator(invigilator);
+    toggleSelectReviewer(reviewer);
   }
 
-  // 移除已选监考员
-  function removeSelectedInvigilator(invigilator) {
-    const targetId = invigilator.ID;
-    removeFromSelectedInvigilators(targetId);
+  // 移除已选批阅员
+  function removeSelectedReviewer(reviewer) {
+    const targetId = reviewer.ID;
+    removeFromSelectedReviewers(targetId);
     
-    // 同时更新invigilator_list中对应项的selected状态
-    const invigilatorInList = invigilator_list.find(i => i.ID === targetId);
-    if (invigilatorInList) {
-      invigilatorInList.selected = false;
+    // 同时更新reviewer_list中对应项的selected状态
+    const reviewerInList = reviewer_list.find(i => i.ID === targetId);
+    if (reviewerInList) {
+      reviewerInList.selected = false;
     }
   }
 
-  async function fetchExaminvigilators(){
+  async function fetchReviewers(){
     const query_params = new URLSearchParams({
       page: search_params.page.toString(),
       pageSize: search_params.pageSize.toString(),
-      domain:'assess^examSupervisor',
+      domain:'assess^examGrader',
       fuzzyCondition: search_params.fuzzyCondition || ''
     }).toString();
     fetch(`/api/user?${query_params}`,{ 
@@ -172,10 +172,10 @@ let view_mode_paginated_invigilators = $derived(
       .then((result => {
         if(result.status === 0)
         {
-          invigilator_count = result.rowCount || result.data.length;
-          invigilator_list = result.data.map(i => ({
+          reviewer_count = result.rowCount || result.data.length;
+          reviewer_list = result.data.map(i => ({
             ...i,
-            selected: selected_invigilators.some(selected => selected.ID === i.ID)
+            selected: selected_reviewers.some(selected => selected.ID === i.ID)
           }));
         }
         else{
@@ -189,29 +189,29 @@ let view_mode_paginated_invigilators = $derived(
       })
   }
 
-  function searchInvigilatorName(value){
+  function searchReviewerName(value){
     search_params.fuzzyCondition = value || '';
     if(name_search_timer)
       clearTimeout(name_search_timer);
     name_search_timer = setTimeout(() => {
-      fetchExaminvigilators();
+      fetchReviewers();
       name_search_timer = null;
     }, 300);
   }
 
-  function filterInvigilatorName(value){
+  function filterreviewerName(value){
     name_filter = value;
   }
 
   onMount(async()=>{
-    await fetchExaminvigilators();
+    await fetchReviewers();
   })
 </script>
 
-    <div class={show_panel ? 'exam-invigilator-panel-container' : 'hide'}>
-        <div class="exam-invigilator-panel">
+    <div class={show_panel ? 'exam-reviewer-panel-container' : 'hide'}>
+        <div class="exam-reviewer-panel">
             <div class="panel-header">
-                <span class="panel-header-text">{is_selection_mode ? '选择监考员' : '监考员列表'}</span>
+                <span class="panel-header-text">{is_selection_mode ? '选择批阅员' : '批阅员列表'}</span>
             <button
                 class="close-btn"
                 onclick={() => {
@@ -225,11 +225,11 @@ let view_mode_paginated_invigilators = $derived(
 
     <div class="panel-body">
         <!-- 查看选择后的列表 -->
-        <div class="selected-exam-invigilator-container">
+        <div class="selected-exam-reviewer-container">
           <div class="action-container">
-            <div class="exam-invigilator-search-container {!is_selection_mode?' ':'hideButton'}">
+            <div class="exam-reviewer-search-container {!is_selection_mode?' ':'hideButton'}">
               <InputBox
-              label={'搜索监考员'} 
+              label={'搜索批阅员'} 
               placeholder={'请输入手机号或姓名'}
               bind:value={name_filter_view}
               clearable={true}
@@ -238,12 +238,12 @@ let view_mode_paginated_invigilators = $derived(
 
             </div>
 
-            <div class="exam-invigilator-search-container {is_selection_mode?' ':'hideButton'}">
+            <div class="exam-reviewer-search-container {is_selection_mode?' ':'hideButton'}">
               <InputBox
-              label={'搜索监考员'} 
+              label={'搜索批阅员'} 
               placeholder={'请输入手机号或姓名'}
               clearable={true}
-              onInput={searchInvigilatorName}
+              onInput={searchReviewerName}
               >
             </InputBox>
 
@@ -254,18 +254,18 @@ let view_mode_paginated_invigilators = $derived(
                   is_selection_mode=!is_selection_mode
                   if(is_selection_mode)
                   {
-                    fetchExaminvigilators();
+                    fetchReviewers();
                   }
                   }}>
-                {is_selection_mode ? '返回监考员列表' : '添加监考员'}</button>
+                {is_selection_mode ? '返回批阅员列表' : '添加批阅员'}</button>
             </div>
           </div>
 
           <!-- 查看模式 -->
            {#if !is_selection_mode}
-          <div class="exam-invigilator-selection-table-container">
+          <div class="exam-reviewer-selection-table-container">
             <table class="table">
-              <thead class="exam-invigilator-table-head">
+              <thead class="exam-reviewer-table-head">
                 <tr class="table-head-row">
                   <th>姓名</th>
                   <th>账号</th>
@@ -275,28 +275,28 @@ let view_mode_paginated_invigilators = $derived(
                 </tr>
               </thead>
               <tbody>
-                {#each view_mode_paginated_invigilators as selected_invigilator, index}
-                  <tr class="exam_invigilator">
-                    <td>{selected_invigilator.OfficialName}</td>
-                    <td>{selected_invigilator.Account}</td>
-                    <td>{selected_invigilator.MobilePhone || "--"}</td>
-                    <td>{selected_invigilator.Gender || "--"}</td>
-                    <td><button class="view-btn" onclick={()=>removeSelectedInvigilator(selected_invigilator)}>移除</button></td>
+                {#each view_mode_paginated_reviewers as selected_reviewer, index}
+                  <tr class="exam_reviewer">
+                    <td>{selected_reviewer.OfficialName}</td>
+                    <td>{selected_reviewer.Account}</td>
+                    <td>{selected_reviewer.MobilePhone || "--"}</td>
+                    <td>{selected_reviewer.Gender || "--"}</td>
+                    <td><button class="view-btn" onclick={()=>removeSelectedReviewer(selected_reviewer)}>移除</button></td>
                   </tr>
                   {/each}
               </tbody>
             </table>
 
-            <div class ="{selected_invigilators.length === 0 ? 'no-data-text' : 'hideButton'}" > 
+            <div class ="{selected_reviewers.length === 0 ? 'no-data-text' : 'hideButton'}" > 
               <Empty text = "暂无数据"/>
             </div>
           </div>
           
           {:else}
           <!-- 选择模式 -->
-          <div class="exam-invigilator-selection-table-container">
+          <div class="exam-reviewer-selection-table-container">
             <table class="table">
-              <thead class="exam-invigilator-table-head">
+              <thead class="exam-reviewer-table-head">
                 <tr class="table-head-row">
                   <th>
                     <input
@@ -312,31 +312,31 @@ let view_mode_paginated_invigilators = $derived(
                 </tr>
               </thead>
               <tbody>
-                {#each invigilator_list as invigilator, index}
-                  <tr class="exam_invigilator"
-                  onclick= {(event) => handleCheckBoxChange(invigilator, event)}
+                {#each reviewer_list as reviewer, index}
+                  <tr class="exam_reviewer"
+                  onclick= {(event) => handleCheckBoxChange(reviewer, event)}
                   >
                     <td>
                         <input
                         type="checkbox"
                         class="custom-checkbox"
-                        checked={invigilator.selected}
+                        checked={reviewer.selected}
                         onchange={(e) => {
                           e.stopPropagation();
-                          toggleSelectInvigilator(invigilator);
+                          toggleSelectreviewer(reviewer);
                         }}
                         />
                     </td>
-                    <td>{invigilator.OfficialName}</td>
-                    <td>{invigilator.Account}</td>
-                    <td>{invigilator.MobilePhone || "--"}</td>
-                    <td>{invigilator.Gender || "--"}</td>
+                    <td>{reviewer.OfficialName}</td>
+                    <td>{reviewer.Account}</td>
+                    <td>{reviewer.MobilePhone || "--"}</td>
+                    <td>{reviewer.Gender || "--"}</td>
                   </tr>
                   {/each}
               </tbody>
             </table>
 
-            <div class ="{invigilator_list.length === 0 ? 'no-data-text' : 'hideButton'}" > 
+            <div class ="{reviewer_list.length === 0 ? 'no-data-text' : 'hideButton'}" > 
               <Empty text = "暂无数据"/>
             </div>
           </div>
@@ -347,7 +347,7 @@ let view_mode_paginated_invigilators = $derived(
     <div class="pagination-container {!is_selection_mode ? ' ' : 'hideButton'}">
 
             <Pagination
-              total_items={filter_invigilator_list.length}
+              total_items={filter_reviewer_list.length}
               current_page={pagination_params.page}
               page_size_options={[10, 20, 50]}
               on:pageChange={(e) => {
@@ -362,20 +362,20 @@ let view_mode_paginated_invigilators = $derived(
     
     <div class="pagination-container {is_selection_mode ? ' ' : 'hideButton'}">
           <span style="font-size: 12px; margin-right:10px">
-            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_invigilators.length}</span> 条
+            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_reviewers.length}</span> 条
           </span>
           <Pagination
-            total_items={invigilator_count}
+            total_items={reviewer_count}
             current_page={search_params.page}
             page_size_options={[10, 20, 50]}
             on:pageChange={(e) => {
               search_params.page = e.detail;
-              fetchExaminvigilators();
+              fetchReviewers();
             }}
             on:pageSizeChange={(e) => {
              search_params.pageSize = e.detail;
              search_params.page = 1; // 重置到第一页
-             fetchExaminvigilators();
+             fetchReviewers();
             }}
           ></Pagination>
         </div>
@@ -386,13 +386,13 @@ let view_mode_paginated_invigilators = $derived(
                     show_panel = false;
                     search_params.page = 1;
                     is_selection_mode = false;
-                     selected_invigilators = [];
+                     selected_reviewers = [];
                     onCancel();
                 }}>取消</button>
                 <button class="btn btn--primary is-plain" onclick={() => {
                     show_panel = false;
                     is_selection_mode = false;
-                    onConfirm(selected_invigilators);
+                    onConfirm(selected_reviewers);
                 }}>确定</button>
         </div>
     </div>
@@ -420,7 +420,7 @@ let view_mode_paginated_invigilators = $derived(
     pointer-events: none;
   }
 
-    .exam-invigilator-panel-container {
+    .exam-reviewer-panel-container {
     position: fixed;
     top: 0%;
     left: 0%;
@@ -433,7 +433,7 @@ let view_mode_paginated_invigilators = $derived(
     z-index: 2000;
   }
 
-  .exam-invigilator-panel {
+  .exam-reviewer-panel {
     width: 1000px;
     min-width: 800px;
     max-height: 90vh;
@@ -503,13 +503,13 @@ let view_mode_paginated_invigilators = $derived(
             justify-content: center;
             padding: 0 0 5px 0;
         }
-        .selected-exam-invigilator-container {
+        .selected-exam-reviewer-container {
             flex: 1;
             display: flex;
             flex-direction: column;
             min-height: 450px;
         }
-        .exam-invigilator-selection-table-container {
+        .exam-reviewer-selection-table-container {
             margin: 20px 0px 0 0px;
             flex: 1;
             max-height: 440px;
@@ -547,7 +547,7 @@ let view_mode_paginated_invigilators = $derived(
     align-items: center;
     justify-content: space-between;
     padding: 0 16px;
-        .exam-invigilator-search-container {
+        .exam-reviewer-search-container {
         flex: 0 0 350px;
         display: flex;
         justify-content: flex-start;
@@ -562,7 +562,7 @@ let view_mode_paginated_invigilators = $derived(
             border-collapse: collapse;
             flex: 1;
             max-height: 40px;
-            .exam-invigilator-table-head {
+            .exam-reviewer-table-head {
             background-color: #ffffff;
             font-size: 14px;
             font-weight: normal;
