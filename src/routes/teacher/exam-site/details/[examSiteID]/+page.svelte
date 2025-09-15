@@ -122,14 +122,14 @@ if (typeof window !== 'undefined' && import.meta.env && import.meta.env.MODE ===
         .then(responseData => {
             if (responseData.status !== 0) {
                 console.error("获取考点名称失败:", responseData.msg);
-                siteName = "加载失败";
+                siteName = "无数据";  
                 return;
             }
             siteName = responseData.data.name || "无数据";
         })
         .catch(error => {
             console.error("Error fetching site name:", error);
-            siteName = "加载失败";
+            siteName = "无数据";  
         });
     }
     function fetchExamRoomsAndSiteName() { // 从后端获取考场列表和考点名称
