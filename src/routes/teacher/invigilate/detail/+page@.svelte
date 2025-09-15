@@ -23,8 +23,12 @@
   import { page as appPage } from '$app/state';
   import { debounce } from '$lib/utils/optimize';
   // import Upload from '$lib/components/Upload/Upload.svelte';
+  // import { fileStore, tusInit, fastdigest, encodeMetadata } from '$lib/utils/file_upload.svelte.js';
+  // import { get } from 'svelte/store';
 
   // TODO 监考员姓名
+
+  // TODO select"无"的问题
 
   // const MOCK_INFO = {
   //   ExamSessionName: '2025年春季期末考试',
@@ -55,6 +59,7 @@
   //     Name: '张三',
   //     Status: '02',
   //     Remark: '缺考',
+  //     ExtraTime: 0, // 单位：分钟
   //   },
   //   {
   //     ExamineeID: 5002,
@@ -63,6 +68,7 @@
   //     Name: '李四',
   //     Status: '02',
   //     Remark: '',
+  //     ExtraTime: 15,
   //   },
   //   {
   //     ExamineeID: 5003,
@@ -71,6 +77,7 @@
   //     Name: '王五',
   //     Status: '06',
   //     Remark: '正常参加考试',
+  //     ExtraTime: 0,
   //   },
   //   {
   //     ExamineeID: 5004,
@@ -79,6 +86,7 @@
   //     Name: '赵六',
   //     Status: '06',
   //     Remark: '提前交卷',
+  //     ExtraTime: 30,
   //   },
   //   {
   //     ExamineeID: 5005,
@@ -87,6 +95,7 @@
   //     Name: '钱七',
   //     Status: '14',
   //     Remark: '作弊嫌疑',
+  //     ExtraTime: 0,
   //   },
   //   {
   //     ExamineeID: 5006,
@@ -95,6 +104,7 @@
   //     Name: '孙八',
   //     Status: '14',
   //     Remark: '身体不适中途退场',
+  //     ExtraTime: 60,
   //   },
   //   {
   //     ExamineeID: 5007,
@@ -103,6 +113,7 @@
   //     Name: '周九',
   //     Status: '02',
   //     Remark: '缺考',
+  //     ExtraTime: 0,
   //   },
   //   {
   //     ExamineeID: 5008,
@@ -111,6 +122,7 @@
   //     Name: '吴十',
   //     Status: '14',
   //     Remark: '忘记带身份证',
+  //     ExtraTime: 15,
   //   },
   //   {
   //     ExamineeID: 5009,
@@ -119,6 +131,7 @@
   //     Name: '郑十一',
   //     Status: '06',
   //     Remark: '正常参加考试',
+  //     ExtraTime: 0,
   //   },
   //   {
   //     ExamineeID: 5010,
@@ -127,6 +140,15 @@
   //     Name: '王十二',
   //     Status: '11',
   //     Remark: '表现优秀',
+  //     ExtraTime: 30,
+  //   },
+  // ];
+
+  // const MOCK_FILES = [
+  //   {
+  //     FileID: 1,
+  //     CheckSum: '',
+  //     Name: '',
   //   },
   // ];
 
@@ -170,16 +192,22 @@
 
   let select = null;
 
+  // let tus;
+  // let { selectedFiles, jobs, uploadedFiles } = $derived(get(fileStore));
+  // const { criteria, fileApi, endpoint, chunkSize, parallelUploads } = $derived(get(fileStore));
+
   let search_text = $state('');
   let exam_session_id = $state('');
   let exam_room_id = $state('');
   let status = $state('');
+  let extra_time = $state(0);
   let remark = $state('');
   let page = $state(1);
   let page_size = $state(10);
 
   let invigilation_info = $state({});
   let examinee_list = $state([]);
+  let files = $state([]);
   let can_update = $state(false); // 考试结束后是否可以更新
   let total_count = $state(0);
 
@@ -202,6 +230,166 @@
   function goBack() {
     history.back();
   }
+
+  // async function singles(job) {
+  //   return new Promise(async (resolve, reject) => {
+  //     if (!job || !job.file) {
+  //       reject('invalid/null job');
+  //       return;
+  //     }
+
+  //     job.checksum = await fastdigest(job);
+  //     let metadata = {
+  //       filename: job.file.name,
+  //       filetype: job.file.type,
+  //       filesize: job.file.size,
+  //       lastModified: job.file.lastModified,
+  //       checksum: job.checksum,
+  //     };
+
+  //     const encodedMetadata = encodeMetadata(metadata);
+  //     let v = encodeURIComponent(encodedMetadata);
+  //     const tusOptions = {
+  //       endpoint: `${endpoint}?metadata=${v}`,
+  //       chunkSize,
+  //       retryDelays: [0, 1000, 3000, 5000],
+  //       parallelUploads,
+  //       metadata,
+  //       onUploadUrlAvailable() {
+  //         job.url = job.tus.url;
+  //       },
+  //       onError(error) {
+  //         console.log(error);
+  //         reject(error);
+  //       },
+  //       onProgress(bytesUploaded, bytesTotal) {
+  //         job.transmitPercentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+  //         job.bytesUploaded = bytesUploaded;
+  //         job.bytesTotal = bytesTotal;
+  //       },
+  //       onSuccess(resp) {
+  //         // let x = resp.lastResponse._xhr;
+  //         // let msg = `上传成功`;
+  //         // if (x.status === 208) {
+  //         // 	msg = '文件已经在服务器上了';
+  //         // }
+  //         // console.log(`${metadata.filename} ${msg}(${x.status}): ${job.url}`);
+
+  //         resolve(job);
+  //       },
+  //     };
+  //     job.tus = new tus.Upload(job.file, tusOptions);
+  //     job.tus.start();
+  //   });
+  // }
+
+  // // 上传文件
+  // async function uploadFiles(files = selectedFiles) {
+  //   let promises = [];
+  //   for (let i = 0; i < files.length; i++) {
+  //     const file = files[i];
+  //     if (!file) continue;
+
+  //     let id = `${file.name}#${file.size}#${file.lastModified}`;
+  //     let job = { id, file };
+
+  //     // 更新 jobs 到 store
+  //     fileStore.update((s) => {
+  //       const newJobs = new Map(s.jobs);
+  //       newJobs.set(id, job);
+  //       return { ...s, jobs: newJobs };
+  //     });
+
+  //     const p = singles(job);
+  //     promises.push(p);
+  //   }
+  //   let results;
+  //   try {
+  //     // var results: [job]
+  //     // job:{ID,file,url}
+  //     results = await Promise.all(promises);
+  //     results.forEach((e) => {
+  //       console.log(e);
+  //       console.log(`download: ${e.file.name}: ${e.url}`);
+  //     });
+  //   } catch (err) {
+  //     console.error(err);
+  //   }
+
+  //   // queryFiles();
+  //   for (const r of results) {
+  //     await fetch('/api/invigilation/file', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({
+  //         data: {
+  //           ExamSessionID: invigilation_info.ExamSessionID,
+  //           ExamRoomID: invigilation_info.ExamRoomID,
+  //           CheckSum: r.checksum,
+  //           Name: r.file.name,
+  //           Size: r.file.size,
+  //         },
+  //       }),
+  //     })
+  //       .then((res) => {
+  //         if (!res.ok)
+  //           return res.text().then((error_text) => {
+  //             throw new Error(`请求失败：${res.status} ${res.statusText}` + (error_text ? '-' + error_text : ''));
+  //           });
+  //         return res.json();
+  //       })
+  //       .then((res) => {
+  //         if (res.status) throw new Error(res?.msg ?? '上传失败');
+  //         else {
+  //           files = [
+  //             ...files,
+  //             {
+  //               Name: r.file.name,
+  //               Size: r.file.size,
+  //               Checksum: r.checksum,
+  //               url: r.url || `${fileApi}/${r.checksum}`,
+  //             },
+  //           ];
+  //           // clearSelectedFiles();
+  //         }
+  //       })
+  //       .catch((err) => {
+  //         console.log(err);
+  //         toast.error(err.message);
+  //       });
+  //   }
+  // }
+
+  // function deleteFiles(file) {
+  //   fetch(`/api/invigilation/file`, {
+  //     method: 'DELETE',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify({
+  //       data: {
+  //         ExamSessionID: invigilation_info.ExamSessionID,
+  //         ExamRoomID: invigilation_info.ExamRoomID,
+  //         FileID: file.FileID,
+  //       },
+  //     }),
+  //   })
+  //     .then((res) => {
+  //       if (!res.ok)
+  //         return res.text().then((error_text) => {
+  //           throw new Error(`请求失败：${res.status} ${res.statusText}` + (error_text ? '-' + error_text : ''));
+  //         });
+  //       return res.json();
+  //     })
+  //     .then((res) => {
+  //       if (!res.status) {
+  //         toast.success('删除成功');
+  //         files = files.filter((f) => f.Checksum !== file.Checksum);
+  //       } else toast.warning('删除失败：' + res.msg);
+  //     })
+  //     .catch((err) => {
+  //       console.error(err);
+  //       toast.error(err.message);
+  //     });
+  // }
 
   function initTempData() {
     temp_exam_session_basic_eval = invigilation_info?.BasicEval;
@@ -247,6 +435,7 @@
         if (!res.status) {
           invigilation_info = res.data?.info ?? {};
           examinee_list = res.data?.examinees ?? [];
+          // files = res.data?.files ?? [];
           total_count = res.rowCount ?? 0;
           can_update = res.data?.canUpdate ?? false;
 
@@ -284,7 +473,7 @@
   }
 
   // 更新监考信息
-  function updateInfos(update_type, data, callback) {
+  function updateInfos(update_type, data) {
     const q = JSON.stringify({
       Data: {
         ExamSessionID: exam_session_id,
@@ -303,9 +492,8 @@
         return res.json();
       })
       .then((res) => {
-        if (!res.status) {
-          if (typeof callback === 'function') callback(); // 这里可以用于更新本地的数据
-        } else throw new Error(res.msg ?? '更新监考信息失败');
+        if (!res.status) getInvigilateDetail();
+        else throw new Error(res.msg ?? '更新监考信息失败');
       })
       .catch((err) => {
         toast.error(err.message);
@@ -348,6 +536,17 @@
     });
   }
 
+  // function updateSingleExamineeExtraTime(examinee_id, e) {
+  //   if (Number(e.target.value) <= 0) e.target.value = '0'; // 防止用户输入负数
+
+  //   updateInfos('06', {
+  //     Examinees: [examinee_id],
+  //     ExamineeExtraTime: Number(e.target.value),
+  //   });
+  // }
+
+  // const debounceUpdateSingleExamineeExtraTime = debounce(updateSingleExamineeExtraTime, 500);
+
   // 更新一个学生的备注
   function updateSingleExamineeRemark(examinee_id, remark) {
     updateInfos('04', {
@@ -365,18 +564,10 @@
       content: '你确定要批量标记为“' + EXAMINEE_STATUE_MAP[new_status] + '”吗？',
       on_close_by_click_outside: false,
       onConfirm: () =>
-        updateInfos(
-          '02',
-          {
-            ExamineeStatus: new_status,
-            Examinees: Array.from(selected_examinee_id_set),
-          },
-          () => {
-            examinee_list.forEach((e) => {
-              if (selected_examinee_id_set.has(e.ExamineeID)) e.Status = new_status;
-            });
-          },
-        ),
+        updateInfos('02', {
+          ExamineeStatus: new_status,
+          Examinees: Array.from(selected_examinee_id_set),
+        }),
       onCancel: () => {
         // 回滚
         status = '';
@@ -384,20 +575,27 @@
     });
   }
 
+  // 批量更新学生的延长时间
+  // function batchUpdateExamineeExtraTime() {
+  //   if (extra_time < 0) {
+  //     toast.warning('延长时间不能小于 0');
+  //     return;
+  //   }
+
+  //   updateInfos('06', {
+  //     ExamineeExtraTime: extra_time,
+  //     Examinees: Array.from(selected_examinee_id_set),
+  //   });
+  // }
+
+  // const debounceBatchUpdateExamineeExtraTime = debounce(batchUpdateExamineeExtraTime, 1000);
+
   // 批量更新学生的备注
   function batchUpdateExamineeRemark() {
-    updateInfos(
-      '04',
-      {
-        ExamineeRemark: remark,
-        Examinees: Array.from(selected_examinee_id_set),
-      },
-      () => {
-        examinee_list.forEach((e) => {
-          if (selected_examinee_id_set.has(e.ExamineeID)) e.Remark = remark;
-        });
-      },
-    );
+    updateInfos('04', {
+      ExamineeRemark: remark,
+      Examinees: Array.from(selected_examinee_id_set),
+    });
   }
 
   const debounceBatchUpdateExamineeRemark = debounce(batchUpdateExamineeRemark, 1000);
@@ -419,7 +617,7 @@
     selected_examinee_id_set = newSet;
   }
 
-  onMount(() => {
+  onMount(async () => {
     const exam_session_id_str = appPage.url.searchParams.get('exam_session_id');
     const exam_room_id_str = appPage.url.searchParams.get('exam_room_id');
 
@@ -436,6 +634,10 @@
       return;
     }
 
+    // 导入TUS库
+    // tus = await import('tus-js-client');
+    // tusInit(tus);
+
     getInvigilateDetail();
   });
 </script>
@@ -443,7 +645,7 @@
 <div class="detail">
   <!-- 顶部信息 -->
   <div class="header card">
-    <button onclick={goBack}></button>
+    <button onclick={goBack}>返回</button>
     <div class="info">
       <span class="exam-session-name">{invigilation_info.ExamSessionName}</span>
       <span class="number"
@@ -532,7 +734,12 @@
           {/if}
         </div>
         <!-- <div class="info-item">
-          <Upload accept="image/*"><a href="javascript:void(0);">证明图片上传</a></Upload>
+          <div class="label">证明图片：</div>
+          {#if allow_updating}
+            <div class="data file-upload">
+              <Upload accept="image/*"><div class="upload-button">点击此处上传</div></Upload>
+            </div>
+          {:else}{/if}
         </div> -->
       </div>
       {#if allow_updating && is_changed}
@@ -571,11 +778,23 @@
                 {/each}
               </Select>
             </div>
+            <!-- <div class="batch-extend-input">
+              <div class="label">批量延时：</div>
+              <input
+                type="number"
+                placeholder="请输入"
+                bind:value={extra_time}
+                class="input"
+                class:is-disabled={selected_examinee_id_set.size === 0}
+                disabled={selected_examinee_id_set.size === 0}
+                oninput={debounceBatchUpdateExamineeExtraTime}
+              />
+            </div> -->
             <div class="batch-remark-input">
               <div class="label">批量备注：</div>
               <input
                 type="text"
-                placeholder="请输入对选中考生的备注"
+                placeholder="请输入"
                 bind:value={remark}
                 class="input"
                 class:is-disabled={selected_examinee_id_set.size === 0}
@@ -613,11 +832,12 @@
                 <th>身份证号</th>
                 <th>准考证号</th>
                 <th>异常标记</th>
+                <!-- <th>延长时间（分钟）</th> -->
                 <th>备注</th>
               </tr>
             </thead>
             <tbody data-testid="examinee-tbody">
-              {#each examinee_list as { ExamineeID, IDCardNo, Name, ExamCard, Status, Remark } (ExamineeID)}
+              {#each examinee_list as { ExamineeID, IDCardNo, Name, ExamCard, Status, ExtraTime, Remark } (ExamineeID)}
                 <tr>
                   {#if allow_updating}
                     <!-- 单选框 -->
@@ -662,6 +882,17 @@
                       >{EXAMINEE_STATUE_MAP[Status] ?? (Status !== '00' && Status !== '10' ? '未知状态' : '无')}
                     </td>
                   {/if}
+                  <!-- <td
+                    >{#if allow_updating}<div class="extra-time"> 
+                        <input
+                          class="input"
+                          type="number"
+                          min="0"
+                          value={ExtraTime}
+                          oninput={(e) => debounceUpdateSingleExamineeExtraTime(ExamineeID, e)}
+                        />
+                      </div>{:else}{ExtraTime}{/if}</td
+                  > -->
                   <td class="remark"
                     >{#if allow_updating}
                       <div class="remark-input">
@@ -728,7 +959,7 @@
     }
 
     .header {
-      height: 18vh;
+      height: 15vh;
       margin-top: 0.5rem;
       position: relative;
       display: flex;
@@ -809,12 +1040,13 @@
 
       .left-content {
         flex: 3;
+        max-width: 400px;
 
         .total-info {
           display: flex;
           flex-direction: column;
           gap: 1rem;
-          height: 52vh;
+          height: 60vh;
           @include scrollbar;
 
           .info-item {
@@ -842,6 +1074,21 @@
               &.number {
                 padding: 0 0.5rem;
                 line-height: 2rem;
+              }
+
+              &.file-upload {
+                cursor: pointer;
+                line-height: 2rem;
+
+                .upload-button {
+                  width: 10rem;
+                  text-align: center;
+                  font-size: 0.8rem;
+
+                  &:hover {
+                    transform: scale(1.05);
+                  }
+                }
               }
 
               &.record {
@@ -883,8 +1130,6 @@
         position: relative;
 
         .body {
-          height: 78%;
-
           .options {
             display: flex;
             flex-wrap: wrap;
@@ -893,6 +1138,7 @@
             gap: 1rem;
 
             .search-input,
+            .batch-extend-input,
             .batch-remark-input,
             .select {
               display: flex;
@@ -907,7 +1153,15 @@
             }
 
             .select {
-              width: 12rem;
+              width: 11rem;
+            }
+
+            .batch-extend-input {
+              width: 9rem;
+            }
+
+            .batch-remark-input {
+              width: 15rem;
             }
 
             .tip {
@@ -921,7 +1175,7 @@
             overflow-y: auto;
             scrollbar-width: thin;
             scrollbar-color: #ccc transparent;
-            height: 51vh;
+            height: 55vh;
 
             table {
               width: 100%;
@@ -992,8 +1246,17 @@
                       text-align: left;
                     }
 
+                    .extra-time {
+                      width: 4rem;
+                      margin: auto;
+                    }
+
                     &.remark {
                       width: 14rem;
+                      max-width: 14rem;
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                      white-space: nowrap;
 
                       .remark-input {
                         width: 80%;
