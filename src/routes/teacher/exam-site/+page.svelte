@@ -3,6 +3,7 @@
     import Pagination from '$lib/components/Pagination/Pagination.svelte';
     import InputBox from '$lib/components/Input/InputBox.svelte';
     import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
+    import MessageBoxJs from '$lib/components/MessageBox/MessageBox.js';
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { toast } from "$lib/components/Toast/Toast";
@@ -303,7 +304,7 @@
         new_room = { name: "", capacity: 0 }; // 重置表单
     }
     function openDeleteDialog(id) { // 打开删除考点确认对话框
-        MessageBox({
+        MessageBoxJs({
             title: '请问是否要删除考点？',
             content: '删除后将无法恢复此考点',
             onConfirm: () => {
@@ -314,11 +315,11 @@
     function deleteExamSite(id) { // 删除考点的函数
         const reqProto = {
             data: {
-                id: id,
+                ids: [id], // 接口现在接受 ids 数组
             },
         };
 
-        fetch("/api/exam-site", {
+        return fetch("/api/exam-site", {
             method: "DELETE",
             credentials: "include",
             headers: {
@@ -331,7 +332,6 @@
                     return response.text().then((text) => {
                         console.error("删除请求失败:", response.status, text);
                         toast.error("删除考点失败，请稍后重试");
-                        // 抛出错误以终止后续 then
                         throw new Error(`Request failed: ${response.status}`);
                     });
                 }
