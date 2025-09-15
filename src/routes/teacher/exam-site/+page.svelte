@@ -8,6 +8,8 @@
     import { goto } from "$app/navigation";
     import { toast } from "$lib/components/Toast/Toast";
     import ExamSiteAdminSelectionPanel from "./_component/ExamSiteAdminSelectionPanel.svelte";
+    import Button from '$lib/components/Button/Button.svelte';
+    import '$lib/components/Button/index.scss';
     
     
     /**
@@ -143,6 +145,10 @@
     let savedAddress = $state("");
     let savedAccount = $state("");
     let savedAccessToken = $state("");
+
+    let selected_site_ids = $state([]); // 已选择的考点 ID 列表
+    let all_selected = $state(false); // 本页全选状态
+    
 
     //按钮控制类
     function openAddDialog() { // 打开新增考点对话框
@@ -354,6 +360,88 @@
                 toast.error("删除考点失败，请稍后重试");
             });
     }
+    function deleteSelectedSites() {
+        if (!selected_site_ids || selected_site_ids.length === 0) {
+            toast.error("请先选择要删除的考点");
+            return;
+        }
+
+        MessageBoxJs({
+            title: '批量删除确认',
+            content: `确定要删除选中的 ${selected_site_ids.length} 个考点？删除后无法恢复。`,
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            confirm_button_type: 'danger',
+            onConfirm: () => {
+                const reqProto = {
+                    data: {
+                        ids: selected_site_ids.slice(), // 传当前选中 id 列表
+                    }
+                };
+
+                fetch("/api/exam-site", {
+                    method: "DELETE",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(reqProto),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(`删除请求失败: ${response.status} ${text}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(responseData => {
+                    if (!responseData || responseData.status !== 0) {
+                        toast.error(responseData?.msg || "批量删除失败");
+                        return;
+                    }
+                    // 清空已选项并刷新列表
+                    selected_site_ids = [];
+                    checkAllSelected();
+                    return getExamSites(current_page, page_size, search_text, sortAsc).then(() => {
+                        toast.success("删除选中考点成功");
+                    });
+                })
+                .catch(err => {
+                    console.error("批量删除失败：", err);
+                    toast.error("批量删除失败，请稍后重试");
+                });
+            }
+        });
+    }
+    function toggleSelection(id, checked) {
+        if (checked) {
+            if (!selected_site_ids.includes(id)) selected_site_ids = [...selected_site_ids, id];
+        } else {
+            selected_site_ids = selected_site_ids.filter(item => item !== id);
+        }
+        checkAllSelected();
+    }
+
+    function selectedAll(checked) {
+        if (checked) {
+            const ids = exam_sites.map(s => s.id);
+            const merged = [...selected_site_ids];
+            for (const id of ids) {
+                if (!merged.includes(id)) merged.push(id);
+            }
+            selected_site_ids = merged;
+        } else {
+            const ids = exam_sites.map(s => s.id);
+            selected_site_ids = selected_site_ids.filter(id => !ids.includes(id));
+        }
+        checkAllSelected();
+    }
+
+    function checkAllSelected() {
+        const currentIds = exam_sites.map(s => s.id);
+        all_selected = currentIds.length !== 0 && currentIds.every(id => selected_site_ids.includes(id));
+    }
 
     // 获取数据类
     function checkServerStatus(serverUrl) { // 检测考点服务器状态
@@ -433,6 +521,7 @@
                 exam_sites = [];
                 total_num = 0;
                 total_pages = 1;
+                checkAllSelected();
                 return;
             }
 
@@ -454,6 +543,8 @@
                     }
                 });*/
             }
+
+            checkAllSelected();
         })
         .catch(err => {
             console.error("获取考点列表失败:", err);
@@ -462,6 +553,7 @@
             exam_sites = [];
             total_num = 0;
             total_pages = 1;
+            checkAllSelected();
         });
     }
     async function sortByCount() { // 按考场数量排序
@@ -552,14 +644,26 @@
                 />
             </div>
 
-            <button class="add-button" onclick={openAddDialog}>
-                + 新增考点
-            </button>
+            <div class="button-actions">
+                <Button plain={true}  type="danger" size="medium" onclick={deleteSelectedSites} >批量删除</Button>
+                <Button plain={true}  type="primary" size="medium" onclick={openAddDialog}>新增考点</Button>
+            </div>
+
+
+
         </div>
         <div class="content">
             <table>
                 <thead>
                     <tr>
+                        <th style="width:40px;">
+                            <input
+                                class="checkbox"
+                                type="checkbox"
+                                bind:checked={all_selected}
+                                onchange={(e) => selectedAll(e.target.checked)}
+                            />
+                        </th>
                         <th>考点名称</th>
                         <th>考点地址</th>
                         <th
@@ -603,7 +707,7 @@
 
                     {#if exam_sites.length === 0}
                         <tr>
-                            <td colspan="6" style="text-align: center;">
+                            <td colspan="7" style="text-align: center;">
                                 暂无考点数据
                             </td>
                         </tr>
@@ -611,6 +715,14 @@
 
                     {#each exam_sites as site}
                         <tr>
+                            <td>
+                                <input
+                                    class="checkbox"
+                                    type="checkbox"
+                                    checked={selected_site_ids.includes(site.id)}
+                                    onchange={(e) => toggleSelection(site.id, e.target.checked)}
+                                />
+                            </td>
                             <td class="exam-site-name" title={site.name}
                                 >{site.name}</td
                             >
@@ -897,6 +1009,14 @@
         align-items: center;
         justify-content: flex-start;
         margin-left: 20px;
+    }
+
+    .tool-bar .button-actions {
+        margin-left: auto;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-right: 60px;
     }
 
     .filter-container {
@@ -1317,5 +1437,23 @@
         font-size: 14px;
         font-weight: 500;
         margin-left: 2px;
+    }
+    .room-status-tag {
+        display: inline-block;
+        background: #2ba471;
+        color: #fff;
+        border-radius: 6px;
+        padding: 2px 18px;
+        font-size: 14px;
+        font-weight: 500;
+        margin-left: 2px;
+    }
+
+/* 新增复选框样式 */
+    .checkbox {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+        accent-color: var(--primary-color);
     }
 </style>
