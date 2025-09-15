@@ -22,7 +22,6 @@
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
   import { formatTimestamp } from '$lib/utils/time_utils.js';
   import { sget } from '$lib/utils/index.js';
-  import BulmaSwitchBlue from '../_component/SwitchBtn/BulmaSwitchBlue.svelte';
 
   /**
    * @typedef {Object} Question
@@ -808,7 +807,7 @@
                     {query_url}
                     {exam_id}
                     {exam_session_id}
-                    {examinee}
+                    {examinee_id}
                     editor_height="400px"
                   ></Question>
                   <div class="question-mark-btn-container">
