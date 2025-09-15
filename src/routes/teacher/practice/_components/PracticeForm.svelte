@@ -463,11 +463,11 @@
     selectedStudents = selected.map((item) => ({
       ...item,
       id:item.ID,
-      Domains:['cst.school^student']
+      Domains:['assess^student']
     }));
     newStudents = newStudent.map((item) => ({
       ...item,
-      Domains:['cst.school^student']
+      Domains:['assess^student']
     }));
   }}
   onCancel={(/** @type {boolean} */ load_new_file) => {
