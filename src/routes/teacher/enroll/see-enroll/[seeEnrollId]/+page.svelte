@@ -536,17 +536,17 @@
               /></th
             >
             <th style="width: 6%">姓名</th>
-            <th style="width: 6%">电话</th>
-            <th style="width: 6%">邮箱</th>
+            <th style="width: 8%">电话</th>
+            <th style="width: 8%">邮箱</th>
             <th style="width: 6%">性别</th>
-            <th style="width: 6%">证件号</th>
+            <th style="width: 8%">证件号</th>
             <th style="width: 6%">证件类型</th>
             <th style="width: 10%">报名时间</th>
             <th style="width: 6%">报名方式</th>
             <th style="width: 6%">考试类型</th>
             <th style="width: 6%">审核人</th>
             <th style="width: 10%">审核状态</th>
-            <th style="width: 20%">操作</th>
+            <th style="width: 14%">操作</th>
           </tr>
         </thead>
         <tbody>
