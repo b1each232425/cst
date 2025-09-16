@@ -174,35 +174,45 @@
         <div class="info-item">
           <span class="label">姓名：</span>{person_detail.OfficialName ? person_detail.OfficialName : '暂无'}
         </div>
+
         <div class="info-item">
           <span class="label">证件类型：</span>{person_detail.IDCardType ? person_detail.IDCardType : '暂无'}
         </div>
+
         <div class="info-item">
-          <span class="label">身份证号：</span>{person_detail.IDCardNo ? person_detail.IDCardNo : '暂无'}
+          <span class="label">考试类型：</span>{person_enroll_info.detail?.ExamType
+            ? person_enroll_info.detail.ExamType
+            : '暂无'}
         </div>
       </div>
 
       <!-- 第二行 -->
       <div class="info-row">
         <div class="info-item">
-          <span class="label">出生日期：</span>{person_detail.Birthday
-            ? formatDateTime(person_detail.Birthday, 'yyyy-mm-dd')
-            : '暂无'}
+          <span class="label">性别：</span>{person_detail.Gender ? person_detail.Gender : '暂无'}
         </div>
+
         <div class="info-item">
-          <span class="label">电话：</span>{person_detail.MobilePhone ? person_detail.MobilePhone : '暂无'}
+          <span class="label">身份证号：</span>{person_detail.IDCardNo ? person_detail.IDCardNo : '暂无'}
         </div>
+
         <div class="info-item">
-          <span class="label">邮箱：</span>{person_detail.Email ? person_detail.Email : '暂无'}
+          <span class="label">考试科目：</span>{course_text ? course_text : '暂无'}
         </div>
       </div>
 
       <!-- 第三行（报名方式挪到这里） -->
       <div class="info-row">
-        <div class="info-item"><span class="label">住址：</span>{person_detail.Addr ? person_detail.Addr : '暂无'}</div>
         <div class="info-item">
-          <span class="label">性别：</span>{person_detail.Gender ? person_detail.Gender : '暂无'}
+          <span class="label">电话：</span>{person_detail.MobilePhone ? person_detail.MobilePhone : '暂无'}
         </div>
+
+        <div class="info-item">
+          <span class="label">出生日期：</span>{person_detail.Birthday
+            ? formatDateTime(person_detail.Birthday, 'yyyy-mm-dd')
+            : '暂无'}
+        </div>
+
         <div class="info-item">
           <span class="label">报名方式：</span>{person_enroll_info.detail?.Type
             ? person_enroll_info.detail.Type
@@ -213,13 +223,12 @@
       <!-- 第四行 -->
       <div class="info-row">
         <div class="info-item">
-          <span class="label">考试科目：</span>{course_text ? course_text : '暂无'}
+          <span class="label">邮箱：</span>{person_detail.Email ? person_detail.Email : '暂无'}
         </div>
         <div class="info-item">
-          <span class="label">考试类型：</span>{person_enroll_info.detail?.ExamType
-            ? person_enroll_info.detail.ExamType
-            : '暂无'}
+          <span class="label">居住住址：</span>{person_detail.Addr ? person_detail.Addr : '暂无'}
         </div>
+
         <div class="info-item">
           <span class="label">报名时间：</span>{person_enroll_info.detail?.RegisterTime
             ? person_enroll_info.detail.RegisterTime
@@ -231,16 +240,25 @@
       {#if person_detail.IDCardFile}
         <div class="info-row idcard-row">
           <div class="info-item idcard-item">
-            <span class="label">身份证人像面：</span>
+            <span class="label">身份证正面：</span>
             <div class="idcard-image">
               <img src={person_detail.IDCardFile.frontImgID} alt="身份证人像面" />
             </div>
           </div>
           <div class="info-item idcard-item">
-            <span class="label">身份证国徽面：</span>
+            <span class="label">身份证反面：</span>
             <div class="idcard-image">
               <img src={person_detail.IDCardFile.backImgID} alt="身份证国徽面" />
             </div>
+          </div>
+        </div>
+      {:else}
+        <div class="info-row idcard-row">
+          <div class="info-item">
+            <span class="label">身份证正面：</span>暂无数据
+          </div>
+          <div class="info-item">
+            <span class="label">身份证反面：</span>暂无数据
           </div>
         </div>
       {/if}

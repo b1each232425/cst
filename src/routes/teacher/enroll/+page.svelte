@@ -375,9 +375,9 @@
             <th style="width: 10%">当前人数/计划人数</th>
             <th style="width: 14%">审核截止时间</th>
             <th style="width: 12%">开始时间 ~ 结束时间</th>
-            <th style="width: 12%">绑定练习</th>
+            <th style="width: 14%">绑定练习</th>
             <th style="width: 8%">状态</th>
-            <th style="width: 16%">操作</th>
+            <th style="width: 14%">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -525,13 +525,15 @@
 
         /* 作废 */
         .invalid-enroll-btn {
-          background-color: #ffeaea;
-          color: #d93025;
-          border: 1px solid #f5c2c0;
+          background-color: #fff;
+          color: #e60000;
+          border: 1px solid #e60000;
           margin-right: 1rem;
+          transition: all 0.2s ease-in-out;
         }
         .invalid-enroll-btn:hover {
-          background-color: #ffdcdc;
+          background-color: #e60000;
+          color: #fff;
           transform: translateY(-1px);
         }
 
