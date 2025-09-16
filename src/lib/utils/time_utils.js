@@ -1,15 +1,15 @@
 /*
  * @Author: Zpekii 3156752796@qq.com
  * @Date: 2025-04-08 15:05:30
- * @LastEditors: Zpekii 3156752796@qq.com
- * @LastEditTime: 2025-06-19 17:06:48
- * @FilePath: \exam-fe\src\lib\common\time_utils.js
+ * @LastEditors: 8023time 2162105974@qq.com
+ * @LastEditTime: 2025-09-15 23:52:48
+ * @FilePath: src\lib\utils\time_utils.js
  * @Description: 时间相关处理工具函数
  * @Copyright (c) 2025 by Zpekii, All Rights Reserved. 
  */
 
  /**
- * 将时间戳转换为可读格式: YYYY-MM-DD HH:MM
+ * 将时间戳转换为可读格式: YYYY-MM-DD HH:MM:SS
  * @param {number} timestamp - 时间戳(毫秒)
  * @param {{
  *      show_date?: boolean; // 是否显示日期
@@ -40,12 +40,13 @@ export function formatTimestamp(timestamp, options) {
 
     const hours = date.getHours().toString().padStart(2, "0");
     const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
 
-    return `${options?.show_date ? `${year}-${month}-${day} ` : ""}${options?.show_time ? `${hours}:${minutes}` : ""}`;
+    return `${options?.show_date ? `${year}-${month}-${day} ` : ""}${options?.show_time ? `${hours}:${minutes}:${seconds}` : ""}`;
 }
 
 /**
- * 将秒级时间戳转换为 YY-MM-DD HH:MM 格式
+ * 将秒级时间戳转换为 YY-MM-DD HH:MM:SS 格式
  * @param {number} timestamp - 秒级时间戳
  * @return {string} - 格式化后的时间字符串
  */
@@ -58,17 +59,18 @@ export function formatSecondTimestamp(timestamp) {
     const day = date.getDate().toString().padStart(2, '0');
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
 
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 /**
- * 将 ISO 格式(YYYY-MM-DDTHH:mm:ss.sssZ)的时间字符串转换为 YYYY-MM-DD HH:MM 格式
+ * 将 ISO 格式(YYYY-MM-DDTHH:mm:ss.sssZ)的时间字符串转换为 YYYY-MM-DD HH:MM:SS 格式
  * @param {string} time_string 
  * @returns 
  */
 export function formatISOString(time_string) {
-    if (!time_string) {
+    if (!time_string) {``
         return '';
     }
     
@@ -79,15 +81,16 @@ export function formatISOString(time_string) {
         return '';
     }
     
-    let year, month, day, hours, minutes;
+    let year, month, day, hours, minutes, seconds;
     
     year = date.getFullYear();
     month = (date.getMonth() + 1).toString().padStart(2, '0');
     day = date.getDate().toString().padStart(2, '0');
     hours = date.getHours().toString().padStart(2, '0');
     minutes = date.getMinutes().toString().padStart(2, '0');
+    seconds = date.getSeconds().toString().padStart(2, '0');
     
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 /**
