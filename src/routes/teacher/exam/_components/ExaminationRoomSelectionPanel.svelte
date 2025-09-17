@@ -170,7 +170,8 @@ let view_mode_paginated_rooms = $derived(
      search_params.filter = {
     ...search_params.filter,
     startTime: exam_start_time?.getTime?.() ?? 0,
-    endTime: exam_end_time?.getTime?.() ?? 0
+    endTime: exam_end_time?.getTime?.() ?? 0,
+    available:true
   };
 
     // 添加 filter 参数（JSON 格式）
@@ -231,7 +232,7 @@ let view_mode_paginated_rooms = $derived(
     name_filter=value;
   }
   onMount(async()=>{
-    await fetchExamRooms();
+    //await fetchExamRooms();
   })
 </script>
 

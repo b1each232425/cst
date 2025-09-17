@@ -1350,9 +1350,9 @@
 
     .config-row-content {
       font-size: 14px;
-      margin-top: 5px;
+      
       &.markConfig{
-        // padding-bottom: 1px;
+        margin-top: 5px;
       }
     }
     .bottom-action-panel-fixed {

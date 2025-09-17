@@ -145,7 +145,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
       MarkMethod: cfg.markMethod,
       NameVisibilityIn: !!cfg.nameVisibility,
       ReviewerIds:
-      cfg.markConfig && cfg.markConfig.teacher_mark_configs ? cfg.markConfig.teacher_mark_configs.map((t) => t.id) : [],
+      cfg.markConfig && cfg.markConfig.teacher_mark_configs ? cfg.markConfig.teacher_mark_configs.map((t) => t.ID) : [],
       MarkMode: cfg.markMode,
       SessionNum: cfg.sessionNum,
     }));

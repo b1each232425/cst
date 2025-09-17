@@ -100,7 +100,7 @@ let view_mode_paginated_reviewers = $derived(
     const isSelected = selected_reviewers.some(i => i.ID === reviewer.ID);
     
     if (isSelected) {
-      removeFromSelectedreviewers(reviewer.ID);
+      removeFromSelectedReviewers(reviewer.ID);
     } else {
       addToSelectedReviewers(reviewer);
     }
@@ -268,7 +268,6 @@ let view_mode_paginated_reviewers = $derived(
               <thead class="exam-reviewer-table-head">
                 <tr class="table-head-row">
                   <th>姓名</th>
-                  <th>账号</th>
                   <th>手机号</th>
                   <th>性别</th>
                   <th>操作</th>
@@ -278,7 +277,6 @@ let view_mode_paginated_reviewers = $derived(
                 {#each view_mode_paginated_reviewers as selected_reviewer, index}
                   <tr class="exam_reviewer">
                     <td>{selected_reviewer.OfficialName}</td>
-                    <td>{selected_reviewer.Account}</td>
                     <td>{selected_reviewer.MobilePhone || "--"}</td>
                     <td>{selected_reviewer.Gender || "--"}</td>
                     <td><button class="view-btn" onclick={()=>removeSelectedReviewer(selected_reviewer)}>移除</button></td>
@@ -306,7 +304,6 @@ let view_mode_paginated_reviewers = $derived(
                     checked={is_total_selected}
                   /></th>
                   <th>姓名</th>
-                  <th>账号</th>
                   <th>手机号</th>
                   <th>性别</th>
                 </tr>
@@ -328,7 +325,6 @@ let view_mode_paginated_reviewers = $derived(
                         />
                     </td>
                     <td>{reviewer.OfficialName}</td>
-                    <td>{reviewer.Account}</td>
                     <td>{reviewer.MobilePhone || "--"}</td>
                     <td>{reviewer.Gender || "--"}</td>
                   </tr>
