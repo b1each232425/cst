@@ -4,7 +4,7 @@
  * @LastEditors: yeweixuan t051521@163.com
  * @LastEditTime: 2025-08-11 14:55:31
  * @FilePath: \exam\src\routes\teacher\exam\components\ExamineeSelectionPanel
- * @Description: 用于查看选中的考场以及为考试挑选考场的面板
+ * @Description: 用于查看选中的批阅员以及为考试挑选批阅员的面板
  * @Copyright (c) 2025 by yeweixuan t051521@163.com, All Rights Reserved. 
 -->
  <script>
@@ -17,29 +17,29 @@
   import {onMount} from 'svelte';
   let{
     show_panel = false,
-    onConfirm=(seleted_exam_rooms) =>{},
+    onConfirm=(seleted_reviewers) =>{},
     onCancel=()=>{},
-    exam_start_time = new Date(),
-    exam_end_time = new Date(),
-    selectedRooms = [] //打开面板时已选考场
+    selectedReviewers = [], // 打开面板时已选批阅员
   }=$props();
   
   let is_selection_mode=$state(false);
-  let exam_room_list = $state([]);
-  let invigilatorCountMap = new Map(); // key: room.id, value: invigilator_count
-  let selected_exam_rooms = $state([]); // 统一管理选中的考场
+  let reviewer_list = $state([]);
+  let selected_reviewers = $state([]); // 统一管理选中的批阅员
   
-  let filter_room_list = $derived(
+  let filter_reviewer_list = $derived(
     is_selection_mode
-      ? selected_exam_rooms            // 选择模式不前端过滤（走后端）
-      : selected_exam_rooms.filter(r =>
-          !name_filter_view || r.name.toLowerCase().includes(name_filter_view.toLowerCase())
+      ? selected_reviewers            // 选择模式不前端过滤（走后端）
+      : selected_reviewers.filter(i =>
+          !name_filter_view || 
+          i.OfficialName.toLowerCase().includes(name_filter_view.toLowerCase()) ||
+          (i.MobilePhone && i.MobilePhone.includes(name_filter_view)) ||
+          (i.Account && i.Account.toLowerCase().includes(name_filter_view.toLowerCase()))
         )
   );
   
-  // 前端分页切片（查看模式）
-let view_mode_paginated_rooms = $derived(
-  filter_room_list.slice(
+  // 查看模式前端分页切片
+let view_mode_paginated_reviewers = $derived(
+  filter_reviewer_list.slice(
     (pagination_params.page - 1) * pagination_params.pageSize,
     pagination_params.page * pagination_params.pageSize
   )
@@ -47,8 +47,8 @@ let view_mode_paginated_rooms = $derived(
 
   /** 当前页是否已全部选中 */
   let is_total_selected = $derived(
-    exam_room_list.length > 0 &&
-    exam_room_list.every(room => selected_exam_rooms.some(r => r.id === room.id))
+    reviewer_list.length > 0 &&
+    reviewer_list.every(reviewer => selected_reviewers.some(i => i.ID === reviewer.ID))
   );
 
   //搜索参数
@@ -56,8 +56,9 @@ let view_mode_paginated_rooms = $derived(
     page: 1,
     pageSize: 10,
     orderBy:[{ "capacity": "DESC"}],
-    data:{"examSiteID":'35'},
-    filter:{"name":""},
+    data:{},
+    filter:{},
+    fuzzyCondition:''
   });
 
   let pagination_params = $state({
@@ -65,54 +66,49 @@ let view_mode_paginated_rooms = $derived(
     pageSize: 10
   });
 
-  let room_count = $state(0);
+  let reviewer_count = $state(0);
   let name_search_timer = null;
   let name_filter = $state("");
   let name_filter_view = $state("");   // 仅查看模式用
 
   $effect(() => {
-    if (show_panel && selectedRooms.length > 0) {
-      // 初始化选中的考场列表
-      selected_exam_rooms = selectedRooms.map((room, index) => ({
-        ...room,
+    if (show_panel && selectedReviewers.length > 0) {
+      // 初始化选中的批阅员列表
+      selected_reviewers = selectedReviewers.map((reviewer, index) => ({
+        ...reviewer,
+        serialNumber: index + 1,
       }));
-      
-      // 将监考员数量保存到映射中
-      selectedRooms.forEach(room => {
-        invigilatorCountMap.set(room.id, room.invigilator_count ?? 1);
-      });
     }
   });
 
-  // 添加考场方法
-  function addToSelectedRooms(room) {
-    if (!selected_exam_rooms.some(r => r.id === room.id)) {
-      selected_exam_rooms.push({
-        ...room,
-        invigilator_count: invigilatorCountMap.get(room.id) ?? room.invigilator_count ?? 1
+  // 统一的添加批阅员方法
+  function addToSelectedReviewers(reviewer) {
+    if (!selected_reviewers.some(i => i.ID === reviewer.ID)) {
+      selected_reviewers.push({
+        ...reviewer
       });
     }
   }
 
-  // 移除考场方法
-  function removeFromSelectedRooms(roomId) {
-    selected_exam_rooms = selected_exam_rooms.filter(r => r.id !== roomId);
+  // 统一的移除批阅员方法
+  function removeFromSelectedReviewers(reviewerId) {
+    selected_reviewers = selected_reviewers.filter(i => i.ID !== reviewerId);
   }
 
-  // 切换单个考场选择状态
-  function toggleSelectRoom(room) {
-    const isSelected = selected_exam_rooms.some(r => r.id === room.id);
+  // 切换单个批阅员选择状态
+  function toggleSelectReviewer(reviewer) {
+    const isSelected = selected_reviewers.some(i => i.ID === reviewer.ID);
     
     if (isSelected) {
-      removeFromSelectedRooms(room.id);
+      removeFromSelectedReviewers(reviewer.ID);
     } else {
-      addToSelectedRooms(room);
+      addToSelectedReviewers(reviewer);
     }
     
-    // 更新exam_room_list中的selected状态
-    const roomInList = exam_room_list.find(r => r.id === room.id);
-    if (roomInList) {
-      roomInList.selected = !isSelected;
+    // 更新reviewer_list中的selected状态
+    const reviewerInList = reviewer_list.find(i => i.ID === reviewer.ID);
+    if (reviewerInList) {
+      reviewerInList.selected = !isSelected;
     }
   }
 
@@ -121,72 +117,51 @@ let view_mode_paginated_rooms = $derived(
     const checked = e.target.checked;
     
     if (checked) {
-      exam_room_list.forEach((room) => {
-        if (!selected_exam_rooms.some(r => r.id === room.id)) {
-          addToSelectedRooms(room);
+      reviewer_list.forEach((reviewer) => {
+        if (!selected_reviewers.some(i => i.ID === reviewer.ID)) {
+          addToSelectedReviewers(reviewer);
         }
       });
     } else {
-      exam_room_list.forEach((room) => {
-        removeFromSelectedRooms(room.id);
+      reviewer_list.forEach((reviewer) => {
+        removeFromSelectedReviewers(reviewer.ID);
       });
     }
     
-    // 更新exam_room_list中的selected状态
-    exam_room_list.forEach(room => {
-      room.selected = selected_exam_rooms.some(r => r.id === room.id);
+    // 更新reviewer_list中的selected状态
+    reviewer_list.forEach(reviewer => {
+      reviewer.selected = selected_reviewers.some(i => i.ID === reviewer.ID);
     });
   }
 
-  function handleCheckBoxChange(room, event) {
+  function handleCheckBoxChange(reviewer, event) {
     if (event.target.type === 'checkbox') {
       event.stopPropagation();
       return;
     }
-    toggleSelectRoom(room);
+    toggleSelectReviewer(reviewer);
   }
 
-  // 移除已选考场
-  function removeSelectedRoom(room) {
-    const targetId = room.id;
-    removeFromSelectedRooms(targetId);
+  // 移除已选批阅员
+  function removeSelectedReviewer(reviewer) {
+    const targetId = reviewer.ID;
+    removeFromSelectedReviewers(targetId);
     
-    // 同时更新exam_room_list中对应项的selected状态
-    const roomInList = exam_room_list.find(r => r.id === targetId);
-    if (roomInList) {
-      roomInList.selected = false;
+    // 同时更新reviewer_list中对应项的selected状态
+    const reviewerInList = reviewer_list.find(i => i.ID === targetId);
+    if (reviewerInList) {
+      reviewerInList.selected = false;
     }
   }
 
-  async function fetchExamRooms(){
-    const query_params = new URLSearchParams();
-    query_params.append('page', search_params.page.toString());
-    query_params.append('pageSize', search_params.pageSize.toString());
-    query_params.append('data',JSON.stringify(search_params.data)); 
-    // 添加 orderBy 参数（JSON 格式）
-    if (search_params.orderBy && search_params.orderBy.length > 0) {
-      query_params.append('orderBy', JSON.stringify(search_params.orderBy));
-    }
-     search_params.filter = {
-    ...search_params.filter,
-    startTime: exam_start_time?.getTime?.() ?? 0,
-    endTime: exam_end_time?.getTime?.() ?? 0,
-    available:true
-  };
-
-    // 添加 filter 参数（JSON 格式）
-    if (search_params.filter && Object.keys(search_params.filter).length > 0) {
-      query_params.append('filter', JSON.stringify(search_params.filter));
-    }
-    //console.log(query_params.toString());
-    const q = {
-                page: search_params.page,
-                pageSize: search_params.pageSize,
-                orderBy: [{ capacity: "DESC" }],
-                data: { examSiteID: 0 },
-                filter: search_params.filter
-            };
-    fetch(`/api/exam-room/list?q=${encodeURIComponent(JSON.stringify(q))}`,{
+  async function fetchReviewers(){
+    const query_params = new URLSearchParams({
+      page: search_params.page.toString(),
+      pageSize: search_params.pageSize.toString(),
+      domain:'assess^examGrader',
+      fuzzyCondition: search_params.fuzzyCondition || ''
+    }).toString();
+    fetch(`/api/user?${query_params}`,{ 
       method:'GET',
       credentials: 'include',
       headers: {
@@ -197,11 +172,10 @@ let view_mode_paginated_rooms = $derived(
       .then((result => {
         if(result.status === 0)
         {
-          room_count= result.rowCount;
-          exam_room_list = result.data.map(r => ({
-            ...r,
-            selected: selected_exam_rooms.some(selected => selected.id === r.id),
-            invigilator_count: invigilatorCountMap.get(r.id) ?? r.invigilator_count ?? 1
+          reviewer_count = result.rowCount || result.data.length;
+          reviewer_list = result.data.map(i => ({
+            ...i,
+            selected: selected_reviewers.some(selected => selected.ID === i.ID)
           }));
         }
         else{
@@ -215,31 +189,29 @@ let view_mode_paginated_rooms = $derived(
       })
   }
 
-  function searchRoomName(value){
-     search_params.filter = {
-       ...search_params.filter,
-       ...(value ? { name: value } : {})   // 有值就放进 filter
-     };
+  function searchReviewerName(value){
+    search_params.fuzzyCondition = value || '';
     if(name_search_timer)
       clearTimeout(name_search_timer);
-      name_search_timer = setTimeout(() => {
-      fetchExamRooms();
+    name_search_timer = setTimeout(() => {
+      fetchReviewers();
       name_search_timer = null;
     }, 300);
   }
 
-  function filterRoomName(value){
-    name_filter=value;
+  function filterreviewerName(value){
+    name_filter = value;
   }
+
   onMount(async()=>{
-    //await fetchExamRooms();
+    await fetchReviewers();
   })
 </script>
 
-    <div class={show_panel ? 'exam-room-panel-container' : 'hide'}>
-        <div class="exam-room-panel">
+    <div class={show_panel ? 'exam-reviewer-panel-container' : 'hide'}>
+        <div class="exam-reviewer-panel">
             <div class="panel-header">
-                <span class="panel-header-text">{is_selection_mode ? '选择考场' : '考场列表'}</span>
+                <span class="panel-header-text">{is_selection_mode ? '选择批阅员' : '批阅员列表'}</span>
             <button
                 class="close-btn"
                 onclick={() => {
@@ -252,26 +224,13 @@ let view_mode_paginated_rooms = $derived(
             </div>
 
     <div class="panel-body">
-        <div class="exam-time-container">
-                <span class="exam-time-text">考试时间：</span>
-                <span class="exam-time-text">{isNaN(exam_start_time) ? '开始时间未选择' : exam_start_time.toLocaleString()}</span>
-                <span class="exam-time-text">-</span>
-                <span class="exam-time-text">{isNaN(exam_end_time) ? '结束时间未选择' : exam_end_time.toLocaleString()}</span>
-        </div>
-        <div class="tip-container">
-                <img src="/exam_list/tip.png" alt="提示" style="width: 15px;" />
-                <span class="exam-tip-text">
-                    考试时间更新后会清空已选择的考场，建议确认考试时间后再进行考场选择
-                </span>
-        </div>
         <!-- 查看选择后的列表 -->
-        <div class="selected-exam-room-container">
+        <div class="selected-exam-reviewer-container">
           <div class="action-container">
-            <div class="exam-room-search-container {!is_selection_mode?' ':'hideButton'}">
+            <div class="exam-reviewer-search-container {!is_selection_mode?' ':'hideButton'}">
               <InputBox
-              label={'搜索考场'} 
-              placeholder={'请输入考场名'}
-              
+              label={'搜索批阅员'} 
+              placeholder={'请输入手机号或姓名'}
               bind:value={name_filter_view}
               clearable={true}
               >
@@ -279,12 +238,12 @@ let view_mode_paginated_rooms = $derived(
 
             </div>
 
-            <div class="exam-room-search-container {is_selection_mode?' ':'hideButton'}">
+            <div class="exam-reviewer-search-container {is_selection_mode?' ':'hideButton'}">
               <InputBox
-              label={'搜索考场'} 
-              placeholder={'请输入考场名'}
+              label={'搜索批阅员'} 
+              placeholder={'请输入手机号或姓名'}
               clearable={true}
-              onInput={searchRoomName}
+              onInput={searchReviewerName}
               >
             </InputBox>
 
@@ -295,66 +254,47 @@ let view_mode_paginated_rooms = $derived(
                   is_selection_mode=!is_selection_mode
                   if(is_selection_mode)
                   {
-                    fetchExamRooms();
+                    fetchReviewers();
                   }
                   }}>
-                {is_selection_mode ? '返回考场列表' : '添加考场'}</button>
+                {is_selection_mode ? '返回批阅员列表' : '添加批阅员'}</button>
             </div>
           </div>
 
           <!-- 查看模式 -->
            {#if !is_selection_mode}
-          <div class="exam-room-selection-table-container">
+          <div class="exam-reviewer-selection-table-container">
             <table class="table">
-              <thead class="exam-room-table-head">
+              <thead class="exam-reviewer-table-head">
                 <tr class="table-head-row">
-                  <th>考场</th>
-                  <!-- <th>所属考点</th> -->
-                  <th>考场容量</th>
-                  <th>监考员数量</th>
+                  <th>姓名</th>
+                  <th>手机号</th>
+                  <th>性别</th>
                   <th>操作</th>
                 </tr>
               </thead>
               <tbody>
-                {#each view_mode_paginated_rooms as selected_room, index}
-                  <tr class="exam_room">
-                    <td>{selected_room.name}</td>
-                    <td>{selected_room.capacity}</td>
-                    <td>
-              <input
-                type="number"
-                min="0"
-                bind:value={selected_room.invigilator_count}
-                oninput={(e) => {
-                  const val = Number(e.target.value);
-                  selected_room.invigilator_count = isNaN(val) ? 1 : val;
-                  invigilatorCountMap.set(selected_room.id, selected_room.invigilator_count);
-                }}
-                style="
-                  width: 60px;
-                  text-align: center;
-                  border: 1px solid #ccc;
-                  border-radius: 4px;
-                  padding: 2px;
-                "
-              />
-            </td>
-            <td><button class="view-btn" onclick={()=>removeSelectedRoom(selected_room)}>移除</button></td>
+                {#each view_mode_paginated_reviewers as selected_reviewer, index}
+                  <tr class="exam_reviewer">
+                    <td>{selected_reviewer.OfficialName}</td>
+                    <td>{selected_reviewer.MobilePhone || "--"}</td>
+                    <td>{selected_reviewer.Gender || "--"}</td>
+                    <td><button class="view-btn" onclick={()=>removeSelectedReviewer(selected_reviewer)}>移除</button></td>
                   </tr>
                   {/each}
               </tbody>
             </table>
 
-            <div class ="{selected_exam_rooms.length === 0?'no-data-text' : 'hideButton'}" > 
+            <div class ="{selected_reviewers.length === 0 ? 'no-data-text' : 'hideButton'}" > 
               <Empty text = "暂无数据"/>
             </div>
           </div>
           
           {:else}
           <!-- 选择模式 -->
-          <div class="exam-room-selection-table-container">
+          <div class="exam-reviewer-selection-table-container">
             <table class="table">
-              <thead class="exam-room-table-head">
+              <thead class="exam-reviewer-table-head">
                 <tr class="table-head-row">
                   <th>
                     <input
@@ -363,38 +303,36 @@ let view_mode_paginated_rooms = $derived(
                     onchange={toggleSelectAll}
                     checked={is_total_selected}
                   /></th>
-                  <th>考场</th>
-                  <!-- <th>所属考点</th> -->
-                  <th>考场容量</th>
-                  <th>监考员数量</th>
+                  <th>姓名</th>
+                  <th>手机号</th>
+                  <th>性别</th>
                 </tr>
               </thead>
               <tbody>
-                {#each exam_room_list as room, index}
-                  <tr class="exam_room"
-                  onclick= {(event) => handleCheckBoxChange(room, event)}
+                {#each reviewer_list as reviewer, index}
+                  <tr class="exam_reviewer"
+                  onclick= {(event) => handleCheckBoxChange(reviewer, event)}
                   >
                     <td>
                         <input
                         type="checkbox"
                         class="custom-checkbox"
-                        checked={room.selected}
+                        checked={reviewer.selected}
                         onchange={(e) => {
                           e.stopPropagation();
-                          toggleSelectRoom(room);
+                          toggleSelectreviewer(reviewer);
                         }}
                         />
                     </td>
-                    <td>{room.name}</td>
-                    <!-- <td>{room.exam_site_name}</td> -->
-                    <td>{room.capacity}</td>
-                    <td>{room.invigilator_count || "--"}</td>
+                    <td>{reviewer.OfficialName}</td>
+                    <td>{reviewer.MobilePhone || "--"}</td>
+                    <td>{reviewer.Gender || "--"}</td>
                   </tr>
                   {/each}
               </tbody>
             </table>
 
-            <div class ="{exam_room_list.length === 0?'no-data-text' : 'hideButton'}" > 
+            <div class ="{reviewer_list.length === 0 ? 'no-data-text' : 'hideButton'}" > 
               <Empty text = "暂无数据"/>
             </div>
           </div>
@@ -405,7 +343,7 @@ let view_mode_paginated_rooms = $derived(
     <div class="pagination-container {!is_selection_mode ? ' ' : 'hideButton'}">
 
             <Pagination
-              total_items={filter_room_list.length}
+              total_items={filter_reviewer_list.length}
               current_page={pagination_params.page}
               page_size_options={[10, 20, 50]}
               on:pageChange={(e) => {
@@ -420,20 +358,20 @@ let view_mode_paginated_rooms = $derived(
     
     <div class="pagination-container {is_selection_mode ? ' ' : 'hideButton'}">
           <span style="font-size: 12px; margin-right:10px">
-            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_exam_rooms.length}</span> 条
+            已选 <span style="color: #00A870; margin:0 5px 0 5px;">{selected_reviewers.length}</span> 条
           </span>
           <Pagination
-            total_items={room_count}
+            total_items={reviewer_count}
             current_page={search_params.page}
             page_size_options={[10, 20, 50]}
             on:pageChange={(e) => {
               search_params.page = e.detail;
-              fetchExamRooms();
+              fetchReviewers();
             }}
             on:pageSizeChange={(e) => {
              search_params.pageSize = e.detail;
              search_params.page = 1; // 重置到第一页
-             fetchExamRooms();
+             fetchReviewers();
             }}
           ></Pagination>
         </div>
@@ -444,13 +382,13 @@ let view_mode_paginated_rooms = $derived(
                     show_panel = false;
                     search_params.page = 1;
                     is_selection_mode = false;
+                     selected_reviewers = [];
                     onCancel();
-                    selected_exam_rooms = [];
                 }}>取消</button>
                 <button class="btn btn--primary is-plain" onclick={() => {
                     show_panel = false;
                     is_selection_mode = false;
-                    onConfirm(selected_exam_rooms);
+                    onConfirm(selected_reviewers);
                 }}>确定</button>
         </div>
     </div>
@@ -478,7 +416,7 @@ let view_mode_paginated_rooms = $derived(
     pointer-events: none;
   }
 
-    .exam-room-panel-container {
+    .exam-reviewer-panel-container {
     position: fixed;
     top: 0%;
     left: 0%;
@@ -491,7 +429,7 @@ let view_mode_paginated_rooms = $derived(
     z-index: 2000;
   }
 
-  .exam-room-panel {
+  .exam-reviewer-panel {
     width: 1000px;
     min-width: 800px;
     max-height: 90vh;
@@ -561,13 +499,13 @@ let view_mode_paginated_rooms = $derived(
             justify-content: center;
             padding: 0 0 5px 0;
         }
-        .selected-exam-room-container {
+        .selected-exam-reviewer-container {
             flex: 1;
             display: flex;
             flex-direction: column;
             min-height: 450px;
         }
-        .exam-room-selection-table-container {
+        .exam-reviewer-selection-table-container {
             margin: 20px 0px 0 0px;
             flex: 1;
             max-height: 440px;
@@ -605,7 +543,7 @@ let view_mode_paginated_rooms = $derived(
     align-items: center;
     justify-content: space-between;
     padding: 0 16px;
-        .exam-room-search-container {
+        .exam-reviewer-search-container {
         flex: 0 0 350px;
         display: flex;
         justify-content: flex-start;
@@ -620,7 +558,7 @@ let view_mode_paginated_rooms = $derived(
             border-collapse: collapse;
             flex: 1;
             max-height: 40px;
-            .exam-room-table-head {
+            .exam-reviewer-table-head {
             background-color: #ffffff;
             font-size: 14px;
             font-weight: normal;

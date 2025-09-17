@@ -121,6 +121,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
         paper_configs[i].questionShuffledMode = '06';
       }
 
+      //自动批改清空批阅员选择
       if (paper_configs[i].markMethod === '02') {
         paper_configs[i].markConfig.teacher_mark_configs = [];
         paper_configs[i].markMode = '00';
@@ -144,7 +145,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
       MarkMethod: cfg.markMethod,
       NameVisibilityIn: !!cfg.nameVisibility,
       ReviewerIds:
-      cfg.markConfig && cfg.markConfig.teacher_mark_configs ? cfg.markConfig.teacher_mark_configs.map((t) => t.id) : [],
+      cfg.markConfig && cfg.markConfig.teacher_mark_configs ? cfg.markConfig.teacher_mark_configs.map((t) => t.ID) : [],
       MarkMode: cfg.markMode,
       SessionNum: cfg.sessionNum,
     }));

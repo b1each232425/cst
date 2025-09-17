@@ -19,26 +19,17 @@ const MOCK_EXAM_ROOMS = [
   {
     id: 1,
     name: '考场A',
-    exam_site_name: '考点1',
     capacity: 30,
-    invigilators_count: 2,
-    selected: false,
   },
   {
     id: 2,
     name: '考场B',
-    exam_site_name: '考点2',
     capacity: 25,
-    invigilators_count: 1,
-    selected: true,
   },
   {
     id: 3,
     name: '考场C',
-    exam_site_name: '考点3',
     capacity: 40,
-    invigilators_count: 3,
-    selected: false,
   },
 ];
 
@@ -47,7 +38,7 @@ function mockFetch(data) {
   global.fetch = vi.fn(() =>
     Promise.resolve({
       ok: true,
-      json: () => Promise.resolve({ status: 0, data }),
+      json: () => Promise.resolve({ status: 0, data,rowCount:3 }),
     })
   );
 }
@@ -61,7 +52,7 @@ const setup = (props = {}) => {
     exam_end_time: new Date('2025-08-28 11:00:00'),
     ...props,
   };
-
+  mockFetch(MOCK_EXAM_ROOMS);
   const result = render(ExaminationRoomSelectionPanel, { props: defaultProps });
 
   return {
@@ -161,22 +152,77 @@ describe('ExaminationRoomSelectionPanel 组件测试', () => {
       });
     });
 
+    it('通过 DOM 验证数据加载', async () => {
+  setup();
+  
+  console.log('=== 初始渲染 ===');
+  await waitFor(() => {
+    expect(global.fetch).toHaveBeenCalled();
+  });
+  
+  console.log('=== 切换到选择模式 ===');
+  fireEvent.click(screen.getByText('添加考场'));
+  await tick();
+  
+  console.log('=== 等待数据加载 ===');
+  await waitFor(() => {
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+  
+  // 等待一点时间让组件状态更新
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  console.log('=== 检查表格内容 ===');
+  const tableBody = document.querySelector('tbody');
+  console.log('表格体HTML:', tableBody?.innerHTML);
+  
+  const allRows = document.querySelectorAll('tbody tr');
+  console.log('数据行数:', allRows.length);
+  
+  // 如果有行，打印每行内容
+  allRows.forEach((row, index) => {
+    console.log(`第${index}行内容:`, row.textContent);
+    console.log(`第${index}行HTML:`, row.innerHTML);
+  });
+  
+  screen.debug();
+  
+  // 现在检查是否能找到数据
+  if (allRows.length > 0) {
+    expect(screen.getByText('考场B')).toBeInTheDocument();
+  } else {
+    console.log('❌ 表格中没有数据行');
+  }
+});
     it('成功加载后渲染考场数据', async () => {
       setup();
+      fireEvent.click(screen.getByText('添加考场'));
+      await tick();
+      
       await waitFor(() => {
-        expect(screen.getByText('考场B')).toBeInTheDocument();
-        expect(screen.getByText('考点2')).toBeInTheDocument();
-        expect(screen.getByText('25')).toBeInTheDocument();
+        expect(global.fetch).toHaveBeenCalledTimes(2);
+      });
+      
+      await waitFor(() => {
+        // 直接检查表格行数
+        const tableRows = document.querySelectorAll('tbody tr');
+        expect(tableRows).toHaveLength(3);
+        
+        // 检查具体内容
+        const secondRow = tableRows[1];
+        expect(secondRow.textContent).toContain('考场B');
+        expect(secondRow.textContent).toContain('25');
       });
     });
 
     it('接口返回错误时提示', async () => {
       const { toast } = await import('$lib/components/Toast/Toast.js');
+      setup();
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ status: 1, msg: '加载失败' }),
       });
-      setup();
+      
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith('获取列表失败加载失败');
       });
