@@ -744,4 +744,93 @@ describe('Teacher Exam Site +page', () => {
             expect(st.total_num).toBe(0);
         });
     });
+
+
+    describe('deleteExamSite branches', () => {
+        it('handles non-ok HTTP response from DELETE and shows toast.error', async () => {
+            const Page = await loadPage();
+            render(Page);
+
+            // wait for initial mount list fetch
+            await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+            fetchMock.mockClear();
+
+            // make the next DELETE return non-ok
+            fetchMock.mockResolvedValueOnce({ ok: false, status: 500, statusText: 'Server Err', text: async () => 'err' });
+
+            // call openDeleteDialog and confirm
+            globalThis.__openDeleteDialog(777);
+            const lastCall = MessageBox.mock.calls[MessageBox.mock.calls.length - 1];
+            const opts = lastCall[0] || {};
+            if (opts.onConfirm) {
+                await opts.onConfirm();
+                await Promise.resolve();
+                vi.advanceTimersByTime(0);
+            }
+
+            await waitFor(() => {
+                expect(toast.error).toHaveBeenCalledWith('删除考点失败，请稍后重试');
+            });
+        });
+
+        it('handles business error when DELETE returns status !== 0', async () => {
+            const Page = await loadPage();
+            render(Page);
+
+            await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+            fetchMock.mockClear();
+
+            // DELETE returns ok but business error status !== 0
+            fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ status: 1, msg: 'cannot delete' }) });
+
+            globalThis.__openDeleteDialog(888);
+            const lastCall = MessageBox.mock.calls[MessageBox.mock.calls.length - 1];
+            const opts = lastCall[0] || {};
+            if (opts.onConfirm) {
+                await opts.onConfirm();
+                await Promise.resolve();
+                vi.advanceTimersByTime(0);
+            }
+
+            await waitFor(() => {
+                expect(toast.error).toHaveBeenCalledWith('cannot delete');
+            });
+        });
+
+     it('sends ids array in DELETE request body', async () => {
+            const Page = await loadPage();
+            render(Page);
+
+            // wait for initial mount list fetch and clear previous calls+            await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+            fetchMock.mockClear();
+
+            // prepare one-off DELETE response
+            fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ status: 0 }) });
+
+            // trigger delete dialog and confirm
+            globalThis.__openDeleteDialog(9999);
+            const lastCall = MessageBox.mock.calls[MessageBox.mock.calls.length - 1];
+            const opts = lastCall[0] || {};
+            if (opts.onConfirm) {
+                await opts.onConfirm();
+                await Promise.resolve();
+                vi.advanceTimersByTime(0);
+            }
+
+            // find the DELETE call and assert body contains data.ids array with the id
+            const delCall = fetchMock.mock.calls.find(call => {
+                const url = call[0] || '';
+                const opts = call[1] || {};
+                return typeof url === 'string' && url.includes('/api/exam-site') && opts.method === 'DELETE';
+            });
+            expect(delCall).toBeTruthy();
+            const sentOpts = delCall[1] || {};
+            const sentBody = sentOpts.body;
+            expect(sentBody).toBeTruthy();
+            const parsed = JSON.parse(sentBody);
+            expect(parsed).toHaveProperty('data');
+            expect(Array.isArray(parsed.data.ids)).toBe(true);
+            expect(parsed.data.ids).toContain(9999);
+        });
+    });
 });
