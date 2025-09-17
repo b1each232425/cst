@@ -267,9 +267,9 @@ let view_mode_paginated_invigilators = $derived(
             <table class="table">
               <thead class="exam-invigilator-table-head">
                 <tr class="table-head-row">
-                  <th>手机号</th>
-                  <th>账号</th>
                   <th>姓名</th>
+                  <th>账号</th>
+                  <th>手机号</th>
                   <th>性别</th>
                   <th>操作</th>
                 </tr>
@@ -277,9 +277,9 @@ let view_mode_paginated_invigilators = $derived(
               <tbody>
                 {#each view_mode_paginated_invigilators as selected_invigilator, index}
                   <tr class="exam_invigilator">
-                    <td>{selected_invigilator.MobilePhone || "--"}</td>
-                    <td>{selected_invigilator.Account}</td>
                     <td>{selected_invigilator.OfficialName}</td>
+                    <td>{selected_invigilator.Account}</td>
+                    <td>{selected_invigilator.MobilePhone || "--"}</td>
                     <td>{selected_invigilator.Gender || "--"}</td>
                     <td><button class="view-btn" onclick={()=>removeSelectedInvigilator(selected_invigilator)}>移除</button></td>
                   </tr>
@@ -305,9 +305,9 @@ let view_mode_paginated_invigilators = $derived(
                     onchange={toggleSelectAll}
                     checked={is_total_selected}
                   /></th>
-                  <th>手机号</th>
-                  <th>账号</th>
                   <th>姓名</th>
+                  <th>账号</th>
+                  <th>手机号</th>
                   <th>性别</th>
                 </tr>
               </thead>
@@ -327,9 +327,9 @@ let view_mode_paginated_invigilators = $derived(
                         }}
                         />
                     </td>
-                    <td>{invigilator.MobilePhone || "--"}</td>
-                    <td>{invigilator.Account}</td>
                     <td>{invigilator.OfficialName}</td>
+                    <td>{invigilator.Account}</td>
+                    <td>{invigilator.MobilePhone || "--"}</td>
                     <td>{invigilator.Gender || "--"}</td>
                   </tr>
                   {/each}

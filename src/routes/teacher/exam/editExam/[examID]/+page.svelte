@@ -16,6 +16,7 @@
   import ExamineeSelectionPanel from '../../_components/ExamineeSelectionPanel.svelte';
   import ExaminationRoomSelectionPanel from '../../_components/ExaminationRoomSelectionPanel.svelte';
   import InvigilatorSelectionPanel from '../../_components/InvigilatorSelectionPanel.svelte';
+  import ReviewerSelectionPanel from '../../_components/ReviewerSelectionPanel.svelte';
   import Button from '$lib/components/Button/Button.svelte';
   import DatePicker from '$lib/components/DatePicker/DatePicker.svelte';
   import Title from '$lib/components/Title/Title.svelte';
@@ -88,6 +89,7 @@
   let uploadedFiles = $state([]);
   let selectedFiles = $state();
   let invigilator_ID = $state();
+  let Reviewer_ID = $state([]);
 	let clearSelectedFiles = () => {
 		selectedFiles = new DataTransfer().files;
 	};
@@ -529,7 +531,6 @@ function getSelectedPaperIDs(excludeIndex = -1) {
 	}
 
   async function fetchExamInfo() {
-        //const examSessionsdata
         fetch(`/api/exam?exam_id=${examID}`,{
             method:"GET",
             credentials: "include",
@@ -549,13 +550,13 @@ function getSelectedPaperIDs(excludeIndex = -1) {
                 exam_method = examData.examInfo.Mode;
                 examinee_ID = examData.examinee || [];
                 invigilator_ID = examData.invigilators || [];
+                 
                 uploadedFileList = examData.files || [];
                 exam_rooms = (examData.examRooms || []).map(({roomID,...rest})=>({
                   id:roomID,
                   ...rest
                 }));
                 paper_configs = examData.examSessions.map((s, idx) => {
-                
                 const mappedConfig = {
                     paperID: s.PaperID || 0,
                     paperName:s.PaperName,
@@ -579,11 +580,12 @@ function getSelectedPaperIDs(excludeIndex = -1) {
                     earlySubmissionTime: s.EarlySubmissionTime || 0,
                     QuestionShuffledMode:s.QuestionShuffledMode
                 };
-                
+                Reviewer_ID[idx] = Array.isArray(s.ReviewerIds) ? s.ReviewerIds : [];
+                fetchSelectedReviewers(idx);
                 return mappedConfig;
             });
-                   
-            }
+              
+          }
         })
         .catch((e) => {
             console.error("获取考试信息失败", e);
@@ -592,10 +594,43 @@ function getSelectedPaperIDs(excludeIndex = -1) {
           checkShuffledMode();
           fetchSelectedStudents();
           fetchSelectedInvigilators();
+
+          
           loading=false;
+          console.log(Reviewer_ID);
         })
     }
   
+  async function fetchSelectedReviewers(index){
+    console.log('idnex',Reviewer_ID);
+    const query = encodeURIComponent(JSON.stringify({
+    data: {
+      Type:"00",
+      UserIDs: Reviewer_ID[index], 
+    },
+  }));
+    fetch(`/api/exam/user?q=${query}`,
+      {
+        method:"GET",
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+          },
+        })
+        .then((response) => response.json())
+        .then((data)=>{
+           paper_configs[index].markConfig.teacher_mark_configs = (data?.data || []).map((reviewer,index)=>{
+              return{
+                ID:reviewer.id,
+                OfficialName:reviewer.name,
+                MobilePhone:reviewer.mobile_phone,
+                IDCardNo:reviewer.id_card_no,
+                Gender:reviewer.gender
+              }
+           });
+        })
+  }
+
   async function fetchSelectedInvigilators(){
     const query = encodeURIComponent(JSON.stringify({
     data: {
@@ -1204,35 +1239,85 @@ function getSelectedPaperIDs(excludeIndex = -1) {
       </div>
 
 
-      <div
-        class="grading-mode-container {paper_configs[paperConfigIndex].markMethod !== '00' ? 'hide' : ' config-row'}"
-      >
-        <RequiredLabel text="批改模式" />
-
-        <div class="config-row-content" style="display: flex;flex-direction:column">
-          <span class="grading-config-row-text">单人阅卷</span>
+     <div class="correct-setting-container {paper_configs[paperConfigIndex].markMethod == "02" ? 'hide' : 'config-row'}">
+          <RequiredLabel text="批改配置" Asterisk={false} colon={true} />
+          <button class="btn btn--info btn--small is-plain" 
+          onclick={()=>{
+            paper_configs[paperConfigIndex].show_reviewer_panel = true;
+          }}>
+            添加批阅员
+          </button>
+          <span style="font-size:14px;margin-top:2px;">已选择 {paper_configs[paperConfigIndex].markConfig.teacher_mark_configs.length} 名</span>
         </div>
-      </div>
 
-      <div
-        class="grading-mode-button-container {paper_configs[paperConfigIndex].markMethod !== '00'
-          ? 'hide'
-          : ' config-row'}"
-      >
-        <RequiredLabel text="" Asterisk={false} colon={false} />
-        <div class="config-row-content {paper_configs[paperConfigIndex].markMethod !== '00' ? 'hide' : ''}">
-          <label class="label" style="color: #757575;">
+        <div class="grading-mode-container {paper_configs[paperConfigIndex].markMethod !== '00' ? 'hide' : ' config-row'}">
+          <RequiredLabel text="批改模式" />
+          <div class="config-row-content {paper_configs[paperConfigIndex].markConfig.teacher_mark_configs.length>=2 ? 'hide' : 'markConfig'}">
+            <label class="label" style="color: #757575;">
+              <input
+                type="radio"
+                bind:group={paper_configs[paperConfigIndex].markMode}
+                value={'10'}
+                class="choice-radio-input"
+              />
+              单人批改
+            </label>
+          </div>
+
+          <div class = "config-row-content {paper_configs[paperConfigIndex].markConfig.teacher_mark_configs.length>=2 ? 'markConfig' : 'hide'}">
+              <span>多人阅卷：</span>
+            <label class="label " style="color: #757575;">            
             <input
-              type="radio"
-              bind:group={paper_configs[paperConfigIndex].markMode}
-              value={'10'}
-              class="choice-radio-input"
-            />
-            单人批改
-          </label>
+                type="radio"
+                bind:group={paper_configs[paperConfigIndex].markMode}
+                value={'02'}
+                class="choice-radio-input"
+              />
+              全卷多评
+              <span class="tip-wrapper">
+                <img class="tip" alt="提示" src="/exam_list/tip.png" />
+                <div class="tooltip-text" style="min-width: 255px;">
+                  {TIP_TEXT['multiply_mark']}
+                </div>
+              </span>
+            </label>
+            
+            <label class="label " style="color: #757575;">            
+            <input
+                type="radio"
+                bind:group={paper_configs[paperConfigIndex].markMode}
+                value={'04'}
+                class="choice-radio-input"
+              />
+              试卷分配
+              <span class="tip-wrapper">
+                <img class="tip" alt="提示" src="/exam_list/tip.png" />
+                <div class="tooltip-text" style="min-width: 255px;">
+                  {TIP_TEXT['assignment_of_paper']}
+                </div>
+              </span>
+            </label>
+
+            <label class="label " style="color: #757575;">            
+            <input
+                type="radio"
+                bind:group={paper_configs[paperConfigIndex].markMode}
+                value={'06'}
+                class="choice-radio-input"
+              />
+              按题分配
+              <span class="tip-wrapper">
+                <img class="tip" alt="提示" src="/exam_list/tip.png" />
+                <div class="tooltip-text" style="min-width: 255px;">
+                  {TIP_TEXT['question_group_mark']}
+                </div>
+              </span>
+            </label>
+
+          </div>
+
         </div>
       </div>
-    </div>
 
     <PaperSelectionPanel
       selected_id={paper_configs[paperConfigIndex].paperID}
@@ -1254,6 +1339,25 @@ function getSelectedPaperIDs(excludeIndex = -1) {
         paper_configs[paperConfigIndex].paperType = selected_type;
       }}
     ></PaperSelectionPanel>
+
+    <ReviewerSelectionPanel
+        show_panel = {paper_configs[paperConfigIndex].show_reviewer_panel}
+        onConfirm={(selected) =>{
+            paper_configs[paperConfigIndex].show_reviewer_panel=false;
+            paper_configs[paperConfigIndex].markConfig.teacher_mark_configs=selected;
+            if(paper_configs[paperConfigIndex].markConfig.teacher_mark_configs.length>=2)
+            {
+              paper_configs[paperConfigIndex].markMode = '02';
+            }
+            else{
+              paper_configs[paperConfigIndex].markMode = '10'
+            }
+          }}
+        onCancel={()=>{
+            paper_configs[paperConfigIndex].show_reviewer_panel=false;
+          }}
+        selectedReviewers={paper_configs[paperConfigIndex].markConfig.teacher_mark_configs}
+        ></ReviewerSelectionPanel>
 
     <ExamineeSelectionPanel
       show_panel={show_examinee_panel}
@@ -1468,6 +1572,7 @@ function getSelectedPaperIDs(excludeIndex = -1) {
   .exam-duration-container.config-row,
   .order-manner-container.config-row,
   .grading-mode-container.config-row,
+  .correct-setting-container,
   .grading-config-container.config-row,
   .show-name-container.config-row,
   .marking-method-container.config-row,
@@ -1499,6 +1604,9 @@ function getSelectedPaperIDs(excludeIndex = -1) {
 
   .config-row-content {
     font-size: 14px;
+    &.markConfig{
+        margin-top: 3px;
+      }
   }
   .bottom-action-panel-fixed {
     display: flex;
