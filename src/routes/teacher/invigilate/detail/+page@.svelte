@@ -19,16 +19,14 @@
   import '$lib/components/Input/index.scss';
   import { toast } from '$lib/components/Toast/Toast.js';
   import { onMount } from 'svelte';
-  import { formatTimestamp } from '$lib/utils/time_utils';
+  import { formatTimestamp, msToMinutes, minutesToMsSafe } from '$lib/utils/time_utils';
   import { page as appPage } from '$app/state';
   import { debounce } from '$lib/utils/optimize';
-  // import Upload from '$lib/components/Upload/Upload.svelte';
-  // import { fileStore, tusInit, fastdigest, encodeMetadata } from '$lib/utils/file_upload.svelte.js';
-  // import { get } from 'svelte/store';
+  import Upload from '$lib/components/Upload/Upload.svelte';
+  import { fileStore, tusInit, fastdigest, encodeMetadata } from '$lib/utils/file_upload.svelte.js';
+  import { get } from 'svelte/store';
 
   // TODO 监考员姓名
-
-  // TODO select"无"的问题
 
   // const MOCK_INFO = {
   //   ExamSessionName: '2025年春季期末考试',
@@ -59,7 +57,9 @@
   //     Name: '张三',
   //     Status: '02',
   //     Remark: '缺考',
-  //     ExtraTime: 0, // 单位：分钟
+  //     ExtraTime: 0 * 60 * 1000, // 分钟 -> 毫秒
+  //     deta_extend_time: 0,
+  //     new_remark: '缺考',
   //   },
   //   {
   //     ExamineeID: 5002,
@@ -68,7 +68,9 @@
   //     Name: '李四',
   //     Status: '02',
   //     Remark: '',
-  //     ExtraTime: 15,
+  //     ExtraTime: 15 * 60 * 1000,
+  //     deta_extend_time: 0,
+  //     new_remark: '',
   //   },
   //   {
   //     ExamineeID: 5003,
@@ -77,7 +79,9 @@
   //     Name: '王五',
   //     Status: '06',
   //     Remark: '正常参加考试',
-  //     ExtraTime: 0,
+  //     ExtraTime: 0 * 60 * 1000,
+  //     deta_extend_time: 0,
+  //     new_remark: '正常参加考试',
   //   },
   //   {
   //     ExamineeID: 5004,
@@ -86,7 +90,9 @@
   //     Name: '赵六',
   //     Status: '06',
   //     Remark: '提前交卷',
-  //     ExtraTime: 30,
+  //     ExtraTime: 30 * 60 * 1000,
+  //     deta_extend_time: 0,
+  //     new_remark: '提前交卷',
   //   },
   //   {
   //     ExamineeID: 5005,
@@ -95,7 +101,9 @@
   //     Name: '钱七',
   //     Status: '14',
   //     Remark: '作弊嫌疑',
-  //     ExtraTime: 0,
+  //     ExtraTime: 0 * 60 * 1000,
+  //     deta_extend_time: 0,
+  //     new_remark: '作弊嫌疑',
   //   },
   //   {
   //     ExamineeID: 5006,
@@ -104,7 +112,9 @@
   //     Name: '孙八',
   //     Status: '14',
   //     Remark: '身体不适中途退场',
-  //     ExtraTime: 60,
+  //     ExtraTime: 60 * 60 * 1000,
+  //     deta_extend_time: 0,
+  //     new_remark: '身体不适中途退场',
   //   },
   //   {
   //     ExamineeID: 5007,
@@ -113,7 +123,9 @@
   //     Name: '周九',
   //     Status: '02',
   //     Remark: '缺考',
-  //     ExtraTime: 0,
+  //     ExtraTime: 0 * 60 * 1000,
+  //     deta_extend_time: 0,
+  //     new_remark: '缺考',
   //   },
   //   {
   //     ExamineeID: 5008,
@@ -122,7 +134,9 @@
   //     Name: '吴十',
   //     Status: '14',
   //     Remark: '忘记带身份证',
-  //     ExtraTime: 15,
+  //     ExtraTime: 15 * 60 * 1000,
+  //     deta_extend_time: 0,
+  //     new_remark: '忘记带身份证',
   //   },
   //   {
   //     ExamineeID: 5009,
@@ -131,7 +145,9 @@
   //     Name: '郑十一',
   //     Status: '06',
   //     Remark: '正常参加考试',
-  //     ExtraTime: 0,
+  //     ExtraTime: 0 * 60 * 1000,
+  //     deta_extend_time: 0,
+  //     new_remark: '正常参加考试',
   //   },
   //   {
   //     ExamineeID: 5010,
@@ -140,7 +156,9 @@
   //     Name: '王十二',
   //     Status: '11',
   //     Remark: '表现优秀',
-  //     ExtraTime: 30,
+  //     ExtraTime: 30 * 60 * 1000,
+  //     new_remark: '表现优秀',
+  //     deta_extend_time: 0,
   //   },
   // ];
 
@@ -192,22 +210,21 @@
 
   let select = null;
 
-  // let tus;
-  // let { selectedFiles, jobs, uploadedFiles } = $derived(get(fileStore));
-  // const { criteria, fileApi, endpoint, chunkSize, parallelUploads } = $derived(get(fileStore));
+  let tus;
+  const { criteria, fileApi, endpoint, chunkSize, parallelUploads } = $derived(get(fileStore));
 
   let search_text = $state('');
-  let exam_session_id = $state('');
-  let exam_room_id = $state('');
+  let exam_session_id = $state(0);
+  let exam_room_id = $state(0);
   let status = $state('');
-  let extra_time = $state(0);
+  let extend_time = $state(0);
   let remark = $state('');
   let page = $state(1);
   let page_size = $state(10);
 
   let invigilation_info = $state({});
   let examinee_list = $state([]);
-  let files = $state([]);
+  let file_list = $state([]);
   let can_update = $state(false); // 考试结束后是否可以更新
   let total_count = $state(0);
 
@@ -231,169 +248,164 @@
     history.back();
   }
 
-  // async function singles(job) {
-  //   return new Promise(async (resolve, reject) => {
-  //     if (!job || !job.file) {
-  //       reject('invalid/null job');
-  //       return;
-  //     }
-
-  //     job.checksum = await fastdigest(job);
-  //     let metadata = {
-  //       filename: job.file.name,
-  //       filetype: job.file.type,
-  //       filesize: job.file.size,
-  //       lastModified: job.file.lastModified,
-  //       checksum: job.checksum,
-  //     };
-
-  //     const encodedMetadata = encodeMetadata(metadata);
-  //     let v = encodeURIComponent(encodedMetadata);
-  //     const tusOptions = {
-  //       endpoint: `${endpoint}?metadata=${v}`,
-  //       chunkSize,
-  //       retryDelays: [0, 1000, 3000, 5000],
-  //       parallelUploads,
-  //       metadata,
-  //       onUploadUrlAvailable() {
-  //         job.url = job.tus.url;
-  //       },
-  //       onError(error) {
-  //         console.log(error);
-  //         reject(error);
-  //       },
-  //       onProgress(bytesUploaded, bytesTotal) {
-  //         job.transmitPercentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
-  //         job.bytesUploaded = bytesUploaded;
-  //         job.bytesTotal = bytesTotal;
-  //       },
-  //       onSuccess(resp) {
-  //         // let x = resp.lastResponse._xhr;
-  //         // let msg = `上传成功`;
-  //         // if (x.status === 208) {
-  //         // 	msg = '文件已经在服务器上了';
-  //         // }
-  //         // console.log(`${metadata.filename} ${msg}(${x.status}): ${job.url}`);
-
-  //         resolve(job);
-  //       },
-  //     };
-  //     job.tus = new tus.Upload(job.file, tusOptions);
-  //     job.tus.start();
-  //   });
-  // }
-
-  // // 上传文件
-  // async function uploadFiles(files = selectedFiles) {
-  //   let promises = [];
-  //   for (let i = 0; i < files.length; i++) {
-  //     const file = files[i];
-  //     if (!file) continue;
-
-  //     let id = `${file.name}#${file.size}#${file.lastModified}`;
-  //     let job = { id, file };
-
-  //     // 更新 jobs 到 store
-  //     fileStore.update((s) => {
-  //       const newJobs = new Map(s.jobs);
-  //       newJobs.set(id, job);
-  //       return { ...s, jobs: newJobs };
-  //     });
-
-  //     const p = singles(job);
-  //     promises.push(p);
-  //   }
-  //   let results;
-  //   try {
-  //     // var results: [job]
-  //     // job:{ID,file,url}
-  //     results = await Promise.all(promises);
-  //     results.forEach((e) => {
-  //       console.log(e);
-  //       console.log(`download: ${e.file.name}: ${e.url}`);
-  //     });
-  //   } catch (err) {
-  //     console.error(err);
-  //   }
-
-  //   // queryFiles();
-  //   for (const r of results) {
-  //     await fetch('/api/invigilation/file', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({
-  //         data: {
-  //           ExamSessionID: invigilation_info.ExamSessionID,
-  //           ExamRoomID: invigilation_info.ExamRoomID,
-  //           CheckSum: r.checksum,
-  //           Name: r.file.name,
-  //           Size: r.file.size,
-  //         },
-  //       }),
-  //     })
-  //       .then((res) => {
-  //         if (!res.ok)
-  //           return res.text().then((error_text) => {
-  //             throw new Error(`请求失败：${res.status} ${res.statusText}` + (error_text ? '-' + error_text : ''));
-  //           });
-  //         return res.json();
-  //       })
-  //       .then((res) => {
-  //         if (res.status) throw new Error(res?.msg ?? '上传失败');
-  //         else {
-  //           files = [
-  //             ...files,
-  //             {
-  //               Name: r.file.name,
-  //               Size: r.file.size,
-  //               Checksum: r.checksum,
-  //               url: r.url || `${fileApi}/${r.checksum}`,
-  //             },
-  //           ];
-  //           // clearSelectedFiles();
-  //         }
-  //       })
-  //       .catch((err) => {
-  //         console.log(err);
-  //         toast.error(err.message);
-  //       });
-  //   }
-  // }
-
-  // function deleteFiles(file) {
-  //   fetch(`/api/invigilation/file`, {
-  //     method: 'DELETE',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     body: JSON.stringify({
-  //       data: {
-  //         ExamSessionID: invigilation_info.ExamSessionID,
-  //         ExamRoomID: invigilation_info.ExamRoomID,
-  //         FileID: file.FileID,
-  //       },
-  //     }),
-  //   })
-  //     .then((res) => {
-  //       if (!res.ok)
-  //         return res.text().then((error_text) => {
-  //           throw new Error(`请求失败：${res.status} ${res.statusText}` + (error_text ? '-' + error_text : ''));
-  //         });
-  //       return res.json();
-  //     })
-  //     .then((res) => {
-  //       if (!res.status) {
-  //         toast.success('删除成功');
-  //         files = files.filter((f) => f.Checksum !== file.Checksum);
-  //       } else toast.warning('删除失败：' + res.msg);
-  //     })
-  //     .catch((err) => {
-  //       console.error(err);
-  //       toast.error(err.message);
-  //     });
-  // }
-
   function initTempData() {
     temp_exam_session_basic_eval = invigilation_info?.BasicEval;
     temp_exam_session_record = invigilation_info?.Record;
+  }
+
+  // 上传单个文件
+  // 将文件写入 t_file 表
+  async function singles(job) {
+    return new Promise(async (resolve, reject) => {
+      if (!job || !job.file) {
+        reject('invalid/null job');
+        return;
+      }
+
+      job.checksum = await fastdigest(job);
+      let metadata = {
+        filename: job.file.name,
+        filetype: job.file.type,
+        filesize: job.file.size,
+        lastModified: job.file.lastModified,
+        checksum: job.checksum,
+      };
+
+      const encodedMetadata = encodeMetadata(metadata);
+      let v = encodeURIComponent(encodedMetadata);
+      const tusOptions = {
+        endpoint: `${endpoint}?metadata=${v}`,
+        chunkSize,
+        retryDelays: [0, 1000, 3000, 5000],
+        parallelUploads,
+        metadata,
+        onUploadUrlAvailable() {
+          job.url = job.tus.url;
+        },
+        onError(error) {
+          console.log(error);
+          reject(error);
+        },
+        onProgress(bytesUploaded, bytesTotal) {
+          job.transmitPercentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+          job.bytesUploaded = bytesUploaded;
+          job.bytesTotal = bytesTotal;
+        },
+        onSuccess(resp) {
+          let x = resp.lastResponse._xhr;
+          let msg = `上传成功`;
+          if (x.status === 208) {
+            msg = '文件已经在服务器上了';
+          }
+          console.log(`${metadata.filename} ${msg}(${x.status}): ${job.url}`);
+
+          resolve(job);
+        },
+      };
+      job.tus = new tus.Upload(job.file, tusOptions);
+      job.tus.start();
+    });
+  }
+
+  // 上传文件
+  async function uploadFiles(files = selectedFiles) {
+    let promises = [];
+
+    // 将所有的文件计算为job然后归为一批任务
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file) continue;
+
+      let id = `${file.name}#${file.size}#${file.lastModified}`;
+      let job = { id, file };
+
+      // 更新 jobs 到 store
+      fileStore.update((s) => {
+        const newJobs = new Map(s.jobs);
+        newJobs.set(id, job);
+        return { ...s, jobs: newJobs };
+      });
+
+      const p = singles(job);
+      promises.push(p);
+    }
+    let results;
+    try {
+      // var results: [job]
+      // job:{ID,file,url}
+      results = await Promise.all(promises);
+      results.forEach((e) => {
+        console.log(e);
+        // 下载 /api/file/${checkSum}
+      });
+    } catch (err) {
+      console.error(err);
+    }
+
+    // queryFiles();
+
+    // 将文件关联到监考
+    for (const r of results) {
+      await fetch('/api/invigilation/file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: {
+            ExamSessionID: exam_session_id,
+            ExamRoomID: exam_room_id,
+            CheckSum: r.checksum,
+            Name: r.file.name,
+            Size: r.file.size,
+          },
+        }),
+      })
+        .then((res) => {
+          if (!res.ok)
+            return res.text().then((error_text) => {
+              throw new Error(`请求失败：${res.status} ${res.statusText}` + (error_text ? '-' + error_text : ''));
+            });
+          return res.json();
+        })
+        .then((res) => {
+          if (res.status) throw new Error(res?.msg ?? '上传失败');
+          else file_list = res.data;
+        })
+        .catch((err) => {
+          console.log(err);
+          toast.error(err.message);
+        });
+    }
+  }
+
+  function deleteFiles(file) {
+    fetch(`/api/invigilation/file`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        data: {
+          ExamSessionID: invigilation_info.ExamSessionID,
+          ExamRoomID: invigilation_info.ExamRoomID,
+          FileID: file.FileID,
+        },
+      }),
+    })
+      .then((res) => {
+        if (!res.ok)
+          return res.text().then((error_text) => {
+            throw new Error(`请求失败：${res.status} ${res.statusText}` + (error_text ? '-' + error_text : ''));
+          });
+        return res.json();
+      })
+      .then((res) => {
+        if (!res.status) {
+          toast.success('删除成功');
+          file_list = file_list.filter((f) => f.Checksum !== file.Checksum);
+        } else toast.warning('删除失败：' + res.msg);
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error(err.message);
+      });
   }
 
   function showErrorDialog(content) {
@@ -435,7 +447,7 @@
         if (!res.status) {
           invigilation_info = res.data?.info ?? {};
           examinee_list = res.data?.examinees ?? [];
-          // files = res.data?.files ?? [];
+          file_list = res.data?.files ?? [];
           total_count = res.rowCount ?? 0;
           can_update = res.data?.canUpdate ?? false;
 
@@ -453,6 +465,13 @@
             examinee_list = [];
             throw new Error('examinee_list 数据类型错误');
           }
+
+          examinee_list.forEach((e) => {
+            e.deta_extend_time = 0;
+            e.new_remark = e.Remark;
+
+            if (e.Status === '00' || e.Status === '10') e.Status = '';
+          });
         } else throw new Error(res.msg ?? '获取监考信息失败');
       })
       .catch((err) => {
@@ -492,8 +511,10 @@
         return res.json();
       })
       .then((res) => {
-        if (!res.status) getInvigilateDetail();
-        else throw new Error(res.msg ?? '更新监考信息失败');
+        if (!res.status) {
+          toast.success('更改成功');
+          getInvigilateDetail();
+        } else throw new Error(res.msg ?? '更新监考信息失败');
       })
       .catch((err) => {
         toast.error(err.message);
@@ -517,8 +538,7 @@
 
   // 更新一个学生的状态
   function updateSingleExamineeStatus(examinee_id, status, old_status) {
-    if (status === old_status || (status === '' && old_status === '00') || (status === '' && old_status === '10'))
-      return;
+    if (status === old_status) return;
 
     MessageBox({
       title: '确认操作',
@@ -531,31 +551,48 @@
         }),
       onCancel: () => {
         // 回滚
-        select?.setValue(old_status === '00' || old_status === '10' ? '' : old_status);
+        select?.setValue(old_status);
       },
     });
   }
 
-  // function updateSingleExamineeExtraTime(examinee_id, e) {
-  //   if (Number(e.target.value) <= 0) e.target.value = '0'; // 防止用户输入负数
+  // 更新一个学生的延长时间
+  function updateSingleExamineeExtraTime(examinee_id, extend_time, index) {
+    if (extend_time < 0) {
+      toast.warning('延长时间不能小于 0');
+      return;
+    }
 
-  //   updateInfos('06', {
-  //     Examinees: [examinee_id],
-  //     ExamineeExtraTime: Number(e.target.value),
-  //   });
-  // }
+    MessageBox({
+      title: '确认操作',
+      content: '你确定要将该考生的考试时间延长' + extend_time + '分钟吗？',
+      on_close_by_click_outside: false,
+      onConfirm: async () => {
+        await updateInfos('06', {
+          Examinees: [examinee_id],
+          ExtraTime: minutesToMsSafe(extend_time),
+        });
 
-  // const debounceUpdateSingleExamineeExtraTime = debounce(updateSingleExamineeExtraTime, 500);
-
-  // 更新一个学生的备注
-  function updateSingleExamineeRemark(examinee_id, remark) {
-    updateInfos('04', {
-      Examinees: [examinee_id],
-      ExamineeRemark: remark,
+        examinee_list[index].deta_extend_time = 0; // 归0
+      },
+      onCancel: () => {},
     });
   }
 
-  const debounceUpdateSingleExamineeRemark = debounce(updateSingleExamineeRemark, 500);
+  // 更新一个学生的备注
+  function updateSingleExamineeRemark(examinee_id, remark, index) {
+    MessageBox({
+      title: '确认操作',
+      content: '你确定要对该考生进行备注吗？',
+      on_close_by_click_outside: false,
+      onConfirm: () =>
+        updateInfos('04', {
+          Examinees: [examinee_id],
+          ExamineeRemark: remark,
+        }),
+      onCancel: () => {},
+    });
+  }
 
   // 批量更新学生的状态
   function batchUpdateExamineeStatus(new_status) {
@@ -576,29 +613,61 @@
   }
 
   // 批量更新学生的延长时间
-  // function batchUpdateExamineeExtraTime() {
-  //   if (extra_time < 0) {
-  //     toast.warning('延长时间不能小于 0');
-  //     return;
-  //   }
+  function batchUpdateExamineeExtraTime() {
+    if (extend_time < 0) {
+      toast.warning('延长时间不能小于 0');
+      return;
+    }
 
-  //   updateInfos('06', {
-  //     ExamineeExtraTime: extra_time,
-  //     Examinees: Array.from(selected_examinee_id_set),
-  //   });
-  // }
+    MessageBox({
+      title: '确认操作',
+      content: '你确定要批量延时' + extend_time + '分钟吗？',
+      on_close_by_click_outside: false,
+      onConfirm: async () => {
+        if (extend_time === 0) return;
 
-  // const debounceBatchUpdateExamineeExtraTime = debounce(batchUpdateExamineeExtraTime, 1000);
+        await updateInfos('06', {
+          ExtraTime: minutesToMsSafe(extend_time),
+          Examinees: Array.from(selected_examinee_id_set),
+        });
 
-  // 批量更新学生的备注
-  function batchUpdateExamineeRemark() {
-    updateInfos('04', {
-      ExamineeRemark: remark,
-      Examinees: Array.from(selected_examinee_id_set),
+        extend_time = 0;
+      },
+      onCancel: () => {},
     });
   }
 
-  const debounceBatchUpdateExamineeRemark = debounce(batchUpdateExamineeRemark, 1000);
+  // 批量更新学生的备注
+  function batchUpdateExamineeRemark() {
+    if (remark === '') return;
+
+    MessageBox({
+      title: '确认操作',
+      content: '你确定要批量备注“' + remark + '”吗？',
+      on_close_by_click_outside: false,
+      onConfirm: async () => {
+        await updateInfos('04', {
+          ExamineeRemark: remark,
+          Examinees: Array.from(selected_examinee_id_set),
+        });
+
+        remark = '';
+      },
+      onCancel: () => {},
+    });
+  }
+
+  // 处理单个考生延时input失焦事件
+  function handleSingleExamineeExtendTimeInputBlur(index) {
+    if (examinee_list[index].deta_extend_time === null) examinee_list[index].deta_extend_time = 0;
+  }
+
+  // 处理单个考生备注input失焦事件
+  function handleSingleExamineeRemarkInputBlur(index) {
+    // setTimeout(() => {
+    //   examinee_list[index].new_remark = examinee_list[index].Remark;
+    // }, 1000); // 延迟，目的是为了点击保存按钮时，不会因为触发失焦无法触发fetch
+  }
 
   // 处理全选框
   function toggleSelectAll() {
@@ -635,8 +704,8 @@
     }
 
     // 导入TUS库
-    // tus = await import('tus-js-client');
-    // tusInit(tus);
+    tus = await import('tus-js-client');
+    tusInit(tus);
 
     getInvigilateDetail();
   });
@@ -714,10 +783,10 @@
           <div class="label">考试异常人数：</div>
           <div class="data number">{invigilation_info.AbnormalExamineeNum}</div>
         </div>
-        <!-- <div class="info-item">
+        <div class="info-item">
           <div class="label">已延长时间人数：</div>
           <div class="data number">{invigilation_info.ExtendedTimeNum}</div>
-        </div> -->
+        </div>
         <div class="info-item record">
           <div class="label">考场记录：</div>
           {#if allow_updating}
@@ -733,14 +802,14 @@
             </div>
           {/if}
         </div>
-        <!-- <div class="info-item">
+        <div class="info-item">
           <div class="label">证明图片：</div>
           {#if allow_updating}
             <div class="data file-upload">
               <Upload accept="image/*"><div class="upload-button">点击此处上传</div></Upload>
             </div>
           {:else}{/if}
-        </div> -->
+        </div>
       </div>
       {#if allow_updating && is_changed}
         <div class="options">
@@ -778,29 +847,40 @@
                 {/each}
               </Select>
             </div>
-            <!-- <div class="batch-extend-input">
+            <div class="batch-extend-input">
               <div class="label">批量延时：</div>
               <input
                 type="number"
-                placeholder="请输入"
-                bind:value={extra_time}
+                min="0"
+                bind:value={extend_time}
                 class="input"
                 class:is-disabled={selected_examinee_id_set.size === 0}
                 disabled={selected_examinee_id_set.size === 0}
-                oninput={debounceBatchUpdateExamineeExtraTime}
+                data-testid="batch-extend-time-input"
               />
-            </div> -->
+              &nbsp;
+              <button
+                class:is-disabled={selected_examinee_id_set.size === 0 || extend_time === 0 || extend_time === null}
+                disabled={selected_examinee_id_set.size === 0 || extend_time === 0 || extend_time === null}
+                onclick={batchUpdateExamineeExtraTime}>&#10003;</button
+              >
+            </div>
             <div class="batch-remark-input">
               <div class="label">批量备注：</div>
               <input
                 type="text"
-                placeholder="请输入"
                 bind:value={remark}
+                placeholder="请输入"
                 class="input"
                 class:is-disabled={selected_examinee_id_set.size === 0}
                 disabled={selected_examinee_id_set.size === 0}
-                oninput={debounceBatchUpdateExamineeRemark}
               />
+              &nbsp;
+              <button
+                class:is-disabled={selected_examinee_id_set.size === 0 || remark === '' || remark === null}
+                disabled={selected_examinee_id_set.size === 0 || remark === '' || remark === null}
+                onclick={batchUpdateExamineeRemark}>&#10003;</button
+              >
             </div>
             <button
               class="btn btn--info is_plain"
@@ -832,12 +912,12 @@
                 <th>身份证号</th>
                 <th>准考证号</th>
                 <th>异常标记</th>
-                <!-- <th>延长时间（分钟）</th> -->
+                <th>延长时间（分钟）</th>
                 <th>备注</th>
               </tr>
             </thead>
             <tbody data-testid="examinee-tbody">
-              {#each examinee_list as { ExamineeID, IDCardNo, Name, ExamCard, Status, ExtraTime, Remark } (ExamineeID)}
+              {#each examinee_list as { ExamineeID, IDCardNo, Name, ExamCard, Status, ExtraTime, Remark, deta_extend_time, new_remark }, index (ExamineeID)}
                 <tr>
                   {#if allow_updating}
                     <!-- 单选框 -->
@@ -882,17 +962,25 @@
                       >{EXAMINEE_STATUE_MAP[Status] ?? (Status !== '00' && Status !== '10' ? '未知状态' : '无')}
                     </td>
                   {/if}
-                  <!-- <td
-                    >{#if allow_updating}<div class="extra-time"> 
+                  <td
+                    >{#if allow_updating}<div class="extra-time">
+                        <span class="read-only">{msToMinutes(ExtraTime)}</span> +
                         <input
                           class="input"
                           type="number"
                           min="0"
-                          value={ExtraTime}
-                          oninput={(e) => debounceUpdateSingleExamineeExtraTime(ExamineeID, e)}
+                          bind:value={examinee_list[index].deta_extend_time}
+                          onblur={() => handleSingleExamineeExtendTimeInputBlur(index)}
+                          data-testid="extra-time-input"
                         />
+                        <button
+                          class:is-disabled={deta_extend_time === 0 || deta_extend_time === null}
+                          disabled={deta_extend_time === 0 || deta_extend_time === null}
+                          onclick={() => updateSingleExamineeExtraTime(ExamineeID, deta_extend_time, index)}
+                          >&#10003;</button
+                        >
                       </div>{:else}{ExtraTime}{/if}</td
-                  > -->
+                  >
                   <td class="remark"
                     >{#if allow_updating}
                       <div class="remark-input">
@@ -900,9 +988,14 @@
                           type="text"
                           class="input"
                           placeholder="暂无备注"
-                          value={Remark}
-                          oninput={(e) => debounceUpdateSingleExamineeRemark(ExamineeID, e.target.value)}
+                          bind:value={examinee_list[index].new_remark}
+                          onblur={() => handleSingleExamineeRemarkInputBlur(index)}
                         />
+                        <button
+                          class:is-disabled={new_remark === Remark}
+                          disabled={new_remark === Remark}
+                          onclick={() => updateSingleExamineeRemark(ExamineeID, new_remark, index)}>&#10003;</button
+                        >
                       </div>
                     {:else}
                       {Remark || '--'}
@@ -920,7 +1013,7 @@
         </div>
       </div>
 
-      <div class="pagination">
+      <div class="pagination" data-testid="pagination">
         <Pagination
           total_items={total_count}
           on:pageChange={handlePageChange}
@@ -936,6 +1029,14 @@
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: #ccc transparent;
+  }
+
+  button {
+    cursor: pointer;
+
+    &.is-disabled {
+      cursor: not-allowed;
+    }
   }
 
   .unknown {
@@ -1144,24 +1245,21 @@
               display: flex;
               align-items: center;
               z-index: 1002;
+              width: 10rem;
+            }
+
+            .search-input {
+              width: 14rem;
+            }
+
+            .batch-remark-input {
+              width: 12rem;
             }
 
             .label {
               white-space: nowrap;
               color: rgba(0, 0, 0, 0.6);
               font-size: 14px;
-            }
-
-            .select {
-              width: 11rem;
-            }
-
-            .batch-extend-input {
-              width: 9rem;
-            }
-
-            .batch-remark-input {
-              width: 15rem;
             }
 
             .tip {
@@ -1247,8 +1345,21 @@
                     }
 
                     .extra-time {
-                      width: 4rem;
-                      margin: auto;
+                      display: flex;
+                      gap: 0.5rem;
+                      justify-content: center;
+                      align-items: center;
+
+                      input {
+                        width: 3.5rem;
+                      }
+
+                      .read-only {
+                        width: 2rem;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                      }
                     }
 
                     &.remark {
@@ -1259,8 +1370,10 @@
                       white-space: nowrap;
 
                       .remark-input {
-                        width: 80%;
-                        margin: auto;
+                        display: flex;
+                        gap: 0.5rem;
+                        justify-content: center;
+                        align-items: center;
                       }
                     }
 
