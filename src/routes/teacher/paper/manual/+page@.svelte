@@ -573,6 +573,65 @@
         });
     }
 
+    // 清空题组内的题目
+    function clearGroupQuestions(groupID) {
+        // 找到要清空的题组
+        const targetGroup = paper_groups.find(group => group.id === groupID);
+        
+        // 检查题组是否存在题目
+        if (targetGroup.questions.length === 0) {
+            toast.error("该题组没有题目", 1000);
+            return;
+        }
+
+        MessageBox({
+            title: "清空确认",
+            content: "请问是否要清空该题组？",
+            confirm_button_type: "danger",
+
+            onConfirm: () => {
+                // 获取要删除的题目ID数组
+                const questionIDs = targetGroup.questions.map(question => question.id);
+                
+                // 获取剩余题目的ID数组（用于重新排序）
+                const remainingQuestionIDs = paper_groups
+                    .flatMap(group => group.questions.map(question => question.id))
+                    .filter(id => !questionIDs.includes(id));
+
+                const ACTIONS = [
+                    {
+                        action: "delete_question",
+                        payload: questionIDs
+                    }
+                ];
+
+                // 如果还有其他题目，需要重新排序
+                if (remainingQuestionIDs.length > 0) {
+                    ACTIONS.push({
+                        action: "move_question",
+                        payload: remainingQuestionIDs
+                    });
+                }
+
+                savePaper(paperID, ACTIONS)
+                    .then(result1 => {
+                        if(result1) {
+                            toast.success("清空成功", 1000);
+                            fetchPaper(paperID)
+                                .then(result => {
+                                    if(result) {
+                                        paper_groups = result.data.GroupsData;
+                                        paper_info = result.data;
+                                        total_score = paper_info.TotalScore;
+                                        question_count = paper_info.QuestionCount;
+                                    }
+                                });
+                        }
+                    });
+            }
+        });
+    }
+
     // 添加题组
     async function addGroup() {
         is_adding_group = true;
@@ -865,12 +924,16 @@
             {
                 action: "move_group",
                 payload: GROUP_IDS,
-            },
-            {
-                action: "move_question",
-                payload: QUESTION_IDS
             }
         ];
+
+        // 只有当存在题目时才添加move_question
+        if(QUESTION_IDS.length > 0) {
+            ACTIONS.push({
+                action: "move_question",
+                payload: QUESTION_IDS
+            });
+        }
         
         savePaper(paperID, ACTIONS)
             .then(result1 => {
@@ -1942,201 +2005,204 @@
                 <div class="content-container">
                     {#if paper_groups}
                         {#each paper_groups as group, groupIndex}
-                        <div class="single-group-content
-                            {highlighted_groups.has(group.id) ? "highlighted" : ""}">
-                            <!-- 头部下拉栏 - 编辑题组名称 -->
-                            {#if to_edit_groupID === group.id && to_edit_group_position === "content"}
-                                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                <div class="group-header"
-                                    onclick={()=>{
-                                        if(!to_edit_groupID && !is_update_average_question_score) changeOpenState("group",group.id)
-                                    }}
-                                    title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"}
-                                    style="{$GROUP_OPEN_STATE[group.id] ? "" : "border-radius: var(--border-radius-sm);"}"
-                                >
-                                <!-- 左侧区域 -->
-                                <div class="header-left">
-                                    <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
-                                    <input
-                                        bind:value={to_edit_group_name}
-                                        onchange={()=>confirmEditGroupName()}
-                                        onblur={()=>{if(to_edit_group_name.trim() === ""||to_edit_group_name.trim() === group.name){cancelEditGroupName()}}}
-                                        bind:this={to_edit_group_content_component}
-                                        onclick={(e)=>{e.stopPropagation()}}
-                                        class="add-group-input"
-                                        type="text"
-                                        placeholder="请输入题组名称"
+                            <div class="single-group-content
+                                {highlighted_groups.has(group.id) ? "highlighted" : ""}">
+                                <!-- 头部下拉栏 - 编辑题组名称 -->
+                                {#if to_edit_groupID === group.id && to_edit_group_position === "content"}
+                                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                    <div class="group-header"
+                                        onclick={()=>{
+                                            if(!to_edit_groupID && !is_update_average_question_score) changeOpenState("group",group.id)
+                                        }}
+                                        title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"}
+                                        style="{$GROUP_OPEN_STATE[group.id] ? "" : "border-radius: var(--border-radius-sm);"}"
                                     >
-                                </div>
-
-                                <!-- 右侧区域 -->
-                                <div class="header-right">
-                                    <button onmousedown={(e)=>{e.stopPropagation();cancelEditGroupName()}} class="delete-group-btn" title="取消">✕</button>
-                                </div>
-                            </div>
-                            {:else}
-                                <!-- 头部下拉栏 - 展开题组 -->
-                                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                <div class="group-header"
-                                    onclick={()=>{
-                                        if(!to_edit_groupID && !is_update_average_question_score) changeOpenState("group",group.id)
-                                    }}
-                                    title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"}
-                                    style="{$GROUP_OPEN_STATE[group.id] ? "" : "border-radius: var(--border-radius-sm);"}"
-                                >
                                     <!-- 左侧区域 -->
                                     <div class="header-left">
                                         <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
-                                        <span>{group.name}（共{group.questions.length}题，共{
-                                            group.questions.reduce((sum,q)=>sum+(q.score||0),0)
-                                        }分）</span>
+                                        <input
+                                            bind:value={to_edit_group_name}
+                                            onchange={()=>confirmEditGroupName()}
+                                            onblur={()=>{if(to_edit_group_name.trim() === ""||to_edit_group_name.trim() === group.name){cancelEditGroupName()}}}
+                                            bind:this={to_edit_group_content_component}
+                                            onclick={(e)=>{e.stopPropagation()}}
+                                            class="add-group-input"
+                                            type="text"
+                                            placeholder="请输入题组名称"
+                                        >
                                     </div>
-    
+
                                     <!-- 右侧区域 -->
                                     <div class="header-right">
-                                        <span>每题分值：</span>
-                                            <input class="input"
-                                                type="number"
-                                                placeholder="请输入"
-                                                bind:value={$GROUP_AVERAGE_SCORE[group.id]}
-                                                oninput={debounce(()=>updateAverageQuestionScore(group),500,false)}
-                                                min={0.5}
-                                                step={0.5}
-                                                onclick={(e)=>{e.stopPropagation()}}
-                                                title=""
-                                                onchange={()=>updateAverageQuestionScore(group)}
-                                                onfocus={()=>{is_update_average_question_score = true;}}
-                                                onblur={()=>{is_update_average_question_score = false;}}
-                                            >
-                                        <button onclick={(e)=>{e.stopPropagation();importQuestions(group)}} class="btn btn--primary import-btn">导入题目</button>
-                                        <button onclick={(e)=>{e.stopPropagation();moveGroup(group,"up")}} class="move-btn" title="上移">↑</button>
-                                        <button onclick={(e)=>{e.stopPropagation();moveGroup(group,"down")}} class="move-btn" title="下移">↓</button>
-                                        <button onclick={(e)=>{e.stopPropagation();editGroupName(group.id,group.name,"content")}} class="edit-group-btn" title="编辑" aria-label="编辑题组">
-                                            <svg
-                                                viewBox="0 0 1024 1024"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                width="12"
-                                                height="12"
-                                            >
-                                                <path
-                                                    d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                                    fill="currentColor"
-                                                />
-                                            </svg>
-                                        </button>
-                                        <button onclick={(e)=>{e.stopPropagation();deleteGroup(group.id)}} class="delete-group-btn" title="删除">✕</button>
+                                        <button onmousedown={(e)=>{e.stopPropagation();cancelEditGroupName()}} class="delete-group-btn" title="取消">✕</button>
                                     </div>
                                 </div>
-                            {/if}
+                                {:else}
+                                    <!-- 头部下拉栏 - 展开题组 -->
+                                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                    <div class="group-header"
+                                        onclick={()=>{
+                                            if(!to_edit_groupID && !is_update_average_question_score) changeOpenState("group",group.id)
+                                        }}
+                                        title={$GROUP_OPEN_STATE[group.id]?"收起":"展开"}
+                                        style="{$GROUP_OPEN_STATE[group.id] ? "" : "border-radius: var(--border-radius-sm);"}"
+                                    >
+                                        <!-- 左侧区域 -->
+                                        <div class="header-left">
+                                            <button class="toggle-btn">{$GROUP_OPEN_STATE[group.id]?"∨":"∧"}</button>
+                                            <span>{group.name}（共{group.questions.length}题，共{
+                                                group.questions.reduce((sum,q)=>sum+(q.score||0),0)
+                                            }分）</span>
+                                        </div>
+        
+                                        <!-- 右侧区域 -->
+                                        <div class="header-right">
+                                            <span>每题分值：</span>
+                                                <input class="input"
+                                                    type="number"
+                                                    placeholder="请输入"
+                                                    bind:value={$GROUP_AVERAGE_SCORE[group.id]}
+                                                    oninput={debounce(()=>updateAverageQuestionScore(group),500,false)}
+                                                    min={0.5}
+                                                    step={0.5}
+                                                    onclick={(e)=>{e.stopPropagation()}}
+                                                    title=""
+                                                    onchange={()=>updateAverageQuestionScore(group)}
+                                                    onfocus={()=>{is_update_average_question_score = true;}}
+                                                    onblur={()=>{is_update_average_question_score = false;}}
+                                                >
+                                            <button onclick={(e)=>{e.stopPropagation();importQuestions(group)}} class="btn btn--primary import-btn">导入题目</button>
+                                            <button onclick={(e)=>{e.stopPropagation();moveGroup(group,"up")}} class="move-btn" title="上移">↑</button>
+                                            <button onclick={(e)=>{e.stopPropagation();moveGroup(group,"down")}} class="move-btn" title="下移">↓</button>
+                                            <button onclick={(e)=>{e.stopPropagation();editGroupName(group.id,group.name,"content")}} class="edit-group-btn" title="编辑" aria-label="编辑题组">
+                                                <svg
+                                                    viewBox="0 0 1024 1024"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    width="12"
+                                                    height="12"
+                                                >
+                                                    <path
+                                                        d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                                        fill="currentColor"
+                                                    />
+                                                </svg>
+                                            </button>
+                                            <button onclick={(e)=>{e.stopPropagation();clearGroupQuestions(group.id)}} class="clear-group-btn" title="清空题组">
+                                                <span class="material-symbols-outlined">cleaning_services</span>
+                                            </button>
+                                            <button onclick={(e)=>{e.stopPropagation();deleteGroup(group.id)}} class="delete-group-btn" title="删除">✕</button>
+                                        </div>
+                                    </div>
+                                {/if}
 
-                            <!-- 题目列表 -->
-                            {#if $GROUP_OPEN_STATE[group.id]}
-                                <div class="group-question-list-outer-box">
-                                    <div class="group-question-list {is_dragging_question ? "drag-over" : ""}">
-                                        {#if group.questions.length !== 0}
-                                            {#each group.questions as question, questionIndex}
+                                <!-- 题目列表 -->
+                                {#if $GROUP_OPEN_STATE[group.id]}
+                                    <div class="group-question-list-outer-box">
+                                        <div class="group-question-list {is_dragging_question ? "drag-over" : ""}">
+                                            {#if group.questions.length !== 0}
+                                                {#each group.questions as question, questionIndex}
+                                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                                    <div class="single-question
+                                                        {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'top' && dragged_type === 'question') ? 'drag-over-top' : ''}
+                                                        {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'bottom' && dragged_type === 'question') ? 'drag-over-bottom' : ''}
+                                                        {dragged_question_item.question?.id === question.id ? "dragging":""}
+                                                        {highlighted_questions.has(question.id) ? "highlighted" : ""}"
+                                                        draggable={!question.isEditingScore && !question.isEditingSubScore}
+                                                        ondragstart={(event)=>handleQuestionDragStart(event,question,group)}
+                                                        ondragover={(event)=>handleQuestionDragOver(event,question,group)}
+                                                        ondrop={handleQuestionDrop}
+                                                        ondragend={handleDragEnd}
+                                                    >
+                                                        <!-- 头部下拉栏 -->
+                                                        <div class="question-header" style="{$QUESTION_OPEN_STATE[question.id] ? "" : "border-radius: var(--border-radius-sm);"}">
+                                                            <!-- 左侧区域 -->
+                                                            <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                                            <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                                            <div class="header-left"  title={$QUESTION_OPEN_STATE[question.id]?"收起":"展开"}  onclick={()=>{changeOpenState("question",question.id);}}>
+                                                                <button class="toggle-btn-down">{$QUESTION_OPEN_STATE[question.id]?"∨":"∧"}</button>
+                                                                <span class="sequence">{question.order}</span>
+                                                                <span class="question-type">{QUESTION_TYPE_TRANS[question.type]}</span>
+                                                                <span class={DIFFICULTY_TRANS[DIFFICULTY_TRANS[question.difficulty]]}>{DIFFICULTY_TRANS[question.difficulty]}</span>
+                                                            </div>
+        
+                                                            <!-- 右侧区域 -->
+                                                            <div class="header-right">
+                                                                <span>分值：</span>
+                                                                <input class="input"
+                                                                    type="number"
+                                                                    placeholder="请输入"
+                                                                    bind:value={question.score}
+                                                                    oninput={debounce(()=>updateQuestionScore(question),500,false)}
+                                                                    min={(question.type==="06" || question.type==="08")?question.answers.length/2:0.5}
+                                                                    step={0.5}
+                                                                    onchange={()=>updateQuestionScore(question)}
+                                                                    onfocus={()=>question.isEditingScore = true}
+                                                                    onblur={()=>question.isEditingScore = false}
+                                                                >
+                                                                <button onclick={()=>moveQuestion(group,question,"up")} class="move-btn" title="上移">↑</button>
+                                                                <button onclick={()=>moveQuestion(group,question,"down")} class="move-btn" title="下移">↓</button>
+                                                                <button onclick={()=>editQuestion(question)} class="edit-question-btn" title="编辑" aria-label="编辑题目">
+                                                                    <svg
+                                                                        viewBox="0 0 1024 1024"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        stroke-width="2"
+                                                                        stroke-linecap="round"
+                                                                        stroke-linejoin="round"
+                                                                        width="12"
+                                                                        height="12"
+                                                                    >
+                                                                        <path
+                                                                            d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
+                                                                            fill="currentColor"
+                                                                        />
+                                                                    </svg>
+                                                                </button>
+                                                                <button onclick={()=>deleteQuestion(question.id,group)} class="delete-question-btn" title="删除">✕</button>
+                                                            </div>
+                                                        </div>
+        
+                                                        <!-- 题目内容 -->
+                                                        {#if $QUESTION_OPEN_STATE[question.id]}
+                                                            <div class="question-container">                                          
+                                                                <QuestionPreviewPanel
+                                                                    question={question}
+                                                                    showHeader={false}
+                                                                    editSubScore={true}
+                                                                    update={(new_sub_score)=>updateSubScore(new_sub_score,groupIndex,questionIndex)}
+                                                                />
+                                                            </div>
+                                                        {/if}
+                                                    </div>
+                                                {/each}
+                                            
+                                                <!-- 暂无题目 -->
+                                            {:else}
                                                 <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                                <div class="single-question
-                                                    {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'top' && dragged_type === 'question') ? 'drag-over-top' : ''}
-                                                    {(drag_over_question_item.question?.id === question.id && drag_over_question_position === 'bottom' && dragged_type === 'question') ? 'drag-over-bottom' : ''}
-                                                    {dragged_question_item.question?.id === question.id ? "dragging":""}
-                                                    {highlighted_questions.has(question.id) ? "highlighted" : ""}"
-                                                    draggable={!question.isEditingScore && !question.isEditingSubScore}
-                                                    ondragstart={(event)=>handleQuestionDragStart(event,question,group)}
-                                                    ondragover={(event)=>handleQuestionDragOver(event,question,group)}
+                                                <div class="no-questions-container"
+                                                    ondragover={(event)=>handleQuestionDragOver(event,{ id: null },group)}
                                                     ondrop={handleQuestionDrop}
                                                     ondragend={handleDragEnd}
                                                 >
-                                                    <!-- 头部下拉栏 -->
-                                                    <div class="question-header" style="{$QUESTION_OPEN_STATE[question.id] ? "" : "border-radius: var(--border-radius-sm);"}">
-                                                        <!-- 左侧区域 -->
-                                                        <!-- svelte-ignore a11y_click_events_have_key_events -->
-                                                        <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                                        <div class="header-left"  title={$QUESTION_OPEN_STATE[question.id]?"收起":"展开"}  onclick={()=>{changeOpenState("question",question.id);}}>
-                                                            <button class="toggle-btn-down">{$QUESTION_OPEN_STATE[question.id]?"∨":"∧"}</button>
-                                                            <span class="sequence">{question.order}</span>
-                                                            <span class="question-type">{QUESTION_TYPE_TRANS[question.type]}</span>
-                                                            <span class={DIFFICULTY_TRANS[DIFFICULTY_TRANS[question.difficulty]]}>{DIFFICULTY_TRANS[question.difficulty]}</span>
-                                                        </div>
-    
-                                                        <!-- 右侧区域 -->
-                                                        <div class="header-right">
-                                                            <span>分值：</span>
-                                                            <input class="input"
-                                                                type="number"
-                                                                placeholder="请输入"
-                                                                bind:value={question.score}
-                                                                oninput={debounce(()=>updateQuestionScore(question),500,false)}
-                                                                min={(question.type==="06" || question.type==="08")?question.answers.length/2:0.5}
-                                                                step={0.5}
-                                                                onchange={()=>updateQuestionScore(question)}
-                                                                onfocus={()=>question.isEditingScore = true}
-                                                                onblur={()=>question.isEditingScore = false}
-                                                            >
-                                                            <button onclick={()=>moveQuestion(group,question,"up")} class="move-btn" title="上移">↑</button>
-                                                            <button onclick={()=>moveQuestion(group,question,"down")} class="move-btn" title="下移">↓</button>
-                                                            <button onclick={()=>editQuestion(question)} class="edit-question-btn" title="编辑" aria-label="编辑题目">
-                                                                <svg
-                                                                    viewBox="0 0 1024 1024"
-                                                                    fill="none"
-                                                                    stroke="currentColor"
-                                                                    stroke-width="2"
-                                                                    stroke-linecap="round"
-                                                                    stroke-linejoin="round"
-                                                                    width="12"
-                                                                    height="12"
-                                                                >
-                                                                    <path
-                                                                        d="M114.445959 666.607355c-20.078238 20.078238-20.078238 46.179948 0 68.266011l174.680675 174.680675c20.078238 20.078238 54.211244 20.078238 68.266011 0l477.862075-477.862076c20.078238-20.078238 20.078238-46.179948 0-68.26601l-174.680675-174.680675c-20.078238-20.078238-54.211244-20.078238-68.26601 0L114.445959 666.607355zM760.965238 14.064605l-100.391193 100.391193 248.970157 248.970157 100.391193-100.391193c34.133005-34.133005 0-68.266011 0-68.266011L835.25472 20.088077c-2.007824-6.023472-34.133005-38.148653-74.289482-6.023472zM46.179948 728.849895L0 1024l295.150105-46.179948L46.179948 728.849895z"
-                                                                        fill="currentColor"
-                                                                    />
-                                                                </svg>
-                                                            </button>
-                                                            <button onclick={()=>deleteQuestion(question.id,group)} class="delete-question-btn" title="删除">✕</button>
+                                                    <div class="no-questions-box">
+                                                        <span class="title">题组暂无题目</span>
+                                                        <span class="prompt">可以通过以下方式快速添加题目：</span>
+                                                        <div class="import-box">
+                                                            <button onclick={()=>importQuestions(group)} class="btn btn--primary">导入题目</button>
                                                         </div>
                                                     </div>
-    
-                                                    <!-- 题目内容 -->
-                                                    {#if $QUESTION_OPEN_STATE[question.id]}
-                                                        <div class="question-container">                                          
-                                                            <QuestionPreviewPanel
-                                                                question={question}
-                                                                showHeader={false}
-                                                                editSubScore={true}
-                                                                update={(new_sub_score)=>updateSubScore(new_sub_score,groupIndex,questionIndex)}
-                                                            />
-                                                        </div>
-                                                    {/if}
                                                 </div>
-                                            {/each}
-                                        
-                                            <!-- 暂无题目 -->
-                                        {:else}
-                                            <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                            <div class="no-questions-container"
-                                                ondragover={(event)=>handleQuestionDragOver(event,{ id: null },group)}
-                                                ondrop={handleQuestionDrop}
-                                                ondragend={handleDragEnd}
-                                            >
-                                                <div class="no-questions-box">
-                                                    <span class="title">题组暂无题目</span>
-                                                    <span class="prompt">可以通过以下方式快速添加题目：</span>
-                                                    <div class="import-box">
-                                                        <button onclick={()=>importQuestions(group)} class="btn btn--primary">导入题目</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        {/if}
+                                            {/if}
+                                        </div>
                                     </div>
-                                </div>
-                            {/if}
-                        </div>
+                                {/if}
+                            </div>
                         {/each}
                     {/if}
                 </div>
@@ -2146,6 +2212,28 @@
 {/if}
 
 <style>
+    .material-symbols-outlined {
+        font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 20;
+        font-size: 20px;
+        color: currentColor; /* 继承父元素的 color */
+        display: inline-block;
+        font-family: 'Material Symbols Outlined';
+        font-style: normal;
+        font-weight: normal;
+        line-height: 1;
+        text-transform: none;
+        letter-spacing: normal;
+        word-wrap: normal;
+        white-space: nowrap;
+        direction: ltr;
+        -webkit-font-feature-settings: 'liga';
+        -webkit-font-smoothing: antialiased;
+    }
+
     .add-paper {
         font-family: 'Noto Sans SC', sans-serif;
         color: var(--text-primary);
@@ -2728,7 +2816,7 @@
                                 margin-right: 36px;
                             }
                             
-                            .move-btn, .delete-group-btn, .edit-group-btn {
+                            .move-btn, .delete-group-btn, .edit-group-btn{
                                 width: 30px;
                                 height: 30px;
                                 margin-left: 6px;
@@ -2736,6 +2824,24 @@
                                 border: 1px solid var(--border-light);
                                 background-color: var(--bg-primary);
                                 cursor: pointer;
+                            }
+
+                            .clear-group-btn {
+                                font-weight: bold;
+                                padding: 4px 0 0 7.5px;
+                                width: 30px;
+                                height: 30px;
+                                margin-left: 6px;
+                                border-radius: var(--btn-border-radius);
+                                border: 1px solid var(--border-light);
+                                background-color: var(--bg-primary);
+                                cursor: pointer;
+
+                                &:hover {
+                                    color: var(--orange);
+                                    border-color: var(--orange);
+                                    transition: all 0.3s;
+                                }
                             }
 
                             /* 移动按钮 */
