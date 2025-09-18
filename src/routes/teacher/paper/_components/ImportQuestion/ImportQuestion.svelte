@@ -721,37 +721,37 @@
                                                     toggleSelection(question.ID, !selected_questions.map(question => question.ID).includes(question.ID))
                                                 }
                                             }}>
-                                        <td class="checkbox">
-                                            {#if existing_question_ids.includes(question.ID)}
-                                                <div class="imported-container">
-                                                    <Tag type="info" size="middle">已导入</Tag>
-                                                </div>
-                                            {:else}
-                                            <input type="checkbox"
-                                                checked={selected_questions.map(question => question.ID).includes(question.ID)}
-                                                onclick={(e) => {
-                                                    e.stopPropagation();
-                                                    toggleSelection(question.ID, e.target.checked);
-                                                }}>
-                                            {/if}
-                                        </td>
-                                        <td class="question-content"><div>{@html question.Content}</div></td>
-                                        <td class="question-type">{QUESTION_TYPE_TRANS[question.Type]}</td>
-                                        <td class="question-level"><span class={DIFFICULTY_TRANS[DIFFICULTY_TRANS[question.Difficulty]]}>{DIFFICULTY_TRANS[question.Difficulty]}</span></td>
-                                        <td class="question-score">{question.Score}</td>
-                                        <td class="update-time">{formatTimestamp(question.UpdateTime,{show_date:true,show_time:true})}</td>
-                                        <td class="question-tags">
-                                            <div class="tag-container">
-                                                {#if question.Tags.length !== 0}
-                                                    {#each question.Tags as tag}
-                                                        <UneditableTag content={tag}/>
-                                                    {/each}
+                                            <td class="checkbox">
+                                                {#if existing_question_ids.includes(question.ID)}
+                                                    <div class="imported-container">
+                                                        <Tag type="info" size="middle">已导入</Tag>
+                                                    </div>
                                                 {:else}
-                                                    <span>-</span>
+                                                <input type="checkbox"
+                                                    checked={selected_questions.map(question => question.ID).includes(question.ID)}
+                                                    onclick={(e) => {
+                                                        e.stopPropagation();
+                                                        toggleSelection(question.ID, e.target.checked);
+                                                    }}>
                                                 {/if}
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            </td>
+                                            <td class="question-content"><div>{@html question.Content}</div></td>
+                                            <td class="question-type">{QUESTION_TYPE_TRANS[question.Type]}</td>
+                                            <td class="question-level"><span class={DIFFICULTY_TRANS[DIFFICULTY_TRANS[question.Difficulty]]}>{DIFFICULTY_TRANS[question.Difficulty]}</span></td>
+                                            <td class="question-score">{question.Score}</td>
+                                            <td class="update-time">{formatTimestamp(question.UpdateTime,{show_date:true,show_time:true})}</td>
+                                            <td class="question-tags">
+                                                <div class="tag-container">
+                                                    {#if question.Tags.length !== 0}
+                                                        {#each question.Tags as tag}
+                                                            <UneditableTag content={tag}/>
+                                                        {/each}
+                                                    {:else}
+                                                        <span>-</span>
+                                                    {/if}
+                                                </div>
+                                            </td>
+                                        </tr>
                                     {/each}
                                 {/if}
                             </tbody>
@@ -841,7 +841,7 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             width: 1450px;
             height: 850px;
-            overflow: auto;
+            overflow: hidden;
 
             /* 头部 */
             .container-header {
@@ -1185,6 +1185,7 @@
                                 .checkbox {
                                     min-width: 32px;
                                     text-align: center;
+                                    padding: 16px 10px;
                                     
                                     input {
                                         width: 16px;
@@ -1194,33 +1195,34 @@
                                     }
                                 }
                                 .question-content {
-                                    padding: 6px 10px;
-                                    max-width: calc(85vw - 820px);
+                                    max-width: calc(85vw - 920px);
                                     min-width: 270px;
-                                    text-align: center;
-                                    white-space: nowrap;      /* 不允许文本换行 */
-                                    overflow: hidden;         /* 超出容器的文本被隐藏 */
-                                    text-overflow: ellipsis;  /* 超出的文本用省略号显示 */
-
+                                    
+                                    padding: 16px 10px;
                                     div {
-                                        &:hover {
-                                            white-space: normal;
-                                            overflow: visible;
-                                            background: white;
-                                            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                                        }
+                                        text-align: center;
+                                        white-space: nowrap;      /* 不允许文本换行 */
+                                        overflow: hidden;         /* 超出容器的文本被隐藏 */
+                                        text-overflow: ellipsis;  /* 超出的文本用省略号显示 */
+                                    }
+
+                                    &:hover div {
+                                        white-space: normal;
+                                        overflow: visible;
+                                        background: white;
+                                        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
                                     }
 
                                 }
                                 .question-type {
                                     font-size: 14px;
                                     text-align: center;
-                                    min-width: 48px;
+                                    min-width: 64px;
                                 }
                                 .question-level {
                                     font-size: 14px;
                                     text-align: center;
-                                    min-width: 48px;
+                                    min-width: 64px;
 
                                     .easy-level { color: green; }
                                     .normal-level { color: orange; }
@@ -1229,12 +1231,12 @@
                                 .question-score {
                                     font-size: 14px;
                                     text-align: center;
-                                    min-width: 24px;
+                                    min-width: 64px;
                                 }
                                 .update-time {
                                     font-size: 14px;
                                     text-align: center;
-                                    min-width: 80px;
+                                    min-width: 100px;
                                 }
                                 .question-tags {
                                     font-size: 14px;
