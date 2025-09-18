@@ -19,7 +19,7 @@
   import '$lib/components/Input/index.scss';
   import { toast } from '$lib/components/Toast/Toast.js';
   import { onMount } from 'svelte';
-  import { formatTimestamp, msToMinutes, minutesToMsSafe } from '$lib/utils/time_utils';
+  import { formatTimestamp, msToMinutes, minutesToMs } from '$lib/utils/time_utils';
   import { page as appPage } from '$app/state';
   import { debounce } from '$lib/utils/optimize';
   import Upload from '$lib/components/Upload/Upload.svelte';
@@ -570,7 +570,7 @@
       onConfirm: async () => {
         await updateInfos('06', {
           Examinees: [examinee_id],
-          ExtraTime: minutesToMsSafe(extend_time),
+          ExtraTime: minutesToMs(extend_time),
         });
 
         examinee_list[index].deta_extend_time = 0; // 归0
@@ -627,7 +627,7 @@
         if (extend_time === 0) return;
 
         await updateInfos('06', {
-          ExtraTime: minutesToMsSafe(extend_time),
+          ExtraTime: minutesToMs(extend_time),
           Examinees: Array.from(selected_examinee_id_set),
         });
 
