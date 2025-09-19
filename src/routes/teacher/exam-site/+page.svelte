@@ -764,7 +764,7 @@
                                         >
 
                                         <button
-                                            class="operation"
+                                            class="operation danger"
                                             onclick={() =>  openDeleteDialog(site.id) }
                                             >删除考点
                                         </button>
@@ -1252,6 +1252,14 @@
             font-size: 10px;
             margin-bottom: 1px;
         }
+    }
+
+    .operation.danger {
+        color: #e34d59; /* 红色文本 */
+    }
+    .operation.danger:hover {
+        font-weight: bold;
+        text-decoration: underline;
     }
     .pagination-container {
         display: flex;
