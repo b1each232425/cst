@@ -602,7 +602,6 @@
             toast.error(`服务器错误！${data.msg || ''}`, 2000);
             throw new Error(data.msg);
           }
-       //    console.log('接口返回数据:', data);
 
           // 赋值到变量
           //题目

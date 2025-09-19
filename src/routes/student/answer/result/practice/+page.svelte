@@ -412,6 +412,8 @@
           throw new Error(data.msg);
         }
 
+        
+
         //学生信息类
         if (!data.data.practiceInfo) throw new Error('practice_info 不能为空'); // 考试信息
            examInfo = data.data.practiceInfo;
@@ -423,6 +425,7 @@
 
         if (!data.data.exam_paper)  throw new Error('exam_paper_info 不能为空');
           practice_paper_info = data.data.exam_paper; // 试卷信息
+
 
         //加载题目
         total_score = 0; // 重置总分
@@ -493,7 +496,7 @@
       </div>
       <div class="exam-title">{practice_paper_info.Name}</div>
       <div class="exam-header-right"> 
-        {#if !student_id}
+        {#if !student_id && examInfo.StudentScore !== practice_paper_info.TotalScore}
           <button class="error-collection-button" onclick={startPracticeError}>
             错题练习
           </button>
