@@ -378,7 +378,7 @@
                         <input type="number"
                             class="input"
                             placeholder="请输入"    
-                            min={1}
+                            min={0.5}
                             bind:value={sub_score[index]}
                             oninput={debounce(()=>update(sub_score),500,false)}
                             onfocus={()=>question.isEditingSubScore = true}

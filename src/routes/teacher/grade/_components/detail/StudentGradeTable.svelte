@@ -4,6 +4,7 @@
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Empty from '$lib/components/Table/Empty.svelte';
   import { debounce } from '../../_utils/debounce.js';
+  import { toast } from '$lib/components/Toast/Toast.js';
 
   /**
    * @typedef {Object} Props
@@ -17,23 +18,20 @@
    */
   let { type, resource_id, papers = [] } = $props();
 
-  // 获取 Context 数据
-  let context_data = $state(null);
-  try {
+  // 获取 Context 数据，使用更简洁的方式
+  const contextData = $derived(() => {
     if (type === 'practice') {
       const context = getContext('practice');
-      context_data = context?.practiceData;
+      return context?.practiceData;
     } else {
       const context = getContext('exam');
-      context_data = context?.examData;
+      return context?.examData;
     }
-  } catch {
-    // Context 不存在时忽略
-  }
+  });
 
   // 状态变量（按照用户管理页面的命名风格）
   let currentData = $state([]);
-  
+
   // 分页相关状态（按照用户管理页面的风格）
   let current_page = $state(1);
   let page_size = $state(10);
@@ -50,43 +48,6 @@
     isfolded = !isfolded;
   }
 
-  /**
-   * 合并学生成绩（考试类型）
-   */
-  function mergeStudentGrades(data) {
-    const map = new Map();
-
-    for (const item of data) {
-      if (!map.has(item.stu_id)) {
-        map.set(item.stu_id, {
-          stu_id: item.stu_id,
-          exam_id: item.exam_id,
-          phone: item.phone,
-          nickname: item.nickname,
-          name: item.name,
-          scores: [
-            {
-              exam_session_id: item.exam_session_id,
-              score: item.score,
-            },
-          ],
-          total_score: item.score ?? 0,
-          remark: item.remark,
-        });
-      } else {
-        const existing = map.get(item.stu_id);
-        if (existing) {
-          existing.scores.push({
-            exam_session_id: item.exam_session_id,
-            score: item.score,
-          });
-          existing.total_score += item.score ?? 0;
-        }
-      }
-    }
-
-    return Array.from(map.values());
-  }
 
   /**
    * 获取学生成绩数据
@@ -98,18 +59,16 @@
 
     // 组装查询参数
     const params = new URLSearchParams({
-      category: type,               
+      category: type,
       page: String(current_page),
       pageSize: String(page_size),
-      ...(type === 'exam'
-        ? { examID: resource_id }
-        : { practiceID: resource_id }),
-      keyword: searchKeyword.trim()
+      ...(type === 'exam' ? { examID: resource_id } : { practiceID: resource_id }),
+      keyword: searchKeyword.trim(),
     });
 
     return fetch(`/api/grade/examinee/list?${params.toString()}`, {
       method: 'GET',
-      credentials: 'include'
+      credentials: 'include',
     })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -127,15 +86,15 @@
               students.push(...practice.student_scores);
             }
           });
-          
+
           currentData = students.map((stu) => ({
-            stuId: stu.stu_id, 
+            stu_id: stu.stu_id,
             phone: stu.phone || '-',
             name: stu.name || '-',
             nickname: stu.nickname || '-',
             highestScore: stu.highest_score ?? 0,
             submitCount: stu.submitted_cnt ?? 0,
-            remark: stu.remark || '-'
+            remark: stu.remark || '-',
           }));
           total_items = json.rowCount || 0;
         } else {
@@ -150,19 +109,18 @@
                 nickname: stu.nickname || '-',
                 scores: stu.exam_sessions.map((s) => ({
                   exam_session_id: s.exam_session_id,
-                  score: s.score ?? 0
+                  score: s.score ?? 0,
                 })),
                 total_score: total_score,
-                remark: stu.remark || '-'
+                remark: stu.remark || '-',
               });
             });
           });
           currentData = merged;
 
-          
           total_items = json.rowCount || 0;
         }
-        
+
         loading = false;
       })
       .catch((err) => {
@@ -209,6 +167,34 @@
     }
   }
 
+  /**
+   * 处理查看详情点击事件
+   */
+  function handleViewDetail(student) {
+    if (type === 'exam') {
+      // 获取当前考试中的所有 exam_session_id
+      const examSessionIds = student.scores?.map((score) => score.exam_session_id) || [];
+
+      if (examSessionIds.length > 0) {
+        console.log('当前考试中的exam_session_id:', examSessionIds);
+        console.log('选中的学生id:', student.stu_id);
+
+        const examSessionIdStr = examSessionIds.join(',');
+        window.location.href = `/student/answer/result/exam?exam-session-id-arr=[${examSessionIdStr}]&student-id=${student.stu_id}`;
+      } else {
+        console.log('未找到exam_session_id');
+        toast.error('未找到学生的考试记录，无法查看详情');
+      }
+    } else {
+      // 练习类型，跳转到练习详情页面，传递练习id和学生id
+      if (resource_id && student.stu_id) {
+        window.location.href = `/student/answer/result/practice?practice-id=${resource_id}&student-id=${student.stu_id}`;
+      } else {
+        toast.error('未找到练习ID或学生ID，无法查看详情');
+      }
+    }
+  }
+
   // 初始化
   onMount(async () => {
     await fetchGradesData();
@@ -229,10 +215,10 @@
   {#if !isfolded}
     <div class="card-body">
       <div class="search-section">
-        <InputBox 
-          show_label={false} 
-          placeholder="请输入学生电话/账号/姓名" 
-          bind:value={searchKeyword} 
+        <InputBox
+          show_label={false}
+          placeholder="请输入学生电话/账号/姓名"
+          bind:value={searchKeyword}
           onInput={debouncedSearch}
         />
       </div>
@@ -253,14 +239,15 @@
                 {#if type === 'practice'}
                   <th>最高得分</th>
                   <th>作答次数</th>
-                {:else if context_data?.papers?.length === 1}
+                {:else if contextData()?.papers?.length === 1}
                   <th>得分</th>
                 {:else}
                   <th>总得分</th>
-                  {#each context_data?.papers || [] as paper, index}
+                  {#each contextData()?.papers || [] as paper, index}
                     <th>试卷{index + 1}</th>
                   {/each}
                 {/if}
+                <th>学生作答详情</th>
                 <th>备注</th>
               </tr>
             </thead>
@@ -273,31 +260,34 @@
                   <td>{student.name || '-'}</td>
                   {#if type === 'practice'}
                     <td class="score-cell">
-                      <span class={getScoreClass(student.highestScore, context_data?.total_score || 100)}>
+                      <span class={getScoreClass(student.highestScore, contextData()?.total_score || 100)}>
                         {student.highestScore != null ? student.highestScore : '-'}
                       </span>
                     </td>
                     <td>{student.submitCount}</td>
-                  {:else if context_data?.papers?.length === 1}
+                  {:else if contextData()?.papers?.length === 1}
                     <td class="score-cell">
-                      <span class={getScoreClass(student.total_score, context_data?.total_score || 100)}>
+                      <span class={getScoreClass(student.total_score, contextData()?.total_score || 100)}>
                         {student.total_score != null ? student.total_score : '-'}
                       </span>
                     </td>
                   {:else}
                     <td class="score-cell">
-                      <span class={getScoreClass(student.total_score, context_data?.total_score || 100)}>
+                      <span class={getScoreClass(student.total_score, contextData()?.total_score || 100)}>
                         {student.total_score != null ? student.total_score : '-'}
                       </span>
                     </td>
                     {#each student.scores || [] as score, index}
                       <td class="score-cell">
-                        <span class={getScoreClass(score.score, context_data?.papers?.[index]?.total_score || 100)}>
+                        <span class={getScoreClass(score.score, contextData()?.papers?.[index]?.total_score || 100)}>
                           {score.score != null ? score.score : '-'}
                         </span>
                       </td>
                     {/each}
                   {/if}
+                  <td class="detail-cell">
+                    <button class="detail-btn" onclick={() => handleViewDetail(student)}> 查看详情 </button>
+                  </td>
                   <td class="note-cell">{student.remark != null ? student.remark : '-'}</td>
                 </tr>
               {:else}
@@ -363,7 +353,7 @@
     }
     .card-body {
       .search-section {
-		max-width:20%;
+        max-width: 20%;
       }
       .loading-indicator {
         display: flex;
@@ -426,9 +416,23 @@
             font-size: 12px;
           }
 
+          .detail-btn {
+            background: none;
+            border: none;
+            color: #0052d9;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+            padding: 0;
+
+            &:hover {
+              color: #0040a7;
+            }
+          }
+
           .empty-row {
-      border-bottom: none;
-    }
+            border-bottom: none;
+          }
         }
       }
     }

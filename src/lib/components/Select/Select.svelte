@@ -19,7 +19,7 @@
    * @property {boolean} [disabled=false] - 是否禁用选择器。
    * @property {boolean} [multiple=false] - 是否启用多选模式。
    * @property {boolean} [filterable=false] - 是否允许输入搜索。
-   * @property {functino} [changeValue] - 选中值变化的回调函数。
+   * @property {function} [changeValue] - 选中值变化的回调函数。
    *
    * @example
    * <Select value="1" placeholder="请选择" multiple filterable >
@@ -31,9 +31,21 @@
   import { writable } from 'svelte/store';
   import { validateAndAssign } from '$lib/utils/validate';
 
-  let { value = $bindable(), placeholder = '请选择', direction = 'bottom', disabled = false, multiple = false, filterable = false, changeValue = () => {}, children } = $props();
+  let {
+    value = $bindable(),
+    placeholder = '请选择',
+    direction = 'bottom',
+    disabled = false,
+    multiple = false,
+    filterable = false,
+    changeValue = () => {},
+    children,
+  } = $props();
 
-  const DIRECTIONS = ['top', 'bottom'];
+  const DIRECTIONS = ['top', 'bottom']; // 旧值
+
+  // 旧值
+  let old_value;
 
   /**
    *   /**
@@ -93,34 +105,74 @@
     handerSelectValue: ({ selectValue, selectLabel }) => {
       if (multiple) {
         if (value.includes(selectValue)) {
-          // 创建新数组进行修改
+          old_value = JSON.parse(JSON.stringify(value));
           value = value.filter((v) => v !== selectValue);
           selectedLabel = selectedLabel.filter((l) => l !== selectLabel);
-          changeValue(value);
+          changeValue(value, old_value);
           return false;
         } else {
-          // 创建新数组进行修改
+          old_value = JSON.parse(JSON.stringify(value));
           value = [...value, selectValue];
           selectedLabel = [...selectedLabel, selectLabel];
-          changeValue(value);
+          changeValue(value, old_value);
           return true;
         }
       } else {
         value = selectValue;
         selectedLabel = [selectLabel];
-        changeValue(value);
+        changeValue(value, old_value);
         closeSelect();
+        old_value = value;
         return true;
       }
     },
   });
 
+  export const setValue = (v) => {
+    if (multiple) {
+      if (Array.isArray(v)) {
+        value = v;
+        selectedLabel = v
+          .map((item) => {
+            const option = OptionData.find((child) => child.selectValue == item);
+            return option ? option.selectLabel : '';
+          })
+          .filter(Boolean);
+      } else {
+        value = [v];
+        const option = OptionData.find((child) => child.selectValue == v);
+        selectedLabel = [option ? option.selectLabel : ''];
+      }
+      old_value = JSON.parse(JSON.stringify(value));
+    } else {
+      if (v === '') {
+        if (OptionData.some((item) => item.selectValue === '')) {
+          selectedLabel = OptionData.filter((item) => item.selectValue === '').map((item) => item.selectLabel);
+        } else {
+          selectedLabel = [placeholder];
+        }
+      } else {
+        value = v;
+        const option = OptionData.find((child) => child.selectValue == v);
+        selectedLabel = [option ? option.selectLabel : ''];
+      }
+      old_value = value;
+    }
+  };
+
   // 处理外部传入value
   $effect(() => {
     initLabelvalue();
-    if (value === '') changeValue(value);
-    if (value === undefined || value === null) changeValue(value);
   });
+
+  if (value === '') {
+    // 如果有OptionData中value为空的选项，则selectedLabel为对应的值，否则为placeholder
+    if (OptionData.some((item) => item.selectValue === '')) {
+      selectedLabel = OptionData.filter((item) => item.selectValue === '').map((item) => item.selectLabel);
+    } else {
+      selectedLabel = [placeholder];
+    }
+  }
 
   /** 处理初始化value @type {function} */
   function initLabelvalue() {
@@ -144,10 +196,11 @@
    *  @param {number} index 取消选择的选项的索引
    * */
   function handleConcelOption(index) {
+    old_value = JSON.parse(JSON.stringify(value));
     const concelData = OptionData.find((child) => child.selectLabel == selectedLabel[index]);
     value = value.filter((v) => v !== concelData.selectValue);
     selectedLabel = selectedLabel.filter((l) => l !== selectedLabel[index]);
-    changeValue(value);
+    changeValue(value, old_value);
     closeSelect();
   }
 
@@ -200,7 +253,11 @@
         <div class="tags">
           {#each selectedLabel as label, index (index)}
             <span class="tag-item">
-              <button aria-label="取消选择" data-testid="select-tag-item-cancel" onclick={() => handleConcelOption(index)}></button>
+              <button
+                aria-label="取消选择"
+                data-testid="select-tag-item-cancel"
+                onclick={() => handleConcelOption(index)}
+              ></button>
               <span class="tag-label">{label}</span>
             </span>
           {/each}
@@ -210,9 +267,25 @@
       {/if}
     </div>
   {:else}
-    <input class="select__input" value={selectedLabel.join(',')} readonly={!filterable} {placeholder} {disabled} oninput={onInputChange} onclick={toggleSelect} data-testid="select-input" />
+    <input
+      class="select__input"
+      class:is-disabled={disabled}
+      value={selectedLabel.join(',')}
+      readonly={!filterable}
+      {placeholder}
+      {disabled}
+      oninput={onInputChange}
+      onclick={toggleSelect}
+      data-testid="select-input"
+    />
   {/if}
-  <button class="select__icon" aria-label="Toggle dropdown" tabindex="-1" onclick={toggleSelect}>
+  <button
+    class="select__icon"
+    class:is-disabled={disabled}
+    aria-label="Toggle dropdown"
+    tabindex="-1"
+    onclick={toggleSelect}
+  >
     <img src="/dropdown/arrow_black.png" alt="Dropdown icon" style={isShow ? 'transform: rotate(180deg);' : ''} />
   </button>
   <ul class="select__options {direction}" class:is-hidden={!isShow} role="listbox" data-testid="select-options">
@@ -370,6 +443,17 @@
           font-weight: 400;
         }
       }
+    }
+  }
+
+  .is-disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    &:hover {
+      border-color: #f5f5f5;
+    }
+    &:focus {
+      border-color: #f5f5f5;
     }
   }
 </style>

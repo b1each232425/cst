@@ -4,6 +4,22 @@ import ExamManagement from '../+page.svelte';
 import { goto } from '$app/navigation';
 import ExamList from '../+page.svelte';
 import { toast } from '$lib/components/Toast/Toast';
+import ExcelJS from 'exceljs';
+
+const writeBufferSpy = vi.fn().mockResolvedValue(new ArrayBuffer(8));
+
+vi.mock('exceljs', () => ({
+  default: {
+    Workbook: vi.fn(() => ({
+      addWorksheet: vi.fn().mockReturnValue({
+        columns: [],
+        addRows: vi.fn(),
+        getRow: vi.fn().mockReturnValue({ font: {} }),
+      }),
+      xlsx: { writeBuffer: writeBufferSpy },
+    })),
+  },
+}));
 // Mock dependencies
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
@@ -194,7 +210,7 @@ describe('考试管理页面测试', () => {
     expect(screen.getByText('考试类型')).toBeInTheDocument();
     expect(screen.getByText('考试方式')).toBeInTheDocument();
     expect(screen.getByText('考试时间')).toBeInTheDocument();
-    expect(screen.getByText('考试时长')).toBeInTheDocument();
+    expect(screen.getByText('考试时长(分钟)')).toBeInTheDocument();
     expect(screen.getByText('考试状态')).toBeInTheDocument();
     expect(screen.getByText('考生人数')).toBeInTheDocument();
     expect(screen.getByText('操作')).toBeInTheDocument();
@@ -1715,7 +1731,394 @@ describe('继续编辑 / 预览试卷跳转测试', () => {
 
     // 验证 goto 被调用并指向预览路由
     await waitFor(() => {
-      expect(goto).toHaveBeenCalledWith('/teacher/exam/previewExam');
+      expect(goto).toHaveBeenCalledWith(
+      expect.stringContaining('/student/answer/exam')
+    );
     });
   });
 });
+
+/* ================== 获取考生名单测试 ================== */
+describe('获取考生名单功能测试', () => {
+  const mockExamineeList = [
+    { serial_number: 1, official_name: '张三', account: 'stu001', id_card_no: '110101200001010011' },
+    { serial_number: 2, official_name: '李四', account: 'stu002', id_card_no: '110101200001010012' },
+  ];
+
+  beforeEach(() => {
+    vi.stubGlobal('URL', {
+    createObjectURL: vi.fn(() => 'blob:fake'),
+    revokeObjectURL: vi.fn(),
+  });
+    vi.clearAllMocks();
+    // 基础列表接口
+    global.fetch = vi.fn((url) => {
+      if (typeof url !== 'string') return Promise.reject(new Error('Invalid URL'));
+
+      if (url.includes('/api/exam/list')) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              status: 0,
+              data: MOCK_EXAMS, // 共 4 条：00,04,02,10
+              rowCount: 4,
+            }),
+        });
+      }
+
+      return Promise.reject(new Error(`Unhandled URL: ${url}`));
+    });
+  });
+
+  it('按钮仅对“非00/10/16”状态的考试显示', async () => {
+  render(ExamManagement);
+
+  await waitFor(() => expect(screen.getByText('数学考试')).toBeInTheDocument());
+
+  // 数学考试 status=00 → 应隐藏（带 hideButton）
+  const mathRow = screen.getByText('数学考试').closest('tr');
+  const mathBtn = within(mathRow).getByText('获取考生名单');
+  expect(mathBtn).toHaveClass('hideButton');
+
+  // 英语考试 status=04 → 应显示（不带 hideButton）
+  const englishRow = screen.getByText('英语考试').closest('tr');
+  const englishBtn = within(englishRow).getByText('获取考生名单');
+  expect(englishBtn).not.toHaveClass('hideButton');
+
+  // 化学期末 status=10 → 应隐藏
+  const chemRow = screen.getByText('化学期末').closest('tr');
+  const chemBtn = within(chemRow).getByText('获取考生名单');
+  expect(chemBtn).toHaveClass('hideButton');
+});
+
+  it('成功获取考生名单后触发下载', async () => {
+  // 1. 接口 mock
+  global.fetch = vi.fn((url) =>
+    url.includes('/api/exam/examinee')
+      ? Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 0, data: mockExamineeList }) })
+      : Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS, rowCount: 4 }) })
+  );
+
+  // 2. 浏览器环境补全
+  vi.stubGlobal('URL', { createObjectURL: vi.fn(), revokeObjectURL: vi.fn() });
+
+  // 3. 渲染并点击
+  render(ExamManagement);
+  await waitFor(() => expect(screen.getByText('英语考试')).toBeInTheDocument());
+
+  const englishRow = screen.getByText('英语考试').closest('tr');
+  const downloadBtn = within(englishRow).getByText('获取考生名单');
+  await fireEvent.click(downloadBtn);
+
+  // 4. 断言接口调用
+  await waitFor(() => {
+    const calls = global.fetch.mock.calls.filter(([u]) => u.includes('/api/exam/examinee'));
+    expect(calls).toHaveLength(1);
+    expect(calls[0][0]).toMatch(/exam_id=2\b/);
+  });
+
+  // 5. 断言真正生成了 Excel（ExcelJS.writeBuffer 被调用）
+  await waitFor(() => {
+  expect(writeBufferSpy).toHaveBeenCalled();
+});
+});
+
+  it('考生名单为空时给出提示', async () => {
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/api/exam/examinee')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 0, data: null }),
+        });
+      }
+      if (url.includes('/api/exam/list')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS, rowCount: 4 }),
+        });
+      }
+      return Promise.reject(new Error('Unhandled'));
+    });
+    const toastSpy = vi.spyOn(toast, 'warning');
+
+    render(ExamManagement);
+    await waitFor(() => expect(screen.getByText('英语考试')).toBeInTheDocument());
+
+    const downloadBtn = screen.getAllByText('获取考生名单')[0];
+    await fireEvent.click(downloadBtn);
+
+    await waitFor(() => {
+      expect(toastSpy).toHaveBeenCalledWith('本场考试还未导入考生');
+    });
+  });
+
+  it('接口返回 status=-1 时给出错误提示', async () => {
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/api/exam/examinee')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: -1, msg: '考生信息读取失败' }),
+        });
+      }
+      if (url.includes('/api/exam/list')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS, rowCount: 4 }),
+        });
+      }
+      return Promise.reject(new Error('Unhandled'));
+    });
+    const toastSpy = vi.spyOn(toast, 'error');
+
+    render(ExamManagement);
+    await waitFor(() => expect(screen.getByText('英语考试')).toBeInTheDocument());
+
+    const downloadBtn = screen.getAllByText('获取考生名单')[0];
+    await fireEvent.click(downloadBtn);
+
+    await waitFor(() => {
+      expect(toastSpy).toHaveBeenCalledWith('考生信息读取失败');
+    });
+  });
+
+  it('网络异常时给出错误提示', async () => {
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/api/exam/examinee')) {
+        return Promise.reject(new Error('网络连接失败'));
+      }
+      if (url.includes('/api/exam/list')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS, rowCount: 4 }),
+        });
+      }
+      return Promise.reject(new Error('Unhandled'));
+    });
+    const toastSpy = vi.spyOn(toast, 'error');
+
+    render(ExamManagement);
+    await waitFor(() => expect(screen.getByText('英语考试')).toBeInTheDocument());
+
+    const downloadBtn = screen.getAllByText('获取考生名单')[0];
+    await fireEvent.click(downloadBtn);
+
+    await waitFor(() => {
+      expect(toastSpy).toHaveBeenCalledWith('网络连接失败');
+    });
+  });
+});
+
+// 在文件末尾添加以下测试代码
+
+describe('预览试卷功能测试', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    
+    // 重置 localStorage
+    global.localStorage = {
+      setItem: vi.fn(),
+      getItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    };
+    
+    global.fetch = vi.fn((url) => {
+      if (typeof url !== 'string') {
+        return Promise.reject(new Error('Invalid URL'));
+      }
+
+      if (url.includes('/api/exam/list')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS, rowCount: 4 }),
+        });
+      }
+      
+      if (url.includes('/api/paper/manual')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            status: 0,
+            data: {
+              Questions: [
+                { id: 1, type: 'single', content: '问题1' },
+                { id: 2, type: 'multiple', content: '问题2' }
+              ],
+              QuestionGroupInfo: [
+                { groupId: 1, groupName: '选择题' }
+              ]
+            }
+          })
+        });
+      }
+
+      return Promise.reject(new Error(`Unhandled URL: ${url}`));
+    });
+  });
+
+  it('应成功预览试卷并跳转到答题页面', async () => {
+    render(ExamManagement);
+    
+    await waitFor(() => {
+      expect(screen.getByText('英语考试')).toBeInTheDocument();
+    });
+
+    // 找到预览试卷按钮
+    const previewBtns = screen.getAllByText('预览试卷');
+    expect(previewBtns.length).toBeGreaterThan(0);
+
+    // 点击预览试卷按钮
+    await fireEvent.click(previewBtns[0]);
+
+    // 等待弹窗出现
+    await waitFor(() => {
+      const sessionItems = screen.getAllByText(/场次/);
+      expect(sessionItems.length).toBeGreaterThan(0);
+    });
+
+    // 点击场次1
+    const session1Btn = screen.getAllByText('场次 1')[0];
+    await fireEvent.click(session1Btn);
+
+    // 验证数据被正确存储到localStorage
+    await waitFor(() => {
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        'examQuestions',
+        expect.stringContaining('Questions')
+      );
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        'examTitle',
+        expect.any(String)
+      );
+      expect(goto).toHaveBeenCalledWith('/student/answer/exam');
+    });
+  });
+
+  it('应处理试卷信息获取失败的情况', async () => {
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/api/paper/manual')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: -1, msg: '试卷不存在' })
+        });
+      }
+      if (url.includes('/api/exam/list')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS, rowCount: 4 })
+        });
+      }
+      return Promise.reject(new Error(`Unhandled URL: ${url}`));
+    });
+
+    const toastSpy = vi.spyOn(toast, 'error');
+
+    render(ExamManagement);
+    
+    await waitFor(() => {
+      expect(screen.getByText('英语考试')).toBeInTheDocument();
+    });
+
+    const previewBtns = screen.getAllByText('预览试卷');
+    await fireEvent.click(previewBtns[0]);
+
+    const session1Btn = screen.getAllByText('场次 1')[0];
+    await fireEvent.click(session1Btn);
+
+    await waitFor(() => {
+      expect(toastSpy).toHaveBeenCalledWith('试卷不存在');
+    });
+  });
+
+  it('应处理 HTTP 错误状态码（如 404）', async () => {
+  global.fetch = vi.fn((url) => {
+    if (url.includes('/api/paper/manual')) {
+      return Promise.resolve({
+        ok: false, // 关键：模拟非 200 状态码
+        status: 404,
+        json: () => Promise.resolve({ status: -1, msg: '网络异常' }),
+      });
+    }
+    if (url.includes('/api/exam/list')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ status: 0, data: MOCK_EXAMS, rowCount: 4 }),
+      });
+    }
+    return Promise.reject(new Error(`Unhandled URL: ${url}`));
+  });
+
+  const toastSpy = vi.spyOn(toast, 'error');
+
+  render(ExamManagement);
+
+  await waitFor(() => expect(screen.getByText('英语考试')).toBeInTheDocument());
+
+  const previewBtns = screen.getAllByText('预览试卷');
+  await fireEvent.click(previewBtns[0]);
+
+  const session1Btn = screen.getAllByText('场次 1')[0];
+  await fireEvent.click(session1Btn);
+
+  await waitFor(() => {
+    expect(toastSpy).toHaveBeenCalledWith('网络异常');
+  });
+});
+
+  it('应正确显示场次选择弹窗', async () => {
+    render(ExamManagement);
+    
+    await waitFor(() => {
+      expect(screen.getByText('数学考试')).toBeInTheDocument();
+    });
+
+    // 数学考试有多个场次
+    const previewBtns = screen.getAllByText('预览试卷');
+    await fireEvent.click(previewBtns[0]);
+
+    // 验证弹窗内容
+    await waitFor(() => {
+      expect(screen.getAllByText('场次 1')[0]).toBeInTheDocument();
+    });
+
+    // 点击空白处关闭弹窗
+    const container = document.querySelector('.examManagementContainer');
+    await fireEvent.click(container);
+
+    // 验证弹窗关闭
+    await waitFor(() => {
+      expect(screen.queryByText('场次 1')).not.toBeInTheDocument();
+    });
+  });
+
+  it('应正确处理无场次数据的考试', async () => {
+    const mockExamNoSessions = [{
+      ...MOCK_EXAMS[0],
+      exam_sessions: []
+    }];
+
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/api/exam/list')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ status: 0, data: [mockExamNoSessions[0]], rowCount: 1 })
+        });
+      }
+      return Promise.reject(new Error(`Unhandled URL: ${url}`));
+    });
+
+    render(ExamManagement);
+    
+    await waitFor(() => {
+      expect(screen.getByText('数学考试')).toBeInTheDocument();
+    });
+
+    const previewBtns = screen.getAllByText('预览试卷');
+    await fireEvent.click(previewBtns[0]);
+
+    // 此时不应该显示场次弹窗
+    expect(screen.queryByText('场次 1')).not.toBeInTheDocument();
+  });
+});
+

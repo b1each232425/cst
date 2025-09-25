@@ -1,5 +1,6 @@
 import { toast } from '$lib/components/Toast/Toast.js';
 import {goto } from '$app/navigation';
+
 export function onChooseStartTime(index, paper_configs, updateDuration) {
   return function (event) {
     const startDate = event.detail.date;
@@ -18,6 +19,7 @@ export function onChooseEndTime(index, paper_configs, updateDuration) {
       endDate.setSeconds(0, 0);
       paper_configs[index].endTime = endDate.toISOString();
       updateDuration(index,paper_configs);
+      
     }
   };
 }
@@ -36,11 +38,14 @@ export function updateDuration(index,paper_configs) {
     const end = new Date(endTime);
     const timeDifference = end.getTime() - start.getTime();
     const durationInMinutes = Math.floor(timeDifference / (1000 * 60));
-
+    // 确保时长不为负数
+    const validDuration = Math.max(0, durationInMinutes);
     paper_configs[index].duration = Math.max(0, durationInMinutes);
     paper_configs[index].maxDuration = Math.max(0, durationInMinutes);
     // 新增：自动调整提前交卷时间和迟到进入时间
-    if (paper_configs[index].earlySubmissionTime > durationInMinutes) {
+    if (validDuration > 0)
+    {
+      if (paper_configs[index].earlySubmissionTime > durationInMinutes) {
         paper_configs[index].earlySubmissionTime = durationInMinutes;
     }
     
@@ -48,8 +53,9 @@ export function updateDuration(index,paper_configs) {
         paper_configs[index].lateEntryTime = Math.min(durationInMinutes, 1); // 确保最小为1分钟
     }
   }
+  }
 
-export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, exam_method, paper_configs, exam_examinee = [], invigilators = [],uploadedFileList }) {
+export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, exam_method, paper_configs, exam_examinee = [], invigilators = [],uploadedFileList, exam_rooms = [] }) {
     /* 1. 必填字段校验（保持原逻辑） */
     if (exam_name === '') {
       toast.warning('请输入考试名称');
@@ -115,6 +121,7 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
         paper_configs[i].questionShuffledMode = '06';
       }
 
+      //自动批改清空批阅员选择
       if (paper_configs[i].markMethod === '02') {
         paper_configs[i].markConfig.teacher_mark_configs = [];
         paper_configs[i].markMode = '00';
@@ -138,23 +145,21 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
       MarkMethod: cfg.markMethod,
       NameVisibilityIn: !!cfg.nameVisibility,
       ReviewerIds:
-      cfg.markConfig && cfg.markConfig.teacher_mark_configs ? cfg.markConfig.teacher_mark_configs.map((t) => t.id) : [],
+      cfg.markConfig && cfg.markConfig.teacher_mark_configs ? cfg.markConfig.teacher_mark_configs.map((t) => t.ID) : [],
       MarkMode: cfg.markMode,
       SessionNum: cfg.sessionNum,
     }));
-
-    // 附加文件：若用户上传了文件，则遍历填充；否则留空数组
-    // const fileArr = files.length ? files.map((f) => ({ Name: f.name, Url: f.url || '' })) : [];
-
-    console.log("examinee",exam_examinee);
-    const invalid_examinee = exam_examinee.filter(e => !e.id )
-    const valid_examinee = exam_examinee?.length
-  ? exam_examinee.filter(e => e && e.id).map(item => item.id)
-  : [];
+     console.log("examinee",exam_examinee);
+    const invalid_examinee = exam_examinee.filter(
+  e => (!e.student || e.student == null) && (!e.ID || e.ID ==null)
+);
+    const valid_examinee = exam_examinee.filter(
+  e => (e.student && e.student.ID != null) || (e.ID && e.ID !=null) || (e.id && e.id !=null)
+)
     //导入新学生
     if (invalid_examinee.length > 0)
     {
-      fetch('/api/user', {
+     await fetch('/api/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -172,10 +177,16 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
           if (result.status !== 0) {
             throw new Error(result.msg || '导入失败');
           }
-          let studentIds = result.data.map((item) => item.ID);
-          console.log("valid_examinee:",valid_examinee);
-          console.log("studentIds",studentIds);
-          exam_examinee = [...valid_examinee,...studentIds];
+          let new_student = result.data;
+           console.log("valid_examinee:",valid_examinee);
+           console.log("new_student",new_student);
+           if(new_student!== null)
+          {
+            exam_examinee = [...valid_examinee,...new_student];
+          }
+          else{
+            exam_examinee=valid_examinee;
+          }
           console.log("exam_examinee:",exam_examinee);
         })
         .catch((error) => {
@@ -183,8 +194,8 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
           toast.error(error.message || '导入学生异常');
         });
 }
-
-
+  // console.log("exam_student",exam_examinee);
+  //console.log("examrooms",exam_rooms);
     const exam_data = {
       data: {
         examInfo: {
@@ -196,13 +207,21 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
           Files: uploadedFileList
         },
         examSessions: examSessionsdata,
-        examinee: exam_examinee.map((e) => e.id ), // 用户选中的考生 id 数组
-        invigilators: invigilators.map((i) => i.id), // 监考员 id 数组
+        examinee: exam_examinee.map(e => ({
+          id: e.student?.ID ?? e.ID ?? e.id,
+          exam_plan_student_id: (e.student &&e.detail.ID)!=null ? e.detail.ID : e.exam_plan_student_id!=null ? e.exam_plan_student_id : 0
+        })), // 用户选中的考生 id 数组
+        invigilators: invigilators.map((i) => i.ID), // 监考员 id 数组
+        examRooms: exam_rooms.map((r) => ({
+          roomID: r.id,
+          capacity:r.capacity,
+          invigilator_count: r.invigilator_count
+        })), // 考场配置 id 数组
       },
     };
 
-    console.log('exam_data', exam_data);
-    console.log('paperconfig',paper_configs);
+    //console.log('exam_data', exam_data);
+   // console.log('paperconfig',paper_configs);
     fetch('/api/exam', {
       method: 'PUT',
       credentials: 'include',
@@ -223,3 +242,20 @@ export async function handleSubmit({ examID,exam_name, exam_rules, exam_type, ex
         toast.error('未知错误');
       });
   }
+
+export function tusInit(tus) {
+		if (!tus || !tus.isSupported) {
+			console.log('tus unsupported');
+			return;
+		}
+	}
+
+export function encodeMetadata(metadata) {
+    const encodedPairs = [];
+    for (const [key, value] of Object.entries(metadata)) {
+        const encodedValue = btoa(unescape(encodeURIComponent(String(value))));
+        encodedPairs.push(`${key} ${encodedValue}`);
+    }
+    return encodedPairs.join(',');
+}
+

@@ -36,7 +36,7 @@
   const uploadHandler = createUploadHandler('/exam_answer');
 
   // 组件属性
-  let { question = $bindable(), ifPreview, query_url, saveAnswer, editor_height } = $props();
+  let { question = $bindable(), ifPreview, query_url, saveAnswer, editor_height ,exam_id,exam_session_id,examinee_id,practice_id,practice_submission_id} = $props();
 
   // 状态管理
   let question_id = $state(question.ID);
@@ -163,6 +163,90 @@
   async function getStudentAnswer() {
     if (ifPreview) return;
 
+    
+    // 1. 先尝试从 localStorage 读取（优先考试 key，其次 practice key）
+    try {
+      const examId = exam_id || 'preview';
+      const examSession = exam_session_id || 'preview';
+      // examinee id 不从 URL 获取，默认为 preview
+      const examinee = examinee_id || 'preview';
+      const examStorageKey = `exam_answers_${examId}_${examSession}_${examinee}`;
+
+      let raw = localStorage.getItem(examStorageKey);
+
+      // practice key：仅使用传入的 props，不再从 URL 回退
+      const pid = practice_id || 'preview';
+      const psid = practice_submission_id || 'preview';
+      const practiceStorageKey = `practice_answers_${pid}_${psid}`;
+
+      if (!raw) raw = localStorage.getItem(practiceStorageKey);
+
+      if (raw) {
+        const storedAnswers = JSON.parse(raw || '{}');
+        const entry = storedAnswers[String(question.ID)];
+        if (entry && entry.answer !== undefined) {
+          student_answer.answer = Array.isArray(entry.answer) ? entry.answer : initialAnswer(question);
+          if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {
+            await updateRichTextEditors();
+          }
+          return; // 命中 localStorage，直接返回
+        }
+      }
+    } catch (e) {
+      console.warn('读取本地答案失败，继续后续逻辑', e);
+    }
+
+    // 2. 父组件已把后端 StudentAnswer 放到 question.Answer 时，优先写入 localStorage 并初始化组件
+    if (question && Array.isArray(question.Answer)) {
+      const ansArr = Array.isArray(question.Answer) ? question.Answer : initialAnswer(question);
+      const hasRealValue = ansArr.length > 0 && !ansArr.every((v) => v === '' || v === null || v === undefined);
+
+      try {
+        const finalPid = practice_id || 'preview';
+        const finalPsid = practice_submission_id || 'preview';
+        const storageKey = `practice_answers_${finalPid}_${finalPsid}`;
+
+        // 读取并合并写回 localStorage（只写本地，不触发后端保存）
+        let stored = {};
+        try {
+          const raw = localStorage.getItem(storageKey);
+          stored = raw ? JSON.parse(raw) : {};
+        } catch (e) {
+          stored = {};
+        }
+
+        // 如果本地已有非空答案且后端返回为空，则不覆盖本地答案
+        const existing = stored[String(question.ID)];
+        const existingHasValue =
+          existing &&
+          Array.isArray(existing.answer) &&
+          !(existing.answer.length === 0 || existing.answer.every((v) => v === '' || v === null || v === undefined));
+
+        if (!existingHasValue || hasRealValue) {
+          stored[String(question.ID)] = {
+            answer: ansArr,
+            attachment_paths: existing?.attachment_paths || [],
+            updated_at: Date.now(),
+          };
+          localStorage.setItem(storageKey, JSON.stringify(stored));
+        }
+      } catch (e) {
+        console.warn('写入本地答案失败', e);
+      }
+
+      // 初始化组件状态并更新编辑器
+      student_answer.answer = ansArr;
+      if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {
+        await updateRichTextEditors();
+      }
+      return;
+    }
+
+    if (!query_url) {
+      // query_url 为空时不发请求
+      return;
+    }
+
     try {
       const res = await fetch(`${query_url}&question_id=${question.ID}`, {
         method: 'GET',
@@ -187,8 +271,8 @@
       const answer = data.data.Answer;
 
       if (Object.keys(answer).length !== 0) {
-        // 有答案数据，更新状态
-        student_answer.answer = answer.answer;
+  // 有答案数据，更新状态（保证为数组或题型期望的初始值）
+  student_answer.answer = Array.isArray(answer.answer) ? answer.answer : initialAnswer(question);
 
         // 对于填空题和简答题，需要更新富文本编辑器内容
         if (question.Type === QUESTION_TYPES.FILL_BLANK || question.Type === QUESTION_TYPES.ESSAY) {

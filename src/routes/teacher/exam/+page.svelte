@@ -16,6 +16,7 @@
   import InputBox from '$lib/components/Input/InputBox.svelte';
   import Select from '$lib/components/Select/Select.svelte';
   import Option from '$lib/components/Select/Option.svelte';
+  import DatePicker from '$lib/components/DatePicker/DatePicker.svelte';
   import MessageBox from '$lib/components/MessageBox/MessageBox.svelte';
   import Pagination from '$lib/components/Pagination/Pagination.svelte';
   import Title from '$lib/components/Title/Title.svelte';
@@ -31,7 +32,7 @@
   let message = $state('');
   let publish_exam_dialog = $state(false);
   let examID_to_publish = $state(false);
-  let examID_to_delete = $state(false);
+  let examID_to_delete = $state([]);
   let total_items = $state(); //总数据条数
   let delete_exam_dialog = $state(false); //删除考试的确认框
   let is_delete_mode = $state(false); //是否是删除模式
@@ -42,7 +43,12 @@
   let preview_id = $state([]);
   let acquire_id = $state(false);
   let show_session_panel = $state(false);
-
+  let examID_to_preview = $state(false);
+  let show_preview_popup = $state(false);
+  let date_picker = $state();
+  let start_time = $state();
+  let end_time = $state();
+  let closeTimer = $state();
   // 映射关系
   const TypeMap = {
     '00': '平时考试',
@@ -104,8 +110,8 @@
       Filter: {
         Name: search_params.name || '',
         Status: search_params.status || '',
-        // start_time: search_params.start_time ? new Date(search_params.start_time).getTime() : 0,
-        // end_time: search_params.end_time ? new Date(search_params.end_time).getTime() : 0
+        StartTime: search_params.start_time ? new Date(search_params.start_time).getTime() : 0,
+        EndTime: search_params.end_time ? new Date(search_params.end_time).getTime() : 0
       },
       page: search_params.page,
       pageSize: search_params.page_size,
@@ -153,6 +159,24 @@
   // function toggleMoreActions(index) {
   //     exam_list[index].actionExpanded = !exam_list[index].actionExpanded;
   // }
+
+  function ChooseStartTime() {
+  return function (event) {
+    const startDate = event.detail.date;
+    const timestamp = new Date(startDate).getTime(); 
+    console.log("开始时间戳：", timestamp);
+    search_params.start_time = timestamp; 
+  };
+}
+
+function ChooseEndTime(){
+  return function (event) {
+    const startDate = event.detail.date;
+    const timestamp = new Date(startDate).getTime(); 
+    console.log("结束时间戳：", timestamp);
+    search_params.end_time = timestamp; 
+  };
+}
 
   function onSearchFunc(value) {
     search_params.name = value;
@@ -301,6 +325,7 @@
         searchExam();
         loading=false;
         selected_exam_ids=[];
+        delete_exam_dialog = false;
       })
   }
 
@@ -399,6 +424,52 @@
       })
   }
 
+   //预览函数的实现
+  async function preview(exam) {
+          // //获取试卷的信息
+          let paperParam = new URLSearchParams();
+          let examName = exam.name;
+          let message;
+          paperParam.append('paper_id', exam.exam_sessions[0].paper_id);
+          paperParam.append('mode', 'preview');
+          return fetch(`/api/paper/manual?${paperParam.toString()}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+
+            credentials: 'include',
+          })
+            .then((response) => {
+              if (!response.ok) {
+                message="网络异常";
+              }
+              return response.json();
+            })
+            .then((paperInfo) => {
+              if (paperInfo.status !== 0) {
+                message=paperInfo.msg;
+              }
+
+              let examQuestions = {
+                Questions: paperInfo.data.Questions,
+                QuestionGroupInfo: paperInfo.data.QuestionGroupInfo,
+              };
+              let examTitle = examName;
+              //存进localStorage
+              localStorage.setItem('examQuestions', JSON.stringify(examQuestions));
+              localStorage.setItem('examTitle', examTitle);
+              goto(`/student/answer/exam`);
+            })
+            .catch((error) => {
+              console.error(message);
+              toast.error(message);
+            });
+
+            
+        }
+
+
   function handleCheckBoxChange(data,event){
      const examID = data.id;
      const is_selected = selected_exam_ids.includes(examID);
@@ -423,39 +494,7 @@ function handleSelectAll(event) {
   }
 }
 
-function previewPaper(ID, category) {
-        const PARAMS = new URLSearchParams();
 
-        PARAMS.append("paper_id", ID);
-        PARAMS.append("mode", "preview");
-
-        fetch(`/api/paper/manual?${PARAMS.toString()}`, {
-            method: "GET",
-            credentials: "include"
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`请求失败，状态码：${response.status}`);
-                }
-                return response.json();
-            })
-            .then(result => {
-                const PREVIEW_QUESTIONS = result.data;
-
-                
-                if (category === "00") {
-                    localStorage.setItem(
-                        "examQuestions",
-                        JSON.stringify(PREVIEW_QUESTIONS),
-                    );
-                    window.location.href = "/student/answer/exam";
-                } 
-            })
-            .catch(error => {
-                console.error('获取试卷详情出错：', error);
-                return null;
-            });
-    }
 
   onMount(() => {
     searchExam();
@@ -475,7 +514,7 @@ function previewPaper(ID, category) {
     <th>考试类型</th>
     <th>考试方式</th>
     <th>考试时间</th>
-    <th>考试时长</th>
+    <th>考试时长(分钟)</th>
     <th>考试状态</th>
     <th>考生人数</th>
     <th>操作</th>
@@ -505,26 +544,43 @@ function previewPaper(ID, category) {
     onclick={(event)=>{
         event.stopPropagation(); // 阻止冒泡
         delete_exam_dialog=true;
-        examID_to_delete =exam_list[index].id
+        examID_to_delete = [exam_list[index].id]
     }}>
     删除考试</button>
 
+    <div class="preview-wrapper">
     <button class="preview-exam-button action-button {status!='00'&&status!='02'&&status!='04' ?'hideButton' : ''}"
     onclick={()=>{
-            preview_id = exam_list[index].exam_sessions.map(session => session.paper_id);
-            CURRENT_PAPER_ID.set(preview_id);
-            goto(`/teacher/exam/previewExam/${preview_id[0]}`)
-            
-        }}>预览试卷</button>
-        <!-- <button class="preview-exam-button action-button {status!='00'&&status!='02'&&status!='04' ?'hideButton' : ''}"
-         onclick={()=>{
-          event.stopPropagation();
-          preview_id = exam_list[index].exam_sessions.map(session => session.paper_id);
-          // CURRENT_PAPER_ID.set(preview_id);
-          // previewPaper(preview_id[0],"00")
-          show_session_panel=true;
-         }
-        }>预览试卷</button> -->
+            // preview_id = exam_list[index].exam_sessions.map(session => session.paper_id);
+            // CURRENT_PAPER_ID.set(preview_id);
+            // goto(`/teacher/exam/previewExam/${preview_id[0]}`)
+            examID_to_preview = exam_list[index].id;
+            show_preview_popup=!show_preview_popup;
+        }}
+        onblur={() => {
+        closeTimer = setTimeout(() => {
+          show_preview_popup = false;
+          examID_to_preview = null;
+        }, 100); // 延迟关闭，给点击弹窗内容留时间
+    }}
+    
+    >预览试卷</button>
+
+    <div class="{examID_to_preview === exam_list[index].id && show_preview_popup ? 'preview-popup' : 'hideButton'}">
+      {#each exam_list[index].exam_sessions as session, idx}
+        <div
+          class="session-item"
+          onclick={() => {
+            preview({ ...exam_list[index], exam_sessions: [session] }); // 只预览当前场次
+            examID_to_preview = null;
+          }}
+        >
+          场次 {idx + 1}
+        </div>
+      {/each}
+    </div>
+    </div>
+
     <button class="cancel-exam-button action-button {status !== '02' ? 'hideButton' : ''}"
     onclick={(event)=>{
             event.stopPropagation(); // 阻止冒泡
@@ -563,7 +619,7 @@ function previewPaper(ID, category) {
       {#each data.exam_sessions as session}
         <div style="display: flex; flex-wrap: no-wrap; gap: 8px;">
           <span>
-            {formatDateTime(session.start_time)} -- {formatDateTime(session.end_time)}
+            {formatDateTime(session.start_time)} ~ {formatDateTime(session.end_time)}
           </span>
         </div>
       {/each}
@@ -607,6 +663,18 @@ function previewPaper(ID, category) {
         />
       </div>
 
+      <div class="datePart">
+        <DatePicker
+            bind:this={date_picker}
+            is_time_selection={true}
+            input_width={'330px'}
+            is_single_date_selection={false}
+            on:start_date_selected={ChooseStartTime()}
+            on:end_date_selected={ChooseEndTime()}
+            onDateConfirm={() => searchExam() }
+          ></DatePicker>
+      </div>
+
       <div class="filterPart">
         <Select placeholder="全部状态" changeValue={onSelectExamStatus}>
           <Option value="" label="全部状态" />
@@ -619,19 +687,11 @@ function previewPaper(ID, category) {
           <Option value="16" label="已作废" />
         </Select>
       </div>
-      <div class="datePart">
-        <!-- <input 
-                    type="text" 
-                    class="search-input"
-                    placeholder="日期筛选"
-                    bind:value={search_params.name}
-                    oninput={(e) => onSearchFunc(e.target.value)}
-                /> -->
-      </div>
+      
     </div>
     <div class="buttonPart">
       <!-- {#if !is_delete_mode}
-      <Button plain={true}  type="danger" size="medium" onclick={() => { is_delete_mode = true; }}>批量删除</Button>
+      
       <Button plain={true}  type="primary" size="medium" onclick={() => goto('/teacher/exam/addExam')}>新增考试</Button>
       {:else}
       <Button plain={true} type="default" size="medium" onclick={() => {is_delete_mode=false;}}>取消</Button>
@@ -639,6 +699,7 @@ function previewPaper(ID, category) {
           删除选中 ({selected_exam_ids.length})
         </Button>
       {/if} -->
+      <Button plain={true}  type="danger" size="medium" onclick={() => { deleteExam(selected_exam_ids) }}>批量删除</Button>
       <Button plain={true}  type="primary" size="medium" onclick={() => goto('/teacher/exam/addExam')}>新增考试</Button>
     </div>
   </div>
@@ -688,10 +749,10 @@ function previewPaper(ID, category) {
       delete_exam_dialog = false;
     }}
     onConfirm={() => {
-      if (!selected_exam_ids.includes(examID_to_delete)) {
-      selected_exam_ids = [...selected_exam_ids, examID_to_delete];
-    }
-      deleteExam(selected_exam_ids)
+    //   if (!selected_exam_ids.includes(examID_to_delete)) {
+    //   selected_exam_ids = [...selected_exam_ids, examID_to_delete];
+    // }
+      deleteExam(examID_to_delete)
       }}
     />
 
@@ -814,6 +875,7 @@ function previewPaper(ID, category) {
       display: flex;
       justify-content: flex-end;
       padding: 0 40px 0px 0;
+      margin-top: 15px;
     }
   }
 
@@ -823,7 +885,7 @@ function previewPaper(ID, category) {
     padding: 33px 37px 40px 37px;
     display: flex;
     flex-direction: column;
-
+    
     .examListTable {
       position: relative;
       font-size: 14px;
@@ -1016,4 +1078,32 @@ function previewPaper(ID, category) {
     z-index: 1001;
     }
   }
+.preview-wrapper {
+  position: relative;
+  display: inline-block;
+  .preview-popup {
+  position: absolute;
+  top: 100%;
+  // right: 100%;
+  background: white;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 100px;
+  padding: 4px 0;
+}
+}
+  
+
+.session-item {
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.session-item:hover {
+  background-color: #f0f0f0;
+}
 </style>

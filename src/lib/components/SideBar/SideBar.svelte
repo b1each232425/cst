@@ -18,6 +18,11 @@
     /\/teacher\/exam\/editExam\/\d+/,
     /\/teacher\/grade\/exam-grade\/detail\?id=\d+/,
     /\/teacher\/grade\/practice-grade\/detail\?id=\d+/,
+    '/teacher/enroll/add-enroll',
+    /\/teacher\/enroll\/edit-enroll\/\d+/,
+    /\/teacher\/enroll\/see-enroll\/\d+/,
+    /\/teacher\/enroll\/see-enroll\/\d+\/person-detail\/\d+/,
+    /\/teacher\/exam-site\/details\/\d+/,
   ];
 
   let { nav_map = [] } = $props();
@@ -217,7 +222,7 @@
 
   // 正则匹配路径
   function regexMatch(path, path_regex) {
-    return new RegExp(`${path_regex}`).test(path);
+    return new RegExp(`^${path_regex}(/|$)`).test(path);
   }
 
   // 监听导航事件，跳转前执行逻辑

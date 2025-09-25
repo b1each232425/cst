@@ -111,6 +111,9 @@
   let markedQuestions = $state(Array(examQuestions.length).fill(false)); // 添加标记题目的数组
   let answeredCount = $state(0); // 已答题数量
 
+  let wrong_mode = $state(false); // 错题作答模式开关
+  let wrong_submission_id = $state(''); // 错题练习的 submission id
+
   //按钮控制类逻辑
   function submitMessageBox() {
     if (ifPreview) {
@@ -186,7 +189,46 @@
       }, 0);
     }
   }
+  function _storageKeyForMarked() { // 标记题目状态的 localStorage key
+    const pid = practice_id || 'preview';
+    const sessionPart = practice_submission_id || 'preview';
+    return `practice_marked_${pid}_${sessionPart}`;
+  }
+  function saveMarkedQuestionsToStorage() { // 保存标记状态到 localStorage
+    try {
+      localStorage.setItem(_storageKeyForMarked(), JSON.stringify(markedQuestions));
+    } catch (e) {
+      console.warn('保存标记状态到 localStorage 失败', e);
+    }
+  }
+  function loadMarkedQuestionsFromStorage() { // 从 localStorage 加载标记状态
+    try {
+      const raw = localStorage.getItem(_storageKeyForMarked());
+      // 初始化为 false 数组
+      if (!raw) {
+        markedQuestions.length = 0;
+        markedQuestions.push(...Array(examQuestions.length).fill(false));
+        return;
+      }
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) {
+        markedQuestions.length = 0;
+        markedQuestions.push(...Array(examQuestions.length).fill(false));
+        return;
+      }
+      // 合并长度并补齐
+      const len = examQuestions.length;
+      const newArr = Array.from({ length: len }, (_, i) => !!arr[i]);
+      markedQuestions.length = 0;
+      markedQuestions.push(...newArr);
+    } catch (e) {
+      console.warn('读取标记状态失败', e);
+      markedQuestions.length = 0;
+      markedQuestions.push(...Array(examQuestions.length).fill(false));
+    }
+  }
 
+  //题目加载类逻辑
   function getQuestionGroups() {
     const groups = [];
 
@@ -249,10 +291,22 @@
       }
 
       groupQuestions.forEach((q) => {
+        // 优先使用后端返回的 StudentAnswer 字段；兼容旧的 Answer 字段
+        const studentAns = q.StudentAnswer?.answer ?? q.Answer ?? null;
+        // 规范为数组（Question 组件和页面其它逻辑依赖 Answer 为数组判断）
+        const normalizedAnswer = Array.isArray(studentAns)
+          ? studentAns
+          : studentAns === null || studentAns === undefined
+          ? []
+          : [studentAns];
+
+
         result.push({
           ...q,
           group_name: groupInfo.Name,
           group_score: totalScore,
+          // 保证字段名为页面和组件期望的 Answer
+          Answer: normalizedAnswer,
         });
       });
     });
@@ -280,13 +334,38 @@
   });
 
   //练习提交类逻辑
+  function clearPracticeLocalStorage() {
+    try {
+      const pid = practice_id || 'preview';
+      const sid = practice_submission_id || 'preview';
+      // 精确删除当前练习／场次的答案和标记
+      localStorage.removeItem(`practice_answers_${pid}_${sid}`);
+      localStorage.removeItem(`practice_marked_${pid}_${sid}`);
+
+      // 如果有可能留下以 pid 为前缀的备用 key，也一并清理（防止历史残留）
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        if (key.startsWith(`practice_answers_${pid}_`) || key.startsWith(`practice_marked_${pid}_`)) {
+          localStorage.removeItem(key);
+        }
+      }
+
+      // 视情况清理 preview 专用 key（仅在需要时取消注释）
+      // localStorage.removeItem('practiceQuestions');
+      // localStorage.removeItem('practiceTitle');
+    } catch (e) {
+      console.warn('清除本地练习数据失败', e);
+    }
+  }
   function submitPractice() {
     //倒计时结束后的提交逻辑
     const body_data = {
       //请求体
-      type: '02',
+      type: wrong_mode ? '04' : '02',
       practice_submission_id: Number(practice_submission_id), //题目id
       practice_id: Number(practice_id),
+      wrong_submission_id: Number(wrong_submission_id),
     };
     const requestBody = {
       data: body_data,
@@ -311,6 +390,10 @@
       })
       .then((resp_data) => {
         if (resp_data.status === 0) {
+          // 提交成功后，清除本地保存的答案（避免下次进入仍显示旧答案）
+          clearPracticeLocalStorage();
+
+
           toast.success('练习结束，提交成功！', 2000);
           goto(`/student/practice`);
         } else {
@@ -335,6 +418,58 @@
       toast.warning('当前为预览模式！', 2000);
       return;
     }
+
+
+    
+    // 本地存储 key（与标记使用类似的命名规则）
+    function _storageKeyForAnswers() {
+      const pid = practice_id || 'preview';
+      const sessionPart = practice_submission_id || 'preview';
+      return `practice_answers_${pid}_${sessionPart}`;
+    }
+
+    // 读取本地已有答案
+    let storedAnswers = {};
+    try {
+      const raw = localStorage.getItem(_storageKeyForAnswers());
+      if (raw) {
+        storedAnswers = JSON.parse(raw) || {};
+      }
+    } catch (e) {
+      console.warn('读取本地答案失败', e);
+      storedAnswers = {};
+    }
+
+    // 比较旧答案与新答案（使用 JSON.stringify 做深度比较）
+    const oldEntry = storedAnswers[String(question.ID)] || {};
+    const oldAnswer = oldEntry.answer === undefined ? null : oldEntry.answer;
+    // 归一化 newAnswer：如果传入的是 { answer: [...] } 这样的包装对象，则取其 .answer
+    const newAnswerRaw = stu_answer === undefined ? null : stu_answer;
+    const normalizedNewAnswer = newAnswerRaw && newAnswerRaw.answer !== undefined ? newAnswerRaw.answer : newAnswerRaw;
+    const changed = JSON.stringify(oldAnswer) !== JSON.stringify(normalizedNewAnswer) ||
+      JSON.stringify(oldEntry.attachment_paths || []) !== JSON.stringify(attachment_paths || []);
+
+    // 若发生变化则先保存到 localStorage
+    if (changed) {
+      try {
+        // 存储时也使用归一化后的值，保证 localStorage 中 answer 字段为数组（或期望的原始类型）
+        storedAnswers[String(question.ID)] = {
+          answer: normalizedNewAnswer,
+          attachment_paths: attachment_paths || [],
+          updated_at: Date.now(),
+        };
+        localStorage.setItem(_storageKeyForAnswers(), JSON.stringify(storedAnswers));
+      } catch (e) {
+        console.warn('保存本地答案失败', e);
+      }
+    }
+
+    
+    // 若未变化则不用再调用后端接口
+    if (!changed) {
+      return;
+    }
+
 
     const data = {
       // 构建数据部分
@@ -384,11 +519,13 @@
   function toggleMarkQuestion(index, event) {
     event.stopPropagation();
     markedQuestions[index] = !markedQuestions[index];
+    saveMarkedQuestionsToStorage();
   }
 
   onMount(async () => {
     // 获取url中的考试参数
     practice_id = page.url.searchParams.get('practice-id');
+    wrong_mode = page.url.searchParams.get('wrong-mode') === 'true';
 
     //如果practice-id为空则从local store中取题目
     if (!practice_id) {
@@ -405,20 +542,21 @@
           examQuestions.push(...flattenExamQuestions());
           questionGroups.length = 0;
           questionGroups.push(...getQuestionGroups());
+          loadMarkedQuestionsFromStorage();
 
           //如果是预览的话直接从localStorage获取title
           const exam_title = localStorage.getItem('practiceTitle');
 
-          // 暂时统一名称为预览练习
-          title = '预览练习';
 
-          // if (!title) {
-          //   if (!exam_title) {
-          //     title = '预览练习';
-          //   } else {
-          //     title = exam_title;
-          //   }
-          // }
+          if (!title) {
+             //////////////////
+             if (!exam_title) {
+               title = '预览练习';
+             } else {
+               title = exam_title;
+             }
+           }
+           
 
           // 允许渲染页面
           load_success = true;
@@ -442,7 +580,7 @@
         credentials: 'include',
         body: JSON.stringify({
           data: {
-            type: '02',
+            type: wrong_mode ? '04' : '02',
             practice_id: Number(practice_id),
           },
         }),
@@ -458,6 +596,7 @@
           return response.json();
         })
         .then((data) => {
+
           if (data.status !== 0) {
             console.error(`接口错误: ${data.msg}`);
             toast.error(`服务器错误！${data.msg || ''}`, 2000);
@@ -475,16 +614,23 @@
           title = sget(data, 'data.Info.PaperName', '无标题');
           totalscore = sget(data, 'data.Info.TotalScore', 0);
           practice_submission_id = sget(data, 'data.Info.PracticeSubmissionID', '');
+          wrong_submission_id = sget(data, 'data.Info.WrongSubmissionID', '');
+
 
           load_success = true;
           ifPreview = false;
-          query_url = `/api/respondent?practice_submission_id=${encodeURIComponent(practice_submission_id || '')}`;
+          if (!wrong_mode) {
+            query_url = `/api/respondent?practice_submission_id=${encodeURIComponent(practice_submission_id || '')}`;
+          } else {
+            query_url = ''; // 传空字符串或 null 给 Question 组件，避免触发额外拉取
+          }
 
           //加载题目
           examQuestions.length = 0;
           examQuestions.push(...flattenExamQuestions());
           questionGroups.length = 0;
           questionGroups.push(...getQuestionGroups());
+          loadMarkedQuestionsFromStorage();
         })
         .catch((error) => {
           console.error('请求失败:', error);
@@ -537,7 +683,10 @@
           <span> 提交 </span>
         </Button> -->
 
-        <button class="submit-button" onclick={submitMessageBox}>提交</button>
+        {#if !ifPreview}
+          <button class="submit-button" onclick={submitMessageBox}>提交</button>
+        {/if}
+        
       </div>
     </div>
     <!-- 预览提醒 -->
@@ -623,18 +772,22 @@
                     {query_url}
                     {saveAnswer}
                     editor_height="200px"
+                    {practice_id}
+                    {practice_submission_id}
                   ></Question>
-                  <div class="question-mark-btn-container">
-                    <button
-                      class="mark-btn"
-                      class:marked={markedQuestions[index]}
-                      onclick={(event) => toggleMarkQuestion(index, event)}
-                      title={markedQuestions[index] ? '取消标记' : '标记此题'}
-                    >
-                      <img src="/student_answer_exam/red_flag.png" alt="标记" class="flag-icon" />
-                      {markedQuestions[index] ? '取消标记' : '标记此题'}
-                    </button>
-                  </div>
+                  {#if !ifPreview}
+                    <div class="question-mark-btn-container">
+                      <button
+                        class="mark-btn"
+                        class:marked={markedQuestions[index]}
+                        onclick={(event) => toggleMarkQuestion(index, event)}
+                        title={markedQuestions[index] ? '取消标记' : '标记此题'}
+                      >
+                        <img src="/student_answer_exam/red_flag.png" alt="标记" class="flag-icon" />
+                        {markedQuestions[index] ? '取消标记' : '标记此题'}
+                      </button>
+                    </div>
+                  {/if}
                 </div>
               {/each}
             {:else}
@@ -653,6 +806,8 @@
                   {query_url}
                   {saveAnswer}
                   editor_height="400px"
+                  {practice_id}
+                  {practice_submission_id}
                 ></Question>
                 <div class="question-mark-btn-container">
                   <button
@@ -742,6 +897,24 @@
   :global(html),
   :global(body) {
     overflow: auto;
+  }
+
+  .timer-container {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* 图标与计时器间距 */
+  }
+  .timer-container img {
+    width: 28px;
+    height: 28px;
+    display: block;
+  }
+  .timer-box {
+    display: inline-flex;
+    align-items: center;
+    /* 根据计时器组件输出调整字体/高度 */
+    font-size: 14px;
+    line-height: 1;
   }
 
   .back-btn {
@@ -851,9 +1024,8 @@
     display: flex;
     align-items: center;
     width: fit-content;
-    right: 7px;
+    right: 17px;
     z-index: 1001; /* 确保在其他元素之上 */
-    min-width: 85px; /* 设置最小宽度 */
   }
 
   .submit-btn {
@@ -1171,7 +1343,10 @@
   //说明区域样式
   .nav-sections {
     height: 100%;
-    overflow: scroll;
+    height: 100%;
+    /* 只允许纵向滚动，隐藏横向滚动，防止出现水平滚动条 */
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   // 用于放置nav-sections的头部位置，放"答题卡"标题和图例说明
   .nav-header {

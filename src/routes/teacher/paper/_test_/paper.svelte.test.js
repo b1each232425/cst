@@ -2,7 +2,7 @@
  * @Author: WangKaidun 1597225095@qq.com
  * @Date: 2025-08-17 10:34:48
  * @LastEditors: WangKaidun 1597225095@qq.com
- * @LastEditTime: 2025-08-19 16:15:37
+ * @LastEditTime: 2025-09-02 10:41:33
  * @FilePath: \exam\src\routes\teacher\paper\_test_\paper.svelte.test.js
  * @Description: 试卷管理页面测试
  * Copyright (c) 2025 by WangKaidun 1597225095@qq.com, All Rights Reserved. 
@@ -25,7 +25,7 @@ import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/sv
 import { goto } from '$app/navigation';
 
 import Paper from '../+page.svelte';
-import { PAPER_ONE, PAPER_TWO, PAPER_THREE } from './utils';
+import { PAPER_ONE, PAPER_TWO, PAPER_THREE, PAPER_FOUR } from './utils';
 import { toast } from "$lib/components/Toast/Toast";
 
 describe('试卷管理页面测试', () => {
@@ -119,6 +119,15 @@ describe('试卷管理页面测试', () => {
 
                         // 输入试卷名称
                         fireEvent.input(screen.getByPlaceholderText('搜索试卷名称'), { target: { value: '测试名称' } });
+                        fireEvent.input(screen.getByPlaceholderText('搜索试卷标签'), { target: { value: '测试标签' } });
+                        
+                        fireEvent.change(screen.getByPlaceholderText('搜索试卷名称'), { target: { value: '测试名称' } });
+                        fireEvent.change(screen.getByPlaceholderText('搜索试卷标签'), { target: { value: '测试标签' } });
+
+                        // 点击clear-name-btn
+                        fireEvent.click(container.querySelector('.clear-name-btn'));
+                        // 点击clear-tags-btn
+                        fireEvent.click(container.querySelector('.clear-tags-btn'));
 
                         // 等待防抖延迟（真的等了600ms）
                         await new Promise(resolve => setTimeout(resolve, 600));
@@ -582,10 +591,10 @@ describe('试卷管理页面测试', () => {
                 ok: true,
                 json: () => Promise.resolve({
                     API: "/api/paper",
-                    data: [PAPER_ONE, PAPER_TWO, PAPER_THREE],
+                    data: [PAPER_ONE, PAPER_TWO, PAPER_THREE, PAPER_FOUR],
                     method: "GET",
                     msg: "success",
-                    rowCount: 3,
+                    rowCount: 4,
                     status: 0
                 })
             });
@@ -594,7 +603,7 @@ describe('试卷管理页面测试', () => {
           
             // 等待表格渲染三条数据
             await waitFor(() => {
-                expect(container.querySelectorAll('tbody tr').length).toBe(3);
+                expect(container.querySelectorAll('tbody tr').length).toBe(4);
             });
 
             // 验证表头
@@ -607,9 +616,10 @@ describe('试卷管理页面测试', () => {
             expect(container.querySelector('thead tr th:nth-child(7)')).toHaveTextContent('建议时长(分)');
             expect(container.querySelector('thead tr th:nth-child(8)')).toHaveTextContent('试卷标签');
             expect(container.querySelector('thead tr th:nth-child(9)')).toHaveTextContent('试卷难度');
-            expect(container.querySelector('thead tr th:nth-child(10)')).toHaveTextContent('更新时间');
-            expect(container.querySelector('thead tr th:nth-child(11)')).toHaveTextContent('创建日期');
-            expect(container.querySelector('thead tr th:nth-child(12)')).toHaveTextContent('操作');
+            expect(container.querySelector('thead tr th:nth-child(10)')).toHaveTextContent('状态');
+            expect(container.querySelector('thead tr th:nth-child(11)')).toHaveTextContent('更新时间');
+            expect(container.querySelector('thead tr th:nth-child(12)')).toHaveTextContent('创建日期');
+            expect(container.querySelector('thead tr th:nth-child(13)')).toHaveTextContent('操作');
 
             // 验证第一条数据
             const firstRow = container.querySelectorAll('tbody tr')[0];
@@ -623,11 +633,13 @@ describe('试卷管理页面测试', () => {
             expect(firstRow.querySelector('td:nth-child(8)')).toHaveTextContent('标签1');
             expect(firstRow.querySelector('td:nth-child(8)')).toHaveTextContent('标签2');
             expect(firstRow.querySelector('td:nth-child(9)')).toHaveTextContent('简单');
-            expect(firstRow.querySelector('td:nth-child(10)')).toHaveTextContent('2025-08-17 10:40');
-            expect(firstRow.querySelector('td:nth-child(11)')).toHaveTextContent('2025-08-15');
-            expect(firstRow.querySelector('td:nth-child(12)')).toHaveTextContent('修改');
-            expect(firstRow.querySelector('td:nth-child(12)')).toHaveTextContent('预览');
-            expect(firstRow.querySelector('td:nth-child(12)')).toHaveTextContent('删除');
+            expect(firstRow.querySelector('td:nth-child(10)')).toHaveTextContent('未发布');
+            expect(firstRow.querySelector('td:nth-child(11)')).toHaveTextContent('2025-08-17 10:40');
+            expect(firstRow.querySelector('td:nth-child(12)')).toHaveTextContent('2025-08-15');
+            expect(firstRow.querySelector('td:nth-child(13)')).toHaveTextContent('修改');
+            expect(firstRow.querySelector('td:nth-child(13)')).toHaveTextContent('发布');
+            expect(firstRow.querySelector('td:nth-child(13)')).toHaveTextContent('预览');
+            expect(firstRow.querySelector('td:nth-child(13)')).toHaveTextContent('删除');
 
             // 验证第二条数据
             const secondRow = container.querySelectorAll('tbody tr')[1];
@@ -640,11 +652,10 @@ describe('试卷管理页面测试', () => {
             expect(secondRow.querySelector('td:nth-child(7)')).toHaveTextContent('60');
             expect(secondRow.querySelector('td:nth-child(8)')).toHaveTextContent('-');
             expect(secondRow.querySelector('td:nth-child(9)')).toHaveTextContent('中等');
-            expect(secondRow.querySelector('td:nth-child(10)')).toHaveTextContent('2025-08-17 10:39');
-            expect(secondRow.querySelector('td:nth-child(11)')).toHaveTextContent('2025-08-17');
-            expect(secondRow.querySelector('td:nth-child(12)')).toHaveTextContent('修改');
-            expect(secondRow.querySelector('td:nth-child(12)')).toHaveTextContent('预览');
-            expect(secondRow.querySelector('td:nth-child(12)')).toHaveTextContent('删除'); 
+            expect(secondRow.querySelector('td:nth-child(10)')).toHaveTextContent('已删除');
+            expect(secondRow.querySelector('td:nth-child(11)')).toHaveTextContent('2025-08-17 10:39');
+            expect(secondRow.querySelector('td:nth-child(12)')).toHaveTextContent('2025-08-17');
+            expect(secondRow.querySelector('td:nth-child(13)')).toHaveTextContent('预览');
 
             // 验证第三条数据
             const thirdRow = container.querySelectorAll('tbody tr')[2];
@@ -657,11 +668,28 @@ describe('试卷管理页面测试', () => {
             expect(thirdRow.querySelector('td:nth-child(7)')).toHaveTextContent('120');
             expect(thirdRow.querySelector('td:nth-child(8)')).toHaveTextContent('-');
             expect(thirdRow.querySelector('td:nth-child(9)')).toHaveTextContent('困难');
-            expect(thirdRow.querySelector('td:nth-child(10)')).toHaveTextContent('2025-08-17 10:39');
-            expect(thirdRow.querySelector('td:nth-child(11)')).toHaveTextContent('2025-08-17');
-            expect(thirdRow.querySelector('td:nth-child(12)')).toHaveTextContent('修改');
-            expect(thirdRow.querySelector('td:nth-child(12)')).toHaveTextContent('预览');
-            expect(thirdRow.querySelector('td:nth-child(12)')).toHaveTextContent('删除');
+            expect(thirdRow.querySelector('td:nth-child(10)')).toHaveTextContent('异常');
+            expect(thirdRow.querySelector('td:nth-child(11)')).toHaveTextContent('2025-08-17 10:39');
+            expect(thirdRow.querySelector('td:nth-child(12)')).toHaveTextContent('2025-08-17');
+            expect(thirdRow.querySelector('td:nth-child(13)')).toHaveTextContent('预览');
+            expect(thirdRow.querySelector('td:nth-child(13)')).toHaveTextContent('删除');
+
+            // 验证第四条数据
+            const fourthRow = container.querySelectorAll('tbody tr')[3];
+            expect(fourthRow.querySelector('td:nth-child(1) input[type="checkbox"]')).toBeInTheDocument();
+            expect(fourthRow.querySelector('td:nth-child(2)')).toHaveTextContent('测试试卷4');
+            expect(fourthRow.querySelector('td:nth-child(3)')).toHaveTextContent('智能刷题');
+            expect(fourthRow.querySelector('td:nth-child(4)')).toHaveTextContent('考试');
+            expect(fourthRow.querySelector('td:nth-child(5)')).toHaveTextContent('5');
+            expect(fourthRow.querySelector('td:nth-child(6)')).toHaveTextContent('20');
+            expect(fourthRow.querySelector('td:nth-child(7)')).toHaveTextContent('120');
+            expect(fourthRow.querySelector('td:nth-child(8)')).toHaveTextContent('-');
+            expect(fourthRow.querySelector('td:nth-child(9)')).toHaveTextContent('困难');
+            expect(fourthRow.querySelector('td:nth-child(10)')).toHaveTextContent('已发布');
+            expect(fourthRow.querySelector('td:nth-child(11)')).toHaveTextContent('2025-08-17 10:39');
+            expect(fourthRow.querySelector('td:nth-child(12)')).toHaveTextContent('2025-08-17');
+            expect(fourthRow.querySelector('td:nth-child(13)')).toHaveTextContent('预览');
+            expect(fourthRow.querySelector('td:nth-child(13)')).toHaveTextContent('删除');
         });
 
         describe('交互', () => {
@@ -764,7 +792,7 @@ describe('试卷管理页面测试', () => {
 
                 // 点击第一条数据的修改按钮
                 const firstRow = container.querySelectorAll('tbody tr')[0];
-                fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(1)'));
+                fireEvent.click(firstRow.querySelector('td:nth-child(13) button:nth-child(1)'));
 
                 // 验证goto被调用
                 await waitFor(() => {
@@ -785,7 +813,7 @@ describe('试卷管理页面测试', () => {
     
                     // 点击第一条数据的删除按钮
                     const firstRow = container.querySelectorAll('tbody tr')[0];
-                    fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(3)'));
+                    fireEvent.click(firstRow.querySelector('td:nth-child(13) button:nth-child(4)'));
     
                     // 验证弹窗
                     expect(screen.getByText('删除确认')).toBeInTheDocument();
@@ -823,7 +851,7 @@ describe('试卷管理页面测试', () => {
     
                     // 点击第一条数据的删除按钮
                     const firstRow = container.querySelectorAll('tbody tr')[0];
-                    fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(3)'));
+                    fireEvent.click(firstRow.querySelector('td:nth-child(13) button:nth-child(4)'));
     
                     // 验证弹窗
                     expect(screen.getByText('删除确认')).toBeInTheDocument();
@@ -857,10 +885,17 @@ describe('试卷管理页面测试', () => {
                 });
             });
 
-
             describe('预览', () => {
 
                 it('正常情况', async () => {
+                    // Mock window.location
+                    const originalLocation = window.location;
+                    delete window.location;
+                    window.location = {
+                        href: '',
+                        assign: vi.fn(),
+                        replace: vi.fn()
+                    };
 
                     const { container } = render(Paper);
 
@@ -972,21 +1007,137 @@ describe('试卷管理页面测试', () => {
 
                     // 点击第一条数据的预览按钮
                     const firstRow = container.querySelectorAll('tbody tr')[0];
-                    fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(2)'));
+                    fireEvent.click(firstRow.querySelector('td:nth-child(13) button:nth-child(3)'));
 
                     // 验证window.location.href被调用
                     await waitFor(() => {
-                        expect(window.location.href).toBe('http://localhost:3000/');
+                        expect(window.location.href).toBe('/student/answer/exam');
+                    });
+
+                    // 恢复原始 location
+                    window.location = originalLocation;
+
+                    // Mock window.location
+                    const originalLocation2 = window.location;
+                    delete window.location;
+                    window.location = {
+                        href: '',
+                        assign: vi.fn(),
+                        replace: vi.fn()
+                    };
+
+                    // 临时mock数据
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            status: 0,
+                            msg: "success",
+                            API: "/api/paper/manual",
+                            method: "GET",
+                            data: {
+                                Paper: {
+                                    ID: 143,
+                                    DomainID: null,
+                                    Name: "新建试卷",
+                                    AssemblyType: "00",
+                                    Category: "00",
+                                    Level: "00",
+                                    SuggestedDuration: 120,
+                                    Description: null,
+                                    Tags: [],
+                                    Creator: 1626,
+                                    CreateTime: 1755419884114,
+                                    UpdatedBy: null,
+                                    UpdateTime: 1755419884114,
+                                    Status: "00",
+                                    TotalScore: 0,
+                                    QuestionCount: 0,
+                                    GroupCount: 5
+                                },
+                                QuestionGroupInfo: {
+                                    517: {
+                                        ID: 517,
+                                        PaperID: null,
+                                        Name: "一、单选题",
+                                        Order: 1,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    518: {
+                                        ID: 518,
+                                        PaperID: null,
+                                        Name: "二、多选题",
+                                        Order: 2,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    519: {
+                                        ID: 519,
+                                        PaperID: null,
+                                        Name: "三、判断题",
+                                        Order: 3,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    520: {
+                                        ID: 520,
+                                        PaperID: null,
+                                        Name: "四、填空题",
+                                        Order: 4,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    521: {
+                                        ID: 521,
+                                        PaperID: null,
+                                        Name: "五、简答题",
+                                        Order: 5,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    }
+                                },
+                                Questions: {
+                                    517: [],
+                                    518: [],
+                                    519: [],
+                                    520: [],
+                                    521: []
+                                }
+                            }
+                        })
                     });
 
                     // 点击第二条数据的预览按钮
                     const secondRow = container.querySelectorAll('tbody tr')[1];
-                    fireEvent.click(secondRow.querySelector('td:nth-child(12) button:nth-child(2)'));
+                    fireEvent.click(secondRow.querySelector('td:nth-child(13) button:nth-child(1)'));
 
                     // 验证window.location.href被调用
                     await waitFor(() => {
-                        expect(window.location.href).toBe('http://localhost:3000/');
+                        expect(window.location.href).toBe('/student/answer/practice');
                     });
+
+                    // 恢复原始 location
+                    window.location = originalLocation2;
                 });
 
                 it('失败情况1：请求失败', async () => {
@@ -1005,7 +1156,7 @@ describe('试卷管理页面测试', () => {
 
                     // 点击第一条数据的预览按钮
                     const firstRow = container.querySelectorAll('tbody tr')[0];
-                    fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(2)'));
+                    fireEvent.click(firstRow.querySelector('td:nth-child(13) button:nth-child(3)'));
 
                     // 验证toast提示
                     await waitFor(() => {
@@ -1032,7 +1183,7 @@ describe('试卷管理页面测试', () => {
 
                     // 点击第一条数据的预览按钮
                     const firstRow = container.querySelectorAll('tbody tr')[0];
-                    fireEvent.click(firstRow.querySelector('td:nth-child(12) button:nth-child(2)'));
+                    fireEvent.click(firstRow.querySelector('td:nth-child(13) button:nth-child(3)'));
 
                     // 验证toast提示
                     await waitFor(() => {
@@ -1041,6 +1192,177 @@ describe('试卷管理页面测试', () => {
                 });
             });
 
+            describe('发布', ()=> {
+                it('正常情况', async () => {
+                    const { container } = render(Paper);
+
+                    // 等待表格渲染两条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                    });
+
+                    // 点击第一条数据的发布按钮
+                    const firstRow = container.querySelectorAll('tbody tr')[0];
+                    fireEvent.click(firstRow.querySelector('td:nth-child(13) button:nth-child(2)'));
+
+                    // 验证确认对话框
+                    await waitFor(() => {
+                        expect(screen.getByText('发布确认')).toBeInTheDocument();
+                        expect(screen.getByText('请问是否要发布该试卷？')).toBeInTheDocument();
+                    });
+
+                    // 临时mock数据
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            status: 0,
+                            msg: "success",
+                        })
+                    });
+
+                    // 点击确认按钮
+                    fireEvent.click(screen.getByText('确定'));
+
+                    // 临时mock数据（空列表）
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            API: "/api/paper",
+                            data: null,
+                            method: "GET",
+                            msg: "success",
+                            rowCount: 0,
+                            status: 0
+                        })
+                    });
+
+                    // 验证toast提示
+                    await waitFor(() => {
+                        expect(toast.success).toHaveBeenCalledWith('发布成功', 1000);
+                    });
+
+                    // 验证表格渲染空列表
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(0);
+                    });
+                });
+
+                it('发布成功但获取试卷列表失败', async () => {
+                    const { container } = render(Paper);
+
+                    // 等待表格渲染两条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                    });
+
+                    // 临时mock数据
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            status: 0,
+                            msg: "success",
+                        })
+                    });
+
+                    // 临时mock数据（请求失败）
+                    global.fetch.mockResolvedValueOnce({
+                        ok: false,
+                        status: 400
+                    });
+
+                    // 点击第一条数据的发布按钮
+                    const firstRow = container.querySelectorAll('tbody tr')[0];
+                    fireEvent.click(firstRow.querySelector('td:nth-child(13) button:nth-child(2)'));
+
+                    // 验证确认对话框
+                    await waitFor(() => {
+                        expect(screen.getByText('发布确认')).toBeInTheDocument();
+                        expect(screen.getByText('请问是否要发布该试卷？')).toBeInTheDocument();
+                    });
+
+                    // 点击确认按钮
+                    fireEvent.click(screen.getByText('确定'));
+
+                    // 验证toast提示
+                    await waitFor(() => {
+                        expect(toast.success).toHaveBeenCalledWith('发布成功', 1000);
+                    });
+
+                    // 验证表格渲染空列表
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(0);
+                    });
+                });
+
+                it('失败情况1：请求失败', async () => {
+                    const { container } = render(Paper);
+
+                    // 等待表格渲染两条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                    });
+
+                    // 临时mock数据
+                    global.fetch.mockResolvedValueOnce({
+                        ok: false,
+                        status: 400,
+                    });
+
+                    // 点击第一条数据的发布按钮
+                    const firstRow = container.querySelectorAll('tbody tr')[0];
+                    fireEvent.click(firstRow.querySelector('td:nth-child(13) button:nth-child(2)'));
+
+                    // 验证确认对话框
+                    await waitFor(() => {
+                        expect(screen.getByText('发布确认')).toBeInTheDocument();
+                        expect(screen.getByText('请问是否要发布该试卷？')).toBeInTheDocument();
+                    });
+
+                    // 点击确认按钮
+                    fireEvent.click(screen.getByText('确定'));
+
+                    // 验证toast提示
+                    await waitFor(() => {
+                        expect(toast.error).toHaveBeenCalledWith(`请求失败，状态码：400`, 1000);
+                    });
+                });
+
+                it('失败情况2：业务错误', async () => {
+                    const { container } = render(Paper);
+
+                    // 等待表格渲染两条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(2);
+                    });
+
+                    // 临时mock数据
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            status: -1,
+                            msg: "业务错误",
+                        })
+                    });
+
+                    // 点击第一条数据的发布按钮
+                    const firstRow = container.querySelectorAll('tbody tr')[0];
+                    fireEvent.click(firstRow.querySelector('td:nth-child(13) button:nth-child(2)'));
+
+                    // 验证确认对话框
+                    await waitFor(() => {
+                        expect(screen.getByText('发布确认')).toBeInTheDocument();
+                        expect(screen.getByText('请问是否要发布该试卷？')).toBeInTheDocument();
+                    });
+
+                    // 点击确认按钮
+                    fireEvent.click(screen.getByText('确定'));
+
+                    // 验证toast提示
+                    await waitFor(() => {
+                        expect(toast.error).toHaveBeenCalledWith(`业务错误`, 1000);
+                    });
+                });
+            });
         });
     });
 
@@ -1400,6 +1722,354 @@ describe('试卷管理页面测试', () => {
 
             // 验证输入框内容（超出50个字符，但被截断）
             expect(screen.getByPlaceholderText('搜索试卷名称').value).toBe('12345678901234567890123456789012345678901234567890');
+        });
+
+        describe('其他状态的试卷', async () => {
+            describe('异常', () => {
+                it('删除', async () => {
+                    global.fetch = vi.fn().mockResolvedValue({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            API: "/api/paper",
+                            data: [PAPER_ONE, PAPER_TWO, PAPER_THREE, PAPER_FOUR],
+                            method: "GET",
+                            msg: "success",
+                            rowCount: 4,
+                            status: 0
+                        })
+                    });
+
+                    const { container } = render(Paper);
+
+                    // 等待表格渲染四条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(4);
+                    });
+
+                    // 获取第三条数据
+                    const thirdRow = container.querySelectorAll('tbody tr')[2];
+                    expect(thirdRow.querySelector('td:nth-child(10)')).toHaveTextContent('异常');
+
+                    // 点击删除按钮
+                    fireEvent.click(thirdRow.querySelector('td:nth-child(13) button:nth-child(2)'));
+                });
+
+                it('预览', async () => {
+                    // Mock window.location
+                    const originalLocation = window.location;
+                    delete window.location;
+                    window.location = {
+                        href: '',
+                        assign: vi.fn(),
+                        replace: vi.fn()
+                    };
+
+                    global.fetch = vi.fn().mockResolvedValue({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            API: "/api/paper",
+                            data: [PAPER_ONE, PAPER_TWO, PAPER_THREE, PAPER_FOUR],
+                            method: "GET",
+                            msg: "success",
+                            rowCount: 4,
+                            status: 0
+                        })
+                    });
+
+                    const { container } = render(Paper);
+
+                    // 等待表格渲染四条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(4);
+                    });
+
+                    // 临时mock数据
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            status: 0,
+                            msg: "success",
+                            API: "/api/paper/manual",
+                            method: "GET",
+                            data: {
+                                Paper: {
+                                    ID: 143,
+                                    DomainID: null,
+                                    Name: "新建试卷",
+                                    AssemblyType: "00",
+                                    Category: "00",
+                                    Level: "00",
+                                    SuggestedDuration: 120,
+                                    Description: null,
+                                    Tags: [],
+                                    Creator: 1626,
+                                    CreateTime: 1755419884114,
+                                    UpdatedBy: null,
+                                    UpdateTime: 1755419884114,
+                                    Status: "00",
+                                    TotalScore: 0,
+                                    QuestionCount: 0,
+                                    GroupCount: 5
+                                },
+                                QuestionGroupInfo: {
+                                    517: {
+                                        ID: 517,
+                                        PaperID: null,
+                                        Name: "一、单选题",
+                                        Order: 1,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    518: {
+                                        ID: 518,
+                                        PaperID: null,
+                                        Name: "二、多选题",
+                                        Order: 2,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    519: {
+                                        ID: 519,
+                                        PaperID: null,
+                                        Name: "三、判断题",
+                                        Order: 3,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    520: {
+                                        ID: 520,
+                                        PaperID: null,
+                                        Name: "四、填空题",
+                                        Order: 4,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    521: {
+                                        ID: 521,
+                                        PaperID: null,
+                                        Name: "五、简答题",
+                                        Order: 5,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    }
+                                },
+                                Questions: {
+                                    517: [],
+                                    518: [],
+                                    519: [],
+                                    520: [],
+                                    521: []
+                                }
+                            }
+                        })
+                    });
+
+                    // 点击第三条数据的预览按钮
+                    const fourthRow = container.querySelectorAll('tbody tr')[2];
+                    fireEvent.click(fourthRow.querySelector('td:nth-child(13) button:nth-child(1)'));
+
+                    // 验证window.location.href被调用
+                    await waitFor(() => {
+                        expect(window.location.href).toBe('/student/answer/exam');
+                    });
+
+                    // 恢复原始 location
+                    window.location = originalLocation;
+                });
+            });
+
+            describe('已发布', () => {
+                it('删除', async () => {
+                    global.fetch = vi.fn().mockResolvedValue({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            API: "/api/paper",
+                            data: [PAPER_ONE, PAPER_TWO, PAPER_THREE, PAPER_FOUR],
+                            method: "GET",
+                            msg: "success",
+                            rowCount: 4,
+                            status: 0
+                        })
+                    });
+
+                    const { container } = render(Paper);
+
+                    // 等待表格渲染四条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(4);
+                    });
+
+                    // 获取第四条数据
+                    const thirdRow = container.querySelectorAll('tbody tr')[3];
+                    expect(thirdRow.querySelector('td:nth-child(10)')).toHaveTextContent('已发布');
+
+                    // 点击删除按钮
+                    fireEvent.click(thirdRow.querySelector('td:nth-child(13) button:nth-child(2)'));
+                });
+
+                it('预览', async () => {
+                    // Mock window.location
+                    const originalLocation = window.location;
+                    delete window.location;
+                    window.location = {
+                        href: '',
+                        assign: vi.fn(),
+                        replace: vi.fn()
+                    };
+
+                    global.fetch = vi.fn().mockResolvedValue({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            API: "/api/paper",
+                            data: [PAPER_ONE, PAPER_TWO, PAPER_THREE, PAPER_FOUR],
+                            method: "GET",
+                            msg: "success",
+                            rowCount: 4,
+                            status: 0
+                        })
+                    });
+
+                    const { container } = render(Paper);
+
+                    // 等待表格渲染四条数据
+                    await waitFor(() => {
+                        expect(container.querySelectorAll('tbody tr').length).toBe(4);
+                    });
+
+                    // 临时mock数据
+                    global.fetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: () => Promise.resolve({
+                            status: 0,
+                            msg: "success",
+                            API: "/api/paper/manual",
+                            method: "GET",
+                            data: {
+                                Paper: {
+                                    ID: 143,
+                                    DomainID: null,
+                                    Name: "新建试卷",
+                                    AssemblyType: "00",
+                                    Category: "00",
+                                    Level: "00",
+                                    SuggestedDuration: 120,
+                                    Description: null,
+                                    Tags: [],
+                                    Creator: 1626,
+                                    CreateTime: 1755419884114,
+                                    UpdatedBy: null,
+                                    UpdateTime: 1755419884114,
+                                    Status: "00",
+                                    TotalScore: 0,
+                                    QuestionCount: 0,
+                                    GroupCount: 5
+                                },
+                                QuestionGroupInfo: {
+                                    517: {
+                                        ID: 517,
+                                        PaperID: null,
+                                        Name: "一、单选题",
+                                        Order: 1,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    518: {
+                                        ID: 518,
+                                        PaperID: null,
+                                        Name: "二、多选题",
+                                        Order: 2,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    519: {
+                                        ID: 519,
+                                        PaperID: null,
+                                        Name: "三、判断题",
+                                        Order: 3,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    520: {
+                                        ID: 520,
+                                        PaperID: null,
+                                        Name: "四、填空题",
+                                        Order: 4,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    },
+                                    521: {
+                                        ID: 521,
+                                        PaperID: null,
+                                        Name: "五、简答题",
+                                        Order: 5,
+                                        Creator: 1626,
+                                        CreateTime: null,
+                                        UpdatedBy: null,
+                                        UpdateTime: null,
+                                        Addi: null,
+                                        Status: "00"
+                                    }
+                                },
+                                Questions: {
+                                    517: [],
+                                    518: [],
+                                    519: [],
+                                    520: [],
+                                    521: []
+                                }
+                            }
+                        })
+                    });
+
+                    // 点击第四条数据的预览按钮
+                    const fourthRow = container.querySelectorAll('tbody tr')[3];
+                    fireEvent.click(fourthRow.querySelector('td:nth-child(13) button:nth-child(1)'));
+
+                    // 验证window.location.href被调用
+                    await waitFor(() => {
+                        expect(window.location.href).toBe('/student/answer/exam');
+                    });
+
+                    // 恢复原始 location
+                    window.location = originalLocation;
+                });
+            });
         });
     });
 });

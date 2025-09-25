@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/sve
 import CorrectPage from '../+page@.svelte';
 import { toast } from '$lib/components/Toast/Toast.js';
 import MessageBox from '$lib/components/MessageBox/MessageBox.js';
+import { page } from '$app/state';
 
 vi.mock('$app/state', () => ({
   page: {
@@ -15,9 +16,6 @@ vi.mock('$lib/components/MessageBox/MessageBox.js', () => ({
     onConfirm();
   }),
 }));
-
-import { page } from '$app/state';
-import { json } from '@sveltejs/kit';
 
 const MOCK_DATA = {
   question_sets: [
@@ -382,7 +380,7 @@ function mockFetch(data) {
 }
 
 function setExamCorrect() {
-  page.url = new URL('http://localhost?name=数学考试&exam_session_id=8001');
+  page.url = new URL('http://localhost?name=数学考试&exam_session_name=第一场次&exam_session_id=8001');
 }
 
 function setPracticeCorrect() {
@@ -398,7 +396,7 @@ describe('批改页面测试', () => {
     });
   });
 
-  it('应正确渲染页面核心元素', async () => {
+  it('应正确渲染页面核心元素（考试模式）', async () => {
     setExamCorrect();
 
     render(CorrectPage);
@@ -407,6 +405,8 @@ describe('批改页面测试', () => {
       // 验证顶部信息
       expect(screen.getByText('返回')).toBeInTheDocument();
       expect(screen.getByText('数学考试')).toBeInTheDocument();
+      expect(screen.getByText('考试场次：')).toBeInTheDocument();
+      expect(screen.getByText('第一场次')).toBeInTheDocument();
       expect(screen.getByText('总人数：')).toBeInTheDocument();
       expect(screen.getAllByText('3').length).toBeGreaterThan(0); // 验证总人数
       expect(screen.getByText('未批改人数：')).toBeInTheDocument();
@@ -414,7 +414,6 @@ describe('批改页面测试', () => {
       expect(screen.getByText('总未批改题数：')).toBeInTheDocument();
 
       // 验证模式切换开关
-      expect(screen.getByText(/全卷模式/)).toBeInTheDocument();
       expect(screen.getByText(/逐题模式/)).toBeInTheDocument();
 
       // 验证操作按钮
@@ -422,12 +421,56 @@ describe('批改页面测试', () => {
       expect(screen.getByText('下一位')).toBeInTheDocument();
 
       // 验证右侧总览
-      expect(screen.getByText('作答总览')).toBeInTheDocument();
+      expect(screen.getByText('批改总览')).toBeInTheDocument();
       expect(screen.getByText('• 未批阅')).toBeInTheDocument();
       expect(screen.getByText('• 正确')).toBeInTheDocument();
       expect(screen.getByText('• 错误')).toBeInTheDocument();
       expect(screen.getByText('• 含错')).toBeInTheDocument();
     });
+  });
+
+  it('应正确渲染页面核心元素（练习模式）', async () => {
+    setPracticeCorrect();
+
+    render(CorrectPage);
+
+    await waitFor(() => {
+      // 验证顶部信息
+      expect(screen.getByText('返回')).toBeInTheDocument();
+      expect(screen.getByText('数学练习')).toBeInTheDocument();
+      expect(screen.queryByText('考试场次：')).not.toBeInTheDocument();
+      expect(screen.getByText('总人数：')).toBeInTheDocument();
+      expect(screen.getAllByText('3').length).toBeGreaterThan(0); // 验证总人数
+      expect(screen.getByText('未批改人数：')).toBeInTheDocument();
+      expect(screen.getAllByText('1').length).toBeGreaterThan(0); // 验证未批改人数
+      expect(screen.getByText('总未批改题数：')).toBeInTheDocument();
+
+      // 验证模式切换开关
+      expect(screen.getByText(/逐题模式/)).toBeInTheDocument();
+
+      // 验证操作按钮
+      expect(screen.getByText('提交')).toBeInTheDocument();
+      expect(screen.getByText('上一位')).toBeInTheDocument();
+      expect(screen.getByText('下一位')).toBeInTheDocument();
+
+      // 验证右侧总览
+      expect(screen.getByText('批改总览')).toBeInTheDocument();
+      expect(screen.getByText('• 未批阅')).toBeInTheDocument();
+      expect(screen.getByText('• 正确')).toBeInTheDocument();
+      expect(screen.getByText('• 错误')).toBeInTheDocument();
+      expect(screen.getByText('• 含错')).toBeInTheDocument();
+    });
+  });
+
+  it('点击返回按钮应正确跳转', async () => {
+    window.history.back = vi.fn(); // 重写 history.back
+
+    setExamCorrect();
+
+    render(CorrectPage);
+
+    await waitFor(() => fireEvent.click(screen.getByText('返回')));
+    expect(window.history.back).toHaveBeenCalledTimes(1);
   });
 
   describe('路径参数错误报错提示测试', () => {
@@ -1199,7 +1242,7 @@ describe('批改页面测试', () => {
       });
     });
 
-    it('最后一位考生时下一位按钮应为禁用（练习模式）', async () => {
+    it('最后一位考生时下一位按钮应为禁用', async () => {
       setPracticeCorrect();
 
       render(CorrectPage);
@@ -1208,11 +1251,8 @@ describe('批改页面测试', () => {
       await fireEvent.click(screen.getByText('下一位'));
       await fireEvent.click(screen.getByText('下一位'));
 
-      await waitFor(() => {
-        expect(screen.getByText('上一位')).toBeInTheDocument();
-        expect(screen.queryByText(/提交/)).not.toBeInTheDocument();
-        expect(screen.getByText('下一位')).toBeInTheDocument();
-      });
+      const lastButton = screen.getByText('下一位');
+      expect(lastButton).toHaveClass('is-disabled');
     });
   });
 
@@ -1546,156 +1586,60 @@ describe('批改页面测试', () => {
   });
 
   describe('提交功能测试（考试模式）', () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       setExamCorrect();
+    });
+
+    it('当前所有的考生没有全部批改完毕，提交按钮是禁用状态', async () => {
+      mockFetch({ status: 0, data: { ...MOCK_DATA, marking_results: [] } });
 
       render(CorrectPage);
-      vi.clearAllMocks();
 
-      // 切换到考试模式最后一位考生
       await fireEvent.click(screen.getByText('下一位'));
       await fireEvent.click(screen.getByText('下一位'));
-    });
-
-    it('应正确提交批改结果', async () => {
-      mockFetch({ status: 0 });
-
-      // 点击提交按钮
-      await fireEvent.click(screen.getByText(/提交/));
 
       await waitFor(() => {
-        expect(MessageBox).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: '确认操作',
-            content: '你确定要提交吗？',
-          }),
-        );
-
-        // 确认后应调用API
-        expect(global.fetch).toHaveBeenCalledWith(
-          '/api/mark/results-submission?exam_session_id=8001',
-          expect.anything(),
-        );
-
-        expect(toast.success).toHaveBeenCalledWith('提交成功');
+        const submitBtn = screen.getByText(/提交/);
+        expect(submitBtn).toHaveClass('is-disabled');
       });
     });
 
-    it('响应码非2xx，应显示错误提示（有error_text）', async () => {
-      global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: false,
-          status: 500,
-          statusText: 'Internal Server Error',
-          text: () => Promise.resolve('服务器错误'),
-        }),
-      );
+    describe('当前考生批改完，点击提交按钮', () => {
+      beforeEach(async () => {
+        render(CorrectPage);
+        vi.clearAllMocks();
 
-      // 点击提交按钮
-      await fireEvent.click(screen.getByText(/提交/));
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('请求失败：500 Internal Server Error-服务器错误');
-      });
-    });
-
-    it('响应码非2xx，应显示错误提示（无error_text）', async () => {
-      global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: false,
-          status: 500,
-          statusText: 'Internal Server Error',
-          text: () => Promise.resolve(),
-        }),
-      );
-
-      // 点击提交按钮
-      await fireEvent.click(screen.getByText(/提交/));
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('请求失败：500 Internal Server Error');
-      });
-    });
-
-    it('返回的status非0，且有 msg，应显示错误提示', async () => {
-      mockFetch({ status: -1, msg: '错误消息' });
-
-      // 点击提交按钮
-      await fireEvent.click(screen.getByText(/提交/));
-
-      await waitFor(() => {
-        // 确认后应调用API
-        expect(global.fetch).toHaveBeenCalledWith(
-          '/api/mark/results-submission?exam_session_id=8001',
-          expect.anything(),
-        );
-
-        expect(toast.error).toHaveBeenCalledWith('错误消息');
-      });
-    });
-
-    it('返回的status非0，且没有 msg，应显示默认错误提示', async () => {
-      mockFetch({ status: -1 });
-
-      // 点击提交按钮
-      await fireEvent.click(screen.getByText(/提交/));
-
-      await waitFor(() => {
-        // 确认后应调用API
-        expect(global.fetch).toHaveBeenCalledWith(
-          '/api/mark/results-submission?exam_session_id=8001',
-          expect.anything(),
-        );
-
-        expect(toast.error).toHaveBeenCalledWith('提交失败');
-      });
-    });
-  });
-
-  describe('提交功能测试（练习模式）', () => {
-    beforeEach(async () => {
-      setPracticeCorrect();
-
-      mockFetch({ status: 0, data: MOCK_DATA });
-
-      render(CorrectPage);
-      vi.clearAllMocks();
-    });
-
-    it('应正确提交批改结果，且所有学生都提交会提示', async () => {
-      mockFetch({ status: 0 });
-
-      await waitFor(() => {
-        const input = screen.getAllByPlaceholderText('输入得分')[0];
-        fireEvent.input(input, { target: { value: 1 } });
+        // 切换到考试模式最后一位考生
+        await fireEvent.click(screen.getByText('下一位'));
+        await fireEvent.click(screen.getByText('下一位'));
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      it('应正确提交批改结果', async () => {
+        mockFetch({ status: 0 });
 
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenNthCalledWith(
-          2, // 只断言第二次调用
-          '/api/mark/results-submission?practice_id=9001&practice_submission_id=7001',
-          { method: 'PATCH' },
-        );
+        // 点击提交按钮
+        await fireEvent.click(screen.getByText(/提交/));
 
-        expect(toast.success).toHaveBeenCalledWith('当前所有的学生已批改且提交成功，可以返回列表');
+        await waitFor(() => {
+          expect(MessageBox).toHaveBeenCalledWith(
+            expect.objectContaining({
+              title: '确认操作',
+              content: '你确定要提交吗？',
+            }),
+          );
+
+          // 确认后应调用API
+          expect(global.fetch).toHaveBeenCalledWith(
+            '/api/mark/results-submission?exam_session_id=8001',
+            expect.anything(),
+          );
+
+          expect(toast.success).toHaveBeenCalledWith('提交成功');
+        });
       });
-    });
 
-    it('响应码非2xx，应显示错误提示（有error_text）', async () => {
-      // 第一次 fetch（保存批改）：成功
-      global.fetch = vi
-        .fn()
-        .mockImplementationOnce(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({ status: 0 }),
-          }),
-        )
-        // 第二次 fetch（提交批改）：失败
-        .mockImplementationOnce(() =>
+      it('响应码非2xx，应显示错误提示（有error_text）', async () => {
+        global.fetch = vi.fn(() =>
           Promise.resolve({
             ok: false,
             status: 500,
@@ -1704,31 +1648,16 @@ describe('批改页面测试', () => {
           }),
         );
 
-      await waitFor(() => {
-        const input = screen.getAllByPlaceholderText('输入得分')[0];
-        fireEvent.input(input, { target: { value: 1 } });
+        // 点击提交按钮
+        await fireEvent.click(screen.getByText(/提交/));
+
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith('请求失败：500 Internal Server Error-服务器错误');
+        });
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 600));
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('请求失败：500 Internal Server Error-服务器错误');
-      });
-    });
-
-    it('响应码非2xx，应显示错误提示（无error_text）', async () => {
-      // 第一次 fetch（保存批改）：成功
-      global.fetch = vi
-        .fn()
-        .mockImplementationOnce(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({ status: 0 }),
-          }),
-        )
-        // 第二次 fetch（提交批改）：失败
-        .mockImplementationOnce(() =>
+      it('响应码非2xx，应显示错误提示（无error_text）', async () => {
+        global.fetch = vi.fn(() =>
           Promise.resolve({
             ok: false,
             status: 500,
@@ -1737,79 +1666,146 @@ describe('批改页面测试', () => {
           }),
         );
 
-      await waitFor(() => {
-        const input = screen.getAllByPlaceholderText('输入得分')[0];
-        fireEvent.input(input, { target: { value: 1 } });
+        // 点击提交按钮
+        await fireEvent.click(screen.getByText(/提交/));
+
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith('请求失败：500 Internal Server Error');
+        });
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      it('返回的status非0，且有 msg，应显示错误提示', async () => {
+        mockFetch({ status: -1, msg: '错误消息' });
+
+        // 点击提交按钮
+        await fireEvent.click(screen.getByText(/提交/));
+
+        await waitFor(() => {
+          // 确认后应调用API
+          expect(global.fetch).toHaveBeenCalledWith(
+            '/api/mark/results-submission?exam_session_id=8001',
+            expect.anything(),
+          );
+
+          expect(toast.error).toHaveBeenCalledWith('错误消息');
+        });
+      });
+
+      it('返回的status非0，且没有 msg，应显示默认错误提示', async () => {
+        mockFetch({ status: -1 });
+
+        // 点击提交按钮
+        await fireEvent.click(screen.getByText(/提交/));
+
+        await waitFor(() => {
+          // 确认后应调用API
+          expect(global.fetch).toHaveBeenCalledWith(
+            '/api/mark/results-submission?exam_session_id=8001',
+            expect.anything(),
+          );
+
+          expect(toast.error).toHaveBeenCalledWith('提交失败');
+        });
+      });
+    });
+  });
+
+  describe('提交功能测试（练习模式）', () => {
+    beforeEach(() => {
+      setPracticeCorrect();
+    });
+
+    it('当前考生未批改完毕的时候，提交按钮为禁用状态', async () => {
+      mockFetch({ status: 0, data: { ...MOCK_DATA, marking_results: [] } });
+
+      render(CorrectPage);
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('请求失败：500 Internal Server Error');
+        const submitButton = screen.getByText(/提交/);
+        expect(submitButton).toHaveClass('is-disabled');
       });
     });
 
-    it('返回的status非0，且有 msg，应显示错误提示', async () => {
-      // 第一次 fetch（保存批改）：成功
-      global.fetch = vi
-        .fn()
-        .mockImplementationOnce(() =>
+    describe('当前考生批改完，点击提交按钮', () => {
+      beforeEach(async () => {
+        mockFetch({ status: 0, data: MOCK_DATA });
+
+        render(CorrectPage);
+        vi.clearAllMocks();
+      });
+
+      it('点击提交按钮成功提交并提示信息', async () => {
+        mockFetch({ status: 0 });
+
+        // 点击提交按钮
+        await fireEvent.click(screen.getByText(/提交/));
+
+        await waitFor(() => {
+          expect(global.fetch).toHaveBeenCalledWith(
+            '/api/mark/results-submission?practice_id=9001&practice_submission_id=7001',
+            { method: 'PATCH' },
+          );
+
+          expect(toast.success).toHaveBeenCalledWith('提交成功');
+        });
+      });
+
+      it('响应码非2xx，应显示错误提示（有error_text）', async () => {
+        global.fetch = vi.fn(() =>
           Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({ status: 0 }),
-          }),
-        )
-        // 第二次 fetch（提交批改）：失败
-        .mockImplementationOnce(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({ status: -1, msg: '错误消息' }),
+            ok: false,
+            status: 500,
+            statusText: 'Internal Server Error',
+            text: () => Promise.resolve('服务器错误'),
           }),
         );
 
-      await waitFor(() => {
-        const input = screen.getAllByPlaceholderText('输入得分')[0];
-        fireEvent.input(input, { target: { value: 1 } });
+        // 点击提交按钮
+        await fireEvent.click(screen.getByText(/提交/));
+
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith('请求失败：500 Internal Server Error-服务器错误');
+        });
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 600));
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('错误消息');
-      });
-    });
-
-    it('返回的status非0，且无 msg，应显示默认错误提示', async () => {
-      // 第一次 fetch（保存批改）：成功
-      global.fetch = vi
-        .fn()
-        .mockImplementationOnce(() =>
+      it('响应码非2xx，应显示错误提示（无error_text）', async () => {
+        global.fetch = vi.fn(() =>
           Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({ status: 0 }),
-          }),
-        )
-        // 第二次 fetch（提交批改）：失败
-        .mockImplementationOnce(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({ status: -1 }),
+            ok: false,
+            status: 500,
+            statusText: 'Internal Server Error',
+            text: () => Promise.resolve(),
           }),
         );
 
-      await waitFor(() => {
-        const input = screen.getAllByPlaceholderText('输入得分')[0];
-        fireEvent.input(input, { target: { value: 1 } });
+        // 点击提交按钮
+        await fireEvent.click(screen.getByText(/提交/));
+
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith('请求失败：500 Internal Server Error');
+        });
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      it('返回的status非0，且有 msg，应显示错误提示', async () => {
+        mockFetch({ status: -1, msg: '错误消息' });
 
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('提交失败');
+        // 点击提交按钮
+        await fireEvent.click(screen.getByText(/提交/));
+
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith('错误消息');
+        });
+      });
+
+      it('返回的status非0，且无 msg，应显示默认错误提示', async () => {
+        mockFetch({ status: -1 });
+
+        // 点击提交按钮
+        await fireEvent.click(screen.getByText(/提交/));
+
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith('提交失败');
+        });
       });
     });
   });

@@ -273,7 +273,7 @@
   <div class="table-container">
     <div class="table-content">
       <!-- 练习表格 -->
-      <div class="practice-table-container">
+      <div class="practice-table-container" class:no-data-container={state.practices.length === 0 && !state.loading}>
         <table class="practice-table">
           <thead>
             <!-- 表头 -->
@@ -366,7 +366,7 @@
     flex-direction: column;
     min-height: 600px;
     overflow: hidden;
-    height: 84vh;
+    height: 85vh;
     position: relative;
   }
 
@@ -396,7 +396,7 @@
   .pagination-wrapper {
     flex-shrink: 0;
     position: absolute;
-    bottom: 10px;
+    bottom: 0px;
     right: 20px;
   }
 
@@ -471,14 +471,16 @@
     width: 100%;
     height: 100%;
     max-height: 100%;
-    overflow: auto;
     flex: 1;
     min-height: 0;
 
+    overflow-x: auto;
+    overflow-y: auto;
+
     // 自定义滚动条
     &::-webkit-scrollbar {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
     }
 
     &::-webkit-scrollbar-track {
@@ -492,6 +494,19 @@
 
       &:hover {
         background: #a8a8a8;
+      }
+    }
+
+    &.no-data-container {
+      overflow: hidden;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .exam-table-container {
+      &::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
       }
     }
   }

@@ -46,7 +46,7 @@
     validateAndAssign('tag', propMap[k].get, propMap[k].set, propsRules[k], k);
   });
 
-  let classes = $state(['tag', `tag--${type}`, `tag--${size}`, them && `is-${them}`, round && 'is-round'].filter(Boolean).join(' '));
+  let classes = $derived(['tag', `tag--${type}`, `tag--${size}`, them && `is-${them}`, round && 'is-round'].filter(Boolean).join(' '));
 </script>
 
 <span class={classes}>

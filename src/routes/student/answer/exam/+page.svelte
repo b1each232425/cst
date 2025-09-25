@@ -22,7 +22,6 @@
   import MessageBox from '$lib/components/MessageBox/MessageBox.js';
   import { formatTimestamp } from '$lib/utils/time_utils.js';
   import { sget } from '$lib/utils/index.js';
-  import BulmaSwitchBlue from '../_component/SwitchBtn/BulmaSwitchBlue.svelte';
 
   /**
    * @typedef {Object} Question
@@ -249,13 +248,60 @@
       toast.warning('当前为预览模式！', 2000);
       return;
     }
+    // 本地存储 key（考试场景多维区分）
+    function _storageKeyForAnswers() {
+      const eid = exam_id || 'preview';
+      const sessionPart = exam_session_id || 'preview';
+      const examineePart = examinee_id || 'preview';
+      return `exam_answers_${eid}_${sessionPart}_${examineePart}`;
+    }
+
+    // 读取本地已有答案
+    let storedAnswers = {};
+    try {
+      const raw = localStorage.getItem(_storageKeyForAnswers());
+      if (raw) {
+        storedAnswers = JSON.parse(raw) || {};
+      }
+    } catch (e) {
+      console.warn('读取本地答案失败', e);
+      storedAnswers = {};
+    }
+
+    // 比较旧答案与新答案（使用 JSON.stringify 做深度比较）
+    const oldEntry = storedAnswers[String(question.ID)] || {};
+    const oldAnswer = oldEntry.answer === undefined ? null : oldEntry.answer;
+    // 归一化 newAnswer：如果传入的是 { answer: [...] } 这样的包装对象，则取其 .answer
+    const newAnswerRaw = stu_answer === undefined ? null : stu_answer;
+    const normalizedNewAnswer = newAnswerRaw && newAnswerRaw.answer !== undefined ? newAnswerRaw.answer : newAnswerRaw;
+    const changed = JSON.stringify(oldAnswer) !== JSON.stringify(normalizedNewAnswer) ||
+      JSON.stringify(oldEntry.attachment_paths || []) !== JSON.stringify(attachment_paths || []);
+
+    // 若发生变化则先保存到 localStorage
+    if (changed) {
+      try {
+        storedAnswers[String(question.ID)] = {
+          answer: normalizedNewAnswer,
+          attachment_paths: attachment_paths || [],
+          updated_at: Date.now(),
+        };
+        localStorage.setItem(_storageKeyForAnswers(), JSON.stringify(storedAnswers));
+      } catch (e) {
+        console.warn('保存本地答案失败', e);
+      }
+    }
+
+    // 若未变化则不用再调用后端接口
+    if (!changed) {
+      return;
+    }
 
     const data = {
       // 构建数据部分
       examinee_id: Number(examinee_id) || 0, // 从上下文获取考试ID
       question_id: question.ID, //题目id
       type: '00', //00说明是考试
-      answer: stu_answer, //该题答案
+      answer: stu_answer, //该题答案（发送原始传入值，后端兼容包装或原始）
       attachment_paths: attachment_paths, //附件
     };
     const requestBody = {
@@ -341,6 +387,20 @@
       })
       .then((resp_data) => {
         if (resp_data.status === 0) {
+          // 提交成功后，清除本地保存的答案与标记，避免下次进入仍显示旧数据
+          try {
+            const ansKey = `exam_answers_${exam_id || 'preview'}_${exam_session_id || 'preview'}_${examinee_id || 'preview'}`;
+            localStorage.removeItem(ansKey);
+          } catch (e) {
+            console.warn('清除本地答案失败', e);
+          }
+          try {
+            const markKey = `exam_marked_${exam_id || 'preview'}_${exam_session_id || 'preview'}_${examinee_id || 'preview'}`;
+            localStorage.removeItem(markKey);
+          } catch (e) {
+            console.warn('清除本地标记失败', e);
+          }
+
           toast.success('考试结束，提交成功！', 2000);
           goto(`/student/answer/exam-detail?exam-id=${exam_id}&exam-session-id=${exam_session_id}`); //跳转到考试详情页
         } else {
@@ -395,18 +455,60 @@
           } else {
             questionElement.scrollIntoView({
               behavior: 'smooth',
-              block: 'center',
+              block: 'start',
             });
           }
         }
       }, 0);
     }
   }
+  function _storageKeyForMarked() { // 标记题目状态的 localStorage key
+    // 使用 exam_id/exam_session_id/examinee_id 区分不同考试/考生；预览时使用 preview 标识
+    const idPart = exam_id || 'preview';
+    const sessionPart = exam_session_id || 'preview';
+    const examineePart = examinee_id || 'preview';
+    return `exam_marked_${idPart}_${sessionPart}_${examineePart}`;
+  }
+  function saveMarkedQuestionsToStorage() { // 保存标记状态到 localStorage
+    try {
+      localStorage.setItem(_storageKeyForMarked(), JSON.stringify(markedQuestions));
+    } catch (e) {
+      console.warn('保存标记状态到 localStorage 失败', e);
+    }
+  }
+  function loadMarkedQuestionsFromStorage() { // 从 localStorage 加载标记状态
+    try {
+      const raw = localStorage.getItem(_storageKeyForMarked());
+      if (!raw) {
+        // 初始化为 false 数组
+        markedQuestions.length = 0;
+        markedQuestions.push(...Array(examQuestions.length).fill(false));
+        return;
+      }
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) {
+        markedQuestions.length = 0;
+        markedQuestions.push(...Array(examQuestions.length).fill(false));
+        return;
+      }
+      // 如果长度不同，按最小长度合并并补齐 false
+      const len = examQuestions.length;
+      const newArr = Array.from({ length: len }, (_, i) => !!arr[i]);
+      markedQuestions.length = 0;
+      markedQuestions.push(...newArr);
+    } catch (e) {
+      console.warn('读取标记状态失败', e);
+      markedQuestions.length = 0;
+      markedQuestions.push(...Array(examQuestions.length).fill(false));
+    }
+  }
+
 
   // 阻止事件冒泡，避免触发题目切换
   function toggleMarkQuestion(index, event) {
     event.stopPropagation();
     markedQuestions[index] = !markedQuestions[index];
+    saveMarkedQuestionsToStorage();
   }
 
   //加载函数
@@ -429,21 +531,19 @@
           examQuestions.push(...flattenExamQuestions());
           questionGroups.length = 0;
           questionGroups.push(...getQuestionGroups());
+          loadMarkedQuestionsFromStorage();
 
           //如果是预览的话直接从localStorage获取title
           const exam_title = localStorage.getItem('examTitle');
 
-          // 暂时统一名称为预览考试
-          title = '预览考试';
-
-          // if (!title) {
-          //   //////////////////
-          //   if (!exam_title) {
-          //     title = '预览考试';
-          //   } else {
-          //     title = exam_title;
-          //   }
-          // }
+          if (!title) {
+             //////////////////
+             if (!exam_title) {
+               title = '预览考试';
+             } else {
+               title = exam_title;
+             }
+           }
 
           // 允许渲染页面
           load_success = true;
@@ -528,6 +628,8 @@
           examQuestions.push(...flattenExamQuestions());
           questionGroups.length = 0;
           questionGroups.push(...getQuestionGroups());
+
+          loadMarkedQuestionsFromStorage();
         })
         .catch((error) => {
           console.error('请求失败:', error);
@@ -596,7 +698,9 @@
         <!-- <Button type="primary" round size="large" onclick={submitMessageBox}>
           <span> 提交 </span>
         </Button> -->
-        <button class="submit-button" onclick={submitMessageBox}>提交</button>
+        {#if !ifPreview}
+         <button class="submit-button" onclick={submitMessageBox}>提交</button>
+        {/if}
       </div>
     </div>
     <!-- 预览提醒用visibility控制 -->
@@ -666,19 +770,24 @@
                       {ifPreview}
                       {saveAnswer}
                       {query_url}
+                      {exam_id}
+                      {exam_session_id}
+                      {examinee_id}
                       editor_height="200px"
                     ></Question>
-                    <div class="question-mark-btn-container">
-                      <button
-                        class="mark-btn"
-                        class:marked={markedQuestions[index]}
-                        onclick={(event) => toggleMarkQuestion(index, event)}
-                        title={markedQuestions[index] ? '取消标记' : '标记此题'}
-                      >
-                        <img src="/student_answer_exam/red_flag.png" alt="标记" class="flag-icon" />
-                        {markedQuestions[index] ? '取消标记' : '标记此题'}
-                      </button>
-                    </div>
+                    {#if !ifPreview}
+                      <div class="question-mark-btn-container">
+                        <button
+                          class="mark-btn"
+                          class:marked={markedQuestions[index]}
+                          onclick={(event) => toggleMarkQuestion(index, event)}
+                          title={markedQuestions[index] ? '取消标记' : '标记此题'}
+                        >
+                          <img src="/student_answer_exam/red_flag.png" alt="标记" class="flag-icon" />
+                          {markedQuestions[index] ? '取消标记' : '标记此题'}
+                        </button>
+                      </div>
+                    {/if}
                   </div>
                 {/each}
               {:else}
@@ -696,6 +805,9 @@
                     {ifPreview}
                     {saveAnswer}
                     {query_url}
+                    {exam_id}
+                    {exam_session_id}
+                    {examinee_id}
                     editor_height="400px"
                   ></Question>
                   <div class="question-mark-btn-container">
@@ -818,6 +930,22 @@
     .icon {
       font-size: 12px;
     }
+  }
+
+  .exam-time-info :global(.button),
+  .exam-time-info button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 6px 10px !important; /* 恢复合适内边距 */
+    height: 32px !important;
+    line-height: normal !important; /* 避免行高干扰居中 */
+    box-sizing: border-box !important;
+    width: auto !important;
+  }
+  .exam-time-info button > span {
+    display: inline-block;
+    vertical-align: middle;
   }
 
   /* 考试容器样式 */
@@ -1015,32 +1143,17 @@
 
   // 考试开始时间和结束时间信息区域
   .exam-time-info {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* 文本和按钮靠左排列，使用 gap 控制间距 */
+    gap: 8px;
     background-color: #f2f3f5;
     font-size: 14px;
     font-weight: 500;
-    width: 70%;
-    padding: 5px;
+    width: 100%;
+    padding: 8px 10px;
     margin-bottom: 10px;
     border-radius: 10px;
-  }
-  .button {
-    background-color: transparent;
-    border: none;
-    color: #0066ff;
-    font-size: 14px;
-    font-weight: bold;
-    padding: 0;
-    height: auto;
-    outline: none;
-    box-shadow: none;
-    -webkit-tap-highlight-color: transparent; /* 移动端点击高亮去除 */
-  }
-
-  .button:focus,
-  .button:active {
-    outline: none;
-    box-shadow: none;
-    background-color: transparent;
   }
 
   //作答偏好信息
@@ -1227,7 +1340,9 @@
   //说明区域样式
   .nav-sections {
     height: 100%;
-    overflow: scroll;
+    /* 只允许纵向滚动，隐藏横向滚动，防止出现水平滚动条 */
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   // 用于放置nav-sections的头部位置，放"答题卡"标题和图例说明
   .nav-header {

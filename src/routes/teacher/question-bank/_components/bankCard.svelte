@@ -23,8 +23,9 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 	import EditableTag from "$lib/components/Tag/EditableTag.svelte";
 	import { fade, slide } from "svelte/transition";
 	 import { selection } from '../store';
-
+import {formatTimeToSecond}from"../utils/utils"
     import '$lib/styles/global.css';
+
 	/**
 	 * @typedef BankData
 	 * @property {string}           ID              - 题库ID
@@ -51,10 +52,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 	 *          delete_tag?: (index: number) => void; // 删除tag的处理函数
 	 *          add_tag?: (content: string) => void; // 添加tag的处理函数
 	 *          tag_change?: (content: string, index: number) => void; // tag内容变化的处理函数, 输入时调用
-	 *          tag_onchange?: (old_content:string, new_content: string, index: number) => void; // tag内容变化的处理函数, 失去焦点或按下回车时调用
 	 *          name_change?: (content: string) => void; // 题库名称变化的处理函数
-	 *          name_input_blur?: (content: string) => void; // 题库名称输入框失去焦点的处理函数
-	 *          name_input_onchange?: (old_content:string, new_content: string) => void; // 题库名称变化的处理函数, 失去焦点或按下回车时调用
 	 *          discard?: () => void; // 放弃修改的处理函数
 	 *          logs?: () => void; // 查看日志的处理函数
 	 *      };
@@ -223,15 +221,14 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 					class="bank-name-input"
 					placeholder="在此输入题库名称"
 					bind:value={bank_name}
-					onblur={() => {
-						normal_handle_funcs?.name_input_blur?.(bank_name);
-					}}
-					oninput={() => {
-						normal_handle_funcs?.name_change?.(bank_name);
-					}}
 					onchange={() => {
-						normal_handle_funcs?.name_input_onchange?.(
-							old_bank_name,
+						normal_handle_funcs?.name_change?.(
+						
+							bank_name
+						);
+					}}
+					oninput={()=>{
+						normal_handle_funcs?.name_change?.(
 							bank_name
 						);
 					}}
@@ -242,11 +239,11 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 				<!-- 题库操作时间 -->
 				<div class="bank-time">
 					<div class="bank-create-time">
-						<span>{new Date(data?.CreateTime).toLocaleString()} 创建</span>
+						<span>{formatTimeToSecond(data?.CreateTime)} 创建</span>
 					</div>
 
 					<div class="bank-update-time">
-						<span>{new Date(data?.UpdateTime).toLocaleString()} 更新</span>
+						<span>{formatTimeToSecond(data?.UpdateTime)} 更新</span>
 					</div>
 				</div>
 
@@ -257,9 +254,9 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 							bind:content={add_tag_input}
 							handle_funcs={{
 								onchange: (old_content, new_content) => {
-									add_tag_input = "";
-
+										add_tag_input = "";
 									normal_handle_funcs?.add_tag?.(new_content);
+								
 								},
 								delete: () => {
 									add_tag_input = "";
@@ -277,13 +274,7 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 									input_change: (content) => {
 										normal_handle_funcs?.tag_change?.(content, index);
 									},
-									onchange: (old_content, new_content) => {
-										normal_handle_funcs?.tag_onchange?.(
-											old_content,
-											new_content,
-											index
-										);
-									},
+								
 								}}
 							/>
 						</div>

@@ -68,14 +68,14 @@ o.  )88b 888   .o8  888      888   888   888   888 .
 
   //对应后端字符
   const roleIdToDomain = {
-    1: 'cst.school^admin', // 普通管理员
-    2: 'cst.school.academicAffair^admin', // 教务员
-    3: 'cst.school^teacher', // 教师
-    4: 'cst.school^examGrader', // 批阅员
-    5: 'cst.school.examSite^admin', // 考点负责人
-    6: 'cst.school^scoreChecker', // 核分员
-    7: 'cst.school^examSupervisor', // 监考员
-    8: 'cst.school^student', // 学生
+    1: 'assess^admin', // 普通管理员
+    2: 'assess.academicAffair^admin', // 教务员
+    3: 'assess^teacher', // 教师
+    4: 'assess^examGrader', // 批阅员
+    5: 'assess^examSiteAdmin', // 考点负责人
+    6: 'assess^scoreChecker', // 核分员
+    7: 'assess^examSupervisor', // 监考员
+    8: 'assess^student', // 学生
   };
 
   // 管理员权限列表

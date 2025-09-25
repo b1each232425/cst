@@ -84,9 +84,11 @@
   // 校验传入参数
   (() => {
     // 校验 initial_start_date 参数
-    if (initial_start_date && !(initial_start_date instanceof Date)) {
-      console.warn(`[DatePicker] initial_start_date 应该是 Date 类型，当前为 ${typeof initial_start_date}`);
-      initial_start_date = null; // 设置默认值为 null
+    if (initial_start_date) {
+      if (!(initial_start_date instanceof Date) || isNaN(initial_start_date.getTime())) {
+        console.warn(`[DatePicker] initial_start_date 无效，当前为 ${initial_start_date}`);
+        initial_start_date = null;
+      }
     }
 
     // 校验 initial_end_date 参数
@@ -286,6 +288,26 @@
     }
   };
 
+  // 上一年
+  const prevStartYear = () => {
+    start_year--;
+  };
+
+  // 下一年
+  const nextStartYear = () => {
+    start_year++;
+  };
+
+  // 上一年
+  const prevEndYear = () => {
+    end_year--;
+  };
+
+  // 下一年
+  const nextEndYear = () => {
+    end_year++;
+  };
+
   // 更新输入框的显示值
   const updateInputValue = () => {
     if (is_single_date_selection) {
@@ -457,16 +479,20 @@
       selected_end_minute = now.getMinutes();
     }
 
-    if (initial_start_date instanceof Date) {
+    if (initial_start_date instanceof Date && !isNaN(initial_start_date.getTime())) {
       internal_start_date = new Date(initial_start_date);
       selected_start_hour = internal_start_date.getHours();
       selected_start_minute = internal_start_date.getMinutes();
+      start_year = internal_start_date.getFullYear();
+      start_month = internal_start_date.getMonth();
     }
 
-    if (initial_end_date instanceof Date) {
+    if (initial_end_date instanceof Date && !isNaN(initial_end_date.getTime())) {
       internal_end_date = new Date(initial_end_date);
       selected_end_hour = internal_end_date.getHours();
       selected_end_minute = internal_end_date.getMinutes();
+      end_year = internal_end_date.getFullYear();
+      end_month = internal_end_date.getMonth();
     }
 
     if (is_single_date_selection) {
@@ -476,7 +502,20 @@
     }
 
     updateInputValue();
+    dispatch('start_date_selected', { date: internal_start_date });
+    dispatch('end_date_selected', { date: internal_end_date });
   };
+
+  $effect(() => {
+    // 如果有初始值就转成字符串
+    if (initial_start_date) {
+      input_value = formatDate(initial_start_date);
+    }
+
+    if (initial_start_date && initial_end_date) {
+      input_value = `${formatDate(initial_start_date)} ~ ${formatDate(initial_end_date)}`;
+    }
+  });
 
   // 初始化日期选择器
   onMount(() => {
@@ -510,9 +549,20 @@
       <div class="dual-calendar-popup" class:single-calendar-mode={is_single_date_selection}>
         <div class="calendar">
           <div class="calendar-header">
-            <button onclick={prevStartMonth} data-testid="start-pre-month">«</button>
+            <button onclick={prevStartYear} data-testid="start-pre-month">
+              <img class="img-year" src="/datepicker/pre_year.svg" alt="" />
+            </button>
+            <button onclick={prevStartMonth} data-testid="start-pre-month">
+              <img class="img-month" src="/datepicker/pre_month.svg" alt="" />
+            </button>
+
             <span data-testid="start-current-date">{`${start_year}年 ${month_names[start_month]}`}</span>
-            <button onclick={nextStartMonth} data-testid="start-next-month">»</button>
+            <button onclick={nextStartMonth} data-testid="start-next-month">
+              <img class="img-month" src="/datepicker/next_month.svg" alt="" />
+            </button>
+            <button onclick={nextStartYear} data-testid="start-pre-month">
+              <img class="img-year" src="/datepicker/next_year.svg" alt="" />
+            </button>
           </div>
           <div class="calendar-days">
             {#each ['日', '一', '二', '三', '四', '五', '六'] as day}
@@ -569,9 +619,19 @@
         {#if !is_single_date_selection}
           <div class="calendar">
             <div class="calendar-header">
-              <button onclick={prevEndMonth} data-testid="end-pre-month">«</button>
+              <button onclick={prevEndYear} data-testid="start-pre-month">
+                <img class="img-year" src="/datepicker/pre_year.svg" alt="" />
+              </button>
+              <button onclick={prevEndMonth} data-testid="start-pre-month">
+                <img class="img-month" src="/datepicker/pre_month.svg" alt="" />
+              </button>
               <span data-testid="end-current-date">{`${end_year}年 ${month_names[end_month]}`}</span>
-              <button onclick={nextEndMonth} data-testid="end-next-month">»</button>
+              <button onclick={nextEndMonth} data-testid="start-next-month">
+                <img class="img-month" src="/datepicker/next_month.svg" alt="" />
+              </button>
+              <button onclick={nextEndYear} data-testid="start-pre-month">
+                <img class="img-year" src="/datepicker/next_year.svg" alt="" />
+              </button>
             </div>
             <div class="calendar-days">
               {#each ['日', '一', '二', '三', '四', '五', '六'] as day}
@@ -629,8 +689,8 @@
       </div>
 
       <div class="calendar-footer">
-        <button class="cancel-btn" onclick={dateConfirm} data-testid="clear-btn">取消</button>
-        <button class="clear-btn" onclick={reset} data-testid="clear-btn">清除</button>
+        <button class="cancel-btn" onclick={dateConfirm}>取消</button>
+        <button class="clear-btn" onclick={reset}>清除</button>
         <button class="confirm-btn" onclick={dateConfirm}>确定</button>
       </div>
     </div>
@@ -645,6 +705,7 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       width: var(--date-picker-width);
+      height: 30px;
       padding: 6px 32px 6px 12px; /* 右边32px给图标留空间 */
       font-size: 16px;
       box-sizing: border-box;
@@ -667,7 +728,7 @@
       background-color: white;
       border: 1px solid #ccc;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      padding: 10px;
+      padding: 0px 10px 10px;
       z-index: 1000;
 
       .dual-calendar-popup {
@@ -689,6 +750,14 @@
             align-items: center;
             padding: 8px;
             border-bottom: 1px solid #eee;
+
+            .img-month {
+              width: 10px;
+            }
+
+            .img-year {
+              width: 16px;
+            }
           }
 
           .calendar-header button {

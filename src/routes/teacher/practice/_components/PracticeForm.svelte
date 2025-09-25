@@ -324,7 +324,7 @@
       {/if}
       {#if !practiceData || (practiceData && practiceData.data.practice.Status === '00')}
         <div class="form-group">
-          <label for="test-select">
+          <label for="test-select"  style="flex-shrink: 0;">
             <span class="required">*</span> <span class="filter-label">练习试卷：</span>
           </label>
           <div class="input-wrapper">
@@ -463,11 +463,11 @@
     selectedStudents = selected.map((item) => ({
       ...item,
       id:item.ID,
-      Domains:['cst.school^student']
+      Domains:['assess^student']
     }));
     newStudents = newStudent.map((item) => ({
       ...item,
-      Domains:['cst.school^student']
+      Domains:['assess^student']
     }));
   }}
   onCancel={(/** @type {boolean} */ load_new_file) => {

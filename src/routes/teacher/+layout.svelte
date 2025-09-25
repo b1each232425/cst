@@ -5,27 +5,58 @@
   import { toast } from '$lib/components/Toast/Toast.js';
   import { baseNavItems } from '$lib/stores/modules/permission.js';
   import { onMount } from 'svelte';
+
   let { children, data } = $props();
 
   let nav_map = $state([]); // 导航数据
   let display_name = $state(''); // 用户名称
 
-  // 获取用户权限并生成 nav_map
+  // 获取用户基础信息
   async function getUserInfo() {
     fetch('/api/user/me')
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
       .then(async (data) => {
-        if (!data?.data?.APIs) throw new Error('APIs 数据不存在');
+        if (!data?.data?.APIs) {
+          toast.error('获取用户基础信息失败');
+          return;
+        }
 
         // 获取用户名
         display_name = data.data.OfficialName;
+      })
+      .catch((error) => {
+        nav_map = []; // 失败时设为空数组
+        console.error('获取用户基础信息失败:', error);
+        toast.error('获取用户权限失败：', error);
+      });
+  }
+
+  // 获取用户权限并生成 nav_map
+  async function getUserPermission() {
+    fetch('/api/auth/authority/me')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('网络错误');
+        }
+        return response.json();
+      })
+      .then(async (data) => {
+        if (!data?.data?.accessibleAPIs) {
+          toast.error('获取用户权限失败');
+          return;
+        }
 
         // 获取当前用户可访问的路径
-        const allowedPaths = await data.data.APIs.map((api) => api.APIExposePath);
+        const allowedPaths = await data.data.accessibleAPIs.map((api) => api.ExposePath);
 
         // 过滤 baseNavItems，只保留匹配的父级菜单
         nav_map = $baseNavItems.filter((item) => {
-          return allowedPaths.includes(item.path); // 只匹配一级菜单的 path
+          return allowedPaths.includes(item.path);
         });
       })
       .catch((error) => {
@@ -37,6 +68,7 @@
 
   onMount(async () => {
     await getUserInfo();
+    await getUserPermission();
   });
 </script>
 
@@ -100,7 +132,8 @@
     .content-wrapper {
       display: flex;
       flex-direction: column;
-      flex: 1;
+      flex: 1 1 auto;
+      height: calc(100% - 100px);
       position: relative;
 
       .content-container {

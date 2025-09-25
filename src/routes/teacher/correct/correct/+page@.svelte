@@ -390,6 +390,11 @@
   let student_infos = $state([]); // 考生信息
   let marking_results = $state([]); // 历史批改结果
 
+  // let question_sets = $state([...mockData.question_sets]); // 题组
+  // let student_answers = $state([...mockData.student_answers]); // 学生信息
+  // let student_infos = $state([...mockData.student_infos]); // 考生信息
+  // let marking_results = $state([...mockData.marking_results]); // 历史批改结果
+
   // 总问题数
   let total_question = $derived(
     Array.isArray(question_sets)
@@ -477,13 +482,8 @@
       })
       .then((res) => {
         if (!res.status) {
-          if (is_exam_mode) {
-            toast.success('提交成功'); // 考试需要提示；练习不需要，直接提交即可
-            goBack();
-          } else {
-            // 练习，全部练习批改完成，提示可以返回
-            if (getUnmarkedExamineeCount() === 0) toast.success('当前所有的学生已批改且提交成功，可以返回列表');
-          }
+          toast.success('提交成功');
+          if (is_exam_mode) goBack();
         } else throw new Error(res.msg ?? '提交失败');
       })
       .catch((err) => {
@@ -744,9 +744,6 @@
               ...data,
             };
           else marking_results.push(data);
-
-          // 练习，批改好一个同学就直接提交
-          if (!is_exam_mode && is_finished_correcting) submitCorrection();
         } else throw new Error(res.msg ?? '批改操作失败');
       })
       .catch((err) => {
@@ -781,13 +778,13 @@
       {#if current_exam_session_name}
         <div class="info"><span>考试场次：</span><span class="data"> {current_exam_session_name}</span></div>
       {/if}
+      <div class="info"><span>主观题总分：</span><span class="data"> {total_score}</span></div>
       <div class="info"><span>总人数：</span><span class="data"> {student_infos.length}</span></div>
       <div class="info"><span>未批改人数：</span><span class="data"> {getUnmarkedExamineeCount()}</span></div>
-      <div class="info"><span>主观题总分：</span><span class="data"> {total_score}</span></div>
       <div class="info"><span>总未批改题数：</span><span class="data"> {getAllUnMarkedQuestionCount()}</span></div>
     </div>
     <div class="hobby" data-testid="switch">
-      全卷模式
+      逐题模式
       <Switch
         is_checked={correct_item_by_item}
         ball_color="white"
@@ -798,7 +795,6 @@
         width="50px"
         clickSwitchButton={handleClickSwitchButton}
       />
-      逐题模式
     </div>
   </div>
 
@@ -818,8 +814,15 @@
             <span>当前得分：</span><span class="data"> {getStudentTotalScore(current_student_info)}</span>
           </div>
         </div>
-        <!-- 练习：上一位，下一位；考试：上一位，下一位/提交 -->
+        <!-- 练习：提交，上一位，下一位；考试：上一位，下一位/提交 -->
         <div class="options">
+          {#if !is_exam_mode}
+            <button
+              class="btn is-plain btn--success"
+              class:is-disabled={!is_finished_correcting}
+              onclick={() => submitCorrection()}>&nbsp;&nbsp;提交&nbsp;&nbsp;</button
+            >
+          {/if}
           <button
             class="btn btn--info is-plain"
             class:is-disabled={current_student_info_index === 0}
@@ -909,26 +912,30 @@
         <span class="incorrect">• 错误</span>
         <span class="partial">• 含错</span>
       </div>
-      {#each question_sets as question_set, i}
-        <div class="question-scores">
-          <div class="scores-header">
-            {question_set.Name} (<span class="data"
-              >{getStudentQuestionSetScore(current_student_info, question_set.ID)}</span
-            >分/{question_set.Score}分)
+      <div class="question-score-list">
+        {#each question_sets as question_set, i}
+          <div class="question-scores">
+            <div class="scores-header">
+              {question_set.Name} (<span class="data"
+                >{getStudentQuestionSetScore(current_student_info, question_set.ID)}</span
+              >分/{question_set.Score}分)
+            </div>
+            <div class="scores">
+              {#each question_set.Questions as question, j}
+                <button
+                  class={`scores-item ${getStudentQuestionScoreStatus(current_student_info, question.ID)}`}
+                  class:active={correct_item_by_item &&
+                    current_question_set_index === i &&
+                    current_question_index === j}
+                  onclick={() => scrollToQuestion(question.ID, i, j)}
+                >
+                  {question.Order}
+                </button>
+              {/each}
+            </div>
           </div>
-          <div class="scores">
-            {#each question_set.Questions as question, j}
-              <button
-                class={`scores-item ${getStudentQuestionScoreStatus(current_student_info, question.ID)}`}
-                class:active={correct_item_by_item && current_question_set_index === i && current_question_index === j}
-                onclick={() => scrollToQuestion(question.ID, i, j)}
-              >
-                {question.Order}
-              </button>
-            {/each}
-          </div>
-        </div>
-      {/each}
+        {/each}
+      </div>
     </div>
   </div>
 </div>
@@ -953,9 +960,7 @@
       &.data {
         color: black;
         font-size: 1.1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        @include flex-center;
       }
     }
   }
@@ -1042,8 +1047,12 @@
 
           .item-by-item {
             .options {
-              @include flex-center;
-              gap: 2rem;
+              display: flex;
+              justify-content: end;
+              gap: 1rem;
+              position: sticky;
+              bottom: 0;
+              z-index: 10;
             }
           }
         }
@@ -1092,70 +1101,77 @@
           }
         }
 
-        .question-scores {
-          padding: 0.8rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-          margin-top: 1rem;
+        .question-score-list {
+          height: 78vh;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: #ccc transparent;
 
-          .scores-header {
-            color: rgba(0, 0, 0, 0.8);
-
-            .data {
-              color: #3399ff;
-            }
-          }
-
-          .scores {
+          .question-scores {
+            padding: 0.8rem;
             display: flex;
-            justify-content: left;
-            flex-wrap: wrap;
-            gap: 1rem;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
 
-            .scores-item {
-              @include flex-center;
-              border: 1px solid #ccc;
-              width: 2rem;
-              height: 2rem;
-              border-radius: 5px;
+            .scores-header {
+              color: rgba(0, 0, 0, 0.8);
 
-              @mixin outline-style {
-                outline: 2px solid gray;
-                outline-offset: 2px;
+              .data {
+                color: #3399ff;
               }
+            }
 
-              &:hover {
-                cursor: pointer;
-                @include outline-style;
-              }
+            .scores {
+              display: flex;
+              justify-content: left;
+              flex-wrap: wrap;
+              gap: 1rem;
 
-              &.active {
-                @include outline-style;
-              }
+              .scores-item {
+                @include flex-center;
+                border: 1px solid #ccc;
+                width: 2rem;
+                height: 2rem;
+                border-radius: 5px;
 
-              &.unreviewed {
-                background-color: $color-unreviewed;
-              }
+                @mixin outline-style {
+                  outline: 2px solid gray;
+                  outline-offset: 2px;
+                }
 
-              &.right {
-                background-color: #e8ffea;
-                color: $color-right;
-              }
+                &:hover {
+                  cursor: pointer;
+                  @include outline-style;
+                }
 
-              &.incorrect {
-                background-color: #f8d2d8;
-                color: $color-incorrect;
-              }
+                &.active {
+                  @include outline-style;
+                }
 
-              &.partial {
-                background-color: #ffe8abfe;
-                color: $color-partial;
-              }
+                &.unreviewed {
+                  background-color: $color-unreviewed;
+                }
 
-              &.unknown {
-                background-color: red;
-                color: white;
+                &.right {
+                  background-color: #e8ffea;
+                  color: $color-right;
+                }
+
+                &.incorrect {
+                  background-color: #f8d2d8;
+                  color: $color-incorrect;
+                }
+
+                &.partial {
+                  background-color: #ffe8abfe;
+                  color: $color-partial;
+                }
+
+                &.unknown {
+                  background-color: red;
+                  color: white;
+                }
               }
             }
           }

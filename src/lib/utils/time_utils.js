@@ -1,15 +1,15 @@
 /*
  * @Author: Zpekii 3156752796@qq.com
  * @Date: 2025-04-08 15:05:30
- * @LastEditors: Zpekii 3156752796@qq.com
- * @LastEditTime: 2025-06-19 17:06:48
- * @FilePath: \exam-fe\src\lib\common\time_utils.js
+ * @LastEditors: 8023time 2162105974@qq.com
+ * @LastEditTime: 2025-09-15 23:52:48
+ * @FilePath: src\lib\utils\time_utils.js
  * @Description: 时间相关处理工具函数
- * @Copyright (c) 2025 by Zpekii, All Rights Reserved. 
+ * @Copyright (c) 2025 by Zpekii, All Rights Reserved.
  */
 
- /**
- * 将时间戳转换为可读格式: YYYY-MM-DD HH:MM
+/**
+ * 将时间戳转换为可读格式: YYYY-MM-DD HH:MM:SS
  * @param {number} timestamp - 时间戳(毫秒)
  * @param {{
  *      show_date?: boolean; // 是否显示日期
@@ -17,77 +17,80 @@
  * }} [options] - 格式化字符串
  */
 export function formatTimestamp(timestamp, options) {
-    if (!options) {
-        options = {
-            show_date: true,
-            show_time: true,
-        };
-    }
+  if (!options) {
+    options = {
+      show_date: true,
+      show_time: true,
+    };
+  }
 
-    if (options?.show_date == null) {
-        options.show_date = true;
-    }
+  if (options?.show_date == null) {
+    options.show_date = true;
+  }
 
-    if (options?.show_time == null) {
-        options.show_time = true;
-    }
+  if (options?.show_time == null) {
+    options.show_time = true;
+  }
 
-    const date = new Date(timestamp);
+  const date = new Date(timestamp);
 
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const day = date.getDate().toString().padStart(2, "0");
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
 
-    const hours = date.getHours().toString().padStart(2, "0");
-    const minutes = date.getMinutes().toString().padStart(2, "0");
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const seconds = date.getSeconds().toString().padStart(2, '0');
 
-    return `${options?.show_date ? `${year}-${month}-${day} ` : ""}${options?.show_time ? `${hours}:${minutes}` : ""}`;
+  return `${options?.show_date ? `${year}-${month}-${day} ` : ''}${options?.show_time ? `${hours}:${minutes}:${seconds}` : ''}`;
 }
 
 /**
- * 将秒级时间戳转换为 YY-MM-DD HH:MM 格式
+ * 将秒级时间戳转换为 YY-MM-DD HH:MM:SS 格式
  * @param {number} timestamp - 秒级时间戳
  * @return {string} - 格式化后的时间字符串
  */
 export function formatSecondTimestamp(timestamp) {
-    
-    const date = new Date(timestamp * 1000);
-    
-    const year = date.getFullYear().toString();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
-    const day = date.getDate().toString().padStart(2, '0');
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
+  const date = new Date(timestamp * 1000);
 
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+  const year = date.getFullYear().toString();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const seconds = date.getSeconds().toString().padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 /**
- * 将 ISO 格式(YYYY-MM-DDTHH:mm:ss.sssZ)的时间字符串转换为 YYYY-MM-DD HH:MM 格式
- * @param {string} time_string 
- * @returns 
+ * 将 ISO 格式(YYYY-MM-DDTHH:mm:ss.sssZ)的时间字符串转换为 YYYY-MM-DD HH:MM:SS 格式
+ * @param {string} time_string
+ * @returns
  */
 export function formatISOString(time_string) {
-    if (!time_string) {
-        return '';
-    }
-    
-    const date = new Date(time_string);
-    
-    if (isNaN(date.getTime())) {
-        console.error('Invalid ISO string format:', time_string);
-        return '';
-    }
-    
-    let year, month, day, hours, minutes;
-    
-    year = date.getFullYear();
-    month = (date.getMonth() + 1).toString().padStart(2, '0');
-    day = date.getDate().toString().padStart(2, '0');
-    hours = date.getHours().toString().padStart(2, '0');
-    minutes = date.getMinutes().toString().padStart(2, '0');
-    
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+  if (!time_string) {
+    ``;
+    return '';
+  }
+
+  const date = new Date(time_string);
+
+  if (isNaN(date.getTime())) {
+    console.error('Invalid ISO string format:', time_string);
+    return '';
+  }
+
+  let year, month, day, hours, minutes, seconds;
+
+  year = date.getFullYear();
+  month = (date.getMonth() + 1).toString().padStart(2, '0');
+  day = date.getDate().toString().padStart(2, '0');
+  hours = date.getHours().toString().padStart(2, '0');
+  minutes = date.getMinutes().toString().padStart(2, '0');
+  seconds = date.getSeconds().toString().padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 /**
@@ -100,95 +103,118 @@ export function formatISOString(time_string) {
  * }} - 包含小时、分钟、秒数的对象
  */
 export function parseHMSTime(timeString) {
-    const parts = timeString.split(':');
-    if (parts.length !== 3) {
-        throw new Error('Invalid time format. Expected HH:MM:SS');
-    }
+  const parts = timeString.split(':');
+  if (parts.length !== 3) {
+    throw new Error('Invalid time format. Expected HH:MM:SS');
+  }
 
-    const hours = parseInt(parts[0], 10);
-    const minutes = parseInt(parts[1], 10);
-    const seconds = parseInt(parts[2], 10);
+  const hours = parseInt(parts[0], 10);
+  const minutes = parseInt(parts[1], 10);
+  const seconds = parseInt(parts[2], 10);
 
-    return { hours, minutes, seconds };
+  return { hours, minutes, seconds };
 }
 
 /**
  * 将HH:MM:SS格式的时间字符串转换为可读的时间格式, 例如 "2h30m15s"
- * @param {string} timeString 
+ * @param {string} timeString
  */
 export function formatHMSTime(timeString) {
+  const { hours, minutes, seconds } = parseHMSTime(timeString);
 
-    const { hours, minutes, seconds } = parseHMSTime(timeString);
-    
-    let result = '';
-    
-    if (hours > 0) {
-        result += `${hours}h`;
-    }
-    
-    if (minutes > 0) {
-        result += `${minutes}m`;
-    }
-    
-    if (seconds > 0 || result === '') {
-        result += `${seconds}s`;
-    }
-    
-    return result;
+  let result = '';
 
+  if (hours > 0) {
+    result += `${hours}h`;
+  }
+
+  if (minutes > 0) {
+    result += `${minutes}m`;
+  }
+
+  if (seconds > 0 || result === '') {
+    result += `${seconds}s`;
+  }
+
+  return result;
 }
-
 
 /**
  * 将"2h30m15s"格式的时间字符串转换为HH:MM:SS格式
- * @param {string} timeString 
+ * @param {string} timeString
  * @return {string} - 转换后的时间字符串，格式为HH:MM:SS
  */
 export function transformTimeToHMS(timeString) {
+  let hours = 0;
 
-    let hours = 0;
+  let minutes = 0;
 
-    let minutes = 0;
+  let seconds = 0;
 
-    let seconds = 0;
+  const hoursMatch = timeString.match(/(\d+)h/);
+  if (hoursMatch) {
+    hours = parseInt(hoursMatch[1], 10);
+  }
 
-    const hoursMatch = timeString.match(/(\d+)h/);
-    if (hoursMatch) {
-        hours = parseInt(hoursMatch[1], 10);
-    }
+  const minutesMatch = timeString.match(/(\d+)m/);
+  if (minutesMatch) {
+    minutes = parseInt(minutesMatch[1], 10);
+  }
 
-    const minutesMatch = timeString.match(/(\d+)m/);
-    if (minutesMatch) {
-        minutes = parseInt(minutesMatch[1], 10);
-    }
+  const secondsMatch = timeString.match(/(\d+)s/);
+  if (secondsMatch) {
+    seconds = parseInt(secondsMatch[1], 10);
+  }
 
-    const secondsMatch = timeString.match(/(\d+)s/);
-    if (secondsMatch) {
-        seconds = parseInt(secondsMatch[1], 10);
-    }
-
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
 /**
  * 将HH:MM:SS格式的时间字符串转换为指定单位的时间值
- * @param {string} timeString 
+ * @param {string} timeString
  * @param {string} unit - 时间单位，支持 "s" (秒), "m" (分钟), "h" (小时)
  * @return {number} - 转换后的时间值
  */
 export function transformHMSTimeExpression(timeString, unit) {
+  const { hours, minutes, seconds } = parseHMSTime(timeString);
 
-    const { hours, minutes, seconds } = parseHMSTime(timeString);
-    
-    switch (unit) {
-        case 's':
-            return hours * 3600 + minutes * 60 + seconds;
-        case 'm':
-            return hours * 60 + minutes + seconds / 60;
-        case 'h':
-            return hours + minutes / 60 + seconds / 3600;
-        default:
-            throw new Error('Unsupported time unit. Use "s", "m", or "h".');
-    }
+  switch (unit) {
+    case 's':
+      return hours * 3600 + minutes * 60 + seconds;
+    case 'm':
+      return hours * 60 + minutes + seconds / 60;
+    case 'h':
+      return hours + minutes / 60 + seconds / 3600;
+    default:
+      throw new Error('Unsupported time unit. Use "s", "m", or "h".');
+  }
+}
 
+/**
+ * 将毫秒转换为分钟（向上取整）
+ * @param {number} ms - 毫秒数
+ * @returns {number} - 转换后的分钟数
+ */
+export function msToMinutes(ms) {
+  return Math.ceil(ms / (1000 * 60));
+}
+
+/**
+ * 将分钟安全地转换为毫秒
+ * @param {number | string} minutes - 分钟数
+ * @returns {number} - 转换后的毫秒数
+ * @throws {Error} - 如果输入无效则抛出错误
+ */
+export function minutesToMs(minutes) {
+  const mins = Number(minutes);
+
+  if (isNaN(mins)) {
+    throw new Error('Invalid minutes value');
+  }
+
+  if (mins < 0) {
+    throw new Error('Minutes cannot be negative');
+  }
+
+  return mins * 60 * 1000;
 }
