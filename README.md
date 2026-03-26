@@ -1,38 +1,208 @@
-# sv
+# 3min CST - 考试管理系统（Comprehensive Smart Testing）
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+> 一个功能完整、专业级的在线考试管理平台，为教师和学生提供全面的考试解决方案。
 
-## Creating a project
+![GitHub License](https://img.shields.io/badge/license-MIT-blue)
+![Svelte](https://img.shields.io/badge/Svelte-5.38.0-FF3E00?logo=svelte)
+![SvelteKit](https://img.shields.io/badge/SvelteKit-2.27.3-FF3E00?logo=svelte)
+![JavaScript](https://img.shields.io/badge/JavaScript-53.7%25-f1e05a)
+![Vite](https://img.shields.io/badge/Vite-7.1.1-646CFF?logo=vite)
 
-If you're seeing this, you've probably already done this step. Congrats!
+## 📖 项目概述
 
-```bash
-# create a new project in the current directory
-npx sv create
+**3min CST** 是一个专为教育机构设计的综合考试管理系统，基于现代前端技术栈构建。该系统为教师和学生提供一体化的考试解决方案，包括题库管理、在线组卷、考试监考、成绩评分等功能。
 
-# create a new project in my-app
-npx sv create my-app
-```
+### 🎯 核心特性
 
-## Developing
+- ✨ **完整的题库管理系统** - 支持多种题型的创建、编辑和批量导入
+- 📝 **在线组卷功能** - 灵活的自动组卷和手动组卷方式
+- 👨‍🏫 **教师考试管理** - 完整的考试创建、分配和监管流程
+- 👥 **学生考试参与** - 良好的考试界面和答题体验
+- 📊 **数据统计与分析** - 成绩统计、分析和可视化
+- 🔐 **身份认证系统** - 支持用户注册、登录和身份验证
+- 📱 **��应式设计** - 支持多设备访问
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## 🏗️ 项目架构
 
-```bash
-npm run dev
+### 系统模块
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+#### 1. **认证模块** (`/routes/login`)
+- **用户注册** - 新用户账号创建，支持邮箱验证
+- **用户登录** - 安全的身份认证
+- **密码重置** - 账户密码恢复功能
+- 支持多角色登录（教师、学生、管理员）
 
-## Building
+#### 2. **教师模块** (`/routes/teacher`)
 
-To create a production version of your app:
+##### 2.1 题库管理 (`question-bank`)
+完整的题目管理系统，支持多种题型：
 
-```bash
-npm run build
-```
+- **单选题 (Single Choice)**
+  - 支持 2-8 个选项
+  - 丰富的文本编辑功能（图片、音视频、表格）
+  - 分值设置和标签管理
+  
+- **多选题 (Multiple Choice)**
+  - 支持多答案选择
+  - 灵活的选项管理
+  - 答案验证机制
+  
+- **判断题 (True/False)**
+  - 简洁的判断选择界面
+  - 自动答案验证
+  
+- **填空题 (Fill in the Blank)**
+  - 多空位支持
+  - 灵活的答案设置
+  
+- **简答题 (Short Answer)**
+  - 长文本答案支持
+  - 评分标准设置
 
-You can preview the production build with `npm run preview`.
+**核心功能：**
+- 题目创建和编辑（集成 TipTap 富文本编辑器）
+- 题目预览和验证
+- **批量导入** - 支持 Excel 格式批量导入题目
+  - 自动解析题目数据
+  - 导入结果统计（成功/失败）
+  - 失败题目编辑和重试
+- 题目搜索、筛选和分页
+- 标签管理和分类
+- 题目重复性检查
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+##### 2.2 组卷管理 (`practice`)
+灵活的试卷组卷系统：
+
+- **自动组卷** - 根据选定条件自动生成试卷
+  - 按难度级别选择
+  - 按题型比例分配
+  - 按知识点选择
+  
+- **手动组卷** - 教师手动选择题目组卷
+  - 试卷预览
+  - 试卷编辑和调整
+  - 分值自动计算
+  
+- **试卷模板** - 可复用的试卷模板
+- **试卷发布** - 发布试卷供学生答题
+- **试卷管理** - 试卷列表、编辑、删除等操作
+
+##### 2.3 考试管理 (`exam`)
+完整的在线考试管理系统：
+
+- **考试创建和设置**
+  - 选择试卷
+  - 设置考试时间和地点
+  - 配置答题规则
+  - 设置考试密码
+  
+- **监考员分配** (`InvigilatorSelectionPanel.svelte`)
+  - 选择监考教师
+  - 设置监考权限
+  - 多监考员分配
+  - 监考员搜索和筛选
+  
+- **考场管理** (`exam-site`)
+  - 考场创建和配置
+  - 考场信息编辑
+  - 考场人员分配
+  - 考场状态管理
+
+##### 2.4 监考模块 (`invigilate`)
+在线监考功能：
+
+- **监考列表** - 查看所有待监考的考试
+  - 按考试名称搜索
+  - 按考试时间筛选
+  - 按考试状态筛选
+  - 分页查看
+  
+- **监考详情** - 详细的监考操作界面
+  - 实时查看考试进度
+  - 查看所有考生信息
+  - 延长考生答题时间
+  - 记录考试过程中的异常情况
+  - 上传监考证据文件
+  - 编写监考备注
+  - 评价考试基本情况
+  
+- **数据上报** - 考试数据提交和同步
+
+#### 3. **学生模块** (`/routes/student`)
+- **考试列表** - 查看分配的考试
+- **在线答题** - 完整的答题界面
+  - 实时答题进度显示
+  - 自动保存草稿
+  - 答案标记功能
+  - 倒计时提醒
+  
+- **成绩查看** - 查看答题成绩
+- **答题分析** - 查看错题分析
+
+## 🛠️ 技术栈详解
+
+### 前端框架与工具
+
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| **Svelte** | 5.38.0 | 响应式 UI 框架，占项目代码比例 45.9% |
+| **SvelteKit** | 2.27.3 | 全栈框架，提供路由和 SSR 支持 |
+| **Vite** | 7.1.1 | 极速构建工具 |
+| **JavaScript** | ES6+ | 主要编程语言，占项目代码比例 53.7% |
+
+### UI 与样式
+
+| 库 | 版本 | 说明 |
+|-----|------|------|
+| **Bulma** | 1.0.4 | 现代化 CSS 框架，提供响应式布局和组件 |
+| **SCSS** | - | 预处理样式语言，增强 CSS 功能 |
+| **Prettier** | 3.6.2 | 代码格式化工具 |
+
+### 编辑器与内容处理
+
+| 库 | 功能 |
+|----|------|
+| **@3min/cst-tiptap** | 1.2.2 - TipTap 富文本编辑器的定制版，支持图片、音视频、表格、公式等 |
+| **@3min/smart-edit** | 1.5.2 - 智能编辑工具，增强编辑体验 |
+
+### 数据处理与文件操作
+
+| 库 | 版本 | 用途 |
+|-----|------|------|
+| **exceljs** | 4.4.0 | Excel 文件读写，用于题目批量导入 |
+| **xlsx** | 0.18.5 | Excel 文件解析和处理 |
+| **jszip** | 3.10.1 | ZIP 文件压缩和解压 |
+| **file-saver** | 2.0.5 | 文件下载功能 |
+| **filesize** | 11.0.2 | 文件大小格式化显示 |
+| **hash-wasm** | 4.12.0 | 文件哈希计算（用于去重） |
+
+### 其他功能库
+
+| 库 | 版本 | 功能 |
+|-----|------|------|
+| **echarts** | 6.0.0 | 数据可视化，用于成绩分析展示 |
+| **china-division** | 2.7.0 | 中国行政区划数据 |
+| **libphonenumber-js** | 1.12.12 | 电话号码验证和格式化 |
+| **svelte-routing** | 2.13.0 | 路由管理 |
+| **tippy.js** | 6.3.7 | 提示框和弹出菜单 |
+| **tus-js-client** | 4.3.1 | 文件上传客户端（支持断点续传） |
+
+### 测试与代码质量
+
+| 工具 | 版本 | 用途 |
+|------|------|------|
+| **Vitest** | 3.2.4 | 单元测试框架 |
+| **Playwright** | 1.54.2 | E2E 端到端测试 |
+| **ESLint** | 9.33.0 | 代码检查 |
+| **svelte-check** | 4.3.1 | Svelte 类型检查 |
+| **@testing-library/svelte** | 5.2.8 | Svelte 组件测试库 |
+
+### 开发工具
+
+| 工具 | 版本 | 说明 |
+|------|------|------|
+| **TypeScript** | 5.9.2 | 可选的类型系统 |
+| **jsdom** | 26.1.0 | DOM 模拟环境 |
+| **c8** | 10.1.3 | 代码覆盖率工具 |
+
+## 📁 详细的项目结构
